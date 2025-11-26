@@ -8,3 +8,7 @@ ITing/build/
 
 # Logs
 *.log
+
+node_modules
+dist
+.env
