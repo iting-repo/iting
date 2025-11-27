@@ -7,6 +7,7 @@ import PrivateRoute from './PrivateRoute';
 // Import các trang (dùng Lazy để nhẹ web)
 const HomePage = lazy(() => import('../pages/public/HomePage'));
 const Login = lazy(() => import('../pages/public/LoginPage'));
+const Register = lazy(() => import('../pages/public/RegisterPage'));
 const JobPage = lazy(() => import('../pages/public/JobPage'));
 const Dashboard = lazy(() => import('../pages/admin/Dashboard'));
 
@@ -18,6 +19,7 @@ const AppRoutes = () => {
         {/* --- KHU VỰC PUBLIC (Ai cũng vào được) --- */}
         
         <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Register />} />
 
         <Route element={<MainLayout />}>
           <Route path="/" element={<HomePage />} />
