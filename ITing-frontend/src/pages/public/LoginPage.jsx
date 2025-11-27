@@ -35,7 +35,7 @@ const LoginPage = () => {
       <div className="w-full lg:w-[50%] flex flex-col justify-center px-8 md:px-20 xl:px-32 relative z-10">
 
         {/* Logo Area */}
-        <div className="top-10 left-8 md:left-20 flex items-center gap-2">
+        <div className="flex items-center gap-2 mb-8">
           <BsBriefcaseFill className="text-[#3AB4E6] text-2xl" />
           <span className="text-2xl font-semibold text-gray-800 tracking-tight">ITWork</span>
         </div>
