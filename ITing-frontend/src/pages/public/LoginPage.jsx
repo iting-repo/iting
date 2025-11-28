@@ -1,7 +1,9 @@
 
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-// Sử dụng bộ icon Feather hoặc FontAwesome đơn giản cho tinh tế
+import { useDispatch, useSelector } from 'react-redux';
+import { useNavigate } from 'react-router-dom';
+import { loginRequest } from '../../store/auth/authSlice';
 import { FaFacebookF, FaGoogle, FaEye, FaEyeSlash, FaArrowRight } from 'react-icons/fa';
 import { BsBriefcaseFill, BsBuilding, BsFileText } from 'react-icons/bs';
 // Import hình background caro của bạn
@@ -26,7 +28,21 @@ const FacebookIcon = () => (
 );
 
 const LoginPage = () => {
+
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
+
+  const { isLoading, error } = useSelector((state) => state.auth);
+
   const [showPassword, setShowPassword] = useState(false);
+
+  const handleLogin = (e) => {
+    e.preventDefault();
+    dispatch(loginRequest({ email, password, navigate }));
+  }
 
   return (
     <div className="min-h-screen flex bg-white font-sans">
@@ -50,12 +66,21 @@ const LoginPage = () => {
             Bạn chưa có tài khoản? <Link to="/register" className="text-[#3AB4E6] font-medium hover:underline">Tạo mới ngay</Link>
           </p>
 
+          {error && (
+            <div className="mb-4 p-3 bg-red-50 text-red-500 text-sm rounded border border-red-100">
+              ⚠️ {error}
+            </div>
+          )}
+
           {/* Login Form */}
-          <form className="space-y-5">
+          <form onSubmit={handleLogin} className="space-y-5">
             {/* Email Input */}
             <div>
               <input
                 type="email"
+                required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
                 placeholder="Nhập email của bạn"
                 className="w-full px-5 py-3.5 bg-[#F0F5FA] border border-transparent rounded-lg text-gray-700 placeholder-gray-400 focus:outline-none focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all"
               />
@@ -65,6 +90,9 @@ const LoginPage = () => {
             <div className="relative">
               <input
                 type={showPassword ? "text" : "password"}
+                required
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
                 placeholder="•••••••••"
                 className="w-full px-5 py-3.5 bg-[#F0F5FA] border border-transparent rounded-lg text-gray-700 placeholder-gray-400 focus:outline-none focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all"
               />
@@ -90,10 +118,13 @@ const LoginPage = () => {
 
             {/* Submit Button */}
             <button
-              type="button" // Đổi thành type="submit" khi integrate
-              className="w-full bg-[#3AB4E6] hover:bg-[#19A4DD] text-white font-bold py-3.5 rounded-lg transition duration-200 flex items-center justify-center gap-2 shadow-lg shadow-blue-500/30"
+              type="submit" // Đổi thành type="submit" khi integrate
+              disabled={isLoading}
+              className="w-full bg-[#3AB4E6] hover:bg-[#19A4DD] text-white font-bold py-3.5 rounded-lg transition duration-200 flex items-center justify-center gap-2 shadow-lg shadow-blue-500/30
+              ${isLoading ? 'opacity-70 cursor-not-allowed' : 'hover:bg-blue-600'}"
             >
-              Đăng Nhập <FaArrowRight size={14} />
+              {isLoading ? 'Đang xử lý...' : 'Đăng Nhập'}
+              {!isLoading && <FaArrowRight size={14} />}
             </button>
           </form>
 

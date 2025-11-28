@@ -1,23 +1,27 @@
 import React from 'react';
-import { Outlet, Link } from 'react-router-dom';
+import { Outlet } from 'react-router-dom';
+import Header from './Header'; 
+import Footer from './Footer'; // 1. Import Footer
 
 const MainLayout = () => {
   return (
-    <div>
-      <nav style={{ padding: 10, background: '#eee' }}>
-        <Link to="/" style={{ marginRight: 10 }}>Home</Link>
-        <Link to="/jobs" style={{ marginRight: 10 }}>Việc làm</Link>
-        <Link to="/login">Đăng nhập</Link>
-      </nav>
+    // Flex-col và min-h-screen giúp footer luôn nằm đáy
+    <div className="flex flex-col min-h-screen font-sans bg-gray-50">
+      
+      {/* HEADER (Sticky) */}
+      <Header />
 
-      <div style={{ padding: 20 }}>
-        {/* Đây là nơi nội dung các trang con (Home, Jobs...) hiện ra */}
+      {/* MAIN CONTENT */}
+      {/* flex-grow đẩy footer xuống dưới cùng nếu nội dung ngắn */}
+      <main className="flex-grow">
+        {/* Giữ container nếu muốn nội dung căn giữa, hoặc bỏ đi nếu muốn full-width */}
+        {/* Ở đây mình để full-width cho main, các trang con tự lo phần container của nó thì linh hoạt hơn */}
         <Outlet />
-      </div>
+      </main>
 
-      <footer style={{ padding: 10, background: '#333', color: '#fff' }}>
-        Footer Chung
-      </footer>
+      {/* FOOTER (Mới tích hợp) */}
+      <Footer />
+
     </div>
   );
 };

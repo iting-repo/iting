@@ -1,25 +1,28 @@
 import React from 'react';
 import { Navigate, Outlet } from 'react-router-dom';
-// import { useSelector } from 'react-redux'; // Bật cái này khi đã setup Redux xong
+import { useSelector } from 'react-redux';
 
 const PrivateRoute = ({ allowedRoles }) => {
-  // --- TẠM THỜI GIẢ LẬP DỮ LIỆU ĐỂ TEST ---
-  // Sau này thay bằng: const { token, role } = useSelector(state => state.auth);
-  const token = "abc"; // Giả vờ đã login
-  const role = "ADMIN"; // Giả vờ là ADMIN (thử đổi thành 'CANDIDATE' để test chặn)
-  // ----------------------------------------
+  // 1. Lấy currentUser từ Redux
+  const { currentUser } = useSelector((state) => state.auth);
 
-  // 1. Nếu chưa có token -> Đẩy về trang Login
+  // 2. Lấy thông tin từ currentUser (hoặc từ localStorage nếu F5 lại)
+  // Ưu tiên lấy từ Redux, nếu không có thì check localStorage (phòng trường hợp F5)
+  const role = currentUser?.role || localStorage.getItem('user_role');
+  const token = localStorage.getItem('access_token');
+
+  // 3. Kiểm tra đăng nhập
   if (!token) {
     return <Navigate to="/login" replace />;
   }
 
-  // 2. Nếu có token nhưng Role không nằm trong danh sách cho phép -> Đẩy về Home
-  if (allowedRoles && !allowedRoles.includes(role)) {
+  // 4. Kiểm tra quyền
+  // Quan trọng: role lấy ra có thể là undefined nếu chưa load xong, nên cần check kỹ
+  if (allowedRoles && role && !allowedRoles.includes(role)) {
+    // Nếu role không khớp -> Đá về trang chủ
     return <Navigate to="/" replace />;
   }
 
-  // 3. Ok hết thì cho đi tiếp
   return <Outlet />;
 };
 

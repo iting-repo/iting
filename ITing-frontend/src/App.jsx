@@ -4,9 +4,7 @@ import AppRoutes from './routes/AppRoutes';       // Import file cấu hình rou
 
 function App() {
   return (
-    <BrowserRouter>
       <AppRoutes />
-    </BrowserRouter>
   );
 }
 
