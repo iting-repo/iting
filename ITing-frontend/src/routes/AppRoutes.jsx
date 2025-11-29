@@ -19,7 +19,12 @@ const PostJob = lazy(() => import('../pages/employer/PostJob'));
 const ManageJobs = lazy(() => import('../pages/employer/ManageJobs'));
 const EditJob = lazy(() => import('../pages/employer/EditJob'));
 const JobApplications = lazy(() => import('../pages/employer/JobApplications'));
-
+const CandidateDashboard = lazy(() => import('../pages/candidate/CandidateDashboard'));
+const CandidateLayout = lazy(() => import('../layouts/CandidateLayout'));
+const CandidateProfile = lazy(() => import('../pages/candidate/profile/CandidateProfile'));
+const AppliedJobs = lazy(() => import('../pages/candidate/AppliedJobs'));
+const JobAlerts = lazy(() => import('../pages/candidate/JobAlerts'));
+const FavoriteJobs = lazy(() => import('../pages/candidate/FavoriteJobs'));
 
 const AppRoutes = () => {
   return (
@@ -65,6 +70,24 @@ const AppRoutes = () => {
               <Route path="manage-jobs/:id" element={<EditJob />} />
               <Route path="job/:id/applications" element={<JobApplications />} />
               <Route path="find-cv" element={<div>Trang Tìm Ứng Viên</div>} />
+
+            </Route>
+          </Route>
+        </Route>
+
+        <Route path="/candidate" element={<PrivateRoute allowedRoles={['candidate']} />}>
+          <Route element={<MainLayout />}>
+            <Route element={<CandidateLayout />}>
+
+              <Route index element={<Navigate to="dashboard" replace />} />
+              <Route path="dashboard" element={<CandidateDashboard />} />
+
+              {/* Các trang con khác làm sau, hiện tại để tạm div rỗng để ko lỗi */}
+              <Route path="profile" element={<CandidateProfile />} />
+              <Route path="applied-jobs" element={<AppliedJobs />} />
+              <Route path="favorite-jobs" element={<FavoriteJobs />} />
+              <Route path="job-alerts" element={<JobAlerts />} />
+              <Route path="settings" element={<div>Settings Page</div>} />
 
             </Route>
           </Route>

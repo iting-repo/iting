@@ -6,15 +6,15 @@ const MOCK_DB = [
         email: 'candidate@gmail.com',
         password: '123',
         role: 'candidate',
-        name: 'Nguyễn Văn Ứng Viên',
+        name: 'Nguyễn Văn A',
         avatar: 'https://i.pravatar.cc/150?img=11',
         token: 'fake-jwt-token-candidate'
     },
     {
-        email: 'hr@company.com',
+        email: 'company@gmail.com',
         password: '123',
         role: 'employer',
-        name: 'HR Manager (VNG)',
+        name: 'Công ty ABC',
         avatar: 'https://i.pravatar.cc/150?img=5',
         token: 'fake-jwt-token-employer'
     }

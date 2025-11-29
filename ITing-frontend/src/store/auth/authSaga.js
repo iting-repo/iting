@@ -25,7 +25,7 @@ function* handleLogin(action) {
             navigate('/employer/dashboard');
         } else if (data.role === 'candidate') {
             console.log("✅ Đang chuyển hướng vào Jobs...");
-            navigate('/jobs');
+            navigate('/');
         } else {
             console.log("❌ Không khớp role nào, về trang chủ.");
             navigate('/');

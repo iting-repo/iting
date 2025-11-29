@@ -311,7 +311,7 @@ const HomePage = () => {
                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
                         {categories.map((cat) => (
                             <div key={cat.id} className="bg-white p-8 rounded-xl shadow-sm hover:shadow-lg transition-all duration-300 cursor-pointer group flex flex-col items-center text-center border border-transparent hover:border-blue-200">
-                                <div className="w-16 h-16 mb-4 text-[#3AB4E6] text-4xl group-hover:scale-110 transition-transform">
+                                <div className="w-16 h-16 mb-4 text-[#3AB4E6] text-4xl group-hover:scale-110 transition-transform flex items-center justify-center">
                                     {cat.icon}
                                 </div>
                                 <h3 className="text-lg font-bold text-gray-800 mb-2 group-hover:text-[#3AB4E6] transition-colors">{cat.name}</h3>
