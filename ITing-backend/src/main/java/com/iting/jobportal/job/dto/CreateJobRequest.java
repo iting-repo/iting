@@ -1,7 +1,10 @@
-package com.ITing.JobPortal.job.dto;
+package com.iting.jobportal.job.dto;
 
 import java.time.LocalDate;
 
+import lombok.Data;
+
+@Data
 public class CreateJobRequest {
     private String position;
     private String description;

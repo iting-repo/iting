@@ -1,5 +1,7 @@
 package com.iting.jobportal.job.controller;
 
+import com.iting.jobportal.job.dto.CreateJobRequest;
+import com.iting.jobportal.job.service.JobService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -16,7 +18,7 @@ public class JobController {
     @PostMapping
     public Long createJob(
             @CurrentUser Long employerId,
-            @RequestBody com.ITing.JobPortal.job.dto.CreateJobRequest request) {
+            @RequestBody CreateJobRequest request) {
 
         return jobService.createJob(employerId, request);
     }
