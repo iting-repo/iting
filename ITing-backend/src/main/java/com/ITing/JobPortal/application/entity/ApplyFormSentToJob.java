@@ -1,4 +1,4 @@
-package com.ITing.JobPortal.application.entity;
+package com.iting.jobportal.application.entity;
 
 public class ApplyFormSentToJob {
 }

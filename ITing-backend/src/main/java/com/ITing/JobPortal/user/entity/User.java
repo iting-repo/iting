@@ -9,8 +9,9 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name="users")
-@Getter @Setter
+@Table(name = "users")
+@Getter
+@Setter
 public class User {
 
     @Id
@@ -18,13 +19,13 @@ public class User {
 
     @MapsId
     @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name="user_id")
+    @JoinColumn(name = "user_id")
     private Account account;
 
-    @Column(length=100)
+    @Column(length = 100)
     private String firstName;
 
-    @Column(length=100)
+    @Column(length = 100)
     private String lastName;
 
     private LocalDate birthDate;
@@ -32,13 +33,13 @@ public class User {
     @Enumerated(EnumType.STRING)
     private Gender sex;
 
-    @Column(length=1000)
+    @Column(length = 1000)
     private String avatarUrl;
 
-    @Column(length=2000)
+    @Column(length = 2000)
     private String description;
 
-    @Column(length=500)
+    @Column(length = 500)
     private String address;
 
     private LocalDateTime lastUpdate;

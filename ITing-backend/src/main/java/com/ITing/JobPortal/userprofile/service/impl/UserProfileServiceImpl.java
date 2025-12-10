@@ -4,6 +4,8 @@ import com.iting.jobportal.userprofile.dto.*;
 import com.iting.jobportal.userprofile.entity.*;
 import com.iting.jobportal.userprofile.repository.*;
 import com.iting.jobportal.userprofile.service.UserProfileService;
+import com.iting.jobportal.file.FileUploadService;  // <-- IMPORT ĐÚNG LOCAL UPLOAD
+
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -26,10 +28,11 @@ public class UserProfileServiceImpl implements UserProfileService {
     private final PortfolioRepository portfolioRepo;
     private final CVRepository cvRepo;
 
-    private final com.iting.jobportal.file.FileUploadService fileUploadService;
+    // 🔥 Dùng local FileUploadService (KHÔNG CLOUDINARY)
+    private final FileUploadService fileUploadService;
 
     /* ============================================================
-                     CONTACT  (Phone + Email)
+                         CONTACT (Phone + Email)
        ============================================================ */
 
     @Override
@@ -44,7 +47,7 @@ public class UserProfileServiceImpl implements UserProfileService {
     }
 
     /* ============================================================
-                     SOCIAL LINKS  (GitHub, LinkedIn...)
+                         SOCIAL LINKS
        ============================================================ */
 
     @Override
@@ -63,7 +66,7 @@ public class UserProfileServiceImpl implements UserProfileService {
 
     @Override
     public void updateSocialLink(Long id, SocialLinkRequest req) {
-        SocialLink link = (SocialLink) socialRepo.findById(id)
+        SocialLink link = socialRepo.findById(id)
                 .orElseThrow(() -> new RuntimeException("Social link not found"));
 
         link.setPlatform(req.getPlatform());
@@ -80,7 +83,7 @@ public class UserProfileServiceImpl implements UserProfileService {
     }
 
     /* ============================================================
-                        EDUCATION (Học vấn)
+                         EDUCATION
        ============================================================ */
 
     @Override
@@ -123,7 +126,7 @@ public class UserProfileServiceImpl implements UserProfileService {
     }
 
     /* ============================================================
-                         SKILLS  (Kỹ năng)
+                         SKILLS
        ============================================================ */
 
     @Override
@@ -142,7 +145,7 @@ public class UserProfileServiceImpl implements UserProfileService {
 
     @Override
     public void updateSkill(Long id, SkillRequest req) {
-        Skill skill = (Skill) skillRepo.findById(id)
+        Skill skill = skillRepo.findById(id)
                 .orElseThrow(() -> new RuntimeException("Skill not found"));
 
         skill.setSkill(req.getSkill());
@@ -159,7 +162,7 @@ public class UserProfileServiceImpl implements UserProfileService {
     }
 
     /* ============================================================
-                      CERTIFICATE (Chứng chỉ)
+                         CERTIFICATE
        ============================================================ */
 
     @Override
@@ -192,12 +195,7 @@ public class UserProfileServiceImpl implements UserProfileService {
     }
 
     /* ============================================================
-                        TIẾP THEO: EXPERIENCE + PORTFOLIO
-                        CV + ANALYZE AI + CAREER OBJECTIVE
-       ============================================================ */
-
-        /* ============================================================
-                         EXPERIENCE (Kinh nghiệm)
+                         EXPERIENCE
        ============================================================ */
 
     @Override
@@ -235,7 +233,7 @@ public class UserProfileServiceImpl implements UserProfileService {
     }
 
     /* ============================================================
-                        PORTFOLIO (File + Link)
+                         PORTFOLIO (Link + File)
        ============================================================ */
 
     @Override
@@ -250,15 +248,12 @@ public class UserProfileServiceImpl implements UserProfileService {
         p.setType("LINK");
         p.setUrl(req.getUrl());
         p.setDescription(req.getDescription());
-
         return portfolioRepo.save(p);
     }
 
     @Override
     public Portfolio uploadPortfolioFile(Long userId, MultipartFile file) {
-        if (file.isEmpty()) {
-            throw new RuntimeException("File cannot be empty");
-        }
+        if (file.isEmpty()) throw new RuntimeException("File cannot be empty");
 
         String url = fileUploadService.uploadPortfolio(file);
 
@@ -267,7 +262,6 @@ public class UserProfileServiceImpl implements UserProfileService {
         p.setType("FILE");
         p.setUrl(url);
         p.setDescription("Uploaded file");
-
         return portfolioRepo.save(p);
     }
 
@@ -281,7 +275,6 @@ public class UserProfileServiceImpl implements UserProfileService {
 
     /* ============================================================
                                 CV
-                         (Upload / Replace / Delete)
        ============================================================ */
 
     @Override
@@ -291,9 +284,7 @@ public class UserProfileServiceImpl implements UserProfileService {
 
     @Override
     public CV uploadCV(Long userId, MultipartFile file) {
-        if (file.isEmpty()) {
-            throw new RuntimeException("CV file is empty");
-        }
+        if (file.isEmpty()) throw new RuntimeException("CV file is empty");
 
         String url = fileUploadService.uploadCV(file);
 
@@ -301,7 +292,6 @@ public class UserProfileServiceImpl implements UserProfileService {
         cv.setUserId(userId);
         cv.setFileUrl(url);
         cv.setUploadedAt(LocalDate.now());
-
         return cvRepo.save(cv);
     }
 
@@ -310,14 +300,12 @@ public class UserProfileServiceImpl implements UserProfileService {
         CV cv = cvRepo.findById(cvId)
                 .orElseThrow(() -> new RuntimeException("CV not found"));
 
-        if (file.isEmpty()) {
-            throw new RuntimeException("File is empty");
-        }
+        if (file.isEmpty()) throw new RuntimeException("File is empty");
 
         String newUrl = fileUploadService.uploadCV(file);
+
         cv.setFileUrl(newUrl);
         cv.setUploadedAt(LocalDate.now());
-
         return cvRepo.save(cv);
     }
 
@@ -330,37 +318,25 @@ public class UserProfileServiceImpl implements UserProfileService {
     }
 
     /* ============================================================
-                          AI CV ANALYSIS (Mock)
+                              AI ANALYZE
        ============================================================ */
 
     @Override
     public void analyzeCV(Long cvId) {
-        // Mock AI process
         CV cv = cvRepo.findById(cvId)
                 .orElseThrow(() -> new RuntimeException("CV not found"));
 
-        System.out.println("AI is analyzing CV at: " + cv.getFileUrl());
-        // Nếu sau này bạn tích hợp OpenAI / VertexAI, code thêm vào đây
+        System.out.println("AI analyzing CV at: " + cv.getFileUrl());
     }
 
     /* ============================================================
-                     CAREER OBJECTIVE (Mục tiêu nghề nghiệp)
+                           CAREER OBJECTIVE
        ============================================================ */
 
     @Override
     public void updateCareerObjective(Long userId, CareerObjectiveRequest req) {
-
-        ContactInfo info = contactInfoRepo.findById(userId)
-                .orElse(new ContactInfo(userId, null, null));
-
-        // Lưu careerObjective vào email field tạm? -> Không được
-        // Giải pháp: tạo entity UserCareerObjective (khuyến nghị)
-
         throw new UnsupportedOperationException(
-                "Career Objective chưa có entity riêng. " +
-                        "Hãy tạo bảng user_career_objective (id, userId, objective)"
+                "Career Objective chưa có entity riêng. Hãy tạo bảng user_career_objective"
         );
     }
 }
-
-

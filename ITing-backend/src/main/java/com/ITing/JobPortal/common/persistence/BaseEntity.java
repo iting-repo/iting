@@ -1,4 +1,4 @@
-package com.ITing.JobPortal.common.persistence;
+package com.iting.jobportal.common.persistence;
 
 public class BaseEntity {
 }

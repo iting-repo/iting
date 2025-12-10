@@ -1,4 +1,4 @@
-package com.ITing.JobPortal.messaging.controller;
+package com.iting.jobportal.messaging.controller;
 
 public class MessageController {
 }

@@ -1,5 +1,4 @@
-package com.ITing.JobPortal.common.entity;
+package com.iting.jobportal.common.entity;
 
-public class AuditableEntity
-{
+public class AuditableEntity {
 }

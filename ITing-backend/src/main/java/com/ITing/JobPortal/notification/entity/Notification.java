@@ -1,4 +1,4 @@
-package com.ITing.JobPortal.notification.entity;
+package com.iting.jobportal.notification.entity;
 
 public class Notification {
 }

@@ -1,15 +1,24 @@
-package com.ITing.JobPortal.company.entity;
+package com.iting.jobportal.company.entity;
 
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
+import lombok.Getter;
+import lombok.Setter;
+import com.iting.jobportal.auth.entity.Account;
 
 @Entity
 @Table(name = "companies")
+@Getter
+@Setter
 public class Company {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
+    @MapsId
+    @OneToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "id")
+    private Account account;
 
     // ===== Thông tin cơ bản =====
     @Column(nullable = false, length = 255)

@@ -1,4 +1,4 @@
-package com.ITing.JobPortal.common.exception;
+package com.iting.jobportal.common.exception;
 
 public class ApiException {
 }

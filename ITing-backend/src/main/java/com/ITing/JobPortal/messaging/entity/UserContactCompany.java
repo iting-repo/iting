@@ -1,4 +1,4 @@
-package com.ITing.JobPortal.messaging.entity;
+package com.iting.jobportal.messaging.entity;
 
 public class UserContactCompany {
 }

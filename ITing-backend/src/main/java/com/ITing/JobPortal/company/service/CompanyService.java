@@ -1,13 +1,12 @@
-package com.ITing.JobPortal.company.service;
+package com.iting.jobportal.company.service;
 
-import com.ITing.JobPortal.company.dto.BusinessLicenseUploadRequest;
-import com.ITing.JobPortal.company.dto.CompanyBasicInfoRequest;
-import com.ITing.JobPortal.company.dto.CompanyRepresentativeRequest;
-import com.ITing.JobPortal.company.dto.CompanyResponse;
-import com.ITing.JobPortal.company.dto.ConsentDocumentUploadRequest;
-import com.ITing.JobPortal.company.dto.VerifyLicenseRequest;
-import com.ITing.JobPortal.company.dto.VerifyPhoneRequest;
-
+import com.iting.jobportal.company.dto.BusinessLicenseUploadRequest;
+import com.iting.jobportal.company.dto.CompanyBasicInfoRequest;
+import com.iting.jobportal.company.dto.CompanyRepresentativeRequest;
+import com.iting.jobportal.company.dto.CompanyResponse;
+import com.iting.jobportal.company.dto.ConsentDocumentUploadRequest;
+import com.iting.jobportal.company.dto.VerifyLicenseRequest;
+import com.iting.jobportal.company.dto.VerifyPhoneRequest;
 
 public interface CompanyService {
     CompanyResponse getCompanyById(Long id);
@@ -29,7 +28,5 @@ public interface CompanyService {
 
     // (F) Verify License Info
     CompanyResponse verifyLicense(Long id, VerifyLicenseRequest request);
-
-
 
 }

@@ -1,9 +1,9 @@
-package com.ITing.JobPortal.company.service.impl;
+package com.iting.jobportal.company.service.impl;
 
-import com.ITing.JobPortal.company.dto.*;
-import com.ITing.JobPortal.company.entity.Company;
-import com.ITing.JobPortal.company.repository.CompanyRepository;
-import com.ITing.JobPortal.company.service.CompanyService;
+import com.iting.jobportal.company.dto.*;
+import com.iting.jobportal.company.entity.Company;
+import com.iting.jobportal.company.repository.CompanyRepository;
+import com.iting.jobportal.company.service.CompanyService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 

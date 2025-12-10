@@ -1,4 +1,4 @@
-package com.ITing.JobPortal.common.security;
+package com.iting.jobportal.common.security;
 
 public class CurrentUser {
 }

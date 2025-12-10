@@ -1,4 +1,4 @@
-package com.ITing.JobPortal.application.controller;
+package com.iting.jobportal.application.controller;
 
 public class ApplyFormController {
 }

@@ -1,4 +1,4 @@
-package com.ITing.JobPortal.admin.entity;
+package com.iting.jobportal.admin.entity;
 
 public class ReportAccount {
 }

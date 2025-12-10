@@ -1,16 +1,13 @@
-package com.ITing.JobPortal.company.controller;
+package com.iting.jobportal.company.controller;
 
-import com.ITing.JobPortal.company.dto.BusinessLicenseUploadRequest;
-import com.ITing.JobPortal.company.dto.CompanyBasicInfoRequest;
-import com.ITing.JobPortal.company.dto.CompanyResponse;
-import com.ITing.JobPortal.company.dto.ConsentDocumentUploadRequest;
-import com.ITing.JobPortal.company.dto.VerifyLicenseRequest;
-import com.ITing.JobPortal.company.dto.VerifyPhoneRequest;
+import com.iting.jobportal.company.dto.BusinessLicenseUploadRequest;
+import com.iting.jobportal.company.dto.CompanyBasicInfoRequest;
+import com.iting.jobportal.company.dto.CompanyResponse;
+import com.iting.jobportal.company.dto.ConsentDocumentUploadRequest;
+import com.iting.jobportal.company.dto.VerifyLicenseRequest;
+import com.iting.jobportal.company.dto.VerifyPhoneRequest;
 
-
-
-
-import com.ITing.JobPortal.company.service.CompanyService;
+import com.iting.jobportal.company.service.CompanyService;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -41,11 +38,11 @@ public class CompanyController {
 
     // --- (B) Update Representative Info ---
     @PutMapping("/{id}/representative")
-    public ResponseEntity<CompanyResponse> CompanyRepresentativeRequest (
+    public ResponseEntity<CompanyResponse> CompanyRepresentativeRequest(
             @PathVariable Long id,
-            @Valid @RequestBody com.ITing.JobPortal.company.dto.CompanyRepresentativeRequest request) {
-                return ResponseEntity.ok(companyService.updateRepresentative(id, request));
-            }
+            @Valid @RequestBody com.iting.jobportal.company.dto.CompanyRepresentativeRequest request) {
+        return ResponseEntity.ok(companyService.updateRepresentative(id, request));
+    }
 
     // --- (C) Upload Business License ---
     @PostMapping("/{id}/business-license")
@@ -83,6 +80,5 @@ public class CompanyController {
 
         return ResponseEntity.ok(companyService.verifyLicense(id, request));
     }
-
 
 }

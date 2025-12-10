@@ -1,4 +1,4 @@
-package com.ITing.JobPortal.company.dto;
+package com.iting.jobportal.company.dto;
 
 import java.time.LocalDateTime;
 
@@ -102,7 +102,9 @@ public class CompanyResponse {
         return description;
     }
 
-    public String getCompanyEmail() { return companyEmail; }
+    public String getCompanyEmail() {
+        return companyEmail;
+    }
 
     public String getWebsite() {
         return website;

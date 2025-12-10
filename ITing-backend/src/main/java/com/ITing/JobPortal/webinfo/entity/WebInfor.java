@@ -1,4 +1,4 @@
-package com.ITing.JobPortal.webinfo.entity;
+package com.iting.jobportal.webinfo.entity;
 
 public class WebInfor {
 }

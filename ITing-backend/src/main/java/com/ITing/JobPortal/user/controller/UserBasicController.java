@@ -8,7 +8,7 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/api/candidate/profile")
 @RequiredArgsConstructor
-public class UserBasiController {
+public class UserBasicController {
 
     private final UserService userService;
 
@@ -20,7 +20,5 @@ public class UserBasiController {
         userService.updateBasic(userId, request);
         return "Profile updated successfully";
     }
-
-
 
 }
