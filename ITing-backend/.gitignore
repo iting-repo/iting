@@ -1,0 +1,59 @@
+# ==========================================
+# GITIGNORE FOR SPRING BOOT PROJECT
+# ==========================================
+
+# Compiled class files
+target/
+*.class
+
+# Package files
+*.jar
+*.war
+*.ear
+*.zip
+*.tar.gz
+*.rar
+
+# Maven
+.mvn/timing.properties
+.mvn/wrapper/maven-wrapper.jar
+
+# IDE
+.idea/
+*.iml
+*.ipr
+*.iws
+.project
+.classpath
+.settings/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Logs
+logs/
+*.log
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Environment variables / Secrets
+.env
+.env.local
+.env.*.local
+*.env
+
+# Application properties với secrets (nếu có)
+# application-local.properties
+
+# Test coverage
+coverage/
+*.lcov
+
+# Build files
+build/
+out/
+bin/
+

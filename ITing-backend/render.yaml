@@ -1,0 +1,38 @@
+# ==========================================
+# RENDER BLUEPRINT CONFIGURATION
+# ==========================================
+# File này giúp Render tự động cấu hình service
+# Docs: https://render.com/docs/blueprint-spec
+
+services:
+  - type: web
+    name: iting-job-portal
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    
+    # Auto-deploy when pushing to main branch
+    autoDeploy: true
+    
+    # Region (Singapore gần Việt Nam nhất)
+    region: singapore
+    
+    # Plan (free tier)
+    plan: free
+    
+    # Health check endpoint
+    healthCheckPath: /actuator/health
+    
+    # Environment variables (set in Render Dashboard)
+    envVars:
+      # Aiven PostgreSQL connection string
+      - key: DATABASE_URL
+        sync: false  # Set manually in dashboard
+      - key: DATABASE_USERNAME
+        sync: false
+      - key: DATABASE_PASSWORD
+        sync: false
+      - key: JWT_SECRET
+        generateValue: true  # Render sẽ tự generate secret
+      - key: SPRING_PROFILES_ACTIVE
+        value: prod
+
