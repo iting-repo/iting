@@ -1,4 +1,4 @@
-package Bookington2.demo.config;
+package com.iting.jobportal.config;
 
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.Components;
@@ -34,10 +34,7 @@ public class OpenAPIConfig {
                                                                 .name("MIT License")
                                                                 .url("https://opensource.org/licenses/MIT")))
                                 .servers(List.of(
-                                                new Server().url("http://localhost:8080")
-                                                                .description("Local Development"),
-                                                new Server().url("https://api.bookington.com")
-                                                                .description("Production")))
+                                                new Server().url("/").description("Default")))
 
                                 .components(new Components().addSecuritySchemes(
                                                 SECURITY_SCHEME_NAME,
