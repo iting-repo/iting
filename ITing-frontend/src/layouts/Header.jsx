@@ -4,9 +4,9 @@ import { useSelector, useDispatch } from 'react-redux';
 import { logout } from '../store/auth/authSlice';
 // Import Icons
 import { BsBriefcaseFill, BsBell, BsEnvelope } from 'react-icons/bs';
-import { 
-  FaChevronDown, FaSignOutAlt, FaUserAlt, FaBuilding, 
-  FaLayerGroup, FaFileAlt, FaHistory, FaHeart, FaCog 
+import {
+  FaChevronDown, FaSignOutAlt, FaUserAlt, FaBuilding,
+  FaLayerGroup, FaFileAlt, FaHistory, FaHeart, FaCog
 } from 'react-icons/fa';
 
 const Header = () => {
@@ -42,7 +42,7 @@ const Header = () => {
   // --- HÀM RENDER MENU GIỮA (NAVIGATION) ---
   const renderNavLinks = () => {
     const linkClass = "text-gray-300 hover:text-white font-medium transition-colors duration-200 text-sm md:text-base";
-    const activeClass = "text-white font-bold text-sm md:text-base"; 
+    const activeClass = "text-white font-bold text-sm md:text-base";
     const isActive = (path) => location.pathname === path ? activeClass : linkClass;
 
     switch (role) {
@@ -51,9 +51,9 @@ const Header = () => {
         return (
           <>
             <Link to="/" className={isActive('/')}>Trang chủ</Link>
-            <Link to="/jobs" className={isActive('/jobs')}>Việc làm</Link>
-            <Link to="/companies" className={isActive('/companies')}>Công ty</Link>
-            <Link to="/blog" className={isActive('/blog')}>Cẩm nang IT</Link>
+            <Link to="/jobs" className={isActive('/jobs')}>Công việc</Link>
+            <Link to="/about" className={isActive('/about')}>Về chúng tôi</Link>
+            <Link to="/contact" className={isActive('/contact')}>Liên hệ</Link>
           </>
         );
       case 'employer':
@@ -74,6 +74,7 @@ const Header = () => {
             <Link to="/" className={isActive('/')}>Trang chủ</Link>
             <Link to="/jobs" className={isActive('/jobs')}>Công việc</Link>
             <Link to="/about" className={isActive('/about')}>Về chúng tôi</Link>
+            <Link to="/contact" className={isActive('/contact')}>Liên hệ</Link>
           </>
         );
     }
@@ -85,37 +86,37 @@ const Header = () => {
     if (role === 'candidate') {
       return (
         <div className="py-2">
-           <Link to="/candidate/dashboard" className="flex items-center gap-3 px-4 py-2 hover:bg-gray-50 text-sm text-gray-700">
-              <FaLayerGroup className="text-gray-400" /> Tổng quan (Dashboard)
-           </Link>
-           <Link to="/candidate/profile" className="flex items-center gap-3 px-4 py-2 hover:bg-gray-50 text-sm text-gray-700">
-              <FaFileAlt className="text-gray-400" /> Hồ sơ của tôi
-           </Link>
-           <Link to="/candidate/applied-jobs" className="flex items-center gap-3 px-4 py-2 hover:bg-gray-50 text-sm text-gray-700">
-              <FaHistory className="text-gray-400" /> Việc đã ứng tuyển
-           </Link>
-           <Link to="/candidate/favorite-jobs" className="flex items-center gap-3 px-4 py-2 hover:bg-gray-50 text-sm text-gray-700">
-              <FaHeart className="text-gray-400" /> Việc đã lưu
-           </Link>
-           <Link to="/candidate/settings" className="flex items-center gap-3 px-4 py-2 hover:bg-gray-50 text-sm text-gray-700">
-              <FaCog className="text-gray-400" /> Cài đặt tài khoản
-           </Link>
+          <Link to="/candidate/dashboard" className="flex items-center gap-3 px-4 py-2 hover:bg-gray-50 text-sm text-gray-700">
+            <FaLayerGroup className="text-gray-400" /> Tổng quan (Dashboard)
+          </Link>
+          <Link to="/candidate/profile" className="flex items-center gap-3 px-4 py-2 hover:bg-gray-50 text-sm text-gray-700">
+            <FaFileAlt className="text-gray-400" /> Hồ sơ của tôi
+          </Link>
+          <Link to="/candidate/applied-jobs" className="flex items-center gap-3 px-4 py-2 hover:bg-gray-50 text-sm text-gray-700">
+            <FaHistory className="text-gray-400" /> Việc đã ứng tuyển
+          </Link>
+          <Link to="/candidate/favorite-jobs" className="flex items-center gap-3 px-4 py-2 hover:bg-gray-50 text-sm text-gray-700">
+            <FaHeart className="text-gray-400" /> Việc đã lưu
+          </Link>
+          <Link to="/candidate/settings" className="flex items-center gap-3 px-4 py-2 hover:bg-gray-50 text-sm text-gray-700">
+            <FaCog className="text-gray-400" /> Cài đặt tài khoản
+          </Link>
         </div>
       );
-    } 
-    
+    }
+
     if (role === 'employer') {
       return (
         <div className="py-2">
-           <Link to="/employer/dashboard" className="flex items-center gap-3 px-4 py-2 hover:bg-gray-50 text-sm text-gray-700">
-              <FaLayerGroup className="text-gray-400" /> Vào trang quản trị
-           </Link>
-           <Link to="/employer/company-profile" className="flex items-center gap-3 px-4 py-2 hover:bg-gray-50 text-sm text-gray-700">
-              <FaBuilding className="text-gray-400" /> Hồ sơ công ty
-           </Link>
-           <Link to="/employer/account-settings" className="flex items-center gap-3 px-4 py-2 hover:bg-gray-50 text-sm text-gray-700">
-              <FaCog className="text-gray-400" /> Cài đặt tài khoản
-           </Link>
+          <Link to="/employer/dashboard" className="flex items-center gap-3 px-4 py-2 hover:bg-gray-50 text-sm text-gray-700">
+            <FaLayerGroup className="text-gray-400" /> Vào trang quản trị
+          </Link>
+          <Link to="/employer/company-profile" className="flex items-center gap-3 px-4 py-2 hover:bg-gray-50 text-sm text-gray-700">
+            <FaBuilding className="text-gray-400" /> Hồ sơ công ty
+          </Link>
+          <Link to="/employer/account-settings" className="flex items-center gap-3 px-4 py-2 hover:bg-gray-50 text-sm text-gray-700">
+            <FaCog className="text-gray-400" /> Cài đặt tài khoản
+          </Link>
         </div>
       );
     }
@@ -123,7 +124,7 @@ const Header = () => {
 
   return (
     <header className="bg-black text-white h-20 sticky top-0 z-40 shadow-md">
-      <div className="container mx-auto px-4 h-full flex items-center justify-between">
+      <div className="container mx-auto px-12 h-full flex items-center justify-between">
 
         {/* LOGO */}
         <Link to="/" className="flex items-center gap-2 select-none group">
@@ -152,14 +153,14 @@ const Header = () => {
             <>
               {/* Icons */}
               <div className="flex items-center gap-3 mr-2">
-                 <button className="w-10 h-10 rounded-full bg-gray-800 hover:bg-gray-700 flex items-center justify-center transition-colors relative">
-                   <BsEnvelope className="text-lg" />
-                 </button>
-                 <button className="w-10 h-10 rounded-full bg-gray-800 hover:bg-gray-700 flex items-center justify-center transition-colors relative">
-                   <BsBell className="text-lg" />
-                   <span className="absolute top-2 right-2.5 w-2 h-2 bg-[#3AB4E6] rounded-full animate-pulse"></span>
-                 </button>
-               </div>
+                <button className="w-10 h-10 rounded-full bg-gray-800 hover:bg-gray-700 flex items-center justify-center transition-colors relative">
+                  <BsEnvelope className="text-lg" />
+                </button>
+                <button className="w-10 h-10 rounded-full bg-gray-800 hover:bg-gray-700 flex items-center justify-center transition-colors relative">
+                  <BsBell className="text-lg" />
+                  <span className="absolute top-2 right-2.5 w-2 h-2 bg-[#3AB4E6] rounded-full animate-pulse"></span>
+                </button>
+              </div>
 
               {/* Avatar Dropdown */}
               <div className="relative" ref={dropdownRef}>

@@ -33,9 +33,33 @@ const authSlice = createSlice({
       // Xóa token trong localStorage
       localStorage.removeItem('access_token');
       localStorage.removeItem('user_role');
+      localStorage.removeItem('user_info');
+    },
+
+    // 5. Action Register
+    registerRequest: (state) => {
+      state.isLoading = true;
+      state.error = null;
+    },
+    registerSuccess: (state, action) => {
+      state.isLoading = false;
+      state.currentUser = action.payload; // Có thể auto login luôn sau khi đăng ký
+      state.error = null;
+    },
+    registerFailure: (state, action) => {
+      state.isLoading = false;
+      state.error = action.payload;
+    },
+
+    // 6. Action Check Auth (Khôi phục session)
+    checkAuth: (state) => {
+      // Chỉ để kích hoạt saga, có thể set loading nếu muốn
     }
   }
 });
 
-export const { loginRequest, loginSuccess, loginFailure, logout } = authSlice.actions;
+export const {
+  loginRequest, loginSuccess, loginFailure, logout,
+  registerRequest, registerSuccess, registerFailure, checkAuth
+} = authSlice.actions;
 export default authSlice.reducer;

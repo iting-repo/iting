@@ -1,5 +1,4 @@
 import axios from "axios";
-
 import { API_BASE_URL } from "../config";
 
 const axiosInstance = axios.create({
@@ -11,7 +10,7 @@ const axiosInstance = axios.create({
 
 axiosInstance.interceptors.request.use(
     (config) => {
-        const token = localStorage.getItem('jwtToken')
+        const token = localStorage.getItem('access_token')
         if (token) {
             config.headers.Authorization = `Bearer ${token}`
         }
@@ -24,20 +23,23 @@ axiosInstance.interceptors.request.use(
 
 axiosInstance.interceptors.response.use(
     (response) => {
-        return response
+        return response.data; // Return data directly to simplify services
     },
     (error) => {
         if (error.response) {
             if (error.response.status === 401) {
                 console.error("Unauthorized: Token expired or invalid")
-                localStorage.removeItem('jwtToken')
-                window.location.href = '/login'
-                // Xử lí đoạn này sau(Trước mắt là auto đúng cái đã)
+                localStorage.removeItem('access_token')
+                localStorage.removeItem('user_role')
+                localStorage.removeItem('user_info');
+
+                // Chỉ redirect nếu không phải đang ở trang login để tránh loop
+                if (window.location.pathname !== '/login') {
+                    window.location.href = '/login'
+                }
             }
-            else if (error.response.status === 403) {
-                console.error("Forbidden: You don't have permission to access this resource.")
-                // Xử lí đoạn này sau(Trước mắt là auto đúng cái đã)
-            }
+            // Trả về error response data để saga xử lý message
+            return Promise.reject(error.response.data || error);
         }
         return Promise.reject(error);
     }

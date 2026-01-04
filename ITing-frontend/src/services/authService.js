@@ -1,49 +1,38 @@
-// src/services/authService.js
-
-// 1. Định nghĩa tài khoản mẫu
-const MOCK_DB = [
-    {
-        email: 'candidate@gmail.com',
-        password: '123',
-        role: 'candidate',
-        name: 'Nguyễn Văn A',
-        avatar: 'https://i.pravatar.cc/150?img=11',
-        token: 'fake-jwt-token-candidate'
-    },
-    {
-        email: 'company@gmail.com',
-        password: '123',
-        role: 'employer',
-        name: 'Công ty ABC',
-        avatar: 'https://i.pravatar.cc/150?img=5',
-        token: 'fake-jwt-token-employer'
-    }
-];
+import axiosInstance from '../utils/axiosInstance';
 
 const authService = {
-    // Hàm login giả lập
+    // API Login
     login: async (email, password) => {
-        return new Promise((resolve, reject) => {
-            console.log("👉 Dữ liệu nhận được:", { email, password });
-            console.log("👉 Dữ liệu trong kho (Mock DB):", MOCK_DB);
-            // Giả lập độ trễ mạng 1 giây (1000ms)
-            setTimeout(() => {
-                const user = MOCK_DB.find(u => u.email === email && u.password === password);
-
-                if (user) {
-                    // Thành công: Trả về thông tin user (bỏ password ra)
-                    const { password, ...userInfo } = user;
-                    resolve(userInfo);
-                } else {
-                    // Thất bại
-                    reject({ message: "Email hoặc mật khẩu không đúng!" });
-                }
-            }, 1000);
-        });
+        // Gọi API: POST /auth/login
+        // Payload: { email, password }
+        // Response kỳ vọng: { token, user: { id, name, ... }, role }
+        const response = await axiosInstance.post('/auth/login', { email, password });
+        return response;
     },
 
-    // Hàm logout (nếu cần xử lý server, hiện tại mock thì ko cần)
+    // API Register
+    register: async (email, password, name, role) => {
+        // Gọi API: POST /auth/register
+        const response = await axiosInstance.post('/auth/register', {
+            email,
+            password,
+            name,
+            role
+        });
+        return response;
+    },
+
+    // API Get Current User (Check Session)
+    getCurrentUser: async () => {
+        // Gọi API: GET /auth/me (hoặc endpoint tương tự để lấy info user từ token)
+        const response = await axiosInstance.get('/auth/me');
+        return response;
+    },
+
+    // Logout
     logout: () => {
+        // Nếu backend cần gọi API logout đe clear cookie/token thì gọi ở đây
+        // return axiosInstance.post('/auth/logout');
         return Promise.resolve();
     }
 };

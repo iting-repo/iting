@@ -10,7 +10,6 @@ const HomePage = lazy(() => import('../pages/public/HomePage'));
 const Login = lazy(() => import('../pages/public/LoginPage'));
 const Register = lazy(() => import('../pages/public/RegisterPage'));
 const JobPage = lazy(() => import('../pages/public/JobPage'));
-const Dashboard = lazy(() => import('../pages/admin/Dashboard'));
 const ForgotPasswordPage = lazy(() => import('../pages/public/ForgotPasswordPage'));
 const EmployerLayout = lazy(() => import('../layouts/EmployerLayout'));
 const EmployerDashboard = lazy(() => import('../pages/employer/EmployerDashboard'));
@@ -25,6 +24,13 @@ const CandidateProfile = lazy(() => import('../pages/candidate/profile/Candidate
 const AppliedJobs = lazy(() => import('../pages/candidate/AppliedJobs'));
 const JobAlerts = lazy(() => import('../pages/candidate/JobAlerts'));
 const FavoriteJobs = lazy(() => import('../pages/candidate/FavoriteJobs'));
+const AdminDashboard = lazy(() => import('../pages/admin/Dashboard'));
+const UserManagement = lazy(() => import('../pages/admin/users/UserManagement'));
+const ReportManagement = lazy(() => import('../pages/admin/reports/ReportManagement'));
+const ApprovalManagement = lazy(() => import('../pages/admin/approvals/ApprovalManagement'));
+const JobDetailPage = lazy(() => import('../pages/public/JobDetailPage'));
+const AboutPage = lazy(() => import('../pages/public/AboutPage'));
+const ContactPage = lazy(() => import('../pages/public/ContactPage'));
 
 const AppRoutes = () => {
   return (
@@ -40,16 +46,31 @@ const AppRoutes = () => {
         <Route element={<MainLayout />}>
           <Route path="/" element={<HomePage />} />
           <Route path="/jobs" element={<JobPage />} />
-
+          <Route path="/jobs/:id" element={<JobDetailPage />} />
+          <Route path="/about" element={<AboutPage />} />
+          <Route path="/contact" element={<ContactPage />} />
         </Route>
 
         {/* --- KHU VỰC ADMIN (Phải Login + Role ADMIN) --- */}
         {/* Bước 1: Bọc bằng PrivateRoute để chặn cửa */}
-        <Route element={<PrivateRoute allowedRoles={['ADMIN']} />}>
-          {/* Bước 2: Bọc bằng AdminLayout để có giao diện Admin */}
+        <Route element={<PrivateRoute allowedRoles={['admin']} />}>
+
+          {/* 2. Áp dụng AdminLayout (Có Sidebar tím + Header) */}
           <Route path="/admin" element={<AdminLayout />}>
-            <Route index element={<Dashboard />} />
+
+            {/* 3. Tự động chuyển hướng /admin -> /admin/dashboard */}
+            <Route index element={<Navigate to="dashboard" replace />} />
+
+            {/* 4. Trang Dashboard Overview */}
+            <Route path="dashboard" element={<AdminDashboard />} />
+
+            {/* Các trang Admin khác sẽ thêm vào đây sau này */}
+            <Route path="users" element={<UserManagement />} />
+            <Route path="reports" element={<ReportManagement />} />
+            <Route path="approvals" element={<ApprovalManagement />} />
+
           </Route>
+
         </Route>
 
         <Route path="/employer" element={<PrivateRoute allowedRoles={['employer']} />}>

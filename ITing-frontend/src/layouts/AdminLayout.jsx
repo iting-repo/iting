@@ -1,18 +1,26 @@
 import React from 'react';
-import { Outlet, Link } from 'react-router-dom';
+import { Outlet } from 'react-router-dom';
+import AdminSidebar from '../pages/admin/components/AdminSidebar';
+import AdminHeader from '../pages/admin/components/AdminHeader';
 
 const AdminLayout = () => {
   return (
-    <div style={{ display: 'flex' }}>
-      <aside style={{ width: 200, background: '#222', color: '#fff', height: '100vh', padding: 10 }}>
-        <h3>Admin Panel</h3>
-        <ul>
-           <li><Link to="/admin" style={{ color: 'white' }}>Dashboard</Link></li>
-        </ul>
-      </aside>
+    <div className="flex bg-[#F3F4F6] min-h-screen font-sans">
+      
+      {/* Fixed Sidebar */}
+      <AdminSidebar />
 
-      <div style={{ flex: 1, padding: 20 }}>
-         <Outlet />
+      {/* Main Content Area */}
+      <div className="flex-1 ml-20 p-6 lg:p-8 overflow-x-hidden">
+        
+        {/* Header dùng chung */}
+        <AdminHeader />
+
+        {/* Nội dung thay đổi theo từng trang */}
+        <div className="animate-fade-in-up">
+           <Outlet />
+        </div>
+        
       </div>
     </div>
   );

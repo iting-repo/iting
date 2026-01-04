@@ -18,6 +18,7 @@ const store = configureStore({
                 ignoredActions: ['auth/loginRequest', 'auth/registerRequest'],
                 // Hoặc bỏ qua kiểm tra cho mọi field có tên là "navigate" hoặc "onSuccess" trong payload
                 ignoredActionPaths: ['payload.navigate', 'payload.onSuccess'],
+                
             },
         }).concat(sagaMiddleware),
 });
