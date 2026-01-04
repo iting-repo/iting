@@ -1,0 +1,13 @@
+# Database Configuration - Copy this to .env file
+# ================================================
+
+DB_HOST=pg-390391d1-nghiavo6777-55a3.g.aivencloud.com
+DB_PORT=23388
+DB_NAME=defaultdb
+DB_USER=avnadmin
+DB_PASSWORD=your_password_here
+
+# Scraper Settings
+SCRAPE_PAGES=5
+DELAY_BETWEEN_REQUESTS=2
+
