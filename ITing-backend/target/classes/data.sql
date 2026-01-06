@@ -41,6 +41,7 @@ INSERT INTO accounts (email, password_hash, role, status, created_at, updated_at
 -- ===============================================
 -- 2. USERS (Profile ứng viên) - account_id 1-10
 -- ===============================================
+<<<<<<< HEAD
 INSERT INTO users (
   user_id, first_name, last_name, email, phone_num,
   birth_date, sex, address, description, avatar_url, last_update
@@ -55,6 +56,20 @@ INSERT INTO users (
 (8,  'Dang',   'Van H', 'dangvanh@gmail.com',    '0908888888', '1997-04-22', 'MALE',   'Hai Phong',                'Tai khoan bi khoa do spam',                                             'https://i.pravatar.cc/150?img=14', NOW()),
 (9,  'Bui',    'Thi I', 'buithii@gmail.com',     '0909999999', '2001-02-14', 'FEMALE', 'Can Tho',                  'Fresher Java Developer moi tot nghiep.',                                'https://i.pravatar.cc/150?img=25', NOW()),
 (10, 'Ngo',    'Van K', 'ngovank@gmail.com',     '0900000010', '1995-09-30', 'MALE',   'Binh Duong',               'Senior Backend Developer 5 nam kinh nghiem.',                           'https://i.pravatar.cc/150?img=15', NOW());
+=======
+INSERT INTO users (user_id, first_name, last_name, birth_date, sex, address, description, avatar_url, last_update) VALUES
+(1, 'Nguyen', 'Van A', '1999-01-15', 'MALE', 'Quan 1, TP. Ho Chi Minh', 'Java Developer 2 nam kinh nghiem, dam me Spring Boot va microservices.', 'https://i.pravatar.cc/150?img=1', NOW()),
+(2, 'Tran', 'Thi B', '1998-05-20', 'FEMALE', 'Quan 7, TP. Ho Chi Minh', 'Frontend Developer chuyen React va Vue.js, yeu thich UI/UX.', 'https://i.pravatar.cc/150?img=5', NOW()),
+(3, 'Le', 'Van C', '1997-11-10', 'MALE', 'Cau Giay, Ha Noi', 'DevOps Engineer kinh nghiem AWS, Docker, Kubernetes.', 'https://i.pravatar.cc/150?img=3', NOW()),
+(4, 'Pham', 'Thi D', '2000-03-25', 'FEMALE', 'Binh Thanh, TP. Ho Chi Minh', 'Full Stack Developer, Node.js va React.', 'https://i.pravatar.cc/150?img=9', NOW()),
+(5, 'Hoang', 'Van E', '1996-07-08', 'MALE', 'Dong Da, Ha Noi', 'Data Engineer 3 nam kinh nghiem Python va Spark.', 'https://i.pravatar.cc/150?img=11', NOW()),
+(6, 'Nguyen', 'Thi F', '1999-12-01', 'FEMALE', 'Da Nang', 'Mobile Developer Flutter va React Native.', 'https://i.pravatar.cc/150?img=20', NOW()),
+(7, 'Vu', 'Van G', '1998-08-18', 'MALE', 'Quan 3, TP. Ho Chi Minh', 'QA Engineer chuyen automation testing.', 'https://i.pravatar.cc/150?img=12', NOW()),
+(8, 'Dang', 'Van H', '1997-04-22', 'MALE', 'Hai Phong', 'Tai khoan bi khoa do spam', 'https://i.pravatar.cc/150?img=14', NOW()),
+(9, 'Bui', 'Thi I', '2001-02-14', 'FEMALE', 'Can Tho', 'Fresher Java Developer moi tot nghiep.', 'https://i.pravatar.cc/150?img=25', NOW()),
+(10, 'Ngo', 'Van K', '1995-09-30', 'MALE', 'Binh Duong', 'Senior Backend Developer 5 nam kinh nghiem.', 'https://i.pravatar.cc/150?img=15', NOW());
+
+>>>>>>> 2d19ca58618c0177d858c51c4606f00e19aecf4a
 -- ===============================================
 -- 3. COMPANIES (Profile công ty) - account_id 11-20
 -- ===============================================
