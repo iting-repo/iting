@@ -1,10 +1,6 @@
 package com.iting.jobportal.user.controller;
 
-import com.iting.jobportal.user.dto.UpdateUserRequest;
-import com.iting.jobportal.user.dto.UpdateAvatarRequest;
-import com.iting.jobportal.user.dto.UpdateDescriptionRequest;
-import com.iting.jobportal.user.dto.UpdateAddressRequest;
-import com.iting.jobportal.user.dto.UpdateBirthGenderRequest;
+import com.iting.jobportal.user.dto.*;
 import com.iting.jobportal.user.service.UserService;
 
 import lombok.RequiredArgsConstructor;
@@ -19,48 +15,50 @@ public class UserController {
 
     private final UserService userService;
 
-    private Long getUserId() {
-        return 5L; // TODO: replace bằng JWT userId
+    @GetMapping
+    public ResponseEntity<UserProfileResponse> getProfile(@CurrentUser Long userId) {
+        return ResponseEntity.ok(userService.getProfile(userId));
     }
 
-    @GetMapping
-    public ResponseEntity<?> getProfile() {
-        return ResponseEntity.ok(userService.getProfile(getUserId()));
-    }
 
     @PutMapping("/basic")
-    public ResponseEntity<?> updateBasic(@RequestBody UpdateUserRequest req) {
-        userService.updateBasic(getUserId(), req);
+    public ResponseEntity<?> updateBasic(@CurrentUser Long userId,
+                                         @RequestBody UpdateUserRequest req) {
+        userService.updateBasic(userId, req);
         return ResponseEntity.ok(Map.of("message", "Updated"));
     }
 
     @PutMapping("/avatar")
-    public ResponseEntity<?> updateAvatar(@RequestBody UpdateAvatarRequest req) {
-        userService.updateAvatar(getUserId(), req.getAvatarUrl());
+    public ResponseEntity<?> updateAvatar(@CurrentUser Long userId,
+                                          @RequestBody UpdateAvatarRequest req) {
+        userService.updateAvatar(userId, req.getAvatarUrl());
         return ResponseEntity.ok(Map.of("message", "Avatar updated"));
     }
 
     @DeleteMapping("/avatar")
-    public ResponseEntity<?> deleteAvatar() {
-        userService.deleteAvatar(getUserId());
+    public ResponseEntity<?> deleteAvatar(@CurrentUser Long userId) {
+        userService.deleteAvatar(userId);
         return ResponseEntity.ok(Map.of("message", "Avatar removed"));
     }
 
     @PutMapping("/description")
-    public ResponseEntity<?> updateDescription(@RequestBody UpdateDescriptionRequest req) {
-        userService.updateDescription(getUserId(), req.getDescription());
+    public ResponseEntity<?> updateDescription(@CurrentUser Long userId,
+                                               @RequestBody UpdateDescriptionRequest req) {
+        userService.updateDescription(userId, req.getDescription());
         return ResponseEntity.ok(Map.of("message", "Description updated"));
     }
 
     @PutMapping("/address")
-    public ResponseEntity<?> updateAddress(@RequestBody UpdateAddressRequest req) {
-        userService.updateAddress(getUserId(), req.getAddress());
+    public ResponseEntity<?> updateAddress(@CurrentUser Long userId,
+                                           @RequestBody UpdateAddressRequest req) {
+        userService.updateAddress(userId, req.getAddress());
         return ResponseEntity.ok(Map.of("message", "Address updated"));
     }
 
     @PutMapping("/birth-gender")
-    public ResponseEntity<?> updateBirthGender(@RequestBody UpdateBirthGenderRequest req) {
-        userService.updateBirthGender(getUserId(), req.getBirthDate(), req.getGender());
+    public ResponseEntity<?> updateBirthGender(@CurrentUser Long userId,
+                                               @RequestBody UpdateBirthGenderRequest req) {
+        userService.updateBirthGender(userId, req.getBirthDate(), req.getGender());
         return ResponseEntity.ok(Map.of("message", "Birthdate & gender updated"));
     }
 }

@@ -10,7 +10,7 @@ import java.util.List;
 
 public interface UserService {
 
-    User getProfile(Long userId);
+    UserProfileResponse getProfile(Long userId);
 
     void updateBasic(Long userId, UpdateUserRequest req);
 
