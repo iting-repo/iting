@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { useDispatch, useSelector } from 'react-redux';
+import { registerRequest } from '../../store/auth/authSlice';
 import { FaEye, FaEyeSlash, FaArrowRight, FaCheck } from 'react-icons/fa';
 import { BsBriefcaseFill, BsBuilding, BsFileText, BsGlobe, BsTelephone } from 'react-icons/bs';
 import bgImage from '../../assets/bg_login.jpg'; // Dùng lại hình nền cũ
@@ -99,20 +101,66 @@ const SuccessModal = ({ onClose }) => {
 };
 
 const RegisterPage = () => {
-    const [role, setRole] = useState('candidate'); // 'candidate' | 'company'
+    const [role, setRole] = useState('CANDIDATE'); // 'CANDIDATE' | 'EMPLOYER'
     const [showPassword, setShowPassword] = useState(false);
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
+    const { currentUser } = useSelector((state) => state.auth);
+    const navigate = useNavigate();
+
+    // Redirect nếu đã login
+    useEffect(() => {
+        if (currentUser && currentUser.token) {
+            const role = currentUser.role;
+            if (role === 'EMPLOYER') {
+                navigate('/employer/dashboard');
+            } else if (role === 'ADMIN') {
+                navigate('/admin/dashboard');
+            } else {
+                navigate('/');
+            }
+        }
+    }, [currentUser, navigate]);
+
+    const dispatch = useDispatch();
+    const [formData, setFormData] = useState({
+        name: '',
+        email: '',
+        password: '',
+        confirmPassword: '',
+        address: '',
+        website: '',
+        phone: ''
+    });
+
+    const handleChange = (e) => {
+        setFormData({
+            ...formData,
+            [e.target.name]: e.target.value
+        });
+    }
 
     const [showSuccessModal, setShowSuccessModal] = useState(false);
     const handleRegister = (e) => {
         e.preventDefault();
-        // Xử lý đăng ký ở đây (gửi API, validate, v.v.)
-        if (role === 'company') {
-            setShowSuccessModal(true); // Hiện Popup nếu là Company
-        } else {
-            // Logic cho candidate (ví dụ chuyển trang luôn hoặc hiện thông báo khác)
-            alert("Đăng ký ứng viên thành công!");
+
+        if (formData.password !== formData.confirmPassword) {
+            alert("Mật khẩu xác nhận không khớp!");
+            return;
         }
+
+        // Dispatch action
+        dispatch(registerRequest({
+            email: formData.email,
+            password: formData.password,
+            name: formData.name,
+            role: role, // 'CANDIDATE' or 'EMPLOYER'
+            // Optional/Extra fields
+            phone: formData.phone,
+            address: formData.address,
+            website: formData.website,
+            navigate // Pass navigate to Saga
+        }));
     }
 
     return (
@@ -123,10 +171,10 @@ const RegisterPage = () => {
             {/* ================= LEFT COLUMN: FORM ================= */}
             <div className="w-full lg:w-[50%] flex flex-col px-8 md:px-20 xl:px-32 relative z-10 h-full overflow-y-auto no-scrollbar py-12">
                 {/* Logo */}
-                <div className="flex items-center gap-2 mb-8">
+                <Link to="/" className="flex items-center gap-2 mb-8 w-fit hover:opacity-80 transition-opacity">
                     <BsBriefcaseFill className="text-[#3AB4E6] text-2xl" />
                     <span className="text-2xl font-semibold text-gray-800 tracking-tight">ITWork</span>
-                </div>
+                </Link>
 
                 <div>
                     <h1 className="text-[32px] font-semibold text-[#1F2937] mb-2 leading-tight">
@@ -141,9 +189,9 @@ const RegisterPage = () => {
                     <div className="bg-[#F3F4F6] p-1.5 rounded-lg flex mb-6 shadow-inner">
                         <button
                             type="button"
-                            onClick={() => setRole('candidate')}
+                            onClick={() => setRole('CANDIDATE')}
                             // Đã xóa 'ring-1 ring-black/5' ở dòng dưới
-                            className={`flex-1 py-2.5 rounded-md text-sm font-semibold transition-all duration-200 ${role === 'candidate'
+                            className={`flex-1 py-2.5 rounded-md text-sm font-semibold transition-all duration-200 ${role === 'CANDIDATE'
                                 ? 'bg-[#3AB4E6] text-white shadow-sm'
                                 : 'text-gray-500 hover:text-gray-600'
                                 }`}
@@ -152,9 +200,9 @@ const RegisterPage = () => {
                         </button>
                         <button
                             type="button"
-                            onClick={() => setRole('company')}
+                            onClick={() => setRole('EMPLOYER')}
                             // Đã xóa 'ring-1 ring-black/5' ở dòng dưới
-                            className={`flex-1 py-2.5 rounded-md text-sm font-semibold transition-all duration-200 ${role === 'company'
+                            className={`flex-1 py-2.5 rounded-md text-sm font-semibold transition-all duration-200 ${role === 'EMPLOYER'
                                 ? 'bg-[#3AB4E6] text-white shadow-sm'
                                 : 'text-gray-500 hover:text-gray-600'
                                 }`}
@@ -174,7 +222,11 @@ const RegisterPage = () => {
                             <div className="flex-1">
                                 <input
                                     type="text"
-                                    placeholder={role === 'company' ? "Tên công ty/doanh nghiệp" : "Họ và tên"}
+                                    name="name"
+                                    value={formData.name}
+                                    onChange={handleChange}
+                                    required
+                                    placeholder={role === 'EMPLOYER' ? "Tên công ty/doanh nghiệp" : "Họ và tên"}
                                     className="w-full px-5 py-3.5 bg-[#F0F5FA] border border-transparent rounded-lg text-gray-700 placeholder-gray-400 focus:outline-none focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all"
                                 />
                             </div>
@@ -185,7 +237,11 @@ const RegisterPage = () => {
                         <div>
                             <input
                                 type="email"
-                                placeholder={role === 'company' ? "Email công ty" : "Nhập email"}
+                                name="email"
+                                value={formData.email}
+                                onChange={handleChange}
+                                required
+                                placeholder={role === 'EMPLOYER' ? "Email công ty" : "Nhập email"}
                                 className="w-full px-5 py-3.5 bg-[#F0F5FA] border border-transparent rounded-lg text-gray-700 placeholder-gray-400 focus:outline-none focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all"
                             />
                         </div>
@@ -194,6 +250,10 @@ const RegisterPage = () => {
                         <div className="relative">
                             <input
                                 type={showPassword ? "text" : "password"}
+                                name="password"
+                                value={formData.password}
+                                onChange={handleChange}
+                                required
                                 placeholder="Nhập mật khẩu"
                                 className="w-full px-5 py-3.5 bg-[#F0F5FA] border border-transparent rounded-lg text-gray-700 placeholder-gray-400 focus:outline-none focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all"
                             />
@@ -210,6 +270,10 @@ const RegisterPage = () => {
                         <div className="relative">
                             <input
                                 type={showConfirmPassword ? "text" : "password"}
+                                name="confirmPassword"
+                                value={formData.confirmPassword}
+                                onChange={handleChange}
+                                required
                                 placeholder="Nhập lại mật khẩu"
                                 className="w-full px-5 py-3.5 bg-[#F0F5FA] border border-transparent rounded-lg text-gray-700 placeholder-gray-400 focus:outline-none focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all"
                             />
@@ -222,12 +286,15 @@ const RegisterPage = () => {
                             </button>
                         </div>
 
-                        {role === 'company' && (
+                        {role === 'EMPLOYER' && (
                             <div className="space-y-4 p-4 bg-blue-50 rounded-lg border border-blue-100 mb-4 animate-fade-in-down">
                                 <p className="text-xs text-[#3AB4E6] font-semibold uppercase tracking-wide">Chúng tôi sẽ dùng thông tin này để xác thực công ty</p>
                                 <div>
                                     <input
                                         type="text"
+                                        name="address"
+                                        value={formData.address}
+                                        onChange={handleChange}
                                         placeholder="Địa chỉ công ty/doanh nghiệp"
                                         className="w-full px-5 py-3.5 bg-white border border-blue-200 rounded-lg text-gray-700 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
                                     />
@@ -237,6 +304,9 @@ const RegisterPage = () => {
                                         <BsGlobe className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
                                         <input
                                             type="text"
+                                            name="website"
+                                            value={formData.website}
+                                            onChange={handleChange}
                                             placeholder="Website (nếu có)"
                                             className="w-full pl-10 pr-5 py-3.5 bg-white border border-blue-200 rounded-lg text-gray-700 focus:outline-none focus:border-blue-500"
                                         />
@@ -245,6 +315,9 @@ const RegisterPage = () => {
                                         <BsTelephone className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
                                         <input
                                             type="text"
+                                            name="phone"
+                                            value={formData.phone}
+                                            onChange={handleChange}
                                             placeholder="Số điện thoại"
                                             className="w-full pl-10 pr-5 py-3.5 bg-white border border-blue-200 rounded-lg text-gray-700 focus:outline-none focus:border-blue-500"
                                         />
@@ -256,7 +329,7 @@ const RegisterPage = () => {
                         {/* --- TERMS CHECKBOX --- */}
                         <div className="flex items-start text-sm mt-2">
                             <div className="flex items-center h-5">
-                                <input type="checkbox" className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500" />
+                                <input type="checkbox" required className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500" />
                             </div>
                             <label className="ml-2 text-gray-500">
                                 Bạn đã đọc và đồng ý với <a href="#" className="text-[#3AB4E6] hover:underline">Điều khoản dịch vụ</a> và <a href="#" className="text-[#3AB4E6] hover:underline">Chính sách bảo mật</a> của ITWork.
@@ -268,7 +341,7 @@ const RegisterPage = () => {
                             type="submit"
                             className="w-full bg-[#3AB4E6] hover:bg-[#19A4DD] text-white font-bold py-3.5 rounded-lg transition duration-200 flex items-center justify-center gap-2 shadow-lg shadow-blue-500/30"
                         >
-                            Đăng Ký {role === 'company' ? '(Chờ duyệt)' : ''} <FaArrowRight size={14} />
+                            Đăng Ký {role === 'EMPLOYER' ? '(Chờ duyệt)' : ''} <FaArrowRight size={14} />
                         </button>
                     </form>
 

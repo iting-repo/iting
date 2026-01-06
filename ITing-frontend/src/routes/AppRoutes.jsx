@@ -32,9 +32,11 @@ const JobDetailPage = lazy(() => import('../pages/public/JobDetailPage'));
 const AboutPage = lazy(() => import('../pages/public/AboutPage'));
 const ContactPage = lazy(() => import('../pages/public/ContactPage'));
 
+import LoadingSpinner from '../components/LoadingSpinner';
+
 const AppRoutes = () => {
   return (
-    <Suspense fallback={<div>Đang tải trang...</div>}>
+    <Suspense fallback={<LoadingSpinner />}>
       <Routes>
 
         {/* --- KHU VỰC PUBLIC (Ai cũng vào được) --- */}
@@ -53,7 +55,7 @@ const AppRoutes = () => {
 
         {/* --- KHU VỰC ADMIN (Phải Login + Role ADMIN) --- */}
         {/* Bước 1: Bọc bằng PrivateRoute để chặn cửa */}
-        <Route element={<PrivateRoute allowedRoles={['admin']} />}>
+        <Route element={<PrivateRoute allowedRoles={['ADMIN']} />}>
 
           {/* 2. Áp dụng AdminLayout (Có Sidebar tím + Header) */}
           <Route path="/admin" element={<AdminLayout />}>
@@ -73,7 +75,7 @@ const AppRoutes = () => {
 
         </Route>
 
-        <Route path="/employer" element={<PrivateRoute allowedRoles={['employer']} />}>
+        <Route path="/employer" element={<PrivateRoute allowedRoles={['EMPLOYER']} />}>
           {/* Lớp 1: MainLayout (Có Header đen + Footer) */}
           <Route element={<MainLayout />}>
 
@@ -96,7 +98,7 @@ const AppRoutes = () => {
           </Route>
         </Route>
 
-        <Route path="/candidate" element={<PrivateRoute allowedRoles={['candidate']} />}>
+        <Route path="/candidate" element={<PrivateRoute allowedRoles={['CANDIDATE']} />}>
           <Route element={<MainLayout />}>
             <Route element={<CandidateLayout />}>
 

@@ -19,8 +19,13 @@ const Header = () => {
   const user = currentUser ? currentUser : null;
 
   const handleLogout = () => {
-    dispatch(logout());
-    navigate('/login');
+    // 1. Navigate về trang chủ trước (để thoát khỏi PrivateRoute)
+    navigate('/');
+
+    // 2. Sau đó mới clear state/token (dùng setTimeout để đảm bảo đã nhảy trang xong hoặc queue sự kiện)
+    setTimeout(() => {
+      dispatch(logout());
+    }, 100);
   }
 
   // State cho Dropdown User
@@ -46,7 +51,7 @@ const Header = () => {
     const isActive = (path) => location.pathname === path ? activeClass : linkClass;
 
     switch (role) {
-      case 'candidate':
+      case 'CANDIDATE':
         // Candidate: Menu chính vẫn là tìm việc
         return (
           <>
@@ -56,7 +61,7 @@ const Header = () => {
             <Link to="/contact" className={isActive('/contact')}>Liên hệ</Link>
           </>
         );
-      case 'employer':
+      case 'EMPLOYER':
         // Employer: Menu chính là các công cụ quản lý
         return (
           <>
@@ -83,7 +88,7 @@ const Header = () => {
   // --- HÀM RENDER DROPDOWN CONTENT (MENU CON KHI BẤM AVATAR) ---
   // Đây là phần quan trọng để điều hướng vào Dashboard
   const renderDropdownMenu = () => {
-    if (role === 'candidate') {
+    if (role === 'CANDIDATE') {
       return (
         <div className="py-2">
           <Link to="/candidate/dashboard" className="flex items-center gap-3 px-4 py-2 hover:bg-gray-50 text-sm text-gray-700">
@@ -105,11 +110,11 @@ const Header = () => {
       );
     }
 
-    if (role === 'employer') {
+    if (role === 'EMPLOYER') {
       return (
         <div className="py-2">
           <Link to="/employer/dashboard" className="flex items-center gap-3 px-4 py-2 hover:bg-gray-50 text-sm text-gray-700">
-            <FaLayerGroup className="text-gray-400" /> Vào trang quản trị
+            <FaLayerGroup className="text-gray-400" /> Vào trang quản lí
           </Link>
           <Link to="/employer/company-profile" className="flex items-center gap-3 px-4 py-2 hover:bg-gray-50 text-sm text-gray-700">
             <FaBuilding className="text-gray-400" /> Hồ sơ công ty
@@ -127,7 +132,7 @@ const Header = () => {
       <div className="container mx-auto px-12 h-full flex items-center justify-between">
 
         {/* LOGO */}
-        <Link to="/" className="flex items-center gap-2 select-none group">
+        <Link to={role === 'EMPLOYER' ? '/employer/dashboard' : '/'} className="flex items-center gap-2 select-none group">
           <BsBriefcaseFill className="text-white text-2xl group-hover:text-[#3AB4E6] transition-colors" />
           <span className="text-2xl font-bold tracking-tight group-hover:text-[#3AB4E6] transition-colors">ITWork</span>
         </Link>
@@ -186,7 +191,7 @@ const Header = () => {
                     <div className="px-4 py-3 border-b border-gray-100 bg-gray-50/50">
                       <p className="text-sm font-bold text-gray-900 truncate">{user?.name || "User"}</p>
                       <p className="text-xs text-gray-500 truncate mt-0.5">
-                        {role === 'candidate' ? 'Ứng viên' : 'Nhà tuyển dụng'}
+                        {role === 'CANDIDATE' ? 'Ứng viên' : 'Nhà tuyển dụng'}
                       </p>
                     </div>
 

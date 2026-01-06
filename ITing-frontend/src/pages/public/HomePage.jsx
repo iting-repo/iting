@@ -1,5 +1,8 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
+import { useDispatch, useSelector } from 'react-redux';
+import { useEffect } from 'react';
+import { fetchLatestJobsRequest } from '../../store/job/jobSlice';
 // FIX: Gom tất cả icon về react-icons/fa để tránh lỗi import undefined
 import {
     FaSearch, FaMapMarkerAlt, FaBriefcase, FaBuilding, FaUserFriends,
@@ -11,7 +14,42 @@ import {
 import heroBg from '../../assets/bg_login.jpg';
 
 const HomePage = () => {
+    const dispatch = useDispatch();
+    const { latestJobs, isLoading } = useSelector((state) => state.job);
     const [currentPage, setCurrentPage] = useState(1);
+
+    useEffect(() => {
+        dispatch(fetchLatestJobsRequest(10));
+    }, [dispatch]);
+
+    // Helper: Format Salary
+    const formatSalary = (min, max) => {
+        if (!min && !max) return "Thỏa thuận";
+        const format = (n) => n?.toLocaleString('vi-VN') + ' VNĐ';
+        if (min && max) return `${format(min)} - ${format(max)}`;
+        if (min) return `Từ ${format(min)}`;
+        return `Up to ${format(max)}`;
+    };
+
+    // Helper: Time Ago (Simple version)
+    const timeAgo = (dateString) => {
+        if (!dateString) return "Mới đăng";
+        const date = new Date(dateString);
+        const now = new Date();
+        const seconds = Math.floor((now - date) / 1000);
+
+        let interval = seconds / 31536000;
+        if (interval > 1) return Math.floor(interval) + " năm trước";
+        interval = seconds / 2592000;
+        if (interval > 1) return Math.floor(interval) + " tháng trước";
+        interval = seconds / 86400;
+        if (interval > 1) return Math.floor(interval) + " ngày trước";
+        interval = seconds / 3600;
+        if (interval > 1) return Math.floor(interval) + " giờ trước";
+        interval = seconds / 60;
+        if (interval > 1) return Math.floor(interval) + " phút trước";
+        return Math.floor(seconds) + " giây trước";
+    };
 
     // --- MOCK DATA ---
     const categories = [
@@ -147,7 +185,7 @@ const HomePage = () => {
             {/* =================================================================
           PHẦN 3: VIỆC LÀM TỐT NHẤT (MODERN CLEAN UI FIX)
          ================================================================= */}
-            <section className="py-20 bg-white">
+            <section className="py-10 px-8 bg-white">
                 <div className="container mx-auto px-4">
 
                     {/* 1. HEADER: Loại bỏ nút đen, dùng nút viền mảnh tinh tế */}
@@ -219,60 +257,74 @@ const HomePage = () => {
 
                     {/* 4. JOB LIST: Thêm hiệu ứng hover xịn & bo góc mềm */}
                     <div className="space-y-5 mb-12">
-                        {bestJobs.map((job) => (
-                            <div key={job.id} className="group relative border border-gray-100 rounded-2xl p-6 hover:shadow-xl hover:shadow-blue-500/5 transition-all duration-300 bg-white overflow-hidden">
+                        {isLoading ? (
+                            <div className="text-center py-10">Đang tải danh sách việc làm...</div>
+                        ) : (
+                            latestJobs.map((job) => (
+                                <div key={job.id} className="group relative border border-gray-100 rounded-2xl p-6 hover:shadow-xl hover:shadow-blue-500/5 transition-all duration-300 bg-white overflow-hidden">
 
-                                {/* Hiệu ứng: Thanh màu xanh trượt ra khi hover */}
-                                <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-[#3AB4E6] transform -translate-x-full group-hover:translate-x-0 transition-transform duration-300"></div>
+                                    {/* Hiệu ứng: Thanh màu xanh trượt ra khi hover */}
+                                    <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-[#3AB4E6] transform -translate-x-full group-hover:translate-x-0 transition-transform duration-300"></div>
 
-                                <div className="flex flex-col md:flex-row gap-6">
-                                    {/* Logo */}
-                                    <div className="shrink-0">
-                                        <img src={job.logo} alt="Logo" className="w-14 h-14 rounded-xl object-cover bg-gray-50 p-1 border border-gray-100" />
-                                    </div>
+                                    <div className="flex flex-col md:flex-row gap-6">
+                                        {/* Logo */}
+                                        <div className="shrink-0">
+                                            <img
+                                                src={job.companyLogo || "https://via.placeholder.com/100"}
+                                                alt="Logo"
+                                                className="w-14 h-14 rounded-xl object-contain bg-gray-50 p-1 border border-gray-100"
+                                                onError={(e) => e.target.src = "https://via.placeholder.com/100"}
+                                            />
+                                        </div>
 
-                                    {/* Nội dung */}
-                                    <div className="flex-1">
-                                        <div className="flex justify-between items-start mb-2">
-                                            <div>
-                                                <h3 className="text-lg font-bold text-gray-900 group-hover:text-[#3AB4E6] transition-colors cursor-pointer">
-                                                    {job.title}
-                                                </h3>
-                                                <p className="text-sm text-gray-500 font-medium mt-1">{job.company}</p>
+                                        {/* Nội dung */}
+                                        <div className="flex-1">
+                                            <div className="flex justify-between items-start mb-2">
+                                                <div>
+                                                    <h3 className="text-lg font-bold text-gray-900 group-hover:text-[#3AB4E6] transition-colors cursor-pointer">
+                                                        {job.position}
+                                                    </h3>
+                                                    <p className="text-sm text-gray-500 font-medium mt-1">{job.companyName}</p>
+                                                </div>
+                                                <button className="w-9 h-9 rounded-full bg-gray-50 text-gray-400 flex items-center justify-center hover:bg-[#3AB4E6] hover:text-white transition-all">
+                                                    <FaRegBookmark />
+                                                </button>
                                             </div>
-                                            <button className="w-9 h-9 rounded-full bg-gray-50 text-gray-400 flex items-center justify-center hover:bg-[#3AB4E6] hover:text-white transition-all">
-                                                <FaRegBookmark />
+
+                                            {/* Tags styled đẹp hơn */}
+                                            <div className="flex flex-wrap items-center gap-3 mt-3 text-xs text-gray-500 font-medium">
+                                                <span className="flex items-center gap-1.5 bg-gray-50 px-3 py-1.5 rounded-lg border border-gray-100">
+                                                    <FaBriefcase className="text-blue-400" /> {job.jobType || "Full-time"}
+                                                </span>
+                                                <span className="flex items-center gap-1.5 bg-gray-50 px-3 py-1.5 rounded-lg border border-gray-100">
+                                                    <FaClock className="text-purple-400" /> {formatSalary(job.minSalary, job.maxSalary)}
+                                                </span>
+                                                {/* Tech Stack */}
+                                                {job.techRequired && (
+                                                    <span className="flex items-center gap-1.5 bg-green-50 text-green-700 px-3 py-1.5 rounded-lg border border-green-100 font-bold truncate max-w-[200px]">
+                                                        {job.techRequired}
+                                                    </span>
+                                                )}
+
+                                                <span className="flex items-center gap-1.5 bg-gray-50 px-3 py-1.5 rounded-lg border border-gray-100">
+                                                    <FaMapMarkerAlt className="text-red-400" /> {job.location || "Việt Nam"}
+                                                </span>
+                                            </div>
+                                        </div>
+
+                                        {/* Nút hành động */}
+                                        <div className="flex flex-col justify-between items-end gap-3 min-w-[100px]">
+                                            <span className="text-xs text-gray-400 font-medium bg-gray-50 px-2 py-1 rounded">
+                                                {timeAgo(job.createdAt)}
+                                            </span>
+                                            {/* Nút Chi Tiết style mới */}
+                                            <button className="w-full md:w-auto bg-[#EAF6FF] text-[#3AB4E6] hover:bg-[#3AB4E6] hover:text-white text-xs font-bold px-5 py-2.5 rounded-xl transition-all duration-300">
+                                                Chi Tiết
                                             </button>
                                         </div>
-
-                                        {/* Tags styled đẹp hơn */}
-                                        <div className="flex flex-wrap items-center gap-3 mt-3 text-xs text-gray-500 font-medium">
-                                            <span className="flex items-center gap-1.5 bg-gray-50 px-3 py-1.5 rounded-lg border border-gray-100">
-                                                <FaBriefcase className="text-blue-400" /> {job.tags[0]}
-                                            </span>
-                                            <span className="flex items-center gap-1.5 bg-gray-50 px-3 py-1.5 rounded-lg border border-gray-100">
-                                                <FaClock className="text-purple-400" /> {job.tags[1]}
-                                            </span>
-                                            <span className="flex items-center gap-1.5 bg-green-50 text-green-700 px-3 py-1.5 rounded-lg border border-green-100 font-bold">
-                                                {job.tags[2]}
-                                            </span>
-                                            <span className="flex items-center gap-1.5 bg-gray-50 px-3 py-1.5 rounded-lg border border-gray-100">
-                                                <FaMapMarkerAlt className="text-red-400" /> {job.tags[3]}
-                                            </span>
-                                        </div>
-                                    </div>
-
-                                    {/* Nút hành động */}
-                                    <div className="flex flex-col justify-between items-end gap-3 min-w-[100px]">
-                                        <span className="text-xs text-gray-400 font-medium bg-gray-50 px-2 py-1 rounded">{job.time}</span>
-                                        {/* Nút Chi Tiết style mới */}
-                                        <button className="w-full md:w-auto bg-[#EAF6FF] text-[#3AB4E6] hover:bg-[#3AB4E6] hover:text-white text-xs font-bold px-5 py-2.5 rounded-xl transition-all duration-300">
-                                            Chi Tiết
-                                        </button>
                                     </div>
                                 </div>
-                            </div>
-                        ))}
+                            )))}
                     </div>
 
                     {/* 5. PAGINATION: Bỏ nút đen, dùng style Clean */}
@@ -301,7 +353,7 @@ const HomePage = () => {
             </section>
 
             {/* PHẦN 2: JOB CATEGORIES */}
-            <section className="py-16 bg-[#F0F5FA]">
+            <section className="py-10 px-8 bg-[#F0F5FA]">
                 <div className="container mx-auto px-4">
                     <div className="text-center mb-12">
                         <h2 className="text-3xl font-bold text-gray-800 mb-3">Tìm việc theo lĩnh vực</h2>
@@ -324,9 +376,9 @@ const HomePage = () => {
                 </div>
             </section>
 
-            
+
             {/* PHẦN 4: BLOGS */}
-            <section className="py-16 bg-white border-t border-gray-100">
+            <section className="py-10 px-8 bg-white border-t border-gray-100">
                 <div className="container mx-auto px-4">
                     <div className="flex justify-between items-end mb-8">
                         <div>
