@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { loginRequest } from '../../store/auth/authSlice';
@@ -29,15 +29,29 @@ const LoginPage = () => {
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  
+
   // STATE MỚI: Quản lý loại đăng nhập ('user' hoặc 'admin')
-  const [loginType, setLoginType] = useState('user'); 
+  const [loginType, setLoginType] = useState('user');
 
   const dispatch = useDispatch();
   const navigate = useNavigate();
 
-  const { isLoading, error } = useSelector((state) => state.auth);
+  const { isLoading, error, currentUser } = useSelector((state) => state.auth);
   const [showPassword, setShowPassword] = useState(false);
+
+  // Redirect nếu đã login
+  useEffect(() => {
+    if (currentUser && currentUser.token) {
+      const role = currentUser.role;
+      if (role === 'EMPLOYER') {
+        navigate('/employer/dashboard');
+      } else if (role === 'ADMIN') {
+        navigate('/admin/dashboard');
+      } else {
+        navigate('/');
+      }
+    }
+  }, [currentUser, navigate]);
 
   const handleLogin = (e) => {
     e.preventDefault();
@@ -56,59 +70,56 @@ const LoginPage = () => {
     <div className="min-h-screen flex bg-white font-sans">
 
       {/* ================= LEFT COLUMN ================= */}
-      <div className="w-full lg:w-[50%] flex flex-col justify-center px-8 md:px-20 xl:px-32 relative z-10">
-
-        {/* Logo Area */}
-        <div className="flex items-center gap-2 mb-8">
+      <div className="w-full lg:w-[50%] flex flex-col px-8 md:px-20 xl:px-32 relative z-10 h-full overflow-y-auto no-scrollbar py-12">
+        {/* Logo */}
+        <Link to="/" className="flex items-center gap-2 mb-8 w-fit hover:opacity-80 transition-opacity">
           <BsBriefcaseFill className="text-[#3AB4E6] text-2xl" />
           <span className="text-2xl font-semibold text-gray-800 tracking-tight">ITWork</span>
-        </div>
+        </Link>
 
         <div>
           {/* Header */}
-          <h1 className="text-[32px] font-semibold text-[#1F2937] mb-6 leading-tight h-10">
-            {loginType === 'user' ? 'Chào mừng trở lại!' : 'Đăng nhập Quản trị'}
+          <h1 className="text-[30px] font-semibold text-[#1F2937] mb-6">
+            {loginType === 'user' ? 'Chào mừng trở lại!' : 'Đăng nhập cho Quản trị viên'}
           </h1>
 
           {/* === 2. TAB SWITCHER (STYLE MỚI THEO YÊU CẦU) === */}
           <div className="bg-[#F3F4F6] p-1.5 rounded-lg flex mb-6 shadow-inner w-full">
             <button
-                type="button"
-                onClick={() => switchTab('user')}
-                className={`flex-1 py-2.5 rounded-md text-sm font-semibold transition-all duration-200 flex items-center justify-center gap-2 ${
-                    loginType === 'user'
-                    ? 'bg-[#3AB4E6] text-white shadow-sm'
-                    : 'text-gray-500 hover:text-gray-600'
+              type="button"
+              onClick={() => switchTab('user')}
+              className={`flex-1 py-2.5 rounded-md text-sm font-semibold transition-all duration-200 flex items-center justify-center gap-2 ${loginType === 'user'
+                ? 'bg-[#3AB4E6] text-white shadow-sm'
+                : 'text-gray-500 hover:text-gray-600'
                 }`}
             >
-                <FaUserTie /> Ứng viên / Nhà tuyển dụng
+              <FaUserTie /> Ứng viên / Nhà tuyển dụng
             </button>
             <button
-                type="button"
-                onClick={() => switchTab('admin')}
-                className={`flex-1 py-2.5 rounded-md text-sm font-semibold transition-all duration-200 flex items-center justify-center gap-2 ${
-                    loginType === 'admin'
-                    ? 'bg-[#3AB4E6] text-white shadow-sm'
-                    : 'text-gray-500 hover:text-gray-600'
+              type="button"
+              onClick={() => switchTab('admin')}
+              className={`flex-1 py-2.5 rounded-md text-sm font-semibold transition-all duration-200 flex items-center justify-center gap-2 ${loginType === 'admin'
+                ? 'bg-[#3AB4E6] text-white shadow-sm'
+                : 'text-gray-500 hover:text-gray-600'
                 }`}
             >
-                <FaUserShield /> Admin
+              <FaUserShield /> Admin
             </button>
           </div>
           {/* ================================================== */}
-          
+
           {/* Mô tả */}
           <p className="text-[#6B7280] text-md mb-8 min-h-[50px]">
             {loginType === 'user' ? (
-                <>
-                    Cùng tìm công việc IT chất lượng.<br />
-                    Bạn chưa có tài khoản? <Link to="/register" className="text-[#3AB4E6] font-medium hover:underline">Tạo mới ngay</Link>
-                </>
+              <>
+                Cùng tìm công việc IT chất lượng.<br />
+                Bạn chưa có tài khoản? <Link to="/register" className="text-[#3AB4E6] font-medium hover:underline">Tạo mới ngay</Link>
+              </>
             ) : (
-                <>
-                    Truy cập vào hệ thống quản trị viên.<br />
-                    Vui lòng sử dụng tài khoản được cấp quyền.
-                </>
+              <>
+                Truy cập vào hệ thống quản trị viên.<br />
+                Vui lòng sử dụng tài khoản được cấp quyền.
+              </>
             )}
           </p>
 
@@ -136,19 +147,19 @@ const LoginPage = () => {
               <label className="block text-sm font-medium text-gray-700 mb-1">Mật khẩu</label>
               <div className="relative">
                 <input
-                    type={showPassword ? "text" : "password"}
-                    required
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    placeholder="•••••••••"
-                    className="w-full px-5 py-3.5 bg-[#F0F5FA] border border-transparent rounded-lg text-gray-700 placeholder-gray-400 focus:outline-none focus:bg-white focus:border-[#3AB4E6] focus:ring-2 focus:ring-blue-100 transition-all"
+                  type={showPassword ? "text" : "password"}
+                  required
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="•••••••••"
+                  className="w-full px-5 py-3.5 bg-[#F0F5FA] border border-transparent rounded-lg text-gray-700 placeholder-gray-400 focus:outline-none focus:bg-white focus:border-[#3AB4E6] focus:ring-2 focus:ring-blue-100 transition-all"
                 />
                 <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-[#3AB4E6]"
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-[#3AB4E6]"
                 >
-                    {showPassword ? <FaEyeSlash size={18} /> : <FaEye size={18} />}
+                  {showPassword ? <FaEyeSlash size={18} /> : <FaEye size={18} />}
                 </button>
               </div>
             </div>
@@ -168,37 +179,37 @@ const LoginPage = () => {
               disabled={isLoading}
               className={`w-full bg-[#3AB4E6] hover:bg-[#2fa0d1] text-white font-bold py-3.5 rounded-lg transition duration-200 flex items-center justify-center gap-2 shadow-lg shadow-blue-500/30 ${isLoading ? 'opacity-70 cursor-not-allowed' : ''}`}
             >
-              {isLoading ? 'Đang xử lý...' : (loginType === 'user' ? 'Đăng Nhập' : 'Vào trang quản trị')}
+              {isLoading ? 'Đang xử lý...' : (loginType === 'user' ? 'Đăng Nhập' : 'Vào trang quản trị viên')}
               {!isLoading && <FaArrowRight size={14} />}
             </button>
           </form>
 
           {/* Social Buttons Area */}
           <div className="min-h-[140px]">
-              {loginType === 'user' && (
-                 <div className="animate-fade-in">
-                    <div className="relative my-8 text-center">
-                        <div className="absolute inset-0 flex items-center">
-                        <div className="w-full border-t border-gray-200"></div>
-                        </div>
-                        <span className="relative bg-white px-4 text-xs text-gray-400 uppercase tracking-wide">
-                        Hoặc đăng nhập bằng
-                        </span>
-                    </div>
+            {loginType === 'user' && (
+              <div className="animate-fade-in">
+                <div className="relative my-8 text-center">
+                  <div className="absolute inset-0 flex items-center">
+                    <div className="w-full border-t border-gray-200"></div>
+                  </div>
+                  <span className="relative bg-white px-4 text-xs text-gray-400 uppercase tracking-wide">
+                    Hoặc đăng nhập bằng
+                  </span>
+                </div>
 
-                    <div className="grid grid-cols-2 gap-4">
-                        <button type="button" className="flex items-center justify-center gap-3 border border-gray-200 py-3 rounded-lg hover:bg-gray-50 transition font-medium text-gray-700">
-                        <FacebookIcon />
-                        <span className="text-sm">Facebook</span>
-                        </button>
+                <div className="grid grid-cols-2 gap-4">
+                  <button type="button" className="flex items-center justify-center gap-3 border border-gray-200 py-3 rounded-lg hover:bg-gray-50 transition font-medium text-gray-700">
+                    <FacebookIcon />
+                    <span className="text-sm">Facebook</span>
+                  </button>
 
-                        <button type="button" className="flex items-center justify-center gap-3 border border-gray-200 py-3 rounded-lg hover:bg-gray-50 transition font-medium text-gray-700">
-                        <GoogleIcon />
-                        <span className="text-sm">Google</span>
-                        </button>
-                    </div>
-                 </div>
-              )}
+                  <button type="button" className="flex items-center justify-center gap-3 border border-gray-200 py-3 rounded-lg hover:bg-gray-50 transition font-medium text-gray-700">
+                    <GoogleIcon />
+                    <span className="text-sm">Google</span>
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
 
         </div>
@@ -224,11 +235,11 @@ const LoginPage = () => {
 
         <div className="absolute bottom-0 left-0 right-0 p-12 pl-24 text-white">
           <h2 className="text-4xl font-bold leading-tight mb-8 drop-shadow-lg animate-fade-in-up">
-             {loginType === 'user' ? (
-                <>Hơn <span className="text-blue-400">1,75,324</span> ứng viên đang tham gia để có công việc chất lượng.</>
-             ) : (
-                <>Hệ thống <span className="text-blue-400">Quản trị tập trung</span> dành cho Admin & Staff.</>
-             )}
+            {loginType === 'user' ? (
+              <>Hơn <span className="text-blue-400">1,75,324</span> ứng viên đang tham gia để có công việc chất lượng.</>
+            ) : (
+              <>Hệ thống <span className="text-blue-400">Quản trị tập trung</span> dành cho Admin & Staff.</>
+            )}
           </h2>
 
           <div className="flex gap-4 animate-fade-in-up delay-100">

@@ -9,8 +9,10 @@ const EmployerSidebar = () => {
   const navigate = useNavigate();
 
   const handleLogout = () => {
-    dispatch(logout());
-    navigate('/login');
+    navigate('/');
+    setTimeout(() => {
+      dispatch(logout());
+    }, 100);
   };
 
   const menuItems = [
@@ -31,10 +33,9 @@ const EmployerSidebar = () => {
               <NavLink
                 to={item.path}
                 className={({ isActive }) =>
-                  `flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-colors ${
-                    isActive
-                      ? 'bg-blue-50 text-[#3AB4E6] border-l-4 border-[#3AB4E6]'
-                      : 'text-gray-500 hover:bg-gray-50 hover:text-gray-900'
+                  `flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-colors ${isActive
+                    ? 'bg-blue-50 text-[#3AB4E6] border-l-4 border-[#3AB4E6]'
+                    : 'text-gray-500 hover:bg-gray-50 hover:text-gray-900'
                   }`
                 }
               >
@@ -43,14 +44,14 @@ const EmployerSidebar = () => {
               </NavLink>
             </li>
           ))}
-          
+
           <li className="mt-8 pt-8 border-t border-gray-100">
-            <button 
-                onClick={handleLogout}
-                className="flex items-center gap-3 px-4 py-3 rounded-lg font-medium text-gray-500 hover:bg-red-50 hover:text-red-600 w-full transition-colors"
+            <button
+              onClick={handleLogout}
+              className="flex items-center gap-3 px-4 py-3 rounded-lg font-medium text-gray-500 hover:bg-red-50 hover:text-red-600 w-full transition-colors"
             >
-                <FaSignOutAlt className="text-lg" />
-                Đăng xuất
+              <FaSignOutAlt className="text-lg" />
+              Đăng xuất
             </button>
           </li>
         </ul>

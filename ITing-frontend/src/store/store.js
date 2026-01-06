@@ -2,12 +2,13 @@ import { configureStore } from '@reduxjs/toolkit';
 import createSagaMiddleware from 'redux-saga';
 import rootSaga from './rootSaga';
 import authReducer from './auth/authSlice'; // Import reducer thật
-
+import jobReducer from './job/jobSlice'; // Import reducer job
 const sagaMiddleware = createSagaMiddleware();
 
 const store = configureStore({
     reducer: {
-        auth: authReducer, // Thay dummyReducer bằng authReducer thật
+        auth: authReducer,
+        job: jobReducer, // Đăng ký job reducer
     },
     middleware: (getDefaultMiddleware) =>
         getDefaultMiddleware({
@@ -18,7 +19,7 @@ const store = configureStore({
                 ignoredActions: ['auth/loginRequest', 'auth/registerRequest'],
                 // Hoặc bỏ qua kiểm tra cho mọi field có tên là "navigate" hoặc "onSuccess" trong payload
                 ignoredActionPaths: ['payload.navigate', 'payload.onSuccess'],
-                
+
             },
         }).concat(sagaMiddleware),
 });

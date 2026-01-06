@@ -11,13 +11,16 @@ const authService = {
     },
 
     // API Register
-    register: async (email, password, name, role) => {
+    register: async (email, password, name, role, phone, address, website) => {
         // Gọi API: POST /auth/register
         const response = await axiosInstance.post('/auth/register', {
             email,
             password,
             name,
-            role
+            role,
+            phone,
+            address,
+            website
         });
         return response;
     },
