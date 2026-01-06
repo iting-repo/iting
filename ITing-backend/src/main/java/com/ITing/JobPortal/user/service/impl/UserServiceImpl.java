@@ -37,6 +37,10 @@ public class UserServiceImpl implements UserService {
         u.setAvatarUrl(req.getAvatarUrl());
         u.setDescription(req.getDescription());
         u.setAddress(req.getAddress());
+
+        u.setEmail(req.getEmail());
+        u.setPhoneNum(req.getPhoneNum());
+
         u.setLastUpdate(LocalDateTime.now());
     }
 

@@ -5,6 +5,7 @@ import com.iting.jobportal.user.entity.enums.Gender;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
+
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
@@ -27,6 +28,13 @@ public class User {
 
     @Column(length = 100)
     private String lastName;
+
+    // THÊM 2 FIELD NÀY
+    @Column(length = 150, unique = true)
+    private String email;
+
+    @Column(length = 20)
+    private String phoneNum;
 
     private LocalDate birthDate;
 

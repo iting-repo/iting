@@ -11,7 +11,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.Hidden;
 import java.util.Map;
 
 @RestController
@@ -27,7 +28,7 @@ public class ApplicationController {
     @PostMapping("/apply")
     @Operation(summary = "Nộp đơn ứng tuyển")
     public ResponseEntity<ApplicationResponse> applyJob(
-            @CurrentUser Long userId,
+            @Parameter(hidden = true) @CurrentUser Long userId,
             @Valid @RequestBody ApplyJobRequest request) {
         return ResponseEntity.ok(applicationService.applyJob(userId, request));
     }

@@ -16,6 +16,11 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import com.iting.jobportal.user.entity.User;
+import com.iting.jobportal.user.repository.UserRepository;
+
+import com.iting.jobportal.company.entity.Company;
+import com.iting.jobportal.company.repository.CompanyRepository;
 
 import java.time.LocalDateTime;
 
@@ -27,52 +32,70 @@ public class ApplicationServiceImpl implements ApplicationService {
     private final JobRepository jobRepository;
     private final CVRepository cvRepository;
 
+    private final UserRepository userRepository;
+    private final CompanyRepository companyRepository; // ✅ thêm
+
     // ========== CHO ỨNG VIÊN ==========
 
     @Override
     @Transactional
     public ApplicationResponse applyJob(Long userId, ApplyJobRequest request) {
-        // Kiểm tra job tồn tại
+
         Job job = jobRepository.findById(request.getJobId())
                 .orElseThrow(() -> new RuntimeException("Job not found"));
-        
-        // Kiểm tra đã ứng tuyển chưa
+
         if (applicationRepository.existsByUserIdAndJobId(userId, request.getJobId())) {
             throw new RuntimeException("Bạn đã ứng tuyển công việc này rồi");
         }
-        
-        // Lấy CV URL
+
+        // ✅ Lấy user từ DB để auto-fill applicant info
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        String applicantName = buildFullName(user.getFirstName(), user.getLastName());
+        String applicantEmail = user.getEmail();
+        String applicantPhone = user.getPhoneNum();
+
+        // ✅ Chỉ “gán CV” theo request (cvId ưu tiên hơn cvUrl)
         String cvUrl = request.getCvUrl();
         String cvTitle = null;
+
         if (request.getCvId() != null) {
             CV cv = cvRepository.findById(request.getCvId())
                     .orElseThrow(() -> new RuntimeException("CV not found"));
             cvUrl = cv.getFileUrl();
             cvTitle = "CV_" + request.getCvId();
         }
-        
-        // Tạo đơn ứng tuyển
+
         JobApplication application = JobApplication.builder()
                 .userId(userId)
                 .jobId(request.getJobId())
                 .employerId(job.getEmployerId())
-                .applicantName(request.getApplicantName())
-                .applicantEmail(request.getApplicantEmail())
-                .applicantPhone(request.getApplicantPhone())
+                .applicantName(applicantName)
+                .applicantEmail(applicantEmail)
+                .applicantPhone(applicantPhone)
                 .cvUrl(cvUrl)
                 .cvTitle(cvTitle)
                 .coverLetter(request.getCoverLetter())
                 .status(ApplicationStatus.PENDING)
                 .build();
-        
+
         JobApplication saved = applicationRepository.save(application);
-        
-        // Tăng số lượng application của job
+
         job.setApplicationCount(job.getApplicationCount() + 1);
         jobRepository.save(job);
-        
+
         return enrichApplicationResponse(ApplicationResponse.fromEntity(saved));
     }
+
+    private String buildFullName(String firstName, String lastName) {
+        String fn = firstName == null ? "" : firstName.trim();
+        String ln = lastName == null ? "" : lastName.trim();
+        String full = (fn + " " + ln).trim();
+        return full.isEmpty() ? null : full;
+    }
+
+
 
     @Override
     @Transactional
@@ -272,11 +295,19 @@ public class ApplicationServiceImpl implements ApplicationService {
             Job job = jobRepository.findById(response.getJobId()).orElse(null);
             if (job != null) {
                 response.setJobPosition(job.getPosition());
+
+                Long employerId = job.getEmployerId();
+                response.setEmployerId(employerId);
+
+                companyRepository.findById(employerId)
+                        .map(Company::getName)
+                        .ifPresent(response::setCompanyName);
             }
         } catch (Exception e) {
-            // Ignore
+            // ignore
         }
         return response;
     }
+
 }
 

@@ -13,4 +13,7 @@ public class UpdateUserRequest {
     private String avatarUrl;
     private String description;
     private String address;
+
+    private String email;
+    private String phoneNum;
 }

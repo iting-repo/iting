@@ -11,13 +11,6 @@ public class ApplyJobRequest {
     @NotNull(message = "Job ID không được để trống")
     private Long jobId;
     
-    @NotBlank(message = "Tên ứng viên không được để trống")
-    private String applicantName;
-    
-    @NotBlank(message = "Email không được để trống")
-    @Email(message = "Email không hợp lệ")
-    private String applicantEmail;
-    
     private String applicantPhone;
     
     // CV có thể là URL đã upload hoặc ID của CV đã có trong hệ thống
