@@ -1,8 +1,68 @@
 import React, { useState } from 'react';
-import { FaTimes, FaCloudUploadAlt, FaPen, FaFilePdf, FaInfoCircle } from 'react-icons/fa';
+import { useNavigate } from 'react-router-dom';
+import { FaTimes, FaCloudUploadAlt, FaPen, FaFilePdf, FaInfoCircle, FaSpinner } from 'react-icons/fa';
+import applicationService from '../services/applicationService';
+import { toast } from 'react-toastify';
 
-const JobApplyModal = ({ isOpen, onClose, jobTitle }) => {
+const JobApplyModal = ({ isOpen, onClose, jobTitle, jobId }) => {
+    const navigate = useNavigate();
     const [cvMethod, setCvMethod] = useState('recent'); // 'recent', 'library', 'upload'
+    const [coverLetter, setCoverLetter] = useState('');
+    const [file, setFile] = useState(null);
+    const [loading, setLoading] = useState(false);
+
+    const handleFileChange = (e) => {
+        if (e.target.files && e.target.files[0]) {
+            setFile(e.target.files[0]);
+        }
+    };
+
+    const handleSubmit = async () => {
+        const token = localStorage.getItem('access_token');
+        if (!token) {
+            toast.error("Vui lòng đăng nhập để ứng tuyển!");
+            navigate('/login');
+            return;
+        }
+
+        setLoading(true);
+        try {
+            // Mock Upload Logic or CV Selection
+            let cvUrl = "https://example.com/cv.pdf"; // Fallback/Mock
+            let cvId = 3;
+
+            if (cvMethod === 'upload' && file) {
+                // TODO: Call Upload API here to get real URL and ID
+                // const uploadRes = await uploadService.upload(file);
+                // cvUrl = uploadRes.url;
+                // cvId = uploadRes.id;
+
+                // Simulating URL for now based on file name
+                cvUrl = `https://mock-storage.com/${file.name}`;
+            }
+
+            const payload = {
+                jobId: jobId || 21, // Fallback if prop missing
+                cvUrl: cvUrl,
+                cvId: cvId,
+                coverLetter: coverLetter || "No cover letter"
+            };
+
+            console.log("[DEBUG] Applying with Payload:", payload);
+            console.log("[DEBUG] Token present:", !!localStorage.getItem('access_token'));
+
+            await applicationService.applyJob(payload);
+            toast.success("Ứng tuyển thành công!");
+            onClose();
+
+        } catch (error) {
+            console.error("Apply error:", error);
+            const msg = error.response?.data || "Đã có lỗi xảy ra khi ứng tuyển.";
+            toast.error(typeof msg === 'string' ? msg : "Đã có lỗi xảy ra");
+        } finally {
+            setLoading(false);
+        }
+    };
 
     if (!isOpen) return null;
 
@@ -80,11 +140,19 @@ const JobApplyModal = ({ isOpen, onClose, jobTitle }) => {
                         </div>
 
                         {cvMethod === 'upload' && (
-                            <div className="ml-8 mt-2 border-2 border-dashed border-gray-300 rounded-lg p-6 flex flex-col items-center justify-center bg-gray-50 text-gray-500">
+                            <div className="ml-8 mt-2 border-2 border-dashed border-gray-300 rounded-lg p-6 flex flex-col items-center justify-center bg-gray-50 text-gray-500 relative">
+                                <input
+                                    type="file"
+                                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                                    onChange={handleFileChange}
+                                    accept=".pdf,.doc,.docx"
+                                />
                                 <FaCloudUploadAlt size={32} className="text-gray-400 mb-2" />
-                                <p className="text-sm">Hỗ trợ định dạng .doc, .docx, pdf có kích thước dưới 5MB</p>
+                                <p className="text-sm">
+                                    {file ? `Đã chọn: ${file.name}` : "Hỗ trợ định dạng .doc, .docx, pdf có kích thước dưới 5MB"}
+                                </p>
                                 <button className="mt-3 px-4 py-1.5 bg-white border border-gray-300 rounded text-sm font-medium hover:bg-gray-100">
-                                    Chọn CV
+                                    {file ? "Chọn lại CV" : "Chọn CV"}
                                 </button>
                             </div>
                         )}
@@ -103,6 +171,8 @@ const JobApplyModal = ({ isOpen, onClose, jobTitle }) => {
                                 rows="3"
                                 className="w-full border border-gray-200 rounded-lg p-3 text-sm focus:ring-1 focus:ring-[#00B4D8] outline-none resize-none bg-gray-50"
                                 placeholder="Viết giới thiệu ngắn gọn về bản thân (Điểm mạnh, kinh nghiệm liên quan)..."
+                                value={coverLetter}
+                                onChange={(e) => setCoverLetter(e.target.value)}
                             ></textarea>
                             <div className="absolute bottom-3 right-3 text-[#00B4D8] cursor-pointer bg-white p-1 rounded-full shadow-sm border border-gray-100">
                                 <FaPen size={12} />
@@ -118,8 +188,12 @@ const JobApplyModal = ({ isOpen, onClose, jobTitle }) => {
                         >
                             Hủy
                         </button>
-                        <button className="flex-1 py-2.5 bg-[#00B4D8] text-white font-bold rounded-lg hover:bg-[#0096B4] transition-colors text-sm shadow-md">
-                            Nộp hồ sơ ứng tuyển
+                        <button
+                            onClick={handleSubmit}
+                            disabled={loading}
+                            className="flex-1 py-2.5 bg-[#00B4D8] text-white font-bold rounded-lg hover:bg-[#0096B4] transition-colors text-sm shadow-md flex justify-center items-center gap-2">
+                            {loading && <FaSpinner className="animate-spin" />}
+                            {loading ? "Đang xử lý..." : "Nộp hồ sơ ứng tuyển"}
                         </button>
                     </div>
 

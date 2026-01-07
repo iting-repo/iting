@@ -1,70 +1,58 @@
-import React from 'react';
-import JobFilters from '../../components/JobFilters'; // Đường dẫn tùy cấu trúc của bạn
+import React, { useState, useEffect } from 'react';
+import JobFilters from '../../components/JobFilters';
 import JobCard from '../../components/JobCard';
 import JobPromo from '../../components/JobPromo';
 import { FaChevronRight } from 'react-icons/fa';
+import jobService from '../../services/jobService';
 
 const JobPage = () => {
-    // Mock Data Jobs
-    const jobs = [
-        {
-            id: 1,
-            title: "Forward Security Director",
-            company: "Bauch, Schuppe and Schulist Co",
-            logo: "https://logo.clearbit.com/security.com",
-            category: "Hotels & Tourism",
-            type: "Full time",
-            salary: "$40000-$42000",
-            location: "New-York, USA",
-            timePosted: "10 min ago"
-        },
-        {
-            id: 2,
-            title: "Regional Creative Facilitator",
-            company: "Wisozk - Becker Co",
-            logo: "https://logo.clearbit.com/creative.com",
-            category: "Media",
-            type: "Part time",
-            salary: "$28000-$32000",
-            location: "Los- Angeles, USA",
-            timePosted: "12 min ago"
-        },
-        {
-            id: 3,
-            title: "Internal Integration Planner",
-            company: "Mraz, Quigley and Feest Inc.",
-            logo: "https://logo.clearbit.com/integration.com",
-            category: "Construction",
-            type: "Full time",
-            salary: "$48000-$50000",
-            location: "Texas, USA",
-            timePosted: "15 min ago"
-        },
-        {
-            id: 4,
-            title: "District Intranet Director",
-            company: "VonRueden - Weber Co",
-            logo: "https://logo.clearbit.com/intranet.com",
-            category: "Commerce",
-            type: "Full time",
-            salary: "$42000-$48000",
-            location: "Florida, USA",
-            timePosted: "24 min ago"
-        },
-        {
-            id: 5,
-            title: "Corporate Tactics Facilitator",
-            company: "Cormier, Turner and Flatley Inc",
-            logo: "https://logo.clearbit.com/tactics.com",
-            category: "Commerce",
-            type: "Full time",
-            salary: "$38000-$40000",
-            location: "Boston, USA",
-            timePosted: "26 min ago"
-        }
-    ];
+    const [jobs, setJobs] = useState([]);
+    const [loading, setLoading] = useState(true);
 
-    // Mock Data Featured Companies
+    useEffect(() => {
+        const fetchJobs = async () => {
+            try {
+                const data = await jobService.getLatestJobs(20);
+                // API trả về array trực tiếp theo ví dụ
+                if (Array.isArray(data)) {
+                    setJobs(data);
+                } else {
+                    console.error("API response format error:", data);
+                    setJobs([]);
+                }
+            } catch (error) {
+                console.error("Failed to fetch jobs:", error);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchJobs();
+    }, []);
+
+    // Helper để tính thời gian đăng (đơn giản hoá)
+    const getTimePosted = (dateString) => {
+        if (!dateString) return "Mới đăng";
+        const date = new Date(dateString);
+        const now = new Date();
+        const diffTime = Math.abs(now - date);
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        if (diffDays <= 1) return "Hôm nay";
+        if (diffDays < 30) return `${diffDays} ngày trước`;
+        return date.toLocaleDateString('vi-VN');
+    };
+
+    // Helper format lương
+    const formatSalary = (min, max) => {
+        if (!min && !max) return "Thỏa thuận";
+        const format = (n) => n ? (n / 1000000) + " triệu" : "";
+        if (min && max) return `${format(min)} - ${format(max)}`;
+        if (min) return `Từ ${format(min)}`;
+        if (max) return `Đến ${format(max)}`;
+        return "Thỏa thuận";
+    };
+
+    // Mock Data Featured Companies (Giữ nguyên hoặc call API nếu có)
     const featuredCompanies = [
         { name: "Instagram", logo: "https://upload.wikimedia.org/wikipedia/commons/e/e7/Instagram_logo_2016.svg", jobs: 8, desc: "Elit velit mauris aliquam est diam. Leo sagittis consectetur." },
         { name: "Tesla", logo: "https://upload.wikimedia.org/wikipedia/commons/e/e8/Tesla_logo.png", jobs: 18, desc: "At pellentesque amet odio cras imperdiet nisl. Ac magna aliquet." },
@@ -91,7 +79,7 @@ const JobPage = () => {
                         {/* Header: Count & Sort */}
                         <div className="flex flex-col md:flex-row justify-between items-center bg-white p-4 rounded-lg border border-gray-100">
                             <span className="text-gray-500 text-sm mb-2 md:mb-0">
-                                Hiển thị <span className="font-bold text-gray-800">1-6</span> trong tổng số <span className="font-bold text-gray-800">10</span> kết quả
+                                Hiển thị <span className="font-bold text-gray-800">{jobs.length}</span> kết quả công việc mới nhất
                             </span>
                             <div className="flex items-center gap-2">
                                 <select className="bg-white border border-gray-200 text-gray-700 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2">
@@ -104,26 +92,39 @@ const JobPage = () => {
 
                         {/* Job List */}
                         <div className="space-y-4">
-                            {jobs.map(job => (
-                                <JobCard key={job.id} job={job} />
-                            ))}
+                            {loading ? (
+                                <div className="text-center py-10">Đang tải công việc...</div>
+                            ) : jobs.length > 0 ? (
+                                jobs.map(job => (
+                                    <JobCard
+                                        key={job.id}
+                                        job={{
+                                            id: job.id,
+                                            title: job.position,
+                                            company: job.companyName,
+                                            logo: job.companyLogo,
+                                            category: job.experienceLevel, // Tạm dùng field này
+                                            type: job.jobType,
+                                            salary: formatSalary(job.minSalary, job.maxSalary),
+                                            location: job.location,
+                                            timePosted: getTimePosted(job.createdAt)
+                                        }}
+                                    />
+                                ))
+                            ) : (
+                                <div className="text-center py-10 text-gray-500">Không có công việc nào.</div>
+                            )}
                         </div>
 
-                        {/* Pagination */}
-                        <div className="flex justify-center items-center gap-2 mt-8">
-                            <button className="w-10 h-10 flex items-center justify-center rounded-lg bg-[#00B4D8] text-white font-bold shadow-md">
-                                1
-                            </button>
-                            <button className="w-10 h-10 flex items-center justify-center rounded-lg bg-white border border-gray-200 text-gray-600 hover:bg-gray-50 transition-colors">
-                                2
-                            </button>
-                            <button className="h-10 px-4 flex items-center gap-1 rounded-lg bg-white border border-gray-200 text-gray-600 hover:bg-gray-50 transition-colors font-medium">
-                                Tiếp <FaChevronRight size={12} />
-                            </button>
-                        </div>
+                        {/* Pagination - Tạm ẩn hoặc giữ UI tĩnh */}
+                        {jobs.length > 0 && (
+                            <div className="flex justify-center items-center gap-2 mt-8">
+                                <button className="w-10 h-10 flex items-center justify-center rounded-lg bg-[#00B4D8] text-white font-bold shadow-md">1</button>
+                            </div>
+                        )}
 
-                        {/* --- FEATURED COMPANIES SECTION (Như ảnh dưới) --- */}
-                        <div className="pt-12">
+                        {/* --- FEATURED COMPANIES SECTION --- */}
+                        {/* <div className="pt-12">
                             <div className="text-center mb-10">
                                 <h2 className="text-3xl font-bold text-gray-800 mb-3">Thương hiệu lớn tiêu biểu</h2>
                                 <p className="text-gray-500">Hàng trăm thương hiệu lớn đang tuyển dụng trên ITWork</p>
@@ -145,7 +146,7 @@ const JobPage = () => {
                                     </div>
                                 ))}
                             </div>
-                        </div>
+                        </div> */}
 
                     </div>
                 </div>

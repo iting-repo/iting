@@ -8,6 +8,12 @@ const applicationService = {
             params: { ...params, employerId }
         });
         return response;
+    },
+
+    // Nộp đơn ứng tuyển
+    applyJob: async (applicationData) => {
+        const response = await axiosInstance.post('/applications/apply', applicationData);
+        return response;
     }
 };
 

@@ -90,7 +90,15 @@ const JobApplications = () => {
                         <tr key={app.id} className="hover:bg-blue-50/30 transition-colors group">
                            <td className="p-5">
                               <div className="flex items-center gap-4">
-                                 <img src={app.avatar || "https://i.pravatar.cc/150?img=12"} alt="Avatar" className="w-10 h-10 rounded-full object-cover border border-gray-200" />
+                                 {/* Avatar Logic */}
+                                 {app.avatar ? (
+                                    <img src={app.avatar} alt="Avatar" className="w-10 h-10 rounded-full object-cover border border-gray-200" />
+                                 ) : (
+                                    <div className="w-10 h-10 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center font-bold border border-blue-200">
+                                       {app.applicantName ? app.applicantName.charAt(0).toUpperCase() : 'U'}
+                                    </div>
+                                 )}
+
                                  <div>
                                     <div
                                        className="font-bold text-gray-800 cursor-pointer hover:text-[#3AB4E6] transition-colors"
@@ -102,8 +110,8 @@ const JobApplications = () => {
                                  </div>
                               </div>
                            </td>
-                           <td className="p-5 text-sm text-gray-600 font-medium">--</td> {/* API chưa trả về Exp */}
-                           <td className="p-5 text-sm text-gray-600">--</td> {/* API chưa trả về Edu */}
+                           <td className="p-5 text-sm text-gray-600 font-medium">Chưa có</td> {/* API chưa trả về Exp */}
+                           <td className="p-5 text-sm text-gray-600">Chưa có</td> {/* API chưa trả về Edu */}
                            <td className="p-5 text-sm text-gray-500">
                               {new Date(app.appliedAt).toLocaleDateString("en-GB", { day: '2-digit', month: 'short', year: 'numeric' })}
                            </td>

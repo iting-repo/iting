@@ -1,9 +1,10 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom'; // 1. Import hook
 import { FaMapMarkerAlt, FaDollarSign, FaClock, FaBriefcase, FaRegBookmark } from 'react-icons/fa';
 
 const JobCard = ({ job }) => {
     const navigate = useNavigate(); // 2. Khởi tạo hook
+    const [imageError, setImageError] = useState(false);
 
     // Hàm xử lý chuyển trang
     const handleNavigate = () => {
@@ -31,9 +32,20 @@ const JobCard = ({ job }) => {
                 {/* Logo - Bấm vào logo cũng chuyển trang luôn cho tiện */}
                 <div
                     onClick={handleNavigate}
-                    className="w-12 h-12 rounded-lg flex-shrink-0 border border-gray-100 p-1.5 bg-white flex items-center justify-center cursor-pointer"
+                    className="w-12 h-12 rounded-lg flex-shrink-0 border border-gray-100 p-1.5 bg-white flex items-center justify-center cursor-pointer overflow-hidden"
                 >
-                    <img src={job.logo} alt={job.company} className="w-full h-full object-contain" />
+                    {job.logo && !imageError ? (
+                        <img
+                            src={job.logo}
+                            alt={job.company}
+                            className="w-full h-full object-contain"
+                            onError={() => setImageError(true)}
+                        />
+                    ) : (
+                        <div className="w-full h-full bg-blue-50 text-blue-500 flex items-center justify-center font-bold text-lg rounded-md">
+                            {job.company ? job.company.charAt(0).toUpperCase() : 'C'}
+                        </div>
+                    )}
                 </div>
 
                 {/* Content */}
