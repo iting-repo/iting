@@ -28,12 +28,12 @@ const CandidateDetailModal = ({ candidate, onClose }) => {
                         <div className="flex items-end gap-6">
                             <img
                                 src={candidate.avatar || "https://via.placeholder.com/150"}
-                                alt={candidate.name}
+                                alt={candidate.applicantName}
                                 className="w-32 h-32 rounded-full border-4 border-white shadow-lg object-cover bg-white"
                             />
                             <div className="mb-2">
-                                <h2 className="text-3xl font-bold text-gray-800">{candidate.name}</h2>
-                                <p className="text-gray-500 font-medium">{candidate.position}</p>
+                                <h2 className="text-3xl font-bold text-gray-800">{candidate.applicantName}</h2>
+                                <p className="text-gray-500 font-medium">{candidate.jobPosition}</p>
                             </div>
                         </div>
 
@@ -56,22 +56,21 @@ const CandidateDetailModal = ({ candidate, onClose }) => {
                         {/* Cột Trái: Thông tin chính */}
                         <div className="lg:col-span-2 space-y-8">
                             <section>
-                                <h3 className="text-lg font-bold text-gray-800 mb-4 border-b pb-2">Thông tin giới thiệu</h3>
-                                <p className="text-gray-600 leading-relaxed text-sm">
-                                    {candidate.bio || "Ứng viên chưa cập nhật thông tin giới thiệu. Tuy nhiên dựa trên kinh nghiệm làm việc, đây là một ứng viên tiềm năng..."}
+                                <h3 className="text-lg font-bold text-gray-800 mb-4 border-b pb-2">Thư xin việc (Cover Letter)</h3>
+                                <p className="text-gray-600 leading-relaxed text-sm whitespace-pre-line">
+                                    {candidate.coverLetter || "Ứng viên chưa nhập thư xin việc."}
                                 </p>
                             </section>
 
                             <section>
                                 <h3 className="text-lg font-bold text-gray-800 mb-4 border-b pb-2">Kinh nghiệm làm việc</h3>
                                 <div className="space-y-4">
-                                    {/* Mock Item */}
+                                    {/* Mock Item - API chưa trả về experience */}
                                     <div className="flex gap-4">
                                         <div className="mt-1"><FaUserTie className="text-gray-400" /></div>
                                         <div>
-                                            <h4 className="font-bold text-gray-800">Senior UI Designer</h4>
-                                            <p className="text-sm text-gray-500">Google Inc • 2020 - Present</p>
-                                            <p className="text-sm text-gray-600 mt-1">Chịu trách nhiệm thiết kế hệ thống Design System...</p>
+                                            <h4 className="font-bold text-gray-800">Chưa có thông tin kinh nghiệm</h4>
+                                            <p className="text-sm text-gray-500">...</p>
                                         </div>
                                     </div>
                                 </div>
@@ -87,14 +86,23 @@ const CandidateDetailModal = ({ candidate, onClose }) => {
                                 <div className="flex items-center justify-between bg-white p-3 rounded-lg border border-gray-200">
                                     <div className="flex items-center gap-3">
                                         <img src="https://upload.wikimedia.org/wikipedia/commons/8/87/PDF_file_icon.svg" className="w-8 h-8" alt="PDF" />
-                                        <div>
-                                            <p className="text-sm font-bold text-gray-700 truncate w-24">CV_{candidate.name}</p>
+                                        <div className="overflow-hidden">
+                                            <p className="text-sm font-bold text-gray-700 truncate w-32" title={candidate.cvTitle || candidate.cvUrl}>
+                                                {candidate.cvTitle || (candidate.cvUrl ? candidate.cvUrl.split('/').pop() : 'No CV File')}
+                                            </p>
                                             <p className="text-xs text-gray-400">PDF</p>
                                         </div>
                                     </div>
-                                    <button className="p-2 text-blue-500 hover:bg-blue-50 rounded-lg transition-colors">
-                                        <FaDownload />
-                                    </button>
+                                    {candidate.cvUrl && (
+                                        <a
+                                            href={candidate.cvUrl}
+                                            target="_blank"
+                                            rel="noreferrer"
+                                            className="p-2 text-blue-500 hover:bg-blue-50 rounded-lg transition-colors"
+                                        >
+                                            <FaDownload />
+                                        </a>
+                                    )}
                                 </div>
                             </div>
 
@@ -104,16 +112,16 @@ const CandidateDetailModal = ({ candidate, onClose }) => {
                                 <div className="space-y-4">
                                     <div className="flex items-start gap-3">
                                         <div className="p-2 bg-blue-50 rounded-full text-blue-600"><FaPhone size={14} /></div>
-                                        <div>
+                                        <div className="overflow-hidden">
                                             <p className="text-xs text-gray-400 uppercase font-bold">Số điện thoại</p>
-                                            <p className="text-sm font-medium text-gray-700">{candidate.phone || "0987 654 321"}</p>
+                                            <p className="text-sm font-medium text-gray-700 truncate">{candidate.applicantPhone || "N/A"}</p>
                                         </div>
                                     </div>
                                     <div className="flex items-start gap-3">
                                         <div className="p-2 bg-blue-50 rounded-full text-blue-600"><FaEnvelope size={14} /></div>
-                                        <div>
+                                        <div className="overflow-hidden">
                                             <p className="text-xs text-gray-400 uppercase font-bold">Email</p>
-                                            <p className="text-sm font-medium text-gray-700">{candidate.email || "email@example.com"}</p>
+                                            <p className="text-sm font-medium text-gray-700 truncate" title={candidate.applicantEmail}>{candidate.applicantEmail || "N/A"}</p>
                                         </div>
                                     </div>
                                 </div>

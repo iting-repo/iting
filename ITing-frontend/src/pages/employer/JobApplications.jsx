@@ -48,7 +48,7 @@ const JobApplications = () => {
             </button>
             <div>
                <h2 className="text-2xl font-bold text-gray-800">Danh sách ứng viên</h2>
-               <p className="text-gray-500 text-sm">Công việc: UI/UX Designer (ID: #{id})</p>
+               {/* <p className="text-gray-500 text-sm">Công việc: UI/UX Designer (ID: #{id})</p> */}
             </div>
          </div>
 

@@ -1,5 +1,6 @@
-import { call, put, takeLatest } from 'redux-saga/effects';
+import { call, put, takeLatest, all } from 'redux-saga/effects';
 import jobService from '../../services/jobService';
+import applicationService from '../../services/applicationService';
 import {
     fetchJobsRequest, fetchJobsSuccess, fetchJobsFailure,
     fetchJobDetailRequest, fetchJobDetailSuccess, fetchJobDetailFailure,
@@ -39,6 +40,29 @@ function* handleFetchCompanyJobs(action) {
         if (!employerId) throw new Error("Missing employerId");
 
         const data = yield call(jobService.getCompanyJobs, employerId, params);
+
+        // Fetch application counts for each job
+        if (data && data.content && Array.isArray(data.content)) {
+            const jobs = data.content;
+            const applicationEffects = jobs.map(job =>
+                call(applicationService.getJobApplications, job.id, employerId, { page: 0, size: 1 })
+            );
+
+            const applicationResponses = yield all(applicationEffects);
+
+            const enrichedJobs = jobs.map((job, index) => {
+                const appResponse = applicationResponses[index];
+                // Check if response has totalElements (Page) or is an array
+                const totalApps = appResponse?.totalElements !== undefined
+                    ? appResponse.totalElements
+                    : (Array.isArray(appResponse) ? appResponse.length : 0);
+
+                return { ...job, applicationCount: totalApps };
+            });
+
+            data.content = enrichedJobs;
+        }
+
         yield put(fetchCompanyJobsSuccess(data));
     } catch (error) {
         const message = error.message || "Failed to fetch company jobs";

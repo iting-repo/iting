@@ -1,16 +1,23 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { BsBriefcase, BsCardChecklist, BsThreeDotsVertical, BsEye, BsXCircle } from 'react-icons/bs';
 import { FaUserFriends } from 'react-icons/fa';
 // 1. Thêm import useNavigate
 import { useNavigate, Link } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
-import { fetchCompanyJobsRequest } from '../../store/job/jobSlice'; // Import action
+import { fetchCompanyRequest } from '../../store/company/companySlice';
 
 const EmployerDashboard = () => {
     const navigate = useNavigate();
     const dispatch = useDispatch();
     const { currentUser } = useSelector((state) => state.auth);
     const { companyJobs, totalCompanyJobs, isLoading } = useSelector((state) => state.job);
+    const { profile: companyProfile } = useSelector((state) => state.company);
+
+    useEffect(() => {
+        if (currentUser?.userId && !companyProfile) {
+            dispatch(fetchCompanyRequest(currentUser.userId));
+        }
+    }, [dispatch, currentUser, companyProfile]);
 
     // Calculate stats
     const totalApplications = companyJobs.reduce((acc, job) => acc + (job.applicationCount || 0), 0);
@@ -26,12 +33,14 @@ const EmployerDashboard = () => {
         else setActiveMenu(id);
     };
 
+    const displayName = companyProfile?.name || currentUser?.companyName || currentUser?.name || "Doanh nghiệp";
+
     return (
         <div className="p-8 bg-white rounded-xl shadow-sm border border-gray-100 min-h-screen">
 
             {/* Header & Stats (Giữ nguyên) */}
             <div className="mb-10">
-                <h1 className="text-2xl font-bold text-gray-800 mb-2">Xin chào, (Tên công ty)</h1>
+                <h1 className="text-2xl font-bold text-gray-800 mb-2">Xin chào, {displayName}</h1>
                 <p className="text-gray-500 mb-8">Dưới đây là thống kê các công việc và số lượng ứng viên đã ứng tuyển</p>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

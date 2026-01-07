@@ -15,8 +15,36 @@ const Header = () => {
   const location = useLocation();
 
   const { currentUser } = useSelector((state) => state.auth);
+  const { profile: companyProfile } = useSelector((state) => state.company);
+  const { profile: userProfile } = useSelector((state) => state.user);
+
   const role = currentUser ? currentUser.role : 'guest';
-  const user = currentUser ? currentUser : null;
+
+  // Determine display name and avatar based on role and profile data
+  let displayName = "User";
+  let displayAvatar = currentUser?.avatar;
+
+  if (currentUser) {
+    if (role === 'EMPLOYER') {
+      displayName = companyProfile?.name || currentUser.companyName || currentUser.name || "Doanh nghiệp";
+      if (companyProfile?.logoUrl) displayAvatar = companyProfile.logoUrl;
+    } else if (role === 'CANDIDATE') {
+      if (userProfile?.lastName || userProfile?.firstName) {
+        displayName = `${userProfile.lastName || ''} ${userProfile.firstName || ''}`.trim();
+      } else {
+        displayName = currentUser.name || "Ứng viên";
+      }
+      if (userProfile?.avatarUrl) displayAvatar = userProfile.avatarUrl;
+    } else {
+      displayName = currentUser.name;
+    }
+  }
+
+  const user = currentUser ? {
+    ...currentUser,
+    name: displayName,
+    avatar: displayAvatar
+  } : null;
 
   const handleLogout = () => {
     // 1. Navigate về trang chủ trước (để thoát khỏi PrivateRoute)
