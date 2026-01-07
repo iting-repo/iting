@@ -3,20 +3,21 @@ import { BsBriefcase, BsCardChecklist, BsThreeDotsVertical, BsEye, BsXCircle } f
 import { FaUserFriends } from 'react-icons/fa';
 // 1. Thêm import useNavigate
 import { useNavigate, Link } from 'react-router-dom';
+import { useDispatch, useSelector } from 'react-redux';
+import { fetchCompanyJobsRequest } from '../../store/job/jobSlice'; // Import action
 
 const EmployerDashboard = () => {
-    const navigate = useNavigate(); // 2. Khởi tạo hook điều hướng
+    const navigate = useNavigate();
+    const dispatch = useDispatch();
+    const { currentUser } = useSelector((state) => state.auth);
+    const { companyJobs, totalCompanyJobs, isLoading } = useSelector((state) => state.job);
 
-    // Mock Data (Giữ nguyên)
-    const stats = { postedJobs: 10, totalApplications: 100 };
+    // Calculate stats
+    const totalApplications = companyJobs.reduce((acc, job) => acc + (job.applicationCount || 0), 0);
+    const stats = { postedJobs: totalCompanyJobs, totalApplications };
 
-    const recentJobs = [
-        { id: 1, title: 'UI/UX Designer', type: 'Full Time', daysLeft: 5, status: 'active', applicants: 798 },
-        { id: 2, title: 'Senior UX Designer', type: 'Internship', daysLeft: 8, status: 'active', applicants: 185 },
-        { id: 3, title: 'Technical Support Specialist', type: 'Part Time', daysLeft: 4, status: 'active', applicants: 556 },
-        { id: 4, title: 'Junior Graphic Designer', type: 'Full Time', daysLeft: 3, status: 'active', applicants: 583 },
-        { id: 5, title: 'Front End Developer', type: 'Full Time', deadline: '30/10/2025', status: 'expired', applicants: 740 },
-    ];
+    // Recent jobs (take first 5)
+    const recentJobs = companyJobs.slice(0, 5);
 
     const [activeMenu, setActiveMenu] = useState(null);
 
@@ -77,81 +78,88 @@ const EmployerDashboard = () => {
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-100">
-                            {recentJobs.map((job) => (
-                                <tr key={job.id} className="hover:bg-gray-50/50 transition-colors">
+                            {recentJobs.length > 0 ? (
+                                recentJobs.map((job) => (
+                                    <tr key={job.id} className="hover:bg-gray-50/50 transition-colors">
 
-                                    <td className="p-4">
-                                        {/* 4. Click vào tiêu đề cũng chuyển sang trang chi tiết */}
-                                        <div
-                                            onClick={() => navigate(`/employer/manage-jobs/${job.id}`)}
-                                            className="font-bold text-gray-800 text-base mb-1 cursor-pointer hover:text-[#3AB4E6] transition-colors"
-                                        >
-                                            {job.title}
-                                        </div>
-                                        <div className="text-sm text-gray-500 flex gap-2">
-                                            <span className="bg-gray-100 px-2 py-0.5 rounded text-xs">{job.type}</span>
-                                            <span className="text-gray-400">•</span>
-                                            <span className="text-gray-400 text-xs mt-0.5">
-                                                {job.status === 'active' ? `Còn ${job.daysLeft} ngày` : job.deadline}
-                                            </span>
-                                        </div>
-                                    </td>
-
-                                    <td className="p-4">
-                                        {job.status === 'active' ? (
-                                            <span className="inline-flex items-center gap-1.5 text-green-600 bg-green-50 px-3 py-1 rounded-full text-xs font-bold border border-green-100">
-                                                <span className="w-1.5 h-1.5 rounded-full bg-green-600"></span> Còn hoạt động
-                                            </span>
-                                        ) : (
-                                            <span className="inline-flex items-center gap-1.5 text-red-500 bg-red-50 px-3 py-1 rounded-full text-xs font-bold border border-red-100">
-                                                <BsXCircle /> Đã hết hạn
-                                            </span>
-                                        )}
-                                    </td>
-
-                                    <td className="p-4">
-                                        <div className="flex items-center gap-2 text-gray-600">
-                                            <FaUserFriends className="text-gray-400" />
-                                            <span className="font-semibold">{job.applicants}</span>
-                                        </div>
-                                    </td>
-
-                                    <td className="p-4 text-right relative">
-                                        <div className="flex items-center justify-end gap-3">
-                                            <button
-                                                onClick={() => navigate(`/employer/job/${job.id}/applications`)}
-                                                className="bg-[#EAF6FF] text-[#3AB4E6] hover:bg-[#3AB4E6] hover:text-white text-xs font-bold px-4 py-2 rounded-lg transition-all shadow-sm"
+                                        <td className="p-4">
+                                            {/* 4. Click vào tiêu đề cũng chuyển sang trang chi tiết */}
+                                            <div
+                                                onClick={() => navigate(`/employer/manage-jobs/${job.id}`, { state: { job } })}
+                                                className="font-bold text-gray-800 text-base mb-1 cursor-pointer hover:text-[#3AB4E6] transition-colors"
                                             >
-                                                Xem Hồ Sơ Ứng Viên
-                                            </button>
+                                                {job.position || job.title}
+                                            </div>
+                                            <div className="text-sm text-gray-500 flex gap-2">
+                                                <span className="bg-gray-100 px-2 py-0.5 rounded text-xs">{job.jobType}</span>
+                                                <span className="text-gray-400">•</span>
+                                                <span className="text-gray-400 text-xs mt-0.5">
+                                                    {/* Giả sử API trả về dueDate format chuẩn */}
+                                                    Due: {job.dueDate}
+                                                </span>
+                                            </div>
+                                        </td>
 
-                                            <button
-                                                onClick={() => toggleMenu(job.id)}
-                                                className={`w-9 h-9 rounded-full flex items-center justify-center transition-colors ${activeMenu === job.id ? 'bg-gray-200 text-gray-700' : 'hover:bg-gray-100 text-gray-400'}`}
-                                            >
-                                                <BsThreeDotsVertical />
-                                            </button>
-
-                                            {/* Dropdown Menu Popup */}
-                                            {activeMenu === job.id && (
-                                                <div className="absolute right-8 top-12 w-48 bg-white shadow-xl rounded-lg border border-gray-100 z-10 animate-fade-in-up overflow-hidden">
-                                                    {/* 5. Gắn link điều hướng vào nút Xem chi tiết */}
-                                                    <button
-                                                        onClick={() => navigate(`/employer/manage-jobs/${job.id}`)}
-                                                        className="w-full text-left px-4 py-3 text-sm text-gray-600 hover:bg-gray-50 hover:text-[#3AB4E6] flex items-center gap-2 border-b border-gray-50"
-                                                    >
-                                                        <BsEye /> Xem chi tiết
-                                                    </button>
-
-                                                    <button className="w-full text-left px-4 py-3 text-sm text-gray-600 hover:bg-red-50 hover:text-red-500 flex items-center gap-2">
-                                                        <BsXCircle /> Đánh dấu hết hạn
-                                                    </button>
-                                                </div>
+                                        <td className="p-4">
+                                            {job.status === 'ACTIVE' ? (
+                                                <span className="inline-flex items-center gap-1.5 text-green-600 bg-green-50 px-3 py-1 rounded-full text-xs font-bold border border-green-100">
+                                                    <span className="w-1.5 h-1.5 rounded-full bg-green-600"></span> Active
+                                                </span>
+                                            ) : (
+                                                <span className="inline-flex items-center gap-1.5 text-red-500 bg-red-50 px-3 py-1 rounded-full text-xs font-bold border border-red-100">
+                                                    <BsXCircle /> Expired
+                                                </span>
                                             )}
-                                        </div>
-                                    </td>
+                                        </td>
+
+                                        <td className="p-4">
+                                            <div className="flex items-center gap-2 text-gray-600">
+                                                <FaUserFriends className="text-gray-400" />
+                                                <span className="font-semibold">{job.applicationCount || 0}</span>
+                                            </div>
+                                        </td>
+
+                                        <td className="p-4 text-right relative">
+                                            <div className="flex items-center justify-end gap-3">
+                                                <button
+                                                    onClick={() => navigate(`/employer/job/${job.id}/applications`)}
+                                                    className="bg-[#EAF6FF] text-[#3AB4E6] hover:bg-[#3AB4E6] hover:text-white text-xs font-bold px-4 py-2 rounded-lg transition-all shadow-sm"
+                                                >
+                                                    Xem Hồ Sơ
+                                                </button>
+
+                                                <button
+                                                    onClick={() => toggleMenu(job.id)}
+                                                    className={`w-9 h-9 rounded-full flex items-center justify-center transition-colors ${activeMenu === job.id ? 'bg-gray-200 text-gray-700' : 'hover:bg-gray-100 text-gray-400'}`}
+                                                >
+                                                    <BsThreeDotsVertical />
+                                                </button>
+
+                                                {/* Dropdown Menu Popup */}
+                                                {activeMenu === job.id && (
+                                                    <div className="absolute right-8 top-12 w-48 bg-white shadow-xl rounded-lg border border-gray-100 z-10 animate-fade-in-up overflow-hidden">
+                                                        {/* 5. Gắn link điều hướng vào nút Xem chi tiết */}
+                                                        <button
+                                                            onClick={() => navigate(`/employer/manage-jobs/${job.id}`, { state: { job } })}
+                                                            className="w-full text-left px-4 py-3 text-sm text-gray-600 hover:bg-gray-50 hover:text-[#3AB4E6] flex items-center gap-2 border-b border-gray-50"
+                                                        >
+                                                            <BsEye /> Xem chi tiết
+                                                        </button>
+
+                                                        <button className="w-full text-left px-4 py-3 text-sm text-gray-600 hover:bg-red-50 hover:text-red-500 flex items-center gap-2">
+                                                            <BsXCircle /> Đánh dấu hết hạn
+                                                        </button>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </td>
+                                    </tr>
+                                ))
+                            ) : (
+                                <tr>
+                                    <td colSpan="4" className="text-center py-8 text-gray-500">Chưa có công việc nào</td>
                                 </tr>
-                            ))}
+                            )}
                         </tbody>
                     </table>
                 </div>

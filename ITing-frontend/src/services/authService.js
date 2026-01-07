@@ -25,12 +25,7 @@ const authService = {
         return response;
     },
 
-    // API Get Current User (Check Session)
-    getCurrentUser: async () => {
-        // Gọi API: GET /auth/me (hoặc endpoint tương tự để lấy info user từ token)
-        const response = await axiosInstance.get('/auth/me');
-        return response;
-    },
+
 
     // Logout
     logout: () => {

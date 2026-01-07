@@ -12,6 +12,14 @@ const jobService = {
     getJobDetail: async (id) => {
         const response = await axiosInstance.get(`/public/jobs/${id}`);
         return response;
+    },
+
+    // 3. Lấy danh sách công việc của công ty (Employer)
+    getCompanyJobs: async (employerId, params) => {
+        const response = await axiosInstance.get('/jobs/my-jobs', {
+            params: { ...params, employerId }
+        });
+        return response;
     }
 };
 

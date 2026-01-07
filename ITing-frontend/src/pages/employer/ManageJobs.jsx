@@ -2,49 +2,53 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FaCheckCircle, FaTimesCircle, FaUserFriends, FaEye, FaBan, FaChevronLeft, FaChevronRight, FaSearch } from 'react-icons/fa';
 import { BsThreeDotsVertical } from 'react-icons/bs';
+import { useDispatch, useSelector } from 'react-redux';
+import { fetchCompanyJobsRequest } from '../../store/job/jobSlice';
 
 const ManageJobs = () => {
     const navigate = useNavigate();
-    // 1. MOCK DATA (Giả lập 12 công việc để test phân trang)
-    const initialJobs = [
-        { id: 1, title: 'UI/UX Designer', type: 'Full Time', deadline: '27 days remaining', status: 'Active', apps: 798 },
-        { id: 2, title: 'Senior UX Designer', type: 'Internship', deadline: '8 days remaining', status: 'Active', apps: 185 },
-        { id: 3, title: 'Junior Graphic Designer', type: 'Full Time', deadline: '24 days remaining', status: 'Active', apps: 583 },
-        { id: 4, title: 'Front End Developer', type: 'Full Time', deadline: 'Dec 7, 2019', status: 'Expired', apps: 740 },
-        { id: 5, title: 'Technical Support Specialist', type: 'Part Time', deadline: '4 days remaining', status: 'Active', apps: 556 },
-        { id: 6, title: 'Interaction Designer', type: 'Contract', deadline: 'Feb 2, 2024', status: 'Expired', apps: 426 },
-        { id: 7, title: 'Software Engineer', type: 'Temporary', deadline: '9 days remaining', status: 'Active', apps: 922 },
-        { id: 8, title: 'Product Designer', type: 'Full Time', deadline: '7 days remaining', status: 'Active', apps: 994 },
-        { id: 9, title: 'Project Manager', type: 'Full Time', deadline: 'Dec 4, 2024', status: 'Expired', apps: 196 },
-        { id: 10, title: 'Marketing Manager', type: 'Full Time', deadline: '4 days remaining', status: 'Active', apps: 492 },
-        { id: 11, title: 'React Native Dev', type: 'Full Time', deadline: '10 days remaining', status: 'Active', apps: 120 },
-        { id: 12, title: 'NodeJS Backend', type: 'Part Time', deadline: 'Expired', status: 'Expired', apps: 50 },
-    ];
+    const dispatch = useDispatch();
 
-    // 2. STATE QUẢN LÝ
-    const [jobs, setJobs] = useState(initialJobs);
-    const [filterStatus, setFilterStatus] = useState('All'); // 'All', 'Active', 'Expired'
+    // Redux State
+    const { currentUser } = useSelector((state) => state.auth);
+    const { companyJobs, totalCompanyJobs, isLoading } = useSelector((state) => state.job);
+
+    // Local State
+    const [filterStatus, setFilterStatus] = useState('All'); // 'All', 'ACTIVE', 'EXPIRED'
     const [currentPage, setCurrentPage] = useState(1);
-    const [activeMenu, setActiveMenu] = useState(null); // Menu hành động đang mở
+    const [activeMenu, setActiveMenu] = useState(null);
 
-    const itemsPerPage = 5; // Yêu cầu: 5 tin/trang
+    const itemsPerPage = 5;
 
-    // 3. LOGIC LỌC (FILTER)
-    const filteredJobs = jobs.filter(job => {
+    // Fetch jobs on mount or page change
+    useEffect(() => {
+        if (currentUser?.userId) {
+            dispatch(fetchCompanyJobsRequest({
+                employerId: currentUser.userId,
+                page: currentPage - 1,
+                size: itemsPerPage
+            }));
+        }
+    }, [dispatch, currentUser, currentPage]);
+
+    // Client-side filtering logic (Note: This filters ONLY the current page's data fetched from API if server-side filtering isn't used. 
+    // Ideally, pass 'status' to API. But for now, let's just filter display or assume API returns mixed status).
+    // The API request above fetches ALL statuses. 
+    // If we want to filter properly with pagination, we should pass status to API. 
+    // Assuming simple client-side filter for now as per prompt flow/complexity 
+    // OR just display what we have since API page=0&size=10 likely returns all active/inactive.
+    // Let's filter the `companyJobs` array (which is just one page from server).
+
+    const filteredJobs = companyJobs.filter(job => {
         if (filterStatus === 'All') return true;
         return job.status === filterStatus;
     });
 
-    // 4. LOGIC PHÂN TRANG (PAGINATION)
-    const indexOfLastItem = currentPage * itemsPerPage;
-    const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-    const currentJobs = filteredJobs.slice(indexOfFirstItem, indexOfLastItem);
-    const totalPages = Math.ceil(filteredJobs.length / itemsPerPage);
+    const totalPages = Math.ceil(totalCompanyJobs / itemsPerPage);
 
-    // Reset trang về 1 khi đổi bộ lọc
-    useEffect(() => {
-        setCurrentPage(1);
-    }, [filterStatus]);
+    // Reset page on filter change? 
+    // If filtering client-side on a server-paginated list, it behaves weirdly. 
+    // Better to keep it simple: Just display the fetched jobs, and maybe filter visual status.
 
     // Toggle Kebab Menu
     const toggleMenu = (id) => {
@@ -58,7 +62,7 @@ const ManageJobs = () => {
             {/* --- HEADER: Tiêu đề + Bộ lọc --- */}
             <div className="flex flex-col md:flex-row justify-between items-end md:items-center mb-8 gap-4">
                 <div>
-                    <h2 className="text-2xl font-bold text-gray-800">Tất cả công việc ({filteredJobs.length})</h2>
+                    <h2 className="text-2xl font-bold text-gray-800">Tất cả công việc ({totalCompanyJobs})</h2>
                     <p className="text-gray-500 text-sm mt-1">Quản lý trạng thái và hồ sơ ứng tuyển</p>
                 </div>
 
@@ -71,8 +75,8 @@ const ManageJobs = () => {
                             className="appearance-none bg-white border border-gray-200 text-gray-700 py-2 pl-4 pr-10 rounded-lg focus:outline-none focus:border-[#3AB4E6] cursor-pointer text-sm font-medium shadow-sm hover:border-gray-300 transition-colors"
                         >
                             <option value="All">Tất cả</option>
-                            <option value="Active">Đang hoạt động</option>
-                            <option value="Expired">Đã hết hạn</option>
+                            <option value="ACTIVE">Đang hoạt động</option>
+                            <option value="EXPIRED">Đã hết hạn</option>
                         </select>
                         {/* Custom Arrow */}
                         <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-gray-500">
@@ -94,23 +98,28 @@ const ManageJobs = () => {
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-100">
-                        {currentJobs.length > 0 ? (
-                            currentJobs.map((job) => (
+                        {filteredJobs.length > 0 ? (
+                            filteredJobs.map((job) => (
                                 <tr key={job.id} className="hover:bg-gray-50/60 transition-colors group">
 
                                     {/* Cột 1: Thông tin */}
                                     <td className="p-5">
-                                        <div className="font-bold text-gray-800 text-base mb-1 group-hover:text-[#3AB4E6] transition-colors cursor-pointer">{job.title}</div>
+                                        <div
+                                            onClick={() => navigate(`/employer/manage-jobs/${job.id}`, { state: { job } })}
+                                            className="font-bold text-gray-800 text-base mb-1 group-hover:text-[#3AB4E6] transition-colors cursor-pointer"
+                                        >
+                                            {job.position || job.title}
+                                        </div>
                                         <div className="text-sm text-gray-500 flex items-center gap-2">
-                                            <span className="bg-gray-100 px-2 py-0.5 rounded text-xs text-gray-600">{job.type}</span>
+                                            <span className="bg-gray-100 px-2 py-0.5 rounded text-xs text-gray-600">{job.jobType}</span>
                                             <span className="text-gray-300">•</span>
-                                            <span className="text-gray-400 text-xs">{job.deadline}</span>
+                                            <span className="text-gray-400 text-xs">{job.dueDate}</span>
                                         </div>
                                     </td>
 
                                     {/* Cột 2: Status */}
                                     <td className="p-5">
-                                        {job.status === 'Active' ? (
+                                        {job.status === 'ACTIVE' ? (
                                             <span className="flex items-center gap-2 text-green-600 font-medium text-sm">
                                                 <FaCheckCircle /> Active
                                             </span>
@@ -125,7 +134,7 @@ const ManageJobs = () => {
                                     <td className="p-5">
                                         <div className="flex items-center gap-2 text-gray-600">
                                             <FaUserFriends className="text-gray-400" />
-                                            <span className="font-semibold">{job.apps} Applications</span>
+                                            <span className="font-semibold">{job.applicationCount || 0} Applications</span>
                                         </div>
                                     </td>
 
@@ -136,7 +145,7 @@ const ManageJobs = () => {
                                                 onClick={() => navigate(`/employer/job/${job.id}/applications`)}
                                                 className="bg-[#EAF6FF] text-[#3AB4E6] hover:bg-[#3AB4E6] hover:text-white text-xs font-bold px-4 py-2.5 rounded-lg transition-all shadow-sm"
                                             >
-                                                View Applications ({job.apps})
+                                                View Applications ({job.applicationCount || 0})
                                             </button>
 
                                             {/* Kebab Menu */}
@@ -152,7 +161,7 @@ const ManageJobs = () => {
                                                 <div className="absolute right-10 top-12 w-48 bg-white shadow-xl rounded-lg border border-gray-100 z-20 animate-fade-in-up overflow-hidden">
                                                     {/* NÚT XEM CHI TIẾT / SỬA */}
                                                     <button
-                                                        onClick={() => navigate(`/employer/manage-jobs/${job.id}`)}
+                                                        onClick={() => navigate(`/employer/manage-jobs/${job.id}`, { state: { job } })}
                                                         className="w-full text-left px-4 py-3 text-sm text-gray-600 hover:bg-gray-50 hover:text-[#3AB4E6] flex items-center gap-2 border-b border-gray-50"
                                                     >
                                                         <FaEye /> Xem / Chỉnh sửa

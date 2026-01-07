@@ -5,6 +5,10 @@ import {
     registerRequest, registerSuccess, registerFailure,
     checkAuth
 } from './authSlice';
+import { fetchProfileRequest } from '../user/userSlice';
+import { fetchCompanyRequest } from '../company/companySlice';
+import { fetchCompanyJobsRequest } from '../job/jobSlice';
+
 
 // Worker Saga: Check Auth (Khôi phục session)
 function* handleCheckAuth() {
@@ -19,23 +23,16 @@ function* handleCheckAuth() {
             yield put(loginSuccess(JSON.parse(userInfo)));
         }
 
-        // 2. Gọi service check token (để verify xem token còn sống không)
-        // Nếu API này lỗi 401, axiosInstance sẽ tự clear token và saga sẽ catch lỗi
-        try {
-            const response = yield call(authService.getCurrentUser);
-            // Update lại info mới nhất từ server (nếu có)
-            if (response) {
-                yield put(loginSuccess(response));
-                // Cập nhật lại localStorage luôn cho đồng bộ
-                localStorage.setItem('user_info', JSON.stringify(response));
+        // 2. Trigger fetch profile để validate session và lấy data mới nhất
+        if (userInfo) {
+            const parsedUser = JSON.parse(userInfo);
+            if (parsedUser.role === 'CANDIDATE' && parsedUser.userId) {
+                yield put(fetchProfileRequest({ userId: parsedUser.userId }));
+            } else if (parsedUser.role === 'EMPLOYER' && parsedUser.userId) {
+                yield put(fetchCompanyRequest({ companyId: parsedUser.userId }));
+                yield put(fetchCompanyJobsRequest({ employerId: parsedUser.userId, page: 0, size: 5 })); // Fetch 5 jobs for dashboard
             }
-        } catch (apiError) {
-            console.warn("CheckAuth API Warning:", apiError);
-            // Chỉ logout nếu thực sự lỗi Auth (401). 
-            // Các lỗi khác (mạng, server 500) thì tạm thời giữ session local để user dùng tiếp.
-            // (Lưu ý: axiosInstance interceptor đã handle vụ 401 -> clear storage rồi)
         }
-
     } catch (error) {
         // Token không hợp lệ hoặc parse lỗi
         console.error("Auth Saga Error:", error);
@@ -106,6 +103,14 @@ function* handleLogin(action) {
 
             // 3. Bắn action thành công vào Redux
             yield put(loginSuccess(data));
+
+            // 3.1 Fetch profile ngay sau khi login
+            if (data.role === 'CANDIDATE' && data.userId) {
+                yield put(fetchProfileRequest({ userId: data.userId }));
+            } else if (data.role === 'EMPLOYER' && data.userId) {
+                yield put(fetchCompanyRequest({ companyId: data.userId }));
+                yield put(fetchCompanyJobsRequest({ employerId: data.userId, page: 0, size: 5 })); // Fetch 5 jobs for dashboard
+            }
 
             // 4. Điều hướng trang tùy theo Role
             if (data.role === 'EMPLOYER') {

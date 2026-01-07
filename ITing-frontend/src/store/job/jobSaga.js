@@ -2,7 +2,8 @@ import { call, put, takeLatest } from 'redux-saga/effects';
 import jobService from '../../services/jobService';
 import {
     fetchJobsRequest, fetchJobsSuccess, fetchJobsFailure,
-    fetchJobDetailRequest, fetchJobDetailSuccess, fetchJobDetailFailure
+    fetchJobDetailRequest, fetchJobDetailSuccess, fetchJobDetailFailure,
+    fetchCompanyJobsRequest, fetchCompanyJobsSuccess, fetchCompanyJobsFailure
 } from './jobSlice';
 
 // Worker: Lấy danh sách jobs
@@ -27,8 +28,21 @@ function* handleFetchJobDetail(action) {
         const data = yield call(jobService.getJobDetail, id);
         yield put(fetchJobDetailSuccess(data));
     } catch (error) {
-        const message = error.message || "Failed to fetch job detail";
         yield put(fetchJobDetailFailure(message));
+    }
+}
+
+// Worker: Lấy danh sách jobs của công ty
+function* handleFetchCompanyJobs(action) {
+    try {
+        const { employerId, ...params } = action.payload; // Payload chứa employerId và các params khác
+        if (!employerId) throw new Error("Missing employerId");
+
+        const data = yield call(jobService.getCompanyJobs, employerId, params);
+        yield put(fetchCompanyJobsSuccess(data));
+    } catch (error) {
+        const message = error.message || "Failed to fetch company jobs";
+        yield put(fetchCompanyJobsFailure(message));
     }
 }
 
@@ -36,4 +50,5 @@ function* handleFetchJobDetail(action) {
 export default function* jobSaga() {
     yield takeLatest(fetchJobsRequest.type, handleFetchJobs);
     yield takeLatest(fetchJobDetailRequest.type, handleFetchJobDetail);
+    yield takeLatest(fetchCompanyJobsRequest.type, handleFetchCompanyJobs);
 }

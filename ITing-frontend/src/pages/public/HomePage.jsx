@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { useEffect } from 'react';
-import { fetchLatestJobsRequest } from '../../store/job/jobSlice';
+import { fetchJobsRequest } from '../../store/job/jobSlice';
 // FIX: Gom tất cả icon về react-icons/fa để tránh lỗi import undefined
 import {
     FaSearch, FaMapMarkerAlt, FaBriefcase, FaBuilding, FaUserFriends,
@@ -15,11 +15,11 @@ import heroBg from '../../assets/bg_login.jpg';
 
 const HomePage = () => {
     const dispatch = useDispatch();
-    const { latestJobs, isLoading } = useSelector((state) => state.job);
+    const { jobs, isLoading } = useSelector((state) => state.job);
     const [currentPage, setCurrentPage] = useState(1);
 
     useEffect(() => {
-        dispatch(fetchLatestJobsRequest(10));
+        dispatch(fetchJobsRequest(10));
     }, [dispatch]);
 
     // Helper: Format Salary
@@ -260,7 +260,7 @@ const HomePage = () => {
                         {isLoading ? (
                             <div className="text-center py-10">Đang tải danh sách việc làm...</div>
                         ) : (
-                            latestJobs.map((job) => (
+                            jobs.map((job) => (
                                 <div key={job.id} className="group relative border border-gray-100 rounded-2xl p-6 hover:shadow-xl hover:shadow-blue-500/5 transition-all duration-300 bg-white overflow-hidden">
 
                                     {/* Hiệu ứng: Thanh màu xanh trượt ra khi hover */}

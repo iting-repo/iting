@@ -3,12 +3,19 @@ import createSagaMiddleware from 'redux-saga';
 import rootSaga from './rootSaga';
 import authReducer from './auth/authSlice'; // Import reducer thật
 import jobReducer from './job/jobSlice'; // Import reducer job
+import userReducer from './user/userSlice'; // Import reducer user
+import companyReducer from './company/companySlice'; // Import reducer company
+import applicationReducer from './application/applicationSlice'; // Import reducer application
+
 const sagaMiddleware = createSagaMiddleware();
 
 const store = configureStore({
     reducer: {
         auth: authReducer,
         job: jobReducer, // Đăng ký job reducer
+        user: userReducer, // Đăng ký user reducer
+        company: companyReducer, // Đăng ký company reducer
+        application: applicationReducer, // Đăng ký application reducer
     },
     middleware: (getDefaultMiddleware) =>
         getDefaultMiddleware({
