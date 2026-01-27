@@ -4,53 +4,88 @@ import {
     FaFilter, FaCheck, FaInfoCircle, FaSearch
 } from 'react-icons/fa';
 import StatsCard from '../components/StatsCard';
+import ReportDetailModal from '../components/ReportDetailModal';
+import ActionConfirmModal from '../components/ActionConfirmModal';
 
 const ReportManagement = () => {
+    // State cho Modal
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [selectedReport, setSelectedReport] = useState(null);
+
+    // State cho Action Confirmation Modal
+    const [confirmModalState, setConfirmModalState] = useState({
+        isOpen: false,
+        type: null, // 'resolve', 'warn', 'block'
+        reportId: null
+    });
+
     // 1. MOCK DATA (Giả lập dữ liệu báo cáo)
     const [reports, setReports] = useState([
         {
             id: "#R-1234",
             reporter: "System",
+            reporterRole: "Automated Bot",
             reportedUser: "Alex Brown",
+            reportedUserId: "USR-002",
             avatar: "https://i.pravatar.cc/150?img=11",
             type: "Post",
             violation: "Spam posting",
             severity: "High",
-            date: "2024-01-15",
-            status: "Pending"
+            date: "2024-01-15T14:30:00",
+            status: "Pending",
+            reason: "User posted 20 identical messages in 1 minute.",
+            evidenceText: "System logic detected repeated content.",
+            evidenceImages: [
+                "https://via.placeholder.com/400x300?text=Spam+Evidence+1",
+                "https://via.placeholder.com/400x300?text=Spam+Evidence+2"
+            ]
         },
         {
             id: "#R-1235",
             reporter: "Jane Doe",
+            reporterRole: "Candidate",
             reportedUser: "Maria Garcia",
+            reportedUserId: "EMP-005",
             avatar: "https://i.pravatar.cc/150?img=5",
             type: "Job",
             violation: "Fake job postings",
             severity: "Critical",
-            date: "2024-01-15",
-            status: "Pending"
+            date: "2024-01-15T09:15:00",
+            status: "Pending",
+            reason: "The job description asks for money transfer before interview.",
+            evidenceText: "Screenshot of the message asking for fees.",
+            evidenceImages: [
+                "https://via.placeholder.com/400x300?text=Scam+Message"
+            ]
         },
         {
             id: "#R-1236",
             reporter: "Mike Ross",
+            reporterRole: "Employer",
             reportedUser: "Tom Wilson",
+            reportedUserId: "USR-088",
             avatar: "https://i.pravatar.cc/150?img=3",
             type: "Comment",
             violation: "Inappropriate content",
             severity: "Medium",
-            date: "2024-01-14",
-            status: "Investigating"
+            date: "2024-01-14T18:45:00",
+            status: "Investigating",
+            reason: "User used offensive language in the comment section.",
+            evidenceText: "Comment ID #9982 contains banned words."
         },
         {
             id: "#R-1237",
             reporter: "System",
+            reporterRole: "Automated Bot",
             reportedUser: "Lisa Chen",
+            reportedUserId: "USR-102",
             avatar: "https://i.pravatar.cc/150?img=9",
             type: "Account",
             violation: "Duplicate accounts",
             severity: "Low",
-            date: "2024-01-14",
-            status: "Resolved"
+            date: "2024-01-14T08:00:00",
+            status: "Resolved",
+            reason: "IP address match with banned user #USR-001."
         },
     ]);
 
@@ -64,15 +99,43 @@ const ReportManagement = () => {
         }
     };
 
-    // Các hàm xử lý hành động (Dummy)
-    const handleResolve = (id) => console.log("Resolve report:", id);
-    const handleWarn = (id) => console.log("Warn user:", id);
+    // --- Action Handlers ---
+    const handleResolve = (id) => {
+        setConfirmModalState({ isOpen: true, type: 'resolve', reportId: id });
+    };
+
+    const handleWarn = (id) => {
+        setConfirmModalState({ isOpen: true, type: 'warn', reportId: id });
+    };
+
     const handleBlock = (id) => {
-        if (window.confirm("Khóa tài khoản này vĩnh viễn?")) {
-            console.log("Block user:", id);
+        setConfirmModalState({ isOpen: true, type: 'block', reportId: id });
+    };
+
+    const handleConfirmAction = (notifyReporter, notifyReportedUser) => {
+        const { type, reportId } = confirmModalState;
+
+        console.log(`✅ ACTION CONFIRMED: ${type.toUpperCase()} on Report ${reportId}`);
+        console.log(`📩 Notification Options -> Reporter: ${notifyReporter}, Reported User: ${notifyReportedUser}`);
+
+        // Logic xử lý API ở đây (khi backend sẵn sàng)
+
+        // Cập nhật UI (nếu cần thiết, ví dụ chuyển Status)
+        if (type === 'resolve') {
+            setReports(prev => prev.map(r => r.id === reportId ? { ...r, status: 'Resolved' } : r));
         }
-    }
-    const handleViewDetail = (id) => console.log("View details:", id);
+
+        // Close modal
+        setConfirmModalState({ isOpen: false, type: null, reportId: null });
+    };
+
+    const handleViewDetail = (id) => {
+        const report = reports.find(r => r.id === id);
+        if (report) {
+            setSelectedReport(report);
+            setIsModalOpen(true);
+        }
+    };
 
     return (
         <div className="space-y-8">
@@ -128,13 +191,13 @@ const ReportManagement = () => {
                 </div>
 
                 {/* Avg Response Time - Màu Tím */}
-                <div className="bg-white p-6 rounded-2xl shadow-sm border-l-4 border-[#9D5CE9]">
+                <div className="bg-white p-6 rounded-2xl shadow-sm border-l-4 border-[#3ab4e6]">
                     <div className="flex justify-between items-start mb-4">
                         <div>
                             <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Avg Response Time</h3>
                             <div className="text-3xl font-bold text-gray-800">2.4h</div>
                         </div>
-                        <div className="w-10 h-10 rounded-lg bg-purple-50 text-[#9D5CE9] flex items-center justify-center text-lg">
+                        <div className="w-10 h-10 rounded-lg bg-blue-50 text-[#3ab4e6] flex items-center justify-center text-lg">
                             <FaClock />
                         </div>
                     </div>
@@ -252,12 +315,28 @@ const ReportManagement = () => {
                 {/* --- PAGINATION --- */}
                 <div className="p-4 border-t border-gray-100 flex items-center justify-center md:justify-end gap-2">
                     <button className="px-3 py-1 text-xs border border-gray-200 rounded hover:bg-gray-50 text-gray-500">Previous</button>
-                    <button className="px-3 py-1 text-xs bg-[#9D5CE9] text-white rounded shadow-sm">1</button>
+                    <button className="px-3 py-1 text-xs bg-[#3ab4e6] text-white rounded shadow-sm">1</button>
                     <button className="px-3 py-1 text-xs border border-gray-200 rounded hover:bg-gray-50 text-gray-500">2</button>
                     <button className="px-3 py-1 text-xs border border-gray-200 rounded hover:bg-gray-50 text-gray-500">Next</button>
                 </div>
 
             </div>
+
+            {/* MODAL CHI TIẾT BÁO CÁO */}
+            <ReportDetailModal
+                isOpen={isModalOpen}
+                onClose={() => setIsModalOpen(false)}
+                report={selectedReport}
+            />
+
+            {/* MODAL XÁC NHẬN HÀNH ĐỘNG */}
+            <ActionConfirmModal
+                isOpen={confirmModalState.isOpen}
+                onClose={() => setConfirmModalState({ ...confirmModalState, isOpen: false })}
+                onConfirm={handleConfirmAction}
+                actionType={confirmModalState.type}
+                reportId={confirmModalState.reportId}
+            />
         </div>
     );
 };

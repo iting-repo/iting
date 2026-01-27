@@ -27,7 +27,7 @@ const AdminSidebar = () => {
   ];
 
   return (
-    <div className="w-20 bg-[#9D5CE9] min-h-screen flex flex-col items-center py-8 fixed left-0 top-0 bottom-0 z-50 shadow-xl">
+    <div className="w-20 bg-[#3ab4e6] min-h-screen flex flex-col items-center py-8 fixed left-0 top-0 bottom-0 z-50 shadow-xl">
       {/* Logo Area */}
       <div className="w-10 h-10 bg-white/20 rounded-lg flex items-center justify-center text-white font-bold text-xl mb-12">
         JD
@@ -41,7 +41,7 @@ const AdminSidebar = () => {
             to={item.path}
             className={({ isActive }) =>
               `w-full aspect-square flex items-center justify-center rounded-xl transition-all duration-300 ${isActive
-                ? 'bg-white text-[#9D5CE9] shadow-lg scale-105'
+                ? 'bg-white text-[#3ab4e6] shadow-lg scale-105'
                 : 'text-white/70 hover:bg-white/10 hover:text-white'
               }`
             }

@@ -24,6 +24,8 @@ function* handleCheckAuth() {
         }
 
         // 2. Trigger fetch profile để validate session và lấy data mới nhất
+        /* 
+        // TẠM ĐÓNG KHI BACKEND OFF: Không gọi API fetch profile để tránh lỗi
         if (userInfo) {
             const parsedUser = JSON.parse(userInfo);
             if (parsedUser.role === 'CANDIDATE' && parsedUser.userId) {
@@ -32,7 +34,10 @@ function* handleCheckAuth() {
                 yield put(fetchCompanyRequest({ companyId: parsedUser.userId }));
                 yield put(fetchCompanyJobsRequest({ employerId: parsedUser.userId, page: 0, size: 5 })); // Fetch 5 jobs for dashboard
             }
-        }
+        } 
+        */
+        console.log("⚠️ [MOCK MODE] checkAuth: Restored user from localStorage. Profile fetch skipped.");
+
     } catch (error) {
         // Token không hợp lệ hoặc parse lỗi
         console.error("Auth Saga Error:", error);
@@ -48,7 +53,11 @@ function* handleRegister(action) {
         const { email, password, name, role, phone, address, website, navigate } = action.payload;
 
         // 1. Gọi API Register
-        const data = yield call(authService.register, email, password, name, role, phone, address, website);
+        // const data = yield call(authService.register, email, password, name, role, phone, address, website);
+
+        // MOCK REGISTER
+        console.log("⚠️ [MOCK MODE] Mimicking Register success");
+        yield new Promise(resolve => setTimeout(resolve, 1000)); // Fake delay
 
         // 2. Không Auto Login -> Chuyển về trang Login để người dùng tự đăng nhập
         // (Theo yêu cầu: đăng ký xong về trang login)
@@ -92,8 +101,35 @@ function* handleLogin(action) {
 
         // 1. Gọi API
         console.log("Starting login request for:", email);
-        const data = yield call(authService.login, email, password);
-        console.log("Login success, response data:", data);
+        // const data = yield call(authService.login, email, password);
+
+        // --- MOCK DATA START ---
+        console.log("⚠️ [MOCK MODE] Using Mock Data for Login");
+        yield new Promise(resolve => setTimeout(resolve, 800)); // Fake delay
+
+        let data = {
+            token: "mock-token-xyz-123",
+            email: email,
+            name: "Mock User",
+        };
+
+        if (email.includes("admin")) {
+            data.role = "ADMIN";
+            data.userId = "admin-001";
+            data.name = "Admin User";
+        } else if (email.includes("emp") || email.includes("company")) {
+            data.role = "EMPLOYER";
+            data.userId = "emp-001";
+            data.name = "Test Employer Company";
+        } else {
+            data.role = "CANDIDATE";
+            data.userId = "can-001";
+            data.name = "Test Candidate";
+        }
+
+        console.log("Login success (MOCK), response data:", data);
+        // --- MOCK DATA END ---
+
 
         // 2. Lưu thông tin quan trọng vào LocalStorage
         if (data.token) {
@@ -105,12 +141,15 @@ function* handleLogin(action) {
             yield put(loginSuccess(data));
 
             // 3.1 Fetch profile ngay sau khi login
+            /* 
+            // TẠM ĐÓNG KHI BACKEND OFF
             if (data.role === 'CANDIDATE' && data.userId) {
                 yield put(fetchProfileRequest({ userId: data.userId }));
             } else if (data.role === 'EMPLOYER' && data.userId) {
                 yield put(fetchCompanyRequest({ companyId: data.userId }));
                 yield put(fetchCompanyJobsRequest({ employerId: data.userId, page: 0, size: 5 })); // Fetch 5 jobs for dashboard
             }
+            */
 
             // 4. Điều hướng trang tùy theo Role
             if (data.role === 'EMPLOYER') {
