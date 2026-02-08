@@ -7,8 +7,9 @@ import com.iting.jobportal.admin.service.AdminService;
 import com.iting.jobportal.application.repository.JobApplicationRepository;
 import com.iting.jobportal.auth.entity.Account;
 import com.iting.jobportal.auth.entity.Enum.AccountStatus;
-import com.iting.jobportal.auth.entity.Enum.Role;
 import com.iting.jobportal.auth.repository.AccountRepository;
+import com.iting.jobportal.core.domain.auth.Role;
+import com.iting.jobportal.core.repository.auth.RoleRepository;
 import com.iting.jobportal.company.entity.Company;
 import com.iting.jobportal.company.repository.CompanyRepository;
 import com.iting.jobportal.job.entity.Job;
@@ -41,19 +42,32 @@ public class AdminServiceImpl implements AdminService {
     private final StaticContentRepository staticContentRepository;
     private final UserReportRepository reportRepository;
     private final ActivityLogRepository activityLogRepository;
+    private final RoleRepository roleRepository;
 
     // ========== QUẢN LÝ NGƯỜI DÙNG ==========
 
     @Override
-    public Page<UserListResponse> getAllUsers(String keyword, Role role, AccountStatus status, int page, int size) {
+    public Page<UserListResponse> getAllUsers(String keyword, com.iting.jobportal.auth.entity.Enum.Role role, AccountStatus status, int page, int size) {
         Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
         
         // Sử dụng query đơn giản trước, có thể cải thiện bằng Specification pattern
         Page<Account> accounts;
         if (role != null && status != null) {
-            accounts = accountRepository.findByRoleAndStatus(role, status, pageable);
+            // Find RBAC role by enum name
+            Role rbacRole = roleRepository.findByName(role.name()).orElse(null);
+            if (rbacRole != null) {
+                accounts = accountRepository.findByRolesContainingAndStatus(rbacRole, status, pageable);
+            } else {
+                accounts = Page.empty(pageable);
+            }
         } else if (role != null) {
-            accounts = accountRepository.findByRole(role, pageable);
+            // Find RBAC role by enum name
+            Role rbacRole = roleRepository.findByName(role.name()).orElse(null);
+            if (rbacRole != null) {
+                accounts = accountRepository.findByRolesContaining(rbacRole, pageable);
+            } else {
+                accounts = Page.empty(pageable);
+            }
         } else if (status != null) {
             accounts = accountRepository.findByStatus(status, pageable);
         } else {
@@ -77,12 +91,14 @@ public class AdminServiceImpl implements AdminService {
                 .orElseThrow(() -> new RuntimeException("User not found"));
         
         if (request.getRole() != null) {
-            account.setRole(request.getRole());
+            // Find RBAC role by name
+            Role rbacRole = roleRepository.findByName(request.getRole().name())
+                    .orElseThrow(() -> new RuntimeException("Role not found: " + request.getRole().name()));
+            account.setRoles(Set.of(rbacRole));
         }
         if (request.getStatus() != null) {
             account.setStatus(request.getStatus());
         }
-        account.setUpdatedAt(LocalDateTime.now());
         
         Account saved = accountRepository.save(account);
         
@@ -100,7 +116,6 @@ public class AdminServiceImpl implements AdminService {
                 .orElseThrow(() -> new RuntimeException("User not found"));
         
         account.setStatus(AccountStatus.BANNED);
-        account.setUpdatedAt(LocalDateTime.now());
         accountRepository.save(account);
         
         logActivity(adminId, "BAN_USER", "USER", userId, 
@@ -114,7 +129,6 @@ public class AdminServiceImpl implements AdminService {
                 .orElseThrow(() -> new RuntimeException("User not found"));
         
         account.setStatus(AccountStatus.ACTIVE);
-        account.setUpdatedAt(LocalDateTime.now());
         accountRepository.save(account);
         
         logActivity(adminId, "UNBAN_USER", "USER", userId, "Unbanned user: " + account.getEmail());
@@ -306,8 +320,16 @@ public class AdminServiceImpl implements AdminService {
         return DashboardStats.builder()
                 // Tổng quan
                 .totalUsers(accountRepository.count())
-                .totalCandidates(accountRepository.countByRole(Role.CANDIDATE))
-                .totalEmployers(accountRepository.countByRole(Role.EMPLOYER))
+                .totalCandidates(
+                        accountRepository.countByRoles_Name(
+                                com.iting.jobportal.auth.entity.Enum.Role.CANDIDATE.name()
+                        )
+                )
+                .totalEmployers(
+                        accountRepository.countByRoles_Name(
+                                com.iting.jobportal.auth.entity.Enum.Role.EMPLOYER.name()
+                        )
+                )
                 .totalJobs(jobRepository.count())
                 .totalApplications(applicationRepository.count())
                 
@@ -367,20 +389,26 @@ public class AdminServiceImpl implements AdminService {
     // ========== HELPER METHODS ==========
 
     private UserListResponse mapToUserListResponse(Account account) {
+        // Get primary role from RBAC roles for backward compatibility
+        com.iting.jobportal.auth.entity.Enum.Role primaryRole = account.getRoles().stream()
+                .map(role -> com.iting.jobportal.auth.entity.Enum.Role.valueOf(role.getName()))
+                .findFirst()
+                .orElse(com.iting.jobportal.auth.entity.Enum.Role.CANDIDATE);
+        
         UserListResponse.UserListResponseBuilder builder = UserListResponse.builder()
                 .id(account.getId())
                 .email(account.getEmail())
-                .role(account.getRole())
+                .role(primaryRole)
                 .status(account.getStatus())
                 .createdAt(account.getCreatedAt())
                 .lastLoginAt(account.getLastLoginAt());
         
-        if (account.getRole() == Role.CANDIDATE) {
+        if (primaryRole == com.iting.jobportal.auth.entity.Enum.Role.CANDIDATE) {
             userRepository.findById(account.getId()).ifPresent(user -> {
                 builder.fullName(user.getFirstName() + " " + user.getLastName());
                 builder.avatarUrl(user.getAvatarUrl());
             });
-        } else if (account.getRole() == Role.EMPLOYER) {
+        } else if (primaryRole == com.iting.jobportal.auth.entity.Enum.Role.EMPLOYER) {
             companyRepository.findById(account.getId()).ifPresent(company -> {
                 builder.companyName(company.getName());
                 builder.avatarUrl(company.getLogoUrl());

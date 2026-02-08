@@ -8,6 +8,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -80,9 +81,10 @@ public class JobController {
         return ResponseEntity.ok(jobService.getHotJobs(limit));
     }
 
-    // ========== EMPLOYER APIs ==========
+    // ========== EMPLOYER APIs (RBAC Applied) ==========
 
     @PostMapping
+    @PreAuthorize("hasAuthority('JOB_CREATE')")
     @Operation(summary = "Đăng tin tuyển dụng mới")
     public ResponseEntity<JobResponse> createJob(
             @CurrentUser Long employerId,
@@ -91,6 +93,7 @@ public class JobController {
     }
 
     @PutMapping("/{id}")
+    @PreAuthorize("hasAuthority('JOB_UPDATE')")
     @Operation(summary = "Cập nhật tin tuyển dụng")
     public ResponseEntity<JobResponse> updateJob(
             @CurrentUser Long employerId,
@@ -100,6 +103,7 @@ public class JobController {
     }
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasAuthority('JOB_DELETE')")
     @Operation(summary = "Xóa tin tuyển dụng")
     public ResponseEntity<?> deleteJob(
             @CurrentUser Long employerId,
@@ -109,6 +113,7 @@ public class JobController {
     }
 
     @PostMapping("/{id}/extend")
+    @PreAuthorize("hasAuthority('JOB_UPDATE')")
     @Operation(summary = "Gia hạn tin tuyển dụng")
     public ResponseEntity<JobResponse> extendJob(
             @CurrentUser Long employerId,
@@ -118,6 +123,7 @@ public class JobController {
     }
 
     @PostMapping("/{id}/close")
+    @PreAuthorize("hasAuthority('JOB_UPDATE')")
     @Operation(summary = "Đóng tin tuyển dụng")
     public ResponseEntity<JobResponse> closeJob(
             @CurrentUser Long employerId,
@@ -126,6 +132,7 @@ public class JobController {
     }
 
     @GetMapping("/my-jobs")
+    @PreAuthorize("hasAuthority('JOB_VIEW')")
     @Operation(summary = "Lấy danh sách tin tuyển dụng của tôi (Employer)")
     public ResponseEntity<Page<JobResponse>> getMyJobs(
             @CurrentUser Long employerId,

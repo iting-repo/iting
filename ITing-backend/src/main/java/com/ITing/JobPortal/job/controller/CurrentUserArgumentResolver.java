@@ -30,6 +30,6 @@ public class CurrentUserArgumentResolver implements HandlerMethodArgumentResolve
         if (auth == null || auth.getPrincipal() == null) return null;
 
         AuthUser user = (AuthUser) auth.getPrincipal();
-        return user.id();
+        return user.getId();
     }
 }
