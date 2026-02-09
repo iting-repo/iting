@@ -1,8 +1,8 @@
 package com.iting.jobportal.admin.entity;
 
+import com.iting.jobportal.common.entity.AuditEntity;
 import jakarta.persistence.*;
 import lombok.*;
-import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "activity_logs")
@@ -11,7 +11,8 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class ActivityLog {
+@EqualsAndHashCode(callSuper = false)
+public class ActivityLog extends AuditEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -21,10 +22,10 @@ public class ActivityLog {
     private Long userId;
 
     @Column(nullable = false, length = 50)
-    private String action;  // LOGIN, LOGOUT, CREATE_JOB, APPLY_JOB, UPDATE_PROFILE, etc.
+    private String action;
 
-    @Column(length = 50)
-    private String entityType;  // JOB, USER, APPLICATION, etc.
+    @Column(length = 100)
+    private String entityType;
 
     private Long entityId;
 
@@ -36,12 +37,4 @@ public class ActivityLog {
 
     @Column(length = 255)
     private String userAgent;
-
-    private LocalDateTime createdAt;
-
-    @PrePersist
-    protected void onCreate() {
-        createdAt = LocalDateTime.now();
-    }
 }
-

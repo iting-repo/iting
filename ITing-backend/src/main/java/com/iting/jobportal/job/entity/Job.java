@@ -1,11 +1,11 @@
 package com.iting.jobportal.job.entity;
 
+import com.iting.jobportal.common.entity.AuditEntity;
 import com.iting.jobportal.job.entity.enums.ExperienceLevel;
 import com.iting.jobportal.job.entity.enums.JobStatus;
 import com.iting.jobportal.job.entity.enums.JobType;
 import jakarta.persistence.*;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import lombok.*;
 
 @Entity
@@ -15,7 +15,8 @@ import lombok.*;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class Job {
+@EqualsAndHashCode(callSuper = false)
+public class Job extends AuditEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -30,14 +31,17 @@ public class Job {
     @Column(length = 5000)
     private String description;
 
-    @Column(length = 1000)
+    @Column(length = 500)
     private String requirements;
 
-    @Column(length = 255)
-    private String location;
-
-    @Column(length = 1000)
+    @Column(length = 500)
     private String techRequired;
+
+    @Column(length = 500)
+    private String benefits;
+
+    @Column(length = 100)
+    private String location;
 
     @Enumerated(EnumType.STRING)
     @Column(length = 20)
@@ -61,19 +65,12 @@ public class Job {
 
     private LocalDate dueDate;
 
-    private LocalDateTime createdAt;
-
-    private LocalDateTime updatedAt;
-
     private Integer viewCount;
 
     private Integer applicationCount;
 
     @PrePersist
     protected void onCreate() {
-        if (createdAt == null) {
-            createdAt = LocalDateTime.now();
-        }
         if (status == null) {
             status = JobStatus.ACTIVE;
         }
@@ -86,10 +83,5 @@ public class Job {
         if (currentAccepted == null) {
             currentAccepted = 0;
         }
-    }
-
-    @PreUpdate
-    protected void onUpdate() {
-        updatedAt = LocalDateTime.now();
     }
 }

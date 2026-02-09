@@ -8,10 +8,10 @@ import com.iting.jobportal.auth.dto.ChangePasswordRequest;
 import com.iting.jobportal.auth.dto.RegisterRequest;
 import com.iting.jobportal.auth.entity.Account;
 import com.iting.jobportal.auth.entity.Enum.AccountStatus;
-import com.iting.jobportal.auth.entity.Enum.Role;
 import com.iting.jobportal.auth.repository.AccountRepository;
 import com.iting.jobportal.auth.security.JwtTokenUtil;
 import com.iting.jobportal.auth.service.AuthService;
+import com.iting.jobportal.core.repository.auth.RoleRepository;
 import com.iting.jobportal.user.entity.User;
 import com.iting.jobportal.user.repository.UserRepository;
 
@@ -21,19 +21,21 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.Set;
 
 @Service
 @RequiredArgsConstructor
 public class AuthServiceImpl implements AuthService {
 
     private final AccountRepository accountRepository;
-    private final UserRepository userRepository; // Mới thêm
-    private final CompanyRepository companyRepository; // Mới thêm
+    private final UserRepository userRepository;
+    private final CompanyRepository companyRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtTokenUtil jwtTokenUtil;
+    private final RoleRepository roleRepository;
 
     @Override
-    @Transactional // Quan trọng: Đảm bảo lưu cả 2 bảng hoặc rollback
+    @Transactional
     public Account register(RegisterRequest request) {
         // 1. Kiểm tra email trùng
         if (accountRepository.existsByEmail(request.getEmail())) {
@@ -41,30 +43,37 @@ public class AuthServiceImpl implements AuthService {
         }
 
         // 2. Tạo Account
-        Account account = new Account();
-        account.setEmail(request.getEmail());
-        account.setPasswordHash(passwordEncoder.encode(request.getPassword()));
-        account.setRole(request.getRole());
-        account.setStatus(AccountStatus.ACTIVE);
-        account.setCreatedAt(LocalDateTime.now());
+        Account account = Account.builder()
+                .email(request.getEmail())
+                .passwordHash(passwordEncoder.encode(request.getPassword()))
+                .status(AccountStatus.ACTIVE)
+                .build();
 
-        // Lưu Account trước để có ID (thực ra Hibernate sẽ xử lý việc này trong
-        // transaction)
+        // 3. Gán role cho account (RBAC)
+        com.iting.jobportal.core.domain.auth.Role rbacRole = roleRepository.findByName(request.getRole().name())
+                .orElseThrow(() -> new RuntimeException("Role not found: " + request.getRole().name()));
+        account.setRoles(Set.of(rbacRole));
+
+        // Lưu Account trước để có ID
         Account savedAccount = accountRepository.save(account);
 
-        // 3. Tạo Profile tương ứng
-        if (request.getRole() == Role.CANDIDATE) { // Hoặc Role.USER tùy enum của bạn
-            User user = new User();
-            user.setAccount(savedAccount); // Gắn account vào user
-            // Set các giá trị mặc định nếu cần
-            userRepository.save(user);
+        // 4. Tạo Profile tương ứng
+        String roleName = rbacRole.getName();
 
-        } else if (request.getRole() == Role.EMPLOYER) { // Hoặc Role.COMPANY
-            Company company = new Company();
-            company.setAccount(savedAccount);
-            company.setName("New Company");
-            companyRepository.save(company);
+        switch (roleName) {
+            case "CANDIDATE" -> {
+                User user = new User();
+                user.setAccount(savedAccount);
+                userRepository.save(user);
+            }
+            case "EMPLOYER" -> {
+                Company company = new Company();
+                company.setAccount(savedAccount);
+                company.setName("New Company");
+                companyRepository.save(company);
+            }
         }
+
 
         return savedAccount;
     }
@@ -80,16 +89,23 @@ public class AuthServiceImpl implements AuthService {
             throw new RuntimeException("Invalid email or password");
         }
 
+        // Lấy role đầu tiên của user (cho backward compatibility)
+        String primaryRole = account.getRoles().stream()
+                .map(r -> r.getName())
+                .sorted() // tạm thời
+                .findFirst()
+                .orElse("USER");
+
         // 🔥 Tạo JWT Token
         String token = jwtTokenUtil.generateToken(
                 account.getId(),
                 account.getEmail(),
-                account.getRole().name());
+                primaryRole);
 
         return new LoginResponse(
                 account.getId(),
                 account.getEmail(),
-                account.getRole().name(),
+                primaryRole,
                 token);
     }
 

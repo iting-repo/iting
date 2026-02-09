@@ -24,9 +24,9 @@ public class JwtTokenUtil {
 
     public String generateToken(Long userId, String email, String role) {
         return Jwts.builder()
+                .setSubject(email) // Use email as subject for RBAC
                 .claim("id", userId)
-                .claim("email", email)
-                .claim("role", role)
+                .claim("role", role) // Keep role for backward compatibility
                 .setIssuedAt(new Date())
                 .setExpiration(new Date(System.currentTimeMillis() + EXPIRATION))
                 .signWith(getSigningKey(), SignatureAlgorithm.HS256)
@@ -48,5 +48,17 @@ public class JwtTokenUtil {
         } catch (JwtException | IllegalArgumentException e) {
             return false;
         }
+    }
+    
+    public String getEmailFromToken(String token) {
+        return getClaims(token).getSubject();
+    }
+    
+    public Long getUserIdFromToken(String token) {
+        return ((Number) getClaims(token).get("id")).longValue();
+    }
+    
+    public String getRoleFromToken(String token) {
+        return (String) getClaims(token).get("role");
     }
 }

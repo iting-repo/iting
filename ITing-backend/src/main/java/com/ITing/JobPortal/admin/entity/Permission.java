@@ -1,8 +1,9 @@
 package com.iting.jobportal.admin.entity;
 
+import com.iting.jobportal.common.entity.AuditEntity;
 import jakarta.persistence.*;
 import lombok.*;
-import java.time.LocalDateTime;
+import lombok.EqualsAndHashCode;
 
 /**
  * Entity quản lý quyền hạn trong hệ thống
@@ -17,7 +18,8 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class Permission {
+@EqualsAndHashCode(callSuper = false)
+public class Permission extends AuditEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -42,13 +44,11 @@ public class Permission {
     private Integer sortOrder;
 
     @Column(nullable = false)
+    @Builder.Default
     private Boolean active = true;
-
-    private LocalDateTime createdAt;
 
     @PrePersist
     protected void onCreate() {
-        if (createdAt == null) createdAt = LocalDateTime.now();
         if (active == null) active = true;
     }
 }
