@@ -29,6 +29,7 @@ public class CompanyResponse {
 
     private LocalDateTime lastUpdate;
     private Boolean active;
+    private Long followerCount;
 
     public CompanyResponse() {
     }
@@ -164,6 +165,14 @@ public class CompanyResponse {
 
     public Boolean getActive() {
         return active;
+    }
+
+    public Long getFollowerCount() {
+        return followerCount;
+    }
+
+    public void setFollowerCount(Long followerCount) {
+        this.followerCount = followerCount;
     }
 
 }

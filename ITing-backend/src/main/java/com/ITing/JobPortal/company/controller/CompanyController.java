@@ -8,18 +8,26 @@ import com.iting.jobportal.company.dto.VerifyLicenseRequest;
 import com.iting.jobportal.company.dto.VerifyPhoneRequest;
 
 import com.iting.jobportal.company.service.CompanyService;
+import com.iting.jobportal.company.service.CompanyFollowService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Map;
+
 @RestController
 @RequestMapping("/api/companies")
+@Tag(name = "Companies", description = "APIs quản lý công ty")
 public class CompanyController {
 
     private final CompanyService companyService;
+    private final CompanyFollowService companyFollowService;
 
-    public CompanyController(CompanyService companyService) {
+    public CompanyController(CompanyService companyService, CompanyFollowService companyFollowService) {
         this.companyService = companyService;
+        this.companyFollowService = companyFollowService;
     }
 
     // --- (0) Get Company Info
@@ -79,6 +87,14 @@ public class CompanyController {
             @Valid @RequestBody VerifyLicenseRequest request) {
 
         return ResponseEntity.ok(companyService.verifyLicense(id, request));
+    }
+
+    // --- Get Follower Count (Public) ---
+    @GetMapping("/{id}/followers/count")
+    @Operation(summary = "Lấy số lượng người theo dõi công ty")
+    public ResponseEntity<Map<String, Long>> getFollowerCount(@PathVariable Long id) {
+        Long count = companyFollowService.getFollowerCount(id);
+        return ResponseEntity.ok(Map.of("followerCount", count));
     }
 
 }
