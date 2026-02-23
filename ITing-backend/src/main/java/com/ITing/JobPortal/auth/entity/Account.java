@@ -1,17 +1,27 @@
 package com.iting.jobportal.auth.entity;
 
-import com.iting.jobportal.auth.entity.Enum.Role;
 import com.iting.jobportal.auth.entity.Enum.AccountStatus;
+import com.iting.jobportal.common.entity.AuditEntity;
+import com.iting.jobportal.core.domain.auth.Role;
 import jakarta.persistence.*;
-import java.time.LocalDateTime;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.NoArgsConstructor;
 
+import java.time.LocalDateTime;
+import java.util.HashSet;
+import java.util.Set;
 
 @Entity
 @Table(name = "accounts")
-@Getter @Setter
-public class Account {
+@Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+@EqualsAndHashCode(callSuper = false)
+public class Account extends AuditEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -25,15 +35,17 @@ public class Account {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 30)
-    private Role role; // CANDIDATE, EMPLOYER, ADMIN
-
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 30)
     private AccountStatus status; // ACTIVE, INACTIVE, BANNED
 
-    private LocalDateTime lastLoginAt;
-    private LocalDateTime createdAt;
-    private LocalDateTime updatedAt;
+    @ManyToMany(fetch = FetchType.LAZY)
+    @JoinTable(
+        name = "account_roles",
+        joinColumns = @JoinColumn(name = "account_id"),
+        inverseJoinColumns = @JoinColumn(name = "role_id")
+    )
+    @Builder.Default
+    private Set<Role> roles = new HashSet<>();
 
-    // getters & setters
+    @Column(name = "last_login_at")
+    private LocalDateTime lastLoginAt;
 }

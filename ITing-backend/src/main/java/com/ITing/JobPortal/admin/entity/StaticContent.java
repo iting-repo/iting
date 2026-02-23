@@ -1,5 +1,6 @@
 package com.iting.jobportal.admin.entity;
 
+import com.iting.jobportal.common.entity.AuditEntity;
 import jakarta.persistence.*;
 import lombok.*;
 import java.time.LocalDateTime;
@@ -11,7 +12,8 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class StaticContent {
+@EqualsAndHashCode(callSuper = false)
+public class StaticContent extends AuditEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -23,13 +25,12 @@ public class StaticContent {
     @Column(nullable = false, length = 50)
     private String type;  // PAGE, FAQ, BLOG
 
-    @Column(nullable = false, length = 255)
     private String title;
 
     @Column(columnDefinition = "TEXT")
     private String content;
 
-    @Column(columnDefinition = "TEXT")
+    @Column(length = 255)
     private String metaDescription;
 
     @Column(length = 255)
@@ -46,23 +47,12 @@ public class StaticContent {
 
     private Long viewCount;
 
-    private LocalDateTime createdAt;
-
-    private LocalDateTime updatedAt;
-
     private LocalDateTime publishedAt;
 
     @PrePersist
     protected void onCreate() {
-        createdAt = LocalDateTime.now();
         if (published == null) published = false;
         if (viewCount == null) viewCount = 0L;
         if (sortOrder == null) sortOrder = 0;
     }
-
-    @PreUpdate
-    protected void onUpdate() {
-        updatedAt = LocalDateTime.now();
-    }
 }
-

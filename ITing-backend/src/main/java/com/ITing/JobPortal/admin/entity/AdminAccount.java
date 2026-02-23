@@ -1,5 +1,6 @@
 package com.iting.jobportal.admin.entity;
 
+import com.iting.jobportal.core.domain.auth.Role;
 import jakarta.persistence.*;
 import lombok.*;
 import java.time.LocalDateTime;

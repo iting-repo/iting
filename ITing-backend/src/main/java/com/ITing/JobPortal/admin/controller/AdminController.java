@@ -1,253 +1,172 @@
 package com.iting.jobportal.admin.controller;
 
-import com.iting.jobportal.admin.dto.*;
-import com.iting.jobportal.admin.entity.*;
-import com.iting.jobportal.admin.service.AdminService;
-import com.iting.jobportal.auth.entity.Enum.AccountStatus;
-import com.iting.jobportal.auth.entity.Enum.Role;
-import com.iting.jobportal.job.controller.CurrentUser;
+import com.iting.jobportal.core.domain.auth.Role;
+import com.iting.jobportal.admin.entity.Permission;
+import com.iting.jobportal.core.service.auth.RoleService;
+import com.iting.jobportal.core.repository.auth.PermissionRepository;
+import com.iting.jobportal.auth.repository.AccountRepository;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Page;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 @RestController
 @RequestMapping("/api/admin")
 @RequiredArgsConstructor
-@Tag(name = "Admin", description = "APIs quản trị hệ thống")
+@Slf4j
+@Tag(name = "Admin Management", description = "APIs for role and permission management")
 public class AdminController {
-
-    private final AdminService adminService;
-
-    // ========================================
-    // DASHBOARD & THỐNG KÊ
-    // ========================================
-
-    @GetMapping("/dashboard")
-    @Operation(summary = "Lấy thống kê tổng quan dashboard")
-    public ResponseEntity<DashboardStats> getDashboard() {
-        return ResponseEntity.ok(adminService.getDashboardStats());
+    
+    private final RoleService roleService;
+    private final PermissionRepository permissionRepository;
+    private final AccountRepository accountRepository;
+    
+    // Role Management APIs
+    @GetMapping("/roles")
+    @PreAuthorize("hasAuthority('ROLE_MANAGE')")
+    @Operation(summary = "Get all roles")
+    public ResponseEntity<List<Role>> getAllRoles() {
+        List<Role> roles = roleService.getAllRoles();
+        return ResponseEntity.ok(roles);
     }
-
-    // ========================================
-    // QUẢN LÝ NGƯỜI DÙNG
-    // ========================================
-
-    @GetMapping("/users")
-    @Operation(summary = "Lấy danh sách người dùng")
-    public ResponseEntity<Page<UserListResponse>> getUsers(
-            @RequestParam(required = false) String keyword,
-            @RequestParam(required = false) String role,
-            @RequestParam(required = false) String status,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "20") int size) {
+    
+    @PostMapping("/roles")
+    @PreAuthorize("hasAuthority('ROLE_MANAGE')")
+    @Operation(summary = "Create a new role")
+    public ResponseEntity<Role> createRole(@Valid @RequestBody Role role) {
+        log.info("Creating role: {}", role.getName());
+        Role createdRole = roleService.createRole(role);
+        return ResponseEntity.status(HttpStatus.CREATED).body(createdRole);
+    }
+    
+    @GetMapping("/roles/{id}")
+    @PreAuthorize("hasAuthority('ROLE_MANAGE')")
+    @Operation(summary = "Get role by ID")
+    public ResponseEntity<Role> getRoleById(@Parameter(description = "Role ID") @PathVariable Long id) {
+        return roleService.findById(id)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
+    }
+    
+    @PutMapping("/roles/{id}")
+    @PreAuthorize("hasAuthority('ROLE_MANAGE')")
+    @Operation(summary = "Update role")
+    public ResponseEntity<Role> updateRole(
+            @Parameter(description = "Role ID") @PathVariable Long id,
+            @Valid @RequestBody Role role) {
+        log.info("Updating role: {}", id);
+        Role updatedRole = roleService.updateRole(id, role);
+        return ResponseEntity.ok(updatedRole);
+    }
+    
+    @DeleteMapping("/roles/{id}")
+    @PreAuthorize("hasAuthority('ROLE_MANAGE')")
+    @Operation(summary = "Delete role")
+    public ResponseEntity<Void> deleteRole(@Parameter(description = "Role ID") @PathVariable Long id) {
+        log.info("Deleting role: {}", id);
+        roleService.deleteRole(id);
+        return ResponseEntity.noContent().build();
+    }
+    
+    // Permission Management APIs
+    @GetMapping("/permissions")
+    @PreAuthorize("hasAuthority('PERMISSION_MANAGE')")
+    @Operation(summary = "Get all permissions")
+    public ResponseEntity<List<Permission>> getAllPermissions() {
+        List<Permission> permissions = permissionRepository.findAll();
+        return ResponseEntity.ok(permissions);
+    }
+    
+    @PostMapping("/permissions")
+    @PreAuthorize("hasAuthority('PERMISSION_MANAGE')")
+    @Operation(summary = "Create a new permission")
+    public ResponseEntity<Permission> createPermission(@Valid @RequestBody Permission permission) {
+        log.info("Creating permission: {}", permission.getCode());
+        Permission createdPermission = permissionRepository.save(permission);
+        return ResponseEntity.status(HttpStatus.CREATED).body(createdPermission);
+    }
+    
+    @PutMapping("/permissions/{id}")
+    @PreAuthorize("hasAuthority('PERMISSION_MANAGE')")
+    @Operation(summary = "Update permission")
+    public ResponseEntity<Permission> updatePermission(
+            @Parameter(description = "Permission ID") @PathVariable Long id,
+            @Valid @RequestBody Permission permission) {
+        log.info("Updating permission: {}", id);
+        Permission existingPermission = permissionRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Permission not found with id: " + id));
         
-        Role roleEnum = role != null ? Role.valueOf(role) : null;
-        AccountStatus statusEnum = status != null ? AccountStatus.valueOf(status) : null;
+        existingPermission.setCode(permission.getCode());
+        existingPermission.setDescription(permission.getDescription());
         
-        return ResponseEntity.ok(adminService.getAllUsers(keyword, roleEnum, statusEnum, page, size));
+        Permission updatedPermission = permissionRepository.save(existingPermission);
+        return ResponseEntity.ok(updatedPermission);
     }
-
-    @GetMapping("/users/{id}")
-    @Operation(summary = "Xem chi tiết người dùng")
-    public ResponseEntity<UserListResponse> getUser(@PathVariable Long id) {
-        return ResponseEntity.ok(adminService.getUserById(id));
+    
+    @DeleteMapping("/permissions/{id}")
+    @PreAuthorize("hasAuthority('PERMISSION_MANAGE')")
+    @Operation(summary = "Delete permission")
+    public ResponseEntity<Void> deletePermission(@Parameter(description = "Permission ID") @PathVariable Long id) {
+        log.info("Deleting permission: {}", id);
+        permissionRepository.deleteById(id);
+        return ResponseEntity.noContent().build();
     }
-
-    @PutMapping("/users/{id}")
-    @Operation(summary = "Cập nhật thông tin người dùng (phân quyền, trạng thái)")
-    public ResponseEntity<UserListResponse> updateUser(
-            @CurrentUser Long adminId,
-            @PathVariable Long id,
-            @Valid @RequestBody UpdateUserRequest request) {
-        return ResponseEntity.ok(adminService.updateUser(adminId, id, request));
+    
+    // Role-Permission Assignment APIs
+    @PutMapping("/roles/{roleId}/permissions")
+    @PreAuthorize("hasAuthority('ROLE_MANAGE')")
+    @Operation(summary = "Assign permissions to role")
+    public ResponseEntity<Role> assignPermissionsToRole(
+            @Parameter(description = "Role ID") @PathVariable Long roleId,
+            @RequestBody Map<String, Set<Long>> request) {
+        
+        Set<Long> permissionIds = request.get("permissionIds");
+        log.info("Assigning {} permissions to role: {}", permissionIds.size(), roleId);
+        
+        Role updatedRole = roleService.assignPermissionsToRole(roleId, permissionIds);
+        return ResponseEntity.ok(updatedRole);
     }
-
-    @PostMapping("/users/{id}/ban")
-    @Operation(summary = "Khóa tài khoản người dùng")
-    public ResponseEntity<?> banUser(
-            @CurrentUser Long adminId,
-            @PathVariable Long id,
-            @Valid @RequestBody BanUserRequest request) {
-        adminService.banUser(adminId, id, request);
-        return ResponseEntity.ok(Map.of("message", "User banned successfully"));
+    
+    @GetMapping("/roles/{roleId}/permissions")
+    @PreAuthorize("hasAuthority('ROLE_MANAGE')")
+    @Operation(summary = "Get permissions for role")
+    public ResponseEntity<Set<String>> getRolePermissions(@Parameter(description = "Role ID") @PathVariable Long roleId) {
+        Set<String> permissionCodes = roleService.getPermissionCodesByRoleId(roleId);
+        return ResponseEntity.ok(permissionCodes);
     }
-
-    @PostMapping("/users/{id}/unban")
-    @Operation(summary = "Mở khóa tài khoản người dùng")
-    public ResponseEntity<?> unbanUser(
-            @CurrentUser Long adminId,
-            @PathVariable Long id) {
-        adminService.unbanUser(adminId, id);
-        return ResponseEntity.ok(Map.of("message", "User unbanned successfully"));
+    
+    // User-Role Assignment APIs
+    @PutMapping("/users/{userId}/roles")
+    @PreAuthorize("hasAuthority('USER_MANAGE')")
+    @Operation(summary = "Assign roles to user")
+    public ResponseEntity<Void> assignRolesToUser(
+            @Parameter(description = "User ID") @PathVariable Long userId,
+            @RequestBody Map<String, Set<Long>> request) {
+        
+        Set<Long> roleIds = request.get("roleIds");
+        log.info("Assigning {} roles to user: {}", roleIds.size(), userId);
+        
+        // Implementation would go here - need to update Account entity relationship
+        // This is a placeholder for the actual implementation
+        
+        return ResponseEntity.ok().build();
     }
-
-    @DeleteMapping("/users/{id}")
-    @Operation(summary = "Xóa tài khoản người dùng")
-    public ResponseEntity<?> deleteUser(
-            @CurrentUser Long adminId,
-            @PathVariable Long id) {
-        adminService.deleteUser(adminId, id);
-        return ResponseEntity.ok(Map.of("message", "User deleted successfully"));
-    }
-
-    // ========================================
-    // KIỂM DUYỆT TIN TUYỂN DỤNG
-    // ========================================
-
-    @GetMapping("/jobs/pending")
-    @Operation(summary = "Lấy danh sách tin tuyển dụng chờ duyệt")
-    public ResponseEntity<Page<?>> getPendingJobs(
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "20") int size) {
-        return ResponseEntity.ok(adminService.getPendingJobs(page, size));
-    }
-
-    @PostMapping("/jobs/{id}/approve")
-    @Operation(summary = "Duyệt tin tuyển dụng")
-    public ResponseEntity<?> approveJob(
-            @CurrentUser Long adminId,
-            @PathVariable Long id) {
-        adminService.approveJob(adminId, id);
-        return ResponseEntity.ok(Map.of("message", "Job approved successfully"));
-    }
-
-    @PostMapping("/jobs/{id}/reject")
-    @Operation(summary = "Từ chối tin tuyển dụng")
-    public ResponseEntity<?> rejectJob(
-            @CurrentUser Long adminId,
-            @PathVariable Long id,
-            @RequestParam String reason) {
-        adminService.rejectJob(adminId, id, reason);
-        return ResponseEntity.ok(Map.of("message", "Job rejected successfully"));
-    }
-
-    // ========================================
-    // QUẢN LÝ BÁO CÁO VI PHẠM
-    // ========================================
-
-    @GetMapping("/reports")
-    @Operation(summary = "Lấy danh sách báo cáo vi phạm")
-    public ResponseEntity<Page<UserReport>> getReports(
-            @RequestParam(required = false) String status,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "20") int size) {
-        return ResponseEntity.ok(adminService.getReports(status, page, size));
-    }
-
-    @PutMapping("/reports/{id}")
-    @Operation(summary = "Xử lý báo cáo vi phạm")
-    public ResponseEntity<UserReport> handleReport(
-            @CurrentUser Long adminId,
-            @PathVariable Long id,
-            @RequestParam String status,
-            @RequestParam(required = false) String note) {
-        return ResponseEntity.ok(adminService.handleReport(adminId, id, status, note));
-    }
-
-    // ========================================
-    // QUẢN LÝ DANH MỤC
-    // ========================================
-
-    @GetMapping("/categories")
-    @Operation(summary = "Lấy danh sách danh mục theo loại")
-    public ResponseEntity<List<Category>> getCategories(
-            @RequestParam String type) {
-        return ResponseEntity.ok(adminService.getCategoriesByType(type));
-    }
-
-    @PostMapping("/categories")
-    @Operation(summary = "Tạo danh mục mới")
-    public ResponseEntity<Category> createCategory(@RequestBody Category category) {
-        return ResponseEntity.ok(adminService.createCategory(category));
-    }
-
-    @PutMapping("/categories/{id}")
-    @Operation(summary = "Cập nhật danh mục")
-    public ResponseEntity<Category> updateCategory(
-            @PathVariable Long id,
-            @RequestBody Category category) {
-        return ResponseEntity.ok(adminService.updateCategory(id, category));
-    }
-
-    @DeleteMapping("/categories/{id}")
-    @Operation(summary = "Xóa danh mục")
-    public ResponseEntity<?> deleteCategory(@PathVariable Long id) {
-        adminService.deleteCategory(id);
-        return ResponseEntity.ok(Map.of("message", "Category deleted successfully"));
-    }
-
-    // ========================================
-    // QUẢN LÝ NỘI DUNG TĨNH
-    // ========================================
-
-    @GetMapping("/contents")
-    @Operation(summary = "Lấy danh sách nội dung tĩnh")
-    public ResponseEntity<Page<StaticContent>> getContents(
-            @RequestParam(required = false) String type,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "20") int size) {
-        return ResponseEntity.ok(adminService.getStaticContents(type, page, size));
-    }
-
-    @GetMapping("/contents/{slug}")
-    @Operation(summary = "Lấy nội dung theo slug")
-    public ResponseEntity<StaticContent> getContentBySlug(@PathVariable String slug) {
-        return ResponseEntity.ok(adminService.getStaticContentBySlug(slug));
-    }
-
-    @PostMapping("/contents")
-    @Operation(summary = "Tạo nội dung mới")
-    public ResponseEntity<StaticContent> createContent(@RequestBody StaticContent content) {
-        return ResponseEntity.ok(adminService.createStaticContent(content));
-    }
-
-    @PutMapping("/contents/{id}")
-    @Operation(summary = "Cập nhật nội dung")
-    public ResponseEntity<StaticContent> updateContent(
-            @PathVariable Long id,
-            @RequestBody StaticContent content) {
-        return ResponseEntity.ok(adminService.updateStaticContent(id, content));
-    }
-
-    @DeleteMapping("/contents/{id}")
-    @Operation(summary = "Xóa nội dung")
-    public ResponseEntity<?> deleteContent(@PathVariable Long id) {
-        adminService.deleteStaticContent(id);
-        return ResponseEntity.ok(Map.of("message", "Content deleted successfully"));
-    }
-
-    @PostMapping("/contents/{id}/publish")
-    @Operation(summary = "Xuất bản nội dung")
-    public ResponseEntity<?> publishContent(@PathVariable Long id) {
-        adminService.publishStaticContent(id);
-        return ResponseEntity.ok(Map.of("message", "Content published successfully"));
-    }
-
-    @PostMapping("/contents/{id}/unpublish")
-    @Operation(summary = "Hủy xuất bản nội dung")
-    public ResponseEntity<?> unpublishContent(@PathVariable Long id) {
-        adminService.unpublishStaticContent(id);
-        return ResponseEntity.ok(Map.of("message", "Content unpublished successfully"));
-    }
-
-    // ========================================
-    // ACTIVITY LOGS
-    // ========================================
-
-    @GetMapping("/activity-logs")
-    @Operation(summary = "Xem lịch sử hoạt động")
-    public ResponseEntity<Page<ActivityLog>> getActivityLogs(
-            @RequestParam(required = false) Long userId,
-            @RequestParam(required = false) String action,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "50") int size) {
-        return ResponseEntity.ok(adminService.getActivityLogs(userId, action, page, size));
+    
+    @GetMapping("/users/{userId}/permissions")
+    @PreAuthorize("hasAuthority('USER_MANAGE')")
+    @Operation(summary = "Get user permissions")
+    public ResponseEntity<Set<String>> getUserPermissions(@Parameter(description = "User ID") @PathVariable Long userId) {
+        Set<String> permissionCodes = accountRepository.findPermissionCodesByAccountId(userId);
+        return ResponseEntity.ok(permissionCodes);
     }
 }

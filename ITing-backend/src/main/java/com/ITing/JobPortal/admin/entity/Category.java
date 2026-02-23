@@ -1,8 +1,8 @@
 package com.iting.jobportal.admin.entity;
 
+import com.iting.jobportal.common.entity.AuditEntity;
 import jakarta.persistence.*;
 import lombok.*;
-import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "categories")
@@ -11,7 +11,8 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class Category {
+@EqualsAndHashCode(callSuper = false)
+public class Category extends AuditEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -24,13 +25,13 @@ public class Category {
     private String name;
 
     @Column(length = 100)
-    private String nameEn;  // Tên tiếng Anh
+    private String nameEn;  // English name for internationalization
 
     @Column(length = 255)
     private String description;
 
-    @Column(length = 255)
-    private String icon;  // Icon URL hoặc icon name
+    @Column(length = 500)
+    private String icon;  // Icon class or image path
 
     private Long parentId;  // Cho category phân cấp
 
@@ -38,20 +39,9 @@ public class Category {
 
     private Boolean active;
 
-    private LocalDateTime createdAt;
-    
-    private LocalDateTime updatedAt;
-
     @PrePersist
     protected void onCreate() {
-        createdAt = LocalDateTime.now();
         if (active == null) active = true;
         if (sortOrder == null) sortOrder = 0;
     }
-
-    @PreUpdate
-    protected void onUpdate() {
-        updatedAt = LocalDateTime.now();
-    }
 }
-

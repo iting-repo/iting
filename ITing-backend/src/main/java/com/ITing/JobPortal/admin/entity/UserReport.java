@@ -1,7 +1,9 @@
 package com.iting.jobportal.admin.entity;
 
+import com.iting.jobportal.common.entity.AuditEntity;
 import jakarta.persistence.*;
 import lombok.*;
+
 import java.time.LocalDateTime;
 
 @Entity
@@ -11,7 +13,8 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class UserReport {
+@EqualsAndHashCode(callSuper = false)
+public class UserReport extends AuditEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -40,13 +43,10 @@ public class UserReport {
 
     private Long handledBy;  // Admin xử lý
 
-    private LocalDateTime createdAt;
-
     private LocalDateTime handledAt;
 
     @PrePersist
     protected void onCreate() {
-        createdAt = LocalDateTime.now();
         if (status == null) status = "PENDING";
     }
 }
