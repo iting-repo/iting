@@ -1,7 +1,0 @@
-com\iting\jobportal\webinfo\entity\WebInfor.class
-com\iting\jobportal\file\FileUploadService.class
-com\iting\jobportal\company\dto\VerifyLicenseRequest.class
-com\iting\jobportal\common\dto\PageResponse.class
-com\iting\jobportal\admin\entity\ReportAccount.class
-com\iting\jobportal\common\dto\ApiResponse.class
-com\iting\jobportal\notification\entity\UserSaveJob.class
