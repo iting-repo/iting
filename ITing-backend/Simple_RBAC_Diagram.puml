@@ -1,0 +1,352 @@
+@startuml Simple_RBAC_Diagram
+
+' ========== CORE ENTITIES ==========
+
+package "Core Entities" {
+    
+    abstract class AuditEntity {
+        - createdAt: LocalDateTime
+        - updatedAt: LocalDateTime
+    }
+    
+    class Account {
+        - id: Long
+        - email: String
+        - passwordHash: String
+        - status: AccountStatus
+        - lastLoginAt: LocalDateTime
+        - roles: Set<Role>
+    }
+    
+    class Role {
+        - id: Long
+        - name: String
+        - description: String
+        - permissions: Set<Permission>
+    }
+    
+    class Permission {
+        - id: Long
+        - code: String
+        - name: String
+        - module: String
+        - action: String
+    }
+    
+    Account --|> AuditEntity
+    Role --|> AuditEntity
+    Permission --|> AuditEntity
+    Account "1" *-- "0..*" Role
+    Role "1" *-- "0..*" Permission
+}
+
+' ========== BUSINESS ENTITIES ==========
+
+package "Business Entities" {
+    
+    class Job {
+        - id: Long
+        - position: String
+        - description: String
+        - requirements: String
+        - techRequired: String
+        - location: String
+        - jobType: JobType
+        - experienceLevel: ExperienceLevel
+        - minSalary: Long
+        - maxSalary: Long
+        - status: JobStatus
+        - employerId: Long
+        - dueDate: LocalDateTime
+    }
+    
+    class Application {
+        - id: Long
+        - jobId: Long
+        - candidateId: Long
+        - coverLetter: String
+        - expectedSalary: Long
+        - status: ApplicationStatus
+        - appliedAt: LocalDateTime
+    }
+    
+    class Company {
+        - id: Long
+        - name: String
+        - description: String
+        - logoUrl: String
+        - website: String
+        - address: String
+        - size: CompanySize
+        - industry: String
+    }
+    
+    class User {
+        - id: Long
+        - firstName: String
+        - lastName: String
+        - phone: String
+        - address: String
+        - avatarUrl: String
+        - skills: List<String>
+        - experience: String
+        - education: String
+        - resumeUrl: String
+    }
+    
+    Job --|> AuditEntity
+    Application --|> AuditEntity
+    Company --|> AuditEntity
+    User --|> AuditEntity
+}
+
+' ========== ADMIN ENTITIES ==========
+
+package "Admin Entities" {
+    
+    class Category {
+        - id: Long
+        - type: String
+        - name: String
+        - nameEn: String
+        - description: String
+        - icon: String
+        - parentId: Long
+        - sortOrder: Integer
+        - active: Boolean
+    }
+    
+    class ActivityLog {
+        - id: Long
+        - adminId: Long
+        - action: String
+        - entityType: String
+        - entityId: Long
+        - description: String
+        - ipAddress: String
+        - userAgent: String
+    }
+    
+    class UserReport {
+        - id: Long
+        - reporterId: Long
+        - reportedUserId: Long
+        - type: String
+        - reason: String
+        - description: String
+        - status: String
+        - adminNote: String
+        - handledBy: Long
+        - handledAt: LocalDateTime
+    }
+    
+    Category --|> AuditEntity
+    ActivityLog --|> AuditEntity
+    UserReport --|> AuditEntity
+}
+
+' ========== RELATIONSHIPS ==========
+
+Account "1" -- "0..1" Company : owns >
+Account "1" -- "0..1" User : has >
+
+Job "1" -- "1" Account : employer >
+Job "1" -- "0..*" Application : receives >
+
+Application "1" -- "1" Job : for >
+Application "1" -- "1" Account : candidate >
+
+ActivityLog "1" -- "1" Account : admin >
+UserReport "1" -- "1" Account : reporter >
+UserReport "1" -- "1" Account : reported >
+
+Category "1" -- "0..*" Job : categorizes >
+
+' ========== ENUMS ==========
+
+package "Enums" {
+    
+    enum AccountStatus {
+        ACTIVE
+        BANNED
+        PENDING
+    }
+    
+    enum JobType {
+        FULL_TIME
+        PART_TIME
+        CONTRACT
+        INTERNSHIP
+        REMOTE
+    }
+    
+    enum ExperienceLevel {
+        ENTRY
+        JUNIOR
+        MID
+        SENIOR
+        LEAD
+    }
+    
+    enum JobStatus {
+        PENDING
+        ACTIVE
+        CLOSED
+        EXPIRED
+    }
+    
+    enum ApplicationStatus {
+        PENDING
+        REVIEWING
+        ACCEPTED
+        REJECTED
+        WITHDRAWN
+    }
+    
+    enum CompanySize {
+        STARTUP
+        SMALL
+        MEDIUM
+        LARGE
+        ENTERPRISE
+    }
+}
+
+' ========== SERVICE LAYER ==========
+
+package "Service Layer" {
+    
+    class AuthService {
+        - accountRepository: AccountRepository
+        - jwtProvider: JwtTokenProvider
+        - passwordEncoder: PasswordEncoder
+        + login(LoginRequest): LoginResponse
+        + logout(String): void
+        + refreshToken(String): TokenResponse
+        + validateToken(String): boolean
+    }
+    
+    class AdminService {
+        - accountRepository: AccountRepository
+        - jobRepository: JobRepository
+        - categoryRepository: CategoryRepository
+        - activityLogRepository: ActivityLogRepository
+        + getUsers(...): Page<UserListResponse>
+        + getDashboardStats(): DashboardStats
+        + approveJob(Long): void
+        + banUser(Long, BanUserRequest): void
+        + createCategory(Category): Category
+    }
+    
+    class JobService {
+        - jobRepository: JobRepository
+        - applicationRepository: ApplicationRepository
+        + createJob(CreateJobRequest): Job
+        + updateJob(Long, UpdateJobRequest): Job
+        + searchJobs(JobSearchRequest): Page<Job>
+        + applyToJob(Long, ApplicationRequest): Application
+    }
+    
+    class UserService {
+        - userRepository: UserRepository
+        - applicationRepository: ApplicationRepository
+        + updateProfile(Long, ProfileRequest): User
+        + getMyApplications(Long): Page<Application>
+        + uploadResume(Long, MultipartFile): String
+    }
+}
+
+' ========== CONTROLLER LAYER ==========
+
+package "Controller Layer" {
+    
+    class AuthController {
+        - authService: AuthService
+        + postLogin(LoginRequest): ResponseEntity<LoginResponse>
+        + postLogout(String): ResponseEntity<Void>
+        + postRefresh(RefreshRequest): ResponseEntity<TokenResponse>
+        + getProfile(User): ResponseEntity<UserProfile>
+    }
+    
+    class AdminController {
+        - adminService: AdminService
+        + getUsers(...): ResponseEntity<Page<UserListResponse>>
+        + getDashboardStats(): ResponseEntity<DashboardStats>
+        + postApproveJob(Long): ResponseEntity<Void>
+        + postBanUser(Long, BanUserRequest): ResponseEntity<Void>
+        + getCategories(): ResponseEntity<List<Category>>
+        + postCategory(Category): ResponseEntity<Category>
+    }
+    
+    class JobController {
+        - jobService: JobService
+        + getJobs(...): ResponseEntity<Page<JobResponse>>
+        + getJob(Long): ResponseEntity<JobResponse>
+        + postJob(CreateJobRequest): ResponseEntity<JobResponse>
+        + putJob(Long, UpdateJobRequest): ResponseEntity<JobResponse>
+        + searchJobs(...): ResponseEntity<Page<JobResponse>>
+    }
+    
+    class ApplicationController {
+        - jobService: JobService
+        + postApplication(ApplicationRequest): ResponseEntity<ApplicationResponse>
+        + getMyApplications(): ResponseEntity<Page<ApplicationResponse>>
+        + getApplicationsForMyJobs(): ResponseEntity<Page<ApplicationResponse>>
+        + putApplicationStatus(Long, StatusRequest): ResponseEntity<Void>
+    }
+}
+
+' ========== DEPENDENCIES ==========
+
+AuthService ..> AccountRepository
+AdminService ..> AccountRepository
+AdminService ..> JobRepository
+AdminService ..> CategoryRepository
+AdminService ..> ActivityLogRepository
+JobService ..> JobRepository
+JobService ..> ApplicationRepository
+UserService ..> UserRepository
+UserService ..> ApplicationRepository
+
+AuthController ..> AuthService
+AdminController ..> AdminService
+JobController ..> JobService
+ApplicationController ..> JobService
+
+' ========== REPOSITORIES ==========
+
+package "Repository Layer" {
+    
+    interface AccountRepository {
+        + findByEmail(String): Optional<Account>
+        + findByEmailWithRolesAndPermissions(String): Optional<Account>
+        + findPermissionCodesByAccountId(Long): Set<String>
+        + countByRoles_Name(String): long
+        + countByStatus(AccountStatus): long
+    }
+    
+    interface JobRepository {
+        + findByEmployerId(Long): List<Job>
+        + findByStatus(JobStatus): List<Job>
+        + countByEmployerIdAndStatus(Long, JobStatus): long
+        + searchJobs(...): Page<Job>
+    }
+    
+    interface ApplicationRepository {
+        + findByJobId(Long): List<Application>
+        + findByCandidateId(Long): List<Application>
+        + findByStatus(ApplicationStatus): List<Application>
+    }
+    
+    interface CategoryRepository {
+        + findByTypeOrderBySortOrderAsc(String): List<Category>
+        + existsByTypeAndName(String, String): boolean
+    }
+    
+    interface ActivityLogRepository {
+        + findByUserIdOrderByCreatedAtDesc(Long, Pageable): Page<ActivityLog>
+        + findRecentActivities(LocalDateTime, Pageable): List<ActivityLog>
+    }
+}
+
+@enduml

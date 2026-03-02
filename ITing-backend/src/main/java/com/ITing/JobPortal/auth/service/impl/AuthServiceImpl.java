@@ -11,6 +11,7 @@ import com.iting.jobportal.auth.entity.Enum.AccountStatus;
 import com.iting.jobportal.auth.repository.AccountRepository;
 import com.iting.jobportal.auth.security.JwtTokenUtil;
 import com.iting.jobportal.auth.service.AuthService;
+import com.iting.jobportal.auth.service.RefreshTokenService;
 import com.iting.jobportal.core.repository.auth.RoleRepository;
 import com.iting.jobportal.user.entity.User;
 import com.iting.jobportal.user.repository.UserRepository;
@@ -20,7 +21,6 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
 import java.util.Set;
 
 @Service
@@ -32,6 +32,7 @@ public class AuthServiceImpl implements AuthService {
     private final CompanyRepository companyRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtTokenUtil jwtTokenUtil;
+    private final RefreshTokenService refreshTokenService;
     private final RoleRepository roleRepository;
 
     @Override
@@ -96,17 +97,29 @@ public class AuthServiceImpl implements AuthService {
                 .findFirst()
                 .orElse("USER");
 
-        // 🔥 Tạo JWT Token
-        String token = jwtTokenUtil.generateToken(
+        // 🔥 Tạo JWT Access Token
+        String accessToken = jwtTokenUtil.generateToken(
                 account.getId(),
                 account.getEmail(),
                 primaryRole);
 
-        return new LoginResponse(
+        // 🔥 Tạo Refresh Token
+        var refreshToken = refreshTokenService.createRefreshToken(
                 account.getId(),
                 account.getEmail(),
-                primaryRole,
-                token);
+                request.getDeviceInfo() != null ? request.getDeviceInfo() : "Unknown",
+                request.getIpAddress() != null ? request.getIpAddress() : "Unknown"
+        );
+
+        return LoginResponse.builder()
+                .userId(account.getId())
+                .email(account.getEmail())
+                .role(primaryRole)
+                .accessToken(accessToken)
+                .refreshToken(refreshToken.getToken())
+                .tokenType("Bearer")
+                .expiresIn(86400L) // 24 hours in seconds
+                .build();
     }
 
     @Override
