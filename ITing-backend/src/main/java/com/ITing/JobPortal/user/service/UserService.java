@@ -10,18 +10,18 @@ import java.util.List;
 
 public interface UserService {
 
-    UserProfileResponse getProfile(Long userId);
+    UserProfileResponse getProfile(String userId);
 
-    void updateBasic(Long userId, UpdateUserRequest req);
+    void updateBasic(String userId, UpdateUserRequest req);
 
-    void updateAvatar(Long userId, String url);
+    void updateAvatar(String userId, String url);
 
-    void deleteAvatar(Long userId);
+    void deleteAvatar(String userId);
 
-    void updateDescription(Long userId, String description);
+    void updateDescription(String userId, String description);
 
-    void updateAddress(Long userId, String address);
+    void updateAddress(String userId, String address);
 
-    void updateBirthGender(Long userId, LocalDate birthDate, Gender gender);
+    void updateBirthGender(String userId, LocalDate birthDate, Gender gender);
 
     }

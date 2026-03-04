@@ -11,7 +11,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
@@ -36,7 +36,7 @@ public class UserProfileServiceImpl implements UserProfileService {
        ============================================================ */
 
     @Override
-    public void updateContact(Long userId, ContactInfoRequest req) {
+    public void updateContact(String userId, ContactInfoRequest req) {
         ContactInfo info = contactInfoRepo.findById(userId)
                 .orElse(new ContactInfo(userId, null, null));
 
@@ -51,12 +51,12 @@ public class UserProfileServiceImpl implements UserProfileService {
        ============================================================ */
 
     @Override
-    public List<SocialLink> getSocialLinks(Long userId) {
+    public List<SocialLink> getSocialLinks(String userId) {
         return socialRepo.findByUserId(userId);
     }
 
     @Override
-    public SocialLink addSocialLink(Long userId, SocialLinkRequest req) {
+    public SocialLink addSocialLink(String userId, SocialLinkRequest req) {
         SocialLink link = new SocialLink();
         link.setUserId(userId);
         link.setPlatform(req.getPlatform());
@@ -87,12 +87,12 @@ public class UserProfileServiceImpl implements UserProfileService {
        ============================================================ */
 
     @Override
-    public List<Education> getEducations(Long userId) {
+    public List<Education> getEducations(String userId) {
         return educationRepo.findByUserId(userId);
     }
 
     @Override
-    public Education addEducation(Long userId, EducationRequest req) {
+    public Education addEducation(String userId, EducationRequest req) {
         Education edu = new Education();
         edu.setUserId(userId);
         edu.setSchool(req.getSchool());
@@ -130,12 +130,12 @@ public class UserProfileServiceImpl implements UserProfileService {
        ============================================================ */
 
     @Override
-    public List<Skill> getSkills(Long userId) {
+    public List<Skill> getSkills(String userId) {
         return skillRepo.findByUserId(userId);
     }
 
     @Override
-    public Skill addSkill(Long userId, SkillRequest req) {
+    public Skill addSkill(String userId, SkillRequest req) {
         Skill skill = new Skill();
         skill.setUserId(userId);
         skill.setSkill(req.getSkill());
@@ -166,7 +166,7 @@ public class UserProfileServiceImpl implements UserProfileService {
        ============================================================ */
 
     @Override
-    public Certificate addCertificate(Long userId, CertificateRequest req) {
+    public Certificate addCertificate(String userId, CertificateRequest req) {
         Certificate c = new Certificate();
         c.setUserId(userId);
         c.setName(req.getName());
@@ -199,7 +199,7 @@ public class UserProfileServiceImpl implements UserProfileService {
        ============================================================ */
 
     @Override
-    public Experience addExperience(Long userId, ExperienceRequest req) {
+    public Experience addExperience(String userId, ExperienceRequest req) {
         Experience exp = new Experience();
         exp.setUserId(userId);
         exp.setCompany(req.getCompany());
@@ -237,12 +237,12 @@ public class UserProfileServiceImpl implements UserProfileService {
        ============================================================ */
 
     @Override
-    public List<Portfolio> getPortfolio(Long userId) {
+    public List<Portfolio> getPortfolio(String userId) {
         return portfolioRepo.findByUserId(userId);
     }
 
     @Override
-    public Portfolio addPortfolioLink(Long userId, PortfolioLinkRequest req) {
+    public Portfolio addPortfolioLink(String userId, PortfolioLinkRequest req) {
         Portfolio p = new Portfolio();
         p.setUserId(userId);
         p.setType("LINK");
@@ -252,7 +252,7 @@ public class UserProfileServiceImpl implements UserProfileService {
     }
 
     @Override
-    public Portfolio uploadPortfolioFile(Long userId, MultipartFile file) {
+    public Portfolio uploadPortfolioFile(String userId, MultipartFile file) {
         if (file.isEmpty()) throw new RuntimeException("File cannot be empty");
 
         String url = fileUploadService.uploadPortfolio(file);
@@ -278,12 +278,12 @@ public class UserProfileServiceImpl implements UserProfileService {
        ============================================================ */
 
     @Override
-    public List<CV> getCVs(Long userId) {
+    public List<CV> getCVs(String userId) {
         return cvRepo.findByUserId(userId);
     }
 
     @Override
-    public CV uploadCV(Long userId, MultipartFile file) {
+    public CV uploadCV(String userId, MultipartFile file) {
         if (file.isEmpty()) throw new RuntimeException("CV file is empty");
 
         String url = fileUploadService.uploadCV(file);
@@ -291,7 +291,7 @@ public class UserProfileServiceImpl implements UserProfileService {
         CV cv = new CV();
         cv.setUserId(userId);
         cv.setFileUrl(url);
-        cv.setUploadedAt(LocalDate.now());
+        cv.setUploadedAt(LocalDateTime.now());
         return cvRepo.save(cv);
     }
 
@@ -305,7 +305,7 @@ public class UserProfileServiceImpl implements UserProfileService {
         String newUrl = fileUploadService.uploadCV(file);
 
         cv.setFileUrl(newUrl);
-        cv.setUploadedAt(LocalDate.now());
+        cv.setUploadedAt(LocalDateTime.now());
         return cvRepo.save(cv);
     }
 
@@ -334,7 +334,7 @@ public class UserProfileServiceImpl implements UserProfileService {
        ============================================================ */
 
     @Override
-    public void updateCareerObjective(Long userId, CareerObjectiveRequest req) {
+    public void updateCareerObjective(String userId, CareerObjectiveRequest req) {
         throw new UnsupportedOperationException(
                 "Career Objective chưa có entity riêng. Hãy tạo bảng user_career_objective"
         );

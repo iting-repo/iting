@@ -1,7 +1,7 @@
 package com.iting.jobportal.application.dto;
 
-import com.iting.jobportal.application.entity.JobApplication;
-import com.iting.jobportal.application.entity.enums.ApplicationStatus;
+import com.iting.jobportal.application.entity.ApplyForm;
+import com.iting.jobportal.application.entity.ApplyFormSentToJob;
 import lombok.Builder;
 import lombok.Data;
 import java.time.LocalDateTime;
@@ -10,49 +10,24 @@ import java.time.LocalDateTime;
 @Builder
 public class ApplicationResponse {
     private Long id;
-    private Long userId;
+    private String userId;
     private Long jobId;
-    private Long employerId;
     
-    // Thông tin job
-    private String jobPosition;
-    private String companyName;
-    
-    // Thông tin ứng viên
     private String applicantName;
-    private String applicantEmail;
-    private String applicantPhone;
-    private String cvUrl;
     private String cvTitle;
-    private String coverLetter;
+    private String introduction;
+
+    private LocalDateTime timeSent;
     
-    // Trạng thái
-    private ApplicationStatus status;
-    private String employerNote;
-    
-    // Thời gian
-    private LocalDateTime appliedAt;
-    private LocalDateTime viewedAt;
-    private LocalDateTime updatedAt;
-    
-    public static ApplicationResponse fromEntity(JobApplication app) {
+    public static ApplicationResponse fromEntities(ApplyForm applyForm, ApplyFormSentToJob applyFormSentToJob) {
         return ApplicationResponse.builder()
-                .id(app.getId())
-                .userId(app.getUserId())
-                .jobId(app.getJobId())
-                .employerId(app.getEmployerId())
-                .applicantName(app.getApplicantName())
-                .applicantEmail(app.getApplicantEmail())
-                .applicantPhone(app.getApplicantPhone())
-                .cvUrl(app.getCvUrl())
-                .cvTitle(app.getCvTitle())
-                .coverLetter(app.getCoverLetter())
-                .status(app.getStatus())
-                .employerNote(app.getEmployerNote())
-                .appliedAt(app.getAppliedAt())
-                .viewedAt(app.getViewedAt())
-                .updatedAt(app.getUpdatedAt())
+                .id(applyForm.getId())
+                .userId(applyForm.getUserId())
+                .jobId(applyFormSentToJob.getId().getJobId())
+                .applicantName(applyForm.getApplicantName())
+                .cvTitle(applyForm.getCvTitle())
+                .introduction(applyForm.getIntroduction())
+                .timeSent(applyFormSentToJob.getTimeSent())
                 .build();
     }
 }
-

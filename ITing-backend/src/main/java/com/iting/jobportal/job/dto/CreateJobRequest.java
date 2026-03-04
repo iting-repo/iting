@@ -5,6 +5,7 @@ import com.iting.jobportal.job.entity.enums.JobType;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
+import java.math.BigDecimal;
 import java.time.LocalDate;
 
 @Data
@@ -30,9 +31,9 @@ public class CreateJobRequest {
     
     private Integer maxAccept;
     
-    private Long minSalary;
+    private BigDecimal minSalary;
     
-    private Long maxSalary;
+    private BigDecimal maxSalary;
     
     @NotNull(message = "Ngày hết hạn không được để trống")
     private LocalDate dueDate;

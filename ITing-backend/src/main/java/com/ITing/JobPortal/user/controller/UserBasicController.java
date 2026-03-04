@@ -14,7 +14,7 @@ public class UserBasicController {
 
     @PutMapping("/basic")
     public String updateBasic(
-            @com.iting.jobportal.user.controller.CurrentUser Long userId,
+            @com.iting.jobportal.user.controller.CurrentUser String userId,
             @RequestBody UpdateUserRequest request) {
 
         userService.updateBasic(userId, request);

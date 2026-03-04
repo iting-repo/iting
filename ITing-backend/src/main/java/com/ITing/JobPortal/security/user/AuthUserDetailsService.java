@@ -21,14 +21,10 @@ public class AuthUserDetailsService implements UserDetailsService {
     @Override
     @Transactional(readOnly = true)
     public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
-        Account account = accountRepository.findByEmailWithRolesAndPermissions(email)
+        Account account = accountRepository.findByEmail(email)
                 .orElseThrow(() -> new UsernameNotFoundException("User not found with email: " + email));
 
-        log.debug("Loading user details for email: {} with {} roles and {} permissions",
-                email, account.getRoles().size(),
-                account.getRoles().stream()
-                        .mapToInt(role -> role.getPermissions().size())
-                        .sum());
+        log.debug("Loading user details for email: {}", email);
 
         return new AuthUser(account);
     }

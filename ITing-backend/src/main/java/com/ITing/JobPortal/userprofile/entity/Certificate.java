@@ -5,6 +5,7 @@ import lombok.*;
 import java.time.LocalDate;
 
 @Entity
+@Table(name = "Certificate")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -15,7 +16,8 @@ public class Certificate {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private Long userId;
+    @Column(name = "User_id", length = 255)
+    private String userId;
 
     private String name;          // Tên chứng chỉ
     private String organization;  // Tổ chức cấp

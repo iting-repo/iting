@@ -2,9 +2,10 @@ package com.iting.jobportal.userprofile.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 @Entity
+@Table(name = "CV")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -15,7 +16,12 @@ public class CV {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private Long userId;        // ID của user sở hữu CV
-    private String fileUrl;     // URL file CV sau khi upload Cloudinary / Firebase / Local
-    private LocalDate uploadedAt;  // Ngày tải lên
+    @Column(name = "User_id", length = 255)
+    private String userId;
+
+    @Column(name = "File_path", columnDefinition = "TEXT")
+    private String fileUrl;
+
+    @Column(name = "Upload_time")
+    private LocalDateTime uploadedAt;
 }

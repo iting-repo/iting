@@ -1,6 +1,5 @@
 package com.iting.jobportal.admin.entity;
 
-import com.iting.jobportal.core.domain.auth.Role;
 import jakarta.persistence.*;
 import lombok.*;
 import java.time.LocalDateTime;
@@ -29,10 +28,6 @@ public class AdminAccount {
 
     @Column(length = 500)
     private String avatarUrl;
-
-    @ManyToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "role_id")
-    private Role role;
 
     @Column(name = "last_login")
     private LocalDateTime lastLogin;
@@ -63,11 +58,6 @@ public class AdminAccount {
     @PreUpdate
     protected void onUpdate() {
         updatedAt = LocalDateTime.now();
-    }
-
-    // Helper method to check permission
-    public boolean hasPermission(String permissionCode) {
-        return role != null && role.hasPermission(permissionCode);
     }
 }
 

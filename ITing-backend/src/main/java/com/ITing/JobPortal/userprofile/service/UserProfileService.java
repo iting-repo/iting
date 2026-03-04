@@ -9,49 +9,49 @@ import java.util.List;
 public interface UserProfileService {
 
     // Contact
-    void updateContact(Long userId, ContactInfoRequest req);
+    void updateContact(String userId, ContactInfoRequest req);
 
     // Social Links
-    List<SocialLink> getSocialLinks(Long userId);
-    SocialLink addSocialLink(Long userId, SocialLinkRequest req);
+    List<SocialLink> getSocialLinks(String userId);
+    SocialLink addSocialLink(String userId, SocialLinkRequest req);
     void updateSocialLink(Long id, SocialLinkRequest req);
     void deleteSocialLink(Long id);
 
     // Education
-    List<Education> getEducations(Long userId);
-    Education addEducation(Long userId, EducationRequest req);
+    List<Education> getEducations(String userId);
+    Education addEducation(String userId, EducationRequest req);
     void updateEducation(Long id, EducationRequest req);
     void deleteEducation(Long id);
 
     // Skills
-    List<Skill> getSkills(Long userId);
-    Skill addSkill(Long userId, SkillRequest req);
+    List<Skill> getSkills(String userId);
+    Skill addSkill(String userId, SkillRequest req);
     void updateSkill(Long id, SkillRequest req);
     void deleteSkill(Long id);
 
     // Certificate
-    Certificate addCertificate(Long userId, CertificateRequest req);
+    Certificate addCertificate(String userId, CertificateRequest req);
     void updateCertificate(Long id, CertificateRequest req);
     void deleteCertificate(Long id);
 
     // Experience
-    Experience addExperience(Long userId, ExperienceRequest req);
+    Experience addExperience(String userId, ExperienceRequest req);
     void updateExperience(Long id, ExperienceRequest req);
     void deleteExperience(Long id);
 
     // Portfolio
-    List<Portfolio> getPortfolio(Long userId);
-    Portfolio addPortfolioLink(Long userId, PortfolioLinkRequest req);
-    Portfolio uploadPortfolioFile(Long userId, MultipartFile file);
+    List<Portfolio> getPortfolio(String userId);
+    Portfolio addPortfolioLink(String userId, PortfolioLinkRequest req);
+    Portfolio uploadPortfolioFile(String userId, MultipartFile file);
     void deletePortfolio(Long id);
 
     // CV
-    List<CV> getCVs(Long userId);
-    CV uploadCV(Long userId, MultipartFile file);
+    List<CV> getCVs(String userId);
+    CV uploadCV(String userId, MultipartFile file);
     CV replaceCV(Long cvId, MultipartFile file);
     void deleteCV(Long cvId);
     void analyzeCV(Long cvId);
 
     // Career Objective
-    void updateCareerObjective(Long userId, CareerObjectiveRequest req);
+    void updateCareerObjective(String userId, CareerObjectiveRequest req);
 }

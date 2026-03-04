@@ -16,47 +16,47 @@ public class UserController {
     private final UserService userService;
 
     @GetMapping
-    public ResponseEntity<UserProfileResponse> getProfile(@CurrentUser Long userId) {
+    public ResponseEntity<UserProfileResponse> getProfile(@CurrentUser String userId) {
         return ResponseEntity.ok(userService.getProfile(userId));
     }
 
 
     @PutMapping("/basic")
-    public ResponseEntity<?> updateBasic(@CurrentUser Long userId,
+    public ResponseEntity<?> updateBasic(@CurrentUser String userId,
                                          @RequestBody UpdateUserRequest req) {
         userService.updateBasic(userId, req);
         return ResponseEntity.ok(Map.of("message", "Updated"));
     }
 
     @PutMapping("/avatar")
-    public ResponseEntity<?> updateAvatar(@CurrentUser Long userId,
+    public ResponseEntity<?> updateAvatar(@CurrentUser String userId,
                                           @RequestBody UpdateAvatarRequest req) {
         userService.updateAvatar(userId, req.getAvatarUrl());
         return ResponseEntity.ok(Map.of("message", "Avatar updated"));
     }
 
     @DeleteMapping("/avatar")
-    public ResponseEntity<?> deleteAvatar(@CurrentUser Long userId) {
+    public ResponseEntity<?> deleteAvatar(@CurrentUser String userId) {
         userService.deleteAvatar(userId);
         return ResponseEntity.ok(Map.of("message", "Avatar removed"));
     }
 
     @PutMapping("/description")
-    public ResponseEntity<?> updateDescription(@CurrentUser Long userId,
+    public ResponseEntity<?> updateDescription(@CurrentUser String userId,
                                                @RequestBody UpdateDescriptionRequest req) {
         userService.updateDescription(userId, req.getDescription());
         return ResponseEntity.ok(Map.of("message", "Description updated"));
     }
 
     @PutMapping("/address")
-    public ResponseEntity<?> updateAddress(@CurrentUser Long userId,
+    public ResponseEntity<?> updateAddress(@CurrentUser String userId,
                                            @RequestBody UpdateAddressRequest req) {
         userService.updateAddress(userId, req.getAddress());
         return ResponseEntity.ok(Map.of("message", "Address updated"));
     }
 
     @PutMapping("/birth-gender")
-    public ResponseEntity<?> updateBirthGender(@CurrentUser Long userId,
+    public ResponseEntity<?> updateBirthGender(@CurrentUser String userId,
                                                @RequestBody UpdateBirthGenderRequest req) {
         userService.updateBirthGender(userId, req.getBirthDate(), req.getGender());
         return ResponseEntity.ok(Map.of("message", "Birthdate & gender updated"));

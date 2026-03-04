@@ -4,6 +4,7 @@ import com.iting.jobportal.job.entity.enums.ExperienceLevel;
 import com.iting.jobportal.job.entity.enums.JobStatus;
 import com.iting.jobportal.job.entity.enums.JobType;
 import lombok.Data;
+import java.math.BigDecimal;
 import java.time.LocalDate;
 
 @Data
@@ -17,8 +18,8 @@ public class UpdateJobRequest {
     private ExperienceLevel experienceLevel;
     private JobStatus status;
     private Integer maxAccept;
-    private Long minSalary;
-    private Long maxSalary;
+    private BigDecimal minSalary;
+    private BigDecimal maxSalary;
     private LocalDate dueDate;
 }
 

@@ -28,7 +28,7 @@ public class ApplicationController {
     @PostMapping("/apply")
     @Operation(summary = "Nộp đơn ứng tuyển")
     public ResponseEntity<ApplicationResponse> applyJob(
-            @Parameter(hidden = true) @CurrentUser Long userId,
+            @Parameter(hidden = true) @CurrentUser String userId,
             @Valid @RequestBody ApplyJobRequest request) {
         return ResponseEntity.ok(applicationService.applyJob(userId, request));
     }
@@ -36,7 +36,7 @@ public class ApplicationController {
     @PostMapping("/{id}/withdraw")
     @Operation(summary = "Rút đơn ứng tuyển")
     public ResponseEntity<?> withdrawApplication(
-            @CurrentUser Long userId,
+            @CurrentUser String userId,
             @PathVariable Long id) {
         applicationService.withdrawApplication(userId, id);
         return ResponseEntity.ok(Map.of("message", "Application withdrawn successfully"));
@@ -45,7 +45,7 @@ public class ApplicationController {
     @GetMapping("/my-applications")
     @Operation(summary = "Xem danh sách đơn đã nộp (Ứng viên)")
     public ResponseEntity<Page<ApplicationResponse>> getMyApplications(
-            @CurrentUser Long userId,
+            @CurrentUser String userId,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
         return ResponseEntity.ok(applicationService.getMyApplications(userId, page, size));
@@ -54,7 +54,7 @@ public class ApplicationController {
     @GetMapping("/check/{jobId}")
     @Operation(summary = "Kiểm tra đã ứng tuyển job chưa")
     public ResponseEntity<Map<String, Boolean>> checkApplied(
-            @CurrentUser Long userId,
+            @CurrentUser String userId,
             @PathVariable Long jobId) {
         boolean hasApplied = applicationService.hasApplied(userId, jobId);
         return ResponseEntity.ok(Map.of("hasApplied", hasApplied));

@@ -6,6 +6,7 @@ import com.iting.jobportal.job.entity.enums.JobStatus;
 import com.iting.jobportal.job.entity.enums.JobType;
 import lombok.Builder;
 import lombok.Data;
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
@@ -26,11 +27,10 @@ public class JobResponse {
     private JobStatus status;
     private Integer maxAccept;
     private Integer currentAccepted;
-    private Long minSalary;
-    private Long maxSalary;
+    private BigDecimal minSalary;
+    private BigDecimal maxSalary;
     private LocalDate dueDate;
-    private LocalDateTime createdAt;
-    private LocalDateTime updatedAt;
+    private LocalDateTime lastUpdate;
     private Integer viewCount;
     private Integer applicationCount;
     
@@ -51,8 +51,7 @@ public class JobResponse {
                 .minSalary(job.getMinSalary())
                 .maxSalary(job.getMaxSalary())
                 .dueDate(job.getDueDate())
-                .createdAt(job.getCreatedAt())
-                .updatedAt(job.getUpdatedAt())
+                .lastUpdate(job.getLastUpdate())
                 .viewCount(job.getViewCount())
                 .applicationCount(job.getApplicationCount())
                 .build();

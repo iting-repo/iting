@@ -10,16 +10,16 @@ public interface ApplicationService {
     // ========== CHO ỨNG VIÊN ==========
     
     // Nộp đơn ứng tuyển
-    ApplicationResponse applyJob(Long userId, ApplyJobRequest request);
+    ApplicationResponse applyJob(String userId, ApplyJobRequest request);
     
     // Rút đơn ứng tuyển
-    void withdrawApplication(Long userId, Long applicationId);
+    void withdrawApplication(String userId, Long applicationId);
     
     // Xem danh sách đơn đã nộp
-    Page<ApplicationResponse> getMyApplications(Long userId, int page, int size);
+    Page<ApplicationResponse> getMyApplications(String userId, int page, int size);
     
     // Kiểm tra đã ứng tuyển job chưa
-    boolean hasApplied(Long userId, Long jobId);
+    boolean hasApplied(String userId, Long jobId);
     
     // ========== CHO NHÀ TUYỂN DỤNG ==========
     

@@ -4,84 +4,84 @@ import jakarta.persistence.*;
 import java.time.LocalDateTime;
 import lombok.Getter;
 import lombok.Setter;
-import com.iting.jobportal.auth.entity.Account;
 
 @Entity
-@Table(name = "companies")
+@Table(name = "Company")
 @Getter
 @Setter
 public class Company {
 
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "Company_id")
     private Long id;
 
-    @MapsId
-    @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "id")
-    private Account account;
-
     // ===== Thông tin cơ bản =====
-    @Column(nullable = false, length = 255)
+    @Column(name = "Name", nullable = false, length = 255)
     private String name;
 
-    @Column(length = 1000)
+    @Column(name = "Logo", columnDefinition = "TEXT")
     private String logoUrl;
 
-    @Column(length = 500)
+    @Column(name = "Address", length = 500)
     private String address;
 
-    @Column(length = 2000)
+    @Column(name = "Description", columnDefinition = "TEXT")
     private String description;
 
-    @Column(length = 255)
+    @Column(name = "Web_link", columnDefinition = "TEXT")
     private String website;
 
-    @Column(length = 255)
+    @Transient
     private String companyEmail;
 
-    @Column(length = 255)
+    @Transient
     private String industry;
 
-    @Column(length = 50)
+    @Transient
     private String companySize;
 
-    @Column(length = 20)
+    @Transient
     private String phone;
 
     // ===== Thông tin người đại diện =====
-    @Column(length = 255)
+    @Transient
     private String representativeName;
 
-    @Column(length = 20)
+    @Transient
     private String representativeGender;
 
-    @Column(length = 20)
+    @Transient
     private String representativePhone;
 
-    @Column(length = 255)
+    @Transient
     private String accountEmail;
 
     // ===== Thông tin pháp lý =====
-    @Column(length = 100)
+    @Transient
     private String taxCode;
 
-    @Column(length = 1000)
+    @Transient
     private String businessLicenseFileUrl;
 
-    @Column(length = 1000)
+    @Transient
     private String consentDocumentFileUrl;
 
     // ===== Xác thực =====
+    @Transient
     private Integer verificationLevel;
 
-    @Column(length = 255)
+    @Transient
     private String companyInfoUpdateStatus;
 
+    @Transient
     private LocalDateTime lastUpdateRequestDate;
 
     // ===== Hệ thống =====
+    @Column(name = "Last_update")
     private LocalDateTime lastUpdate;
 
+    @Transient
     private Boolean active = true;
 
     public Company() {

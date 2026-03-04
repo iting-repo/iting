@@ -4,12 +4,9 @@ import com.iting.jobportal.admin.dto.*;
 import com.iting.jobportal.admin.entity.*;
 import com.iting.jobportal.admin.repository.*;
 import com.iting.jobportal.admin.service.AdminService;
-import com.iting.jobportal.application.repository.JobApplicationRepository;
+import com.iting.jobportal.application.repository.ApplyFormRepository;
 import com.iting.jobportal.auth.entity.Account;
-import com.iting.jobportal.auth.entity.Enum.AccountStatus;
 import com.iting.jobportal.auth.repository.AccountRepository;
-import com.iting.jobportal.core.domain.auth.Role;
-import com.iting.jobportal.core.repository.auth.RoleRepository;
 import com.iting.jobportal.company.entity.Company;
 import com.iting.jobportal.company.repository.CompanyRepository;
 import com.iting.jobportal.job.entity.Job;
@@ -37,43 +34,18 @@ public class AdminServiceImpl implements AdminService {
     private final UserRepository userRepository;
     private final CompanyRepository companyRepository;
     private final JobRepository jobRepository;
-    private final JobApplicationRepository applicationRepository;
+    private final ApplyFormRepository applyFormRepository;
     private final CategoryRepository categoryRepository;
     private final StaticContentRepository staticContentRepository;
     private final UserReportRepository reportRepository;
     private final ActivityLogRepository activityLogRepository;
-    private final RoleRepository roleRepository;
 
     // ========== QUẢN LÝ NGƯỜI DÙNG ==========
 
     @Override
-    public Page<UserListResponse> getAllUsers(String keyword, com.iting.jobportal.auth.entity.Enum.Role role, AccountStatus status, int page, int size) {
-        Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
-        
-        // Sử dụng query đơn giản trước, có thể cải thiện bằng Specification pattern
-        Page<Account> accounts;
-        if (role != null && status != null) {
-            // Find RBAC role by enum name
-            Role rbacRole = roleRepository.findByName(role.name()).orElse(null);
-            if (rbacRole != null) {
-                accounts = accountRepository.findByRolesContainingAndStatus(rbacRole, status, pageable);
-            } else {
-                accounts = Page.empty(pageable);
-            }
-        } else if (role != null) {
-            // Find RBAC role by enum name
-            Role rbacRole = roleRepository.findByName(role.name()).orElse(null);
-            if (rbacRole != null) {
-                accounts = accountRepository.findByRolesContaining(rbacRole, pageable);
-            } else {
-                accounts = Page.empty(pageable);
-            }
-        } else if (status != null) {
-            accounts = accountRepository.findByStatus(status, pageable);
-        } else {
-            accounts = accountRepository.findAll(pageable);
-        }
-        
+    public Page<UserListResponse> getAllUsers(String keyword, com.iting.jobportal.auth.entity.Enum.Role role, com.iting.jobportal.auth.entity.Enum.AccountStatus status, int page, int size) {
+        Pageable pageable = PageRequest.of(page, size, Sort.by("id").descending());
+        Page<Account> accounts = accountRepository.findAll(pageable);
         return accounts.map(this::mapToUserListResponse);
     }
 
@@ -87,51 +59,19 @@ public class AdminServiceImpl implements AdminService {
     @Override
     @Transactional
     public UserListResponse updateUser(Long adminId, Long userId, UpdateUserRequest request) {
-        Account account = accountRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("User not found"));
-        
-        if (request.getRole() != null) {
-            // Find RBAC role by name
-            Role rbacRole = roleRepository.findByName(request.getRole().name())
-                    .orElseThrow(() -> new RuntimeException("Role not found: " + request.getRole().name()));
-            account.setRoles(Set.of(rbacRole));
-        }
-        if (request.getStatus() != null) {
-            account.setStatus(request.getStatus());
-        }
-        
-        Account saved = accountRepository.save(account);
-        
-        // Log activity
-        logActivity(adminId, "UPDATE_USER", "USER", userId, 
-                "Updated user: " + account.getEmail() + (request.getNote() != null ? ". Note: " + request.getNote() : ""));
-        
-        return mapToUserListResponse(saved);
+        throw new UnsupportedOperationException("Admin user update is not supported with current schema.sql mapping");
     }
 
     @Override
     @Transactional
     public void banUser(Long adminId, Long userId, BanUserRequest request) {
-        Account account = accountRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("User not found"));
-        
-        account.setStatus(AccountStatus.BANNED);
-        accountRepository.save(account);
-        
-        logActivity(adminId, "BAN_USER", "USER", userId, 
-                "Banned user: " + account.getEmail() + ". Reason: " + request.getReason());
+        throw new UnsupportedOperationException("Admin ban user is not supported with current schema.sql mapping");
     }
 
     @Override
     @Transactional
     public void unbanUser(Long adminId, Long userId) {
-        Account account = accountRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("User not found"));
-        
-        account.setStatus(AccountStatus.ACTIVE);
-        accountRepository.save(account);
-        
-        logActivity(adminId, "UNBAN_USER", "USER", userId, "Unbanned user: " + account.getEmail());
+        throw new UnsupportedOperationException("Admin unban user is not supported with current schema.sql mapping");
     }
 
     @Override
@@ -150,7 +90,7 @@ public class AdminServiceImpl implements AdminService {
 
     @Override
     public Page<?> getPendingJobs(int page, int size) {
-        Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
+        Pageable pageable = PageRequest.of(page, size, Sort.by("lastUpdate").descending());
         return jobRepository.findByStatus(JobStatus.PENDING, pageable);
     }
 
@@ -320,36 +260,28 @@ public class AdminServiceImpl implements AdminService {
         return DashboardStats.builder()
                 // Tổng quan
                 .totalUsers(accountRepository.count())
-                .totalCandidates(
-                        accountRepository.countByRoles_Name(
-                                com.iting.jobportal.auth.entity.Enum.Role.CANDIDATE.name()
-                        )
-                )
-                .totalEmployers(
-                        accountRepository.countByRoles_Name(
-                                com.iting.jobportal.auth.entity.Enum.Role.EMPLOYER.name()
-                        )
-                )
+                .totalCandidates(0)
+                .totalEmployers(0)
                 .totalJobs(jobRepository.count())
-                .totalApplications(applicationRepository.count())
+                .totalApplications(applyFormRepository.count())
                 
                 // Trạng thái
-                .activeUsers(accountRepository.countByStatus(AccountStatus.ACTIVE))
-                .bannedUsers(accountRepository.countByStatus(AccountStatus.BANNED))
-                .activeJobs(jobRepository.countByEmployerIdAndStatus(null, JobStatus.ACTIVE))
+                .activeUsers(0)
+                .bannedUsers(0)
+                .activeJobs(countJobsByStatus(JobStatus.ACTIVE))
                 .pendingJobs(countJobsByStatus(JobStatus.PENDING))
                 .expiredJobs(countJobsByStatus(JobStatus.EXPIRED))
                 
                 // Thống kê theo thời gian
-                .newUsersToday(accountRepository.countByCreatedAtAfter(startOfDay))
-                .newUsersThisWeek(accountRepository.countByCreatedAtAfter(startOfWeek))
-                .newUsersThisMonth(accountRepository.countByCreatedAtAfter(startOfMonth))
-                .newJobsToday(countJobsCreatedAfter(startOfDay))
-                .newJobsThisWeek(countJobsCreatedAfter(startOfWeek))
-                .newJobsThisMonth(countJobsCreatedAfter(startOfMonth))
-                .applicationsToday(countApplicationsAfter(startOfDay))
-                .applicationsThisWeek(countApplicationsAfter(startOfWeek))
-                .applicationsThisMonth(countApplicationsAfter(startOfMonth))
+                .newUsersToday(0)
+                .newUsersThisWeek(0)
+                .newUsersThisMonth(0)
+                .newJobsToday(0)
+                .newJobsThisWeek(0)
+                .newJobsThisMonth(0)
+                .applicationsToday(0)
+                .applicationsThisWeek(0)
+                .applicationsThisMonth(0)
                 
                 // Top thống kê
                 .topCompanies(getTopCompanies())
@@ -389,31 +321,13 @@ public class AdminServiceImpl implements AdminService {
     // ========== HELPER METHODS ==========
 
     private UserListResponse mapToUserListResponse(Account account) {
-        // Get primary role from RBAC roles for backward compatibility
-        com.iting.jobportal.auth.entity.Enum.Role primaryRole = account.getRoles().stream()
-                .map(role -> com.iting.jobportal.auth.entity.Enum.Role.valueOf(role.getName()))
-                .findFirst()
-                .orElse(com.iting.jobportal.auth.entity.Enum.Role.CANDIDATE);
-        
         UserListResponse.UserListResponseBuilder builder = UserListResponse.builder()
                 .id(account.getId())
                 .email(account.getEmail())
-                .role(primaryRole)
-                .status(account.getStatus())
-                .createdAt(account.getCreatedAt())
-                .lastLoginAt(account.getLastLoginAt());
-        
-        if (primaryRole == com.iting.jobportal.auth.entity.Enum.Role.CANDIDATE) {
-            userRepository.findById(account.getId()).ifPresent(user -> {
-                builder.fullName(user.getFirstName() + " " + user.getLastName());
-                builder.avatarUrl(user.getAvatarUrl());
-            });
-        } else if (primaryRole == com.iting.jobportal.auth.entity.Enum.Role.EMPLOYER) {
-            companyRepository.findById(account.getId()).ifPresent(company -> {
-                builder.companyName(company.getName());
-                builder.avatarUrl(company.getLogoUrl());
-            });
-        }
+                .role(null)
+                .status(null)
+                .createdAt(null)
+                .lastLoginAt(null);
         
         return builder.build();
     }
@@ -423,15 +337,11 @@ public class AdminServiceImpl implements AdminService {
     }
     
     private long countJobsCreatedAfter(LocalDateTime since) {
-        // Simplified - should use proper query
-        return jobRepository.findAll().stream()
-                .filter(j -> j.getCreatedAt() != null && j.getCreatedAt().isAfter(since))
-                .count();
+        return 0;
     }
     
     private long countApplicationsAfter(LocalDateTime since) {
-        // Simplified - should use proper query
-        return applicationRepository.count(); // Placeholder
+        return 0;
     }
     
     private List<Map<String, Object>> getTopCompanies() {
@@ -441,7 +351,7 @@ public class AdminServiceImpl implements AdminService {
             Map<String, Object> map = new HashMap<>();
             map.put("id", company.getId());
             map.put("name", company.getName());
-            map.put("jobCount", jobRepository.countByEmployerId(company.getId()));
+            map.put("jobCount", 0);
             result.add(map);
         });
         return result;

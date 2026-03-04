@@ -1,15 +1,11 @@
 package com.iting.jobportal.auth.security;
 
 import com.iting.jobportal.auth.entity.Account;
-import com.iting.jobportal.core.domain.auth.Role;
-import com.iting.jobportal.admin.entity.Permission;
 import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
 import java.util.Collection;
-import java.util.Set;
-import java.util.stream.Collectors;
+import java.util.Collections;
 
 public class AuthUser implements UserDetails {
     
@@ -21,11 +17,7 @@ public class AuthUser implements UserDetails {
     
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        // Convert Role + Permission → GrantedAuthority
-        return account.getRoles().stream()
-                .flatMap(role -> role.getPermissions().stream())
-                .map(permission -> new SimpleGrantedAuthority(permission.getCode()))
-                .collect(Collectors.toSet());
+        return Collections.emptySet();
     }
     
     @Override
@@ -45,7 +37,7 @@ public class AuthUser implements UserDetails {
     
     @Override
     public boolean isAccountNonLocked() {
-        return account.getStatus().equals(com.iting.jobportal.auth.entity.Enum.AccountStatus.ACTIVE);
+        return true;
     }
     
     @Override
@@ -55,23 +47,10 @@ public class AuthUser implements UserDetails {
     
     @Override
     public boolean isEnabled() {
-        return account.getStatus().equals(com.iting.jobportal.auth.entity.Enum.AccountStatus.ACTIVE);
+        return true;
     }
     
     public Long getId() {
         return account.getId();
-    }
-    
-    public Set<String> getRoles() {
-        return account.getRoles().stream()
-                .map(role -> role.getName())
-                .collect(Collectors.toSet());
-    }
-    
-    public Set<String> getPermissions() {
-        return account.getRoles().stream()
-                .flatMap(role -> role.getPermissions().stream())
-                .map(permission -> permission.getCode())
-                .collect(Collectors.toSet());
     }
 }

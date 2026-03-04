@@ -15,7 +15,7 @@ import lombok.NoArgsConstructor;
 public class ContactInfo {
 
     @Id
-    private Long userId;
+    private String userId;
 
     private String phone;
     private String email;

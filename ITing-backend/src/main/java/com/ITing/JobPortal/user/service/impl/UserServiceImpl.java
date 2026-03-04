@@ -21,18 +21,18 @@ public class UserServiceImpl implements UserService {
     private final UserRepository userRepository;
 
     // ✅ dùng nội bộ cho các hàm update
-    private User getUserEntity(Long userId) {
+    private User getUserEntity(String userId) {
         return userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found"));
     }
 
     // ✅ dùng cho API GET /profile
     @Override
-    public UserProfileResponse getProfile(Long userId) {
+    public UserProfileResponse getProfile(String userId) {
         User u = getUserEntity(userId);
 
         return UserProfileResponse.builder()
-                .userId(u.getUserId())
+                .userId(u.getEmail())
                 .firstName(u.getFirstName())
                 .lastName(u.getLastName())
                 .email(u.getEmail())
@@ -47,7 +47,7 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public void updateBasic(Long userId, UpdateUserRequest req) {
+    public void updateBasic(String userId, UpdateUserRequest req) {
         User u = getUserEntity(userId);
 
         u.setFirstName(req.getFirstName());
@@ -66,35 +66,35 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public void updateAvatar(Long userId, String url) {
+    public void updateAvatar(String userId, String url) {
         User u = getUserEntity(userId);
         u.setAvatarUrl(url);
         u.setLastUpdate(LocalDateTime.now());
     }
 
     @Override
-    public void deleteAvatar(Long userId) {
+    public void deleteAvatar(String userId) {
         User u = getUserEntity(userId);
         u.setAvatarUrl(null);
         u.setLastUpdate(LocalDateTime.now());
     }
 
     @Override
-    public void updateDescription(Long userId, String description) {
+    public void updateDescription(String userId, String description) {
         User u = getUserEntity(userId);
         u.setDescription(description);
         u.setLastUpdate(LocalDateTime.now());
     }
 
     @Override
-    public void updateAddress(Long userId, String address) {
+    public void updateAddress(String userId, String address) {
         User u = getUserEntity(userId);
         u.setAddress(address);
         u.setLastUpdate(LocalDateTime.now());
     }
 
     @Override
-    public void updateBirthGender(Long userId, LocalDate birth, Gender gender) {
+    public void updateBirthGender(String userId, LocalDate birth, Gender gender) {
         User u = getUserEntity(userId);
         u.setBirthDate(birth);
         u.setSex(gender);

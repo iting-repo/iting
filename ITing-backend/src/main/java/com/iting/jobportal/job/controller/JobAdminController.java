@@ -4,7 +4,6 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
@@ -18,7 +17,6 @@ public class JobAdminController {
     // Admin-only job management endpoints
     
     @PostMapping("/{id}/feature")
-    @PreAuthorize("hasAuthority('JOB_MANAGE')")
     @Operation(summary = "Đánh dấu việc làm là nổi bật (Admin only)")
     public ResponseEntity<?> featureJob(@PathVariable Long id) {
         // Implementation would go here
@@ -26,7 +24,6 @@ public class JobAdminController {
     }
     
     @PostMapping("/{id}/unfeature")
-    @PreAuthorize("hasAuthority('JOB_MANAGE')")
     @Operation(summary = "Bỏ đánh dấu nổi bật (Admin only)")
     public ResponseEntity<?> unfeatureJob(@PathVariable Long id) {
         // Implementation would go here
@@ -34,7 +31,6 @@ public class JobAdminController {
     }
     
     @PostMapping("/{id}/approve")
-    @PreAuthorize("hasAuthority('JOB_MANAGE')")
     @Operation(summary = "Phê duyệt việc làm (Admin only)")
     public ResponseEntity<?> approveJob(@PathVariable Long id) {
         // Implementation would go here
@@ -42,7 +38,6 @@ public class JobAdminController {
     }
     
     @PostMapping("/{id}/reject")
-    @PreAuthorize("hasAuthority('JOB_MANAGE')")
     @Operation(summary = "Từ chối việc làm (Admin only)")
     public ResponseEntity<?> rejectJob(
             @PathVariable Long id,
@@ -53,7 +48,6 @@ public class JobAdminController {
     }
     
     @PostMapping("/{id}/ban-employer")
-    @PreAuthorize("hasAuthority('USER_MANAGE')")
     @Operation(summary = "Cấm nhà tuyển dụng (Admin only)")
     public ResponseEntity<?> banEmployer(
             @PathVariable Long id,

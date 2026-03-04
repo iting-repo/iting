@@ -93,12 +93,7 @@ public class RefreshTokenServiceImpl implements RefreshTokenService {
         Account account = accountRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
-        // Get user role
-        String primaryRole = account.getRoles().stream()
-                .map(r -> r.getName())
-                .sorted()
-                .findFirst()
-                .orElse("USER");
+        String primaryRole = "USER";
 
         // Generate new access token
         String newAccessToken = jwtTokenUtil.generateToken(userId, email, primaryRole);

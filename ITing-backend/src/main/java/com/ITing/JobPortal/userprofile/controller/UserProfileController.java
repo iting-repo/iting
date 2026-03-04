@@ -3,6 +3,7 @@ package com.iting.jobportal.userprofile.controller;
 import com.iting.jobportal.userprofile.dto.*;
 import com.iting.jobportal.userprofile.entity.*;
 import com.iting.jobportal.userprofile.service.UserProfileService;
+import com.iting.jobportal.user.controller.CurrentUser;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -18,11 +19,6 @@ public class UserProfileController {
 
     private final UserProfileService profileService;
 
-    // TODO: Replace with JWT extraction
-    private Long getUserId() {
-        return 5L;
-    }
-
     private ResponseEntity<?> ok(String msg) {
         return ResponseEntity.ok(Map.of("message", msg));
     }
@@ -31,8 +27,8 @@ public class UserProfileController {
     // CONTACT INFO
     // ==========================================================
     @PutMapping("/contact")
-    public ResponseEntity<?> updateContact(@RequestBody ContactInfoRequest req) {
-        profileService.updateContact(getUserId(), req);
+    public ResponseEntity<?> updateContact(@CurrentUser String userId, @RequestBody ContactInfoRequest req) {
+        profileService.updateContact(userId, req);
         return ok("Contact updated");
     }
 
@@ -40,13 +36,13 @@ public class UserProfileController {
     // SOCIAL LINKS
     // ==========================================================
     @GetMapping("/social")
-    public List<SocialLink> getSocialLinks() {
-        return profileService.getSocialLinks(getUserId());
+    public List<SocialLink> getSocialLinks(@CurrentUser String userId) {
+        return profileService.getSocialLinks(userId);
     }
 
     @PostMapping("/social")
-    public SocialLink addSocial(@RequestBody SocialLinkRequest req) {
-        return profileService.addSocialLink(getUserId(), req);
+    public SocialLink addSocial(@CurrentUser String userId, @RequestBody SocialLinkRequest req) {
+        return profileService.addSocialLink(userId, req);
     }
 
     @PutMapping("/social/{id}")
@@ -65,13 +61,13 @@ public class UserProfileController {
     // EDUCATION
     // ==========================================================
     @GetMapping("/educations")
-    public List<Education> getEducations() {
-        return profileService.getEducations(getUserId());
+    public List<Education> getEducations(@CurrentUser String userId) {
+        return profileService.getEducations(userId);
     }
 
     @PostMapping("/education")
-    public Education addEducation(@RequestBody EducationRequest req) {
-        return profileService.addEducation(getUserId(), req);
+    public Education addEducation(@CurrentUser String userId, @RequestBody EducationRequest req) {
+        return profileService.addEducation(userId, req);
     }
 
     @PutMapping("/education/{id}")
@@ -90,13 +86,13 @@ public class UserProfileController {
     // SKILLS
     // ==========================================================
     @GetMapping("/skills")
-    public List<Skill> getSkills() {
-        return profileService.getSkills(getUserId());
+    public List<Skill> getSkills(@CurrentUser String userId) {
+        return profileService.getSkills(userId);
     }
 
     @PostMapping("/skills")
-    public Skill addSkill(@RequestBody SkillRequest req) {
-        return profileService.addSkill(getUserId(), req);
+    public Skill addSkill(@CurrentUser String userId, @RequestBody SkillRequest req) {
+        return profileService.addSkill(userId, req);
     }
 
     @PutMapping("/skills/{id}")
@@ -115,8 +111,8 @@ public class UserProfileController {
     // CERTIFICATES
     // ==========================================================
     @PostMapping("/certificates")
-    public Certificate addCertificate(@RequestBody CertificateRequest req) {
-        return profileService.addCertificate(getUserId(), req);
+    public Certificate addCertificate(@CurrentUser String userId, @RequestBody CertificateRequest req) {
+        return profileService.addCertificate(userId, req);
     }
 
     @PutMapping("/certificates/{id}")
@@ -135,8 +131,8 @@ public class UserProfileController {
     // EXPERIENCE
     // ==========================================================
     @PostMapping("/experience")
-    public Experience addExperience(@RequestBody ExperienceRequest req) {
-        return profileService.addExperience(getUserId(), req);
+    public Experience addExperience(@CurrentUser String userId, @RequestBody ExperienceRequest req) {
+        return profileService.addExperience(userId, req);
     }
 
     @PutMapping("/experience/{id}")
@@ -155,18 +151,18 @@ public class UserProfileController {
     // PORTFOLIO
     // ==========================================================
     @GetMapping("/portfolio")
-    public List<Portfolio> getPortfolio() {
-        return profileService.getPortfolio(getUserId());
+    public List<Portfolio> getPortfolio(@CurrentUser String userId) {
+        return profileService.getPortfolio(userId);
     }
 
     @PostMapping("/portfolio/link")
-    public Portfolio addPortfolioLink(@RequestBody PortfolioLinkRequest req) {
-        return profileService.addPortfolioLink(getUserId(), req);
+    public Portfolio addPortfolioLink(@CurrentUser String userId, @RequestBody PortfolioLinkRequest req) {
+        return profileService.addPortfolioLink(userId, req);
     }
 
     @PostMapping("/portfolio/file")
-    public Portfolio uploadPortfolioFile(@RequestParam MultipartFile file) {
-        return profileService.uploadPortfolioFile(getUserId(), file);
+    public Portfolio uploadPortfolioFile(@CurrentUser String userId, @RequestParam MultipartFile file) {
+        return profileService.uploadPortfolioFile(userId, file);
     }
 
     @DeleteMapping("/portfolio/{id}")
@@ -179,13 +175,13 @@ public class UserProfileController {
     // CV
     // ==========================================================
     @GetMapping("/cv")
-    public List<CV> getCVs() {
-        return profileService.getCVs(getUserId());
+    public List<CV> getCVs(@CurrentUser String userId) {
+        return profileService.getCVs(userId);
     }
 
     @PostMapping("/cv")
-    public CV uploadCV(@RequestParam MultipartFile file) {
-        return profileService.uploadCV(getUserId(), file);
+    public CV uploadCV(@CurrentUser String userId, @RequestParam MultipartFile file) {
+        return profileService.uploadCV(userId, file);
     }
 
     @PutMapping("/cv/{id}")
@@ -209,8 +205,8 @@ public class UserProfileController {
     // CAREER OBJECTIVE
     // ==========================================================
     @PutMapping("/career")
-    public ResponseEntity<?> updateCareerObjective(@RequestBody CareerObjectiveRequest req) {
-        profileService.updateCareerObjective(getUserId(), req);
+    public ResponseEntity<?> updateCareerObjective(@CurrentUser String userId, @RequestBody CareerObjectiveRequest req) {
+        profileService.updateCareerObjective(userId, req);
         return ok("Career objective updated");
     }
 }
