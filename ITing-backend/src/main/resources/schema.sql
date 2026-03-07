@@ -178,7 +178,6 @@ CREATE TABLE Job (
                      Min_accept TEXT,
                      Max_accept INTEGER,
                      Current_accepted INTEGER,
-                     Employer_id BIGINT,
 
                      View_count INTEGER DEFAULT 0,
                      Application_count INTEGER DEFAULT 0,

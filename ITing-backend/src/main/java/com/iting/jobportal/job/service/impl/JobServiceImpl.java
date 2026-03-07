@@ -9,6 +9,7 @@ import com.iting.jobportal.job.dto.response.JobResponse;
 import com.iting.jobportal.job.entity.Job;
 import com.iting.jobportal.job.entity.enums.JobStatus;
 import com.iting.jobportal.job.repository.JobRepository;
+import com.iting.jobportal.job.repository.JobSpecification;
 import com.iting.jobportal.job.service.JobService;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
@@ -22,6 +23,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -35,139 +37,214 @@ public class JobServiceImpl implements JobService {
     @PersistenceContext
     private EntityManager entityManager;
 
+    // =====================================================================
+    // PRIVATE HELPERS
+    // =====================================================================
+
+    /** Tìm job, ném 404 nếu không tồn tại */
+    private Job findJobOrThrow(Long jobId) {
+        return jobRepository.findById(jobId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Không tìm thấy tin tuyển dụng với id: " + jobId));
+    }
+
+    /** Kiểm tra employer có quyền sở hữu job không */
+    private void checkOwnership(Job job, Long employerId) {
+        if (!job.getCompanyId().equals(employerId)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Bạn không có quyền thực hiện thao tác này trên tin tuyển dụng này");
+        }
+    }
+
+    /** Tìm company, ném lỗi phù hợp */
+    private Company findCompanyOrThrow(Long companyId) {
+        return companyRepository.findById(companyId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Không tìm thấy công ty với id: " + companyId));
+    }
+
+    // =====================================================================
+    // CREATE
+    // =====================================================================
+
     @Override
     @Transactional
     public JobResponse createJob(Long employerId, CreateJobRequest request) {
-        Long companyId = employerId;
+        // Xác minh company tồn tại (Company_id = Account.Id của employer)
+        Company company = findCompanyOrThrow(employerId);
 
-        Object companyExists = entityManager
-                .createNativeQuery("SELECT 1 FROM Company WHERE Company_id = :companyId")
-                .setParameter("companyId", companyId)
-                .getResultStream()
-                .findFirst()
-                .orElse(null);
-
-        if (companyExists == null) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Company not found with id: " + companyId);
-        }
-
-        Job job = new Job();
-        job.setCompanyId(companyId);           // ← company_id = employer account ID
-        job.setPosition(request.getPosition());
-        job.setDescription(request.getDescription());
-        job.setLocation(request.getLocation());
-        job.setTechRequired(request.getTechRequired());
-        job.setMinSalary(request.getMinSalary());
-        job.setMaxSalary(request.getMaxSalary());
-        job.setDueDate(request.getDueDate());
-        job.setStatus(JobStatus.ACTIVE);
-        job.setLastUpdate(LocalDateTime.now());
-        job.setJobType(request.getJobType());
-        job.setExperienceLevel(request.getExperienceLevel());
-        job.setMaxAccept(request.getMaxAccept());
+        Job job = Job.builder()
+                .companyId(employerId)
+                .position(request.getPosition())
+                .description(request.getDescription())
+                .location(request.getLocation())
+                .techRequired(request.getTechRequired())
+                .minSalary(request.getMinSalary())
+                .maxSalary(request.getMaxSalary())
+                .dueDate(request.getDueDate())
+                .status(JobStatus.ACTIVE)
+                .lastUpdate(LocalDateTime.now())
+                .jobType(request.getJobType())
+                .experienceLevel(request.getExperienceLevel())
+                .maxAccept(request.getMaxAccept() != null ? request.getMaxAccept() : 0)
+                .minAccept(request.getMinAccept())
+                .locId(request.getLocId())
+                .viewCount(0)
+                .applicationCount(0)
+                .currentAccepted(0)
+                .build();
 
         Job saved = jobRepository.save(job);
 
+        // Ghi nhận vào bảng Company_upload_job
         entityManager.createNativeQuery(
                         "INSERT INTO Company_upload_job (Job_id, Company_id, Time) VALUES (:jobId, :companyId, CURRENT_TIMESTAMP)"
                 )
                 .setParameter("jobId", saved.getId())
-                .setParameter("companyId", companyId)
+                .setParameter("companyId", employerId)
                 .executeUpdate();
 
-        return JobResponse.fromEntity(saved);
+        return JobResponse.fromEntityWithCompany(saved, company.getName(), company.getLogoUrl());
     }
+
+    // =====================================================================
+    // UPDATE
+    // =====================================================================
 
     @Override
     @Transactional
     public JobResponse updateJob(Long employerId, Long jobId, UpdateJobRequest request) {
-        throw new UnsupportedOperationException("Employer job update is not supported with current schema.sql mapping");
+        Job job = findJobOrThrow(jobId);
+        checkOwnership(job, employerId);
+
+        if (request.getPosition() != null)         job.setPosition(request.getPosition());
+        if (request.getDescription() != null)      job.setDescription(request.getDescription());
+        if (request.getLocation() != null)         job.setLocation(request.getLocation());
+        if (request.getTechRequired() != null)     job.setTechRequired(request.getTechRequired());
+        if (request.getJobType() != null)          job.setJobType(request.getJobType());
+        if (request.getExperienceLevel() != null)  job.setExperienceLevel(request.getExperienceLevel());
+        if (request.getStatus() != null)           job.setStatus(request.getStatus());
+        if (request.getMaxAccept() != null)        job.setMaxAccept(request.getMaxAccept());
+        if (request.getMinAccept() != null)        job.setMinAccept(request.getMinAccept());
+        if (request.getMinSalary() != null)        job.setMinSalary(request.getMinSalary());
+        if (request.getMaxSalary() != null)        job.setMaxSalary(request.getMaxSalary());
+        if (request.getDueDate() != null)          job.setDueDate(request.getDueDate());
+        if (request.getLocId() != null)            job.setLocId(request.getLocId());
+
+        Job saved = jobRepository.save(job);
+        Company company = findCompanyOrThrow(employerId);
+        return JobResponse.fromEntityWithCompany(saved, company.getName(), company.getLogoUrl());
     }
+
+    // =====================================================================
+    // DELETE
+    // =====================================================================
 
     @Override
     @Transactional
     public void deleteJob(Long employerId, Long jobId) {
-        throw new UnsupportedOperationException("Employer job deletion is not supported with current schema.sql mapping");
+        Job job = findJobOrThrow(jobId);
+        checkOwnership(job, employerId);
+        jobRepository.delete(job);
     }
+
+    // =====================================================================
+    // EXTEND
+    // =====================================================================
 
     @Override
     @Transactional
     public JobResponse extendJob(Long employerId, Long jobId, int days) {
-        throw new UnsupportedOperationException("Employer job extend is not supported with current schema.sql mapping");
+        if (days <= 0 || days > 365) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Số ngày gia hạn phải từ 1 đến 365");
+        }
+
+        Job job = findJobOrThrow(jobId);
+        checkOwnership(job, employerId);
+
+        if (job.getStatus() == JobStatus.CLOSED) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Không thể gia hạn tin tuyển dụng đã đóng");
+        }
+
+        // Nếu đã hết hạn thì tính từ hôm nay, nếu chưa thì cộng thêm từ ngày hiện tại
+        LocalDate baseDate = (job.getDueDate() == null || job.getDueDate().isBefore(LocalDate.now()))
+                ? LocalDate.now()
+                : job.getDueDate();
+
+        job.setDueDate(baseDate.plusDays(days));
+        job.setStatus(JobStatus.ACTIVE);
+
+        Job saved = jobRepository.save(job);
+        Company company = findCompanyOrThrow(employerId);
+        return JobResponse.fromEntityWithCompany(saved, company.getName(), company.getLogoUrl());
     }
+
+    // =====================================================================
+    // CLOSE
+    // =====================================================================
 
     @Override
     @Transactional
     public JobResponse closeJob(Long employerId, Long jobId) {
-        throw new UnsupportedOperationException("Employer job close is not supported with current schema.sql mapping");
+        Job job = findJobOrThrow(jobId);
+        checkOwnership(job, employerId);
+
+        if (job.getStatus() == JobStatus.CLOSED) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Tin tuyển dụng đã được đóng trước đó");
+        }
+
+        job.setStatus(JobStatus.CLOSED);
+        Job saved = jobRepository.save(job);
+        Company company = findCompanyOrThrow(employerId);
+        return JobResponse.fromEntityWithCompany(saved, company.getName(), company.getLogoUrl());
     }
+
+    // =====================================================================
+    // GET BY ID
+    // =====================================================================
 
     @Override
     public JobResponse getJobById(Long jobId) {
-        Job job = jobRepository.findById(jobId)
-                .orElseThrow(() -> new RuntimeException("Job not found"));
-        return JobResponse.fromEntity(job);
+        Job job = findJobOrThrow(jobId);
+        return enrichWithCompany(job);
     }
 
     @Override
     @Transactional
     public JobResponse getJobByIdWithView(Long jobId) {
-        Job job = jobRepository.findById(jobId)
-                .orElseThrow(() -> new RuntimeException("Job not found"));
-
-        return JobResponse.fromEntity(job);
+        Job job = findJobOrThrow(jobId);
+        // Tăng view count
+        jobRepository.incrementViewCount(jobId);
+        job.setViewCount((job.getViewCount() != null ? job.getViewCount() : 0) + 1);
+        return enrichWithCompany(job);
     }
+
+    // =====================================================================
+    // MY JOBS
+    // =====================================================================
 
     @Override
     public Page<JobResponse> getJobsByEmployer(Long employerId, int page, int size) {
-
         int safePage = Math.max(page, 0);
         int safeSize = Math.max(1, Math.min(size, 100));
-
         Pageable pageable = PageRequest.of(safePage, safeSize);
 
-        Company company = companyRepository.findById(employerId)
-                .orElseThrow(() -> new RuntimeException("Company not found"));
-
+        Company company = findCompanyOrThrow(employerId);
         String companyName = company.getName();
         String companyLogo = company.getLogoUrl();
 
-        return jobRepository.findByEmployerId(employerId, pageable)
+        return jobRepository.findByCompanyId(employerId, pageable)
                 .map(job -> JobResponse.fromEntityWithCompany(job, companyName, companyLogo));
     }
 
+    // =====================================================================
+    // SEARCH / LATEST / HOT
+    // =====================================================================
+
     @Override
     public Page<JobResponse> searchJobs(JobSearchRequest request) {
-        // Xử lý sắp xếp
-        Sort sort = Sort.by("lastUpdate").descending(); // Default
-        if (request.getSortBy() != null) {
-            switch (request.getSortBy()) {
-                case "salary":
-                    sort = "desc".equalsIgnoreCase(request.getSortOrder()) 
-                            ? Sort.by("maxSalary").descending() 
-                            : Sort.by("minSalary").ascending();
-                    break;
-                case "lastUpdate":
-                    sort = "asc".equalsIgnoreCase(request.getSortOrder()) 
-                            ? Sort.by("lastUpdate").ascending() 
-                            : Sort.by("lastUpdate").descending();
-                    break;
-                default:
-                    break;
-            }
-        }
-        
+        Sort sort = buildSort(request.getSortBy(), request.getSortOrder());
         Pageable pageable = PageRequest.of(request.getPage(), request.getSize(), sort);
-        
-        return jobRepository.searchJobs(
-                JobStatus.ACTIVE,
-                request.getKeyword(),
-                request.getLocation(),
-                request.getMinSalary(),
-                request.getMaxSalary(),
-                request.getTechRequired(),
-                pageable
-        ).map(JobResponse::fromEntity);
+
+        return jobRepository.findAll(JobSpecification.fromRequest(request), pageable)
+                .map(this::enrichWithCompany);
     }
 
     @Override
@@ -175,18 +252,22 @@ public class JobServiceImpl implements JobService {
         int safeLimit = Math.max(1, Math.min(limit, 100));
         Pageable pageable = PageRequest.of(0, safeLimit, Sort.by("lastUpdate").descending());
         return jobRepository.findByStatus(JobStatus.ACTIVE, pageable)
-                .map(JobResponse::fromEntity)
+                .map(this::enrichWithCompany)
                 .getContent();
     }
 
     @Override
     public List<JobResponse> getHotJobs(int limit) {
         int safeLimit = Math.max(1, Math.min(limit, 100));
-        Pageable pageable = PageRequest.of(0, safeLimit, Sort.by("lastUpdate").descending());
-        return jobRepository.findByStatus(JobStatus.ACTIVE, pageable)
-                .map(JobResponse::fromEntity)
+        Pageable pageable = PageRequest.of(0, safeLimit);
+        return jobRepository.findHotJobs(JobStatus.ACTIVE, pageable)
+                .map(this::enrichWithCompany)
                 .getContent();
     }
+
+    // =====================================================================
+    // SCHEDULER
+    // =====================================================================
 
     @Override
     @Transactional
@@ -194,7 +275,33 @@ public class JobServiceImpl implements JobService {
         List<Job> expiredJobs = jobRepository.findExpiredJobs();
         for (Job job : expiredJobs) {
             job.setStatus(JobStatus.EXPIRED);
-            jobRepository.save(job);
         }
+        jobRepository.saveAll(expiredJobs);
+    }
+
+    // =====================================================================
+    // PRIVATE UTILS
+    // =====================================================================
+
+    /** Enrich job với tên + logo công ty từ DB */
+    private JobResponse enrichWithCompany(Job job) {
+        return companyRepository.findById(job.getCompanyId())
+                .map(c -> JobResponse.fromEntityWithCompany(job, c.getName(), c.getLogoUrl()))
+                .orElseGet(() -> JobResponse.fromEntity(job));
+    }
+
+    private Sort buildSort(String sortBy, String sortOrder) {
+        if (sortBy == null) return Sort.by("lastUpdate").descending();
+        return switch (sortBy) {
+            case "salary" -> "asc".equalsIgnoreCase(sortOrder)
+                    ? Sort.by("minSalary").ascending()
+                    : Sort.by("maxSalary").descending();
+            case "viewCount"       -> Sort.by("viewCount").descending();
+            case "applicationCount"-> Sort.by("applicationCount").descending();
+            case "lastUpdate"      -> "asc".equalsIgnoreCase(sortOrder)
+                    ? Sort.by("lastUpdate").ascending()
+                    : Sort.by("lastUpdate").descending();
+            default -> Sort.by("lastUpdate").descending();
+        };
     }
 }

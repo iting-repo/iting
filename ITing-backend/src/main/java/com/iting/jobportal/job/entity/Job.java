@@ -60,8 +60,6 @@ public class Job {
     @Column(name = "Current_accepted")
     private Integer currentAccepted;
 
-    @Column(name = "Employer_id")
-    private Long employerId;
 
     @Column(name = "View_count")
     private Integer viewCount;

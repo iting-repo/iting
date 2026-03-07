@@ -167,7 +167,6 @@ INSERT INTO Job (
     Current_accepted,
     View_count,
     Application_count,
-    Employer_id,
     Job_embedding
 ) VALUES
 
@@ -176,7 +175,7 @@ INSERT INTO Job (
  'Chúng tôi tìm kiếm Senior Backend Developer thiết kế hệ thống xử lý lượng truy cập lớn. Yêu cầu 5+ năm kinh nghiệm Python, thành thạo FastAPI/Django, PostgreSQL, Redis, Microservices, Docker, CI/CD.',
  'Python, FastAPI, PostgreSQL, Redis, Docker, Microservices',
  25000000,45000000,'ACTIVE','FULL_TIME','SENIOR',
- '2026-03-31','Hà Nội',1,'Bachelor in CS',5,0,150,12,101,
+ '2026-03-31','Hà Nội',1,'Bachelor in CS',5,0,150,12,
  '[-0.030870257,0.027029185,0.0047450466,0.0055392203,0.0010084402,0.006234577,0.036056675,0.00900157,-0.00851098,0.057104517]'),
 
 -- 2
@@ -184,7 +183,7 @@ INSERT INTO Job (
  'Xây dựng RESTful APIs cho ứng dụng fintech, bảo mật và hiệu suất cao. Yêu cầu 3+ năm Node.js/TypeScript, MongoDB, AWS.',
  'Node.js, Express, MongoDB, AWS, TypeScript',
  20000000,35000000,'ACTIVE','FULL_TIME','MID_LEVEL',
- '2026-03-31','TP. Hồ Chí Minh',2,'Bachelor degree',3,0,85,5,102,
+ '2026-03-31','TP. Hồ Chí Minh',2,'Bachelor degree',3,0,85,5,
  '[-0.008350043,0.028674584,-0.0085813,-0.03028236,0.02613937,0.02265706,0.030086936,-0.014348418,0.028914949,0.059459884]'),
 
 -- 3
@@ -192,7 +191,7 @@ INSERT INTO Job (
  'Tạo web responsive, làm việc với team UX. Yêu cầu 2+ năm React, TypeScript, Redux/Zustand.',
  'React, TypeScript, Redux, TailwindCSS, Vite',
  18000000,32000000,'ACTIVE','FULL_TIME','JUNIOR',
- '2026-04-15','TP. Hồ Chí Minh',2,'Bachelor in IT',4,0,210,25,103,
+ '2026-04-15','TP. Hồ Chí Minh',2,'Bachelor in IT',4,0,210,25,
  '[0.016776728,0.024641637,0.0030576934,0.009415475,0.023797229,-0.017801192,0.0027535986,0.01174786,-0.033685345,0.021833766]'),
 
 -- 4
@@ -200,7 +199,7 @@ INSERT INTO Job (
  'Quản lý infrastructure, CI/CD pipelines cloud-native. Yêu cầu AWS, Kubernetes, Terraform.',
  'AWS, Docker, Kubernetes, Terraform, Jenkins, Linux',
  30000000,50000000,'ACTIVE','REMOTE','SENIOR',
- '2026-03-25','Hà Nội',1,'3+ years experience',2,0,45,3,104,
+ '2026-03-25','Hà Nội',1,'3+ years experience',2,0,45,3,
  '[0.012345678,-0.023456789,0.034567890,-0.045678901,0.056789012,-0.067890123,0.078901234,-0.089012345,0.090123456,-0.001234567]'),
 
 -- 5
@@ -208,7 +207,7 @@ INSERT INTO Job (
  'Phát triển App đa nền tảng cho hàng triệu người dùng.',
  'Flutter, Dart, Firebase, RESTful API, Git',
  22000000,38000000,'ACTIVE','FULL_TIME','MID_LEVEL',
- '2026-04-10','Đà Nẵng',3,'2+ years Flutter/RN',3,0,95,12,105,
+ '2026-04-10','Đà Nẵng',3,'2+ years Flutter/RN',3,0,95,12,
  '[0.011111111,0.022222222,0.033333333,0.044444444,0.055555555,0.066666666,0.077777777,0.088888888,0.099999999,0.000000000]'),
 
 -- 6
@@ -216,7 +215,7 @@ INSERT INTO Job (
  'Nghiên cứu giải pháp AI cho xử lý ngôn ngữ tiếng Việt (NLP).',
  'Python, TensorFlow, PyTorch, NLP, Computer Vision',
  35000000,60000000,'ACTIVE','FULL_TIME','EXPERT',
- '2026-04-20','Hà Nội',1,'Bachelor + 4 years',2,0,300,20,106,
+ '2026-04-20','Hà Nội',1,'Bachelor + 4 years',2,0,300,20,
  '[0.098765432,0.087654321,0.076543210,0.065432109,0.054321098,0.043210987,0.032109876,0.021098765,0.010987654,0.009876543]'),
 
 -- 7
@@ -224,7 +223,7 @@ INSERT INTO Job (
  'Xây dựng và maintain ETL pipelines cho Data Warehouse.',
  'Python, Spark, Airflow, SQL, AWS/GCP',
  24000000,42000000,'ACTIVE','FULL_TIME','MID_LEVEL',
- '2026-03-30','TP. Hồ Chí Minh',2,'1-2 years experience',3,0,110,9,107,
+ '2026-03-30','TP. Hồ Chí Minh',2,'1-2 years experience',3,0,110,9,
  '[0.055555555,0.044444444,0.033333333,0.022222222,0.011111111,0.066666666,0.077777777,0.088888888,0.099999999,0.000111111]'),
 
 -- 8
@@ -232,7 +231,7 @@ INSERT INTO Job (
  'Đảm bảo chất lượng sản phẩm, automation testing web.',
  'Manual Testing, Automation Testing, Selenium, Java/Python',
  12000000,22000000,'ACTIVE','FULL_TIME','JUNIOR',
- '2026-04-05','Cần Thơ',5,'Fresher/Junior',5,0,60,30,108,
+ '2026-04-05','Cần Thơ',5,'Fresher/Junior',5,0,60,30,
  '[0.001111111,0.002222222,0.003333333,0.004444444,0.005555555,0.006666666,0.007777777,0.008888888,0.009999999,0.000011111]'),
 
 -- 9
@@ -240,7 +239,7 @@ INSERT INTO Job (
  'Phát triển microservices cho hệ thống E-commerce.',
  'Java, Spring Boot, Microservices, MySQL, Redis, Kafka',
  28000000,48000000,'ACTIVE','FULL_TIME','SENIOR',
- '2026-04-12','Hà Nội',1,'3+ years Java',4,0,180,14,109,
+ '2026-04-12','Hà Nội',1,'3+ years Java',4,0,180,14,
  '[0.012121212,0.023232323,0.034343434,0.045454545,0.056565656,0.067676767,0.078787878,0.089898989,0.090909090,0.001010101]'),
 
 -- 10
@@ -248,7 +247,7 @@ INSERT INTO Job (
  'Dẫn dắt team 8-10 người, thiết kế kiến trúc hệ thống phân tán.',
  'System Design, Distributed Systems, Leadership, Mentoring',
  45000000,80000000,'ACTIVE','FULL_TIME','LEAD',
- '2026-04-18','TP. Hồ Chí Minh',2,'5+ years experience',1,0,450,5,110,
+ '2026-04-18','TP. Hồ Chí Minh',2,'5+ years experience',1,0,450,5,
  '[0.099999999,0.088888888,0.077777777,0.066666666,0.055555555,0.044444444,0.033333333,0.022222222,0.011111111,0.000999999]');
 
 -- CV DATA

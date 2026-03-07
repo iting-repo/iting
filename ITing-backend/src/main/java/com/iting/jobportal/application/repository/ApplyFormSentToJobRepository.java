@@ -21,4 +21,14 @@ public interface ApplyFormSentToJobRepository extends JpaRepository<ApplyFormSen
     boolean existsByUserIdAndJobId(@Param("userId") String userId, @Param("jobId") Long jobId);
 
     void deleteByIdApplyFormId(Long applyFormId);
+
+    // Lấy tất cả đơn ứng tuyển của một job cụ thể (dùng cho employer)
+    Page<ApplyFormSentToJob> findByIdJobId(Long jobId, Pageable pageable);
+
+    // Lấy tất cả đơn ứng tuyển của nhiều jobs (dùng cho employer dashboard)
+    Page<ApplyFormSentToJob> findByIdJobIdIn(java.util.List<Long> jobIds, Pageable pageable);
+
+    // Đếm số ứng viên của một job
+    long countByIdJobId(Long jobId);
 }
+

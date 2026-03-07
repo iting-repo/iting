@@ -5,42 +5,39 @@ import com.iting.jobportal.job.entity.enums.JobStatus;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
-import java.math.BigDecimal;
 import java.util.List;
 
-public interface JobRepository extends JpaRepository<Job, Long> {
+public interface JobRepository extends JpaRepository<Job, Long>, JpaSpecificationExecutor<Job> {
 
     // Tìm jobs theo status
     List<Job> findByStatus(JobStatus status);
-    
+
     Page<Job> findByStatus(JobStatus status, Pageable pageable);
-    
-    // Tìm kiếm và lọc nâng cao
-    @Query("SELECT j FROM Job j WHERE j.status = :status " +
-           "AND (:keyword IS NULL OR LOWER(j.position) LIKE LOWER(CONCAT('%', :keyword, '%')) " +
-           "OR LOWER(j.description) LIKE LOWER(CONCAT('%', :keyword, '%'))) " +
-           "AND (:location IS NULL OR LOWER(j.location) LIKE LOWER(CONCAT('%', :location, '%'))) " +
-           "AND (:minSalary IS NULL OR j.maxSalary >= :minSalary) " +
-           "AND (:maxSalary IS NULL OR j.minSalary <= :maxSalary) " +
-           "AND (:techRequired IS NULL OR LOWER(j.techRequired) LIKE LOWER(CONCAT('%', :techRequired, '%')))")
-    Page<Job> searchJobs(
-            @Param("status") JobStatus status,
-            @Param("keyword") String keyword,
-            @Param("location") String location,
-            @Param("minSalary") BigDecimal minSalary,
-            @Param("maxSalary") BigDecimal maxSalary,
-            @Param("techRequired") String techRequired,
-            Pageable pageable
-    );
-    
+
+    // Lấy jobs hot (sắp xếp theo lượt ứng tuyển + view)
+    @Query("SELECT j FROM Job j WHERE j.status = :status ORDER BY j.applicationCount DESC, j.viewCount DESC")
+    Page<Job> findHotJobs(@Param("status") JobStatus status, Pageable pageable);
+
     // Tìm jobs hết hạn
     @Query("SELECT j FROM Job j WHERE j.dueDate < CURRENT_DATE AND j.status = 'ACTIVE'")
     List<Job> findExpiredJobs();
 
-    // Lấy jobs của employer theo company_id (= Account ID của employer)
+    // Lấy jobs của company theo company_id (= Account ID của employer)
     @Query("SELECT j FROM Job j WHERE j.companyId = :companyId ORDER BY j.lastUpdate DESC")
-    Page<Job> findByEmployerId(@Param("companyId") Long companyId, Pageable pageable);
+    Page<Job> findByCompanyId(@Param("companyId") Long companyId, Pageable pageable);
+
+    // Tăng view count
+    @Modifying
+    @Query("UPDATE Job j SET j.viewCount = j.viewCount + 1 WHERE j.id = :id")
+    void incrementViewCount(@Param("id") Long id);
+
+    // Tăng application count
+    @Modifying
+    @Query("UPDATE Job j SET j.applicationCount = j.applicationCount + 1 WHERE j.id = :id")
+    void incrementApplicationCount(@Param("id") Long id);
 }

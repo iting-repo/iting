@@ -92,13 +92,11 @@ public class JobController {
     @Operation(summary = "Đăng tin tuyển dụng mới")
     public ResponseEntity<JobResponse> createJob(
             @CurrentUser Long currentEmployerId,
-            @RequestParam(required = false) Long employerId,
             @Valid @RequestBody CreateJobRequest request) {
-        Long resolvedEmployerId = currentEmployerId != null ? currentEmployerId : employerId;
-        if (resolvedEmployerId == null) {
-            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Missing employerId (no authenticated user)");
+        if (currentEmployerId == null) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Bạn cần đăng nhập để đăng tin tuyển dụng");
         }
-        return ResponseEntity.ok(jobService.createJob(resolvedEmployerId, request));
+        return ResponseEntity.status(HttpStatus.CREATED).body(jobService.createJob(currentEmployerId, request));
     }
 
     @PutMapping("/{id}")
@@ -107,6 +105,9 @@ public class JobController {
             @CurrentUser Long employerId,
             @PathVariable Long id,
             @Valid @RequestBody UpdateJobRequest request) {
+        if (employerId == null) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Bạn cần đăng nhập để cập nhật tin tuyển dụng");
+        }
         return ResponseEntity.ok(jobService.updateJob(employerId, id, request));
     }
 
@@ -115,8 +116,11 @@ public class JobController {
     public ResponseEntity<?> deleteJob(
             @CurrentUser Long employerId,
             @PathVariable Long id) {
+        if (employerId == null) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Bạn cần đăng nhập để xóa tin tuyển dụng");
+        }
         jobService.deleteJob(employerId, id);
-        return ResponseEntity.ok(Map.of("message", "Job deleted successfully"));
+        return ResponseEntity.ok(Map.of("message", "Xóa tin tuyển dụng thành công"));
     }
 
     @PostMapping("/{id}/extend")
@@ -125,6 +129,9 @@ public class JobController {
             @CurrentUser Long employerId,
             @PathVariable Long id,
             @RequestParam(defaultValue = "30") int days) {
+        if (employerId == null) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Bạn cần đăng nhập để gia hạn tin tuyển dụng");
+        }
         return ResponseEntity.ok(jobService.extendJob(employerId, id, days));
     }
 
@@ -133,6 +140,9 @@ public class JobController {
     public ResponseEntity<JobResponse> closeJob(
             @CurrentUser Long employerId,
             @PathVariable Long id) {
+        if (employerId == null) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Bạn cần đăng nhập để đóng tin tuyển dụng");
+        }
         return ResponseEntity.ok(jobService.closeJob(employerId, id));
     }
 

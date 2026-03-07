@@ -17,8 +17,9 @@ public class UpdateJobRequest {
     private ExperienceLevel experienceLevel;
     private JobStatus status;
     private Integer maxAccept;
+    private String minAccept;
     private BigDecimal minSalary;
     private BigDecimal maxSalary;
     private LocalDate dueDate;
+    private Long locId;
 }
-

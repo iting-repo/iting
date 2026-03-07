@@ -63,7 +63,18 @@ public class SecurityConfig {
                     "/v3/api-docs/**", "/api-docs/**"
                 ).permitAll()
 
-                // ── Public: Job (đọc công khai, không cần token) ──────────
+                // ── Public: error endpoint (avoid secondary 403 loop) ──────
+                .requestMatchers("/error").permitAll()
+
+                // ── EMPLOYER: Quản lý Job (phải khai báo TRƯỚC các rule /{id}) ──
+                .requestMatchers(HttpMethod.GET,  "/api/jobs/my-jobs").hasRole("EMPLOYER")
+                .requestMatchers(HttpMethod.POST, "/api/jobs").hasRole("EMPLOYER")
+                .requestMatchers(HttpMethod.PUT,  "/api/jobs/**").hasRole("EMPLOYER")
+                .requestMatchers(HttpMethod.DELETE, "/api/jobs/**").hasRole("EMPLOYER")
+                .requestMatchers(HttpMethod.POST, "/api/jobs/*/extend").hasRole("EMPLOYER")
+                .requestMatchers(HttpMethod.POST, "/api/jobs/*/close").hasRole("EMPLOYER")
+
+                // ── Public: Job (đọc công khai — sau các rule EMPLOYER) ────
                 .requestMatchers(HttpMethod.GET, "/api/jobs/search").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/jobs/latest").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/jobs/hot").permitAll()
@@ -71,14 +82,6 @@ public class SecurityConfig {
 
                 // ── Public: Company (xem thông tin công ty) ───────────────
                 .requestMatchers(HttpMethod.GET, "/api/companies/{id}").permitAll()
-
-                // ── EMPLOYER: Quản lý Job ─────────────────────────────────
-                .requestMatchers(HttpMethod.POST, "/api/jobs").hasRole("EMPLOYER")
-                .requestMatchers(HttpMethod.PUT, "/api/jobs/**").hasRole("EMPLOYER")
-                .requestMatchers(HttpMethod.DELETE, "/api/jobs/**").hasRole("EMPLOYER")
-                .requestMatchers(HttpMethod.POST, "/api/jobs/*/extend").hasRole("EMPLOYER")
-                .requestMatchers(HttpMethod.POST, "/api/jobs/*/close").hasRole("EMPLOYER")
-                .requestMatchers(HttpMethod.GET, "/api/jobs/my-jobs").hasRole("EMPLOYER")
 
                 // ── EMPLOYER: Quản lý Company profile ────────────────────
                 .requestMatchers(HttpMethod.PUT, "/api/companies/**").hasRole("EMPLOYER")
