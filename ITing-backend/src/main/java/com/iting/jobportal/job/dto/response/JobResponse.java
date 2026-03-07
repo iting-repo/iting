@@ -1,4 +1,4 @@
-package com.iting.jobportal.job.dto;
+package com.iting.jobportal.job.dto.response;
 
 import com.iting.jobportal.job.entity.Job;
 import com.iting.jobportal.job.entity.enums.ExperienceLevel;
@@ -19,7 +19,6 @@ public class JobResponse {
     private String companyLogo;
     private String position;
     private String description;
-    private String requirements;
     private String location;
     private String techRequired;
     private JobType jobType;
@@ -35,12 +34,17 @@ public class JobResponse {
     private Integer applicationCount;
     
     public static JobResponse fromEntity(Job job) {
+        return fromEntityWithCompany(job, null, null);
+    }
+
+    public static JobResponse fromEntityWithCompany(Job job, String companyName, String companyLogo) {
         return JobResponse.builder()
                 .id(job.getId())
                 .employerId(job.getEmployerId())
+                .companyName(companyName)
+                .companyLogo(companyLogo)
                 .position(job.getPosition())
                 .description(job.getDescription())
-                .requirements(job.getRequirements())
                 .location(job.getLocation())
                 .techRequired(job.getTechRequired())
                 .jobType(job.getJobType())

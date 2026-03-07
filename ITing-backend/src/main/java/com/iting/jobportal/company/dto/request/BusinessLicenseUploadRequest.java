@@ -1,4 +1,4 @@
-package com.iting.jobportal.company.dto;
+package com.iting.jobportal.company.dto.request;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;

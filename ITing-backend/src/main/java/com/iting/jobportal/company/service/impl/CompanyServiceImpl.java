@@ -1,6 +1,7 @@
 package com.iting.jobportal.company.service.impl;
 
-import com.iting.jobportal.company.dto.*;
+import com.iting.jobportal.company.dto.request.*;
+import com.iting.jobportal.company.dto.response.CompanyResponse;
 import com.iting.jobportal.company.entity.Company;
 import com.iting.jobportal.company.repository.CompanyRepository;
 import com.iting.jobportal.company.service.CompanyService;

@@ -5,8 +5,10 @@ import com.iting.jobportal.userprofile.entity.*;
 import com.iting.jobportal.userprofile.service.UserProfileService;
 import com.iting.jobportal.user.controller.CurrentUser;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
@@ -19,6 +21,14 @@ public class UserProfileController {
 
     private final UserProfileService profileService;
 
+    private String resolveUserId(String currentUserId, String userId) {
+        String resolved = currentUserId != null ? currentUserId : userId;
+        if (resolved == null || resolved.isBlank()) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Missing userId (no authenticated user)");
+        }
+        return resolved;
+    }
+
     private ResponseEntity<?> ok(String msg) {
         return ResponseEntity.ok(Map.of("message", msg));
     }
@@ -27,8 +37,12 @@ public class UserProfileController {
     // CONTACT INFO
     // ==========================================================
     @PutMapping("/contact")
-    public ResponseEntity<?> updateContact(@CurrentUser String userId, @RequestBody ContactInfoRequest req) {
-        profileService.updateContact(userId, req);
+    public ResponseEntity<?> updateContact(
+            @CurrentUser String currentUserId,
+            @RequestParam(required = false) String userId,
+            @RequestBody ContactInfoRequest req
+    ) {
+        profileService.updateContact(resolveUserId(currentUserId, userId), req);
         return ok("Contact updated");
     }
 
@@ -36,13 +50,20 @@ public class UserProfileController {
     // SOCIAL LINKS
     // ==========================================================
     @GetMapping("/social")
-    public List<SocialLink> getSocialLinks(@CurrentUser String userId) {
-        return profileService.getSocialLinks(userId);
+    public List<SocialLink> getSocialLinks(
+            @CurrentUser String currentUserId,
+            @RequestParam(required = false) String userId
+    ) {
+        return profileService.getSocialLinks(resolveUserId(currentUserId, userId));
     }
 
     @PostMapping("/social")
-    public SocialLink addSocial(@CurrentUser String userId, @RequestBody SocialLinkRequest req) {
-        return profileService.addSocialLink(userId, req);
+    public SocialLink addSocial(
+            @CurrentUser String currentUserId,
+            @RequestParam(required = false) String userId,
+            @RequestBody SocialLinkRequest req
+    ) {
+        return profileService.addSocialLink(resolveUserId(currentUserId, userId), req);
     }
 
     @PutMapping("/social/{id}")
@@ -61,13 +82,20 @@ public class UserProfileController {
     // EDUCATION
     // ==========================================================
     @GetMapping("/educations")
-    public List<Education> getEducations(@CurrentUser String userId) {
-        return profileService.getEducations(userId);
+    public List<Education> getEducations(
+            @CurrentUser String currentUserId,
+            @RequestParam(required = false) String userId
+    ) {
+        return profileService.getEducations(resolveUserId(currentUserId, userId));
     }
 
     @PostMapping("/education")
-    public Education addEducation(@CurrentUser String userId, @RequestBody EducationRequest req) {
-        return profileService.addEducation(userId, req);
+    public Education addEducation(
+            @CurrentUser String currentUserId,
+            @RequestParam(required = false) String userId,
+            @RequestBody EducationRequest req
+    ) {
+        return profileService.addEducation(resolveUserId(currentUserId, userId), req);
     }
 
     @PutMapping("/education/{id}")
@@ -86,13 +114,20 @@ public class UserProfileController {
     // SKILLS
     // ==========================================================
     @GetMapping("/skills")
-    public List<Skill> getSkills(@CurrentUser String userId) {
-        return profileService.getSkills(userId);
+    public List<Skill> getSkills(
+            @CurrentUser String currentUserId,
+            @RequestParam(required = false) String userId
+    ) {
+        return profileService.getSkills(resolveUserId(currentUserId, userId));
     }
 
     @PostMapping("/skills")
-    public Skill addSkill(@CurrentUser String userId, @RequestBody SkillRequest req) {
-        return profileService.addSkill(userId, req);
+    public Skill addSkill(
+            @CurrentUser String currentUserId,
+            @RequestParam(required = false) String userId,
+            @RequestBody SkillRequest req
+    ) {
+        return profileService.addSkill(resolveUserId(currentUserId, userId), req);
     }
 
     @PutMapping("/skills/{id}")
@@ -111,8 +146,12 @@ public class UserProfileController {
     // CERTIFICATES
     // ==========================================================
     @PostMapping("/certificates")
-    public Certificate addCertificate(@CurrentUser String userId, @RequestBody CertificateRequest req) {
-        return profileService.addCertificate(userId, req);
+    public Certificate addCertificate(
+            @CurrentUser String currentUserId,
+            @RequestParam(required = false) String userId,
+            @RequestBody CertificateRequest req
+    ) {
+        return profileService.addCertificate(resolveUserId(currentUserId, userId), req);
     }
 
     @PutMapping("/certificates/{id}")
@@ -131,8 +170,12 @@ public class UserProfileController {
     // EXPERIENCE
     // ==========================================================
     @PostMapping("/experience")
-    public Experience addExperience(@CurrentUser String userId, @RequestBody ExperienceRequest req) {
-        return profileService.addExperience(userId, req);
+    public Experience addExperience(
+            @CurrentUser String currentUserId,
+            @RequestParam(required = false) String userId,
+            @RequestBody ExperienceRequest req
+    ) {
+        return profileService.addExperience(resolveUserId(currentUserId, userId), req);
     }
 
     @PutMapping("/experience/{id}")
@@ -151,18 +194,29 @@ public class UserProfileController {
     // PORTFOLIO
     // ==========================================================
     @GetMapping("/portfolio")
-    public List<Portfolio> getPortfolio(@CurrentUser String userId) {
-        return profileService.getPortfolio(userId);
+    public List<Portfolio> getPortfolio(
+            @CurrentUser String currentUserId,
+            @RequestParam(required = false) String userId
+    ) {
+        return profileService.getPortfolio(resolveUserId(currentUserId, userId));
     }
 
     @PostMapping("/portfolio/link")
-    public Portfolio addPortfolioLink(@CurrentUser String userId, @RequestBody PortfolioLinkRequest req) {
-        return profileService.addPortfolioLink(userId, req);
+    public Portfolio addPortfolioLink(
+            @CurrentUser String currentUserId,
+            @RequestParam(required = false) String userId,
+            @RequestBody PortfolioLinkRequest req
+    ) {
+        return profileService.addPortfolioLink(resolveUserId(currentUserId, userId), req);
     }
 
     @PostMapping("/portfolio/file")
-    public Portfolio uploadPortfolioFile(@CurrentUser String userId, @RequestParam MultipartFile file) {
-        return profileService.uploadPortfolioFile(userId, file);
+    public Portfolio uploadPortfolioFile(
+            @CurrentUser String currentUserId,
+            @RequestParam(required = false) String userId,
+            @RequestParam MultipartFile file
+    ) {
+        return profileService.uploadPortfolioFile(resolveUserId(currentUserId, userId), file);
     }
 
     @DeleteMapping("/portfolio/{id}")
@@ -175,13 +229,20 @@ public class UserProfileController {
     // CV
     // ==========================================================
     @GetMapping("/cv")
-    public List<CV> getCVs(@CurrentUser String userId) {
-        return profileService.getCVs(userId);
+    public List<CV> getCVs(
+            @CurrentUser String currentUserId,
+            @RequestParam(required = false) String userId
+    ) {
+        return profileService.getCVs(resolveUserId(currentUserId, userId));
     }
 
     @PostMapping("/cv")
-    public CV uploadCV(@CurrentUser String userId, @RequestParam MultipartFile file) {
-        return profileService.uploadCV(userId, file);
+    public CV uploadCV(
+            @CurrentUser String currentUserId,
+            @RequestParam(required = false) String userId,
+            @RequestParam MultipartFile file
+    ) {
+        return profileService.uploadCV(resolveUserId(currentUserId, userId), file);
     }
 
     @PutMapping("/cv/{id}")
@@ -205,8 +266,12 @@ public class UserProfileController {
     // CAREER OBJECTIVE
     // ==========================================================
     @PutMapping("/career")
-    public ResponseEntity<?> updateCareerObjective(@CurrentUser String userId, @RequestBody CareerObjectiveRequest req) {
-        profileService.updateCareerObjective(userId, req);
+    public ResponseEntity<?> updateCareerObjective(
+            @CurrentUser String currentUserId,
+            @RequestParam(required = false) String userId,
+            @RequestBody CareerObjectiveRequest req
+    ) {
+        profileService.updateCareerObjective(resolveUserId(currentUserId, userId), req);
         return ok("Career objective updated");
     }
 }

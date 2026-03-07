@@ -1,14 +1,19 @@
 package com.iting.jobportal.job.controller;
 
-import com.iting.jobportal.job.dto.*;
+import com.iting.jobportal.job.dto.request.CreateJobRequest;
+import com.iting.jobportal.job.dto.request.JobSearchRequest;
+import com.iting.jobportal.job.dto.request.UpdateJobRequest;
+import com.iting.jobportal.job.dto.response.JobResponse;
 import com.iting.jobportal.job.service.JobService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -86,9 +91,14 @@ public class JobController {
     @PostMapping
     @Operation(summary = "Đăng tin tuyển dụng mới")
     public ResponseEntity<JobResponse> createJob(
-            @CurrentUser Long employerId,
+            @CurrentUser Long currentEmployerId,
+            @RequestParam(required = false) Long employerId,
             @Valid @RequestBody CreateJobRequest request) {
-        return ResponseEntity.ok(jobService.createJob(employerId, request));
+        Long resolvedEmployerId = currentEmployerId != null ? currentEmployerId : employerId;
+        if (resolvedEmployerId == null) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Missing employerId (no authenticated user)");
+        }
+        return ResponseEntity.ok(jobService.createJob(resolvedEmployerId, request));
     }
 
     @PutMapping("/{id}")
@@ -129,9 +139,12 @@ public class JobController {
     @GetMapping("/my-jobs")
     @Operation(summary = "Lấy danh sách tin tuyển dụng của tôi (Employer)")
     public ResponseEntity<Page<JobResponse>> getMyJobs(
-            @CurrentUser Long employerId,
+            @CurrentUser Long currentEmployerId,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
-        return ResponseEntity.ok(jobService.getJobsByEmployer(employerId, page, size));
+        if (currentEmployerId == null) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Bạn cần đăng nhập để xem danh sách tin tuyển dụng");
+        }
+        return ResponseEntity.ok(jobService.getJobsByEmployer(currentEmployerId, page, size));
     }
 }

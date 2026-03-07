@@ -1,12 +1,13 @@
 package com.iting.jobportal.company.controller;
 
-import com.iting.jobportal.company.dto.BusinessLicenseUploadRequest;
-import com.iting.jobportal.company.dto.CompanyBasicInfoRequest;
-import com.iting.jobportal.company.dto.CompanyResponse;
-import com.iting.jobportal.company.dto.ConsentDocumentUploadRequest;
-import com.iting.jobportal.company.dto.VerifyLicenseRequest;
-import com.iting.jobportal.company.dto.VerifyPhoneRequest;
+import com.iting.jobportal.company.dto.request.BusinessLicenseUploadRequest;
+import com.iting.jobportal.company.dto.request.CompanyBasicInfoRequest;
+import com.iting.jobportal.company.dto.response.CompanyResponse;
+import com.iting.jobportal.company.dto.request.ConsentDocumentUploadRequest;
+import com.iting.jobportal.company.dto.request.VerifyLicenseRequest;
+import com.iting.jobportal.company.dto.request.VerifyPhoneRequest;
 
+import com.iting.jobportal.company.dto.request.CompanyRepresentativeRequest;
 import com.iting.jobportal.company.service.CompanyService;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
@@ -40,7 +41,7 @@ public class CompanyController {
     @PutMapping("/{id}/representative")
     public ResponseEntity<CompanyResponse> CompanyRepresentativeRequest(
             @PathVariable Long id,
-            @Valid @RequestBody com.iting.jobportal.company.dto.CompanyRepresentativeRequest request) {
+            @Valid @RequestBody CompanyRepresentativeRequest request) {
         return ResponseEntity.ok(companyService.updateRepresentative(id, request));
     }
 

@@ -1,4 +1,4 @@
-package com.iting.jobportal.job.dto;
+package com.iting.jobportal.job.dto.request;
 
 import com.iting.jobportal.job.entity.enums.ExperienceLevel;
 import com.iting.jobportal.job.entity.enums.JobStatus;
@@ -11,7 +11,6 @@ import java.time.LocalDate;
 public class UpdateJobRequest {
     private String position;
     private String description;
-    private String requirements;
     private String location;
     private String techRequired;
     private JobType jobType;

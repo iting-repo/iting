@@ -4,10 +4,11 @@ import com.iting.jobportal.job.entity.enums.ExperienceLevel;
 import com.iting.jobportal.job.entity.enums.JobStatus;
 import com.iting.jobportal.job.entity.enums.JobType;
 import jakarta.persistence.*;
+import lombok.*;
+
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import lombok.*;
 
 @Entity
 @Table(name = "Job")
@@ -23,44 +24,26 @@ public class Job {
     @Column(name = "Id")
     private Long id;
 
-    @Transient
-    private Long employerId;
+    // Thêm Company_id để khớp database
+    @Column(name = "Company_id", nullable = false)
+    private Long companyId;
 
-    @Column(name = "Position", nullable = false, length = 100)
+    @Column(name = "Position", length = 255)
     private String position;
 
     @Column(name = "Description", columnDefinition = "TEXT")
     private String description;
 
-    @Transient
-    private String requirements;
-
     @Column(name = "Tech_required", columnDefinition = "TEXT")
     private String techRequired;
 
-    @Transient
-    private String benefits;
-
-    @Column(name = "Location", length = 255)
-    private String location;
-
-    @Transient
-    private JobType jobType; // FULL_TIME, PART_TIME, CONTRACT, INTERNSHIP, REMOTE
-
-    @Transient
-    private ExperienceLevel experienceLevel; // FRESHER, JUNIOR, MIDDLE, SENIOR, LEAD, MANAGER
+    @Enumerated(EnumType.STRING)
+    @Column(name = "Job_type", length = 50)
+    private JobType jobType;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "Status", length = 50)
-    private JobStatus status; // DRAFT, PENDING, ACTIVE, EXPIRED, CLOSED
-
-    @Column(name = "Min_accept", length = 100)
-    private String minAccept;
-
-    @Transient
-    private Integer maxAccept;
-
-    private Integer currentAccepted;
+    @Column(name = "Experience_level", length = 50)
+    private ExperienceLevel experienceLevel;
 
     @Column(name = "Min_salary", precision = 15, scale = 2)
     private BigDecimal minSalary;
@@ -68,23 +51,42 @@ public class Job {
     @Column(name = "Max_salary", precision = 15, scale = 2)
     private BigDecimal maxSalary;
 
+    @Column(name = "Min_accept", columnDefinition = "TEXT")
+    private String minAccept;
+
+    @Column(name = "Max_accept")
+    private Integer maxAccept;
+
+    @Column(name = "Current_accepted")
+    private Integer currentAccepted;
+
+    @Column(name = "Employer_id")
+    private Long employerId;
+
+    @Column(name = "View_count")
+    private Integer viewCount;
+
+    @Column(name = "Application_count")
+    private Integer applicationCount;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "Status", length = 50)
+    private JobStatus status;
+
     @Column(name = "Due_date")
     private LocalDate dueDate;
-
-    @Column(name = "Job_embedding", columnDefinition = "TEXT")
-    private String jobEmbedding;
-
-    @Column(name = "Loc_id")
-    private Long locId;
 
     @Column(name = "Last_update")
     private LocalDateTime lastUpdate;
 
-    @Transient
-    private Integer viewCount;
+    @Column(name = "Location", length = 255)
+    private String location;
 
-    @Transient
-    private Integer applicationCount;
+    @Column(name = "Loc_id")
+    private Long locId;
+
+    @Column(name = "Job_embedding", columnDefinition = "TEXT")
+    private String jobEmbedding;
 
     @PrePersist
     protected void onCreate() {
@@ -94,14 +96,15 @@ public class Job {
         if (lastUpdate == null) {
             lastUpdate = LocalDateTime.now();
         }
-        if (viewCount == null) {
-            viewCount = 0;
-        }
-        if (applicationCount == null) {
-            applicationCount = 0;
-        }
-        if (currentAccepted == null) {
-            currentAccepted = 0;
-        }
+
+        if (viewCount == null) viewCount = 0;
+        if (applicationCount == null) applicationCount = 0;
+        if (currentAccepted == null) currentAccepted = 0;
+        if (maxAccept == null) maxAccept = 0;
+    }
+
+    @PreUpdate
+    protected void onUpdate() {
+        lastUpdate = LocalDateTime.now();
     }
 }

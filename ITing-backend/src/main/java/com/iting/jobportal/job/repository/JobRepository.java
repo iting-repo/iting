@@ -39,4 +39,8 @@ public interface JobRepository extends JpaRepository<Job, Long> {
     // Tìm jobs hết hạn
     @Query("SELECT j FROM Job j WHERE j.dueDate < CURRENT_DATE AND j.status = 'ACTIVE'")
     List<Job> findExpiredJobs();
+
+    // Lấy jobs của employer theo company_id (= Account ID của employer)
+    @Query("SELECT j FROM Job j WHERE j.companyId = :companyId ORDER BY j.lastUpdate DESC")
+    Page<Job> findByEmployerId(@Param("companyId") Long companyId, Pageable pageable);
 }

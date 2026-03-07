@@ -1,7 +1,9 @@
 package com.iting.jobportal.job.service;
 
-import com.iting.jobportal.job.dto.*;
-import com.iting.jobportal.job.entity.Job;
+import com.iting.jobportal.job.dto.request.CreateJobRequest;
+import com.iting.jobportal.job.dto.request.JobSearchRequest;
+import com.iting.jobportal.job.dto.request.UpdateJobRequest;
+import com.iting.jobportal.job.dto.response.JobResponse;
 import org.springframework.data.domain.Page;
 
 import java.util.List;

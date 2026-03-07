@@ -32,10 +32,10 @@ public class UserServiceImpl implements UserService {
         User u = getUserEntity(userId);
 
         return UserProfileResponse.builder()
-                .userId(u.getEmail())
+                .userId(u.getAccount().getId())
                 .firstName(u.getFirstName())
                 .lastName(u.getLastName())
-                .email(u.getEmail())
+                .email(u.getAccount().getEmail())
                 .phoneNum(u.getPhoneNum())
                 .birthDate(u.getBirthDate())
                 .sex(u.getSex())
@@ -58,7 +58,7 @@ public class UserServiceImpl implements UserService {
         u.setDescription(req.getDescription());
         u.setAddress(req.getAddress());
 
-        u.setEmail(req.getEmail());
+        u.getAccount().setEmail(req.getEmail());
         u.setPhoneNum(req.getPhoneNum());
 
         u.setLastUpdate(LocalDateTime.now());

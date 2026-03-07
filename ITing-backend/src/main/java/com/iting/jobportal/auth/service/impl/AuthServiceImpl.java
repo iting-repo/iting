@@ -39,6 +39,7 @@ public class AuthServiceImpl implements AuthService {
         Account account = Account.builder()
                 .email(request.getEmail())
                 .passwordHash(passwordEncoder.encode(request.getPassword()))
+                .role(request.getRole())
                 .build();
 
         // Lưu Account trước để có ID
@@ -46,9 +47,8 @@ public class AuthServiceImpl implements AuthService {
 
         // 3. Tạo Users profile theo schema.sql (PK = Email)
         User user = new User();
-        user.setEmail(savedAccount.getEmail());
+        user.setAccount(savedAccount);
         userRepository.save(user);
-
 
         return savedAccount;
     }
@@ -64,7 +64,9 @@ public class AuthServiceImpl implements AuthService {
             throw new RuntimeException("Invalid email or password");
         }
 
-        String primaryRole = "USER";
+        String primaryRole = account.getRole() != null
+                ? account.getRole().normalizedName()
+                : "CANDIDATE";
 
         // 🔥 Tạo JWT Access Token
         String accessToken = jwtTokenUtil.generateToken(

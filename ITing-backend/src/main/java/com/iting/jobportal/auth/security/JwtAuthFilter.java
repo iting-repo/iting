@@ -1,5 +1,7 @@
 package com.iting.jobportal.auth.security;
 
+import com.iting.jobportal.auth.entity.Account;
+import com.iting.jobportal.auth.entity.Enum.Role;
 import io.jsonwebtoken.Claims;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -8,8 +10,6 @@ import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
@@ -20,7 +20,6 @@ import java.io.IOException;
 public class JwtAuthFilter extends OncePerRequestFilter {
 
     private final JwtTokenUtil jwtTokenUtil;
-    private final UserDetailsService userDetailsService;
 
     @Override
     protected void doFilterInternal(
@@ -49,25 +48,39 @@ public class JwtAuthFilter extends OncePerRequestFilter {
             return;
         }
 
-        Claims claims = jwtTokenUtil.getClaims(token);
-        String email = (String) claims.get("sub"); // JWT subject should be email
-
         try {
-            UserDetails userDetails = userDetailsService.loadUserByUsername(email);
-            
-            var auth = new UsernamePasswordAuthenticationToken(
-                    userDetails, 
-                    null, 
-                    userDetails.getAuthorities()
-            );
-            
+            Claims claims = jwtTokenUtil.getClaims(token);
+            Long userId  = ((Number) claims.get("id")).longValue();
+            String email = claims.getSubject();
+            String roleStr = (String) claims.get("role");
+
+            // Build Account stub từ JWT claims — không cần query DB
+            Account stub = new Account();
+            stub.setId(userId);
+            stub.setEmail(email);
+            stub.setRole(parseRole(roleStr));
+
+            AuthUser authUser = new AuthUser(stub);
+
+            UsernamePasswordAuthenticationToken auth =
+                    new UsernamePasswordAuthenticationToken(authUser, null, authUser.getAuthorities());
+
             SecurityContextHolder.getContext().setAuthentication(auth);
+
         } catch (Exception e) {
-            // User not found or other error, continue without authentication
-            filterChain.doFilter(request, response);
-            return;
+            // Token hợp lệ nhưng claim bị lỗi → tiếp tục không authenticated
         }
 
         filterChain.doFilter(request, response);
+    }
+
+    private Role parseRole(String roleStr) {
+        if (roleStr == null) return Role.CANDIDATE;
+        try {
+            // Parse rồi normalize: USER→CANDIDATE, COMPANY→EMPLOYER
+            return Role.valueOf(roleStr.toUpperCase()).normalize();
+        } catch (IllegalArgumentException e) {
+            return Role.CANDIDATE;
+        }
     }
 }

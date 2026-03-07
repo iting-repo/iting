@@ -1,4 +1,4 @@
-package com.iting.jobportal.job.dto;
+package com.iting.jobportal.job.dto.request;
 
 import com.iting.jobportal.job.entity.enums.ExperienceLevel;
 import com.iting.jobportal.job.entity.enums.JobType;

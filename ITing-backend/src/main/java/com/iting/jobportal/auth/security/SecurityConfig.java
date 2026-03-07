@@ -1,14 +1,10 @@
-
 package com.iting.jobportal.auth.security;
 
-import com.iting.jobportal.auth.security.JwtAuthFilter;
-import com.iting.jobportal.security.user.AuthUserDetailsService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -19,6 +15,11 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+
+import java.util.List;
 
 @Configuration
 @EnableWebSecurity
@@ -27,133 +28,78 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 public class SecurityConfig {
 
     private final JwtAuthFilter jwtAuthFilter;
-    private final AuthUserDetailsService authUserDetailsService;
 
+    // ===================== CORS =====================
 
     @Bean
-    public org.springframework.web.cors.CorsConfigurationSource corsConfigurationSource() {
-        org.springframework.web.cors.CorsConfiguration configuration = new org.springframework.web.cors.CorsConfiguration();
-        configuration.setAllowedOrigins(java.util.List.of("*")); // Cho phép tất cả (chỉ dùng khi dev)
-        configuration.setAllowedMethods(java.util.List.of("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
-        configuration.setAllowedHeaders(java.util.List.of("Authorization", "Content-Type", "X-Requested-With"));
+    public CorsConfigurationSource corsConfigurationSource() {
+        CorsConfiguration configuration = new CorsConfiguration();
+        configuration.setAllowedOrigins(List.of("*"));
+        configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
+        configuration.setAllowedHeaders(List.of("Authorization", "Content-Type", "X-Requested-With"));
 
-        org.springframework.web.cors.UrlBasedCorsConfigurationSource source = new org.springframework.web.cors.UrlBasedCorsConfigurationSource();
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);
         return source;
     }
 
-//    @Bean
-//    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-//        http
-//                .csrf(AbstractHttpConfigurer::disable)
-//                .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-//                .authorizeHttpRequests(auth -> auth
-//                        // Public endpoints
-//                        .requestMatchers(
-//                                "/api/auth/**",
-//                                "/swagger-ui/**", "/swagger-ui.html",
-//                                "/api-docs/**", "/v3/api-docs/**",
-//                                "/api/jobs",           // Public job viewing
-//                                "/api/jobs/search",    // Public job search
-//                                "/api/jobs/featured",  // Public featured jobs
-//                                "/api/jobs/{id}",      // Public job details
-//                                "/api/jobs/location/**", // Public jobs by location
-//                                "/api/jobs/type/**",   // Public jobs by type
-//                                "/api/auth/login",
-//                                "/api/auth/register",
-//                                "/api/auth/**",
-//                                "/api/jobs/company/**"  // Public jobs by company
-//                        ).permitAll()
-//
-//                        // Permission-based endpoints - Jobs
-//                        .requestMatchers(HttpMethod.POST, "/api/jobs").hasAuthority("JOB_CREATE")
-//                        .requestMatchers(HttpMethod.PUT, "/api/jobs/**").hasAuthority("JOB_UPDATE")
-//                        .requestMatchers(HttpMethod.DELETE, "/api/jobs/**").hasAuthority("JOB_DELETE")
-//                        .requestMatchers(HttpMethod.PATCH, "/api/jobs/**/toggle-status").hasAuthority("JOB_UPDATE")
-//                        .requestMatchers(HttpMethod.PATCH, "/api/jobs/**/featured").hasAuthority("JOB_MANAGE")
-//
-//                        // User management
-//                        .requestMatchers(HttpMethod.GET, "/api/users/profile").hasAuthority("USER_VIEW")
-//                        .requestMatchers(HttpMethod.PUT, "/api/users/profile").hasAuthority("USER_UPDATE")
-//                        .requestMatchers(HttpMethod.GET, "/api/users/{id}").hasAuthority("USER_VIEW")
-//
-//                        // Application management
-//                        .requestMatchers(HttpMethod.POST, "/api/applications").hasAuthority("APPLICATION_CREATE")
-//                        .requestMatchers(HttpMethod.GET, "/api/applications").hasAuthority("APPLICATION_VIEW")
-//                        .requestMatchers(HttpMethod.PUT, "/api/applications/{id}").hasAuthority("APPLICATION_UPDATE")
-//                        .requestMatchers(HttpMethod.DELETE, "/api/applications/{id}").hasAuthority("APPLICATION_DELETE")
-//
-//                        // Company management
-//                        .requestMatchers(HttpMethod.POST, "/api/companies").hasAuthority("COMPANY_CREATE")
-//                        .requestMatchers(HttpMethod.PUT, "/api/companies/**").hasAuthority("COMPANY_UPDATE")
-//                        .requestMatchers(HttpMethod.DELETE, "/api/companies/**").hasAuthority("COMPANY_DELETE")
-//                        .requestMatchers(HttpMethod.GET, "/api/companies/**").hasAuthority("COMPANY_VIEW")
-//
-//                        // Admin endpoints - require specific permissions
-//                        .requestMatchers("/api/admin/**").hasAnyAuthority(
-//                                "USER_MANAGE", "ROLE_MANAGE", "PERMISSION_MANAGE", "SYSTEM_ADMIN"
-//                        )
-//
-//                        // User profile management
-//                        .requestMatchers(HttpMethod.GET, "/api/userprofile/**").hasAuthority("USER_VIEW")
-//                        .requestMatchers(HttpMethod.PUT, "/api/userprofile/**").hasAuthority("USER_UPDATE")
-//                        .requestMatchers(HttpMethod.POST, "/api/userprofile/**").hasAuthority("USER_UPDATE")
-//                        .requestMatchers(HttpMethod.DELETE, "/api/userprofile/**").hasAuthority("USER_UPDATE")
-//
-//                        // File management
-//                        .requestMatchers(HttpMethod.POST, "/api/file/upload").hasAuthority("FILE_UPLOAD")
-//                        .requestMatchers(HttpMethod.DELETE, "/api/file/**").hasAuthority("FILE_DELETE")
-//
-//                        // Messaging
-//                        .requestMatchers(HttpMethod.POST, "/api/messaging/**").hasAuthority("MESSAGE_SEND")
-//                        .requestMatchers(HttpMethod.GET, "/api/messaging/**").hasAuthority("MESSAGE_VIEW")
-//
-//                        // Social features
-//                        .requestMatchers(HttpMethod.POST, "/api/social/**").hasAuthority("USER_UPDATE")
-//                        .requestMatchers(HttpMethod.GET, "/api/social/**").hasAuthority("USER_VIEW")
-//
-//                        // All other requests need authentication
-////                        .anyRequest().authenticated()
-//                        .anyRequest().permitAll()
-//                )
-//                .authenticationProvider(authenticationProvider());
-////                .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
-//
-//        return http.build();
-//    }
-
-
-@Bean
-public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-    http
-            // 1. Tắt CSRF (Bắt buộc để gọi POST/PUT/DELETE từ bên ngoài)
-            .csrf(AbstractHttpConfigurer::disable)
-
-            // 2. Tắt CORS (Để Swagger hoặc Frontend gọi không bị chặn)
-            .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-
-            // 3. Chế độ Stateless (Vì là API thuần)
-            .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-
-            // 4. MỞ CỬA TẤT CẢ ENDPOINTS
-            .authorizeHttpRequests(auth -> auth
-                    .anyRequest().permitAll()
-            );
-
-    // 5. LOẠI BỎ JwtAuthFilter
-    // Xóa hoặc comment dòng .addFilterBefore(jwtAuthFilter...)
-    // để không kiểm tra Token nữa.
-
-    return http.build();
-}
+    // ===================== SECURITY FILTER CHAIN =====================
 
     @Bean
-    public DaoAuthenticationProvider authenticationProvider() {
-        DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider();
-        authProvider.setUserDetailsService(authUserDetailsService);
-        authProvider.setPasswordEncoder(passwordEncoder());
-        return authProvider;
+    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+        http
+            .csrf(AbstractHttpConfigurer::disable)
+            .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+            .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+
+            .authorizeHttpRequests(auth -> auth
+
+                // ── Public: Auth (register, login, refresh) ───────────────
+                .requestMatchers("/api/auth/**").permitAll()
+
+                // ── Public: Swagger / API Docs ────────────────────────────
+                .requestMatchers(
+                    "/swagger-ui/**", "/swagger-ui.html",
+                    "/v3/api-docs/**", "/api-docs/**"
+                ).permitAll()
+
+                // ── Public: Job (đọc công khai, không cần token) ──────────
+                .requestMatchers(HttpMethod.GET, "/api/jobs/search").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/jobs/latest").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/jobs/hot").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/jobs/{id}").permitAll()
+
+                // ── Public: Company (xem thông tin công ty) ───────────────
+                .requestMatchers(HttpMethod.GET, "/api/companies/{id}").permitAll()
+
+                // ── EMPLOYER: Quản lý Job ─────────────────────────────────
+                .requestMatchers(HttpMethod.POST, "/api/jobs").hasRole("EMPLOYER")
+                .requestMatchers(HttpMethod.PUT, "/api/jobs/**").hasRole("EMPLOYER")
+                .requestMatchers(HttpMethod.DELETE, "/api/jobs/**").hasRole("EMPLOYER")
+                .requestMatchers(HttpMethod.POST, "/api/jobs/*/extend").hasRole("EMPLOYER")
+                .requestMatchers(HttpMethod.POST, "/api/jobs/*/close").hasRole("EMPLOYER")
+                .requestMatchers(HttpMethod.GET, "/api/jobs/my-jobs").hasRole("EMPLOYER")
+
+                // ── EMPLOYER: Quản lý Company profile ────────────────────
+                .requestMatchers(HttpMethod.PUT, "/api/companies/**").hasRole("EMPLOYER")
+                .requestMatchers(HttpMethod.POST, "/api/companies/**").hasRole("EMPLOYER")
+
+                // ── CANDIDATE + EMPLOYER + ADMIN: Nộp / xem đơn ─────────
+                .requestMatchers("/api/applications/**").hasAnyRole("CANDIDATE", "EMPLOYER", "ADMIN")
+
+                // ── ADMIN: Toàn quyền quản trị ────────────────────────────
+                .requestMatchers("/api/admin/**").hasRole("ADMIN")
+
+                // ── Các request còn lại: phải đăng nhập ──────────────────
+                .anyRequest().authenticated()
+            )
+
+            .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
+
+        return http.build();
     }
+
+    // ===================== BEANS =====================
 
     @Bean
     public PasswordEncoder passwordEncoder() {

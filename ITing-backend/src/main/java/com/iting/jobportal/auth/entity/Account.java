@@ -1,5 +1,6 @@
 package com.iting.jobportal.auth.entity;
 
+import com.iting.jobportal.auth.entity.Enum.Role;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -26,4 +27,8 @@ public class Account {
 
     @Column(name = "Password", nullable = false, length = 255)
     private String passwordHash;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "Role", nullable = false, length = 20)
+    private Role role = Role.CANDIDATE;
 }

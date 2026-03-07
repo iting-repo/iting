@@ -1,4 +1,4 @@
-package com.iting.jobportal.job.dto;
+package com.iting.jobportal.job.dto.request;
 
 import com.iting.jobportal.job.entity.enums.ExperienceLevel;
 import com.iting.jobportal.job.entity.enums.JobType;
@@ -16,8 +16,7 @@ public class CreateJobRequest {
     
     @NotBlank(message = "Mô tả công việc không được để trống")
     private String description;
-    
-    private String requirements;
+
     
     @NotBlank(message = "Địa điểm không được để trống")
     private String location;
