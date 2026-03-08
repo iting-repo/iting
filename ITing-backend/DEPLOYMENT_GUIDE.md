@@ -1,258 +1,403 @@
-# 🚀 HƯỚNG DẪN DEPLOY ITING JOB PORTAL LÊN RENDER + AIVEN
+# 🚀 HƯỚNG DẪN DEPLOY ITING JOB PORTAL LÊN AWS (EC2 + RDS)
 
 ## 📋 Mục lục
 1. [Yêu cầu](#yêu-cầu)
-2. [Bước 1: Chuẩn bị Aiven PostgreSQL](#bước-1-chuẩn-bị-aiven-postgresql)
-3. [Bước 2: Đẩy code lên GitHub](#bước-2-đẩy-code-lên-github)
-4. [Bước 3: Deploy lên Render](#bước-3-deploy-lên-render)
-5. [Bước 4: Cấu hình Environment Variables](#bước-4-cấu-hình-environment-variables)
-6. [Bước 5: Khởi tạo Database](#bước-5-khởi-tạo-database)
-7. [Kiểm tra và Troubleshooting](#kiểm-tra-và-troubleshooting)
+2. [Bước 1: Chuẩn bị AWS RDS PostgreSQL](#bước-1-chuẩn-bị-aws-rds-postgresql)
+3. [Bước 2: Chuẩn bị EC2 Instance](#bước-2-chuẩn-bị-ec2-instance)
+4. [Bước 3: Cấu hình Security Groups](#bước-3-cấu-hình-security-groups)
+5. [Bước 4: Deploy lên EC2](#bước-4-deploy-lên-ec2)
+6. [Bước 5: Cấu hình Environment Variables](#bước-5-cấu-hình-environment-variables)
+7. [Bước 6: Khởi tạo Database](#bước-6-khởi-tạo-database)
+8. [Tối ưu hóa và Monitoring](#tối-ưu-hóa-và-monitoring)
+9. [Troubleshooting](#troubleshooting)
 
 ---
 
 ## 📌 Yêu cầu
 
-- Tài khoản [GitHub](https://github.com)
-- Tài khoản [Render](https://render.com) (miễn phí)
-- Tài khoản [Aiven](https://aiven.io) (miễn phí 30 ngày trial)
+- Tài khoản [AWS](https://aws.amazon.com) (có thể dùng Free Tier)
+- Docker Desktop (cho build local)
+- Git
+- AWS CLI v2 (khuyến nghị cho deploy tự động)
 
 ---
 
-## 🗄️ Bước 1: Chuẩn bị Aiven PostgreSQL
+## 🗄️ Bước 1: Chuẩn bị AWS RDS PostgreSQL
 
-### 1.1 Đăng ký Aiven (nếu chưa có)
-1. Truy cập https://console.aiven.io/signup
-2. Đăng ký bằng email hoặc GitHub
+### 1.1 Tạo RDS Instance
 
-### 1.2 Tạo PostgreSQL Service
-1. Đăng nhập vào Aiven Console
-2. Click **Create Service**
-3. Chọn **PostgreSQL**
-4. Chọn plan **Free** (hoặc Hobbyist)
-5. Chọn cloud region gần Việt Nam (Singapore)
-6. Đặt tên service: `iting-postgres`
-7. Click **Create Service**
+1. Đăng nhập [AWS Console](https://console.aws.amazon.com)
+2. Vào **RDS** → **Create database**
+3. Cấu hình:
 
-### 1.3 Lấy thông tin kết nối
-Sau khi service được tạo (chờ 1-2 phút), vào tab **Overview**:
+| Setting | Value |
+|---------|-------|
+| **Choose a database creation method** | Standard create |
+| **Engine options** | PostgreSQL |
+| **Version** | PostgreSQL 15.x (latest) |
+| **Templates** | Free Tier (hoặc Dev/Test) |
+| **DB instance identifier** | `iting-job-web` |
+| **Master username** | `postgres` |
+| **Master password** | `YourSecurePassword123!` |
+| **Confirm password** | `YourSecurePassword123!` |
+| **Instance configuration** | db.t3.micro (Free Tier) |
+| **Storage** | 20 GB, gp3 |
+| **Public access** | Yes (để EC2 có thể kết nối) |
+
+4. Click **Create database**
+
+### 1.2 Lấy thông tin kết nối
+
+Sau khi tạo xong (5-10 phút), vào **DB Identifier** → **Connectivity & security**:
 
 ```
-Host:     pg-xxx.aivencloud.com
-Port:     23388
-Database: defaultdb
-User:     avnadmin
-Password: AVNS_xxxxxxxxxxxx
+Endpoint: iting-job-web.xxxx.ap-southeast-1.rds.amazonaws.com
+Port: 5432
 ```
 
 **Connection String (JDBC):**
 ```
-jdbc:postgresql://pg-xxx.aivencloud.com:23388/defaultdb?sslmode=require
-```
-
-> ⚠️ **Lưu ý**: SSL là bắt buộc với Aiven. Đảm bảo có `?sslmode=require` trong URL.
-
----
-
-## 📤 Bước 2: Đẩy code lên GitHub
-
-### 2.1 Tạo Repository trên GitHub
-1. Truy cập https://github.com/new
-2. Tạo repository mới: `iting-job-portal`
-3. **KHÔNG** chọn "Initialize with README"
-
-### 2.2 Push code lên GitHub
-Mở terminal trong thư mục dự án và chạy:
-
-```bash
-# Khởi tạo Git (nếu chưa có)
-git init
-
-# Thêm tất cả files
-git add .
-
-# Commit
-git commit -m "Initial commit - ITing Job Portal"
-
-# Thêm remote origin (thay YOUR_USERNAME bằng tên GitHub của bạn)
-git remote add origin https://github.com/YOUR_USERNAME/iting-job-portal.git
-
-# Push lên GitHub
-git branch -M main
-git push -u origin main
+jdbc:postgresql://iting-job-web.xxxx.ap-southeast-1.rds.amazonaws.com:5432/iting_job_web
 ```
 
 ---
 
-## 🌐 Bước 3: Deploy lên Render
+## 🖥️ Bước 2: Chuẩn bị EC2 Instance
 
-### 3.1 Đăng ký Render
-1. Truy cập https://render.com
-2. Đăng ký bằng GitHub (recommended)
+### 2.1 Tạo EC2 Instance
 
-### 3.2 Tạo Web Service
-
-#### Cách 1: Deploy thủ công (Recommended cho lần đầu)
-
-1. Đăng nhập Render Dashboard
-2. Click **New +** → **Web Service**
-3. Chọn **Connect a Git Repository**
-4. Chọn repository `iting-job-portal`
-5. Cấu hình:
+1. Vào **EC2** → **Launch Instance**
+2. Cấu hình:
 
 | Setting | Value |
 |---------|-------|
-| **Name** | `iting-job-portal` |
-| **Region** | Singapore |
-| **Branch** | `main` |
-| **Runtime** | Docker |
-| **Dockerfile Path** | `./Dockerfile` |
-| **Instance Type** | Free |
+| **Name** | `iting-app-server` |
+| **Amazon Machine Image** | Amazon Linux 2023 AMI |
+| **Instance type** | t3.micro (Free Tier) |
+| **Key pair** | Create new hoặc existing |
+| **Network settings** | Default VPC |
+| **Subnet** | Public subnet |
+| **Auto-assign public IP** | Enable |
+| **Storage** | 8 GB (gp3) |
 
-6. Click **Create Web Service**
+3. Click **Launch Instance**
 
-#### Cách 2: Deploy bằng Blueprint (render.yaml)
-1. Đăng nhập Render Dashboard
-2. Click **New +** → **Blueprint**
-3. Chọn repository chứa file `render.yaml`
-4. Render sẽ tự động đọc cấu hình
+### 2.2 Cài đặt Docker trên EC2
+
+Sau khi SSH vào EC2:
+
+```bash
+# Update
+sudo yum update -y
+
+# Install Docker
+sudo amazon-linux-extras install docker -y
+
+# Start Docker
+sudo systemctl start docker
+sudo systemctl enable docker
+
+# Add user to docker group
+sudo usermod -a -G docker ec2-user
+
+# Install Docker Compose
+sudo curl -L "https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+sudo chmod +x /usr/local/bin/docker-compose
+
+# Verify
+docker --version
+docker-compose --version
+```
+
+### 2.3 Cấu hình Docker Compose (Optional - Alternative to manual)
+
+Tạo file `/home/ec2-user/docker-compose.yml` trên EC2:
+
+```yaml
+version: '3.8'
+
+services:
+  app:
+    image: iting-app:latest
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      - SPRING_PROFILES_ACTIVE=prod
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://ITING-RDS-ENDPOINT:5432/iting_job_web
+      - SPRING_DATASOURCE_USERNAME=postgres
+      - SPRING_DATASOURCE_PASSWORD=YourSecurePassword123!
+      - SPRING_JPA_HIBERNATE_DDL_AUTO=update
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 45s
+```
 
 ---
 
-## ⚙️ Bước 4: Cấu hình Environment Variables
+## 🔒 Bước 3: Cấu hình Security Groups
 
-### 4.1 Thêm Environment Variables trong Render
+### 3.1 RDS Security Group
 
-1. Vào **Dashboard** → Chọn service `iting-job-portal`
-2. Click tab **Environment**
-3. Thêm các biến sau:
+1. Vào **RDS** → **Databases** → Chọn instance
+2. Click **VPC security groups** → **Edit inbound rules**
+3. Thêm rule:
+
+| Type | Protocol | Port | Source |
+|------|----------|------|--------|
+| PostgreSQL | TCP | 5432 | EC2 Security Group |
+
+### 3.2 EC2 Security Group
+
+1. Vào **EC2** → **Security Groups**
+2. Inbound Rules:
+
+| Type | Protocol | Port | Source |
+|------|----------|------|--------|
+| HTTP | TCP | 80 | 0.0.0.0/0 |
+| HTTPS | TCP | 443 | 0.0.0.0/0 |
+| SSH | TCP | 22 | Your IP |
+
+---
+
+## 📦 Bước 4: Deploy lên EC2
+
+### Cách 1: Deploy với Docker (Recommended)
+
+#### 4.1 Build Docker Image Local
+
+```bash
+cd ITing-backend
+
+# Build image
+docker build -t iting-app:latest .
+
+# Hoặc với docker-compose
+docker-compose build
+```
+
+#### 4.2 Push lên ECR (Elastic Container Registry) - Optional
+
+```bash
+# Tạo ECR repository
+aws ecr create-repository --repository-name iting-app
+
+# Login to ECR
+aws ecr get-login-password --region ap-southeast-1 | docker login --username AWS --password-stdin ACCOUNT_ID.dkr.ecr.ap-southeast-1.amazonaws.com
+
+# Tag và push
+docker tag iting-app:latest ACCOUNT_ID.dkr.ecr.ap-southeast-1.amazonaws.com/iting-app:latest
+docker push ACCOUNT_ID.dkr.ecr.ap-southeast-1.amazonaws.com/iting-app:latest
+```
+
+#### 4.3 Deploy trên EC2
+
+```bash
+# SSH vào EC2
+ssh -i your-key.pem ec2-user@EC2_PUBLIC_IP
+
+# Tạo thư mục project
+mkdir -p iting-app && cd iting-app
+
+# Tạo .env file
+cat > .env << 'EOF'
+DB_HOST=iting-job-web.xxxx.ap-southeast-1.rds.amazonaws.com
+DB_PORT=5432
+DB_NAME=iting_job_web
+DB_USER=postgres
+DB_PASSWORD=YourSecurePassword123!
+EOF
+
+# Pull image (nếu dùng ECR)
+docker pull ACCOUNT_ID.dkr.ecr.ap-southeast-1.amazonaws.com/iting-app:latest
+
+# Hoặc copy files và build trực tiếp trên EC2
+# Copy project files via SCP
+scp -i your-key.pem -r ITing-backend/* ec2-user@EC2_PUBLIC_IP:~/iting-app/
+
+# Build trên EC2
+docker build -t iting-app:latest .
+
+# Run container
+docker run -d \
+  --name iting-app \
+  -p 8080:8080 \
+  --restart unless-stopped \
+  --env-file .env \
+  iting-app:latest
+```
+
+### Cách 2: Sử dụng Deploy Script
+
+```bash
+# Chạy script có sẵn
+chmod +x deploy.sh
+./deploy.sh
+```
+
+---
+
+## ⚙️ Bước 5: Cấu hình Environment Variables
+
+### 5.1 Các biến môi trường cần thiết
 
 | Key | Value | Description |
 |-----|-------|-------------|
-| `DATABASE_URL` | `jdbc:postgresql://pg-xxx.aivencloud.com:23388/defaultdb?sslmode=require` | JDBC URL từ Aiven |
-| `DATABASE_USERNAME` | `avnadmin` | Username Aiven |
-| `DATABASE_PASSWORD` | `AVNS_xxxxxxxxxxxx` | Password Aiven |
-| `JWT_SECRET` | `your-256-bit-secret-key-at-least-32-characters` | Secret key cho JWT |
 | `SPRING_PROFILES_ACTIVE` | `prod` | Active profile |
+| `SPRING_DATASOURCE_URL` | `jdbc:postgresql://HOST:5432/iting_job_web` | JDBC URL |
+| `SPRING_DATASOURCE_USERNAME` | `postgres` | Database user |
+| `SPRING_DATASOURCE_PASSWORD` | `YourSecurePassword123!` | Database password |
+| `SPRING_JPA_HIBERNATE_DDL_AUTO` | `update` | Auto create tables |
+| `JWT_SECRET` | `your-256-bit-secret-key-at-least-32-characters` | JWT secret |
+| `SERVER_PORT` | `8080` | Server port |
 
-4. Click **Save Changes**
+### 5.2 Cấu hình trong docker-compose.yml
 
-### 4.2 Lấy thông tin Aiven chính xác
-Vào Aiven Console → Service của bạn → Tab **Overview**:
-- **Service URI** chứa host, port, user, password
-- Copy và thay thế vào các biến trên
+```yaml
+environment:
+  - SPRING_PROFILES_ACTIVE=prod
+  - SPRING_DATASOURCE_URL=jdbc:postgresql://${DB_HOST}:${DB_PORT}/${DB_NAME}
+  - SPRING_DATASOURCE_USERNAME=${DB_USER}
+  - SPRING_DATASOURCE_PASSWORD=${DB_PASSWORD}
+  - SPRING_JPA_HIBERNATE_DDL_AUTO=update
+```
 
 ---
 
-## 🗃️ Bước 5: Khởi tạo Database
+## 🗃️ Bước 6: Khởi tạo Database
 
-### 5.1 Khởi tạo Schema (Lần đầu tiên)
+### 6.1 Sử dụng Schema SQL (Recommended)
 
-Có 2 cách:
+```bash
+# Copy schema.sql lên EC2
+scp -i your-key.pem schema.sql ec2-user@EC2_PUBLIC_IP:~/iting-app/
 
-#### Cách 1: Dùng Hibernate tự tạo tables
-File `application-prod.properties` đã cấu hình:
+# Kết nối RDS và chạy schema
+psql -h iting-job-web.xxxx.ap-southeast-1.rds.amazonaws.com -U postgres -d iting_job_web -f schema.sql
+```
+
+### 6.2 Sử dụng Hibernate (Tự động)
+
+Đảm bảo `application-prod.properties` có:
 ```properties
 spring.jpa.hibernate.ddl-auto=update
+spring.jpa.show-sql=false
 ```
+
 Hibernate sẽ tự tạo tables khi app khởi động.
 
-#### Cách 2: Chạy data.sql thủ công (Recommended)
-1. Tải **DBeaver** hoặc **pgAdmin**
-2. Kết nối đến Aiven PostgreSQL
-3. Chạy nội dung file `src/main/resources/data.sql`
+### 6.3 Import dữ liệu mẫu
 
-### 5.2 Để App tự insert dữ liệu mẫu (Chỉ lần đầu)
-
-**Bước 1**: Sửa tạm `application-prod.properties`:
-```properties
-spring.sql.init.mode=always
-spring.jpa.hibernate.ddl-auto=create
-```
-
-**Bước 2**: Deploy lại
 ```bash
-git add .
-git commit -m "Enable data initialization"
-git push origin main
-```
-
-**Bước 3**: Đợi Render deploy xong, sau đó đổi lại:
-```properties
-spring.sql.init.mode=never
-spring.jpa.hibernate.ddl-auto=update
-```
-
-**Bước 4**: Push lại để tránh reset data mỗi lần deploy
-```bash
-git add .
-git commit -m "Disable data initialization"
-git push origin main
+# Import data.sql
+psql -h iting-job-web.xxxx.ap-southeast-1.rds.amazonaws.com -U postgres -d iting_job_web -f data.sql
 ```
 
 ---
 
-## ✅ Kiểm tra và Troubleshooting
+## ⏱️ Tối ưu hóa và Monitoring
 
-### Kiểm tra API hoạt động
+### Docker Optimizations (Đã tích hợp trong Dockerfile)
 
-Sau khi deploy thành công, Render sẽ cung cấp URL dạng:
-```
-https://iting-job-portal.onrender.com
-```
+| Feature | Benefit |
+|---------|---------|
+| Layered JAR extraction | ~30% faster startup |
+| ZGC garbage collector | Low-latency GC |
+| Alpine JRE | Smaller image (~150MB) |
+| Parallel Gradle builds | Faster compilation |
+| Health check với actuator | Faster failure detection |
 
-Test các endpoint:
+### Monitoring
 
 ```bash
-# Health check
-curl https://iting-job-portal.onrender.com/actuator/health
+# Xem logs
+docker logs iting-app -f
 
-# API endpoint
-curl https://iting-job-portal.onrender.com/api/jobs
+# Xem resource usage
+docker stats iting-app
 
-# Swagger UI
-# Mở trình duyệt: https://iting-job-portal.onrender.com/swagger-ui.html
+# Restart nếu cần
+docker restart iting-app
 ```
 
-### Xem Logs
-1. Vào Render Dashboard → Service
-2. Click tab **Logs**
-3. Xem realtime logs
+### Setup CloudWatch Monitoring (Optional)
 
-### Các lỗi thường gặp
+```bash
+# Install CloudWatch agent
+sudo yum install -y amazon-cloudwatch-agent
 
-#### ❌ Lỗi: "Connection refused" hoặc "FATAL: password authentication failed"
-**Nguyên nhân**: Sai thông tin kết nối database
+# Configure monitoring
+sudo cat > /opt/aws/amazon-cloudwatch-agent/etc/amazon-cloudwatch-agent.json << 'EOF'
+{
+  "metrics": {
+    "namespace": "ITingApp",
+    "metrics_collected": {
+      "docker": {
+        "metrics_collection_interval": 60
+      }
+    }
+  }
+}
+```
+
+---
+
+## 🔧 Troubleshooting
+
+### ❌ Lỗi: "Connection refused" đến RDS
+
+**Nguyên nhân**: Security Group chưa mở port
 **Giải pháp**: 
-- Kiểm tra lại `DATABASE_URL`, `DATABASE_USERNAME`, `DATABASE_PASSWORD`
-- Đảm bảo có `?sslmode=require` trong URL
+- Kiểm tra RDS Security Group → Inbound Rules → PostgreSQL (5432) từ EC2 SG
 
-#### ❌ Lỗi: "Build failed"
-**Nguyên nhân**: Lỗi compile Maven
+### ❌ Lỗi: "Password authentication failed"
+
+**Nguyên nhân**: Sai password hoặc user
+**Giải pháp**: 
+- Kiểm tra lại `DB_USER` và `DB_PASSWORD`
+- Verify RDS master username là `postgres`
+
+### ❌ Lỗi: "Database does not exist"
+
+**Nguyên nhân**: Database chưa được tạo
+**Giải pháp**: 
+- Tạo database: `CREATE DATABASE iting_job_web;`
+
+### ❌ Lỗi: "Build failed" trên EC2
+
+**Nguyên nhân**: Thiếu Docker build tools
 **Giải pháp**: 
 ```bash
-# Test build local trước
-mvn clean package -DskipTests
+# Install Gradle
+sudo yum install -y gradle
+
+# Hoặc build local và chỉ push image
 ```
 
-#### ❌ Lỗi: "Port already in use" hoặc "Address already in use"
-**Nguyên nhân**: App không dùng PORT từ Render
-**Giải pháp**: Đảm bảo `application-prod.properties` có:
-```properties
-server.port=${PORT:8080}
+### ❌ App khởi động chậm
+
+**Nguyên nhân**: 
+- Thiếu memory
+- Cold start lần đầu
+
+**Giải pháp**: 
+- Tăng `-Xmx512m` trong JAVA_OPTS
+- Sử dụng ZGC (đã cấu hình)
+
+### ❌ Health check fails
+
+**Nguyên nhân**: Actuator endpoint không accessible
+**Giải pháp**: 
+```bash
+# Kiểm tra logs
+docker logs iting-app
+
+# Test thủ công
+curl http://localhost:8080/actuator/health
 ```
-
-#### ❌ Lỗi: "Table does not exist"
-**Nguyên nhân**: Hibernate chưa tạo tables
-**Giải pháp**: 
-- Kiểm tra `spring.jpa.hibernate.ddl-auto=update`
-- Hoặc chạy `data.sql` thủ công
-
-#### ❌ App khởi động chậm / Timeout
-**Nguyên nhân**: Free tier Render sleep sau 15 phút không hoạt động
-**Giải pháp**: 
-- Đợi 30-60 giây cho cold start
-- Upgrade lên paid plan nếu cần performance
 
 ---
 
@@ -261,13 +406,14 @@ server.port=${PORT:8080}
 ```
 ┌─────────────────┐     ┌─────────────────┐     ┌─────────────────┐
 │                 │     │                 │     │                 │
-│   GitHub Repo   │────▶│  Render (Docker)│────▶│ Aiven PostgreSQL│
-│                 │     │                 │     │                 │
+│   GitHub Repo   │────▶│   EC2 (Docker)  │────▶│ AWS RDS         │
+│                 │     │                 │     │ PostgreSQL      │
 └─────────────────┘     └─────────────────┘     └─────────────────┘
         │                       │                       │
-        │                       │                       │
-    Source Code            Web Service              Database
-    (Auto Deploy)        (Spring Boot)           (Cloud SQL)
+        │                   Web Service             Database
+    Source Code            (Spring Boot)          (Cloud SQL)
+    (Manual/CI/CD)        Containerized          Managed
+                                              (Auto backups)
 ```
 
 ---
@@ -276,32 +422,66 @@ server.port=${PORT:8080}
 
 | Service | URL |
 |---------|-----|
-| **API Base** | `https://iting-job-portal.onrender.com` |
-| **Swagger UI** | `https://iting-job-portal.onrender.com/swagger-ui.html` |
-| **API Docs** | `https://iting-job-portal.onrender.com/api-docs` |
-| **Health Check** | `https://iting-job-portal.onrender.com/actuator/health` |
+| **API Base** | `http://EC2_PUBLIC_IP:8080` |
+| **Swagger UI** | `http://EC2_PUBLIC_IP:8080/swagger-ui.html` |
+| **API Docs** | `http://EC2_PUBLIC_IP:8080/api-docs` |
+| **Health Check** | `http://EC2_PUBLIC_IP:8080/actuator/health` |
 
 ---
 
 ## 📝 Checklist Deploy
 
-- [ ] Đã tạo Aiven PostgreSQL service
-- [ ] Đã lấy connection string từ Aiven
-- [ ] Đã push code lên GitHub
-- [ ] Đã tạo Render Web Service
-- [ ] Đã cấu hình Environment Variables trên Render
+- [ ] Đã tạo RDS PostgreSQL instance
+- [ ] Đã lấy RDS endpoint
+- [ ] Đã tạo EC2 Instance
+- [ ] Đã cài đặt Docker trên EC2
+- [ ] Đã cấu hình Security Groups
+- [ ] Đã build Docker image
+- [ ] Đã deploy lên EC2
+- [ ] Đã cấu hình Environment Variables
 - [ ] Đã kiểm tra app hoạt động qua /actuator/health
 - [ ] Đã test API qua Swagger UI
 
 ---
 
-## 🎉 Hoàn tất!
+## 🚀 Optional: CI/CD với GitHub Actions
 
-Sau khi hoàn thành các bước trên, ứng dụng ITing Job Portal của bạn đã được deploy thành công!
+Tạo `.github/workflows/deploy.yml`:
 
-Mỗi khi push code mới lên branch `main`, Render sẽ tự động build và deploy lại.
+```yaml
+name: Deploy to AWS EC2
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Build Docker image
+        run: docker build -t iting-app:latest .
+      
+      - name: Deploy to EC2
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ec2-user
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            cd iting-app
+            docker-compose pull
+            docker-compose up -d
+```
 
 ---
 
-*Cập nhật: December 2024*
+## 🎉 Hoàn tất!
 
+Sau khi hoàn thành các bước trên, ứng dụng ITing Job Portal của bạn đã được deploy thành công lên AWS!
+
+---
+
+*Cập nhật: March 2026*
