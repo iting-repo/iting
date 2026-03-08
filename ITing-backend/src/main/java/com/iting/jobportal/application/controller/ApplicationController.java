@@ -23,12 +23,12 @@ public class ApplicationController {
 
     private final ApplicationService applicationService;
 
-    // ========== CHO ỨNG VIÊN ==========
+    // ========== CHO ỨNG VIÊN (CANDIDATE) ==========
 
     @PostMapping("/apply")
     @Operation(summary = "Nộp đơn ứng tuyển")
     public ResponseEntity<ApplicationResponse> applyJob(
-            @Parameter(hidden = true) @CurrentUser String userId,
+            @Parameter(hidden = true) @CurrentUser Long userId, // Sửa String -> Long
             @Valid @RequestBody ApplyJobRequest request) {
         return ResponseEntity.ok(applicationService.applyJob(userId, request));
     }
@@ -36,7 +36,7 @@ public class ApplicationController {
     @PostMapping("/{id}/withdraw")
     @Operation(summary = "Rút đơn ứng tuyển")
     public ResponseEntity<?> withdrawApplication(
-            @CurrentUser String userId,
+            @CurrentUser Long userId, // Sửa String -> Long
             @PathVariable Long id) {
         applicationService.withdrawApplication(userId, id);
         return ResponseEntity.ok(Map.of("message", "Application withdrawn successfully"));
@@ -45,7 +45,7 @@ public class ApplicationController {
     @GetMapping("/my-applications")
     @Operation(summary = "Xem danh sách đơn đã nộp (Ứng viên)")
     public ResponseEntity<Page<ApplicationResponse>> getMyApplications(
-            @CurrentUser String userId,
+            @CurrentUser Long userId, // Sửa String -> Long
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
         return ResponseEntity.ok(applicationService.getMyApplications(userId, page, size));
@@ -54,13 +54,14 @@ public class ApplicationController {
     @GetMapping("/check/{jobId}")
     @Operation(summary = "Kiểm tra đã ứng tuyển job chưa")
     public ResponseEntity<Map<String, Boolean>> checkApplied(
-            @CurrentUser String userId,
+            @CurrentUser Long userId, // Sửa String -> Long
             @PathVariable Long jobId) {
         boolean hasApplied = applicationService.hasApplied(userId, jobId);
         return ResponseEntity.ok(Map.of("hasApplied", hasApplied));
     }
 
-    // ========== CHO NHÀ TUYỂN DỤNG ==========
+    // ========== CHO NHÀ TUYỂN DỤNG (EMPLOYER) ==========
+    // Các phương thức Employer bên dưới bạn đã để Long nên giữ nguyên
 
     @GetMapping("/job/{jobId}")
     @Operation(summary = "Xem danh sách đơn ứng tuyển của một job (Employer)")

@@ -1,5 +1,6 @@
 package com.iting.jobportal.user.service.impl;
 
+import com.iting.jobportal.auth.exception.ResourceNotFoundException;
 import com.iting.jobportal.user.dto.UpdateUserRequest;
 import com.iting.jobportal.user.dto.UserProfileResponse;
 import com.iting.jobportal.user.entity.User;
@@ -20,19 +21,18 @@ public class UserServiceImpl implements UserService {
 
     private final UserRepository userRepository;
 
-    // ✅ dùng nội bộ cho các hàm update
-    private User getUserEntity(String userId) {
-        return userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+    // ✅ Tìm kiếm trực tiếp bằng Long Id (ID kế thừa từ Account)
+    private User getUserEntity(Long id) {
+        return userRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + id));
     }
 
-    // ✅ dùng cho API GET /profile
     @Override
-    public UserProfileResponse getProfile(String userId) {
-        User u = getUserEntity(userId);
+    public UserProfileResponse getProfile(Long id) {
+        User u = getUserEntity(id);
 
         return UserProfileResponse.builder()
-                .userId(u.getAccount().getId())
+                .userId(u.getId()) // u.getId() chính là AccountId
                 .firstName(u.getFirstName())
                 .lastName(u.getLastName())
                 .email(u.getAccount().getEmail())
@@ -47,8 +47,8 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public void updateBasic(String userId, UpdateUserRequest req) {
-        User u = getUserEntity(userId);
+    public void updateBasic(Long id, UpdateUserRequest req) {
+        User u = getUserEntity(id);
 
         u.setFirstName(req.getFirstName());
         u.setLastName(req.getLastName());
@@ -58,44 +58,43 @@ public class UserServiceImpl implements UserService {
         u.setDescription(req.getDescription());
         u.setAddress(req.getAddress());
 
+        // Cập nhật thông tin email ở bảng Account thông qua quan hệ kế thừa/liên kết
         u.getAccount().setEmail(req.getEmail());
         u.setPhoneNum(req.getPhoneNum());
-
         u.setLastUpdate(LocalDateTime.now());
-        // không cần save nếu @Transactional + entity managed
     }
 
     @Override
-    public void updateAvatar(String userId, String url) {
-        User u = getUserEntity(userId);
+    public void updateAvatar(Long id, String url) {
+        User u = getUserEntity(id);
         u.setAvatarUrl(url);
         u.setLastUpdate(LocalDateTime.now());
     }
 
     @Override
-    public void deleteAvatar(String userId) {
-        User u = getUserEntity(userId);
+    public void deleteAvatar(Long id) {
+        User u = getUserEntity(id);
         u.setAvatarUrl(null);
         u.setLastUpdate(LocalDateTime.now());
     }
 
     @Override
-    public void updateDescription(String userId, String description) {
-        User u = getUserEntity(userId);
+    public void updateDescription(Long id, String description) {
+        User u = getUserEntity(id);
         u.setDescription(description);
         u.setLastUpdate(LocalDateTime.now());
     }
 
     @Override
-    public void updateAddress(String userId, String address) {
-        User u = getUserEntity(userId);
+    public void updateAddress(Long id, String address) {
+        User u = getUserEntity(id);
         u.setAddress(address);
         u.setLastUpdate(LocalDateTime.now());
     }
 
     @Override
-    public void updateBirthGender(String userId, LocalDate birth, Gender gender) {
-        User u = getUserEntity(userId);
+    public void updateBirthGender(Long id, LocalDate birth, Gender gender) {
+        User u = getUserEntity(id);
         u.setBirthDate(birth);
         u.setSex(gender);
         u.setLastUpdate(LocalDateTime.now());

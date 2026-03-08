@@ -47,28 +47,38 @@ INSERT INTO VN_location (Loc_id, Province_name, Province_name_en, Region) VALUES
 -- ============================================================================
 
 -- Accounts (using bcrypt hashed passwords from data_jobweb.sql)
-INSERT INTO Account (Id, Email, Password, Role) VALUES
-                                                    (1, 'admin@iting.com', '$2a$10$XuCJKq/inhdGdYFp9d/TP.S7DnKtMERu7Nec5TWXHAxNbgFHEZwZ6', 'ADMIN'),
-                                                    (2, 'superadmin@iting.com', '$2a$10$XuCJKq/inhdGdYFp9d/TP.S7DnKtMERu7Nec5TWXHAxNbgFHEZwZ6', 'ADMIN'),
-                                                    (3, 'moderator@iting.com', '$2a$10$XuCJKq/inhdGdYFp9d/TP.S7DnKtMERu7Nec5TWXHAxNbgFHEZwZ6', 'ADMIN'),
+INSERT INTO Account (Id, Email, Password, Role, Status) VALUES
+-- ADMINS
+(1, 'admin@iting.com', '$2a$10$XuCJKq/inhdGdYFp9d/TP.S7DnKtMERu7Nec5TWXHAxNbgFHEZwZ6', 'ADMIN', 'ACTIVE'),
+(2, 'superadmin@iting.com', '$2a$10$XuCJKq/inhdGdYFp9d/TP.S7DnKtMERu7Nec5TWXHAxNbgFHEZwZ6', 'ADMIN', 'ACTIVE'),
+(3, 'moderator@iting.com', '$2a$10$XuCJKq/inhdGdYFp9d/TP.S7DnKtMERu7Nec5TWXHAxNbgFHEZwZ6', 'ADMIN', 'ACTIVE'),
 
-                                                    (11, 'hr@fpt.com', '$2a$10$XuCJKq/inhdGdYFp9d/TP.S7DnKtMERu7Nec5TWXHAxNbgFHEZwZ6', 'COMPANY'),
-                                                    (12, 'hr@vng.com', '$2a$10$XuCJKq/inhdGdYFp9d/TP.S7DnKtMERu7Nec5TWXHAxNbgFHEZwZ6', 'COMPANY'),
-                                                    (13, 'hr@vingroup.com', '$2a$10$XuCJKq/inhdGdYFp9d/TP.S7DnKtMERu7Nec5TWXHAxNbgFHEZwZ6', 'COMPANY'),
-                                                    (14, 'hr@tiki.vn', '$2a$10$XuCJKq/inhdGdYFp9d/TP.S7DnKtMERu7Nec5TWXHAxNbgFHEZwZ6', 'COMPANY'),
-                                                    (15, 'hr@shopee.vn', '$2a$10$XuCJKq/inhdGdYFp9d/TP.S7DnKtMERu7Nec5TWXHAxNbgFHEZwZ6', 'COMPANY'),
+-- COMPANIES
+(11, 'hr@fpt.com', '$2a$10$XuCJKq/inhdGdYFp9d/TP.S7DnKtMERu7Nec5TWXHAxNbgFHEZwZ6', 'COMPANY', 'ACTIVE'),
+(12, 'hr@vng.com', '$2a$10$XuCJKq/inhdGdYFp9d/TP.S7DnKtMERu7Nec5TWXHAxNbgFHEZwZ6', 'COMPANY', 'ACTIVE'),
+(13, 'hr@vingroup.com', '$2a$10$XuCJKq/inhdGdYFp9d/TP.S7DnKtMERu7Nec5TWXHAxNbgFHEZwZ6', 'COMPANY', 'ACTIVE'),
+(14, 'hr@tiki.vn', '$2a$10$XuCJKq/inhdGdYFp9d/TP.S7DnKtMERu7Nec5TWXHAxNbgFHEZwZ6', 'COMPANY', 'ACTIVE'),
+(15, 'hr@shopee.vn', '$2a$10$XuCJKq/inhdGdYFp9d/TP.S7DnKtMERu7Nec5TWXHAxNbgFHEZwZ6', 'COMPANY', 'BANNED'), -- Tài khoản này bị cấm
 
-                                                    (101, 'nguyenvana@gmail.com', '$2a$10$XuCJKq/inhdGdYFp9d/TP.S7DnKtMERu7Nec5TWXHAxNbgFHEZwZ6', 'USER'),
-                                                    (102, 'tranthib@gmail.com', '$2a$10$XuCJKq/inhdGdYFp9d/TP.S7DnKtMERu7Nec5TWXHAxNbgFHEZwZ6', 'USER'),
-                                                    (103, 'levanc@gmail.com', '$2a$10$XuCJKq/inhdGdYFp9d/TP.S7DnKtMERu7Nec5TWXHAxNbgFHEZwZ6', 'USER'),
-                                                    (104, 'phamthid@gmail.com', '$2a$10$XuCJKq/inhdGdYFp9d/TP.S7DnKtMERu7Nec5TWXHAxNbgFHEZwZ6', 'USER'),
-                                                    (105, 'hoangvane@gmail.com', '$2a$10$XuCJKq/inhdGdYFp9d/TP.S7DnKtMERu7Nec5TWXHAxNbgFHEZwZ6', 'USER');
-
+-- USERS
+(101, 'nguyenvana@gmail.com', '$2a$10$XuCJKq/inhdGdYFp9d/TP.S7DnKtMERu7Nec5TWXHAxNbgFHEZwZ6', 'USER', 'ACTIVE'),
+(102, 'tranthib@gmail.com', '$2a$10$XuCJKq/inhdGdYFp9d/TP.S7DnKtMERu7Nec5TWXHAxNbgFHEZwZ6', 'USER', 'ACTIVE'),
+(103, 'levanc@gmail.com', '$2a$10$XuCJKq/inhdGdYFp9d/TP.S7DnKtMERu7Nec5TWXHAxNbgFHEZwZ6', 'USER', 'BANNED'), -- Tài khoản này bị cấm
+(104, 'phamthid@gmail.com', '$2a$10$XuCJKq/inhdGdYFp9d/TP.S7DnKtMERu7Nec5TWXHAxNbgFHEZwZ6', 'USER', 'ACTIVE'),
+(105, 'hoangvane@gmail.com', '$2a$10$XuCJKq/inhdGdYFp9d/TP.S7DnKtMERu7Nec5TWXHAxNbgFHEZwZ6', 'USER', 'ACTIVE');
 -- Admin accounts
 INSERT INTO Admin (Admin_id, F_name, L_name, Web_infor_id) VALUES
 (1, 'System', 'Admin', 1),
 (2, 'Super', 'Admin', 1),
 (3, 'Content', 'Moderator', 2);
+
+-- Thêm dữ liệu mẫu cho lịch sử cấm
+INSERT INTO Ban_history (Target_account_id, Admin_account_id, Reason, Banned_at, Expired_at, Is_active) VALUES
+-- Admin 1 ban Shopee (Id 15) vĩnh viễn vì lừa đảo
+(15, 1, 'Spam tin tuyển dụng lừa đảo, không cung cấp giấy phép kinh doanh hợp lệ.', CURRENT_TIMESTAMP, NULL, TRUE),
+
+-- Admin 2 ban Lê Văn C (Id 103) 30 ngày vì ngôn từ không chuẩn mực
+(103, 2, 'Sử dụng ngôn từ không chuẩn mực trong bình luận và tin nhắn.', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP + INTERVAL '30 days', TRUE);
 
 -- Users (job seekers)
 INSERT INTO Users (
@@ -76,27 +86,27 @@ INSERT INTO Users (
     B_date, B_month, B_year, Sex, Avatar, Description,
     Address, Last_update
 ) VALUES
-      (101, '0901111111', 2, NULL, 'Nguyen Van', 'A', '1999-01-15', 1, 1999, 'Male',
+      (101, '0901111111', 2, NULL, 'Nguyen Van', 'A', '1999-01-15', 1, 1999, 'MALE',
        'https://i.pravatar.cc/150?img=1',
        'Java Developer 2 năm kinh nghiệm, đam mê Spring Boot và microservices.',
        'Quận 1, TP. Hồ Chí Minh', CURRENT_TIMESTAMP),
 
-      (102, '0902222222', 2, NULL, 'Tran Thi', 'B', '1998-05-20', 5, 1998, 'Female',
+      (102, '0902222222', 2, NULL, 'Tran Thi', 'B', '1998-05-20', 5, 1998, 'FEMALE',
        'https://i.pravatar.cc/150?img=5',
        'Frontend Developer chuyên React và Vue.js, yêu thích UI/UX.',
        'Quận 7, TP. Hồ Chí Minh', CURRENT_TIMESTAMP),
 
-      (103, '0903333333', 1, NULL, 'Le Van', 'C', '1997-11-10', 11, 1997, 'Male',
+      (103, '0903333333', 1, NULL, 'Le Van', 'C', '1997-11-10', 11, 1997, 'MALE',
        'https://i.pravatar.cc/150?img=3',
        'DevOps Engineer kinh nghiệm AWS, Docker, Kubernetes.',
        'Cầu Giấy, Hà Nội', CURRENT_TIMESTAMP),
 
-      (104, '0904444444', 2, NULL, 'Pham Thi', 'D', '2000-03-25', 3, 2000, 'Female',
+      (104, '0904444444', 2, NULL, 'Pham Thi', 'D', '2000-03-25', 3, 2000, 'FEMALE',
        'https://i.pravatar.cc/150?img=9',
        'Full Stack Developer, Node.js và React.',
        'Bình Thạnh, TP. Hồ Chí Minh', CURRENT_TIMESTAMP),
 
-      (105, '0905555555', 1, NULL, 'Hoang Van', 'E', '1996-07-08', 7, 1996, 'Male',
+      (105, '0905555555', 1, NULL, 'Hoang Van', 'E', '1996-07-08', 7, 1996, 'MALE',
        'https://i.pravatar.cc/150?img=11',
        'Data Engineer 3 năm kinh nghiệm Python và Spark.',
        'Đống Đa, Hà Nội', CURRENT_TIMESTAMP);

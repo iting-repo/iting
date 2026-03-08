@@ -1,7 +1,7 @@
 package com.iting.jobportal.auth.service.impl;
 
-import com.iting.jobportal.auth.dto.RefreshTokenRequest;
-import com.iting.jobportal.auth.dto.TokenResponse;
+import com.iting.jobportal.auth.dto.request.RefreshTokenRequest;
+import com.iting.jobportal.auth.dto.response.TokenResponse;
 import com.iting.jobportal.auth.entity.Account;
 import com.iting.jobportal.auth.entity.RefreshToken;
 import com.iting.jobportal.auth.repository.AccountRepository;

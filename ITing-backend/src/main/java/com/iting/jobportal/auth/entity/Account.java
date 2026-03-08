@@ -1,5 +1,6 @@
 package com.iting.jobportal.auth.entity;
 
+import com.iting.jobportal.auth.entity.Enum.AccountStatus;
 import com.iting.jobportal.auth.entity.Enum.Role;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -31,4 +32,8 @@ public class Account {
     @Enumerated(EnumType.STRING)
     @Column(name = "Role", nullable = false, length = 20)
     private Role role = Role.CANDIDATE;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "Status", nullable = false, length = 20)
+    private AccountStatus status = AccountStatus.ACTIVE;
 }

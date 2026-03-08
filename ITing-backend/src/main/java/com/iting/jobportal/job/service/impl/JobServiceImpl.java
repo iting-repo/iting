@@ -79,7 +79,7 @@ public class JobServiceImpl implements JobService {
                 .minSalary(request.getMinSalary())
                 .maxSalary(request.getMaxSalary())
                 .dueDate(request.getDueDate())
-                .status(JobStatus.ACTIVE)
+                .status(JobStatus.PENDING)
                 .lastUpdate(LocalDateTime.now())
                 .jobType(request.getJobType())
                 .experienceLevel(request.getExperienceLevel())

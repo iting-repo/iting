@@ -30,7 +30,7 @@ DROP TABLE IF EXISTS Account CASCADE;
 DROP TABLE IF EXISTS VN_location CASCADE;
 DROP TABLE IF EXISTS web_info CASCADE;
 DROP TABLE IF EXISTS Social_network CASCADE;
-
+DROP TABLE IF EXISTS Ban_history CASCADE;
 -- ============================================================================
 -- REFERENCE DATA TABLES
 -- ============================================================================
@@ -73,12 +73,12 @@ CREATE TABLE VN_location (
 -- Table: Account
 -- Description: User authentication and login credentials
 CREATE TABLE Account (
-    Id BIGSERIAL PRIMARY KEY,
-    Email VARCHAR(255) UNIQUE NOT NULL,
-    Password VARCHAR(255) NOT NULL,
-    Role VARCHAR(20) NOT NULL DEFAULT 'CANDIDATE'
+                         Id BIGSERIAL PRIMARY KEY,
+                         Email VARCHAR(255) UNIQUE NOT NULL,
+                         Password VARCHAR(255) NOT NULL,
+                         Role VARCHAR(20) NOT NULL DEFAULT 'CANDIDATE',
+                         Status VARCHAR(20) NOT NULL DEFAULT 'ACTIVE'
 );
-
 -- Table: Users
 -- Description: User profile information (job seekers)
 CREATE TABLE Users (
@@ -218,7 +218,37 @@ CREATE TABLE Admin (
                                REFERENCES web_info(Id)
                                ON DELETE SET NULL
 );
+-- ============================================================================
+-- ACCOUNT SECURITY & MODERATION
+-- ============================================================================
 
+-- Table: Ban_history
+-- Description: Detailed log of account suspensions and bans
+CREATE TABLE Ban_history (
+                             Id BIGSERIAL PRIMARY KEY,
+                             Target_account_id BIGINT NOT NULL,
+                             Admin_account_id BIGINT NOT NULL,
+                             Reason TEXT,
+                             Banned_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                             Expired_at TIMESTAMP, -- NULL means permanent ban
+                             Is_active BOOLEAN NOT NULL DEFAULT TRUE,
+
+                             CONSTRAINT fk_ban_target_account
+                                 FOREIGN KEY (Target_account_id)
+                                     REFERENCES Account(Id)
+                                     ON DELETE CASCADE,
+
+                             CONSTRAINT fk_ban_admin
+                                 FOREIGN KEY (Admin_account_id) -- Cập nhật tên cột ở đây
+                                     REFERENCES Account(Id)
+                                     ON DELETE CASCADE
+);
+
+-- Index for performance
+CREATE INDEX idx_ban_target_account ON Ban_history(Target_account_id);
+CREATE INDEX idx_ban_is_active ON Ban_history(Is_active);
+
+COMMENT ON TABLE Ban_history IS 'Detailed log of account suspensions performed by administrators';
 -- ============================================================================
 -- ACCOUNT REPORTING SYSTEM
 -- ============================================================================

@@ -8,27 +8,31 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
+import java.util.List;
 
 @Repository
 public interface ApplyFormSentToJobRepository extends JpaRepository<ApplyFormSentToJob, ApplyFormSentToJobId> {
 
+    // ✅ Kiểm tra tồn tại bằng cặp ID (JobId và ApplyFormId đều là Long)
     boolean existsByIdJobIdAndIdApplyFormId(Long jobId, Long applyFormId);
 
+    // ✅ Tìm danh sách ứng tuyển theo UserId (Long) - Khớp với thiết kế kế thừa Account/User
     @Query("SELECT s FROM ApplyFormSentToJob s JOIN ApplyForm f ON f.id = s.id.applyFormId WHERE f.userId = :userId")
-    Page<ApplyFormSentToJob> findByUserId(@Param("userId") String userId, Pageable pageable);
+    Page<ApplyFormSentToJob> findByUserId(@Param("userId") Long userId, Pageable pageable);
 
+    // ✅ Kiểm tra ứng viên (Long) đã ứng tuyển Job (Long) chưa
     @Query("SELECT COUNT(s) > 0 FROM ApplyFormSentToJob s JOIN ApplyForm f ON f.id = s.id.applyFormId WHERE f.userId = :userId AND s.id.jobId = :jobId")
-    boolean existsByUserIdAndJobId(@Param("userId") String userId, @Param("jobId") Long jobId);
+    boolean existsByUserIdAndJobId(@Param("userId") Long userId, @Param("jobId") Long jobId);
 
+    // ✅ Xóa theo Id của đơn ứng tuyển (Long)
     void deleteByIdApplyFormId(Long applyFormId);
 
-    // Lấy tất cả đơn ứng tuyển của một job cụ thể (dùng cho employer)
+    // ✅ Lấy đơn ứng tuyển của một Job cụ thể (Long)
     Page<ApplyFormSentToJob> findByIdJobId(Long jobId, Pageable pageable);
 
-    // Lấy tất cả đơn ứng tuyển của nhiều jobs (dùng cho employer dashboard)
-    Page<ApplyFormSentToJob> findByIdJobIdIn(java.util.List<Long> jobIds, Pageable pageable);
+    // ✅ Lấy đơn ứng tuyển từ danh sách Job IDs (Long)
+    Page<ApplyFormSentToJob> findByIdJobIdIn(List<Long> jobIds, Pageable pageable);
 
-    // Đếm số ứng viên của một job
+    // ✅ Đếm số lượng ứng viên theo JobId (Long)
     long countByIdJobId(Long jobId);
 }
-

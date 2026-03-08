@@ -9,19 +9,18 @@ import java.time.LocalDate;
 import java.util.List;
 
 public interface UserService {
+    // Thay String userId thành Long id để khớp với Account Id
+    UserProfileResponse getProfile(Long id);
 
-    UserProfileResponse getProfile(String userId);
+    void updateBasic(Long id, UpdateUserRequest req);
 
-    void updateBasic(String userId, UpdateUserRequest req);
+    void updateAvatar(Long id, String url);
 
-    void updateAvatar(String userId, String url);
+    void deleteAvatar(Long id);
 
-    void deleteAvatar(String userId);
+    void updateDescription(Long id, String description);
 
-    void updateDescription(String userId, String description);
+    void updateAddress(Long id, String address);
 
-    void updateAddress(String userId, String address);
-
-    void updateBirthGender(String userId, LocalDate birthDate, Gender gender);
-
-    }
+    void updateBirthGender(Long id, LocalDate birthDate, Gender gender);
+}

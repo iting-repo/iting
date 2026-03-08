@@ -1,4 +1,4 @@
-package com.iting.jobportal.auth.dto;
+package com.iting.jobportal.auth.dto.response;
 
 import lombok.*;
 

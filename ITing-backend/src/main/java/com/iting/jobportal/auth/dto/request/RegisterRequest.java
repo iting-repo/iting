@@ -1,4 +1,4 @@
-package com.iting.jobportal.auth.dto;
+package com.iting.jobportal.auth.dto.request;
 
 import com.iting.jobportal.auth.entity.Enum.Role;
 import jakarta.validation.constraints.Email;

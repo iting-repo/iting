@@ -18,7 +18,7 @@ public class ApplyForm {
     private Long id;
 
     @Column(name = "User_id", nullable = false, length = 255)
-    private String userId;
+    private Long userId;
 
     @Column(name = "Cv_title", length = 255)
     private String cvTitle;

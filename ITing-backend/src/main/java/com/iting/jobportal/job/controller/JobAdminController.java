@@ -47,13 +47,13 @@ public class JobAdminController {
         return ResponseEntity.ok(Map.of("message", "Job rejected successfully"));
     }
     
-    @PostMapping("/{id}/ban-employer")
-    @Operation(summary = "Cấm nhà tuyển dụng (Admin only)")
-    public ResponseEntity<?> banEmployer(
-            @PathVariable Long id,
-            @RequestBody Map<String, String> request) {
-        String reason = request.get("reason");
-        // Implementation would go here
-        return ResponseEntity.ok(Map.of("message", "Employer banned successfully"));
-    }
+//    @PostMapping("/{id}/ban-employer")
+//    @Operation(summary = "Cấm nhà tuyển dụng (Admin only)")
+//    public ResponseEntity<?> banEmployer(
+//            @PathVariable Long id,
+//            @RequestBody Map<String, String> request) {
+//        String reason = request.get("reason");
+//        // Implementation would go here
+//        return ResponseEntity.ok(Map.of("message", "Employer banned successfully"));
+//    }
 }
