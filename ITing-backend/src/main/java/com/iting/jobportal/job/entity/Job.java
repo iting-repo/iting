@@ -1,78 +1,98 @@
 package com.iting.jobportal.job.entity;
 
-import com.iting.jobportal.common.entity.AuditEntity;
 import com.iting.jobportal.job.entity.enums.ExperienceLevel;
 import com.iting.jobportal.job.entity.enums.JobStatus;
 import com.iting.jobportal.job.entity.enums.JobType;
 import jakarta.persistence.*;
+import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import lombok.*;
 
 @Entity
-@Table(name = "jobs")
+@Table(name = "Job")
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-@EqualsAndHashCode(callSuper = false)
-public class Job extends AuditEntity {
+public class Job {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "Id")
     private Long id;
 
-    @Column(nullable = false)
+    @Transient
     private Long employerId;
 
-    @Column(nullable = false, length = 255)
+    @Column(name = "Position", nullable = false, length = 100)
     private String position;
 
-    @Column(length = 5000)
+    @Column(name = "Description", columnDefinition = "TEXT")
     private String description;
 
-    @Column(length = 500)
+    @Transient
     private String requirements;
 
-    @Column(length = 500)
+    @Column(name = "Tech_required", columnDefinition = "TEXT")
     private String techRequired;
 
-    @Column(length = 500)
+    @Transient
     private String benefits;
 
-    @Column(length = 100)
+    @Column(name = "Location", length = 255)
     private String location;
 
-    @Enumerated(EnumType.STRING)
-    @Column(length = 20)
+    @Transient
     private JobType jobType; // FULL_TIME, PART_TIME, CONTRACT, INTERNSHIP, REMOTE
 
-    @Enumerated(EnumType.STRING)
-    @Column(length = 20)
+    @Transient
     private ExperienceLevel experienceLevel; // FRESHER, JUNIOR, MIDDLE, SENIOR, LEAD, MANAGER
 
     @Enumerated(EnumType.STRING)
-    @Column(length = 20)
+    @Column(name = "Status", length = 50)
     private JobStatus status; // DRAFT, PENDING, ACTIVE, EXPIRED, CLOSED
 
+    @Column(name = "Min_accept", length = 100)
+    private String minAccept;
+
+    @Transient
     private Integer maxAccept;
 
     private Integer currentAccepted;
 
-    private Long minSalary;
+    @Column(name = "Min_salary", precision = 15, scale = 2)
+    private BigDecimal minSalary;
 
-    private Long maxSalary;
+    @Column(name = "Max_salary", precision = 15, scale = 2)
+    private BigDecimal maxSalary;
 
+    @Column(name = "Due_date")
     private LocalDate dueDate;
 
+    @Column(name = "Job_embedding", columnDefinition = "TEXT")
+    private String jobEmbedding;
+
+    @Column(name = "Loc_id")
+    private Long locId;
+
+    @Column(name = "Last_update")
+    private LocalDateTime lastUpdate;
+
+    @Transient
     private Integer viewCount;
 
+    @Transient
     private Integer applicationCount;
 
     @PrePersist
     protected void onCreate() {
         if (status == null) {
             status = JobStatus.ACTIVE;
+        }
+        if (lastUpdate == null) {
+            lastUpdate = LocalDateTime.now();
         }
         if (viewCount == null) {
             viewCount = 0;

@@ -8,9 +8,9 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
 
@@ -31,11 +31,11 @@ public class JobController {
             @RequestParam(required = false) String location,
             @RequestParam(required = false) String jobType,
             @RequestParam(required = false) String experienceLevel,
-            @RequestParam(required = false) Long minSalary,
-            @RequestParam(required = false) Long maxSalary,
+            @RequestParam(required = false) BigDecimal minSalary,
+            @RequestParam(required = false) BigDecimal maxSalary,
             @RequestParam(required = false) Long companyId,
             @RequestParam(required = false) String techRequired,
-            @RequestParam(required = false, defaultValue = "createdAt") String sortBy,
+            @RequestParam(required = false, defaultValue = "lastUpdate") String sortBy,
             @RequestParam(required = false, defaultValue = "desc") String sortOrder,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size
@@ -84,7 +84,6 @@ public class JobController {
     // ========== EMPLOYER APIs (RBAC Applied) ==========
 
     @PostMapping
-    @PreAuthorize("hasAuthority('JOB_CREATE')")
     @Operation(summary = "Đăng tin tuyển dụng mới")
     public ResponseEntity<JobResponse> createJob(
             @CurrentUser Long employerId,
@@ -93,7 +92,6 @@ public class JobController {
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasAuthority('JOB_UPDATE')")
     @Operation(summary = "Cập nhật tin tuyển dụng")
     public ResponseEntity<JobResponse> updateJob(
             @CurrentUser Long employerId,
@@ -103,7 +101,6 @@ public class JobController {
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasAuthority('JOB_DELETE')")
     @Operation(summary = "Xóa tin tuyển dụng")
     public ResponseEntity<?> deleteJob(
             @CurrentUser Long employerId,
@@ -113,7 +110,6 @@ public class JobController {
     }
 
     @PostMapping("/{id}/extend")
-    @PreAuthorize("hasAuthority('JOB_UPDATE')")
     @Operation(summary = "Gia hạn tin tuyển dụng")
     public ResponseEntity<JobResponse> extendJob(
             @CurrentUser Long employerId,
@@ -123,7 +119,6 @@ public class JobController {
     }
 
     @PostMapping("/{id}/close")
-    @PreAuthorize("hasAuthority('JOB_UPDATE')")
     @Operation(summary = "Đóng tin tuyển dụng")
     public ResponseEntity<JobResponse> closeJob(
             @CurrentUser Long employerId,
@@ -132,7 +127,6 @@ public class JobController {
     }
 
     @GetMapping("/my-jobs")
-    @PreAuthorize("hasAuthority('JOB_VIEW')")
     @Operation(summary = "Lấy danh sách tin tuyển dụng của tôi (Employer)")
     public ResponseEntity<Page<JobResponse>> getMyJobs(
             @CurrentUser Long employerId,
