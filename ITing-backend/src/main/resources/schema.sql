@@ -8,8 +8,11 @@
 -- ============================================================================
 
 -- Drop tables in reverse dependency order
-DROP TABLE IF EXISTS Account_report_account CASCADE;
-DROP TABLE IF EXISTS Reported_account_id CASCADE;
+DROP TABLE IF EXISTS user_reports CASCADE;
+DROP TABLE IF EXISTS activity_logs CASCADE;
+DROP TABLE IF EXISTS report_accounts CASCADE;
+DROP TABLE IF EXISTS categories CASCADE;
+DROP TABLE IF EXISTS static_contents CASCADE;
 DROP TABLE IF EXISTS Apply_form_user_to_job CASCADE;
 DROP TABLE IF EXISTS Apply_form CASCADE;
 DROP TABLE IF EXISTS Company_upload_job CASCADE;
@@ -147,8 +150,9 @@ CREATE TABLE Company (
                          Consent_document_file_url TEXT,
 
     -- Trạng thái
+    -- Trạng thái
                          Verification_level VARCHAR(50) DEFAULT 'UNVERIFIED',
-                         Company_info_update_status VARCHAR(50) DEFAULT 'PENDING',
+                         Company_info_update_status VARCHAR(50) DEFAULT 'DRAFT',
                          Last_update_request_date TIMESTAMP,
                          Last_update TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                          Active BOOLEAN DEFAULT TRUE,
@@ -160,64 +164,79 @@ CREATE TABLE Company (
                                  ON DELETE CASCADE
 );
 
+
+-- Table: Admin
+-- Description: Administrator accounts
+CREATE TABLE Admin (
+    id BIGINT PRIMARY KEY,
+    full_name VARCHAR(100) NOT NULL,
+    phone VARCHAR(20),
+    avatar_url VARCHAR(500),
+    last_login TIMESTAMP,
+    login_count INTEGER DEFAULT 0,
+    last_login_ip VARCHAR(50),
+    active BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP,
+    notes TEXT,
+    CONSTRAINT fk_admin_account FOREIGN KEY (id) REFERENCES Account(Id) ON DELETE CASCADE
+);
+
 -- Chèn đoạn này vào trước bảng Company_upload_job
 CREATE TABLE Job (
-                     Id BIGSERIAL PRIMARY KEY,
-                     Company_id BIGINT NOT NULL,
+    Id BIGSERIAL PRIMARY KEY,
+    Company_id BIGINT NOT NULL,
 
-                     Position VARCHAR(255),
-                     Description TEXT,
-                     Tech_required TEXT,
+    Position VARCHAR(255),
+    Description TEXT,
+    Tech_required TEXT,
 
-                     Job_type VARCHAR(50),
-                     Experience_level VARCHAR(50),
+    Job_type VARCHAR(50),
+    Experience_level VARCHAR(50),
 
-                     Min_salary DECIMAL(15,2),
-                     Max_salary DECIMAL(15,2),
+    Min_salary DECIMAL(15,2),
+    Max_salary DECIMAL(15,2),
 
-                     Min_accept TEXT,
-                     Max_accept INTEGER,
-                     Current_accepted INTEGER,
+    Min_accept TEXT,
+    Max_accept INTEGER,
+    Current_accepted INTEGER,
 
-                     View_count INTEGER DEFAULT 0,
-                     Application_count INTEGER DEFAULT 0,
+    View_count INTEGER DEFAULT 0,
+    Application_count INTEGER DEFAULT 0,
 
-                     Status VARCHAR(50),
+    Featured BOOLEAN DEFAULT FALSE,
+    Review_reason TEXT,
+    Reviewed_by BIGINT,
+    Reviewed_at TIMESTAMP,
 
-                     Due_date DATE,
-                     Last_update TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    Status VARCHAR(50) DEFAULT 'DRAFT',
 
-                     Location VARCHAR(255),
-                     Loc_id BIGINT,
+    Due_date DATE,
+    Last_update TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 
-                     Job_embedding TEXT,
+    Location VARCHAR(255),
+    Loc_id BIGINT,
 
-                     CONSTRAINT fk_job_company
-                         FOREIGN KEY (Company_id)
-                             REFERENCES Company(Company_id),
+    Job_embedding TEXT,
 
-                             CONSTRAINT fk_job_location
-                             FOREIGN KEY (Loc_id)
-                             REFERENCES VN_location(Loc_id)
-                             ON DELETE SET NULL
+    CONSTRAINT fk_job_company
+        FOREIGN KEY (Company_id)
+        REFERENCES Company(Company_id),
+
+    CONSTRAINT fk_job_location
+        FOREIGN KEY (Loc_id)
+        REFERENCES VN_location(Loc_id)
+        ON DELETE SET NULL,
+
+    CONSTRAINT fk_job_reviewed_by_admin
+        FOREIGN KEY (Reviewed_by)
+        REFERENCES Admin(id)
+        ON DELETE SET NULL
 );
 -- Table: Job
 -- Description: Job postings
 
 
--- Table: Admin
--- Description: Administrator accounts
-CREATE TABLE Admin (
-                       Admin_id BIGSERIAL PRIMARY KEY,
-                       F_name VARCHAR(100),
-                       L_name VARCHAR(100),
-                       Web_infor_id BIGINT,
-
-                       CONSTRAINT fk_admin_web_infor
-                           FOREIGN KEY (Web_infor_id)
-                               REFERENCES web_info(Id)
-                               ON DELETE SET NULL
-);
 -- ============================================================================
 -- ACCOUNT SECURITY & MODERATION
 -- ============================================================================
@@ -253,26 +272,37 @@ COMMENT ON TABLE Ban_history IS 'Detailed log of account suspensions performed b
 -- ACCOUNT REPORTING SYSTEM
 -- ============================================================================
 
--- Table: Reported_account_id
--- Description: Details of reported accounts
-CREATE TABLE Reported_account_id (
-    Reported_account_id BIGINT PRIMARY KEY,
-    Time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    Reason TEXT
+-- Table: user_reports
+CREATE TABLE user_reports (
+    id BIGSERIAL PRIMARY KEY,
+    reporter_id BIGINT NOT NULL,
+    reported_user_id BIGINT NOT NULL,
+    type VARCHAR(50) NOT NULL,
+    reason VARCHAR(500) NOT NULL,
+    description TEXT,
+    status VARCHAR(50) DEFAULT 'PENDING',
+    admin_note TEXT,
+    handled_by BIGINT,
+    handled_at TIMESTAMP,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP
 );
 
--- Table: Account_report_account
--- Description: Account reporting relationship (who reported whom)
-CREATE TABLE Account_report_account (
-    Admin_id BIGINT NOT NULL,
-    Reported_account_id BIGINT NOT NULL,
-    Time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    Reason TEXT,
-    PRIMARY KEY (Admin_id, Reported_account_id),
-    CONSTRAINT fk_report_admin FOREIGN KEY (Admin_id)
-        REFERENCES Admin(Admin_id) ON DELETE CASCADE,
-    CONSTRAINT fk_report_account FOREIGN KEY (Reported_account_id)
-        REFERENCES Reported_account_id(Reported_account_id) ON DELETE CASCADE
+-- Table: report_accounts (Mô hình chi tiết hơn của bạn)
+CREATE TABLE report_accounts (
+    id BIGSERIAL PRIMARY KEY,
+    reported_user_id BIGINT NOT NULL,
+    reporter_id BIGINT,
+    report_type VARCHAR(30) NOT NULL,
+    violation VARCHAR(255) NOT NULL,
+    severity VARCHAR(20) NOT NULL,
+    status VARCHAR(20) NOT NULL DEFAULT 'PENDING',
+    description TEXT,
+    handled_by BIGINT,
+    handled_at TIMESTAMP,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_report_acc_user FOREIGN KEY (reported_user_id) REFERENCES Users(Id) ON DELETE CASCADE,
+    CONSTRAINT fk_report_acc_admin FOREIGN KEY (handled_by) REFERENCES Admin(id) ON DELETE SET NULL
 );
 
 -- ============================================================================
@@ -348,7 +378,7 @@ CREATE TABLE Company_upload_job (
     CONSTRAINT fk_upload_company FOREIGN KEY (Company_id)
         REFERENCES Company(Company_id) ON DELETE CASCADE,
     CONSTRAINT fk_upload_admin FOREIGN KEY (Admin_id)
-        REFERENCES Admin(Admin_id) ON DELETE SET NULL
+        REFERENCES Admin(id) ON DELETE SET NULL
 );
 
 -- Table: User_save_job
@@ -404,42 +434,104 @@ CREATE TABLE Apply_form_user_to_job (
 -- USER PROFILE COMPONENTS
 -- ============================================================================
 
--- Table: Education
--- Description: User education history
-CREATE TABLE Education (
-                           Id BIGSERIAL PRIMARY KEY,
-                           User_id BIGINT NOT NULL,
-
-                           CONSTRAINT fk_education_user
-                               FOREIGN KEY (User_id)
-                                   REFERENCES Users(Id)
-                                   ON DELETE CASCADE
+-- Table: categories
+CREATE TABLE categories (
+    id BIGSERIAL PRIMARY KEY,
+    type VARCHAR(50) NOT NULL,
+    name VARCHAR(100) NOT NULL,
+    name_en VARCHAR(100),
+    description VARCHAR(255),
+    icon VARCHAR(500),
+    parent_id BIGINT,
+    sort_order INTEGER DEFAULT 0,
+    active BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP
 );
+
+-- Table: static_contents
+CREATE TABLE static_contents (
+    id BIGSERIAL PRIMARY KEY,
+    slug VARCHAR(50) NOT NULL UNIQUE,
+    type VARCHAR(50) NOT NULL,
+    title VARCHAR(255),
+    content TEXT,
+    meta_description VARCHAR(255),
+    meta_keywords VARCHAR(255),
+    thumbnail_url VARCHAR(500),
+    published BOOLEAN DEFAULT FALSE,
+    sort_order INTEGER DEFAULT 0,
+    author_id BIGINT,
+    view_count BIGINT DEFAULT 0,
+    published_at TIMESTAMP,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP
+);
+
+-- Table: activity_logs
+CREATE TABLE activity_logs (
+    id BIGSERIAL PRIMARY KEY,
+    user_id BIGINT NOT NULL,
+    action VARCHAR(50) NOT NULL,
+    entity_type VARCHAR(100),
+    entity_id BIGINT,
+    description VARCHAR(500),
+    ip_address VARCHAR(50),
+    user_agent VARCHAR(255),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP
+);
+
+-- ============================================================================
+-- USER PROFILE COMPONENTS
+-- ============================================================================
+
+-- Table: Education
+CREATE TABLE Education (
+    Id BIGSERIAL PRIMARY KEY,
+    User_id BIGINT NOT NULL,
+    School_name VARCHAR(255),
+    Major VARCHAR(255),
+    Degree VARCHAR(50),
+    Start_date DATE,
+    End_date DATE,
+    Description TEXT,
+    CONSTRAINT fk_education_user FOREIGN KEY (User_id) REFERENCES Users(Id) ON DELETE CASCADE
+);
+
 -- Table: Certificate
--- Description: User certifications and credentials
 CREATE TABLE Certificate (
     Id BIGSERIAL PRIMARY KEY,
     User_id BIGINT NOT NULL,
-    CONSTRAINT fk_certificate_user FOREIGN KEY (User_id)
-        REFERENCES Users(Id) ON DELETE CASCADE
+    Name VARCHAR(255),
+    Organization VARCHAR(255),
+    Issue_date DATE,
+    Expiration_date DATE,
+    Credential_id VARCHAR(100),
+    Credential_url TEXT,
+    CONSTRAINT fk_certificate_user FOREIGN KEY (User_id) REFERENCES Users(Id) ON DELETE CASCADE
 );
 
 -- Table: Skill
--- Description: User skills and competencies
 CREATE TABLE Skill (
     Id BIGSERIAL PRIMARY KEY,
     User_id BIGINT NOT NULL,
-    CONSTRAINT fk_skill_user FOREIGN KEY (User_id)
-        REFERENCES Users(Id) ON DELETE CASCADE
+    Name VARCHAR(100),
+    Level VARCHAR(50),
+    CONSTRAINT fk_skill_user FOREIGN KEY (User_id) REFERENCES Users(Id) ON DELETE CASCADE
 );
 
 -- Table: Experience
--- Description: User work experience
 CREATE TABLE Experience (
     Id BIGSERIAL PRIMARY KEY,
     User_id BIGINT NOT NULL,
-    CONSTRAINT fk_experience_user FOREIGN KEY (User_id)
-        REFERENCES Users(Id) ON DELETE CASCADE
+    Company_name VARCHAR(255),
+    Position VARCHAR(255),
+    Start_date DATE,
+    End_date DATE,
+    Is_current BOOLEAN,
+    Description TEXT,
+    CONSTRAINT fk_experience_user FOREIGN KEY (User_id) REFERENCES Users(Id) ON DELETE CASCADE
 );
 
 -- ============================================================================

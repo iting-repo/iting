@@ -1,9 +1,13 @@
 package com.iting.jobportal.company.entity;
 
 import com.iting.jobportal.auth.entity.Account;
+import com.iting.jobportal.company.entity.enums.CompanyReviewStatus;
 import com.iting.jobportal.company.entity.enums.VerificationLevel;
+import com.iting.jobportal.job.entity.Job;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
+import java.util.List;
+
 import lombok.Getter;
 import lombok.Setter;
 
@@ -16,11 +20,13 @@ public class Company {
     @Id
     private Long id;
 
-
     @OneToOne
     @MapsId
     @JoinColumn(name = "company_id")
     private Account account;
+
+    @OneToMany(mappedBy = "company", fetch = FetchType.LAZY)
+    private List<Job> jobs;
 
     // ===== Thông tin cơ bản =====
     @Column(name = "Name", nullable = false, length = 255)
@@ -78,8 +84,9 @@ public class Company {
     @Column(name = "Verification_level", length = 50)
     private VerificationLevel verificationLevel = VerificationLevel.UNVERIFIED;
 
+    @Enumerated(EnumType.STRING)
     @Column(name = "Company_info_update_status", length = 50)
-    private String companyInfoUpdateStatus;
+    private CompanyReviewStatus companyInfoUpdateStatus = CompanyReviewStatus.DRAFT;
 
     @Column(name = "Last_update_request_date")
     private LocalDateTime lastUpdateRequestDate;

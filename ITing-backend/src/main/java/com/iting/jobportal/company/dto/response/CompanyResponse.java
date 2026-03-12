@@ -1,5 +1,6 @@
 package com.iting.jobportal.company.dto.response;
 
+import com.iting.jobportal.company.entity.enums.CompanyReviewStatus;
 import com.iting.jobportal.company.entity.enums.VerificationLevel;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -32,9 +33,35 @@ public class CompanyResponse {
     private String consentDocumentFileUrl;
 
     private VerificationLevel verificationLevel;
-    private String companyInfoUpdateStatus;
+    private CompanyReviewStatus companyInfoUpdateStatus;
     private LocalDateTime lastUpdateRequestDate;
 
     private LocalDateTime lastUpdate;
     private Boolean active;
+
+    public static CompanyResponse fromEntity(com.iting.jobportal.company.entity.Company company) {
+        return new CompanyResponse(
+                company.getId(),
+                company.getName(),
+                company.getLogoUrl(),
+                company.getAddress(),
+                company.getDescription(),
+                company.getWebsite(),
+                company.getCompanyEmail(),
+                company.getIndustry(),
+                company.getCompanySize(),
+                company.getRepresentativeName(),
+                company.getRepresentativeGender(),
+                company.getRepresentativePhone(),
+                company.getAccountEmail(),
+                company.getTaxCode(),
+                company.getBusinessLicenseFileUrl(),
+                company.getConsentDocumentFileUrl(),
+                company.getVerificationLevel(),
+                company.getCompanyInfoUpdateStatus(),
+                company.getLastUpdateRequestDate(),
+                company.getLastUpdate(),
+                company.getActive()
+        );
+    }
 }

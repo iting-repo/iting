@@ -157,4 +157,15 @@ public class JobController {
         }
         return ResponseEntity.ok(jobService.getJobsByEmployer(currentEmployerId, page, size));
     }
+
+    @PostMapping("/{id}/submit-review")
+    @Operation(summary = "Gửi tin tuyển dụng để duyệt")
+    public ResponseEntity<JobResponse> submitJobForReview(
+            @CurrentUser Long employerId,
+            @PathVariable Long id) {
+        if (employerId == null) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Bạn cần đăng nhập để gửi duyệt tin tuyển dụng");
+        }
+        return ResponseEntity.ok(jobService.submitJobForReview(employerId, id));
+    }
 }

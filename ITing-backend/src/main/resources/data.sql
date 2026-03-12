@@ -67,10 +67,10 @@ INSERT INTO Account (Id, Email, Password, Role, Status) VALUES
 (104, 'phamthid@gmail.com', '$2a$10$XuCJKq/inhdGdYFp9d/TP.S7DnKtMERu7Nec5TWXHAxNbgFHEZwZ6', 'USER', 'ACTIVE'),
 (105, 'hoangvane@gmail.com', '$2a$10$XuCJKq/inhdGdYFp9d/TP.S7DnKtMERu7Nec5TWXHAxNbgFHEZwZ6', 'USER', 'ACTIVE');
 -- Admin accounts
-INSERT INTO Admin (Admin_id, F_name, L_name, Web_infor_id) VALUES
-(1, 'System', 'Admin', 1),
-(2, 'Super', 'Admin', 1),
-(3, 'Content', 'Moderator', 2);
+INSERT INTO Admin (id, full_name, active) VALUES
+(1, 'System Admin', TRUE),
+(2, 'Super Admin', TRUE),
+(3, 'Content Moderator', TRUE);
 
 -- Thêm dữ liệu mẫu cho lịch sử cấm
 INSERT INTO Ban_history (Target_account_id, Admin_account_id, Reason, Banned_at, Expired_at, Is_active) VALUES
@@ -439,20 +439,31 @@ INSERT INTO Experience (User_id) VALUES
                                      (10);
 
 -- ============================================================================
+-- CATEGORIES & STATIC CONTENT
+-- ============================================================================
+
+INSERT INTO categories (type, name, name_en, active) VALUES
+('INDUSTRY', 'Công nghệ thông tin', 'Information Technology', true),
+('INDUSTRY', 'Tài chính - Ngân hàng', 'Finance - Banking', true),
+('INDUSTRY', 'Y tế - Dược phẩm', 'Healthcare - Pharmaceutical', true),
+('SKILL', 'Java', 'Java', true),
+('SKILL', 'Python', 'Python', true),
+('SKILL', 'React', 'React', true),
+('LOCATION', 'Hà Nội', 'Hanoi', true),
+('LOCATION', 'TP. Hồ Chí Minh', 'Ho Chi Minh City', true);
+
+INSERT INTO static_contents (slug, type, title, content, published) VALUES
+('about-us', 'PAGE', 'Về ITing', 'ITing là nền tảng kết nối ứng viên và nhà tuyển dụng...', true),
+('terms-of-service', 'PAGE', 'Điều khoản sử dụng', 'Khi sử dụng ITing, bạn đồng ý với các điều khoản sau...', true);
+
+-- ============================================================================
 -- ACCOUNT REPORTING SYSTEM
 -- ============================================================================
 
--- Reported Accounts
-INSERT INTO Reported_account_id (Reported_account_id, Time, Reason) VALUES
-(201, '2026-03-01 10:00:00', 'Spam messages to multiple companies'),
-(202, '2026-03-05 14:30:00', 'Fake job postings'),
-(203, '2026-03-10 09:15:00', 'Harassment in messages');
-
--- Account Report Account
-INSERT INTO Account_report_account (Admin_id, Reported_account_id, Time, Reason) VALUES
-(1, 201, '2026-03-01 10:05:00', 'Multiple spam reports received'),
-(2, 202, '2026-03-05 14:35:00', 'Verified fake job postings'),
-(1, 203, '2026-03-10 09:20:00', 'User complaints about harassment');
+-- report_accounts
+INSERT INTO report_accounts (reported_user_id, reporter_id, report_type, violation, severity, status, description) VALUES
+(101, 102, 'ACCOUNT', 'Spamming', 'LOW', 'PENDING', 'User sends too many messages'),
+(15, 101, 'JOB', 'Scam Job', 'HIGH', 'PENDING', 'This job posting seems to be a scam');
 
 -- ============================================================================
 -- SEQUENCE UPDATES

@@ -15,9 +15,7 @@ import java.util.List;
 public interface JobRepository extends JpaRepository<Job, Long>, JpaSpecificationExecutor<Job> {
 
     // Tìm jobs theo status
-    List<Job> findByStatus(JobStatus status);
-
-    Page<Job> findByStatus(JobStatus status, Pageable pageable);
+    Page<Job> findAllByStatus(JobStatus status, Pageable pageable);
 
     // Lấy jobs hot (sắp xếp theo lượt ứng tuyển + view)
     @Query("SELECT j FROM Job j WHERE j.status = :status ORDER BY j.applicationCount DESC, j.viewCount DESC")
@@ -28,8 +26,8 @@ public interface JobRepository extends JpaRepository<Job, Long>, JpaSpecificatio
     List<Job> findExpiredJobs();
 
     // Lấy jobs của company theo company_id (= Account ID của employer)
-    @Query("SELECT j FROM Job j WHERE j.companyId = :companyId ORDER BY j.lastUpdate DESC")
-    Page<Job> findByCompanyId(@Param("companyId") Long companyId, Pageable pageable);
+    @Query("SELECT j FROM Job j WHERE j.company.id = :companyId ORDER BY j.lastUpdate DESC")
+    Page<Job> findByCompany_Id(@Param("companyId") Long companyId, Pageable pageable);
 
     // Tăng view count
     @Modifying

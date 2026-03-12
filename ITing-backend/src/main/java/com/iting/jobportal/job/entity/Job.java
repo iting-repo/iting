@@ -1,5 +1,6 @@
 package com.iting.jobportal.job.entity;
 
+import com.iting.jobportal.company.entity.Company;
 import com.iting.jobportal.job.entity.enums.ExperienceLevel;
 import com.iting.jobportal.job.entity.enums.JobStatus;
 import com.iting.jobportal.job.entity.enums.JobType;
@@ -11,7 +12,12 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "Job")
+@Table(
+        name = "Job",
+        indexes = {
+                @Index(name = "idx_job_company", columnList = "Company_id")
+        }
+)
 @Getter
 @Setter
 @NoArgsConstructor
@@ -25,8 +31,12 @@ public class Job {
     private Long id;
 
     // Thêm Company_id để khớp database
-    @Column(name = "Company_id", nullable = false)
-    private Long companyId;
+//    @Column(name = "Company_id", nullable = false)
+//    private Long companyId;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "Company_id", nullable = false)
+    private Company company;
 
     @Column(name = "Position", length = 255)
     private String position;
@@ -67,6 +77,18 @@ public class Job {
     @Column(name = "Application_count")
     private Integer applicationCount;
 
+    @Column(name = "Featured")
+    private Boolean featured;
+
+    @Column(name = "Review_reason", columnDefinition = "TEXT")
+    private String reviewReason;
+
+    @Column(name = "Reviewed_by")
+    private Long reviewedBy;
+
+    @Column(name = "Reviewed_at")
+    private LocalDateTime reviewedAt;
+
     @Enumerated(EnumType.STRING)
     @Column(name = "Status", length = 50)
     private JobStatus status;
@@ -89,7 +111,7 @@ public class Job {
     @PrePersist
     protected void onCreate() {
         if (status == null) {
-            status = JobStatus.ACTIVE;
+            status = JobStatus.DRAFT;
         }
         if (lastUpdate == null) {
             lastUpdate = LocalDateTime.now();
@@ -99,6 +121,8 @@ public class Job {
         if (applicationCount == null) applicationCount = 0;
         if (currentAccepted == null) currentAccepted = 0;
         if (maxAccept == null) maxAccept = 0;
+
+        if (featured == null) featured = false;
     }
 
     @PreUpdate

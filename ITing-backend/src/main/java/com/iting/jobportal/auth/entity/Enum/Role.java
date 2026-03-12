@@ -18,10 +18,6 @@ public enum Role {
     USER,     // → CANDIDATE
     COMPANY;  // → EMPLOYER
 
-    /**
-     * Chuẩn hóa về role chuẩn để dùng trong Spring Security và JWT.
-     * USER → CANDIDATE, COMPANY → EMPLOYER, còn lại giữ nguyên.
-     */
     public Role normalize() {
         return switch (this) {
             case USER    -> CANDIDATE;

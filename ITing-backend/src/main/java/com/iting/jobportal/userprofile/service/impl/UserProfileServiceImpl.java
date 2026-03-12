@@ -1,6 +1,6 @@
 package com.iting.jobportal.userprofile.service.impl;
 
-import com.iting.jobportal.userprofile.dto.*;
+import com.iting.jobportal.userprofile.dto.request.*;
 import com.iting.jobportal.userprofile.entity.*;
 import com.iting.jobportal.userprofile.repository.*;
 import com.iting.jobportal.userprofile.service.UserProfileService;

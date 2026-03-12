@@ -45,4 +45,7 @@ public interface JobService {
     
     // Cập nhật jobs hết hạn
     void updateExpiredJobs();
+
+    // Gửi duyệt job
+    JobResponse submitJobForReview(Long employerId, Long jobId);
 }

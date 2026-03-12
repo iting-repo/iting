@@ -43,7 +43,7 @@ public class ApplicationServiceImpl implements ApplicationService {
     private Job verifyJobOwnership(Long employerId, Long jobId) {
         Job job = findJobOrThrow(jobId);
         // Đảm bảo so sánh hai đối tượng Long bằng .equals()
-        if (!job.getCompanyId().equals(employerId)) {
+        if (!job.getCompany().getId().equals(employerId)) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Bạn không có quyền xem ứng viên của job này");
         }
         return job;
@@ -149,7 +149,7 @@ public class ApplicationServiceImpl implements ApplicationService {
         if (employerId == null) throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Yêu cầu đăng nhập");
 
         Pageable jobPageable = PageRequest.of(0, 1000);
-        var jobs = jobRepository.findByCompanyId(employerId, jobPageable);
+        var jobs = jobRepository.findByCompany_Id(employerId, jobPageable);
         if (jobs.isEmpty()) return Page.empty();
 
         var jobIds = jobs.stream().map(Job::getId).toList();

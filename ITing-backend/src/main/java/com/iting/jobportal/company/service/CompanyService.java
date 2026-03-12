@@ -29,4 +29,6 @@ public interface CompanyService {
     // (F) Verify License Info
     CompanyResponse verifyLicense(Long id, VerifyLicenseRequest request);
 
+    // (G) Submit for Review
+    CompanyResponse submitForReview(Long id);
 }

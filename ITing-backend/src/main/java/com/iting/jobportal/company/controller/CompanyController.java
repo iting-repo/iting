@@ -78,8 +78,12 @@ public class CompanyController {
     public ResponseEntity<CompanyResponse> verifyLicense(
             @PathVariable Long id,
             @Valid @RequestBody VerifyLicenseRequest request) {
-
         return ResponseEntity.ok(companyService.verifyLicense(id, request));
     }
 
+    // --- (G) Submit for Review ---
+    @PostMapping("/{id}/submit-review")
+    public ResponseEntity<CompanyResponse> submitForReview(@PathVariable Long id) {
+        return ResponseEntity.ok(companyService.submitForReview(id));
+    }
 }

@@ -42,7 +42,7 @@ public class JobResponse {
     public static JobResponse fromEntityWithCompany(Job job, String companyName, String companyLogo) {
         return JobResponse.builder()
                 .id(job.getId())
-                .companyId(job.getCompanyId())
+                .companyId(job.getCompany().getId())
                 .companyName(companyName)
                 .companyLogo(companyLogo)
                 .position(job.getPosition())
