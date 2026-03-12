@@ -1,7 +1,5 @@
 import React from 'react';
-import JobFilters from '../../components/JobFilters'; // Đường dẫn tùy cấu trúc của bạn
-import JobCard from '../../components/JobCard';
-import JobPromo from '../../components/JobPromo';
+import { JobFilters, JobCard, JobPromo } from '../../components';
 import { FaChevronRight } from 'react-icons/fa';
 
 const JobPage = () => {

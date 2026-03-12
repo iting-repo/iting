@@ -1,265 +1,318 @@
-import React, { useState } from 'react';
-import {
-    FaExclamationTriangle, FaBan, FaCheckCircle, FaClock,
-    FaFilter, FaCheck, FaInfoCircle, FaSearch
-} from 'react-icons/fa';
-import StatsCard from '../components/StatsCard';
+import React, { useEffect, useMemo, useState } from "react";
+import adminCompanyService from '../../../services/adminCompanyService';
+import { 
+    Button, Badge, Input, PageHeader, Card, Table, Td, StatsCard, Pagination
+} from "../../../components";
+import { RowActionMenu } from "../../../components/admin/RowActionMenu";
+import { CompanyDetailDialog } from "../../../components/admin/CompanyDetailDialog";
+import { ActionDialog } from "../../../components/admin/ActionDialog";
+import { 
+  Building2, 
+  Users, 
+  UserCheck, 
+  UserX,
+  FileText,
+  ShieldCheck,
+  Search
+} from "lucide-react";
 
-const ReportManagement = () => {
-    // 1. MOCK DATA (Giả lập dữ liệu báo cáo)
-    const [reports, setReports] = useState([
-        {
-            id: "#R-1234",
-            reporter: "System",
-            reportedUser: "Alex Brown",
-            avatar: "https://i.pravatar.cc/150?img=11",
-            type: "Post",
-            violation: "Spam posting",
-            severity: "High",
-            date: "2024-01-15",
-            status: "Pending"
-        },
-        {
-            id: "#R-1235",
-            reporter: "Jane Doe",
-            reportedUser: "Maria Garcia",
-            avatar: "https://i.pravatar.cc/150?img=5",
-            type: "Job",
-            violation: "Fake job postings",
-            severity: "Critical",
-            date: "2024-01-15",
-            status: "Pending"
-        },
-        {
-            id: "#R-1236",
-            reporter: "Mike Ross",
-            reportedUser: "Tom Wilson",
-            avatar: "https://i.pravatar.cc/150?img=3",
-            type: "Comment",
-            violation: "Inappropriate content",
-            severity: "Medium",
-            date: "2024-01-14",
-            status: "Investigating"
-        },
-        {
-            id: "#R-1237",
-            reporter: "System",
-            reportedUser: "Lisa Chen",
-            avatar: "https://i.pravatar.cc/150?img=9",
-            type: "Account",
-            violation: "Duplicate accounts",
-            severity: "Low",
-            date: "2024-01-14",
-            status: "Resolved"
-        },
-    ]);
+const AdminCompanyManagement = () => {
+  const [companies, setCompanies] = useState([]);
+  const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState("ALL");
+  const [detailCompany, setDetailCompany] = useState(null);
+  const [actionDialog, setActionDialog] = useState(null);
+  const [actionNote, setActionNote] = useState("");
+  const [openMenuId, setOpenMenuId] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [page, setPage] = useState(0);
+  const [size] = useState(10);
+  const [totalPages, setTotalPages] = useState(0);
 
-    // Helper chọn màu cho mức độ nghiêm trọng (Severity)
-    const getSeverityColor = (severity) => {
-        switch (severity) {
-            case 'Critical': return 'bg-red-100 text-red-700 border-red-200';
-            case 'High': return 'bg-orange-100 text-orange-700 border-orange-200';
-            case 'Medium': return 'bg-yellow-100 text-yellow-700 border-yellow-200';
-            default: return 'bg-gray-100 text-gray-600 border-gray-200';
-        }
-    };
+  const statusColorMap = {
+    PENDING_REVIEW: "warning",
+    UNDER_REVIEW: "info",
+    APPROVED: "success",
+    REJECTED: "danger",
+    NEEDS_RESUBMISSION: "amber",
+    SUSPENDED: "danger"
+  };
 
-    // Các hàm xử lý hành động (Dummy)
-    const handleResolve = (id) => console.log("Resolve report:", id);
-    const handleWarn = (id) => console.log("Warn user:", id);
-    const handleBlock = (id) => {
-        if (window.confirm("Khóa tài khoản này vĩnh viễn?")) {
-            console.log("Block user:", id);
-        }
+  const verificationColorMap = {
+    BASIC: "slate",
+    ADVANCED: "emerald",
+    VERIFIED: "success"
+  };
+
+  useEffect(() => {
+    fetchCompanies();
+  }, [page, size, search, statusFilter]);
+
+
+
+  const fetchCompanies = async () => {
+    try {
+      setLoading(true);
+
+      const params = {
+        page,
+        size,
+        keyword: search || undefined,
+        status: statusFilter !== "ALL" ? statusFilter : undefined,
+      };
+
+      const data = await adminCompanyService.getCompanies(params);
+
+      console.log("API response:", data);
+
+      setCompanies(data?.content || []);
+      setTotalPages(data?.totalPages || 0);
+
+    } catch (error) {
+      console.error("Lỗi lấy danh sách công ty:", error);
+    } finally {
+      setLoading(false);
     }
-    const handleViewDetail = (id) => console.log("View details:", id);
+  };
 
-    return (
-        <div className="space-y-8">
+  
 
-            {/* ================= ROW 1: STATS CARDS (Màu sắc theo thiết kế) ================= */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                {/* Pending Reports - Màu Vàng */}
-                <div className="bg-white p-6 rounded-2xl shadow-sm border-l-4 border-yellow-400">
-                    <div className="flex justify-between items-start mb-4">
-                        <div>
-                            <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Pending Reports</h3>
-                            <div className="text-3xl font-bold text-gray-800">47</div>
-                        </div>
-                        <div className="w-10 h-10 rounded-lg bg-yellow-50 text-yellow-500 flex items-center justify-center text-lg">
-                            <FaExclamationTriangle />
-                        </div>
-                    </div>
-                    <div className="text-xs font-bold text-green-500 flex items-center gap-1">
-                        +12 today
-                    </div>
-                </div>
+  const filteredCompanies = useMemo(() => {
+    return companies.filter((company) => {
+      const q = search.toLowerCase().trim();
+      const matchesSearch =
+        !q ||
+        company.name.toLowerCase().includes(q) ||
+        company.id.toLowerCase().includes(q) ||
+        (company.taxCode || "").toLowerCase().includes(q) ||
+        (company.companyEmail || "").toLowerCase().includes(q);
 
-                {/* Blocked Accounts - Màu Đỏ */}
-                <div className="bg-white p-6 rounded-2xl shadow-sm border-l-4 border-red-500">
-                    <div className="flex justify-between items-start mb-4">
-                        <div>
-                            <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Blocked Accounts</h3>
-                            <div className="text-3xl font-bold text-gray-800">234</div>
-                        </div>
-                        <div className="w-10 h-10 rounded-lg bg-red-50 text-red-500 flex items-center justify-center text-lg">
-                            <FaBan />
-                        </div>
-                    </div>
-                    <div className="text-xs font-bold text-green-500 flex items-center gap-1">
-                        -8 this week
-                    </div>
-                </div>
+      const currentStatus = company.companyInfoUpdateStatus || company.status;
+      const matchesStatus = statusFilter === "ALL" || currentStatus === statusFilter;
+      return matchesSearch && matchesStatus;
+    });
+  }, [companies, search, statusFilter]);
 
-                {/* Resolved Today - Màu Xanh Lá */}
-                <div className="bg-white p-6 rounded-2xl shadow-sm border-l-4 border-green-500">
-                    <div className="flex justify-between items-start mb-4">
-                        <div>
-                            <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Resolved Today</h3>
-                            <div className="text-3xl font-bold text-gray-800">89</div>
-                        </div>
-                        <div className="w-10 h-10 rounded-lg bg-green-50 text-green-500 flex items-center justify-center text-lg">
-                            <FaCheckCircle />
-                        </div>
-                    </div>
-                    <div className="text-xs font-bold text-green-500 flex items-center gap-1">
-                        +23%
-                    </div>
-                </div>
+  const stats = useMemo(() => {
+    return {
+      total: totalPages * size || companies.length,
+      pending: companies.filter((c) => 
+        (c.companyInfoUpdateStatus || c.status) === "PENDING_REVIEW" || 
+        (c.companyInfoUpdateStatus || c.status) === "PENDING"
+      ).length,
+      approved: companies.filter((c) => 
+        (c.companyInfoUpdateStatus || c.status) === "APPROVED"
+      ).length,
+      suspended: companies.filter((c) => 
+        (c.companyInfoUpdateStatus || c.status) === "SUSPENDED"
+      ).length,
+    };
+  }, [companies, totalPages, size]);
 
-                {/* Avg Response Time - Màu Tím */}
-                <div className="bg-white p-6 rounded-2xl shadow-sm border-l-4 border-[#9D5CE9]">
-                    <div className="flex justify-between items-start mb-4">
-                        <div>
-                            <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Avg Response Time</h3>
-                            <div className="text-3xl font-bold text-gray-800">2.4h</div>
-                        </div>
-                        <div className="w-10 h-10 rounded-lg bg-purple-50 text-[#9D5CE9] flex items-center justify-center text-lg">
-                            <FaClock />
-                        </div>
-                    </div>
-                    <div className="text-xs font-bold text-green-500 flex items-center gap-1">
-                        Within SLA
-                    </div>
-                </div>
-            </div>
+  const handleAction = (company, action) => {
+    setActionDialog({ company, action });
+    setActionNote("");
+  };
 
-            {/* ================= ROW 2: ACCOUNT MODERATION QUEUE ================= */}
-            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
 
-                {/* --- HEADER --- */}
-                <div className="p-6 border-b border-gray-100 flex flex-col md:flex-row md:items-center justify-between gap-4">
-                    <div>
-                        <h3 className="text-xl font-bold text-gray-800">Account Moderation Queue</h3>
-                        <p className="text-xs text-gray-400 mt-1">Review and take action on reported violations.</p>
-                    </div>
 
-                    <div className="flex items-center gap-3">
-                        <button className="flex items-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-600 text-sm font-semibold rounded-lg transition-colors">
-                            <FaFilter size={12} /> Filter by Type
-                        </button>
-                        <button className="flex items-center gap-2 px-4 py-2 bg-orange-100 text-orange-600 text-sm font-bold rounded-lg border border-orange-200">
-                            <FaExclamationTriangle size={12} /> High Priority
-                        </button>
-                    </div>
-                </div>
+  const confirmAction = async () => {
+    if (!actionDialog) return;
 
-                {/* --- TABLE --- */}
-                <div className="overflow-x-auto">
-                    <table className="w-full text-left border-collapse">
-                        <thead className="bg-gray-50/50">
-                            <tr>
-                                <th className="p-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Report ID</th>
-                                <th className="p-4 text-xs font-bold text-gray-500 uppercase tracking-wider">User</th>
-                                <th className="p-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Type</th>
-                                <th className="p-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Violation</th>
-                                <th className="p-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Severity</th>
-                                <th className="p-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Date</th>
-                                <th className="p-4 text-xs font-bold text-gray-500 uppercase tracking-wider text-right">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-gray-50">
-                            {reports.map((report) => (
-                                <tr key={report.id} className="hover:bg-gray-50/80 transition-colors">
+    const { company, action } = actionDialog;
 
-                                    <td className="p-4 text-sm font-medium text-gray-500">{report.id}</td>
+    try {
+      if (action === "approve") {
+        await adminCompanyService.approveCompany(
+          company.id,
+          company.businessLicenseFileUrl ? "ADVANCED" : "BASIC",
+          actionNote
+        );
+      } else if (action === "reject") {
+        await adminCompanyService.rejectCompany(company.id, actionNote);
+      } else if (action === "resubmit") {
+        await adminCompanyService.requestResubmission(company.id, actionNote);
+      } else if (action === "suspend") {
+        await adminCompanyService.suspendCompany(company.id, actionNote);
+      } else if (action === "unsuspend") {
+        await adminCompanyService.unsuspendCompany(company.id);
+      }
 
-                                    <td className="p-4">
-                                        <div className="flex items-center gap-3">
-                                            <img src={report.avatar} alt={report.reportedUser} className="w-8 h-8 rounded-full object-cover" />
-                                            <span className="font-bold text-gray-700 text-sm">{report.reportedUser}</span>
-                                        </div>
-                                    </td>
+      setActionDialog(null);
+      setActionNote("");
+      fetchCompanies();
+    } catch (error) {
+      console.error("Lỗi xử lý action công ty:", error);
+    }
+  };
+  return (
+    <div className="space-y-6">
+      <PageHeader
+        title="Quản lý Công ty"
+        description="Duyệt hồ sơ đăng ký doanh nghiệp và quản lý trạng thái hoạt động."
+      >
+        <Button variant="outline">Xuất báo cáo</Button>
+        <Button>
+          <ShieldCheck className="mr-2 h-4 w-4" />
+          Duyệt nhanh
+        </Button>
+      </PageHeader>
 
-                                    <td className="p-4 text-sm text-gray-600">{report.type}</td>
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
+        <StatsCard 
+          title="Tổng công ty" 
+          value={stats.total} 
+          icon={<Building2 />} 
+          percentage="12" 
+          isIncrease={true} 
+        />
+        <StatsCard 
+          title="Chờ duyệt" 
+          value={stats.pending} 
+          icon={<Users />} 
+          percentage="5" 
+          isIncrease={true} 
+        />
+        <StatsCard 
+          title="Đã duyệt" 
+          value={stats.approved} 
+          icon={<UserCheck />} 
+          percentage="8" 
+          isIncrease={true} 
+        />
+        <StatsCard 
+          title="Bị khóa" 
+          value={stats.suspended} 
+          icon={<UserX />} 
+          percentage="2" 
+          isIncrease={false} 
+        />
+      </div>
 
-                                    <td className="p-4 text-sm font-medium text-gray-800">{report.violation}</td>
-
-                                    <td className="p-4">
-                                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded border ${getSeverityColor(report.severity)}`}>
-                                            {report.severity.toUpperCase()}
-                                        </span>
-                                    </td>
-
-                                    <td className="p-4 text-sm text-gray-500">{report.date}</td>
-
-                                    {/* ACTIONS BUTTONS */}
-                                    <td className="p-4 text-right">
-                                        <div className="flex items-center justify-end gap-2">
-                                            {/* 1. Resolve (Green) */}
-                                            <button
-                                                onClick={() => handleResolve(report.id)}
-                                                className="w-8 h-8 rounded-lg flex items-center justify-center bg-green-100 text-green-600 hover:bg-green-200 transition-colors"
-                                                title="Resolve / Mark Safe"
-                                            >
-                                                <FaCheck size={12} />
-                                            </button>
-
-                                            {/* 2. Warn (Yellow) */}
-                                            <button
-                                                onClick={() => handleWarn(report.id)}
-                                                className="w-8 h-8 rounded-lg flex items-center justify-center bg-yellow-100 text-yellow-600 hover:bg-yellow-200 transition-colors"
-                                                title="Send Warning"
-                                            >
-                                                <FaExclamationTriangle size={12} />
-                                            </button>
-
-                                            {/* 3. Block (Red) */}
-                                            <button
-                                                onClick={() => handleBlock(report.id)}
-                                                className="w-8 h-8 rounded-lg flex items-center justify-center bg-red-100 text-red-600 hover:bg-red-200 transition-colors"
-                                                title="Block Account"
-                                            >
-                                                <FaBan size={12} />
-                                            </button>
-
-                                            {/* 4. Info (Blue) */}
-                                            <button
-                                                onClick={() => handleViewDetail(report.id)}
-                                                className="w-8 h-8 rounded-lg flex items-center justify-center bg-blue-100 text-blue-600 hover:bg-blue-200 transition-colors"
-                                                title="View Details"
-                                            >
-                                                <FaInfoCircle size={12} />
-                                            </button>
-                                        </div>
-                                    </td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                </div>
-
-                {/* --- PAGINATION --- */}
-                <div className="p-4 border-t border-gray-100 flex items-center justify-center md:justify-end gap-2">
-                    <button className="px-3 py-1 text-xs border border-gray-200 rounded hover:bg-gray-50 text-gray-500">Previous</button>
-                    <button className="px-3 py-1 text-xs bg-[#9D5CE9] text-white rounded shadow-sm">1</button>
-                    <button className="px-3 py-1 text-xs border border-gray-200 rounded hover:bg-gray-50 text-gray-500">2</button>
-                    <button className="px-3 py-1 text-xs border border-gray-200 rounded hover:bg-gray-50 text-gray-500">Next</button>
-                </div>
-
-            </div>
+      <Card className="!p-4">
+        <div className="flex flex-col gap-4 md:flex-row md:items-center">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+            <Input
+              placeholder="Tìm theo tên công ty, MST, email..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="pl-10"
+            />
+          </div>
+          <select
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+            className="w-full md:w-56 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm focus:border-purple-400 focus:outline-none"
+          >
+            <option value="ALL">Tất cả trạng thái</option>
+            <option value="PENDING_REVIEW">Chờ duyệt</option>
+            <option value="UNDER_REVIEW">Đang review</option>
+            <option value="APPROVED">Đã duyệt</option>
+            <option value="REJECTED">Bị từ chối</option>
+            <option value="NEEDS_RESUBMISSION">Yêu cầu nộp lại</option>
+            <option value="SUSPENDED">Đã suspend</option>
+          </select>
         </div>
-    );
+      </Card>
+
+      <Card className="!p-0 overflow-hidden shadow-sm">
+        <Table
+          headers={[
+            { label: "Mã công ty" },
+            { label: "Tên công ty" },
+            { label: "Mã số thuế" },
+            { label: "Người đại diện" },
+            { label: "Xác thực" },
+            { label: "Trạng thái" },
+            { label: "Active" },
+            { label: "Ngày cập nhật" },
+            { label: "Thao tác", className: "text-right" }
+          ]}
+        >
+          {loading ? (
+            <tr>
+              <Td colSpan={9} className="text-center py-10">
+                <div className="flex justify-center">
+                  <div className="h-6 w-6 animate-spin rounded-full border-2 border-purple-500 border-t-transparent"></div>
+                </div>
+              </Td>
+            </tr>
+          ) : filteredCompanies.length > 0 ? (
+            filteredCompanies.map((company) => (
+              <tr key={company.id} className="hover:bg-slate-50/50 transition-colors">
+                <Td className="font-medium text-slate-500">{company.id}</Td>
+                <Td className="font-bold text-slate-700">{company.name || "N/A"}</Td>
+                <Td>{company.taxCode || company.tax_code || "---"}</Td>
+                <Td>{company.representativeName || company.contactName || "---"}</Td>
+                <Td>
+                  <Badge variant={verificationColorMap[company.verificationLevel || company.verificationStatus] || "default"}>
+                    {company.verificationLevel || company.verificationStatus || "BASIC"}
+                  </Badge>
+                </Td>
+                <Td>
+                  <Badge variant={statusColorMap[company.companyInfoUpdateStatus || company.status] || "default"}>
+                    {company.companyInfoUpdateStatus || company.status || "UNKNOWN"}
+                  </Badge>
+                </Td>
+                <Td>
+                  {company.active ? (
+                    <Badge variant="success">Active</Badge>
+                  ) : (
+                    <Badge variant="danger">Inactive</Badge>
+                  )}
+                </Td>
+                <Td className="text-slate-500 text-xs">{company.lastUpdateRequestDate || "---"}</Td>
+                <Td className="text-right">
+                  <RowActionMenu
+                    company={company}
+                    openMenuId={openMenuId}
+                    setOpenMenuId={setOpenMenuId}
+                    onViewDetail={async (company) => {
+                      try {
+                        const detail = await adminCompanyService.getCompanyDetail(company.id);
+                        setDetailCompany(detail);
+                      } catch (error) {
+                        console.error("Lỗi lấy chi tiết công ty:", error);
+                      }
+                    }}
+                    onAction={(company, action) => handleAction(company, action)}
+                  />
+                </Td>
+              </tr>
+            ))
+          ) : (
+            <tr>
+              <Td colSpan={9} className="text-center py-10 text-slate-400 italic">
+                Không tìm thấy dữ liệu phù hợp
+              </Td>
+            </tr>
+          )}
+        </Table>
+
+        <Pagination
+          currentPage={page + 1}
+          totalPages={totalPages}
+          onPageChange={(p) => setPage(p - 1)}
+        />
+      </Card>
+
+      <CompanyDetailDialog
+        company={detailCompany}
+        open={!!detailCompany}
+        onClose={() => setDetailCompany(null)}
+        onAction={handleAction}
+      />
+      
+      <ActionDialog
+        actionDialog={actionDialog}
+        actionNote={actionNote}
+        setActionNote={setActionNote}
+        onClose={() => setActionDialog(null)}
+        onConfirm={confirmAction}
+      />
+    </div>
+  );
 };
 
-export default ReportManagement;
+export default AdminCompanyManagement;

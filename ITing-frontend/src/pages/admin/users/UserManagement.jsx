@@ -3,9 +3,13 @@ import {
     FaUserFriends, FaBuilding, FaUserTie, FaUserClock,
     FaFilter, FaPlus, FaEdit, FaTrash, FaBan, FaSearch
 } from 'react-icons/fa';
-import StatsCard from '../components/StatsCard';
+import { 
+    StatsCard, Pagination, Button, Input, Badge, Card, CardHeader, Table, Td 
+} from '../../../components';
 
 const UserManagement = () => {
+    const [currentPage, setCurrentPage] = useState(1);
+    
     // 1. MOCK DATA (Giả lập dữ liệu từ API)
     // Trong thực tế, bạn sẽ gọi API ở đây
     const [users, setUsers] = useState([
@@ -102,80 +106,65 @@ const UserManagement = () => {
             </div>
 
             {/* ================= ROW 2: MAIN CONTENT (TABLE) ================= */}
-            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-
+            <Card className="!p-0 overflow-hidden border-gray-100">
                 {/* --- HEADER CỦA BẢNG --- */}
-                <div className="p-6 border-b border-gray-100 flex flex-col md:flex-row md:items-center justify-between gap-4">
-                    <h3 className="text-xl font-bold text-gray-800 flex items-center gap-2">
-                        <FaUserFriends className="text-[#9D5CE9]" /> User Management
-                    </h3>
-
-                    <div className="flex items-center gap-3">
-                        {/* Search Box nhỏ */}
-                        <div className="relative hidden md:block">
-                            <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs" />
-                            <input
-                                type="text"
-                                placeholder="Search user..."
-                                className="pl-8 pr-3 py-2 bg-gray-50 border-none rounded-lg text-sm focus:ring-2 focus:ring-[#9D5CE9] outline-none transition-all w-48"
-                            />
-                        </div>
-
-                        {/* Filter Button */}
-                        <button className="flex items-center gap-2 px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white text-sm font-semibold rounded-lg transition-colors shadow-sm">
-                            <FaFilter size={12} /> Filter
-                        </button>
-
-                        {/* Add User Button */}
-                        <button className="flex items-center gap-2 px-4 py-2 bg-[#5D5FEF] hover:bg-[#4a4cdb] text-white text-sm font-bold rounded-lg transition-all shadow-md hover:shadow-lg transform hover:-translate-y-0.5">
-                            <FaPlus size={12} /> Add User
-                        </button>
-                    </div>
-                </div>
+                <CardHeader
+                    className="px-6 pt-6 mb-4"
+                    title={<span className="text-gray-800">User Management</span>}
+                    icon={<FaUserFriends className="text-[#9D5CE9]" />}
+                    action={
+                        <>
+                            <div className="relative hidden md:block w-48">
+                                <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs" />
+                                <Input placeholder="Search user..." className="pl-8" />
+                            </div>
+                            <Button variant="outline" className="flex items-center gap-2">
+                                <FaFilter size={12} /> Filter
+                            </Button>
+                            <Button className="flex items-center gap-2 bg-[#5D5FEF] hover:bg-[#4a4cdb]">
+                                <FaPlus size={12} /> Add User
+                            </Button>
+                        </>
+                    }
+                />
 
                 {/* --- TABLE CONTENT --- */}
-                <div className="overflow-x-auto">
-                    <table className="w-full text-left border-collapse">
-                        <thead className="bg-gray-50/50">
-                            <tr>
-                                <th className="p-4 text-xs font-bold text-gray-500 uppercase tracking-wider text-center w-16">ID</th>
-                                <th className="p-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Name</th>
-                                <th className="p-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Type</th>
-                                <th className="p-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Email</th>
-                                <th className="p-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Status</th>
-                                <th className="p-4 text-xs font-bold text-gray-500 uppercase tracking-wider text-right">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-gray-50">
+                <Table
+                    headers={[
+                        { label: "ID", className: "text-center w-16" },
+                        { label: "Name" },
+                        { label: "Type" },
+                        { label: "Email" },
+                        { label: "Status" },
+                        { label: "Actions", className: "text-right" }
+                    ]}
+                >
                             {users.map((user) => (
                                 <tr key={user.id} className="hover:bg-gray-50/80 transition-colors group">
 
                                     {/* ID */}
-                                    <td className="p-4 text-sm font-medium text-gray-400 text-center">{user.id}</td>
+                                    <Td className="font-medium text-gray-400 text-center">{user.id}</Td>
 
                                     {/* NAME & AVATAR */}
-                                    <td className="p-4">
+                                    <Td>
                                         <div className="flex items-center gap-3">
                                             <img src={user.avatar} alt={user.name} className="w-9 h-9 rounded-full object-cover border border-gray-200 shadow-sm" />
                                             <span className="font-bold text-gray-700">{user.name}</span>
                                         </div>
-                                    </td>
+                                    </Td>
 
                                     {/* TYPE (ROLE) */}
-                                    <td className="p-4">
-                                        <span className={`text-[11px] font-bold px-2.5 py-1 rounded border ${user.role === 'COMPANY'
-                                                ? 'bg-purple-50 text-purple-600 border-purple-100'
-                                                : 'bg-blue-50 text-blue-600 border-blue-100'
-                                            }`}>
+                                    <Td>
+                                        <Badge variant={user.role === 'COMPANY' ? 'purple' : 'info'}>
                                             {user.role}
-                                        </span>
-                                    </td>
+                                        </Badge>
+                                    </Td>
 
                                     {/* EMAIL */}
-                                    <td className="p-4 text-sm text-gray-500">{user.email}</td>
+                                    <Td className="text-gray-500">{user.email}</Td>
 
                                     {/* STATUS */}
-                                    <td className="p-4">
+                                    <Td>
                                         <div className="flex items-center gap-2">
                                             <span className={`w-2 h-2 rounded-full ${user.status === 'Active' ? 'bg-green-500' :
                                                     user.status === 'Banned' ? 'bg-red-500' : 'bg-gray-400'
@@ -186,10 +175,10 @@ const UserManagement = () => {
                                                 {user.status.toUpperCase()}
                                             </span>
                                         </div>
-                                    </td>
+                                    </Td>
 
                                     {/* ACTIONS */}
-                                    <td className="p-4 text-right">
+                                    <Td className="text-right">
                                         <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                                             {/* Edit Button */}
                                             <button
@@ -218,25 +207,19 @@ const UserManagement = () => {
                                                 <FaTrash size={12} />
                                             </button>
                                         </div>
-                                    </td>
+                                    </Td>
                                 </tr>
                             ))}
-                        </tbody>
-                    </table>
-                </div>
+                </Table>
 
                 {/* --- PAGINATION (Footer) --- */}
-                <div className="p-4 border-t border-gray-100 flex items-center justify-between">
-                    <div className="text-xs text-gray-400">Showing 1-5 of 12,458 users</div>
-                    <div className="flex gap-1">
-                        <button className="px-3 py-1 text-xs border border-gray-200 rounded hover:bg-gray-50 text-gray-500">Prev</button>
-                        <button className="px-3 py-1 text-xs bg-[#9D5CE9] text-white rounded shadow-sm">1</button>
-                        <button className="px-3 py-1 text-xs border border-gray-200 rounded hover:bg-gray-50 text-gray-500">2</button>
-                        <button className="px-3 py-1 text-xs border border-gray-200 rounded hover:bg-gray-50 text-gray-500">3</button>
-                        <button className="px-3 py-1 text-xs border border-gray-200 rounded hover:bg-gray-50 text-gray-500">Next</button>
-                    </div>
-                </div>
-            </div>
+                <Pagination 
+                    totalItems={12458} 
+                    itemsPerPage={5} 
+                    currentPage={currentPage}
+                    onPageChange={setCurrentPage}
+                />
+            </Card>
 
         </div>
     );

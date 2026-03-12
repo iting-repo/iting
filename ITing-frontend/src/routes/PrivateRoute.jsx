@@ -1,6 +1,7 @@
 import React from 'react';
 import { Navigate, Outlet } from 'react-router-dom';
 import { useSelector } from 'react-redux';
+import { storage } from '../utils/storage';
 
 const PrivateRoute = ({ allowedRoles }) => {
   // 1. Lấy currentUser từ Redux
@@ -8,8 +9,8 @@ const PrivateRoute = ({ allowedRoles }) => {
 
   // 2. Lấy thông tin từ currentUser (hoặc từ localStorage nếu F5 lại)
   // Ưu tiên lấy từ Redux, nếu không có thì check localStorage (phòng trường hợp F5)
-  const role = currentUser?.role || localStorage.getItem('user_role');
-  const token = localStorage.getItem('access_token');
+  const role = currentUser?.role || storage.getRole();
+  const token = storage.getToken();
 
   // 3. Kiểm tra đăng nhập
   if (!token) {

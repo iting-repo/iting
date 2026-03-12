@@ -1,6 +1,6 @@
 import React from 'react';
 import { Outlet } from 'react-router-dom';
-import CandidateSidebar from '../pages/candidate/components/CandidateSidebar';
+import CandidateSidebar from '../components/candidate/CandidateSidebar';
 
 const CandidateLayout = () => {
   return (

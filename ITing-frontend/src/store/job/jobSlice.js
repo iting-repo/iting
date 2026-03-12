@@ -29,6 +29,22 @@ const jobSlice = createSlice({
             state.error = action.payload;
         },
 
+        fetchLatestJobsRequest: (state) => {
+            state.isLoading = true;
+            state.error = null;
+        },
+
+        fetchLatestJobsSuccess: (state, action) => {
+            state.isLoading = false;
+            state.error = action.payload || [];
+        },
+
+        fetchLatestJobsFailure: (state, action) => {
+            state.isLoading = false;
+            state.error = action.payload;
+        },
+        
+
         // --- JOB DETAIL ---
         fetchJobDetailRequest: (state) => {
             state.isLoading = true;
@@ -48,6 +64,9 @@ const jobSlice = createSlice({
 
 export const {
     fetchJobsRequest, fetchJobsSuccess, fetchJobsFailure,
+
+    fetchLatestJobsRequest, fetchLatestJobsSuccess, fetchLatestJobsFailure,
+
     fetchJobDetailRequest, fetchJobDetailSuccess, fetchJobDetailFailure
 } = jobSlice.actions;
 

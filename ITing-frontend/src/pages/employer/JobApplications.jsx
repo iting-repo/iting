@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { FaSearch, FaFilter, FaFileDownload, FaEye, FaArrowLeft, FaSort } from 'react-icons/fa';
-import CandidateDetailModal from './components/CandidateDetailModal'; // Import modal vừa tạo
+import CandidateDetailModal from '../../components/employer/CandidateDetailModal'; // Import modal từ components/employer
 
 const JobApplications = () => {
   const { id } = useParams();

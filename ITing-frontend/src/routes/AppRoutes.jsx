@@ -31,8 +31,10 @@ const ApprovalManagement = lazy(() => import('../pages/admin/approvals/ApprovalM
 const JobDetailPage = lazy(() => import('../pages/public/JobDetailPage'));
 const AboutPage = lazy(() => import('../pages/public/AboutPage'));
 const ContactPage = lazy(() => import('../pages/public/ContactPage'));
+const AdminJobPage = lazy(() => import('../pages/admin/jobs/AdminJobPage'));
 
-import LoadingSpinner from '../components/LoadingSpinner';
+
+import { LoadingSpinner } from '../components';
 
 const AppRoutes = () => {
   return (
@@ -69,7 +71,9 @@ const AppRoutes = () => {
             {/* Các trang Admin khác sẽ thêm vào đây sau này */}
             <Route path="users" element={<UserManagement />} />
             <Route path="reports" element={<ReportManagement />} />
-            <Route path="approvals" element={<ApprovalManagement />} />
+            {/* <Route path="approvals" element={<ApprovalManagement />} /> */}
+            <Route path="approvals" element={<AdminJobPage />} />
+            
 
           </Route>
 

@@ -1,7 +1,7 @@
 import React from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
-import { logout } from '../../../store/auth/authSlice';
+import { logout } from '../../store/auth/authSlice';
 import {
   FaUserFriends, FaShieldAlt, FaEye, FaTags, FaFileAlt, FaCog, FaPowerOff
 } from 'react-icons/fa';

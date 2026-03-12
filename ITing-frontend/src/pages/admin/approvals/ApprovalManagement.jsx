@@ -1,6 +1,6 @@
 import React from 'react';
 import { FaPen, FaUserClock, FaCheckCircle, FaTimesCircle } from 'react-icons/fa';
-import StatsCard from '../components/StatsCard';
+import { StatsCard } from '../../../components';
 import PendingJobsTable from './PendingJobsTable';
 import PendingCompaniesTable from './PendingCompaniesTable';
 

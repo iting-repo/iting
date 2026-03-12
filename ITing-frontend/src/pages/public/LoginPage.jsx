@@ -48,7 +48,7 @@ const LoginPage = () => {
       } else if (role === 'ADMIN') {
         navigate('/admin/dashboard');
       } else {
-        navigate('/');
+        navigate('/jobs');
       }
     }
   }, [currentUser, navigate]);

@@ -1,0 +1,31 @@
+import {
+  MoreHorizontal,
+  Eye,
+  CheckCircle2,
+  XCircle,
+  RotateCcw,
+  Ban,
+  ShieldCheck,
+  Building2,
+  Mail,
+  Phone,
+  User,
+  Shield,
+  X,
+} from "lucide-react";
+
+export const Icons = {
+  more: MoreHorizontal,
+  view: Eye,
+  approve: CheckCircle2,
+  reject: XCircle,
+  resubmit: RotateCcw,
+  suspend: Ban,
+  unsuspend: ShieldCheck,
+  company: Building2,
+  mail: Mail,
+  phone: Phone,
+  user: User,
+  tax: Shield,
+  close: X,
+};

@@ -1,4 +1,5 @@
 import { createSlice } from '@reduxjs/toolkit';
+import { storage } from '../../utils/storage';
 
 const initialState = {
   currentUser: null, // Chứa info user: { name, role, token... }
@@ -31,9 +32,7 @@ const authSlice = createSlice({
       state.currentUser = null;
       state.error = null;
       // Xóa token trong localStorage
-      localStorage.removeItem('access_token');
-      localStorage.removeItem('user_role');
-      localStorage.removeItem('user_info');
+      storage.clearAuth();
     },
 
     // 5. Action Register

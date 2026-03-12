@@ -1,5 +1,6 @@
 import React from 'react';
 import { FaEye, FaCheck, FaTimes, FaFilter, FaBriefcase } from 'react-icons/fa';
+import { Button, Card, CardHeader, Table, Td } from '../../../components';
 
 const PendingJobsTable = () => {
     // Mock Data: Danh sách tin tuyển dụng chờ duyệt
@@ -31,47 +32,46 @@ const PendingJobsTable = () => {
     ];
 
     return (
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden mb-8">
+        <Card className="!p-0 overflow-hidden border-gray-100 mb-8">
             {/* HEADER */}
-            <div className="p-6 border-b border-gray-100 flex flex-col md:flex-row md:items-center justify-between gap-4">
-                <h3 className="text-xl font-bold text-gray-800 flex items-center gap-2">
-                    <FaBriefcase className="text-orange-500" /> Recruitment Posts Review
-                </h3>
-                <div className="flex gap-2">
-                    <button className="flex items-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-600 text-sm font-semibold rounded-lg transition-colors">
-                        <FaFilter size={12} /> Filter
-                    </button>
-                    <button className="flex items-center gap-2 px-4 py-2 bg-green-500 hover:bg-green-600 text-white text-sm font-bold rounded-lg transition-colors shadow-sm">
-                        <FaCheck size={12} /> Approve All
-                    </button>
-                </div>
-            </div>
+            <CardHeader
+                className="px-6 pt-6 mb-4"
+                title={<span className="text-gray-800">Recruitment Posts Review</span>}
+                icon={<FaBriefcase className="text-orange-500" />}
+                action={
+                    <div className="flex gap-2">
+                        <Button variant="outline" className="flex items-center gap-2">
+                            <FaFilter size={12} /> Filter
+                        </Button>
+                        <Button className="flex items-center gap-2 bg-green-500 hover:bg-green-600 text-white border-0">
+                            <FaCheck size={12} /> Approve All
+                        </Button>
+                    </div>
+                }
+            />
 
             {/* TABLE */}
-            <div className="overflow-x-auto">
-                <table className="w-full text-left border-collapse">
-                    <thead className="bg-gray-50/50">
-                        <tr>
-                            <th className="p-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Post ID</th>
-                            <th className="p-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Job Title</th>
-                            <th className="p-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Company</th>
-                            <th className="p-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Posted By</th>
-                            <th className="p-4 text-xs font-bold text-gray-500 uppercase tracking-wider text-right">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody className="divide-y divide-gray-50">
+            <Table
+                headers={[
+                    { label: "Post ID" },
+                    { label: "Job Title" },
+                    { label: "Company" },
+                    { label: "Posted By" },
+                    { label: "Actions", className: "text-right" }
+                ]}
+            >
                         {jobs.map((job) => (
                             <tr key={job.id} className="hover:bg-gray-50/80 transition-colors">
-                                <td className="p-4 text-sm font-medium text-gray-500">{job.id}</td>
-                                <td className="p-4 text-sm font-bold text-gray-800">{job.title}</td>
-                                <td className="p-4 text-sm text-gray-600">{job.company}</td>
-                                <td className="p-4">
+                                <Td className="font-medium text-gray-500">{job.id}</Td>
+                                <Td className="font-bold text-gray-800">{job.title}</Td>
+                                <Td className="text-gray-600">{job.company}</Td>
+                                <Td>
                                     <div className="flex items-center gap-2">
                                         <img src={job.avatar} alt={job.postedBy} className="w-6 h-6 rounded-full object-cover" />
                                         <span className="text-sm font-medium text-gray-700">{job.postedBy}</span>
                                     </div>
-                                </td>
-                                <td className="p-4 text-right">
+                                </Td>
+                                <Td className="text-right">
                                     <div className="flex items-center justify-end gap-2">
                                         <button className="w-8 h-8 rounded-lg flex items-center justify-center bg-purple-100 text-purple-600 hover:bg-purple-200 transition-colors" title="View Details">
                                             <FaEye size={12} />
@@ -83,13 +83,11 @@ const PendingJobsTable = () => {
                                             <FaTimes size={12} />
                                         </button>
                                     </div>
-                                </td>
+                                </Td>
                             </tr>
                         ))}
-                    </tbody>
-                </table>
-            </div>
-        </div>
+            </Table>
+        </Card>
     );
 };
 

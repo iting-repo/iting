@@ -1,22 +1,31 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import axiosInstance from '../../utils/axiosInstance';
 import { FaBookmark, FaBell, FaArrowRight, FaCheck } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
 
 const CandidateDashboard = () => {
   const navigate = useNavigate();
 
-  // Mock Data
-  const stats = {
-    favoriteJobs: 238,
-    jobAlerts: 574,
-  };
+  const [recentApplications, setRecentApplications] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  const recentApplications = [
-    { id: 1, company: "Networking Engineer", logo: "https://via.placeholder.com/50/4ade80/ffffff?text=Up", position: "Remote", location: "Washington", salary: "$50k-80k/month", date: "Feb 2, 2019 19:28", status: "Active" },
-    { id: 2, company: "Product Designer", logo: "https://via.placeholder.com/50/f43f5e/ffffff?text=P", position: "Full Time", location: "Dhaka", salary: "$50k-80k/month", date: "Dec 7, 2019 23:26", status: "Active" },
-    { id: 3, company: "Junior Graphic Designer", logo: "https://via.placeholder.com/50/1e293b/ffffff?text=Apple", position: "Temporary", location: "Brazil", salary: "$50k-80k/month", date: "Feb 2, 2019 19:28", status: "Active" },
-    { id: 4, company: "Visual Designer", logo: "https://via.placeholder.com/50/f1f5f9/000000?text=Ms", position: "Contract Base", location: "Wisconsin", salary: "$50k-80k/month", date: "Dec 7, 2019 23:26", status: "Active" },
-  ];
+  useEffect(() => {
+    const fetchApplications = async () => {
+      try {
+        const response = await axiosInstance.get('/api/applications/my-applications', {
+          params: { page: 0, size: 5 }
+        });
+        setRecentApplications(response.data.content || []);
+      } catch (error) {
+        console.error("Failed to fetch applications:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchApplications();
+  }, []);
+
 
   return (
     <div className="bg-white rounded-xl p-8 shadow-sm border border-gray-100 min-h-screen animate-fade-in">
@@ -31,7 +40,7 @@ const CandidateDashboard = () => {
           {/* Card 1 */}
           <div className="bg-[#FFF6E5] p-6 rounded-xl flex items-center justify-between shadow-sm border border-orange-100 transition-transform hover:-translate-y-1">
             <div>
-              <div className="text-3xl font-bold text-gray-800 mb-1">{stats.favoriteJobs}</div>
+              <div className="text-3xl font-bold text-gray-800 mb-1">...</div>
               <div className="text-gray-600 font-medium">Công việc yêu thích</div>
             </div>
             <div className="w-14 h-14 bg-white rounded-xl flex items-center justify-center text-orange-400 shadow-sm text-2xl">
@@ -42,7 +51,7 @@ const CandidateDashboard = () => {
           {/* Card 2 */}
           <div className="bg-[#E6F8EF] p-6 rounded-xl flex items-center justify-between shadow-sm border border-green-100 transition-transform hover:-translate-y-1">
             <div>
-              <div className="text-3xl font-bold text-gray-800 mb-1">{stats.jobAlerts}</div>
+              <div className="text-3xl font-bold text-gray-800 mb-1">...</div>
               <div className="text-gray-600 font-medium">Thông báo việc làm</div>
             </div>
             <div className="w-14 h-14 bg-white rounded-xl flex items-center justify-center text-green-600 shadow-sm text-2xl">
@@ -94,26 +103,33 @@ const CandidateDashboard = () => {
                   </tr>
                </thead>
                <tbody className="divide-y divide-gray-100 text-sm">
-                  {recentApplications.map((job) => (
-                     <tr key={job.id} className="hover:bg-gray-50/60 transition-colors">
+                  {loading ? (
+                     <tr>
+                        <td colSpan="4" className="p-4 text-center text-gray-500">Đang tải...</td>
+                     </tr>
+                  ) : recentApplications.length === 0 ? (
+                     <tr>
+                        <td colSpan="4" className="p-4 text-center text-gray-500">Chưa có ứng tuyển nào gần đây.</td>
+                     </tr>
+                  ) : recentApplications.map((app) => (
+                     <tr key={app.id} className="hover:bg-gray-50/60 transition-colors">
                         <td className="p-4">
                            <div className="flex items-center gap-4">
                               <div className="w-12 h-12 rounded-lg flex items-center justify-center bg-gray-50 overflow-hidden shrink-0 border border-gray-100">
-                                 <img src={job.logo} alt="Logo" className="w-full h-full object-cover" />
+                                 <img src={"https://via.placeholder.com/50"} alt="Logo" className="w-full h-full object-cover" />
                               </div>
                               <div>
-                                 <div className="font-bold text-gray-800 text-base mb-1">{job.company}</div>
+                                 <div className="font-bold text-gray-800 text-base mb-1">{app.companyName || "Công ty ẩn danh"}</div>
                                  <div className="text-gray-500 flex items-center gap-2 text-xs">
-                                    <span className="bg-blue-50 text-blue-600 px-2 py-0.5 rounded border border-blue-100">{job.position}</span>
-                                    <span>{job.location}</span> • <span>{job.salary}</span>
+                                    <span className="bg-blue-50 text-blue-600 px-2 py-0.5 rounded border border-blue-100">{app.jobPosition || "Không rõ vị trí"}</span>
                                  </div>
                               </div>
                            </div>
                         </td>
-                        <td className="p-4 text-gray-500">{job.date}</td>
+                        <td className="p-4 text-gray-500">{app.appliedAt ? new Date(app.appliedAt).toLocaleDateString() : ''}</td>
                         <td className="p-4">
                            <span className="inline-flex items-center gap-1.5 text-green-600 font-medium px-3 py-1 rounded-full bg-green-50 border border-green-100 text-xs">
-                              <FaCheck size={10} /> {job.status}
+                              <FaCheck size={10} /> {app.status}
                            </span>
                         </td>
                         <td className="p-4 text-right">

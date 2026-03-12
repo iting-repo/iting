@@ -1,6 +1,6 @@
 import React from 'react';
 import { FaUserFriends, FaFileAlt, FaClipboardList, FaHourglassHalf } from 'react-icons/fa';
-import StatsCard from './components/StatsCard';
+import { StatsCard } from '../../components';
 
 // 1. IMPORT CHART.JS
 import {

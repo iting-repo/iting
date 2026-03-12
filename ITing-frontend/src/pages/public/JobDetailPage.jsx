@@ -4,8 +4,7 @@ import {
     FaExclamationTriangle, FaBell, FaLaptop, FaGift, FaUser,
     FaAward, FaGraduationCap, FaWallet, FaEnvelope, FaPhone, FaRegComment
 } from 'react-icons/fa';
-import JobCard from '../../components/JobCard'; // Import component JobCard cũ
-import JobApplyModal from '../../components/JobApplyModal';
+import { JobCard, JobApplyModal } from '../../components';
 
 const JobDetailPage = () => {
 

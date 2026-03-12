@@ -1,5 +1,6 @@
 import { call, put, takeLatest } from 'redux-saga/effects';
 import authService from '../../services/authService';
+import { storage } from '../../utils/storage';
 import {
     loginRequest, loginSuccess, loginFailure,
     registerRequest, registerSuccess, registerFailure,
@@ -9,14 +10,14 @@ import {
 // Worker Saga: Check Auth (Khôi phục session)
 function* handleCheckAuth() {
     try {
-        const token = localStorage.getItem('access_token');
-        const userInfo = localStorage.getItem('user_info');
+        const token = storage.getToken();
+        const userInfo = storage.getUserInfo();
 
         if (!token) return;
 
         // 1. Ưu tiên: Restore từ localStorage ngay lập tức để UI không bị "nháy"
         if (userInfo) {
-            yield put(loginSuccess(JSON.parse(userInfo)));
+            yield put(loginSuccess(userInfo));
         }
 
         // 2. Gọi service check token (để verify xem token còn sống không)
@@ -27,7 +28,7 @@ function* handleCheckAuth() {
             if (response) {
                 yield put(loginSuccess(response));
                 // Cập nhật lại localStorage luôn cho đồng bộ
-                localStorage.setItem('user_info', JSON.stringify(response));
+                storage.setUserInfo(response);
             }
         } catch (apiError) {
             console.warn("CheckAuth API Warning:", apiError);
@@ -39,9 +40,7 @@ function* handleCheckAuth() {
     } catch (error) {
         // Token không hợp lệ hoặc parse lỗi
         console.error("Auth Saga Error:", error);
-        localStorage.removeItem('access_token');
-        localStorage.removeItem('user_role');
-        localStorage.removeItem('user_info');
+        storage.clearAuth();
     }
 }
 
@@ -65,9 +64,7 @@ function* handleRegister(action) {
         /* 
         // Logic cũ: Auto Login
         if (data.token) {
-            localStorage.setItem('access_token', data.token);
-            localStorage.setItem('user_role', data.role);
-            localStorage.setItem('user_info', JSON.stringify(data));
+            storage.setAuth(data.token, data.role, data);
             yield put(registerSuccess(data));
         } else {
             yield put(registerSuccess(null)); 
@@ -98,11 +95,13 @@ function* handleLogin(action) {
         const data = yield call(authService.login, email, password);
         console.log("Login success, response data:", data);
 
+        // Chuẩn hóa token do API có thể trả về `accessToken` thay vì `token`
+        const token = data.token || data.accessToken;
+
         // 2. Lưu thông tin quan trọng vào LocalStorage
-        if (data.token) {
-            localStorage.setItem('access_token', data.token);
-            localStorage.setItem('user_role', data.role);
-            localStorage.setItem('user_info', JSON.stringify(data));
+        if (token) {
+            data.token = token;
+            storage.setAuth(token, data.role, data);
 
             // 3. Bắn action thành công vào Redux
             yield put(loginSuccess(data));

@@ -1,3 +1,4 @@
+import { retry } from "redux-saga/effects";
 import axiosInstance from "../utils/axiosInstance";
 
 const jobService = {
@@ -12,6 +13,13 @@ const jobService = {
     getJobDetail: async (id) => {
         const response = await axiosInstance.get(`/public/jobs/${id}`);
         return response;
+    },
+
+    getLatestJobs: async(limit = 10) => {
+        const response = await axiosInstance.get(`/api/jobs/latest`,{
+            params: {limit}
+        });
+        return response.data;
     }
 };
 

@@ -2,6 +2,9 @@ import { call, put, takeLatest } from 'redux-saga/effects';
 import jobService from '../../services/jobService';
 import {
     fetchJobsRequest, fetchJobsSuccess, fetchJobsFailure,
+    fetchLatestJobsRequest,
+    fetchLatestJobsSuccess,
+    fetchLatestJobsFailure,
     fetchJobDetailRequest, fetchJobDetailSuccess, fetchJobDetailFailure
 } from './jobSlice';
 
@@ -32,8 +35,18 @@ function* handleFetchJobDetail(action) {
     }
 }
 
+function* handleFetchLatestJobs(action) {
+    try {
+        const data = yield call(jobService.getJobDetail, action.payload);
+        yield put(fetchJobDetailSuccess(data));
+    } catch (error) {
+        yield put(fetchJobDetailFailure(error.response?.data?.message || error.message));
+    }
+}
+
 // Watcher
 export default function* jobSaga() {
     yield takeLatest(fetchJobsRequest.type, handleFetchJobs);
+    yield takeLatest(fetchLatestJobsRequest.type, handleFetchLatestJobs);
     yield takeLatest(fetchJobDetailRequest.type, handleFetchJobDetail);
 }
