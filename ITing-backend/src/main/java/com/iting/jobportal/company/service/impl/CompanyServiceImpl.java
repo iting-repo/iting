@@ -1,6 +1,7 @@
 package com.iting.jobportal.company.service.impl;
 
-import com.iting.jobportal.company.dto.*;
+import com.iting.jobportal.company.dto.request.*;
+import com.iting.jobportal.company.dto.response.CompanyResponse;
 import com.iting.jobportal.company.entity.Company;
 import com.iting.jobportal.company.repository.CompanyRepository;
 import com.iting.jobportal.company.service.CompanyService;
@@ -158,14 +159,33 @@ public class CompanyServiceImpl implements CompanyService {
             company.setVerificationLevel(request.getVerificationLevel());
         }
 
-        if (request.getCompanyInfoUpdateStatus() != null) {
-            company.setCompanyInfoUpdateStatus(request.getCompanyInfoUpdateStatus());
-        }
+        // Removed direct setting of status if it's incompatible or not needed here
+        // as we use the specific admin/employer flow now.
 
         company.setLastUpdate(LocalDateTime.now());
 
         Company saved = companyRepository.save(company);
         return mapToResponse(saved);
+    }
+
+    @Override
+    public CompanyResponse submitForReview(Long id) {
+        Company company = companyRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Company not found with id: " + id));
+
+        // Validate mandatory fields as per user request
+        if (company.getName() == null || company.getName().isBlank()) throw new IllegalArgumentException("Tên công ty không được để trống");
+        if (company.getCompanyEmail() == null || company.getCompanyEmail().isBlank()) throw new IllegalArgumentException("Email công ty không được để trống");
+        if (company.getPhone() == null || company.getPhone().isBlank()) throw new IllegalArgumentException("Số điện thoại không được để trống");
+        if (company.getRepresentativeName() == null || company.getRepresentativeName().isBlank()) throw new IllegalArgumentException("Tên người đại diện không được để trống");
+        if (company.getTaxCode() == null || company.getTaxCode().isBlank()) throw new IllegalArgumentException("Mã số thuế không được để trống");
+        if (company.getBusinessLicenseFileUrl() == null || company.getBusinessLicenseFileUrl().isBlank()) throw new IllegalArgumentException("Giấy phép kinh doanh không được để trống");
+
+        company.setCompanyInfoUpdateStatus(com.iting.jobportal.company.entity.enums.CompanyReviewStatus.PENDING_REVIEW);
+        company.setLastUpdateRequestDate(LocalDateTime.now());
+        company.setLastUpdate(LocalDateTime.now());
+
+        return mapToResponse(companyRepository.save(company));
     }
 
     // ==========================================

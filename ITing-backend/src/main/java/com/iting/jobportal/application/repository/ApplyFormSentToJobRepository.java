@@ -8,18 +8,23 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
+import java.util.List;
 
 @Repository
 public interface ApplyFormSentToJobRepository extends JpaRepository<ApplyFormSentToJob, ApplyFormSentToJobId> {
 
+    // ✅ Kiểm tra tồn tại bằng cặp ID (JobId và ApplyFormId đều là Long)
     boolean existsByIdJobIdAndIdApplyFormId(Long jobId, Long applyFormId);
 
+    // ✅ Tìm danh sách ứng tuyển theo UserId (Long) - Khớp với thiết kế kế thừa Account/User
     @Query("SELECT s FROM ApplyFormSentToJob s JOIN ApplyForm f ON f.id = s.id.applyFormId WHERE f.userId = :userId")
-    Page<ApplyFormSentToJob> findByUserId(@Param("userId") String userId, Pageable pageable);
+    Page<ApplyFormSentToJob> findByUserId(@Param("userId") Long userId, Pageable pageable);
 
+    // ✅ Kiểm tra ứng viên (Long) đã ứng tuyển Job (Long) chưa
     @Query("SELECT COUNT(s) > 0 FROM ApplyFormSentToJob s JOIN ApplyForm f ON f.id = s.id.applyFormId WHERE f.userId = :userId AND s.id.jobId = :jobId")
-    boolean existsByUserIdAndJobId(@Param("userId") String userId, @Param("jobId") Long jobId);
+    boolean existsByUserIdAndJobId(@Param("userId") Long userId, @Param("jobId") Long jobId);
 
+    // ✅ Xóa theo Id của đơn ứng tuyển (Long)
     void deleteByIdApplyFormId(Long applyFormId);
 
     java.util.Optional<ApplyFormSentToJob> findByIdApplyFormId(Long applyFormId);

@@ -31,7 +31,12 @@ public class CurrentUserArgumentResolver implements HandlerMethodArgumentResolve
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         if (auth == null || auth.getPrincipal() == null) return null;
 
-        AuthUser user = (AuthUser) auth.getPrincipal();
+        Object principal = auth.getPrincipal();
+        if (!(principal instanceof AuthUser)) {
+            return null;
+        }
+
+        AuthUser user = (AuthUser) principal;
         if (Long.class.isAssignableFrom(parameter.getParameterType())) {
             return user.getId();
         }

@@ -1,7 +1,7 @@
 package com.iting.jobportal.auth.controller;
 
-import com.iting.jobportal.auth.dto.RefreshTokenRequest;
-import com.iting.jobportal.auth.dto.TokenResponse;
+import com.iting.jobportal.auth.dto.request.RefreshTokenRequest;
+import com.iting.jobportal.auth.dto.response.TokenResponse;
 import com.iting.jobportal.auth.service.RefreshTokenService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;

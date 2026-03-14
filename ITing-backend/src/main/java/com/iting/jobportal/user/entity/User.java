@@ -1,5 +1,6 @@
 package com.iting.jobportal.user.entity;
 
+import com.iting.jobportal.auth.entity.Account;
 import com.iting.jobportal.user.entity.enums.Gender;
 import jakarta.persistence.*;
 import lombok.Getter;
@@ -15,8 +16,12 @@ import java.time.LocalDateTime;
 public class User {
 
     @Id
-    @Column(name = "Email", length = 255)
-    private String email;
+    private Long id;
+
+    @OneToOne
+    @MapsId
+    @JoinColumn(name = "Id")
+    private Account account;
 
     @Column(name = "Phone_num", length = 20)
     private String phoneNum;

@@ -1,6 +1,6 @@
 package com.iting.jobportal.userprofile.service;
 
-import com.iting.jobportal.userprofile.dto.*;
+import com.iting.jobportal.userprofile.dto.request.*;
 import com.iting.jobportal.userprofile.entity.*;
 import org.springframework.web.multipart.MultipartFile;
 

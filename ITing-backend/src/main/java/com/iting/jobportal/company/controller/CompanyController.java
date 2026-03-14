@@ -1,12 +1,13 @@
 package com.iting.jobportal.company.controller;
 
-import com.iting.jobportal.company.dto.BusinessLicenseUploadRequest;
-import com.iting.jobportal.company.dto.CompanyBasicInfoRequest;
-import com.iting.jobportal.company.dto.CompanyResponse;
-import com.iting.jobportal.company.dto.ConsentDocumentUploadRequest;
-import com.iting.jobportal.company.dto.VerifyLicenseRequest;
-import com.iting.jobportal.company.dto.VerifyPhoneRequest;
+import com.iting.jobportal.company.dto.request.BusinessLicenseUploadRequest;
+import com.iting.jobportal.company.dto.request.CompanyBasicInfoRequest;
+import com.iting.jobportal.company.dto.response.CompanyResponse;
+import com.iting.jobportal.company.dto.request.ConsentDocumentUploadRequest;
+import com.iting.jobportal.company.dto.request.VerifyLicenseRequest;
+import com.iting.jobportal.company.dto.request.VerifyPhoneRequest;
 
+import com.iting.jobportal.company.dto.request.CompanyRepresentativeRequest;
 import com.iting.jobportal.company.service.CompanyService;
 import com.iting.jobportal.company.service.CompanyFollowService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -48,7 +49,7 @@ public class CompanyController {
     @PutMapping("/{id}/representative")
     public ResponseEntity<CompanyResponse> CompanyRepresentativeRequest(
             @PathVariable Long id,
-            @Valid @RequestBody com.iting.jobportal.company.dto.CompanyRepresentativeRequest request) {
+            @Valid @RequestBody CompanyRepresentativeRequest request) {
         return ResponseEntity.ok(companyService.updateRepresentative(id, request));
     }
 
@@ -85,7 +86,6 @@ public class CompanyController {
     public ResponseEntity<CompanyResponse> verifyLicense(
             @PathVariable Long id,
             @Valid @RequestBody VerifyLicenseRequest request) {
-
         return ResponseEntity.ok(companyService.verifyLicense(id, request));
     }
 
@@ -97,4 +97,9 @@ public class CompanyController {
         return ResponseEntity.ok(Map.of("followerCount", count));
     }
 
+    // --- (G) Submit for Review ---
+    @PostMapping("/{id}/submit-review")
+    public ResponseEntity<CompanyResponse> submitForReview(@PathVariable Long id) {
+        return ResponseEntity.ok(companyService.submitForReview(id));
+    }
 }
