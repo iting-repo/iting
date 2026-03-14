@@ -12,20 +12,36 @@ public class ApplicationResponse {
     private Long id;
     private String userId;
     private Long jobId;
-    
+
+    // Candidate info
     private String applicantName;
-    private String cvTitle;
+    private String avatarUrl;
+    private String jobTitle;        // e.g. "Website Designer (UI/UX)"
+
+    // Introduction / cover letter
     private String introduction;
 
+    // CV info
+    private String cvFileName;      // e.g. "NguyenVanA"
+    private String cvFileType;      // e.g. "PDF"
+    private String cvUrl;           // download link
+
+    // List card fields (for /api/applications/job/{jobId})
+    private Integer yearsExperience; // total years across all experience entries
+    private String education;        // highest degree, e.g. "Master Degree"
+
+    // Contact info
+    private String phoneNumber;
+    private String email;
+
     private LocalDateTime timeSent;
-    
+
     public static ApplicationResponse fromEntities(ApplyForm applyForm, ApplyFormSentToJob applyFormSentToJob) {
         return ApplicationResponse.builder()
                 .id(applyForm.getId())
                 .userId(applyForm.getUserId())
                 .jobId(applyFormSentToJob.getId().getJobId())
                 .applicantName(applyForm.getApplicantName())
-                .cvTitle(applyForm.getCvTitle())
                 .introduction(applyForm.getIntroduction())
                 .timeSent(applyFormSentToJob.getTimeSent())
                 .build();

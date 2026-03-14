@@ -1,6 +1,6 @@
 # ==========================================
-# DOCKER-COMPOSE FOR AWS EC2 + RDS DEPLOYMENT
-# Optimized for fast startup and production use
+# DOCKER-COMPOSE FOR AWS RDS
+# Optimized for production use with AWS RDS
 # ==========================================
 
 services:
@@ -12,7 +12,7 @@ services:
     container_name: iting-app
     restart: unless-stopped
     
-    # Environment variables for AWS RDS
+    # Environment variables for AWS RDS (using .env file)
     environment:
       # Database configuration (AWS RDS)
       - SPRING_DATASOURCE_URL=jdbc:postgresql://${DB_HOST}:${DB_PORT}/${DB_NAME}
@@ -22,7 +22,7 @@ services:
       # JPA/Hibernate
       - SPRING_JPA_HIBERNATE_DDL_AUTO=update
       - SPRING_JPA_PROPERTIES_HIBERNATE_DIALECT=org.hibernate.dialect.PostgreSQLDialect
-      - SPRING_JPA_PROPERTIES_HIBERNATE_FORMAT_SQL=false
+      - SPRING_JPA_PROPERTIES_HIBERNATE_FORMAT_SQL=true
       
       # Logging
       - LOGGING_LEVEL_ROOT=INFO
@@ -36,8 +36,33 @@ services:
       - MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE=health,info,metrics
       - MANAGEMENT_ENDPOINT_HEALTH_SHOW_DETAILS=when_authorized
       
+      # Application name
+      - SPRING_APPLICATION_NAME=iting-job-portal
+      
+      # Swagger / OpenAPI
+      - SPRINGDOC_API_DOCS_ENABLED=true
+      - SPRINGDOC_API_DOCS_PATH=/v3/api-docs
+      - SPRINGDOC_SWAGGER_UI_ENABLED=true
+      - SPRINGDOC_SWAGGER_UI_PATH=/swagger-ui.html
+      
+      # JWT configuration
+      - JWT_SECRET=404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970
+      - JWT_EXPIRATION=86400000
+      - JWT_REFRESH_SECRET=7134743777217A25432A462D4A614E645267556B58703272357538782F413F4428472B4B6250645367566B5970
+      - JWT_REFRESH_EXPIRATION=604800000
+      - JWT_REFRESH_MAX_TOKENS_PER_USER=5
+      
+      # Security logging
+      - LOGGING_LEVEL_ORG_SPRINGFRAMEWORK_SECURITY=DEBUG
+      
+      # AWS S3
+      - AWS_ACCESS_KEY=${AWS_ACCESS_KEY}
+      - AWS_SECRET_KEY=${AWS_SECRET_KEY}
+      - AWS_REGION=${AWS_REGION}
+      - AWS_S3_BUCKET=${AWS_S3_BUCKET}
+      
     ports:
-      - "8080:8080"
+      - "8081:8080"
     
     # Health check
     healthcheck:

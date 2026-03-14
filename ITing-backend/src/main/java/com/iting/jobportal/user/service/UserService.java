@@ -24,4 +24,6 @@ public interface UserService {
 
     void updateBirthGender(String userId, LocalDate birthDate, Gender gender);
 
+    String uploadAvatar(String userId, org.springframework.web.multipart.MultipartFile file);
+
     }

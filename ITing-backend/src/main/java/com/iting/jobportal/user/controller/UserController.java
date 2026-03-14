@@ -6,6 +6,7 @@ import com.iting.jobportal.user.service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.Map;
 @RestController
@@ -35,6 +36,13 @@ public class UserController {
         return ResponseEntity.ok(Map.of("message", "Avatar updated"));
     }
 
+    @PostMapping("/avatar/upload")
+    public ResponseEntity<?> uploadAvatar(@CurrentUser String userId,
+                                          @RequestParam("file") MultipartFile file) {
+        String url = userService.uploadAvatar(userId, file);
+        return ResponseEntity.ok(Map.of("avatarUrl", url));
+    }
+
     @DeleteMapping("/avatar")
     public ResponseEntity<?> deleteAvatar(@CurrentUser String userId) {
         userService.deleteAvatar(userId);
@@ -62,3 +70,4 @@ public class UserController {
         return ResponseEntity.ok(Map.of("message", "Birthdate & gender updated"));
     }
 }
+

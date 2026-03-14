@@ -21,4 +21,9 @@ public interface ApplyFormSentToJobRepository extends JpaRepository<ApplyFormSen
     boolean existsByUserIdAndJobId(@Param("userId") String userId, @Param("jobId") Long jobId);
 
     void deleteByIdApplyFormId(Long applyFormId);
+
+    java.util.Optional<ApplyFormSentToJob> findByIdApplyFormId(Long applyFormId);
+
+    @Query("SELECT s FROM ApplyFormSentToJob s WHERE s.id.jobId = :jobId")
+    Page<ApplyFormSentToJob> findByJobId(@Param("jobId") Long jobId, Pageable pageable);
 }
