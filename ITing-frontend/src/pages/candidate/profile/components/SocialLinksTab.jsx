@@ -1,101 +1,47 @@
-import React, { useState } from 'react';
-import { FaPlusCircle, FaTimes, FaFacebook, FaTwitter, FaLinkedin, FaYoutube, FaInstagram, FaGlobe } from 'react-icons/fa';
+import React from 'react';
+import { FaLinkedin, FaGithub, FaFacebook, FaTwitter, FaGlobe, FaSave } from 'react-icons/fa';
 
 const SocialLinksTab = () => {
-  const [socials, setSocials] = useState([
-    { id: 1, platform: 'Facebook', url: '' },
-    { id: 2, platform: 'Twitter', url: '' },
-    { id: 3, platform: 'Instagram', url: '' },
-    { id: 4, platform: 'Youtube', url: '' },
-  ]);
+    const socialPlatforms = [
+        { id: 'linkedin', label: 'LinkedIn', icon: <FaLinkedin className="text-[#0077b5]" />, placeholder: 'https://linkedin.com/in/username' },
+        { id: 'github', label: 'GitHub', icon: <FaGithub className="text-[#333]" />, placeholder: 'https://github.com/username' },
+        { id: 'facebook', label: 'Facebook', icon: <FaFacebook className="text-[#1877f2]" />, placeholder: 'https://facebook.com/username' },
+        { id: 'twitter', label: 'Twitter (X)', icon: <FaTwitter className="text-[#1da1f2]" />, placeholder: 'https://twitter.com/username' },
+        { id: 'website', label: 'Website Cá nhân', icon: <FaGlobe className="text-gray-600" />, placeholder: 'https://yourwebsite.com' },
+    ];
 
-  const addSocial = () => {
-    setSocials([...socials, { id: Date.now(), platform: 'Facebook', url: '' }]);
-  };
+    return (
+        <div className="max-full bg-white">
+            <div className="mb-6">
+                <h3 className="text-lg font-semibold text-gray-800">Liên kết mạng xã hội</h3>
+                <p className="text-sm text-gray-500 mt-1">Gắn các liên kết này để nhà tuyển dụng có cái nhìn tổng quan hơn về bạn.</p>
+            </div>
 
-  const removeSocial = (id) => {
-    setSocials(socials.filter(item => item.id !== id));
-  };
-
-  const getIcon = (platform) => {
-      switch(platform) {
-          case 'Facebook': return <FaFacebook className="text-blue-600" />;
-          case 'Instagram': return <FaInstagram className="text-pink-600" />;
-          case 'Youtube': return <FaYoutube className="text-red-600" />;
-          case 'Twitter': return <FaTwitter className="text-sky-400" />;
-          case 'Linkedin': return <FaLinkedin className="text-blue-700" />;
-          default: return <FaGlobe className="text-gray-400" />;
-      }
-  }
-
-  return (
-    <div className="max-w-4xl">
-      <div className="space-y-6 mb-8">
-        {socials.map((item, index) => (
-          <div key={item.id}>
-             <label className="block text-gray-700 text-sm font-medium mb-1">{item.platform}</label>
-             <div className="flex gap-4">
-                {/* Dropdown Select */}
-                <div className="relative w-48">
-                    <div className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none text-lg">
-                        {getIcon(item.platform)}
+            <form className="space-y-5">
+                {socialPlatforms.map((platform) => (
+                    <div key={platform.id} className="relative">
+                        <label className="block text-sm font-medium text-gray-700 mb-1.5">{platform.label}</label>
+                        <div className="relative group">
+                            <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-xl">
+                                {platform.icon}
+                            </div>
+                            <input 
+                                type="text"
+                                className="block w-full pl-11 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:bg-white focus:border-transparent outline-none transition-all placeholder:text-gray-400 text-sm"
+                                placeholder={platform.placeholder}
+                            />
+                        </div>
                     </div>
-                    <select 
-                        className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-lg appearance-none bg-white focus:outline-none focus:border-[#3AB4E6]"
-                        value={item.platform}
-                        onChange={(e) => {
-                            const newSocials = [...socials];
-                            newSocials[index].platform = e.target.value;
-                            setSocials(newSocials);
-                        }}
-                    >
-                        <option value="Facebook">Facebook</option>
-                        <option value="Twitter">Twitter</option>
-                        <option value="Instagram">Instagram</option>
-                        <option value="Youtube">Youtube</option>
-                        <option value="Linkedin">Linkedin</option>
-                    </select>
+                ))}
+
+                <div className="pt-4">
+                    <button type="submit" className="w-full flex items-center justify-center gap-2 bg-[#3AB4E6] text-white px-6 py-3 rounded-xl font-bold hover:bg-[#2fa1cf] transition-all shadow-lg active:scale-[0.98]">
+                        <FaSave /> Cập nhật tất cả liên kết
+                    </button>
                 </div>
-
-                {/* Input URL */}
-                <div className="flex-1">
-                    <input 
-                        type="text" 
-                        placeholder="Profile link/url..." 
-                        value={item.url}
-                        className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:border-[#3AB4E6]"
-                        onChange={(e) => {
-                            const newSocials = [...socials];
-                            newSocials[index].url = e.target.value;
-                            setSocials(newSocials);
-                        }}
-                    />
-                </div>
-
-                {/* Delete Button */}
-                <button 
-                    onClick={() => removeSocial(item.id)}
-                    className="w-12 flex items-center justify-center bg-gray-100 rounded-lg hover:bg-gray-200 text-gray-500 transition-colors"
-                >
-                    <FaTimes />
-                </button>
-             </div>
-          </div>
-        ))}
-      </div>
-
-      <button 
-        onClick={addSocial}
-        className="w-full bg-gray-50 border border-gray-200 text-gray-700 font-bold py-3 rounded-lg flex items-center justify-center gap-2 hover:bg-gray-100 transition-colors mb-8"
-      >
-        <FaPlusCircle /> Thêm Link Mạng Xã Hội
-      </button>
-
-      <button className="bg-[#3AB4E6] text-white font-bold py-3 px-8 rounded-lg hover:bg-blue-500 transition-colors">
-        Lưu Thay Đổi
-      </button>
-    </div>
-  );
+            </form>
+        </div>
+    );
 };
 
 export default SocialLinksTab;
