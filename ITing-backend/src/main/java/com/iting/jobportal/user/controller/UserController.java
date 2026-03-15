@@ -1,13 +1,15 @@
 package com.iting.jobportal.user.controller; // Đảm bảo đúng package của bạn
 
-import com.iting.jobportal.user.controller.CurrentUser;
-import com.iting.jobportal.user.dto.*;
+import com.iting.jobportal.user.dto.request.*;
+import com.iting.jobportal.user.dto.response.UserProfileResponse;
 import com.iting.jobportal.user.service.UserService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
+
 
 @RestController
 @RequestMapping("/api/user/profile")
@@ -45,27 +47,11 @@ public class UserController {
         return ResponseEntity.ok(Map.of("message", "Avatar removed"));
     }
 
-    // ✅ Cập nhật Mô tả bằng Long ID
-    @PutMapping("/description")
-    public ResponseEntity<?> updateDescription(@CurrentUser Long userId,
-                                               @RequestBody UpdateDescriptionRequest req) {
-        userService.updateDescription(userId, req.getDescription());
-        return ResponseEntity.ok(Map.of("message", "Description updated"));
-    }
-
-    // ✅ Cập nhật Địa chỉ bằng Long ID
-    @PutMapping("/address")
-    public ResponseEntity<?> updateAddress(@CurrentUser Long userId,
-                                           @RequestBody UpdateAddressRequest req) {
-        userService.updateAddress(userId, req.getAddress());
-        return ResponseEntity.ok(Map.of("message", "Address updated"));
-    }
-
-    // ✅ Cập nhật Ngày sinh & Giới tính bằng Long ID
-    @PutMapping("/birth-gender")
-    public ResponseEntity<?> updateBirthGender(@CurrentUser Long userId,
-                                               @RequestBody UpdateBirthGenderRequest req) {
-        userService.updateBirthGender(userId, req.getBirthDate(), req.getGender());
-        return ResponseEntity.ok(Map.of("message", "Birthdate & gender updated"));
+    // ✅ Cập nhật thông tin cá nhân (không cho nhà tuyển dụng xem)
+    @PutMapping("/personal")
+    public ResponseEntity<?> updatePersonal(@CurrentUser Long userId,
+                                            @Valid @RequestBody PersonalUpdateDto dto) {
+        userService.updatePersonal(userId, dto);
+        return ResponseEntity.ok(Map.of("message", "Personal information updated"));
     }
 }

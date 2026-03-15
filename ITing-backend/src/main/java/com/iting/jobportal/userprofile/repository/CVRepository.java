@@ -8,5 +8,6 @@ import java.util.List;
 
 @Repository
 public interface CVRepository extends JpaRepository<CV, Long> {
-    List<CV> findByUserId(String userId);
+    List<CV> findByProfileId(Long profileId);
 }
+

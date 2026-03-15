@@ -1,11 +1,6 @@
 package com.iting.jobportal.userprofile.entity;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.Column;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -21,13 +16,29 @@ public class Experience {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "Id")
     private Long id;
 
-    @Column(name = "User_id", length = 255)
-    private String userId;
-    private String company;
-    private String role;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "profile_id", nullable = false)
+    @com.fasterxml.jackson.annotation.JsonIgnore
+    private UserProfile profile;
+
+    @Column(name = "Company_name", length = 255)
+    private String companyName;
+
+    @Column(name = "Position", length = 255)
+    private String position;
+
+    @Column(name = "Start_date")
     private LocalDate startDate;
+
+    @Column(name = "End_date")
     private LocalDate endDate;
+
+    @Column(name = "Is_current")
+    private Boolean isCurrent;
+
+    @Column(name = "Description", columnDefinition = "TEXT")
     private String description;
-}
+}

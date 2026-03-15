@@ -199,6 +199,7 @@ public class CompanyServiceImpl implements CompanyService {
                 company.getIndustry(),
                 company.getCompanyEmail(),
                 company.getCompanySize(),
+                company.getPhone(),
                 company.getRepresentativeName(),
                 company.getRepresentativeGender(),
                 company.getRepresentativePhone(),

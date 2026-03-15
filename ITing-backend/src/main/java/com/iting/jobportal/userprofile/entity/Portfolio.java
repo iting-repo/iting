@@ -1,10 +1,6 @@
 package com.iting.jobportal.userprofile.entity;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Column;
-import jakarta.persistence.Table;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
+
+import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -20,9 +16,14 @@ public class Portfolio {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "User_id", length = 255)
-    private String userId;
-    private String type; // FILE or LINK
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "profile_id", nullable = false)
+    @com.fasterxml.jackson.annotation.JsonIgnore
+    private UserProfile profile;
+
+    private String title;
     private String url;
     private String description;
 }
+
+

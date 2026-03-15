@@ -1,6 +1,6 @@
 package com.iting.jobportal.user.controller;
 
-import com.iting.jobportal.user.dto.UpdateUserRequest;
+import com.iting.jobportal.user.dto.request.UpdateUserRequest;
 import com.iting.jobportal.user.service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;

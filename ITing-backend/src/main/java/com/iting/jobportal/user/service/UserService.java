@@ -1,12 +1,7 @@
 package com.iting.jobportal.user.service;
-import com.iting.jobportal.user.dto.*;
-import com.iting.jobportal.user.entity.*;
-import com.iting.jobportal.user.entity.enums.Gender;
-import com.iting.jobportal.userprofile.entity.*;
-import org.springframework.web.multipart.MultipartFile;
-
-import java.time.LocalDate;
-import java.util.List;
+import com.iting.jobportal.user.dto.request.PersonalUpdateDto;
+import com.iting.jobportal.user.dto.request.UpdateUserRequest;
+import com.iting.jobportal.user.dto.response.UserProfileResponse;
 
 public interface UserService {
     // Thay String userId thành Long id để khớp với Account Id
@@ -14,13 +9,11 @@ public interface UserService {
 
     void updateBasic(Long id, UpdateUserRequest req);
 
+    void updatePersonal(Long id, PersonalUpdateDto dto);
+
     void updateAvatar(Long id, String url);
 
     void deleteAvatar(Long id);
-
-    void updateDescription(Long id, String description);
-
-    void updateAddress(Long id, String address);
-
-    void updateBirthGender(Long id, LocalDate birthDate, Gender gender);
 }
+
+

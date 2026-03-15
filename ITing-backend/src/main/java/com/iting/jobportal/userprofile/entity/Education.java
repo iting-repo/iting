@@ -1,11 +1,6 @@
 package com.iting.jobportal.userprofile.entity;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.Column;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -21,14 +16,32 @@ public class Education {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "Id")
     private Long id;
 
-    @Column(name = "User_id", length = 255)
-    private String userId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "profile_id", nullable = false)
+    @com.fasterxml.jackson.annotation.JsonIgnore
+    private UserProfile profile;
 
-    private String school;
+    @Column(name = "School_name", length = 255)
+    private String schoolName;
+
+    @Column(name = "Major", length = 255)
+    private String major;
+
+    @Column(name = "Area_of_study", length = 255)
+    private String areaOfStudy;
+
+    @Column(name = "Degree", length = 100)
     private String degree;
+
+    @Column(name = "Start_date")
     private LocalDate startDate;
+
+    @Column(name = "End_date")
     private LocalDate endDate;
+
+    @Column(name = "Description", columnDefinition = "TEXT")
     private String description;
-}
+}

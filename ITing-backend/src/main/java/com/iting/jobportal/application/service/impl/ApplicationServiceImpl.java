@@ -84,7 +84,7 @@ public class ApplicationServiceImpl implements ApplicationService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Không tìm thấy thông tin ứng viên"));
 
-        String applicantName = buildFullName(user.getFirstName(), user.getLastName());
+        String applicantName = user.getFullName();
         String cvTitle = (request.getCvId() != null) ? ("CV_" + request.getCvId()) : "Default_CV";
 
         // Entity ApplyForm phải được sửa trường userId thành kiểu Long

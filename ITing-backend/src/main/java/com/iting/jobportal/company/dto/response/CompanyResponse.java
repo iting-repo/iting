@@ -22,7 +22,7 @@ public class CompanyResponse {
     private String companyEmail;
     private String industry;
     private String companySize;
-
+    private String phone;
     private String representativeName;
     private String representativeGender;
     private String representativePhone;
@@ -50,6 +50,7 @@ public class CompanyResponse {
                 company.getCompanyEmail(),
                 company.getIndustry(),
                 company.getCompanySize(),
+                company.getPhone(),
                 company.getRepresentativeName(),
                 company.getRepresentativeGender(),
                 company.getRepresentativePhone(),

@@ -1,5 +1,6 @@
 package com.iting.jobportal.userprofile.entity;
 
+import com.iting.jobportal.userprofile.entity.enums.CvStatus;
 import jakarta.persistence.*;
 import lombok.*;
 import java.time.LocalDateTime;
@@ -16,12 +17,25 @@ public class CV {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "User_id", length = 255)
-    private String userId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "profile_id", nullable = false)
+    @com.fasterxml.jackson.annotation.JsonIgnore
+    private UserProfile profile;
 
-    @Column(name = "File_path", columnDefinition = "TEXT")
+    @Column(name = "Title", length = 255)
+    private String title;
+
+    @Column(name = "File_path", columnDefinition = "TEXT", nullable = false)
     private String fileUrl;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "Cv_status", length = 50)
+    private CvStatus cvStatus;
+
+    @Column(name = "Is_default")
+    private Boolean isDefault = false;
 
     @Column(name = "Upload_time")
     private LocalDateTime uploadedAt;
 }
+

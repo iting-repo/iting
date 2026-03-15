@@ -23,6 +23,7 @@ public class Account {
     @Column(name = "Id")
     private Long id;
 
+
     @Column(name = "Email", nullable = false, unique = true, length = 255)
     private String email;
 

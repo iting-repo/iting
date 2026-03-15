@@ -1,10 +1,6 @@
 package com.iting.jobportal.userprofile.entity;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Column;
-import jakarta.persistence.Table;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
+
+import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -18,10 +14,17 @@ public class Skill {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "Id")
     private Long id;
 
-    @Column(name = "User_id", length = 255)
-    private String userId;
-    private String skill;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "profile_id", nullable = false)
+    @com.fasterxml.jackson.annotation.JsonIgnore
+    private UserProfile profile;
+
+    @Column(name = "Name", length = 100)
+    private String name;
+
+    @Column(name = "Level", length = 50)
     private String level;
-}
+}

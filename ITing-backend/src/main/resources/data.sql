@@ -66,8 +66,8 @@ INSERT INTO Account (Id, Email, Password, Role, Status) VALUES
 (103, 'levanc@gmail.com', '$2a$10$XuCJKq/inhdGdYFp9d/TP.S7DnKtMERu7Nec5TWXHAxNbgFHEZwZ6', 'USER', 'BANNED'), -- Tài khoản này bị cấm
 (104, 'phamthid@gmail.com', '$2a$10$XuCJKq/inhdGdYFp9d/TP.S7DnKtMERu7Nec5TWXHAxNbgFHEZwZ6', 'USER', 'ACTIVE'),
 (105, 'hoangvane@gmail.com', '$2a$10$XuCJKq/inhdGdYFp9d/TP.S7DnKtMERu7Nec5TWXHAxNbgFHEZwZ6', 'USER', 'ACTIVE');
--- Admin accounts
-INSERT INTO Admin (id, full_name, active) VALUES
+-- admin_accounts accounts
+INSERT INTO admin_accounts (id, full_name, active) VALUES
 (1, 'System Admin', TRUE),
 (2, 'Super Admin', TRUE),
 (3, 'Content Moderator', TRUE);
@@ -82,41 +82,30 @@ INSERT INTO Ban_history (Target_account_id, Admin_account_id, Reason, Banned_at,
 
 -- Users (job seekers)
 INSERT INTO Users (
-    Id, Phone_num, Loc_id, Cv_embedding, F_name, L_name,
-    B_date, B_month, B_year, Sex, Avatar, Description,
-    Address, Last_update
+    Id, Phone_num, Loc_id, Cv_embedding, full_name, Avatar, Last_update
 ) VALUES
-      (101, '0901111111', 2, NULL, 'Nguyen Van', 'A', '1999-01-15', 1, 1999, 'MALE',
-       'https://i.pravatar.cc/150?img=1',
-       'Java Developer 2 năm kinh nghiệm, đam mê Spring Boot và microservices.',
-       'Quận 1, TP. Hồ Chí Minh', CURRENT_TIMESTAMP),
+      (101, '0901111111', 2, NULL, 'Nguyen Van A', 'https://i.pravatar.cc/150?img=1', CURRENT_TIMESTAMP),
+      (102, '0902222222', 2, NULL, 'Tran Thi B', 'https://i.pravatar.cc/150?img=5', CURRENT_TIMESTAMP),
+      (103, '0903333333', 1, NULL, 'Le Van C', 'https://i.pravatar.cc/150?img=3', CURRENT_TIMESTAMP),
+      (104, '0904444444', 2, NULL, 'Pham Thi D', 'https://i.pravatar.cc/150?img=9', CURRENT_TIMESTAMP),
+      (105, '0905555555', 1, NULL, 'Hoang Van E', 'https://i.pravatar.cc/150?img=11', CURRENT_TIMESTAMP);
 
-      (102, '0902222222', 2, NULL, 'Tran Thi', 'B', '1998-05-20', 5, 1998, 'FEMALE',
-       'https://i.pravatar.cc/150?img=5',
-       'Frontend Developer chuyên React và Vue.js, yêu thích UI/UX.',
-       'Quận 7, TP. Hồ Chí Minh', CURRENT_TIMESTAMP),
-
-      (103, '0903333333', 1, NULL, 'Le Van', 'C', '1997-11-10', 11, 1997, 'MALE',
-       'https://i.pravatar.cc/150?img=3',
-       'DevOps Engineer kinh nghiệm AWS, Docker, Kubernetes.',
-       'Cầu Giấy, Hà Nội', CURRENT_TIMESTAMP),
-
-      (104, '0904444444', 2, NULL, 'Pham Thi', 'D', '2000-03-25', 3, 2000, 'FEMALE',
-       'https://i.pravatar.cc/150?img=9',
-       'Full Stack Developer, Node.js và React.',
-       'Bình Thạnh, TP. Hồ Chí Minh', CURRENT_TIMESTAMP),
-
-      (105, '0905555555', 1, NULL, 'Hoang Van', 'E', '1996-07-08', 7, 1996, 'MALE',
-       'https://i.pravatar.cc/150?img=11',
-       'Data Engineer 3 năm kinh nghiệm Python và Spark.',
-       'Đống Đa, Hà Nội', CURRENT_TIMESTAMP);
+-- candidate_profiles
+INSERT INTO candidate_profiles (
+    id, headline, location, total_experience_years, education_summary, short_bio, employment_status, is_open_to_work, updated_at
+) VALUES
+      (101, 'Senior Java Backend Developer', 'Quận 1, TP. Hồ Chí Minh', 5, 'Bách Khoa TP.HCM', 'Đam mê xây dựng hệ thống scale lớn...', 'ACTIVELY_LOOKING', TRUE, CURRENT_TIMESTAMP),
+      (102, 'Frontend lead React/Vue', 'Quận 7, TP. Hồ Chí Minh', 4, 'Đại học FPT', 'Chuyên gia xây dựng UI/UX hiện đại...', 'OPEN_TO_OPPORTUNITIES', TRUE, CURRENT_TIMESTAMP),
+      (103, 'DevOps Engineer Professional', 'Cầu Giấy, Hà Nội', 3, 'Bách Khoa Hà Nội', 'Kinh nghiệm triển khai CI/CD, K8s...', 'NOT_LOOKING', FALSE, CURRENT_TIMESTAMP),
+      (104, 'Fullstack Developer (JS/Python)', 'Quận 2, TP. Hồ Chí Minh', 2, 'UIT', 'Thích làm việc với startup...', 'ACTIVELY_LOOKING', TRUE, CURRENT_TIMESTAMP),
+      (105, 'Data Scientist / ML Engineer', 'Đống Đa, Hà Nội', 6, 'Đại học Tổng Hợp', 'Nghiên cứu AI và Big Data...', 'FREELANCE_AVAILABLE', TRUE, CURRENT_TIMESTAMP);
 
 -- ============================================================================
 -- COMPANIES
 -- ============================================================================
 
 INSERT INTO Company (
-    Company_id, Name, Web_link, Address, Logo, Description,
+    company_id, Name, Web_link, Address, Logo, Description,
     Industry, Company_size, Phone, Representative_name,
     Tax_code, Verification_level,
     Company_info_update_status, Active
@@ -160,134 +149,41 @@ INSERT INTO Company (
 -- JOBS (with realistic embeddings from data_jobweb.sql)
 -- ============================================================================
 INSERT INTO Job (
-    Company_id,
-    Position,
-    Description,
-    Tech_required,
-    Min_salary,
-    Max_salary,
-    Status,
-    Job_type,
-    Experience_level,
-    Due_date,
-    Location,
-    Loc_id,
-    Min_accept,
-    Max_accept,
-    Current_accepted,
-    View_count,
-    Application_count,
-    Job_embedding
+    Id, Company_id, Position, Description, Tech_required, Job_type, Experience_level,
+    Min_salary, Max_salary, Status, Due_date, Location, Loc_id, Min_accept,
+    View_count, Application_count, Job_embedding
 ) VALUES
-
--- 1
-(11,'Senior Backend Developer',
- 'Chúng tôi tìm kiếm Senior Backend Developer thiết kế hệ thống xử lý lượng truy cập lớn. Yêu cầu 5+ năm kinh nghiệm Python, thành thạo FastAPI/Django, PostgreSQL, Redis, Microservices, Docker, CI/CD.',
- 'Python, FastAPI, PostgreSQL, Redis, Docker, Microservices',
- 25000000,45000000,'ACTIVE','FULL_TIME','SENIOR',
- '2026-03-31','Hà Nội',1,'Bachelor in CS',5,0,150,12,
- '[-0.030870257,0.027029185,0.0047450466,0.0055392203,0.0010084402,0.006234577,0.036056675,0.00900157,-0.00851098,0.057104517]'),
-
--- 2
-(12,'Backend Engineer',
- 'Xây dựng RESTful APIs cho ứng dụng fintech, bảo mật và hiệu suất cao. Yêu cầu 3+ năm Node.js/TypeScript, MongoDB, AWS.',
- 'Node.js, Express, MongoDB, AWS, TypeScript',
- 20000000,35000000,'ACTIVE','FULL_TIME','MID_LEVEL',
- '2026-03-31','TP. Hồ Chí Minh',2,'Bachelor degree',3,0,85,5,
- '[-0.008350043,0.028674584,-0.0085813,-0.03028236,0.02613937,0.02265706,0.030086936,-0.014348418,0.028914949,0.059459884]'),
-
--- 3
-(11,'Frontend Developer (React)',
- 'Tạo web responsive, làm việc với team UX. Yêu cầu 2+ năm React, TypeScript, Redux/Zustand.',
- 'React, TypeScript, Redux, TailwindCSS, Vite',
- 18000000,32000000,'ACTIVE','FULL_TIME','JUNIOR',
- '2026-04-15','TP. Hồ Chí Minh',2,'Bachelor in IT',4,0,210,25,
- '[0.016776728,0.024641637,0.0030576934,0.009415475,0.023797229,-0.017801192,0.0027535986,0.01174786,-0.033685345,0.021833766]'),
-
--- 4
-(13,'DevOps Engineer',
- 'Quản lý infrastructure, CI/CD pipelines cloud-native. Yêu cầu AWS, Kubernetes, Terraform.',
- 'AWS, Docker, Kubernetes, Terraform, Jenkins, Linux',
- 30000000,50000000,'ACTIVE','REMOTE','SENIOR',
- '2026-03-25','Hà Nội',1,'3+ years experience',2,0,45,3,
- '[0.012345678,-0.023456789,0.034567890,-0.045678901,0.056789012,-0.067890123,0.078901234,-0.089012345,0.090123456,-0.001234567]'),
-
--- 5
-(14,'Mobile Developer (Flutter)',
- 'Phát triển App đa nền tảng cho hàng triệu người dùng.',
- 'Flutter, Dart, Firebase, RESTful API, Git',
- 22000000,38000000,'ACTIVE','FULL_TIME','MID_LEVEL',
- '2026-04-10','Đà Nẵng',3,'2+ years Flutter/RN',3,0,95,12,
- '[0.011111111,0.022222222,0.033333333,0.044444444,0.055555555,0.066666666,0.077777777,0.088888888,0.099999999,0.000000000]'),
-
--- 6
-(11,'AI/ML Engineer',
- 'Nghiên cứu giải pháp AI cho xử lý ngôn ngữ tiếng Việt (NLP).',
- 'Python, TensorFlow, PyTorch, NLP, Computer Vision',
- 35000000,60000000,'ACTIVE','FULL_TIME','EXPERT',
- '2026-04-20','Hà Nội',1,'Bachelor + 4 years',2,0,300,20,
- '[0.098765432,0.087654321,0.076543210,0.065432109,0.054321098,0.043210987,0.032109876,0.021098765,0.010987654,0.009876543]'),
-
--- 7
-(12,'Data Engineer',
- 'Xây dựng và maintain ETL pipelines cho Data Warehouse.',
- 'Python, Spark, Airflow, SQL, AWS/GCP',
- 24000000,42000000,'ACTIVE','FULL_TIME','MID_LEVEL',
- '2026-03-30','TP. Hồ Chí Minh',2,'1-2 years experience',3,0,110,9,
- '[0.055555555,0.044444444,0.033333333,0.022222222,0.011111111,0.066666666,0.077777777,0.088888888,0.099999999,0.000111111]'),
-
--- 8
-(13,'QA Engineer',
- 'Đảm bảo chất lượng sản phẩm, automation testing web.',
- 'Manual Testing, Automation Testing, Selenium, Java/Python',
- 12000000,22000000,'ACTIVE','FULL_TIME','JUNIOR',
- '2026-04-05','Cần Thơ',5,'Fresher/Junior',5,0,60,30,
- '[0.001111111,0.002222222,0.003333333,0.004444444,0.005555555,0.006666666,0.007777777,0.008888888,0.009999999,0.000011111]'),
-
--- 9
-(14,'Java Backend Developer',
- 'Phát triển microservices cho hệ thống E-commerce.',
- 'Java, Spring Boot, Microservices, MySQL, Redis, Kafka',
- 28000000,48000000,'ACTIVE','FULL_TIME','SENIOR',
- '2026-04-12','Hà Nội',1,'3+ years Java',4,0,180,14,
- '[0.012121212,0.023232323,0.034343434,0.045454545,0.056565656,0.067676767,0.078787878,0.089898989,0.090909090,0.001010101]'),
-
--- 10
-(15,'Tech Lead',
- 'Dẫn dắt team 8-10 người, thiết kế kiến trúc hệ thống phân tán.',
- 'System Design, Distributed Systems, Leadership, Mentoring',
- 45000000,80000000,'ACTIVE','FULL_TIME','LEAD',
- '2026-04-18','TP. Hồ Chí Minh',2,'5+ years experience',1,0,450,5,
- '[0.099999999,0.088888888,0.077777777,0.066666666,0.055555555,0.044444444,0.033333333,0.022222222,0.011111111,0.000999999]');
+(1, 11, 'Senior Backend Developer', 'Thiết kế hệ thống high-traffic...', 'Python, FastAPI, Redis', 'FULL_TIME', 'SENIOR', 25000000, 45000000, 'ACTIVE', '2026-03-31', 'Hà Nội', 1, '5+ years', 150, 12, NULL),
+(2, 12, 'Backend Engineer', 'Xây dựng RESTful APIs fintech...', 'Node.js, MongoDB, AWS', 'FULL_TIME', 'MID_LEVEL', 20000000, 35000000, 'ACTIVE', '2026-03-31', 'TP. Hồ Chí Minh', 2, '3+ years', 85, 5, NULL),
+(3, 11, 'Frontend Developer (React)', 'Tạo web responsive UI/UX...', 'React, TypeScript, Redux', 'FULL_TIME', 'JUNIOR', 18000000, 32000000, 'ACTIVE', '2026-04-15', 'TP. Hồ Chí Minh', 2, '2+ years', 210, 25, NULL),
+(4, 13, 'DevOps Engineer', 'Quản lý infra CI/CD cloud...', 'AWS, Kubernetes, Terraform', 'FULL_TIME', 'SENIOR', 30000000, 50000000, 'ACTIVE', '2026-03-25', 'Hà Nội', 1, '4+ years', 45, 3, NULL),
+(5, 14, 'Mobile Developer (Flutter)', 'Phát triển App đa nền tảng...', 'Flutter, Dart, Firebase', 'FULL_TIME', 'MID_LEVEL', 22000000, 38000000, 'ACTIVE', '2026-04-10', 'Đà Nẵng', 3, '2+ years', 95, 12, NULL),
+(6, 11, 'AI/ML Engineer', 'Nghiên cứu giải pháp NLP...', 'Python, TensorFlow, PyTorch', 'FULL_TIME', 'EXPERT', 35000000, 60000000, 'ACTIVE', '2026-04-20', 'Hà Nội', 1, '4+ years', 300, 20, NULL),
+(7, 12, 'Data Engineer', 'Xây dựng ETL pipelines...', 'Python, Spark, Airflow', 'FULL_TIME', 'MID_LEVEL', 24000000, 42000000, 'ACTIVE', '2026-03-30', 'TP. Hồ Chí Minh', 2, '1-2 years', 110, 9, NULL),
+(8, 13, 'QA Engineer', 'Automation testing web...', 'Selenium, Java, Python', 'FULL_TIME', 'JUNIOR', 12000000, 22000000, 'ACTIVE', '2026-04-05', 'Cần Thơ', 5, 'Fresher', 60, 30, NULL),
+(9, 14, 'Java Backend Developer', 'Microservices E-commerce...', 'Java, Spring Boot, MySQL', 'FULL_TIME', 'SENIOR', 28000000, 48000000, 'ACTIVE', '2026-04-12', 'Hà Nội', 1, '3+ years', 180, 14, NULL),
+(10,15, 'Tech Lead', 'Dẫn dắt team 8-10 người...', 'System Design, Leadership', 'FULL_TIME', 'LEAD', 45000000, 80000000, 'ACTIVE', '2026-04-18', 'TP. Hồ Chí Minh', 2, '5+ years', 450, 5, NULL);
 
 -- CV DATA
--- ============================================================================
-
-INSERT INTO CV (User_id, Title, File_path, Upload_time, Cv_status) VALUES
-                                                                       (1, 'Java Developer CV - Nguyen Van A', '/uploads/cv/nguyenvana_cv_2024.pdf', '2024-01-15 10:30:00', 'Active'),
-                                                                       (2, 'Frontend Developer CV - Tran Thi B', '/uploads/cv/tranthib_cv_2024.pdf', '2024-03-10 14:20:00', 'Active'),
-                                                                       (3, 'DevOps Engineer Resume - Le Van C', '/uploads/cv/levanc_resume_2024.pdf', '2024-02-28 09:15:00', 'Active'),
-                                                                       (4, 'Full Stack Developer CV', '/uploads/cv/phamthid_cv_2024.pdf', '2024-04-05 16:45:00', 'Active'),
-                                                                       (5, 'Data Engineer CV - Hoang Van E', '/uploads/cv/hoangvane_cv_2024.pdf', '2024-03-20 11:00:00', 'Active'),
-                                                                       (6, 'Mobile Developer CV', '/uploads/cv/nguyenthif_cv_2024.pdf', '2024-05-01 13:30:00', 'Active'),
-                                                                       (7, 'QA Engineer CV - Vu Van G', '/uploads/cv/vuvang_cv_2024.pdf', '2024-02-15 10:00:00', 'Active'),
-                                                                       (8, 'Fresher Backend CV', '/uploads/cv/buithii_cv_2024.pdf', '2024-06-01 08:30:00', 'Active'),
-                                                                       (9, 'Senior Backend Developer CV', '/uploads/cv/ngovank_cv_2024.pdf', '2024-01-05 15:20:00', 'Active');
+INSERT INTO CV (profile_id, Title, File_path, Upload_time, Cv_status, Is_default) VALUES
+(101, 'Java Developer CV', '/uploads/cv/cv101.pdf', CURRENT_TIMESTAMP, 'ACTIVE', TRUE),
+(102, 'Frontend Lead CV', '/uploads/cv/cv102.pdf', CURRENT_TIMESTAMP, 'ACTIVE', TRUE),
+(103, 'DevOps Pro CV', '/uploads/cv/cv103.pdf', CURRENT_TIMESTAMP, 'ACTIVE', TRUE),
+(104, 'Fullstack Dev CV', '/uploads/cv/cv104.pdf', CURRENT_TIMESTAMP, 'ACTIVE', TRUE),
+(105, 'ML Engineer CV', '/uploads/cv/cv105.pdf', CURRENT_TIMESTAMP, 'ACTIVE', TRUE);
 -- ============================================================================
 -- COMPANY-JOB RELATIONSHIPS
 -- ============================================================================
 
-INSERT INTO Company_upload_job (Job_id, Company_id, Admin_id, Time) VALUES
-(1, 1, 1, '2026-03-01 09:00:00'),
-(2, 6, 1, '2026-03-01 10:30:00'),
-(3, 2, 1, '2026-03-02 14:00:00'),
-(4, 1, 1, '2026-03-03 11:00:00'),
-(5, 7, 1, '2026-03-04 15:30:00'),
-(6, 8, 1, '2026-03-05 09:30:00'),
-(7, 5, 1, '2026-03-06 13:00:00'),
-(8, 9, 1, '2026-03-07 10:00:00'),
-(9, 4, 1, '2026-03-08 16:00:00'),
-(10, 2, 1, '2026-03-09 11:30:00');
+INSERT INTO Company_upload_job (job_id, company_id, admin_id, time) VALUES
+(1, 11, 1, '2026-03-01 09:00:00'),
+(2, 12, 1, '2026-03-01 10:30:00'),
+(3, 11, 1, '2026-03-02 14:00:00'),
+(4, 13, 1, '2026-03-03 11:00:00'),
+(5, 14, 1, '2026-03-04 15:30:00'),
+(6, 11, 1, '2026-03-05 09:30:00'),
+(7, 12, 1, '2026-03-06 13:00:00'),
+(10, 12, 1, '2026-03-09 11:30:00');
 
 -- ============================================================================
 -- NOTIFICATIONS
@@ -309,134 +205,91 @@ INSERT INTO Notification (Id, Content, Time) VALUES
 -- USER-COMPANY INTERACTIONS
 -- ============================================================================
 
--- User Follow Company
-INSERT INTO User_follow_company
-(User_id, Company_id, Notification_id, Follow_date)
-VALUES
-    (1, 1, 1, '2026-02-15 10:00:00'),
-    (1, 2, NULL, '2026-02-20 14:30:00'),
-    (1, 6, 2, '2026-02-25 09:15:00'),
+-- User Save Jobs
+INSERT INTO user_save_job (job_id, user_id) VALUES
+(1, 101),
+(2, 102),
+(3, 101),
+(4, 103),
+(5, 104);
 
-    (2, 2, 3, '2026-02-18 11:00:00'),
-    (2, 5, NULL, '2026-02-22 16:45:00'),
-
-    (3, 1, NULL, '2026-02-16 08:30:00'),
-    (3, 3, NULL, '2026-02-28 13:20:00'),
-
-    (4, 7, 5, '2026-03-01 10:00:00'),
-
-    (5, 4, NULL, '2026-02-19 15:30:00'),
-    (5, 5, NULL, '2026-02-26 12:00:00');
--- User Save Job
-INSERT INTO User_save_job (User_id, Job_id) VALUES
-                                                (1, 1),
-                                                (1, 9),
-                                                (2, 3),
-                                                (2, 10),
-                                                (3, 4),
-                                                (4, 2),
-                                                (4, 3),
-                                                (5, 7),
-                                                (6, 5),
-                                                (7, 8),
-                                                (10, 1),
-                                                (10, 9);
+-- User Follow Companies
+INSERT INTO User_follow_company (User_id, Company_id) VALUES
+(101, 11),
+(101, 12),
+(102, 11),
+(103, 13);
 
 -- User Contact Company (Messages)
 INSERT INTO User_contact_company (User_id, Company_id, Time) VALUES
-                                                                 (1, 1, '2026-03-10 09:30:00'),
-                                                                 (2, 2, '2026-03-11 14:15:00'),
-                                                                 (3, 1, '2026-03-12 10:45:00'),
-                                                                 (4, 6, '2026-03-13 16:20:00'),
-                                                                 (5, 5, '2026-03-14 11:00:00');
+(101, 11, '2026-03-10 09:30:00'),
+(102, 12, '2026-03-11 14:15:00'),
+(103, 13, '2026-03-12 10:45:00');
+
+-- No redundant section needed
 
 -- ============================================================================
 -- JOB APPLICATIONS
 -- ============================================================================
 
 -- Apply Forms
-INSERT INTO Apply_form (Id, User_id, Cv_title, Applicant_name, Introduction) VALUES
-                                                                                 (1, 1, 'Java Developer CV - Nguyen Van A', 'Nguyen Van A',
-                                                                                  'Xin chào, tôi là Nguyen Van A với 2 năm kinh nghiệm phát triển Java Spring Boot. Tôi rất hứng thú với vị trí Senior Backend Developer tại FPT Software và tin rằng kỹ năng của tôi phù hợp với yêu cầu công việc.'),
+INSERT INTO Apply_form (Id, user_id, Cv_title, Applicant_name, Introduction) VALUES
+(1, 101, 'Java Developer CV', 'Nguyen Van A', 'Đam mê backend...'),
+(2, 102, 'Frontend lead CV', 'Tran Thi B', 'Thích UX/UI...'),
+(3, 103, 'DevOps Pro CV', 'Le Van C', 'Kinh nghiệm infra...'),
+(4, 104, 'Fullstack Dev CV', 'Pham Thi D', 'Sẵn sàng học hỏi...'),
+(5, 105, 'ML Engineer CV', 'Hoang Van E', 'Yêu AI...');
 
-                                                                                 (2, 2, 'Frontend Developer CV', 'Tran Thi B',
-                                                                                  'Chào team VNG, tôi là Frontend Developer với đam mê về React và UX. Tôi đã theo dõi các sản phẩm của VNG và rất mong muốn được đóng góp cho sự phát triển của Zalo.'),
-
-                                                                                 (3, 3, 'DevOps Engineer Resume', 'Le Van C',
-                                                                                  'Xin chào, với kinh nghiệm quản lý infrastructure AWS và Kubernetes, tôi tin rằng mình có thể đóng góp tích cực cho đội DevOps của FPT Software.'),
-
-                                                                                 (4, 4, 'Full Stack Developer CV', 'Pham Thi D',
-                                                                                  'Hello MoMo team, I am excited about the Backend Engineer position. My experience with Node.js and payment systems aligns well with the requirements.'),
-
-                                                                                 (5, 5, 'Data Engineer CV', 'Hoang Van E',
-                                                                                  'Xin chào Shopee, tôi có 3 năm kinh nghiệm xây dựng data pipelines với Python và Spark.'),
-
-                                                                                 (6, 6, 'Mobile Developer CV', 'Nguyen Thi F',
-                                                                                  'Chào Grab Vietnam, tôi rất hứng thú với vị trí Mobile Developer. Kinh nghiệm Flutter của tôi có thể đóng góp cho các dự án mobile.'),
-
-                                                                                 (7, 10, 'Senior Backend Developer CV', 'Ngo Van K',
-                                                                                  'Với 7 năm kinh nghiệm Java Spring và microservices, tôi tin rằng mình phù hợp với vị trí Java Backend Developer tại Tiki.');
 -- Apply Form Sent to Job
 INSERT INTO Apply_form_user_to_job (Job_id, Apply_form_id, Time_sent) VALUES
-                                                                          (1, 1, '2026-03-10 10:00:00'),
-                                                                          (3, 2, '2026-03-11 15:00:00'),
-                                                                          (4, 3, '2026-03-12 11:30:00'),
-                                                                          (2, 4, '2026-03-13 17:00:00'),
-                                                                          (7, 5, '2026-03-14 12:00:00'),
-                                                                          (5, 6, '2026-03-15 09:30:00'),
-                                                                          (9, 7, '2026-03-16 14:30:00'),
-                                                                          (1, 7, '2026-03-16 14:45:00');
+(1, 1, CURRENT_TIMESTAMP),
+(2, 2, CURRENT_TIMESTAMP),
+(3, 3, CURRENT_TIMESTAMP),
+(4, 4, CURRENT_TIMESTAMP),
+(5, 5, CURRENT_TIMESTAMP);
 
 -- ============================================================================
 -- USER PROFILE COMPONENTS
 -- ============================================================================
 
 -- Education
-INSERT INTO Education (User_id) VALUES
-                                    (1),
-                                    (2),
-                                    (3),
-                                    (4),
-                                    (5),
-                                    (6),
-                                    (7),
-                                    (8),
-                                    (9),
-                                    (10);
+INSERT INTO Education (profile_id, School_name, Major, Start_date, End_date, Description) VALUES
+(101, 'Đại học Bách Khoa TP.HCM', 'Khoa học máy tính', '2015-09-01', '2019-06-30', 'Tốt nghiệp loại giỏi.'),
+(102, 'Đại học FPT', 'Kỹ thuật phần mềm', '2016-09-01', '2020-06-30', 'Học bổng 100%.'),
+(103, 'Đại học Bách Khoa Hà Nội', 'Hệ thống thông tin', '2014-09-01', '2018-06-30', 'Tham gia nghiên cứu Lab ATTT.');
 
 -- Certificate
-INSERT INTO Certificate (User_id) VALUES
-                                      (1),
-                                      (2),
-                                      (3),
-                                      (5),
-                                      (6),
-                                      (7),
-                                      (10);
+INSERT INTO Certificate (profile_id, Title, Issuing_organization, Issue_date, Expiration_date) VALUES
+(101, 'AWS Certified Solutions Architect', 'Amazon Web Services', '2022-01-01', '2025-01-01'),
+(102, 'Google Professional Cloud Architect', 'Google Cloud', '2021-06-15', NULL),
+(103, 'Certified Kubernetes Administrator (CKA)', 'CNCF', '2023-01-01', '2026-01-01');
 
 -- Skill
-INSERT INTO Skill (User_id) VALUES
-                                (1),
-                                (2),
-                                (3),
-                                (4),
-                                (5),
-                                (6),
-                                (7),
-                                (8),
-                                (9),
-                                (10);
+INSERT INTO Skill (profile_id, Name, Level) VALUES
+(101, 'Java', 'Expert'),
+(101, 'Spring Boot', 'Expert'),
+(102, 'React', 'Advanced'),
+(102, 'Typescript', 'Advanced'),
+(103, 'Kubernetes', 'Advanced'),
+(103, 'Docker', 'Expert');
 
 -- Experience
-INSERT INTO Experience (User_id) VALUES
-                                     (1),
-                                     (2),
-                                     (3),
-                                     (4),
-                                     (5),
-                                     (6),
-                                     (7),
-                                     (10);
+INSERT INTO Experience (profile_id, Company_name, Position, Start_date, End_date, Description) VALUES
+(101, 'FPT Software', 'Senior Developer', '2019-06-01', CURRENT_DATE, 'Dẫn dắt team phát triển microservices.'),
+(102, 'VNG Corporation', 'Frontend Lead', '2020-07-01', CURRENT_DATE, 'Phát triển UI cho Zalo Pay.'),
+(103, 'VinGroup', 'DevOps Engineer', '2018-08-01', '2022-12-31', 'Triển khai hạ tầng Cloud cho VinID.');
+
+-- SocialLink
+INSERT INTO social_link (profile_id, Platform, Url) VALUES
+(101, 'LINKEDIN', 'https://linkedin.com/in/nguyenvana'),
+(101, 'GITHUB', 'https://github.com/nguyenvana'),
+(102, 'LINKEDIN', 'https://linkedin.com/in/tranthib'),
+(102, 'PORTFOLIO', 'https://tranthib.dev');
+
+-- Portfolio
+INSERT INTO Portfolio (profile_id, Url, Title, Description) VALUES
+(101, 'https://nguyenvana.blog', 'My Tech Blog', 'Chia sẻ kiến thức về backend.'),
+(102, 'https://github.com/tranthib/my-ui-lib', 'My UI Library', 'Thư viện React components tự xây dựng.');
 
 -- ============================================================================
 -- CATEGORIES & STATIC CONTENT
@@ -474,8 +327,8 @@ INSERT INTO report_accounts (reported_user_id, reporter_id, report_type, violati
 -- SELECT setval('web_info_id_seq', (SELECT MAX(Id) FROM web_info));
 -- SELECT setval('vn_location_loc_id_seq', (SELECT MAX(Loc_id) FROM VN_location));
 -- SELECT setval('account_id_seq', (SELECT MAX(Id) FROM Account));
--- SELECT setval('admin_admin_id_seq', (SELECT MAX(Admin_id) FROM Admin));
--- SELECT setval('company_company_id_seq', (SELECT MAX(Company_id) FROM Company));
+-- SELECT setval('admin_accounts_id_seq', (SELECT MAX(id) FROM admin_accounts));
+-- SELECT setval('company_company_id_seq', (SELECT MAX(company_id) FROM Company));
 -- SELECT setval('job_id_seq', (SELECT MAX(Id) FROM Job));
 -- SELECT setval('notification_id_seq', (SELECT MAX(Id) FROM Notification));
 -- SELECT setval('user_contact_company_id_seq', (SELECT MAX(Id) FROM User_contact_company));
@@ -616,6 +469,14 @@ UPDATE Users SET Cv_embedding = '[-0.03413896,0.06033864,0.00613062,0.03996229,-
 
 
 
+-- contact_info
+INSERT INTO contact_info (userId, phone, email)
+VALUES
+('101', '0901111111', 'nguyenvana@gmail.com'),
+('102', '0902222222', 'tranthib@gmail.com'),
+('103', '0903333333', 'levanc@gmail.com'),
+('104', '0904444444', 'phamthid@gmail.com'),
+('105', '0905555555', 'hoangvane@gmail.com');
 -- ============================================================================
 -- Embedding generation complete!
 -- Total job embeddings:  10

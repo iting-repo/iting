@@ -1,4 +1,4 @@
-package com.iting.jobportal.user.dto;
+package com.iting.jobportal.user.dto.request;
 
 import com.iting.jobportal.user.entity.enums.Gender;
 import lombok.Data;

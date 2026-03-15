@@ -14,12 +14,32 @@ public class Certificate {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "Id")
     private Long id;
 
-    @Column(name = "User_id", length = 255)
-    private String userId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "profile_id", nullable = false)
+    @com.fasterxml.jackson.annotation.JsonIgnore
+    private UserProfile profile;
 
-    private String name;          // Tên chứng chỉ
-    private String organization;  // Tổ chức cấp
-    private LocalDate date;       // Ngày cấp
-}
+    @Column(name = "Title", length = 255)
+    private String title;
+
+    @Column(name = "Issuing_organization", length = 255)
+    private String issuingOrganization;
+
+    @Column(name = "Issue_date")
+    private LocalDate issueDate;
+
+    @Column(name = "Expiration_date")
+    private LocalDate expirationDate;
+
+    @Column(name = "Credential_id", length = 255)
+    private String credentialId;
+
+    @Column(name = "Credential_url", columnDefinition = "TEXT")
+    private String credentialUrl;
+
+    @Column(name = "Does_not_expire")
+    private Boolean doesNotExpire;
+}

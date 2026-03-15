@@ -1,105 +1,52 @@
 package com.iting.jobportal.userprofile.controller;
 
+import com.iting.jobportal.user.controller.CurrentUser;
 import com.iting.jobportal.userprofile.dto.request.*;
 import com.iting.jobportal.userprofile.entity.*;
 import com.iting.jobportal.userprofile.service.UserProfileService;
-import com.iting.jobportal.user.controller.CurrentUser;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.server.ResponseStatusException;
-import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/api/user/profile")
+@RequestMapping("/api/user/professional-profile")
 @RequiredArgsConstructor
 public class UserProfileController {
 
     private final UserProfileService profileService;
 
-    private String resolveUserId(String currentUserId, String userId) {
-        String resolved = currentUserId != null ? currentUserId : userId;
-        if (resolved == null || resolved.isBlank()) {
-            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Missing userId (no authenticated user)");
-        }
-        return resolved;
-    }
-
     private ResponseEntity<?> ok(String msg) {
         return ResponseEntity.ok(Map.of("message", msg));
     }
 
-    // ==========================================================
-    // CONTACT INFO
-    // ==========================================================
-    @PutMapping("/contact")
-    public ResponseEntity<?> updateContact(
-            @CurrentUser String currentUserId,
-            @RequestParam(required = false) String userId,
-            @RequestBody ContactInfoRequest req
-    ) {
-        profileService.updateContact(resolveUserId(currentUserId, userId), req);
-        return ok("Contact updated");
+    @GetMapping
+    public ResponseEntity<UserProfile> getProfile(@CurrentUser Long userId) {
+        return ResponseEntity.ok(profileService.getProfile(userId));
     }
 
-    // ==========================================================
-    // SOCIAL LINKS
-    // ==========================================================
-    @GetMapping("/social")
-    public List<SocialLink> getSocialLinks(
-            @CurrentUser String currentUserId,
-            @RequestParam(required = false) String userId
-    ) {
-        return profileService.getSocialLinks(resolveUserId(currentUserId, userId));
+    @PutMapping
+    public ResponseEntity<?> updateProfile(@CurrentUser Long userId, @Valid @RequestBody UserProfileUpdateDto dto) {
+        profileService.updateProfile(userId, dto);
+        return ok("Professional profile updated");
     }
 
-    @PostMapping("/social")
-    public SocialLink addSocial(
-            @CurrentUser String currentUserId,
-            @RequestParam(required = false) String userId,
-            @RequestBody SocialLinkRequest req
-    ) {
-        return profileService.addSocialLink(resolveUserId(currentUserId, userId), req);
-    }
-
-    @PutMapping("/social/{id}")
-    public ResponseEntity<?> updateSocial(@PathVariable Long id, @RequestBody SocialLinkRequest req) {
-        profileService.updateSocialLink(id, req);
-        return ok("Social link updated");
-    }
-
-    @DeleteMapping("/social/{id}")
-    public ResponseEntity<?> deleteSocial(@PathVariable Long id) {
-        profileService.deleteSocialLink(id);
-        return ok("Social link deleted");
-    }
-
-    // ==========================================================
-    // EDUCATION
-    // ==========================================================
-    @GetMapping("/educations")
-    public List<Education> getEducations(
-            @CurrentUser String currentUserId,
-            @RequestParam(required = false) String userId
-    ) {
-        return profileService.getEducations(resolveUserId(currentUserId, userId));
+    // Education
+    @GetMapping("/education")
+    public List<Education> getEducations(@CurrentUser Long userId) {
+        return profileService.getEducations(userId);
     }
 
     @PostMapping("/education")
-    public Education addEducation(
-            @CurrentUser String currentUserId,
-            @RequestParam(required = false) String userId,
-            @RequestBody EducationRequest req
-    ) {
-        return profileService.addEducation(resolveUserId(currentUserId, userId), req);
+    public Education addEducation(@CurrentUser Long userId, @Valid @RequestBody EducationRequest req) {
+        return profileService.addEducation(userId, req);
     }
 
     @PutMapping("/education/{id}")
-    public ResponseEntity<?> updateEducation(@PathVariable Long id, @RequestBody EducationRequest req) {
+    public ResponseEntity<?> updateEducation(@PathVariable Long id, @Valid @RequestBody EducationRequest req) {
         profileService.updateEducation(id, req);
         return ok("Education updated");
     }
@@ -110,28 +57,19 @@ public class UserProfileController {
         return ok("Education deleted");
     }
 
-    // ==========================================================
-    // SKILLS
-    // ==========================================================
+    // Skills
     @GetMapping("/skills")
-    public List<Skill> getSkills(
-            @CurrentUser String currentUserId,
-            @RequestParam(required = false) String userId
-    ) {
-        return profileService.getSkills(resolveUserId(currentUserId, userId));
+    public List<Skill> getSkills(@CurrentUser Long userId) {
+        return profileService.getSkills(userId);
     }
 
     @PostMapping("/skills")
-    public Skill addSkill(
-            @CurrentUser String currentUserId,
-            @RequestParam(required = false) String userId,
-            @RequestBody SkillRequest req
-    ) {
-        return profileService.addSkill(resolveUserId(currentUserId, userId), req);
+    public Skill addSkill(@CurrentUser Long userId, @Valid @RequestBody SkillRequest req) {
+        return profileService.addSkill(userId, req);
     }
 
     @PutMapping("/skills/{id}")
-    public ResponseEntity<?> updateSkill(@PathVariable Long id, @RequestBody SkillRequest req) {
+    public ResponseEntity<?> updateSkill(@PathVariable Long id, @Valid @RequestBody SkillRequest req) {
         profileService.updateSkill(id, req);
         return ok("Skill updated");
     }
@@ -142,20 +80,19 @@ public class UserProfileController {
         return ok("Skill deleted");
     }
 
-    // ==========================================================
-    // CERTIFICATES
-    // ==========================================================
+    // Certificate
+    @GetMapping("/certificates")
+    public List<Certificate> getCertificates(@CurrentUser Long userId) {
+        return profileService.getCertificates(userId);
+    }
+
     @PostMapping("/certificates")
-    public Certificate addCertificate(
-            @CurrentUser String currentUserId,
-            @RequestParam(required = false) String userId,
-            @RequestBody CertificateRequest req
-    ) {
-        return profileService.addCertificate(resolveUserId(currentUserId, userId), req);
+    public Certificate addCertificate(@CurrentUser Long userId, @Valid @RequestBody CertificateRequest req) {
+        return profileService.addCertificate(userId, req);
     }
 
     @PutMapping("/certificates/{id}")
-    public ResponseEntity<?> updateCertificate(@PathVariable Long id, @RequestBody CertificateRequest req) {
+    public ResponseEntity<?> updateCertificate(@PathVariable Long id, @Valid @RequestBody CertificateRequest req) {
         profileService.updateCertificate(id, req);
         return ok("Certificate updated");
     }
@@ -166,20 +103,19 @@ public class UserProfileController {
         return ok("Certificate deleted");
     }
 
-    // ==========================================================
-    // EXPERIENCE
-    // ==========================================================
+    // Experience
+    @GetMapping("/experience")
+    public List<Experience> getExperiences(@CurrentUser Long userId) {
+        return profileService.getExperiences(userId);
+    }
+
     @PostMapping("/experience")
-    public Experience addExperience(
-            @CurrentUser String currentUserId,
-            @RequestParam(required = false) String userId,
-            @RequestBody ExperienceRequest req
-    ) {
-        return profileService.addExperience(resolveUserId(currentUserId, userId), req);
+    public Experience addExperience(@CurrentUser Long userId, @Valid @RequestBody ExperienceRequest req) {
+        return profileService.addExperience(userId, req);
     }
 
     @PutMapping("/experience/{id}")
-    public ResponseEntity<?> updateExperience(@PathVariable Long id, @RequestBody ExperienceRequest req) {
+    public ResponseEntity<?> updateExperience(@PathVariable Long id, @Valid @RequestBody ExperienceRequest req) {
         profileService.updateExperience(id, req);
         return ok("Experience updated");
     }
@@ -190,33 +126,21 @@ public class UserProfileController {
         return ok("Experience deleted");
     }
 
-    // ==========================================================
-    // PORTFOLIO
-    // ==========================================================
-    @GetMapping("/portfolio")
-    public List<Portfolio> getPortfolio(
-            @CurrentUser String currentUserId,
-            @RequestParam(required = false) String userId
-    ) {
-        return profileService.getPortfolio(resolveUserId(currentUserId, userId));
+    // Portfolio
+    @GetMapping("/portfolios")
+    public List<Portfolio> getPortfolios(@CurrentUser Long userId) {
+        return profileService.getPortfolios(userId);
     }
 
-    @PostMapping("/portfolio/link")
-    public Portfolio addPortfolioLink(
-            @CurrentUser String currentUserId,
-            @RequestParam(required = false) String userId,
-            @RequestBody PortfolioLinkRequest req
-    ) {
-        return profileService.addPortfolioLink(resolveUserId(currentUserId, userId), req);
+    @PostMapping("/portfolio")
+    public Portfolio addPortfolio(@CurrentUser Long userId, @Valid @RequestBody PortfolioRequest req) {
+        return profileService.addPortfolio(userId, req);
     }
 
-    @PostMapping("/portfolio/file")
-    public Portfolio uploadPortfolioFile(
-            @CurrentUser String currentUserId,
-            @RequestParam(required = false) String userId,
-            @RequestParam MultipartFile file
-    ) {
-        return profileService.uploadPortfolioFile(resolveUserId(currentUserId, userId), file);
+    @PutMapping("/portfolio/{id}")
+    public ResponseEntity<?> updatePortfolio(@PathVariable Long id, @Valid @RequestBody PortfolioRequest req) {
+        profileService.updatePortfolio(id, req);
+        return ok("Portfolio updated");
     }
 
     @DeleteMapping("/portfolio/{id}")
@@ -225,29 +149,27 @@ public class UserProfileController {
         return ok("Portfolio item deleted");
     }
 
-    // ==========================================================
     // CV
-    // ==========================================================
     @GetMapping("/cv")
-    public List<CV> getCVs(
-            @CurrentUser String currentUserId,
-            @RequestParam(required = false) String userId
-    ) {
-        return profileService.getCVs(resolveUserId(currentUserId, userId));
+    public List<CV> getCVs(@CurrentUser Long userId) {
+        return profileService.getCVs(userId);
     }
 
     @PostMapping("/cv")
-    public CV uploadCV(
-            @CurrentUser String currentUserId,
-            @RequestParam(required = false) String userId,
-            @RequestParam MultipartFile file
-    ) {
-        return profileService.uploadCV(resolveUserId(currentUserId, userId), file);
+    public CV addCV(@CurrentUser Long userId, @Valid @RequestBody CVRequest req) {
+        return profileService.addCV(userId, req);
     }
 
-    @PutMapping("/cv/{id}")
-    public CV replaceCV(@PathVariable Long id, @RequestParam MultipartFile file) {
-        return profileService.replaceCV(id, file);
+    @PatchMapping("/cv/{id}/title")
+    public ResponseEntity<?> updateCVTitle(@PathVariable Long id, @RequestBody Map<String, String> body) {
+        profileService.updateCVTitle(id, body.get("title"));
+        return ok("CV title updated");
+    }
+
+    @PatchMapping("/cv/{id}/default")
+    public ResponseEntity<?> setDefaultCV(@CurrentUser Long userId, @PathVariable Long id) {
+        profileService.setDefaultCV(userId, id);
+        return ok("Set as default CV");
     }
 
     @DeleteMapping("/cv/{id}")
@@ -256,22 +178,20 @@ public class UserProfileController {
         return ok("CV deleted");
     }
 
-    @PostMapping("/cv/{id}/analyze")
-    public ResponseEntity<?> analyzeCV(@PathVariable Long id) {
-        profileService.analyzeCV(id);
-        return ok("AI analyzing CV");
+    // Social Links
+    @GetMapping("/social-links")
+    public List<SocialLink> getSocialLinks(@CurrentUser Long userId) {
+        return profileService.getSocialLinks(userId);
     }
 
-    // ==========================================================
-    // CAREER OBJECTIVE
-    // ==========================================================
-    @PutMapping("/career")
-    public ResponseEntity<?> updateCareerObjective(
-            @CurrentUser String currentUserId,
-            @RequestParam(required = false) String userId,
-            @RequestBody CareerObjectiveRequest req
-    ) {
-        profileService.updateCareerObjective(resolveUserId(currentUserId, userId), req);
-        return ok("Career objective updated");
+    @PostMapping("/social-link")
+    public SocialLink addSocialLink(@CurrentUser Long userId, @Valid @RequestBody SocialLinkRequest req) {
+        return profileService.addSocialLink(userId, req);
+    }
+
+    @DeleteMapping("/social-link/{id}")
+    public ResponseEntity<?> deleteSocialLink(@PathVariable Long id) {
+        profileService.deleteSocialLink(id);
+        return ok("Social link deleted");
     }
 }
