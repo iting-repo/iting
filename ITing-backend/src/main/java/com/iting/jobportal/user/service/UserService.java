@@ -22,5 +22,10 @@ public interface UserService {
 
     void updateAddress(Long id, String address);
 
-    void updateBirthGender(Long id, LocalDate birthDate, Gender gender);
-}
+    void updateAddress(String userId, String address);
+
+    void updateBirthGender(String userId, LocalDate birthDate, Gender gender);
+
+    String uploadAvatar(String userId, org.springframework.web.multipart.MultipartFile file);
+
+    }
