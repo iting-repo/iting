@@ -10,7 +10,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
-@Service
+// @Service  ← disabled: replaced by S3FileUploadServiceImpl
 @RequiredArgsConstructor
 public class LocalFileUploadServiceImpl implements FileUploadService {
 

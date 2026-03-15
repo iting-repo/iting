@@ -5,6 +5,7 @@ import com.iting.jobportal.company.dto.response.CompanyResponse;
 import com.iting.jobportal.company.entity.Company;
 import com.iting.jobportal.company.repository.CompanyRepository;
 import com.iting.jobportal.company.service.CompanyService;
+import com.iting.jobportal.company.service.CompanyFollowService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -15,9 +16,11 @@ import java.time.LocalDateTime;
 public class CompanyServiceImpl implements CompanyService {
 
     private final CompanyRepository companyRepository;
+    private final CompanyFollowService companyFollowService;
 
-    public CompanyServiceImpl(CompanyRepository companyRepository) {
+    public CompanyServiceImpl(CompanyRepository companyRepository, CompanyFollowService companyFollowService) {
         this.companyRepository = companyRepository;
+        this.companyFollowService = companyFollowService;
     }
 
     // ==========================
@@ -189,7 +192,7 @@ public class CompanyServiceImpl implements CompanyService {
     // 8. Hàm map Company -> CompanyResponse
     // ==========================================
     private CompanyResponse mapToResponse(Company company) {
-        return new CompanyResponse(
+        CompanyResponse response = new CompanyResponse(
                 company.getId(),
                 company.getName(),
                 company.getLogoUrl(),
@@ -212,5 +215,11 @@ public class CompanyServiceImpl implements CompanyService {
                 company.getLastUpdateRequestDate(),
                 company.getLastUpdate(),
                 company.getActive());
+        
+        // Add follower count
+        Long followerCount = companyFollowService.getFollowerCount(company.getId());
+        response.setFollowerCount(followerCount);
+        
+        return response;
     }
 }

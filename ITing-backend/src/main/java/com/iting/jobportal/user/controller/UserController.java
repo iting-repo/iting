@@ -7,6 +7,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.Map;
 
@@ -40,6 +41,13 @@ public class UserController {
         return ResponseEntity.ok(Map.of("message", "Avatar updated"));
     }
 
+    @PostMapping("/avatar/upload")
+    public ResponseEntity<?> uploadAvatar(@CurrentUser String userId,
+                                          @RequestParam("file") MultipartFile file) {
+        String url = userService.uploadAvatar(userId, file);
+        return ResponseEntity.ok(Map.of("avatarUrl", url));
+    }
+
     // ✅ Xóa Avatar bằng Long ID
     @DeleteMapping("/avatar")
     public ResponseEntity<?> deleteAvatar(@CurrentUser Long userId) {
@@ -55,3 +63,4 @@ public class UserController {
         return ResponseEntity.ok(Map.of("message", "Personal information updated"));
     }
 }
+

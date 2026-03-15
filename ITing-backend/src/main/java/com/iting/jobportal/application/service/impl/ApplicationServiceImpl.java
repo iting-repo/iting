@@ -10,6 +10,14 @@ import com.iting.jobportal.job.entity.Job;
 import com.iting.jobportal.job.repository.JobRepository;
 import com.iting.jobportal.user.entity.User;
 import com.iting.jobportal.user.repository.UserRepository;
+import com.iting.jobportal.userprofile.entity.ContactInfo;
+import com.iting.jobportal.userprofile.entity.CV;
+import com.iting.jobportal.userprofile.entity.Education;
+import com.iting.jobportal.userprofile.entity.Experience;
+import com.iting.jobportal.userprofile.repository.ContactInfoRepository;
+import com.iting.jobportal.userprofile.repository.CVRepository;
+import com.iting.jobportal.userprofile.repository.EducationRepository;
+import com.iting.jobportal.userprofile.repository.ExperienceRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -18,9 +26,12 @@ import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.server.ResponseStatusException;
 
-import java.time.LocalDateTime;
+import java.time.LocalDate;
+import java.time.temporal.ChronoUnit;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -30,6 +41,10 @@ public class ApplicationServiceImpl implements ApplicationService {
     private final ApplyFormSentToJobRepository applyFormSentToJobRepository;
     private final JobRepository jobRepository;
     private final UserRepository userRepository;
+    private final CVRepository cvRepository;
+    private final ContactInfoRepository contactInfoRepository;
+    private final ExperienceRepository experienceRepository;
+    private final EducationRepository educationRepository;
 
     // =====================================================================
     // PRIVATE HELPERS
@@ -137,11 +152,115 @@ public class ApplicationServiceImpl implements ApplicationService {
 
     @Override
     public Page<ApplicationResponse> getApplicationsByJob(Long employerId, Long jobId, int page, int size) {
-        if (employerId == null) throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Yêu cầu đăng nhập");
-        verifyJobOwnership(employerId, jobId);
+        jobRepository.findById(jobId)
+                .orElseThrow(() -> new RuntimeException("Job not found: " + jobId));
 
-        Pageable pageable = PageRequest.of(Math.max(page, 0), Math.max(1, size), Sort.by("timeSent").descending());
-        return applyFormSentToJobRepository.findByIdJobId(jobId, pageable).map(this::toResponse);
+        Pageable pageable = PageRequest.of(page, size, Sort.by("timeSent").descending());
+
+        return applyFormSentToJobRepository.findByJobId(jobId, pageable)
+                .map(sent -> {
+                    Long formId = sent.getId().getApplyFormId();
+                    ApplyForm form = applyFormRepository.findById(formId)
+                            .orElseThrow(() -> new RuntimeException("ApplyForm not found: " + formId));
+                    return buildFullResponse(form, sent);
+                });
+    }
+
+    // ========== SHARED HELPER ==========
+
+    private ApplicationResponse buildFullResponse(ApplyForm applyForm, ApplyFormSentToJob sent) {
+        Long jobId = sent.getId().getJobId();
+        String userId = applyForm.getUserId();
+
+        // Job title
+        String jobTitle = jobRepository.findById(jobId)
+                .map(Job::getPosition)
+                .orElse(null);
+
+        // Avatar
+        String avatarUrl = userRepository.findById(userId)
+                .map(User::getAvatarUrl)
+                .orElse(null);
+
+        // CV
+        String cvFileName = null;
+        String cvFileType = null;
+        String cvUrl = null;
+        if (applyForm.getCvTitle() != null && applyForm.getCvTitle().startsWith("CV_")) {
+            try {
+                Long cvId = Long.parseLong(applyForm.getCvTitle().substring(3));
+                Optional<CV> cvOpt = cvRepository.findById(cvId);
+                if (cvOpt.isPresent()) {
+                    CV cv = cvOpt.get();
+                    cvUrl = cv.getFileUrl();
+                    if (cvUrl != null) {
+                        String path = cvUrl.contains("/") ? cvUrl.substring(cvUrl.lastIndexOf('/') + 1) : cvUrl;
+                        int dotIdx = path.lastIndexOf('.');
+                        if (dotIdx > 0) {
+                            cvFileName = path.substring(0, dotIdx);
+                            cvFileType = path.substring(dotIdx + 1).toUpperCase();
+                        } else {
+                            cvFileName = path;
+                            cvFileType = "PDF";
+                        }
+                    }
+                }
+            } catch (NumberFormatException ignored) {
+                cvFileName = applyForm.getCvTitle();
+            }
+        }
+
+        // Contact info
+        String phoneNumber = null;
+        String email = null;
+        Optional<ContactInfo> contactOpt = contactInfoRepository.findById(userId);
+        if (contactOpt.isPresent()) {
+            ContactInfo c = contactOpt.get();
+            phoneNumber = c.getPhone();
+            email = c.getEmail();
+        }
+        if (email == null || email.isBlank()) {
+            email = userId;
+        }
+
+        // Years of experience (sum of all experience durations)
+        List<Experience> experiences = experienceRepository.findByUserId(userId);
+        int totalMonths = 0;
+        LocalDate now = LocalDate.now();
+        for (Experience exp : experiences) {
+            LocalDate start = exp.getStartDate();
+            LocalDate end = exp.getEndDate() != null ? exp.getEndDate() : now;
+            if (start != null) {
+                totalMonths += (int) ChronoUnit.MONTHS.between(start, end);
+            }
+        }
+        Integer yearsExperience = totalMonths > 0 ? Math.max(1, totalMonths / 12) : null;
+
+        // Highest education degree
+        List<Education> educations = educationRepository.findByUserId(userId);
+        String education = educations.stream()
+                .filter(e -> e.getDegree() != null)
+                .max(Comparator.comparing(e -> e.getEndDate() != null ? e.getEndDate() : LocalDate.MIN))
+                .map(Education::getDegree)
+                .orElse(null);
+
+        return ApplicationResponse.builder()
+                .id(applyForm.getId())
+                .userId(userId)
+                .jobId(jobId)
+                .applicantName(applyForm.getApplicantName())
+                .avatarUrl(avatarUrl)
+                .jobTitle(jobTitle)
+                .introduction(applyForm.getIntroduction())
+                .cvFileName(cvFileName)
+                .cvFileType(cvFileType)
+                .cvUrl(cvUrl)
+                .phoneNumber(phoneNumber)
+                .email(email)
+                .yearsExperience(yearsExperience)
+                .education(education)
+                .timeSent(sent.getTimeSent())
+                .build();
     }
 
     @Override
@@ -168,15 +287,14 @@ public class ApplicationServiceImpl implements ApplicationService {
 
     @Override
     public ApplicationResponse viewApplication(Long employerId, Long applicationId) {
-        ApplyForm form = findFormOrThrow(applicationId);
-        // Tìm bản ghi sent tương ứng dựa trên ID tổ hợp
-        ApplyFormSentToJob sent = applyFormSentToJobRepository.findAll().stream()
-                .filter(s -> s.getId().getApplyFormId().equals(applicationId))
-                .findFirst()
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Không tìm thấy liên kết ứng tuyển"));
+        ApplyForm applyForm = applyFormRepository.findById(applicationId)
+                .orElseThrow(() -> new RuntimeException("Application not found: " + applicationId));
 
-        verifyJobOwnership(employerId, sent.getId().getJobId());
-        return ApplicationResponse.fromEntities(form, sent);
+        ApplyFormSentToJob sent = applyFormSentToJobRepository
+                .findByIdApplyFormId(applicationId)
+                .orElseThrow(() -> new RuntimeException("Application job mapping not found: " + applicationId));
+
+        return buildFullResponse(applyForm, sent);
     }
 
     @Override
