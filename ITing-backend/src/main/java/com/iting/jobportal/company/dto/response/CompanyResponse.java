@@ -39,6 +39,8 @@ public class CompanyResponse {
     private LocalDateTime lastUpdate;
     private Boolean active;
 
+    private Long followerCount;
+
     public static CompanyResponse fromEntity(com.iting.jobportal.company.entity.Company company) {
         return new CompanyResponse(
                 company.getId(),
@@ -62,7 +64,8 @@ public class CompanyResponse {
                 company.getCompanyInfoUpdateStatus(),
                 company.getLastUpdateRequestDate(),
                 company.getLastUpdate(),
-                company.getActive()
+                company.getActive(),
+                company.getFollowerCount()
         );
     }
 }

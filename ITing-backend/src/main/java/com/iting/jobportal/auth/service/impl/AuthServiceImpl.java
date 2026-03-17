@@ -64,6 +64,10 @@ public class AuthServiceImpl implements AuthService {
             throw new RuntimeException("Invalid email or password");
         }
 
+        if (account.getStatus() == com.iting.jobportal.auth.entity.Enum.AccountStatus.BANNED) {
+            throw new RuntimeException("Tài khoản của bạn đã bị khóa. Vui lòng kiểm tra email để biết thêm chi tiết.");
+        }
+
         String primaryRole = account.getRole() != null
                 ? account.getRole().normalizedName()
                 : "CANDIDATE";

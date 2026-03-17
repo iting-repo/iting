@@ -42,7 +42,7 @@ public class UserController {
     }
 
     @PostMapping("/avatar/upload")
-    public ResponseEntity<?> uploadAvatar(@CurrentUser String userId,
+    public ResponseEntity<?> uploadAvatar(@CurrentUser Long userId,
                                           @RequestParam("file") MultipartFile file) {
         String url = userService.uploadAvatar(userId, file);
         return ResponseEntity.ok(Map.of("avatarUrl", url));

@@ -214,7 +214,8 @@ public class CompanyServiceImpl implements CompanyService {
                 company.getCompanyInfoUpdateStatus(),
                 company.getLastUpdateRequestDate(),
                 company.getLastUpdate(),
-                company.getActive());
+                company.getActive(),
+                company.getFollowerCount());
         
         // Add follower count
         Long followerCount = companyFollowService.getFollowerCount(company.getId());

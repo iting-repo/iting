@@ -41,7 +41,7 @@ public class AuthUser implements UserDetails {
     
     @Override
     public boolean isAccountNonLocked() {
-        return true;
+        return account.getStatus() != com.iting.jobportal.auth.entity.Enum.AccountStatus.BANNED;
     }
     
     @Override
@@ -51,7 +51,7 @@ public class AuthUser implements UserDetails {
     
     @Override
     public boolean isEnabled() {
-        return true;
+        return account.getStatus() != com.iting.jobportal.auth.entity.Enum.AccountStatus.BANNED;
     }
     
     public Long getId() {

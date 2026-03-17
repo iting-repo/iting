@@ -26,7 +26,8 @@ import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
+import org.springframework.web.server.ResponseStatusException;
+import org.springframework.http.HttpStatus;
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
 import java.util.Comparator;
@@ -170,7 +171,7 @@ public class ApplicationServiceImpl implements ApplicationService {
 
     private ApplicationResponse buildFullResponse(ApplyForm applyForm, ApplyFormSentToJob sent) {
         Long jobId = sent.getId().getJobId();
-        String userId = applyForm.getUserId();
+        Long userId = applyForm.getUserId();
 
         // Job title
         String jobTitle = jobRepository.findById(jobId)
@@ -220,7 +221,9 @@ public class ApplicationServiceImpl implements ApplicationService {
             email = c.getEmail();
         }
         if (email == null || email.isBlank()) {
-            email = userId;
+            email = userRepository.findById(userId)
+                    .map(u -> u.getAccount() != null ? u.getAccount().getEmail() : String.valueOf(userId))
+                    .orElse(String.valueOf(userId));
         }
 
         // Years of experience (sum of all experience durations)

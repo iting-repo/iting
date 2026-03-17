@@ -98,6 +98,9 @@ public class Company {
     @Column(name = "Active")
     private Boolean active = true;
 
+    @Column(name = "follower_count")
+    private Long followerCount;
+
     public Company() {
     }
 }

@@ -93,6 +93,10 @@ public class RefreshTokenServiceImpl implements RefreshTokenService {
         Account account = accountRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
+        if (account.getStatus() == com.iting.jobportal.auth.entity.Enum.AccountStatus.BANNED) {
+            throw new RuntimeException("Tài khoản của bạn đã bị khóa.");
+        }
+
         String primaryRole = "USER";
 
         // Generate new access token

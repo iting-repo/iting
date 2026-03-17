@@ -15,7 +15,7 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 public class ApplicationResponse {
     private Long id;
-    private String userId;
+    private Long userId;
     private Long jobId;
 
     // Candidate info

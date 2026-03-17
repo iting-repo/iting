@@ -11,9 +11,9 @@ import org.springframework.data.repository.query.Param;
 public interface JobApplicationRepository extends JpaRepository<ApplyFormSentToJob, ApplyFormSentToJobId> {
 
     @Query("SELECT COUNT(s) > 0 FROM ApplyFormSentToJob s JOIN ApplyForm f ON f.id = s.id.applyFormId WHERE f.userId = :userId AND s.id.jobId = :jobId")
-    boolean existsByUserIdAndJobId(@Param("userId") String userId, @Param("jobId") Long jobId);
+    boolean existsByUserIdAndJobId(@Param("userId") Long userId, @Param("jobId") Long jobId);
 
     @Query("SELECT s FROM ApplyFormSentToJob s JOIN ApplyForm f ON f.id = s.id.applyFormId WHERE f.userId = :userId")
-    Page<ApplyFormSentToJob> findByUserId(@Param("userId") String userId, Pageable pageable);
+    Page<ApplyFormSentToJob> findByUserId(@Param("userId") Long userId, Pageable pageable);
 }
 
