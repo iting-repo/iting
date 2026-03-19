@@ -6,8 +6,14 @@ import com.iting.jobportal.company.entity.Company;
 import com.iting.jobportal.company.repository.CompanyRepository;
 import com.iting.jobportal.company.service.CompanyService;
 import com.iting.jobportal.company.service.CompanyFollowService;
+import com.iting.jobportal.messaging.service.event.DomainNotificationPublisher;
+import com.iting.jobportal.notification.entity.UserFollowCompany;
+import com.iting.jobportal.notification.enums.NotificationType;
+import com.iting.jobportal.notification.repository.UserFollowCompanyRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
 
 import java.time.LocalDateTime;
 
@@ -17,10 +23,19 @@ public class CompanyServiceImpl implements CompanyService {
 
     private final CompanyRepository companyRepository;
     private final CompanyFollowService companyFollowService;
+    private final UserFollowCompanyRepository userFollowCompanyRepository;
+    private final DomainNotificationPublisher domainNotificationPublisher;
 
-    public CompanyServiceImpl(CompanyRepository companyRepository, CompanyFollowService companyFollowService) {
+    public CompanyServiceImpl(
+            CompanyRepository companyRepository,
+            CompanyFollowService companyFollowService,
+            UserFollowCompanyRepository userFollowCompanyRepository,
+            DomainNotificationPublisher domainNotificationPublisher
+    ) {
         this.companyRepository = companyRepository;
         this.companyFollowService = companyFollowService;
+        this.userFollowCompanyRepository = userFollowCompanyRepository;
+        this.domainNotificationPublisher = domainNotificationPublisher;
     }
 
     // ==========================
@@ -54,6 +69,19 @@ public class CompanyServiceImpl implements CompanyService {
         company.setLastUpdate(LocalDateTime.now());
 
         Company saved = companyRepository.save(company);
+
+        List<UserFollowCompany> followers = userFollowCompanyRepository.findByCompanyId(saved.getId());
+        for (UserFollowCompany follower : followers) {
+            domainNotificationPublisher.notifyUser(
+                    follower.getUserId(),
+                    NotificationType.COMPANY_UPDATE,
+                    "Company " + saved.getName() + " updated its profile.",
+                    "COMPANY",
+                    saved.getId(),
+                    "/companies/" + saved.getId()
+            );
+        }
+
         return mapToResponse(saved);
     }
 

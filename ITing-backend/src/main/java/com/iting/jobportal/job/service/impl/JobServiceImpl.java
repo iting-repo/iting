@@ -11,6 +11,10 @@ import com.iting.jobportal.job.entity.enums.JobStatus;
 import com.iting.jobportal.job.repository.JobRepository;
 import com.iting.jobportal.job.repository.JobSpecification;
 import com.iting.jobportal.job.service.JobService;
+import com.iting.jobportal.messaging.service.event.DomainNotificationPublisher;
+import com.iting.jobportal.notification.entity.UserFollowCompany;
+import com.iting.jobportal.notification.enums.NotificationType;
+import com.iting.jobportal.notification.repository.UserFollowCompanyRepository;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import lombok.RequiredArgsConstructor;
@@ -33,6 +37,8 @@ public class JobServiceImpl implements JobService {
 
     private final JobRepository jobRepository;
     private final CompanyRepository companyRepository;
+    private final UserFollowCompanyRepository userFollowCompanyRepository;
+    private final DomainNotificationPublisher domainNotificationPublisher;
 
     @PersistenceContext
     private EntityManager entityManager;
@@ -92,6 +98,18 @@ public class JobServiceImpl implements JobService {
                 .build();
 
         Job saved = jobRepository.save(job);
+
+        List<UserFollowCompany> followers = userFollowCompanyRepository.findByCompanyId(employerId);
+        for (UserFollowCompany follower : followers) {
+            domainNotificationPublisher.notifyUser(
+                    follower.getUserId(),
+                    NotificationType.COMPANY_NEW_JOB,
+                    "Company " + company.getName() + " posted a new job: " + saved.getPosition(),
+                    "JOB",
+                    saved.getId(),
+                    "/jobs/" + saved.getId()
+            );
+        }
 
         // Ghi nhận vào bảng Company_upload_job
         entityManager.createNativeQuery(
@@ -300,6 +318,14 @@ public class JobServiceImpl implements JobService {
         List<Job> expiredJobs = jobRepository.findExpiredJobs();
         for (Job job : expiredJobs) {
             job.setStatus(JobStatus.EXPIRED);
+            domainNotificationPublisher.notifyCompany(
+                    job.getCompany().getId(),
+                    NotificationType.JOB_EXPIRED,
+                    "Your job posting \"" + job.getPosition() + "\" has expired.",
+                    "JOB",
+                    job.getId(),
+                    "/employer/jobs/" + job.getId()
+            );
         }
         jobRepository.saveAll(expiredJobs);
     }
