@@ -8,6 +8,8 @@ import com.iting.jobportal.application.repository.ApplyFormSentToJobRepository;
 import com.iting.jobportal.application.service.ApplicationService;
 import com.iting.jobportal.job.entity.Job;
 import com.iting.jobportal.job.repository.JobRepository;
+import com.iting.jobportal.messaging.service.event.DomainNotificationPublisher;
+import com.iting.jobportal.notification.enums.NotificationType;
 import com.iting.jobportal.user.entity.User;
 import com.iting.jobportal.user.repository.UserRepository;
 import com.iting.jobportal.userprofile.entity.ContactInfo;
@@ -46,6 +48,7 @@ public class ApplicationServiceImpl implements ApplicationService {
     private final ContactInfoRepository contactInfoRepository;
     private final ExperienceRepository experienceRepository;
     private final EducationRepository educationRepository;
+    private final DomainNotificationPublisher domainNotificationPublisher;
 
     // =====================================================================
     // PRIVATE HELPERS
@@ -118,6 +121,17 @@ public class ApplicationServiceImpl implements ApplicationService {
                 .build();
 
         ApplyFormSentToJob savedSent = applyFormSentToJobRepository.save(sent);
+
+        Job job = findJobOrThrow(request.getJobId());
+        domainNotificationPublisher.notifyCompany(
+                job.getCompany().getId(),
+                NotificationType.APPLICATION_STATUS_CHANGED,
+                "New application received for job: " + job.getPosition(),
+                "APPLICATION",
+                savedForm.getId(),
+                "/applications/job/" + request.getJobId()
+        );
+
         return ApplicationResponse.fromEntities(savedForm, savedSent);
     }
 
@@ -214,7 +228,7 @@ public class ApplicationServiceImpl implements ApplicationService {
         // Contact info
         String phoneNumber = null;
         String email = null;
-        Optional<ContactInfo> contactOpt = contactInfoRepository.findById(userId);
+        Optional<ContactInfo> contactOpt = contactInfoRepository.findById(String.valueOf(userId));
         if (contactOpt.isPresent()) {
             ContactInfo c = contactOpt.get();
             phoneNumber = c.getPhone();
@@ -227,7 +241,7 @@ public class ApplicationServiceImpl implements ApplicationService {
         }
 
         // Years of experience (sum of all experience durations)
-        List<Experience> experiences = experienceRepository.findByUserId(userId);
+        List<Experience> experiences = experienceRepository.findByProfileId(userId);
         int totalMonths = 0;
         LocalDate now = LocalDate.now();
         for (Experience exp : experiences) {
@@ -240,7 +254,7 @@ public class ApplicationServiceImpl implements ApplicationService {
         Integer yearsExperience = totalMonths > 0 ? Math.max(1, totalMonths / 12) : null;
 
         // Highest education degree
-        List<Education> educations = educationRepository.findByUserId(userId);
+        List<Education> educations = educationRepository.findByProfileId(userId);
         String education = educations.stream()
                 .filter(e -> e.getDegree() != null)
                 .max(Comparator.comparing(e -> e.getEndDate() != null ? e.getEndDate() : LocalDate.MIN))
@@ -310,12 +324,30 @@ public class ApplicationServiceImpl implements ApplicationService {
     @Override
     @Transactional
     public ApplicationResponse acceptApplication(Long employerId, Long applicationId, String note) {
+        ApplyForm form = findFormOrThrow(applicationId);
+        domainNotificationPublisher.notifyUser(
+                form.getUserId(),
+                NotificationType.APPLICATION_ACCEPTED,
+                "Your application has been accepted.",
+                "APPLICATION",
+                applicationId,
+                "/applications/me"
+        );
         return viewApplication(employerId, applicationId);
     }
 
     @Override
     @Transactional
     public ApplicationResponse rejectApplication(Long employerId, Long applicationId, String note) {
+        ApplyForm form = findFormOrThrow(applicationId);
+        domainNotificationPublisher.notifyUser(
+                form.getUserId(),
+                NotificationType.APPLICATION_REJECTED,
+                "Your application has been rejected.",
+                "APPLICATION",
+                applicationId,
+                "/applications/me"
+        );
         return viewApplication(employerId, applicationId);
     }
 

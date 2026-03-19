@@ -23,7 +23,7 @@ RUN gradle dependencies --no-daemon || true
 COPY src ./src
 
 # Build with layered JARs for faster container startup
-RUN gradle bootJar --no-daemon \
+RUN gradle clean bootJar --no-daemon \
     --no-build-cache \
     -Porg.gradle.parallel=true \
     -Dorg.gradle.jvmargs="-Xmx512m"

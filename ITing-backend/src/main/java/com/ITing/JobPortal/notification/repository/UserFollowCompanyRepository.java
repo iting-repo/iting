@@ -9,6 +9,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.util.Optional;
+import java.util.List;
 
 public interface UserFollowCompanyRepository extends JpaRepository<UserFollowCompany, Long> {
 
@@ -31,6 +32,11 @@ public interface UserFollowCompanyRepository extends JpaRepository<UserFollowCom
      * Get follower count for a company
      */
     Long countByCompanyId(Long companyId);
+
+    /**
+     * Get all followers of a company
+     */
+    List<UserFollowCompany> findByCompanyId(Long companyId);
 
     /**
      * Unfollow company (delete relationship)

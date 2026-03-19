@@ -1,0 +1,34 @@
+package com.iting.jobportal.messaging.dto.response;
+
+import com.iting.jobportal.messaging.enums.ReceiverType;
+import com.iting.jobportal.messaging.enums.SenderType;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
+import java.time.LocalDateTime;
+
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
+public class MessageResponse {
+
+    private Long id;
+    private Long conversationId;
+    private Long senderId;
+    private SenderType senderType;
+    private String senderName;
+    private String senderAvatar;
+    private Long receiverId;
+    private ReceiverType receiverType;
+    private String receiverName;
+    private String receiverAvatar;
+    private String content;
+    private Boolean isRead;
+    private LocalDateTime readAt;
+    private LocalDateTime createdAt;
+}

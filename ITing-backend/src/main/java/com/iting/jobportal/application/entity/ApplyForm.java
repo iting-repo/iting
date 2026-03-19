@@ -17,7 +17,7 @@ public class ApplyForm {
     @Column(name = "Id")
     private Long id;
 
-    @Column(name = "User_id", nullable = false, length = 255)
+    @Column(name = "User_id", nullable = false)
     private Long userId;
 
     @Column(name = "Cv_title", length = 255)
