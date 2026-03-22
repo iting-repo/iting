@@ -40,6 +40,7 @@ public class AuthServiceImpl implements AuthService {
                 .email(request.getEmail())
                 .passwordHash(passwordEncoder.encode(request.getPassword()))
                 .role(request.getRole())
+                .status(com.iting.jobportal.auth.entity.Enum.AccountStatus.ACTIVE)
                 .build();
 
         // Lưu Account trước để có ID

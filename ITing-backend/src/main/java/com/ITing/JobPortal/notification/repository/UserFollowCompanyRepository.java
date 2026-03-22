@@ -11,7 +11,7 @@ import org.springframework.data.repository.query.Param;
 import java.util.Optional;
 import java.util.List;
 
-public interface UserFollowCompanyRepository extends JpaRepository<UserFollowCompany, Long> {
+public interface UserFollowCompanyRepository extends JpaRepository<UserFollowCompany, UserFollowCompany.UserFollowCompanyId> {
 
     /**
      * Check if user follows company

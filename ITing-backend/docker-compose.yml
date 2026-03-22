@@ -62,6 +62,7 @@ services:
       # Actuator
       - MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE=health,info,metrics
       - MANAGEMENT_ENDPOINT_HEALTH_SHOW_DETAILS=when_authorized
+      - MANAGEMENT_HEALTH_MAIL_ENABLED=false
       
       # Application name
       - SPRING_APPLICATION_NAME=iting-job-portal
@@ -93,7 +94,7 @@ services:
     
     # Health check
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health"]
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8080/actuator/health | grep -q UP || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 3
