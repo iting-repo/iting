@@ -227,7 +227,7 @@ public class ApplicationServiceImpl implements ApplicationService {
         }
 
         // Years of experience (sum of all experience durations)
-        List<Experience> experiences = experienceRepository.findByUserId(userId);
+        List<Experience> experiences = experienceRepository.findByProfile_Id(userId);
         int totalMonths = 0;
         LocalDate now = LocalDate.now();
         for (Experience exp : experiences) {
@@ -240,7 +240,7 @@ public class ApplicationServiceImpl implements ApplicationService {
         Integer yearsExperience = totalMonths > 0 ? Math.max(1, totalMonths / 12) : null;
 
         // Highest education degree
-        List<Education> educations = educationRepository.findByUserId(userId);
+        List<Education> educations = educationRepository.findByProfile_Id(userId);
         String education = educations.stream()
                 .filter(e -> e.getDegree() != null)
                 .max(Comparator.comparing(e -> e.getEndDate() != null ? e.getEndDate() : LocalDate.MIN))
@@ -341,4 +341,6 @@ public class ApplicationServiceImpl implements ApplicationService {
                 .total(applyFormSentToJobRepository.countByIdJobId(jobId))
                 .build();
     }
+
+
 }

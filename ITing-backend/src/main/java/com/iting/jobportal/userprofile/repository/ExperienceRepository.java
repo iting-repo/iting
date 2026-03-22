@@ -8,6 +8,7 @@ import java.util.List;
 
 @Repository
 public interface ExperienceRepository extends JpaRepository<Experience, Long> {
-    List<Experience> findByProfileId(Long profileId);
+//    List<Experience> findByUserId(Long userId);
+    List<Experience> findByProfile_Id(Long profileId);
 }
 

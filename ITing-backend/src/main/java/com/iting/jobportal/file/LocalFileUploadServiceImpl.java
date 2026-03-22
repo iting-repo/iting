@@ -1,6 +1,7 @@
 package com.iting.jobportal.file;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -10,8 +11,9 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
-// @Service  ← disabled: replaced by S3FileUploadServiceImpl
+@Service
 @RequiredArgsConstructor
+@ConditionalOnProperty(name = "aws.enabled", havingValue = "false", matchIfMissing = true)
 public class LocalFileUploadServiceImpl implements FileUploadService {
 
     private final String UPLOAD_DIR = "uploads/";

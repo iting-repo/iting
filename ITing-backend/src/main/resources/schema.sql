@@ -9,7 +9,7 @@
 
 -- Drop tables in reverse dependency order
 DROP TABLE IF EXISTS Portfolio CASCADE;
-DROP TABLE IF EXISTS SocialLink CASCADE;
+DROP TABLE IF EXISTS Social_link CASCADE;
 DROP TABLE IF EXISTS contact_info CASCADE;
 DROP TABLE IF EXISTS user_reports CASCADE;
 DROP TABLE IF EXISTS activity_logs CASCADE;
@@ -418,6 +418,8 @@ CREATE TABLE Experience (
     CONSTRAINT fk_experience_profile FOREIGN KEY (profile_id) REFERENCES candidate_profiles(id) ON DELETE CASCADE
 );
 
+DROP TABLE IF EXISTS social_link CASCADE;
+DROP TABLE IF EXISTS sociallink CASCADE;
 -- Table: SocialLink
 CREATE TABLE social_link (
     Id BIGSERIAL PRIMARY KEY,

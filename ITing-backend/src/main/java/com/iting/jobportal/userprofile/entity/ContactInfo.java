@@ -1,22 +1,32 @@
 package com.iting.jobportal.userprofile.entity;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import jakarta.persistence.*;
+import lombok.*;
 
 @Entity
 @Table(name = "contact_info")
-@Data
-@NoArgsConstructor
-@AllArgsConstructor
+@Getter
+@Setter
 public class ContactInfo {
 
     @Id
-    private String userId;
+    private Long id;
 
+    @OneToOne
+    @MapsId
+    @JoinColumn(name = "id")
+    @com.fasterxml.jackson.annotation.JsonIgnore
+    private UserProfile profile;
+
+    @Column(name = "phone", length = 20)
     private String phone;
+
+    @Column(name = "email", length = 255)
     private String email;
+
+    @Column(name = "show_phone_to_recruiter")
+    private Boolean showPhoneToRecruiter = false;
+
+    @Column(name = "show_email_to_recruiter")
+    private Boolean showEmailToRecruiter = false;
 }

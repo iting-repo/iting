@@ -4,6 +4,7 @@ import com.iting.jobportal.auth.dto.request.LoginRequest;
 import com.iting.jobportal.auth.entity.Account;
 import com.iting.jobportal.auth.service.AuthService;
 import com.iting.jobportal.job.controller.CurrentUser;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -14,6 +15,7 @@ import com.iting.jobportal.auth.dto.response.LoginResponse;
 import com.iting.jobportal.auth.dto.request.ChangePasswordRequest;
 import com.iting.jobportal.auth.dto.request.RegisterRequest;
 
+@Tag(name ="01. Auth")
 @RestController
 @RequestMapping("/api/auth")
 @RequiredArgsConstructor

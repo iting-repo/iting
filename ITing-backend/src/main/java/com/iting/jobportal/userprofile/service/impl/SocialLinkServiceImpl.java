@@ -37,7 +37,7 @@ public class SocialLinkServiceImpl implements SocialLinkService {
     public SocialLinkResponse getSocialLinks(String userId) {
         Long uid = parseUserId(userId);
 
-        List<SocialLink> links = socialLinkRepository.findByProfileId(uid);
+        List<SocialLink> links = socialLinkRepository.findByProfile_Id(uid);
 
         SocialLinkResponse res = new SocialLinkResponse();
 

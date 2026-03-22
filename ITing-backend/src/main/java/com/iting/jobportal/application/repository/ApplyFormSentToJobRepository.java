@@ -31,4 +31,8 @@ public interface ApplyFormSentToJobRepository extends JpaRepository<ApplyFormSen
 
     @Query("SELECT s FROM ApplyFormSentToJob s WHERE s.id.jobId = :jobId")
     Page<ApplyFormSentToJob> findByJobId(@Param("jobId") Long jobId, Pageable pageable);
+
+    Page<ApplyFormSentToJob> findByIdJobIdIn(List<Long> jobIds, Pageable pageable);
+
+    long countByIdJobId(Long jobId);
 }

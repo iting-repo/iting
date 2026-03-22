@@ -68,6 +68,9 @@ dependencies {
 
     // Testing
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
+
+    // 🛡️ Rate Limiting
+    implementation 'com.bucket4j:bucket4j-core:8.1.0'
 }
 
 tasks.named('test') {

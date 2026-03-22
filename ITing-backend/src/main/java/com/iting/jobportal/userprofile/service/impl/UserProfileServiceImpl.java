@@ -70,7 +70,7 @@ public class UserProfileServiceImpl implements UserProfileService {
     // Education
     @Override
     public List<Education> getEducations(Long profileId) {
-        return educationRepo.findByProfileId(profileId);
+        return educationRepo.findByProfile_Id(profileId);
     }
 
     @Override
@@ -110,7 +110,7 @@ public class UserProfileServiceImpl implements UserProfileService {
     // Skills
     @Override
     public List<Skill> getSkills(Long profileId) {
-        return skillRepo.findByProfileId(profileId);
+        return skillRepo.findByProfile_Id(profileId);
     }
 
     @Override
@@ -140,7 +140,7 @@ public class UserProfileServiceImpl implements UserProfileService {
     // Certificate
     @Override
     public List<Certificate> getCertificates(Long profileId) {
-        return certificateRepo.findByProfileId(profileId);
+        return certificateRepo.findByProfile_Id(profileId);
     }
 
     @Override
@@ -180,7 +180,7 @@ public class UserProfileServiceImpl implements UserProfileService {
     // Experience
     @Override
     public List<Experience> getExperiences(Long profileId) {
-        return experienceRepo.findByProfileId(profileId);
+        return experienceRepo.findByProfile_Id(profileId);
     }
 
     @Override
@@ -218,7 +218,7 @@ public class UserProfileServiceImpl implements UserProfileService {
     // Portfolio
     @Override
     public List<Portfolio> getPortfolios(Long profileId) {
-        return portfolioRepo.findByProfileId(profileId);
+        return portfolioRepo.findByProfile_Id(profileId);
     }
 
     @Override
@@ -250,7 +250,7 @@ public class UserProfileServiceImpl implements UserProfileService {
     // CV
     @Override
     public List<CV> getCVs(Long profileId) {
-        return cvRepo.findByProfileId(profileId);
+        return cvRepo.findByProfile_Id(profileId);
     }
 
     @Override
@@ -286,7 +286,7 @@ public class UserProfileServiceImpl implements UserProfileService {
     }
 
     private void resetDefaultCV(Long profileId) {
-        List<CV> cvs = cvRepo.findByProfileId(profileId);
+        List<CV> cvs = cvRepo.findByProfile_Id(profileId);
         for (CV cv : cvs) {
             if (Boolean.TRUE.equals(cv.getIsDefault())) {
                 cv.setIsDefault(false);
@@ -303,7 +303,7 @@ public class UserProfileServiceImpl implements UserProfileService {
     // Social Links
     @Override
     public List<SocialLink> getSocialLinks(Long profileId) {
-        return socialRepo.findByProfileId(profileId);
+        return socialRepo.findByProfile_Id(profileId);
     }
 
     @Override
