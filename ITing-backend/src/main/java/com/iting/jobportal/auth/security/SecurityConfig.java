@@ -66,6 +66,9 @@ public class SecurityConfig {
                 // ── Public: Actuator health for container healthcheck ─────
                 .requestMatchers("/actuator/health", "/actuator/health/**").permitAll()
 
+                // ── Public: Public API endpoints ─────────────────────────
+                .requestMatchers("/api/public/**").permitAll()
+
                 // ── Public: error endpoint (avoid secondary 403 loop) ──────
                 .requestMatchers("/error").permitAll()
 
