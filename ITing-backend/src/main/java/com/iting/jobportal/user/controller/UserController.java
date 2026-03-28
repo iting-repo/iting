@@ -3,6 +3,7 @@ package com.iting.jobportal.user.controller; // Đảm bảo đúng package củ
 import com.iting.jobportal.user.dto.request.*;
 import com.iting.jobportal.user.dto.response.UserProfileResponse;
 import com.iting.jobportal.user.service.UserService;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -12,6 +13,7 @@ import org.springframework.web.multipart.MultipartFile;
 import java.util.Map;
 
 
+@Tag(name ="06. User Profile")
 @RestController
 @RequestMapping("/api/user/profile")
 @RequiredArgsConstructor

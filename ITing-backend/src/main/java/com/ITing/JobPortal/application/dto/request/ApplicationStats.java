@@ -1,4 +1,4 @@
-package com.iting.jobportal.application.dto;
+package com.iting.jobportal.application.dto.request;
 
 import lombok.Builder;
 import lombok.Data;

@@ -1,9 +1,7 @@
 package com.iting.jobportal.job.entity;
 
 import com.iting.jobportal.company.entity.Company;
-import com.iting.jobportal.job.entity.enums.ExperienceLevel;
-import com.iting.jobportal.job.entity.enums.JobStatus;
-import com.iting.jobportal.job.entity.enums.JobType;
+import com.iting.jobportal.job.entity.enums.*;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -15,7 +13,9 @@ import java.time.LocalDateTime;
 @Table(
         name = "Job",
         indexes = {
-                @Index(name = "idx_job_company", columnList = "Company_id")
+                @Index(name = "idx_job_company", columnList = "Company_id"),
+                @Index(name = "idx_job_status", columnList = "Status"),
+                @Index(name = "idx_job_city", columnList = "City")
         }
 )
 @Getter
@@ -27,106 +27,112 @@ public class Job {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "Id")
     private Long id;
 
-    // Thêm Company_id để khớp database
-//    @Column(name = "Company_id", nullable = false)
-//    private Long companyId;
-
+    // ===== RELATION =====
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "Company_id", nullable = false)
     private Company company;
 
-    @Column(name = "Position", length = 255)
+    // ===== BASIC INFO =====
+    @Column(nullable = false)
+    private String title;
+
     private String position;
 
-    @Column(name = "Description", columnDefinition = "TEXT")
-    private String description;
-
-    @Column(name = "Tech_required", columnDefinition = "TEXT")
+    @Column(columnDefinition = "TEXT")
     private String techRequired;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "Job_type", length = 50)
     private JobType jobType;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "Experience_level", length = 50)
     private ExperienceLevel experienceLevel;
 
-    @Column(name = "Min_salary", precision = 15, scale = 2)
-    private BigDecimal minSalary;
+    private String workingDays;
 
-    @Column(name = "Max_salary", precision = 15, scale = 2)
+    // ===== SALARY =====
+    private BigDecimal minSalary;
     private BigDecimal maxSalary;
 
-    @Column(name = "Min_accept", columnDefinition = "TEXT")
-    private String minAccept;
+    @Enumerated(EnumType.STRING)
+    private SalaryType salaryType;
 
-    @Column(name = "Max_accept")
+    // ===== QUANTITY =====
     private Integer maxAccept;
-
-    @Column(name = "Current_accepted")
     private Integer currentAccepted;
 
-
-    @Column(name = "View_count")
-    private Integer viewCount;
-
-    @Column(name = "Application_count")
-    private Integer applicationCount;
-
-    @Column(name = "Featured")
-    private Boolean featured;
-
-    @Column(name = "Review_reason", columnDefinition = "TEXT")
-    private String reviewReason;
-
-    @Column(name = "Reviewed_by")
-    private Long reviewedBy;
-
-    @Column(name = "Reviewed_at")
-    private LocalDateTime reviewedAt;
-
-    @Enumerated(EnumType.STRING)
-    @Column(name = "Status", length = 50)
-    private JobStatus status;
-
-    @Column(name = "Due_date")
     private LocalDate dueDate;
 
-    @Column(name = "Last_update")
-    private LocalDateTime lastUpdate;
-
-    @Column(name = "Location", length = 255)
+    // ===== LOCATION =====
+    private String city;
+    private String district;
+    private String address;
     private String location;
 
-    @Column(name = "Loc_id")
-    private Long locId;
+    private Long locId; // ✅ GIỮ
 
-    @Column(name = "Job_embedding", columnDefinition = "TEXT")
-    private String jobEmbedding;
+    // ===== CONTENT =====
+    @Column(columnDefinition = "TEXT")
+    private String description;
 
+    @Column(columnDefinition = "TEXT")
+    private String responsibilities;
+
+    @Column(columnDefinition = "TEXT")
+    private String requirements;
+
+    @Column(columnDefinition = "TEXT")
+    private String benefits;
+
+    // ===== SYSTEM =====
+    private Integer viewCount;
+    private Integer applicationCount;
+    private Boolean featured;
+
+    @Enumerated(EnumType.STRING)
+    private JobStatus status;
+
+    // ===== REVIEW =====
+    @Column(columnDefinition = "TEXT")
+    private String reviewReason;
+
+    private Long reviewedBy;
+    private LocalDateTime reviewedAt;
+
+    // ===== AUDIT =====
+    private LocalDateTime createdAt;
+    private LocalDateTime lastUpdate;
+
+    // ===== AUTO LOGIC =====
     @PrePersist
     protected void onCreate() {
-        if (status == null) {
-            status = JobStatus.DRAFT;
-        }
-        if (lastUpdate == null) {
-            lastUpdate = LocalDateTime.now();
-        }
-
+        if (status == null) status = JobStatus.DRAFT;
+        if (createdAt == null) createdAt = LocalDateTime.now();
+        if (lastUpdate == null) lastUpdate = LocalDateTime.now();
         if (viewCount == null) viewCount = 0;
         if (applicationCount == null) applicationCount = 0;
         if (currentAccepted == null) currentAccepted = 0;
         if (maxAccept == null) maxAccept = 0;
-
         if (featured == null) featured = false;
+
+        if (location == null) {
+            location = buildLocation();
+        }
     }
 
     @PreUpdate
     protected void onUpdate() {
         lastUpdate = LocalDateTime.now();
+    }
+
+    private String buildLocation() {
+        StringBuilder sb = new StringBuilder();
+
+        if (address != null) sb.append(address);
+        if (district != null) sb.append(", ").append(district);
+        if (city != null) sb.append(", ").append(city);
+
+        return sb.toString();
     }
 }

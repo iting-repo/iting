@@ -4,6 +4,7 @@ import com.iting.jobportal.user.controller.CurrentUser;
 import com.iting.jobportal.userprofile.dto.request.*;
 import com.iting.jobportal.userprofile.entity.*;
 import com.iting.jobportal.userprofile.service.UserProfileService;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -12,6 +13,8 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 import java.util.Map;
 
+
+@Tag(name ="05. User Professional Profile")
 @RestController
 @RequestMapping("/api/user/professional-profile")
 @RequiredArgsConstructor

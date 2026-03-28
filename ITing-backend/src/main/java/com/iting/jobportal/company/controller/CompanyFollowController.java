@@ -1,7 +1,7 @@
 package com.iting.jobportal.company.controller;
 
-import com.iting.jobportal.company.dto.FollowCompanyRequest;
-import com.iting.jobportal.company.dto.FollowedCompanyResponse;
+import com.iting.jobportal.company.dto.request.FollowCompanyRequest;
+import com.iting.jobportal.company.dto.response.FollowedCompanyResponse;
 import com.iting.jobportal.company.service.CompanyFollowService;
 import com.iting.jobportal.job.controller.CurrentUser;
 import io.swagger.v3.oas.annotations.Operation;

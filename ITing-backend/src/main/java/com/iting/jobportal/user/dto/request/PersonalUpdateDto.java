@@ -1,15 +1,15 @@
-package com.iting.jobportal.user.dto.request;
+    package com.iting.jobportal.user.dto.request;
 
-import jakarta.validation.constraints.NotBlank;
-import lombok.Data;
+    import jakarta.validation.constraints.NotBlank;
+    import lombok.Data;
 
-@Data
-public class PersonalUpdateDto {
-    @NotBlank(message = "Full name is required")
-    private String fullName;
+    @Data
+    public class PersonalUpdateDto {
+        @NotBlank(message = "Full name is required")
+        private String fullName;
 
-    private String phoneNum;
+        private String phoneNum;
 
-    private String avatarUrl;
-}
+        private String avatarUrl;
+    }
 

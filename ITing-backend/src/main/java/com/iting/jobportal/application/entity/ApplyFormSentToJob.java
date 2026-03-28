@@ -1,9 +1,13 @@
 package com.iting.jobportal.application.entity;
 
+import com.iting.jobportal.application.entity.enums.ApplicationStatus;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Embeddable;
 import jakarta.persistence.EmbeddedId;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
@@ -30,10 +34,17 @@ public class ApplyFormSentToJob {
     @Column(name = "Time_sent")
     private LocalDateTime timeSent;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "Status")
+    private ApplicationStatus status;
+
     @PrePersist
     protected void onCreate() {
         if (timeSent == null) {
             timeSent = LocalDateTime.now();
+        }
+        if (status == null) {
+            status = ApplicationStatus.PENDING;
         }
     }
 

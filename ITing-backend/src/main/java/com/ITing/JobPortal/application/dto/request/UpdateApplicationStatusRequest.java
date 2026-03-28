@@ -1,4 +1,4 @@
-package com.iting.jobportal.application.dto;
+package com.iting.jobportal.application.dto.request;
 
 import com.iting.jobportal.application.entity.enums.ApplicationStatus;
 import jakarta.validation.constraints.NotNull;

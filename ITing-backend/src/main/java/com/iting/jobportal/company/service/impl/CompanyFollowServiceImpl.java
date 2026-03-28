@@ -1,13 +1,13 @@
 package com.iting.jobportal.company.service.impl;
 
-import com.iting.jobportal.company.dto.FollowedCompanyResponse;
+import com.iting.jobportal.company.dto.response.FollowedCompanyResponse;
 import com.iting.jobportal.company.entity.Company;
 import com.iting.jobportal.company.repository.CompanyRepository;
 import com.iting.jobportal.company.service.CompanyFollowService;
+import com.iting.jobportal.company.entity.UserFollowCompany;
+import com.iting.jobportal.company.repository.UserFollowCompanyRepository;
 import com.iting.jobportal.notification.entity.Notification;
-import com.iting.jobportal.notification.entity.UserFollowCompany;
 import com.iting.jobportal.notification.repository.NotificationRepository;
-import com.iting.jobportal.notification.repository.UserFollowCompanyRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -46,7 +46,6 @@ public class CompanyFollowServiceImpl implements CompanyFollowService {
         UserFollowCompany follow = UserFollowCompany.builder()
                 .userId(userId)
                 .companyId(companyId)
-                .notificationId(notification.getId())
                 .build();
 
         userFollowCompanyRepository.save(follow);

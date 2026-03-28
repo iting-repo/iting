@@ -1,6 +1,6 @@
 package com.iting.jobportal.company.service;
 
-import com.iting.jobportal.company.dto.FollowedCompanyResponse;
+import com.iting.jobportal.company.dto.response.FollowedCompanyResponse;
 import org.springframework.data.domain.Page;
 
 public interface CompanyFollowService {

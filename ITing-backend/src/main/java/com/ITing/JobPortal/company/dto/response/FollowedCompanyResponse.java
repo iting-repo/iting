@@ -1,4 +1,4 @@
-package com.iting.jobportal.company.dto;
+package com.iting.jobportal.company.dto.response;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;

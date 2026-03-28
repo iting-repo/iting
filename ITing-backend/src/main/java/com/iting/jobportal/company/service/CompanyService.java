@@ -11,6 +11,10 @@ import com.iting.jobportal.company.dto.request.VerifyPhoneRequest;
 public interface CompanyService {
     CompanyResponse getCompanyById(Long id);
 
+    CompanyResponse getMyCompany(Long accountId);
+
+//    CompanyResponse getCompanyByUserId(Long userId);
+
     // (A) Basic Info
     CompanyResponse updateBasicInfo(Long id, CompanyBasicInfoRequest request);
 

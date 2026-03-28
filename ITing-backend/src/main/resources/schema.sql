@@ -127,6 +127,7 @@ CREATE TABLE Company (
     Tax_code VARCHAR(50),
     Business_license_file_url TEXT,
     Consent_document_file_url TEXT,
+    Follower_count INTEGER DEFAULT 0,
     Verification_level VARCHAR(50) DEFAULT 'UNVERIFIED',
     Company_info_update_status VARCHAR(50) DEFAULT 'DRAFT',
     Last_update_request_date TIMESTAMP,
@@ -155,31 +156,66 @@ CREATE TABLE admin_accounts (
 CREATE TABLE Job (
     Id BIGSERIAL PRIMARY KEY,
     Company_id BIGINT NOT NULL,
+
+    -- BASIC
+    Title VARCHAR(255) NOT NULL,
     Position VARCHAR(255),
-    Description TEXT,
     Tech_required TEXT,
     Job_type VARCHAR(50),
     Experience_level VARCHAR(50),
+    Working_days VARCHAR(255),
+
+    -- SALARY
     Min_salary DECIMAL(15,2),
     Max_salary DECIMAL(15,2),
-    Min_accept TEXT,
-    Max_accept INTEGER,
-    Current_accepted INTEGER,
+    Salary_type VARCHAR(50),
+
+    -- QUANTITY
+    Max_accept INTEGER DEFAULT 0,
+    Current_accepted INTEGER DEFAULT 0,
+
+    -- DATE
+    Due_date DATE,
+
+    -- LOCATION
+    City VARCHAR(100),
+    District VARCHAR(100),
+    Address VARCHAR(500),
+    Location VARCHAR(255),
+    Loc_id BIGINT,
+
+    -- CONTENT
+    Description TEXT,
+    Responsibilities TEXT,
+    Requirements TEXT,
+    Benefits TEXT,
+
+    -- SYSTEM
     View_count INTEGER DEFAULT 0,
     Application_count INTEGER DEFAULT 0,
     Featured BOOLEAN DEFAULT FALSE,
+    Status VARCHAR(50) DEFAULT 'DRAFT',
+
+    -- REVIEW
     Review_reason TEXT,
     Reviewed_by BIGINT,
     Reviewed_at TIMESTAMP,
-    Status VARCHAR(50) DEFAULT 'DRAFT',
-    Due_date DATE,
+
+    -- AUDIT
+    Created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     Last_update TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    Location VARCHAR(255),
-    Loc_id BIGINT,
+
+    -- ADVANCED
     Job_embedding TEXT,
-    CONSTRAINT fk_job_company FOREIGN KEY (Company_id) REFERENCES Company(company_id),
-    CONSTRAINT fk_job_location FOREIGN KEY (Loc_id) REFERENCES VN_location(Loc_id) ON DELETE SET NULL,
-    CONSTRAINT fk_job_reviewed_by_admin FOREIGN KEY (Reviewed_by) REFERENCES admin_accounts(id) ON DELETE SET NULL
+
+    CONSTRAINT fk_job_company
+        FOREIGN KEY (Company_id) REFERENCES Company(company_id),
+
+    CONSTRAINT fk_job_location
+        FOREIGN KEY (Loc_id) REFERENCES VN_location(Loc_id) ON DELETE SET NULL,
+
+    CONSTRAINT fk_job_reviewed_by_admin
+        FOREIGN KEY (Reviewed_by) REFERENCES admin_accounts(id) ON DELETE SET NULL
 );
 
 -- ============================================================================
@@ -285,19 +321,37 @@ CREATE TABLE user_save_job (
     CONSTRAINT fk_save_job FOREIGN KEY (job_id) REFERENCES Job(Id) ON DELETE CASCADE
 );
 
+-- Table: CV
+CREATE TABLE CV (
+    id BIGSERIAL PRIMARY KEY,
+    profile_id BIGINT NOT NULL,
+    Title VARCHAR(255),
+    File_path TEXT NOT NULL,
+    Cv_status VARCHAR(50),
+    Is_default BOOLEAN DEFAULT FALSE,
+    Upload_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_cv_profile FOREIGN KEY (profile_id) REFERENCES candidate_profiles(id) ON DELETE CASCADE
+);
+
 CREATE TABLE Apply_form (
     Id BIGSERIAL PRIMARY KEY,
     User_id BIGINT NOT NULL,
+    Cv_id BIGINT, -- ✅ thêm cột này
     Cv_title VARCHAR(255),
     Applicant_name VARCHAR(255),
     Introduction TEXT,
-    CONSTRAINT fk_apply_user FOREIGN KEY (User_id) REFERENCES Users(Id) ON DELETE CASCADE
-);
 
+    CONSTRAINT fk_apply_user
+        FOREIGN KEY (User_id) REFERENCES Users(Id) ON DELETE CASCADE,
+
+    CONSTRAINT fk_apply_cv
+        FOREIGN KEY (Cv_id) REFERENCES CV(Id) ON DELETE SET NULL
+);
 CREATE TABLE Apply_form_user_to_job (
     Job_id BIGINT NOT NULL,
     Apply_form_id BIGINT NOT NULL,
     Time_sent TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    status VARCHAR(50) DEFAULT 'PENDING',
     PRIMARY KEY (Job_id, Apply_form_id),
     CONSTRAINT fk_apply_job FOREIGN KEY (Job_id) REFERENCES Job(Id) ON DELETE CASCADE,
     CONSTRAINT fk_apply_form FOREIGN KEY (Apply_form_id) REFERENCES Apply_form(Id) ON DELETE CASCADE
@@ -356,17 +410,7 @@ CREATE TABLE activity_logs (
 -- USER PROFILE COMPONENTS (Mapped to entities in userprofile package)
 -- ============================================================================
 
--- Table: CV
-CREATE TABLE CV (
-    id BIGSERIAL PRIMARY KEY,
-    profile_id BIGINT NOT NULL,
-    Title VARCHAR(255),
-    File_path TEXT NOT NULL,
-    Cv_status VARCHAR(50),
-    Is_default BOOLEAN DEFAULT FALSE,
-    Upload_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT fk_cv_profile FOREIGN KEY (profile_id) REFERENCES candidate_profiles(id) ON DELETE CASCADE
-);
+
 
 -- Table: Education
 CREATE TABLE Education (
@@ -441,10 +485,18 @@ CREATE TABLE Portfolio (
 );
 
 -- Table: contact_info
+DROP TABLE IF EXISTS contact_info;
+
 CREATE TABLE contact_info (
-    userId VARCHAR(255) PRIMARY KEY,
+    id BIGINT PRIMARY KEY,
     phone VARCHAR(20),
-    email VARCHAR(255)
+    email VARCHAR(255),
+    show_phone_to_recruiter BOOLEAN DEFAULT FALSE,
+    show_email_to_recruiter BOOLEAN DEFAULT FALSE,
+
+    CONSTRAINT fk_contact_profile
+    FOREIGN KEY (id) REFERENCES candidate_profiles(id)
+    ON DELETE CASCADE
 );
 
 -- ============================================================================

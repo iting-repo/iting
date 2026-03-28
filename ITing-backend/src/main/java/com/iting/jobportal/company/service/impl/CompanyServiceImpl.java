@@ -18,9 +18,19 @@ public class CompanyServiceImpl implements CompanyService {
     private final CompanyRepository companyRepository;
     private final CompanyFollowService companyFollowService;
 
+
+
     public CompanyServiceImpl(CompanyRepository companyRepository, CompanyFollowService companyFollowService) {
         this.companyRepository = companyRepository;
         this.companyFollowService = companyFollowService;
+    }
+
+    @Override
+    public CompanyResponse getMyCompany(Long accountId) {
+        Company company = companyRepository.findById(accountId)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy công ty của tài khoản này"));
+
+        return mapToResponse(company);
     }
 
     // ==========================
@@ -192,7 +202,7 @@ public class CompanyServiceImpl implements CompanyService {
     // 8. Hàm map Company -> CompanyResponse
     // ==========================================
     private CompanyResponse mapToResponse(Company company) {
-        CompanyResponse response = new CompanyResponse(
+        return new CompanyResponse(
                 company.getId(),
                 company.getName(),
                 company.getLogoUrl(),
@@ -214,13 +224,6 @@ public class CompanyServiceImpl implements CompanyService {
                 company.getCompanyInfoUpdateStatus(),
                 company.getLastUpdateRequestDate(),
                 company.getLastUpdate(),
-                company.getActive(),
-                company.getFollowerCount());
-        
-        // Add follower count
-        Long followerCount = companyFollowService.getFollowerCount(company.getId());
-        response.setFollowerCount(followerCount);
-        
-        return response;
+                company.getActive());
     }
 }

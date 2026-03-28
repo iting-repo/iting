@@ -106,64 +106,282 @@ INSERT INTO candidate_profiles (
 
 INSERT INTO Company (
     company_id, Name, Web_link, Address, Logo, Description,
-    Industry, Company_size, Phone, Representative_name,
-    Tax_code, Verification_level,
-    Company_info_update_status, Active
+    Company_email, Industry, Company_size, Phone,
+    Representative_name, Representative_gender, Representative_phone,
+    Account_email, Tax_code, Verification_level,
+    Company_info_update_status, Active, Follower_count
 ) VALUES
-      (11, 'FPT Software', 'https://fpt-software.com',
-       'Khu CNC Hòa Lạc, Hà Nội',
-       'https://fpt-software.com/logo.png',
-       'Công ty phần mềm hàng đầu Việt Nam...',
-       'IT Outsourcing','30,000+','0243123456','Nguyễn Văn A',
-       '0101248141','PREMIUM','APPROVED',true),
+      (11, 'FPT Software', 'https://fpt-software.com', 'Khu CNC Hòa Lạc, Hà Nội',
+       'https://fpt-software.com/logo.png', 'Công ty phần mềm hàng đầu Việt Nam...',
+       'hr@fpt-software.com', 'IT Outsourcing', '30,000+', '0243123456',
+       'Nguyễn Văn A', 'MALE', '0901234567', 'admin_hr@fpt.com',
+       '0101248141', 'PREMIUM', 'APPROVED', true, 12000),
 
-      (12, 'VNG Corporation', 'https://vng.com.vn',
-       '182 Lê Đại Hành, Q11, TP.HCM',
-       'https://vng.com.vn/logo.png',
-       'Kỳ lân công nghệ Việt Nam...',
-       'Internet Services','5,000+','0283962388','Lê Hồng Minh',
-       '0303867050','ADVANCED','APPROVED',true),
+      (12, 'VNG Corporation', 'https://vng.com.vn', '182 Lê Đại Hành, Q11, TP.HCM',
+       'https://vng.com.vn/logo.png', 'Kỳ lân công nghệ Việt Nam...',
+       'recruitment@vng.com.vn', 'Internet Services', '5,000+', '0283962388',
+       'Lê Hồng Minh', 'MALE', '0912345678', 'minhlh@vng.com.vn',
+       '0303867050', 'ADVANCED', 'APPROVED', true, 8500),
 
-      (13, 'VinGroup', 'https://vingroup.net',
-       'Vinhomes Riverside, Hà Nội',
-       'https://vingroup.net/logo.png',
-       'Tập đoàn kinh tế tư nhân đa ngành...',
-       'Multi-industry','50,000+','0243974999','Phạm Nhật Vượng',
-       '0101245486','PREMIUM','APPROVED',true),
+      (13, 'VinGroup', 'https://vingroup.net', 'Vinhomes Riverside, Hà Nội',
+       'https://vingroup.net/logo.png', 'Tập đoàn kinh tế tư nhân đa ngành...',
+       'info@vingroup.net', 'Multi-industry', '50,000+', '0243974999',
+       'Phạm Nhật Vượng', 'MALE', '0988888888', 'contact@vingroup.net',
+       '0101245486', 'PREMIUM', 'APPROVED', true, 20000),
 
-      (14, 'Tiki Corporation', 'https://tiki.vn',
-       'Tòa nhà Rivera Park, Quận 10, TP.HCM',
-       'https://tiki.vn/logo.png',
-       'Sàn thương mại điện tử hàng đầu...',
-       'E-commerce','3,000+','19006035','Trần Ngọc Thái Sơn',
-       '0309532909','ADVANCED','APPROVED',true),
+      (14, 'Tiki Corporation', 'https://tiki.vn', 'Tòa nhà Rivera Park, Quận 10, TP.HCM',
+       'https://tiki.vn/logo.png', 'Sàn thương mại điện tử hàng đầu...',
+       'jobs@tiki.vn', 'E-commerce', '3,000+', '19006035',
+       'Trần Ngọc Thái Sơn', 'MALE', '0977665544', 'son.tran@tiki.vn',
+       '0309532909', 'ADVANCED', 'APPROVED', true, 6000),
 
-      (15, 'Shopee Vietnam', 'https://shopee.vn',
-       'Tòa nhà Viettel, Quận 10, TP.HCM',
-       'https://shopee.vn/logo.png',
-       'Nền tảng thương mại điện tử số 1...',
-       'E-commerce','2,000+','0287302007','Pine Kyaw',
-       '0314051252','ADVANCED','APPROVED',true);
+      (15, 'Shopee Vietnam', 'https://shopee.vn', 'Tòa nhà Viettel, Quận 10, TP.HCM',
+       'https://shopee.vn/logo.png', 'Nền tảng thương mại điện tử số 1...',
+       'hr@shopee.vn', 'E-commerce', '2,000+', '0287302007',
+       'Pine Kyaw', 'MALE', '0966554433', 'pine.k@shopee.vn',
+       '0314051252', 'ADVANCED', 'APPROVED', true, 15000);
 
 -- ============================================================================
 -- JOBS (with realistic embeddings from data_jobweb.sql)
 -- ============================================================================
-INSERT INTO Job (
-    Id, Company_id, Position, Description, Tech_required, Job_type, Experience_level,
-    Min_salary, Max_salary, Status, Due_date, Location, Loc_id, Min_accept,
-    View_count, Application_count, Job_embedding
-) VALUES
-(1, 11, 'Senior Backend Developer', 'Thiết kế hệ thống high-traffic...', 'Python, FastAPI, Redis', 'FULL_TIME', 'SENIOR', 25000000, 45000000, 'ACTIVE', '2026-03-31', 'Hà Nội', 1, '5+ years', 150, 12, NULL),
-(2, 12, 'Backend Engineer', 'Xây dựng RESTful APIs fintech...', 'Node.js, MongoDB, AWS', 'FULL_TIME', 'MID_LEVEL', 20000000, 35000000, 'ACTIVE', '2026-03-31', 'TP. Hồ Chí Minh', 2, '3+ years', 85, 5, NULL),
-(3, 11, 'Frontend Developer (React)', 'Tạo web responsive UI/UX...', 'React, TypeScript, Redux', 'FULL_TIME', 'JUNIOR', 18000000, 32000000, 'ACTIVE', '2026-04-15', 'TP. Hồ Chí Minh', 2, '2+ years', 210, 25, NULL),
-(4, 13, 'DevOps Engineer', 'Quản lý infra CI/CD cloud...', 'AWS, Kubernetes, Terraform', 'FULL_TIME', 'SENIOR', 30000000, 50000000, 'ACTIVE', '2026-03-25', 'Hà Nội', 1, '4+ years', 45, 3, NULL),
-(5, 14, 'Mobile Developer (Flutter)', 'Phát triển App đa nền tảng...', 'Flutter, Dart, Firebase', 'FULL_TIME', 'MID_LEVEL', 22000000, 38000000, 'ACTIVE', '2026-04-10', 'Đà Nẵng', 3, '2+ years', 95, 12, NULL),
-(6, 11, 'AI/ML Engineer', 'Nghiên cứu giải pháp NLP...', 'Python, TensorFlow, PyTorch', 'FULL_TIME', 'EXPERT', 35000000, 60000000, 'ACTIVE', '2026-04-20', 'Hà Nội', 1, '4+ years', 300, 20, NULL),
-(7, 12, 'Data Engineer', 'Xây dựng ETL pipelines...', 'Python, Spark, Airflow', 'FULL_TIME', 'MID_LEVEL', 24000000, 42000000, 'ACTIVE', '2026-03-30', 'TP. Hồ Chí Minh', 2, '1-2 years', 110, 9, NULL),
-(8, 13, 'QA Engineer', 'Automation testing web...', 'Selenium, Java, Python', 'FULL_TIME', 'JUNIOR', 12000000, 22000000, 'ACTIVE', '2026-04-05', 'Cần Thơ', 5, 'Fresher', 60, 30, NULL),
-(9, 14, 'Java Backend Developer', 'Microservices E-commerce...', 'Java, Spring Boot, MySQL', 'FULL_TIME', 'SENIOR', 28000000, 48000000, 'ACTIVE', '2026-04-12', 'Hà Nội', 1, '3+ years', 180, 14, NULL),
-(10,15, 'Tech Lead', 'Dẫn dắt team 8-10 người...', 'System Design, Leadership', 'FULL_TIME', 'LEAD', 45000000, 80000000, 'ACTIVE', '2026-04-18', 'TP. Hồ Chí Minh', 2, '5+ years', 450, 5, NULL);
+-- ============================================================================
+-- JOBS (NEW STRUCTURE - CLEAN DATA)
+-- ============================================================================
 
+INSERT INTO Job (
+    Company_id,
+    Title, Position,
+    Description, Tech_required,
+    Job_type, Experience_level, Working_days,
+    Min_salary, Max_salary, Salary_type,
+    Max_accept, Current_accepted,
+    Status, Due_date,
+    City, District, Address, Location, Loc_id,
+    Responsibilities, Requirements, Benefits,
+    View_count, Application_count,
+    Created_at, Last_update,
+    Job_embedding
+) VALUES
+
+-- 1
+(
+    11,
+    'Senior Backend Developer (Python)',
+    'Backend Developer',
+    'Thiết kế và xây dựng hệ thống backend phục vụ hàng triệu request mỗi ngày.',
+    'Python, FastAPI, Redis, PostgreSQL',
+    'FULL_TIME', 'SENIOR', 'Thứ 2 - Thứ 6 (08:30 - 17:30)',
+    25000000, 45000000, 'MONTH',
+    3, 1,
+    'ACTIVE', '2026-04-30',
+    'Hà Nội', 'Cầu Giấy', 'Tòa nhà ABC, Trần Thái Tông',
+    'Tòa nhà ABC, Trần Thái Tông, Cầu Giấy, Hà Nội',
+    1,
+    'Thiết kế API, tối ưu hệ thống.',
+    'Có 5+ năm kinh nghiệm backend.',
+    'Thưởng tháng 13, hybrid.',
+    150, 12,
+    CURRENT_TIMESTAMP, CURRENT_TIMESTAMP,
+    NULL
+),
+
+-- 2
+(
+    12,
+    'Backend Engineer (Node.js)',
+    'Backend Engineer',
+    'Xây dựng hệ thống fintech realtime.',
+    'Node.js, MongoDB, AWS',
+    'FULL_TIME', 'MID', 'Thứ 2 - Thứ 6',
+    20000000, 35000000, 'MONTH',
+    2, 0,
+    'ACTIVE', '2026-05-01',
+    'TP. Hồ Chí Minh', 'Quận 1', 'Bitexco Tower',
+    'Bitexco Tower, Quận 1, TP. Hồ Chí Minh',
+    2,
+    'Phát triển API, xử lý dữ liệu lớn.',
+    '3+ năm Node.js.',
+    'Bonus dự án.',
+    85, 5,
+    CURRENT_TIMESTAMP, CURRENT_TIMESTAMP,
+    NULL
+),
+
+-- 3
+(
+    11,
+    'Frontend Developer (React)',
+    'Frontend Developer',
+    'Xây dựng UI/UX cho nền tảng tuyển dụng.',
+    'React, TypeScript, Redux',
+    'FULL_TIME', 'JUNIOR', 'Thứ 2 - Thứ 6',
+    18000000, 32000000, 'MONTH',
+    3, 1,
+    'ACTIVE', '2026-05-15',
+    'TP. Hồ Chí Minh', 'Quận 3', '123 Nguyễn Đình Chiểu',
+    '123 Nguyễn Đình Chiểu, Quận 3, TP. Hồ Chí Minh',
+    2,
+    'Xây dựng UI component.',
+    '2+ năm React.',
+    'Remote 2 ngày/tuần.',
+    210, 25,
+    CURRENT_TIMESTAMP, CURRENT_TIMESTAMP,
+    NULL
+),
+
+-- 4
+(
+    13,
+    'DevOps Engineer',
+    'DevOps Engineer',
+    'Quản lý hệ thống CI/CD và cloud infrastructure.',
+    'AWS, Kubernetes, Terraform',
+    'FULL_TIME', 'SENIOR', 'Thứ 2 - Thứ 6',
+    30000000, 50000000, 'MONTH',
+    2, 0,
+    'ACTIVE', '2026-04-25',
+    'Hà Nội', 'Nam Từ Liêm', 'Keangnam Landmark',
+    'Keangnam Landmark, Nam Từ Liêm, Hà Nội',
+    1,
+    'Triển khai CI/CD.',
+    'Kubernetes, AWS.',
+    'Thưởng hiệu suất.',
+    45, 3,
+    CURRENT_TIMESTAMP, CURRENT_TIMESTAMP,
+    NULL
+),
+
+-- 5
+(
+    14,
+    'Mobile Developer (Flutter)',
+    'Mobile Developer',
+    'Phát triển ứng dụng mobile đa nền tảng.',
+    'Flutter, Dart, Firebase',
+    'FULL_TIME', 'MID', 'Thứ 2 - Thứ 6',
+    22000000, 38000000, 'MONTH',
+    2, 0,
+    'ACTIVE', '2026-05-10',
+    'Đà Nẵng', 'Hải Châu', 'Tòa nhà FPT',
+    'Tòa nhà FPT, Hải Châu, Đà Nẵng',
+    3,
+    'Phát triển app mobile.',
+    'Flutter 2+ năm.',
+    'Team trẻ, năng động.',
+    95, 12,
+    CURRENT_TIMESTAMP, CURRENT_TIMESTAMP,
+    NULL
+),
+
+-- 6
+(
+     11,
+    'AI/ML Engineer',
+    'AI Engineer',
+    'Xây dựng hệ thống AI recommendation.',
+    'Python, TensorFlow, PyTorch',
+    'FULL_TIME', 'SENIOR', 'Thứ 2 - Thứ 6',
+    35000000, 60000000, 'MONTH',
+    2, 1,
+    'ACTIVE', '2026-05-20',
+    'Hà Nội', 'Thanh Xuân', 'Royal City',
+    'Royal City, Thanh Xuân, Hà Nội',
+    1,
+    'Xây dựng model AI.',
+    'Deep Learning.',
+    'Lương cao + stock.',
+    300, 20,
+    CURRENT_TIMESTAMP, CURRENT_TIMESTAMP,
+    NULL
+),
+
+-- 7
+(
+     12,
+    'Data Engineer',
+    'Data Engineer',
+    'Xây dựng hệ thống data pipeline.',
+    'Python, Spark, Airflow',
+    'FULL_TIME', 'MID', 'Thứ 2 - Thứ 6',
+    24000000, 42000000, 'MONTH',
+    2, 0,
+    'ACTIVE', '2026-04-30',
+    'TP. Hồ Chí Minh', 'Quận 7', 'Phú Mỹ Hưng',
+    'Phú Mỹ Hưng, Quận 7, TP. Hồ Chí Minh',
+    2,
+    'ETL pipeline.',
+    'Big Data.',
+    'Hybrid.',
+    110, 9,
+    CURRENT_TIMESTAMP, CURRENT_TIMESTAMP,
+    NULL
+),
+
+-- 8
+(
+    13,
+    'QA Engineer',
+    'QA Engineer',
+    'Automation testing hệ thống.',
+    'Selenium, Java, Python',
+    'FULL_TIME', 'JUNIOR', 'Thứ 2 - Thứ 6',
+    12000000, 22000000, 'MONTH',
+    3, 0,
+    'ACTIVE', '2026-05-05',
+    'Cần Thơ', 'Ninh Kiều', 'Vincom Cần Thơ',
+    'Vincom, Ninh Kiều, Cần Thơ',
+    5,
+    'Test automation.',
+    'Fresher/Jr.',
+    'Training bài bản.',
+    60, 30,
+    CURRENT_TIMESTAMP, CURRENT_TIMESTAMP,
+    NULL
+),
+
+-- 9
+(
+    14,
+    'Java Backend Developer',
+    'Backend Developer',
+    'Xây dựng hệ thống E-commerce.',
+    'Java, Spring Boot, MySQL',
+    'FULL_TIME', 'SENIOR', 'Thứ 2 - Thứ 6',
+    28000000, 48000000, 'MONTH',
+    2, 1,
+    'ACTIVE', '2026-05-12',
+    'Hà Nội', 'Đống Đa', 'Xã Đàn',
+    'Xã Đàn, Đống Đa, Hà Nội',
+    1,
+    'Microservices.',
+    'Spring Boot.',
+    'Lương cao.',
+    180, 14,
+    CURRENT_TIMESTAMP, CURRENT_TIMESTAMP,
+    NULL
+),
+
+-- 10
+(
+    15,
+    'Tech Lead',
+    'Tech Lead',
+    'Dẫn dắt team kỹ thuật.',
+    'System Design, Leadership',
+    'FULL_TIME', 'LEAD', 'Thứ 2 - Thứ 6',
+    45000000, 80000000, 'MONTH',
+    1, 0,
+    'ACTIVE', '2026-05-18',
+    'TP. Hồ Chí Minh', 'Quận 1', 'Landmark 81',
+    'Landmark 81, Quận 1, TP. Hồ Chí Minh',
+    2,
+    'Quản lý team.',
+    '5+ năm kinh nghiệm.',
+    'Stock option.',
+    450, 5,
+    CURRENT_TIMESTAMP, CURRENT_TIMESTAMP,
+    NULL
+);
 -- CV DATA
 INSERT INTO CV (profile_id, Title, File_path, Upload_time, Cv_status, Is_default) VALUES
 (101, 'Java Developer CV', '/uploads/cv/cv101.pdf', CURRENT_TIMESTAMP, 'ACTIVE', TRUE),
@@ -231,22 +449,20 @@ INSERT INTO User_contact_company (User_id, Company_id, Time) VALUES
 -- ============================================================================
 -- JOB APPLICATIONS
 -- ============================================================================
-
--- Apply Forms
-INSERT INTO Apply_form (Id, user_id, Cv_title, Applicant_name, Introduction) VALUES
-(1, 101, 'Java Developer CV', 'Nguyen Van A', 'Đam mê backend...'),
-(2, 102, 'Frontend lead CV', 'Tran Thi B', 'Thích UX/UI...'),
-(3, 103, 'DevOps Pro CV', 'Le Van C', 'Kinh nghiệm infra...'),
-(4, 104, 'Fullstack Dev CV', 'Pham Thi D', 'Sẵn sàng học hỏi...'),
-(5, 105, 'ML Engineer CV', 'Hoang Van E', 'Yêu AI...');
+INSERT INTO Apply_form (User_id, Cv_id, Cv_title, Applicant_name, Introduction) VALUES
+(101, 1, 'Java Developer CV', 'Nguyen Van A', 'Đam mê backend...'),
+(102, 2, 'Frontend lead CV', 'Tran Thi B', 'Thích UX/UI...'),
+(103, 3, 'DevOps Pro CV', 'Le Van C', 'Kinh nghiệm infra...'),
+(104, 4, 'Fullstack Dev CV', 'Pham Thi D', 'Sẵn sàng học hỏi...'),
+(105, 5, 'ML Engineer CV', 'Hoang Van E', 'Yêu AI...');
 
 -- Apply Form Sent to Job
-INSERT INTO Apply_form_user_to_job (Job_id, Apply_form_id, Time_sent) VALUES
-(1, 1, CURRENT_TIMESTAMP),
-(2, 2, CURRENT_TIMESTAMP),
-(3, 3, CURRENT_TIMESTAMP),
-(4, 4, CURRENT_TIMESTAMP),
-(5, 5, CURRENT_TIMESTAMP);
+INSERT INTO Apply_form_user_to_job (Job_id, Apply_form_id, Time_sent, status) VALUES
+(1, 1, CURRENT_TIMESTAMP, 'PENDING'),
+(2, 2, CURRENT_TIMESTAMP, 'PENDING'),
+(3, 3, CURRENT_TIMESTAMP, 'PENDING'),
+(4, 4, CURRENT_TIMESTAMP, 'PENDING'),
+(5, 5, CURRENT_TIMESTAMP, 'PENDING');
 
 -- ============================================================================
 -- USER PROFILE COMPONENTS
@@ -470,13 +686,13 @@ UPDATE Users SET Cv_embedding = '[-0.03413896,0.06033864,0.00613062,0.03996229,-
 
 
 -- contact_info
-INSERT INTO contact_info (userId, phone, email)
+INSERT INTO contact_info (id, phone, email)
 VALUES
-('101', '0901111111', 'nguyenvana@gmail.com'),
-('102', '0902222222', 'tranthib@gmail.com'),
-('103', '0903333333', 'levanc@gmail.com'),
-('104', '0904444444', 'phamthid@gmail.com'),
-('105', '0905555555', 'hoangvane@gmail.com');
+(101, '0901111111', 'nguyenvana@gmail.com'),
+(102, '0902222222', 'tranthib@gmail.com'),
+(103, '0903333333', 'levanc@gmail.com'),
+(104, '0904444444', 'phamthid@gmail.com'),
+(105, '0905555555', 'hoangvane@gmail.com');
 -- ============================================================================
 -- Embedding generation complete!
 -- Total job embeddings:  10

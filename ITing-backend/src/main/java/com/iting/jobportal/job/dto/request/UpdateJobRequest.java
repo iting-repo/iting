@@ -1,25 +1,53 @@
 package com.iting.jobportal.job.dto.request;
 
-import com.iting.jobportal.job.entity.enums.ExperienceLevel;
-import com.iting.jobportal.job.entity.enums.JobStatus;
-import com.iting.jobportal.job.entity.enums.JobType;
+import com.iting.jobportal.job.entity.enums.*;
 import lombok.Data;
+
 import java.math.BigDecimal;
 import java.time.LocalDate;
 
 @Data
 public class UpdateJobRequest {
+
+    private String title;
+
     private String position;
-    private String description;
-    private String location;
+
     private String techRequired;
+
     private JobType jobType;
+
     private ExperienceLevel experienceLevel;
-    private JobStatus status;
-    private Integer maxAccept;
-    private String minAccept;
+
+    private String workingDays;
+
     private BigDecimal minSalary;
+
     private BigDecimal maxSalary;
+
+    private SalaryType salaryType;
+
+    private Integer maxAccept;
+
     private LocalDate dueDate;
+
+    private String city;
+
+    private String district;
+
+    private String address;
+
+    private String location;
+
     private Long locId;
+
+    private String description;
+
+    private String responsibilities;
+
+    private String requirements;
+
+    private String benefits;
+
+    private JobStatus status;
 }

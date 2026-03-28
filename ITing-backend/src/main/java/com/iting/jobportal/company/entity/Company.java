@@ -47,9 +47,13 @@ public class Company {
     @Column(name = "Company_email", length = 255)
     private String companyEmail;
 
+
+    // enums
     @Column(name = "Industry", length = 255)
     private String industry;
 
+
+    // enums
     @Column(name = "Company_size", length = 100)
     private String companySize;
 

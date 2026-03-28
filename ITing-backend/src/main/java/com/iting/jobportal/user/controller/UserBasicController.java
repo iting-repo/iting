@@ -2,10 +2,14 @@ package com.iting.jobportal.user.controller;
 
 import com.iting.jobportal.user.dto.request.UpdateUserRequest;
 import com.iting.jobportal.user.service.UserService;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 import io.swagger.v3.oas.annotations.Operation;
 
+
+
+@Tag(name ="07. User Basic Profile")
 @RestController
 @RequestMapping("/api/candidate/profile")
 @RequiredArgsConstructor

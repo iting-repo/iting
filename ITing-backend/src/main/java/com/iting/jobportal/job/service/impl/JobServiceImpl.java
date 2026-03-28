@@ -1,6 +1,7 @@
 package com.iting.jobportal.job.service.impl;
 
 import com.iting.jobportal.company.entity.Company;
+import com.iting.jobportal.company.entity.enums.CompanyReviewStatus;
 import com.iting.jobportal.company.repository.CompanyRepository;
 import com.iting.jobportal.job.dto.request.CreateJobRequest;
 import com.iting.jobportal.job.dto.request.JobSearchRequest;
@@ -14,10 +15,7 @@ import com.iting.jobportal.job.service.JobService;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
+import org.springframework.data.domain.*;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -37,76 +35,182 @@ public class JobServiceImpl implements JobService {
     @PersistenceContext
     private EntityManager entityManager;
 
-    // =====================================================================
+    // =========================================================
     // PRIVATE HELPERS
-    // =====================================================================
+    // =========================================================
 
-    /** Tìm job, ném 404 nếu không tồn tại */
     private Job findJobOrThrow(Long jobId) {
         return jobRepository.findById(jobId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Không tìm thấy tin tuyển dụng với id: " + jobId));
+                .orElseThrow(() ->
+                        new ResponseStatusException(
+                                HttpStatus.NOT_FOUND,
+                                "Không tìm thấy tin tuyển dụng với id: " + jobId
+                        )
+                );
     }
 
-    /** Kiểm tra employer có quyền sở hữu job không */
+    private Company findCompanyOrThrow(Long accountId) {
+        return companyRepository.findByAccount_Id(accountId)
+                .orElseThrow(() ->
+                        new ResponseStatusException(
+                                HttpStatus.BAD_REQUEST,
+                                "Không tìm thấy công ty của tài khoản hiện tại"
+                        )
+                );
+    }
+
     private void checkOwnership(Job job, Long employerId) {
+        if (job.getCompany() == null || job.getCompany().getId() == null) {
+            throw new ResponseStatusException(
+                    HttpStatus.FORBIDDEN,
+                    "Tin tuyển dụng chưa gắn với công ty hợp lệ"
+            );
+        }
+
         if (!job.getCompany().getId().equals(employerId)) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Bạn không có quyền thực hiện thao tác này trên tin tuyển dụng này");
+            throw new ResponseStatusException(
+                    HttpStatus.FORBIDDEN,
+                    "Bạn không có quyền thực hiện thao tác này trên tin tuyển dụng này"
+            );
         }
     }
 
-    /** Tìm company, ném lỗi phù hợp */
-    private Company findCompanyOrThrow(Long companyId) {
-        return companyRepository.findById(companyId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Không tìm thấy công ty với id: " + companyId));
+    private void validateSalary(Job job) {
+        if (job.getMinSalary() != null && job.getMaxSalary() != null
+                && job.getMinSalary().compareTo(job.getMaxSalary()) > 0) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Lương tối thiểu không được lớn hơn lương tối đa"
+            );
+        }
     }
 
-    // =====================================================================
+    private String buildLocation(String address, String district, String city) {
+        StringBuilder sb = new StringBuilder();
+
+        if (address != null && !address.isBlank()) {
+            sb.append(address.trim());
+        }
+        if (district != null && !district.isBlank()) {
+            if (sb.length() > 0) sb.append(", ");
+            sb.append(district.trim());
+        }
+        if (city != null && !city.isBlank()) {
+            if (sb.length() > 0) sb.append(", ");
+            sb.append(city.trim());
+        }
+
+        return sb.toString();
+    }
+
+    private boolean isImportantFieldUpdated(UpdateJobRequest request) {
+        return request.getTitle() != null
+                || request.getPosition() != null
+                || request.getDescription() != null
+                || request.getResponsibilities() != null
+                || request.getRequirements() != null
+                || request.getBenefits() != null
+                || request.getTechRequired() != null
+                || request.getJobType() != null
+                || request.getExperienceLevel() != null
+                || request.getWorkingDays() != null
+                || request.getMinSalary() != null
+                || request.getMaxSalary() != null
+                || request.getSalaryType() != null
+                || request.getDueDate() != null
+                || request.getMaxAccept() != null
+                || request.getCity() != null
+                || request.getDistrict() != null
+                || request.getAddress() != null
+                || request.getLocation() != null
+                || request.getLocId() != null;
+    }
+
+    private JobResponse enrichWithCompany(Job job) {
+        return companyRepository.findById(job.getCompany().getId())
+                .map(company -> JobResponse.fromEntityWithCompany(job, company.getName(), company.getLogoUrl()))
+                .orElseGet(() -> JobResponse.fromEntity(job));
+    }
+
+    private Sort buildSort(String sortBy, String sortOrder) {
+        if (sortBy == null || sortBy.isBlank()) {
+            return Sort.by("lastUpdate").descending();
+        }
+
+        return switch (sortBy) {
+            case "salary" -> "asc".equalsIgnoreCase(sortOrder)
+                    ? Sort.by("minSalary").ascending()
+                    : Sort.by("maxSalary").descending();
+
+            case "viewCount" -> Sort.by("viewCount").descending();
+            case "applicationCount" -> Sort.by("applicationCount").descending();
+
+            case "dueDate" -> "asc".equalsIgnoreCase(sortOrder)
+                    ? Sort.by("dueDate").ascending()
+                    : Sort.by("dueDate").descending();
+
+            case "createdAt" -> "asc".equalsIgnoreCase(sortOrder)
+                    ? Sort.by("createdAt").ascending()
+                    : Sort.by("createdAt").descending();
+
+            case "lastUpdate" -> "asc".equalsIgnoreCase(sortOrder)
+                    ? Sort.by("lastUpdate").ascending()
+                    : Sort.by("lastUpdate").descending();
+
+            default -> Sort.by("lastUpdate").descending();
+        };
+    }
+
+    // =========================================================
     // CREATE
-    // =====================================================================
+    // =========================================================
 
     @Override
     @Transactional
     public JobResponse createJob(Long employerId, CreateJobRequest request) {
-        // Xác minh company tồn tại (Company_id = Account.Id của employer)
         Company company = findCompanyOrThrow(employerId);
 
         Job job = Job.builder()
                 .company(company)
+                .title(request.getTitle())
                 .position(request.getPosition())
-                .description(request.getDescription())
-                .location(request.getLocation())
                 .techRequired(request.getTechRequired())
-                .minSalary(request.getMinSalary())
-                .maxSalary(request.getMaxSalary())
-                .dueDate(request.getDueDate())
-                .status(JobStatus.DRAFT)
-                .lastUpdate(LocalDateTime.now())
                 .jobType(request.getJobType())
                 .experienceLevel(request.getExperienceLevel())
-                .maxAccept(request.getMaxAccept() != null ? request.getMaxAccept() : 0)
-                .minAccept(request.getMinAccept())
+                .workingDays(request.getWorkingDays())
+                .minSalary(request.getMinSalary())
+                .maxSalary(request.getMaxSalary())
+                .salaryType(request.getSalaryType())
+                .maxAccept(request.getMaxAccept())
+                .dueDate(request.getDueDate())
+                .city(request.getCity())
+                .district(request.getDistrict())
+                .address(request.getAddress())
                 .locId(request.getLocId())
-                .viewCount(0)
-                .applicationCount(0)
-                .currentAccepted(0)
+                .description(request.getDescription())
+                .responsibilities(request.getResponsibilities())
+                .requirements(request.getRequirements())
+                .benefits(request.getBenefits())
+                .status(JobStatus.DRAFT)
                 .build();
+
+        validateSalary(job);
 
         Job saved = jobRepository.save(job);
 
-        // Ghi nhận vào bảng Company_upload_job
         entityManager.createNativeQuery(
-                        "INSERT INTO Company_upload_job (Job_id, Company_id, Time) VALUES (:jobId, :companyId, CURRENT_TIMESTAMP)"
+                        "INSERT INTO Company_upload_job (job_id, company_id, time) VALUES (:jobId, :companyId, CURRENT_TIMESTAMP)"
                 )
                 .setParameter("jobId", saved.getId())
-                .setParameter("companyId", employerId)
+                .setParameter("companyId", company.getId())
                 .executeUpdate();
 
         return JobResponse.fromEntityWithCompany(saved, company.getName(), company.getLogoUrl());
     }
 
-    // =====================================================================
+    // =========================================================
     // UPDATE
-    // =====================================================================
+    // =========================================================
 
     @Override
     @Transactional
@@ -114,46 +218,48 @@ public class JobServiceImpl implements JobService {
         Job job = findJobOrThrow(jobId);
         checkOwnership(job, employerId);
 
-        if (request.getPosition() != null)         job.setPosition(request.getPosition());
-        if (request.getDescription() != null)      job.setDescription(request.getDescription());
-        if (request.getLocation() != null)         job.setLocation(request.getLocation());
-        if (request.getTechRequired() != null)     job.setTechRequired(request.getTechRequired());
-        if (request.getJobType() != null)          job.setJobType(request.getJobType());
-        if (request.getExperienceLevel() != null)  job.setExperienceLevel(request.getExperienceLevel());
-        if (request.getStatus() != null)           job.setStatus(request.getStatus());
-        if (request.getMaxAccept() != null)        job.setMaxAccept(request.getMaxAccept());
-        if (request.getMinAccept() != null)        job.setMinAccept(request.getMinAccept());
-        if (request.getMinSalary() != null)        job.setMinSalary(request.getMinSalary());
-        if (request.getMaxSalary() != null)        job.setMaxSalary(request.getMaxSalary());
-        if (request.getDueDate() != null)          job.setDueDate(request.getDueDate());
-        if (request.getLocId() != null)            job.setLocId(request.getLocId());
+        if (request.getTitle() != null) job.setTitle(request.getTitle());
+        if (request.getPosition() != null) job.setPosition(request.getPosition());
+        if (request.getDescription() != null) job.setDescription(request.getDescription());
+        if (request.getResponsibilities() != null) job.setResponsibilities(request.getResponsibilities());
+        if (request.getRequirements() != null) job.setRequirements(request.getRequirements());
+        if (request.getBenefits() != null) job.setBenefits(request.getBenefits());
+        if (request.getTechRequired() != null) job.setTechRequired(request.getTechRequired());
+        if (request.getJobType() != null) job.setJobType(request.getJobType());
+        if (request.getExperienceLevel() != null) job.setExperienceLevel(request.getExperienceLevel());
+        if (request.getWorkingDays() != null) job.setWorkingDays(request.getWorkingDays());
+        if (request.getStatus() != null) job.setStatus(request.getStatus());
+        if (request.getMaxAccept() != null) job.setMaxAccept(request.getMaxAccept());
+        if (request.getMinSalary() != null) job.setMinSalary(request.getMinSalary());
+        if (request.getMaxSalary() != null) job.setMaxSalary(request.getMaxSalary());
+        if (request.getSalaryType() != null) job.setSalaryType(request.getSalaryType());
+        if (request.getDueDate() != null) job.setDueDate(request.getDueDate());
+        if (request.getCity() != null) job.setCity(request.getCity());
+        if (request.getDistrict() != null) job.setDistrict(request.getDistrict());
+        if (request.getAddress() != null) job.setAddress(request.getAddress());
+        if (request.getLocId() != null) job.setLocId(request.getLocId());
 
-        // If job was active and important fields are updated, move it back to pending
-        if (job.getStatus() == JobStatus.ACTIVE) {
-            boolean importantFieldUpdated = request.getPosition() != null ||
-                    request.getDescription() != null ||
-                    request.getTechRequired() != null ||
-                    request.getJobType() != null ||
-                    request.getExperienceLevel() != null ||
-                    request.getMinSalary() != null ||
-                    request.getMaxSalary() != null ||
-                    request.getLocation() != null ||
-                    request.getDueDate() != null ||
-                    request.getMaxAccept() != null;
-            
-            if (importantFieldUpdated) {
-                job.setStatus(JobStatus.PENDING);
-            }
+        if (request.getLocation() != null && !request.getLocation().isBlank()) {
+            job.setLocation(request.getLocation());
+        } else if (request.getCity() != null || request.getDistrict() != null || request.getAddress() != null) {
+            job.setLocation(buildLocation(job.getAddress(), job.getDistrict(), job.getCity()));
+        }
+
+        validateSalary(job);
+
+        if (job.getStatus() == JobStatus.ACTIVE && isImportantFieldUpdated(request)) {
+            job.setStatus(JobStatus.PENDING);
         }
 
         Job saved = jobRepository.save(job);
         Company company = findCompanyOrThrow(employerId);
+
         return JobResponse.fromEntityWithCompany(saved, company.getName(), company.getLogoUrl());
     }
 
-    // =====================================================================
+    // =========================================================
     // DELETE
-    // =====================================================================
+    // =========================================================
 
     @Override
     @Transactional
@@ -163,25 +269,30 @@ public class JobServiceImpl implements JobService {
         jobRepository.delete(job);
     }
 
-    // =====================================================================
+    // =========================================================
     // EXTEND
-    // =====================================================================
+    // =========================================================
 
     @Override
     @Transactional
     public JobResponse extendJob(Long employerId, Long jobId, int days) {
         if (days <= 0 || days > 365) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Số ngày gia hạn phải từ 1 đến 365");
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Số ngày gia hạn phải từ 1 đến 365"
+            );
         }
 
         Job job = findJobOrThrow(jobId);
         checkOwnership(job, employerId);
 
         if (job.getStatus() == JobStatus.CLOSED) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Không thể gia hạn tin tuyển dụng đã đóng");
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Không thể gia hạn tin tuyển dụng đã đóng"
+            );
         }
 
-        // Nếu đã hết hạn thì tính từ hôm nay, nếu chưa thì cộng thêm từ ngày hiện tại
         LocalDate baseDate = (job.getDueDate() == null || job.getDueDate().isBefore(LocalDate.now()))
                 ? LocalDate.now()
                 : job.getDueDate();
@@ -191,12 +302,13 @@ public class JobServiceImpl implements JobService {
 
         Job saved = jobRepository.save(job);
         Company company = findCompanyOrThrow(employerId);
+
         return JobResponse.fromEntityWithCompany(saved, company.getName(), company.getLogoUrl());
     }
 
-    // =====================================================================
+    // =========================================================
     // CLOSE
-    // =====================================================================
+    // =========================================================
 
     @Override
     @Transactional
@@ -205,18 +317,23 @@ public class JobServiceImpl implements JobService {
         checkOwnership(job, employerId);
 
         if (job.getStatus() == JobStatus.CLOSED) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Tin tuyển dụng đã được đóng trước đó");
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Tin tuyển dụng đã được đóng trước đó"
+            );
         }
 
         job.setStatus(JobStatus.CLOSED);
+
         Job saved = jobRepository.save(job);
         Company company = findCompanyOrThrow(employerId);
+
         return JobResponse.fromEntityWithCompany(saved, company.getName(), company.getLogoUrl());
     }
 
-    // =====================================================================
+    // =========================================================
     // GET BY ID
-    // =====================================================================
+    // =========================================================
 
     @Override
     public JobResponse getJobById(Long jobId) {
@@ -228,15 +345,16 @@ public class JobServiceImpl implements JobService {
     @Transactional
     public JobResponse getJobByIdWithView(Long jobId) {
         Job job = findJobOrThrow(jobId);
-        // Tăng view count
+
         jobRepository.incrementViewCount(jobId);
         job.setViewCount((job.getViewCount() != null ? job.getViewCount() : 0) + 1);
+
         return enrichWithCompany(job);
     }
 
-    // =====================================================================
+    // =========================================================
     // MY JOBS
-    // =====================================================================
+    // =========================================================
 
     @Override
     public Page<JobResponse> getJobsByEmployer(Long employerId, int page, int size) {
@@ -245,20 +363,17 @@ public class JobServiceImpl implements JobService {
         Pageable pageable = PageRequest.of(safePage, safeSize);
 
         Company company = findCompanyOrThrow(employerId);
-        String companyName = company.getName();
-        String companyLogo = company.getLogoUrl();
 
-        return jobRepository.findByCompany_Id(employerId, pageable)
-                .map(job -> JobResponse.fromEntityWithCompany(job, companyName, companyLogo));
+        return jobRepository.findByCompany_Id(company.getId(), pageable)
+                .map(job -> JobResponse.fromEntityWithCompany(job, company.getName(), company.getLogoUrl()));
     }
 
-    // =====================================================================
+    // =========================================================
     // SEARCH / LATEST / HOT
-    // =====================================================================
+    // =========================================================
 
     @Override
     public Page<JobResponse> searchJobs(JobSearchRequest request) {
-
         Sort sort = buildSort(request.getSortBy(), request.getSortOrder());
 
         Pageable pageable = PageRequest.of(
@@ -267,8 +382,7 @@ public class JobServiceImpl implements JobService {
                 sort
         );
 
-        return jobRepository
-                .findAll(JobSpecification.fromRequest(request), pageable)
+        return jobRepository.findAll(JobSpecification.fromRequest(request), pageable)
                 .map(this::enrichWithCompany);
     }
 
@@ -276,6 +390,7 @@ public class JobServiceImpl implements JobService {
     public List<JobResponse> getLatestJobs(int limit) {
         int safeLimit = Math.max(1, Math.min(limit, 100));
         Pageable pageable = PageRequest.of(0, safeLimit, Sort.by("lastUpdate").descending());
+
         return jobRepository.findAllByStatus(JobStatus.ACTIVE, pageable)
                 .map(this::enrichWithCompany)
                 .getContent();
@@ -285,14 +400,15 @@ public class JobServiceImpl implements JobService {
     public List<JobResponse> getHotJobs(int limit) {
         int safeLimit = Math.max(1, Math.min(limit, 100));
         Pageable pageable = PageRequest.of(0, safeLimit);
+
         return jobRepository.findHotJobs(JobStatus.ACTIVE, pageable)
                 .map(this::enrichWithCompany)
                 .getContent();
     }
 
-    // =====================================================================
+    // =========================================================
     // SCHEDULER
-    // =====================================================================
+    // =========================================================
 
     @Override
     @Transactional
@@ -304,58 +420,70 @@ public class JobServiceImpl implements JobService {
         jobRepository.saveAll(expiredJobs);
     }
 
-    // =====================================================================
-    // PRIVATE UTILS
-    // =====================================================================
-
-    /** Enrich job với tên + logo công ty từ DB */
-    private JobResponse enrichWithCompany(Job job) {
-        return companyRepository.findById(job.getCompany().getId())
-                .map(c -> JobResponse.fromEntityWithCompany(job, c.getName(), c.getLogoUrl()))
-                .orElseGet(() -> JobResponse.fromEntity(job));
-    }
+    // =========================================================
+    // SUBMIT FOR REVIEW
+    // =========================================================
 
     @Override
     @Transactional
     public JobResponse submitJobForReview(Long employerId, Long jobId) {
         Job job = findJobOrThrow(jobId);
         checkOwnership(job, employerId);
-        
+
         Company company = findCompanyOrThrow(employerId);
-        
-        // Ràng buộc: chỉ submit nếu company đã được duyệt
-        if (company.getCompanyInfoUpdateStatus() != com.iting.jobportal.company.entity.enums.CompanyReviewStatus.APPROVED) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Công ty của bạn chưa được phê duyệt. Vui lòng hoàn tất hồ sơ công ty trước.");
-        }
-        
-        if (company.getActive() == null || !company.getActive()) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Tài khoản công ty đang bị khóa.");
+
+        if (company.getCompanyInfoUpdateStatus() != CompanyReviewStatus.APPROVED) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Công ty của bạn chưa được phê duyệt. Vui lòng hoàn tất hồ sơ công ty trước."
+            );
         }
 
-        // Validate mandatory fields
-        if (job.getPosition() == null || job.getPosition().isBlank()) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Vị trí tuyển dụng không được để trống");
-        if (job.getDescription() == null || job.getDescription().isBlank()) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Mô tả công việc không được để trống");
-        if (job.getDueDate() == null || job.getDueDate().isBefore(LocalDate.now())) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Hạn ứng tuyển không hợp lệ");
+        if (company.getActive() == null || !company.getActive()) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Tài khoản công ty đang bị khóa."
+            );
+        }
+
+        if (job.getTitle() == null || job.getTitle().isBlank()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Tiêu đề công việc không được để trống");
+        }
+
+        if (job.getPosition() == null || job.getPosition().isBlank()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Vị trí tuyển dụng không được để trống");
+        }
+
+        if (job.getDescription() == null || job.getDescription().isBlank()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Mô tả công việc không được để trống");
+        }
+
+        if (job.getCity() == null || job.getCity().isBlank()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Thành phố không được để trống");
+        }
+
+        if (job.getAddress() == null || job.getAddress().isBlank()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Địa chỉ không được để trống");
+        }
+
+        if (job.getMinSalary() == null || job.getMaxSalary() == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Thông tin lương không được để trống");
+        }
+
+        validateSalary(job);
+
+        if (job.getDueDate() == null || job.getDueDate().isBefore(LocalDate.now())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Hạn ứng tuyển không hợp lệ");
+        }
+
+        if (job.getMaxAccept() == null || job.getMaxAccept() <= 0) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Số lượng tuyển phải lớn hơn 0");
+        }
 
         job.setStatus(JobStatus.PENDING);
         job.setLastUpdate(LocalDateTime.now());
-        
+
         Job saved = jobRepository.save(job);
         return JobResponse.fromEntityWithCompany(saved, company.getName(), company.getLogoUrl());
-    }
-
-    private Sort buildSort(String sortBy, String sortOrder) {
-        if (sortBy == null) return Sort.by("lastUpdate").descending();
-        return switch (sortBy) {
-            case "salary" -> "asc".equalsIgnoreCase(sortOrder)
-                    ? Sort.by("minSalary").ascending()
-                    : Sort.by("maxSalary").descending();
-            case "viewCount"       -> Sort.by("viewCount").descending();
-            case "applicationCount"-> Sort.by("applicationCount").descending();
-            case "lastUpdate"      -> "asc".equalsIgnoreCase(sortOrder)
-                    ? Sort.by("lastUpdate").ascending()
-                    : Sort.by("lastUpdate").descending();
-            default -> Sort.by("lastUpdate").descending();
-        };
     }
 }

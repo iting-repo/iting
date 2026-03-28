@@ -1,5 +1,6 @@
 package com.iting.jobportal.application.entity;
 
+import com.iting.jobportal.userprofile.entity.CV;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -19,6 +20,10 @@ public class ApplyForm {
 
     @Column(name = "User_id", nullable = false, length = 255)
     private Long userId;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "Cv_id")
+    private CV cv;
 
     @Column(name = "Cv_title", length = 255)
     private String cvTitle;
