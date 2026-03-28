@@ -151,6 +151,12 @@
             <artifactId>spring-boot-starter-mail</artifactId>
         </dependency>
 
+        <!-- 🔌 WebSocket Support for Real-time Messaging -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-websocket</artifactId>
+        </dependency>
+
         <!-- 🛡️ Rate Limiting -->
         <dependency>
             <groupId>com.bucket4j</groupId>

@@ -74,7 +74,7 @@ public class CompanyFollowServiceImpl implements CompanyFollowService {
         if (page < 0) page = 0;
         if (size <= 0 || size > 100) size = 10;
 
-        Pageable pageable = PageRequest.of(page, size, Sort.by("followedAt").descending());
+        Pageable pageable = PageRequest.of(page, size, Sort.by("followDate").descending());
         Page<UserFollowCompany> followPage = userFollowCompanyRepository.findByUserId(userId, pageable);
 
         // Map to FollowedCompanyResponse
@@ -91,7 +91,7 @@ public class CompanyFollowServiceImpl implements CompanyFollowService {
                     company.getName(),
                     company.getLogoUrl(),
                     company.getIndustry(),
-                    follow.getFollowedAt()
+                    follow.getFollowDate()
             );
         });
     }

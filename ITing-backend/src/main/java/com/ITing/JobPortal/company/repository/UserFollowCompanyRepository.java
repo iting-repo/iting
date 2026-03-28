@@ -9,7 +9,9 @@ import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
-public interface UserFollowCompanyRepository extends JpaRepository<UserFollowCompany, UserFollowCompanyId> {
+import java.util.Optional;
+
+public interface UserFollowCompanyRepository extends JpaRepository<UserFollowCompany, Long> {
 
     /**
      * Check if user follows company
