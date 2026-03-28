@@ -1,8 +1,26 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { FaTimes, FaEnvelope, FaPhone, FaDownload, FaStar, FaRegStar, FaCheckCircle, FaUserTie } from 'react-icons/fa';
+import { toast } from 'sonner';
+import applicationService from '../../services/applicationService';
 
 const CandidateDetailModal = ({ candidate, onClose }) => {
+    const [isAccepting, setIsAccepting] = useState(false);
+
     if (!candidate) return null;
+
+    const handleAccept = async () => {
+        try {
+            setIsAccepting(true);
+            await applicationService.acceptApplication(candidate.id, 'Nhà tuyển dụng đã phản hồi thông qua UI');
+            toast.success('Đã đánh dấu tuyển dụng ứng viên thành công!');
+            onClose();
+        } catch (error) {
+            console.error('Lỗi khi tuyển dụng:', error);
+            toast.error('Có lỗi xảy ra, vui lòng thử lại.');
+        } finally {
+            setIsAccepting(false);
+        }
+    };
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in"
@@ -27,13 +45,13 @@ const CandidateDetailModal = ({ candidate, onClose }) => {
                     <div className="flex flex-col md:flex-row justify-between items-start md:items-end -mt-12 mb-8">
                         <div className="flex items-end gap-6">
                             <img
-                                src={candidate.avatar || "https://via.placeholder.com/150"}
-                                alt={candidate.name}
+                                src={candidate.avatarUrl || "https://via.placeholder.com/150"}
+                                alt={candidate.applicantName}
                                 className="w-32 h-32 rounded-full border-4 border-white shadow-lg object-cover bg-white"
                             />
                             <div className="mb-2">
-                                <h2 className="text-3xl font-bold text-gray-800">{candidate.name}</h2>
-                                <p className="text-gray-500 font-medium">{candidate.position}</p>
+                                <h2 className="text-3xl font-bold text-gray-800">{candidate.applicantName || "Chưa cập nhật"}</h2>
+                                <p className="text-gray-500 font-medium">{candidate.jobTitle || "Chưa cập nhật"}</p>
                             </div>
                         </div>
 
@@ -44,8 +62,11 @@ const CandidateDetailModal = ({ candidate, onClose }) => {
                             <button className="flex items-center gap-2 px-4 py-2 bg-white border border-[#3AB4E6] text-[#3AB4E6] rounded-lg hover:bg-blue-50 shadow-sm transition-colors">
                                 <FaEnvelope /> Liên hệ
                             </button>
-                            <button className="flex items-center gap-2 px-6 py-2 bg-[#1967D2] text-white rounded-lg hover:bg-blue-700 shadow-lg shadow-blue-500/30 transition-colors">
-                                <FaCheckCircle /> Tuyển dụng
+                            <button 
+                                onClick={handleAccept}
+                                disabled={isAccepting}
+                                className={`flex items-center gap-2 px-6 py-2 bg-[#1967D2] text-white rounded-lg hover:bg-blue-700 shadow-lg shadow-blue-500/30 transition-colors ${isAccepting ? 'opacity-70 cursor-not-allowed' : ''}`}>
+                                <FaCheckCircle /> {isAccepting ? 'Đang xử lý...' : 'Tuyển dụng'}
                             </button>
                         </div>
                     </div>
@@ -58,7 +79,7 @@ const CandidateDetailModal = ({ candidate, onClose }) => {
                             <section>
                                 <h3 className="text-lg font-bold text-gray-800 mb-4 border-b pb-2">Thông tin giới thiệu</h3>
                                 <p className="text-gray-600 leading-relaxed text-sm">
-                                    {candidate.bio || "Ứng viên chưa cập nhật thông tin giới thiệu. Tuy nhiên dựa trên kinh nghiệm làm việc, đây là một ứng viên tiềm năng..."}
+                                    {candidate.introduction || "Ứng viên chưa cập nhật thông tin giới thiệu. Tuy nhiên dựa trên kinh nghiệm làm việc, đây là một ứng viên tiềm năng..."}
                                 </p>
                             </section>
 
@@ -88,7 +109,7 @@ const CandidateDetailModal = ({ candidate, onClose }) => {
                                     <div className="flex items-center gap-3">
                                         <img src="https://upload.wikimedia.org/wikipedia/commons/8/87/PDF_file_icon.svg" className="w-8 h-8" alt="PDF" />
                                         <div>
-                                            <p className="text-sm font-bold text-gray-700 truncate w-24">CV_{candidate.name}</p>
+                                            <p className="text-sm font-bold text-gray-700 truncate w-24">{candidate.cvFileName || `CV_${candidate.applicantName || candidate.id}`}</p>
                                             <p className="text-xs text-gray-400">PDF</p>
                                         </div>
                                     </div>
@@ -106,14 +127,14 @@ const CandidateDetailModal = ({ candidate, onClose }) => {
                                         <div className="p-2 bg-blue-50 rounded-full text-blue-600"><FaPhone size={14} /></div>
                                         <div>
                                             <p className="text-xs text-gray-400 uppercase font-bold">Số điện thoại</p>
-                                            <p className="text-sm font-medium text-gray-700">{candidate.phone || "0987 654 321"}</p>
+                                            <p className="text-sm font-medium text-gray-700">{candidate.phoneNumber || "Chưa cập nhật"}</p>
                                         </div>
                                     </div>
                                     <div className="flex items-start gap-3">
                                         <div className="p-2 bg-blue-50 rounded-full text-blue-600"><FaEnvelope size={14} /></div>
                                         <div>
                                             <p className="text-xs text-gray-400 uppercase font-bold">Email</p>
-                                            <p className="text-sm font-medium text-gray-700">{candidate.email || "email@example.com"}</p>
+                                            <p className="text-sm font-medium text-gray-700">{candidate.email || "Chưa cập nhật"}</p>
                                         </div>
                                     </div>
                                 </div>

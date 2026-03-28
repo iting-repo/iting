@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { useEffect } from 'react';
-import { fetchJobsRequest } from '../../store/job/jobSlice';
+import { fetchJobsRequest, fetchJobDetailRequest } from '../../store/job/jobSlice';
 
 // FIX: Gom tất cả icon về react-icons/fa để tránh lỗi import undefined
 import {
@@ -16,12 +16,24 @@ import heroBg from '../../assets/bg_login.jpg';
 
 const HomePage = () => {
     const dispatch = useDispatch();
-    const { jobs = [], isLoading } = useSelector((state) => state.job || {});
+    const navigate = useNavigate();
+    const { jobs = [], totalJobs = 0, isLoading } = useSelector((state) => state.job || {});
     const [currentPage, setCurrentPage] = useState(1);
 
+    const handleJobClick = (jobId) => {
+        dispatch(fetchJobDetailRequest(jobId));
+        navigate(`/jobs/${jobId}`);
+    };
+
     useEffect(() => {
-        dispatch(fetchJobsRequest({limit: 10}));
+        dispatch(fetchJobsRequest({
+            page: 0,
+            size: 10,
+            sortBy: 'lastUpdate',
+            sortOrder: 'desc',
+        }));
     }, [dispatch]);
+
     // Helper: Format Salary
     const formatSalary = (min, max) => {
         if (!min && !max) return "Thỏa thuận";
@@ -29,6 +41,73 @@ const HomePage = () => {
         if (min && max) return `${format(min)} - ${format(max)}`;
         if (min) return `Từ ${format(min)}`;
         return `Up to ${format(max)}`;
+    };
+
+    // Search 
+    const [searchForm, setSearchForm] = useState({
+        keyword: '',
+        location: '',
+        jobType: '',
+        experienceLevel: '',
+        minSalary: '',
+        maxSalary: '',
+        companyId: '',
+        techRequired: '',
+        sortBy: 'lastUpdate',
+        sortOrder: 'desc',
+        page: 0,
+        size: 10,
+    });
+
+
+    // Update field
+    const handleChangeSearchField = (field, value) => {
+        setSearchForm((prev) => ({
+            ...prev,
+            [field]: value,
+            page: 0,
+        }));
+    };
+
+    const handlePageChange = (newPage) => {
+        setCurrentPage(newPage);
+        const updatedForm = { ...searchForm, page: newPage - 1 };
+        setSearchForm(updatedForm);
+        
+        const params = {
+            ...updatedForm,
+            minSalary: updatedForm.minSalary || undefined,
+            maxSalary: updatedForm.maxSalary || undefined,
+            companyId: updatedForm.companyId || undefined,
+            keyword: updatedForm.keyword || undefined,
+            location: updatedForm.location || undefined,
+            jobType: updatedForm.jobType || undefined,
+            experienceLevel: updatedForm.experienceLevel || undefined,
+            techRequired: updatedForm.techRequired || undefined,
+        };
+        dispatch(fetchJobsRequest(params));
+    };
+
+
+    // submit form
+    const handleSearch = () => {
+        setCurrentPage(1);
+        setSearchForm(prev => ({ ...prev, page: 0 }));
+        
+        const params = {
+            ...searchForm,
+            page: 0,
+            minSalary: searchForm.minSalary || undefined,
+            maxSalary: searchForm.maxSalary || undefined,
+            companyId: searchForm.companyId || undefined,
+            keyword: searchForm.keyword || undefined,
+            location: searchForm.location || undefined,
+            jobType: searchForm.jobType || undefined,
+            experienceLevel: searchForm.experienceLevel || undefined,
+            techRequired: searchForm.techRequired || undefined,
+        };
+
+        dispatch(fetchJobsRequest(params));
     };
 
     // Helper: Time Ago (Simple version)
@@ -131,23 +210,54 @@ const HomePage = () => {
                     <div className="bg-white rounded-lg md:rounded-full p-1.5 flex flex-col md:flex-row items-center max-w-4xl mx-auto shadow-2xl">
                         <div className="flex-1 w-full md:w-auto px-4 py-3 flex items-center border-b md:border-b-0 md:border-r border-gray-200">
                             <FaSearch className="text-gray-400 mr-2" />
-                            <input type="text" placeholder="Vị trí tuyển dụng, tên công ty" className="w-full outline-none text-gray-700 text-sm placeholder-gray-400" />
+                            <input
+                                type="text"
+                                placeholder="Vị trí tuyển dụng, tên công ty"
+                                value={searchForm.keyword}
+                                onChange={(e) => handleChangeSearchField('keyword', e.target.value)}
+                                onKeyDown={(e) => {
+                                    if (e.key === 'Enter') handleSearch();
+                                }}
+                                className="w-full outline-none text-gray-700 text-sm placeholder-gray-400"
+                            />                        
+                            </div>
+                        <div className="w-full md:w-[20%] px-4 py-3 flex items-center border-b md:border-b-0 md:border-r border-gray-200">
+                            <FaMapMarkerAlt className="text-gray-400 mr-2" />
+                            <select
+                                value={searchForm.location}
+                                onChange={(e) => handleChangeSearchField('location', e.target.value)}
+                                className="w-full outline-none text-gray-700 text-sm bg-transparent"
+                            >
+                                <option value="">Địa điểm</option>
+                                {locations.map((loc, i) => (
+                                    <option key={i} value={loc}>{loc}</option>
+                                ))}
+                            </select>
                         </div>
-                        <div className="w-full md:w-[20%] px-4 py-3 flex items-center border-b md:border-b-0 md:border-r border-gray-200 cursor-pointer hover:bg-gray-50 transition">
-                            <span className="text-gray-700 text-sm font-medium flex-1">Địa điểm</span>
-                            <FaMapMarkerAlt className="text-gray-400" />
-                        </div>
-                        <div className="w-full md:w-[25%] px-4 py-3 flex items-center border-b md:border-b-0 md:border-r border-gray-200 cursor-pointer hover:bg-gray-50 transition">
-                            <span className="text-gray-700 text-sm font-medium flex-1 truncate">Danh mục nghề nghiệp</span>
-                            <FaBriefcase className="text-gray-400" />
+                        <div className="w-full md:w-[25%] px-4 py-3 flex items-center border-b md:border-b-0 md:border-r border-gray-200">
+                            <FaBriefcase className="text-gray-400 mr-2" />
+                            <select
+                                value={searchForm.jobType}
+                                onChange={(e) => handleChangeSearchField('jobType', e.target.value)}
+                                className="w-full outline-none text-gray-700 text-sm bg-transparent"
+                            >
+                                <option value="">Loại công việc</option>
+                                <option value="FULL_TIME">Full-time</option>
+                                <option value="PART_TIME">Part-time</option>
+                                <option value="INTERNSHIP">Internship</option>
+                                <option value="REMOTE">Remote</option>
+                            </select>
                         </div>
                         <button className="w-full md:w-auto bg-[#3AB4E6] hover:bg-blue-500 text-white px-5 py-3 font-bold text-sm flex items-center justify-center gap-1 transition-colors border-r border-blue-400/30">
                             {/* FIX: Thay HiSparkles bằng FaMagic */}
                             <FaMagic className="text-yellow-300" /> AI
                         </button>
-                        <button className="w-full md:w-auto bg-[#3AB4E6] hover:bg-blue-500 text-white px-8 py-3 rounded-b-lg md:rounded-r-full md:rounded-bl-none font-bold text-sm transition-all flex items-center justify-center gap-2">
-                            <FaSearch /> Tìm kiếm
-                        </button>
+                        <button
+                        onClick={handleSearch}
+                        className="w-full md:w-auto bg-[#3AB4E6] hover:bg-blue-500 text-white px-8 py-3 rounded-b-lg md:rounded-r-full md:rounded-bl-none font-bold text-sm transition-all flex items-center justify-center gap-2"
+                    >
+                        <FaSearch /> Tìm kiếm
+                    </button>
                     </div>
 
                     <div className="mt-6 flex flex-wrap justify-center gap-2 items-center">
@@ -260,7 +370,10 @@ const HomePage = () => {
                         {isLoading ? (
                             <div className="text-center py-10">Đang tải danh sách việc làm...</div>
                         ) : (jobs ?? []).map((job) => (
-                                <div key={job.id} className="group relative border border-gray-100 rounded-2xl p-6 hover:shadow-xl hover:shadow-blue-500/5 transition-all duration-300 bg-white overflow-hidden">
+                                <div 
+                                    key={job.id} 
+                                    onClick={() => handleJobClick(job.id)}
+                                    className="group relative border border-gray-100 rounded-2xl p-6 hover:shadow-xl hover:shadow-blue-500/5 transition-all duration-300 bg-white overflow-hidden cursor-pointer">
 
                                     {/* Hiệu ứng: Thanh màu xanh trượt ra khi hover */}
                                     <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-[#3AB4E6] transform -translate-x-full group-hover:translate-x-0 transition-transform duration-300"></div>
@@ -285,7 +398,9 @@ const HomePage = () => {
                                                     </h3>
                                                     <p className="text-sm text-gray-500 font-medium mt-1">{job.companyName}</p>
                                                 </div>
-                                                <button className="w-9 h-9 rounded-full bg-gray-50 text-gray-400 flex items-center justify-center hover:bg-[#3AB4E6] hover:text-white transition-all">
+                                                <button 
+                                                    onClick={(e) => { e.stopPropagation(); /* handle bookmark */ }}
+                                                    className="w-9 h-9 rounded-full bg-gray-50 text-gray-400 flex items-center justify-center hover:bg-[#3AB4E6] hover:text-white transition-all">
                                                     <FaRegBookmark />
                                                 </button>
                                             </div>
@@ -327,27 +442,43 @@ const HomePage = () => {
                     </div>
 
                     {/* 5. PAGINATION: Bỏ nút đen, dùng style Clean */}
-                    <div className="flex justify-center items-center gap-2">
-                        <button className="w-10 h-10 rounded-full flex items-center justify-center border border-gray-200 text-gray-400 hover:border-[#3AB4E6] hover:text-[#3AB4E6] transition-all bg-white">
-                            <FaArrowLeft size={12} />
-                        </button>
-                        {[1, 2, 3, 4].map((page) => (
-                            <button
-                                key={page}
-                                onClick={() => setCurrentPage(page)}
-                                className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm transition-all duration-300 border
-                  ${currentPage === page
-                                        ? 'bg-[#3AB4E6] border-[#3AB4E6] text-white shadow-lg shadow-blue-200'
-                                        : 'bg-white border-transparent text-gray-500 hover:bg-gray-50'}`}
-                            >
-                                {page < 10 ? `0${page}` : page}
+                    {totalJobs > 0 && (
+                        <div className="flex justify-center items-center gap-2">
+                            <button 
+                                onClick={() => currentPage > 1 && handlePageChange(currentPage - 1)}
+                                disabled={currentPage === 1}
+                                className={`w-10 h-10 rounded-full flex items-center justify-center border transition-all ${currentPage === 1 ? 'border-gray-100 text-gray-300 bg-gray-50 cursor-not-allowed' : 'border-gray-200 text-gray-400 hover:border-[#3AB4E6] hover:text-[#3AB4E6] bg-white'}`}>
+                                <FaArrowLeft size={12} />
                             </button>
-                        ))}
-                        <span className="text-gray-300 px-2">...</span>
-                        <button className="w-10 h-10 rounded-full flex items-center justify-center border border-gray-200 text-gray-400 hover:border-[#3AB4E6] hover:text-[#3AB4E6] transition-all bg-white">
-                            <FaArrowRight size={12} />
-                        </button>
-                    </div>
+                            
+                            {Array.from({ length: Math.ceil(totalJobs / searchForm.size) }, (_, i) => i + 1)
+                                .filter(p => p === 1 || p === Math.ceil(totalJobs / searchForm.size) || Math.abs(p - currentPage) <= 2)
+                                .map((page, index, array) => (
+                                    <React.Fragment key={page}>
+                                        {index > 0 && array[index - 1] !== page - 1 && (
+                                            <span className="text-gray-300 px-2">...</span>
+                                        )}
+                                        <button
+                                            onClick={() => handlePageChange(page)}
+                                            className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm transition-all duration-300 border
+                                                ${currentPage === page
+                                                    ? 'bg-[#3AB4E6] border-[#3AB4E6] text-white shadow-lg shadow-blue-200'
+                                                    : 'bg-white border-transparent text-gray-500 hover:bg-gray-50'}`}
+                                        >
+                                            {page < 10 ? `0${page}` : page}
+                                        </button>
+                                    </React.Fragment>
+                                ))
+                            }
+                            
+                            <button 
+                                onClick={() => currentPage < Math.ceil(totalJobs / searchForm.size) && handlePageChange(currentPage + 1)}
+                                disabled={currentPage === Math.ceil(totalJobs / searchForm.size)}
+                                className={`w-10 h-10 rounded-full flex items-center justify-center border transition-all ${currentPage === Math.ceil(totalJobs / searchForm.size) ? 'border-gray-100 text-gray-300 bg-gray-50 cursor-not-allowed' : 'border-gray-200 text-gray-400 hover:border-[#3AB4E6] hover:text-[#3AB4E6] bg-white'}`}>
+                                <FaArrowRight size={12} />
+                            </button>
+                        </div>
+                    )}
                 </div>
             </section>
 

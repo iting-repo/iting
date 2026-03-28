@@ -18,7 +18,7 @@ const EmployerSidebar = () => {
   const menuItems = [
     { path: '/employer/dashboard', name: 'Tổng quan', icon: <FaHome /> },
     { path: '/employer/company-profile', name: 'Hồ sơ công ty', icon: <FaBuilding /> },
-    { path: '/employer/post-job', name: 'Đăng tuyển dụng', icon: <FaPlusCircle /> },
+    // { path: '/employer/post-job', name: 'Đăng tuyển dụng', icon: <FaPlusCircle /> },
     { path: '/employer/manage-jobs', name: 'Quản lý tin đăng', icon: <FaList /> },
     { path: '/employer/find-cv', name: 'Tìm kiếm ứng viên', icon: <FaSearch /> },
   ];

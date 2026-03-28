@@ -1,4 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useParams } from 'react-router-dom';
+import { useDispatch, useSelector } from 'react-redux';
+import { fetchJobDetailRequest } from '../../store/job/jobSlice';
 import {
     FaMapMarkerAlt, FaDollarSign, FaClock, FaBriefcase, FaRegBookmark,
     FaExclamationTriangle, FaBell, FaLaptop, FaGift, FaUser,
@@ -7,39 +10,48 @@ import {
 import { JobCard, JobApplyModal } from '../../components';
 
 const JobDetailPage = () => {
+    const { id } = useParams();
+    const dispatch = useDispatch();
+    const { currentJob, isLoading } = useSelector(state => state.job || {});
+    
+    useEffect(() => {
+        if (id) {
+            dispatch(fetchJobDetailRequest(id));
+        }
+    }, [id, dispatch]);
 
-    // --- MOCK DATA ---
     const [isApplyModalOpen, setIsApplyModalOpen] = useState(false);
+
+    if (isLoading) return <div className="text-center py-20 font-bold text-gray-500">Đang tải chi tiết công việc...</div>;
+    if (!currentJob) return <div className="text-center py-20 font-bold text-red-500">Không tìm thấy công việc!</div>;
+
+    const formatSalary = (min, max) => {
+        if (!min && !max) return "Thỏa thuận";
+        const format = (n) => n?.toLocaleString('vi-VN') + ' VNĐ';
+        if (min && max) return `${format(min)} - ${format(max)}`;
+        if (min) return `Từ ${format(min)}`;
+        return `Up to ${format(max)}`;
+    };
+
     const jobDetail = {
-        title: "Java BackEnd Developer",
-        company: "Công ty cổ phần CROW GAMING",
-        deadline: "30/11/2025",
-        salary: "$40000-$42000",
-        location: "Số 9 Nguyễn Hoàng - Mỹ Đình 2 - Nam Từ Liêm - Hà Nội",
-        description: [
-            "Tham gia phát triển và bảo trì hệ thống backend sử dụng Java, với các framework Spring Boot, Spring MVC.",
-            "Phối hợp với team để xây dựng, tối ưu hiệu suất và đảm bảo tính ổn định của các API RESTful và SOAP.",
-            "Thực hiện tích hợp hệ thống với các đối tác bên ngoài, bao gồm các nhà mạng viễn thông (Telco).",
-            "Hỗ trợ triển khai và vận hành các giải pháp lưu trữ và xử lý dữ liệu như Redis, Kafka, MongoDB, và SQL Databases.",
-            "Tham gia xử lý sự cố, fix bug, viết unit test để nâng cao chất lượng mã nguồn và đảm bảo sản phẩm ổn định.",
-            "Làm việc theo mô hình Agile/Scrum, phối hợp chặt chẽ với các bộ phận BA, QA, và DevOps nhằm đảm bảo tiến độ và chất lượng dự án."
-        ],
-        requirements: [
-            "Có ít nhất 2 năm kinh nghiệm phát triển ứng dụng backend với Java, ưu tiên sử dụng Spring Boot, Hibernate/JPA.",
-            "Nắm vững kiến thức cơ bản về Lập trình hướng đối tượng (OOP), RESTful API, SQL/NoSQL databases."
-        ],
+        title: currentJob.position,
+        company: currentJob.companyName,
+        logo: currentJob.companyLogo || "https://via.placeholder.com/100",
+        deadline: currentJob.dueDate || "Không có",
+        salary: formatSalary(currentJob.minSalary, currentJob.maxSalary),
+        location: currentJob.location || "Chưa cập nhật",
+        description: currentJob.description ? currentJob.description.split('\n') : ["Không có mô tả chi tiết"],
+        requirements: currentJob.techRequired ? currentJob.techRequired.split(',') : ["Không có yêu cầu đặc biệt"],
         priority: [
-            "Đã tham gia các dự án liên quan đến Telco (nhà mạng) hoặc Backend cho Game.",
-            "Có kinh nghiệm làm việc với Redis, Kafka, MongoDB.",
-            "Biết sử dụng các công cụ như SOAP UI, Docker, Git.",
-            "Có tinh thần chủ động học hỏi, trách nhiệm cao, và khả năng làm việc tốt dưới áp lực deadline."
+            "Có khả năng làm việc nhóm và chịu áp lực tốt",
+            "Có mong muốn gắn bó lâu dài và phát triển cùng công ty"
         ],
         benefits: [
-            "Mức lương: 18-25 triệu VND gross/tháng + thưởng dự án (mức lương có thể thỏa thuận theo năng lực).",
-            "Môi trường làm việc trẻ trung, năng động, khuyến khích học hỏi và phát triển cá nhân.",
-            "Cơ hội tham gia các dự án lớn, áp dụng các công nghệ hiện đại hàng đầu.",
-            "Chế độ nghỉ mát, khám sức khỏe định kỳ và đóng BHXH đầy đủ theo quy định của Luật Lao động."
-        ]
+            "Đóng BHXH, BHYT, BHTN theo quy định",
+            "Môi trường làm việc năng động, chuyên nghiệp"
+        ],
+        jobType: currentJob.jobType || "Toàn thời gian",
+        experience: currentJob.experienceLevel || "Không yêu cầu kinh nghiệm"
     };
 
     const relatedJobs = [
@@ -84,6 +96,7 @@ const JobDetailPage = () => {
                 isOpen={isApplyModalOpen}
                 onClose={() => setIsApplyModalOpen(false)}
                 jobTitle={jobDetail.title}
+                jobId={currentJob.id}
             />
             <div className="container mx-auto px-4 max-w-7xl">
 
@@ -107,7 +120,7 @@ const JobDetailPage = () => {
 
                             <div className="flex gap-4">
                                 <div className="w-20 h-20 rounded-xl border border-gray-100 p-2 flex items-center justify-center shadow-sm">
-                                    <img src="https://logo.clearbit.com/java.com" alt="Company Logo" className="w-full h-full object-contain" />
+                                    <img src={jobDetail.logo} alt="Company Logo" className="w-full h-full object-contain" onError={(e) => e.target.src="https://via.placeholder.com/100"} />
                                 </div>
                                 <div>
                                     <h1 className="text-3xl font-bold text-gray-800 mb-2">{jobDetail.title}</h1>
@@ -131,7 +144,7 @@ const JobDetailPage = () => {
                                 </div>
                                 <div className="flex items-center gap-2">
                                     <span className="bg-white p-2 rounded-full text-[#00B4D8]"><FaMapMarkerAlt /></span>
-                                    Hà Nội
+                                    {jobDetail.location}
                                 </div>
                                 <div className="w-full pt-2 mt-2 border-t border-gray-200 text-gray-400 text-xs">
                                     <span className="bg-gray-200 text-gray-600 px-2 py-1 rounded mr-2">Hạn nộp hồ sơ: {jobDetail.deadline}</span>
@@ -290,7 +303,7 @@ const JobDetailPage = () => {
                                     <div className="mt-1 text-[#00B4D8]"><FaClock /></div>
                                     <div>
                                         <p className="font-bold text-gray-800 text-sm">Hình thức làm việc</p>
-                                        <p className="text-gray-500 text-sm">Toàn thời gian</p>
+                                        <p className="text-gray-500 text-sm">{jobDetail.jobType}</p>
                                     </div>
                                 </div>
                                 <div className="flex gap-3">
@@ -304,7 +317,7 @@ const JobDetailPage = () => {
                                     <div className="mt-1 text-[#00B4D8]"><FaAward /></div>
                                     <div>
                                         <p className="font-bold text-gray-800 text-sm">Kinh nghiệm</p>
-                                        <p className="text-gray-500 text-sm">2 Năm</p>
+                                        <p className="text-gray-500 text-sm">{jobDetail.experience}</p>
                                     </div>
                                 </div>
                                 <div className="flex gap-3">
@@ -318,14 +331,14 @@ const JobDetailPage = () => {
                                     <div className="mt-1 text-[#00B4D8]"><FaWallet /></div>
                                     <div>
                                         <p className="font-bold text-gray-800 text-sm">Lương</p>
-                                        <p className="text-gray-500 text-sm">Thỏa thuận</p>
+                                        <p className="text-gray-500 text-sm">{jobDetail.salary}</p>
                                     </div>
                                 </div>
                                 <div className="flex gap-3">
                                     <div className="mt-1 text-[#00B4D8]"><FaMapMarkerAlt /></div>
                                     <div>
                                         <p className="font-bold text-gray-800 text-sm">Địa điểm</p>
-                                        <p className="text-gray-500 text-sm">Nam Từ Liêm - Hà Nội</p>
+                                        <p className="text-gray-500 text-sm">{jobDetail.location}</p>
                                     </div>
                                 </div>
                             </div>

@@ -1,10 +1,40 @@
 import React, { useState } from 'react';
 import { FaTimes, FaCloudUploadAlt, FaPen, FaFilePdf, FaInfoCircle } from 'react-icons/fa';
+import { toast } from 'sonner';
+import applicationService from '../services/applicationService';
 
-const JobApplyModal = ({ isOpen, onClose, jobTitle }) => {
+const JobApplyModal = ({ isOpen, onClose, jobTitle, jobId }) => {
     const [cvMethod, setCvMethod] = useState('recent'); // 'recent', 'library', 'upload'
+    const [coverLetter, setCoverLetter] = useState('');
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
     if (!isOpen) return null;
+
+    const handleSubmit = async () => {
+        if (!jobId) {
+            toast.error('Không tìm thấy thông tin công việc!');
+            return;
+        }
+
+        const payload = {
+            jobId: jobId,
+            cvUrl: 'pdf',
+            cvId: 1,
+            coverLetter: coverLetter || 'toi rat gioi'
+        };
+
+        try {
+            setIsSubmitting(true);
+            await applicationService.applyJob(payload);
+            toast.success('Ứng tuyển thành công!');
+            onClose();
+        } catch (error) {
+            console.error('Lỗi khi ứng tuyển:', error);
+            toast.error('Có lỗi xảy ra khi nộp hồ sơ.');
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-fade-in">
@@ -103,6 +133,8 @@ const JobApplyModal = ({ isOpen, onClose, jobTitle }) => {
                                 rows="3"
                                 className="w-full border border-gray-200 rounded-lg p-3 text-sm focus:ring-1 focus:ring-[#00B4D8] outline-none resize-none bg-gray-50"
                                 placeholder="Viết giới thiệu ngắn gọn về bản thân (Điểm mạnh, kinh nghiệm liên quan)..."
+                                value={coverLetter}
+                                onChange={(e) => setCoverLetter(e.target.value)}
                             ></textarea>
                             <div className="absolute bottom-3 right-3 text-[#00B4D8] cursor-pointer bg-white p-1 rounded-full shadow-sm border border-gray-100">
                                 <FaPen size={12} />
@@ -118,8 +150,12 @@ const JobApplyModal = ({ isOpen, onClose, jobTitle }) => {
                         >
                             Hủy
                         </button>
-                        <button className="flex-1 py-2.5 bg-[#00B4D8] text-white font-bold rounded-lg hover:bg-[#0096B4] transition-colors text-sm shadow-md">
-                            Nộp hồ sơ ứng tuyển
+                        <button 
+                            onClick={handleSubmit} 
+                            disabled={isSubmitting}
+                            className={`flex-1 py-2.5 bg-[#00B4D8] text-white font-bold rounded-lg hover:bg-[#0096B4] transition-colors text-sm shadow-md ${isSubmitting ? 'opacity-70 cursor-not-allowed' : ''}`}
+                        >
+                            {isSubmitting ? 'Đang nộp hồ sơ...' : 'Nộp hồ sơ ứng tuyển'}
                         </button>
                     </div>
 
