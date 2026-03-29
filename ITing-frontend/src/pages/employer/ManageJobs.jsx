@@ -58,18 +58,10 @@ const ManageJobs = () => {
     else setActiveMenu(id);
   };
 
-  const handleAddNewJob = (jobData) => {
-    const newJob = {
-      id: jobs.length + 1,
-      title: jobData.jobTitle || 'Untitled Job',
-      type: jobData.workType || 'Full Time',
-      deadline: jobData.deadline || 'No deadline',
-      status: 'Active',
-      apps: 0,
-    };
+  const handleAddNewJob = (createdJob) => {
+    if (!createdJob) return;
 
-    setJobs((prev) => [newJob, ...prev]);
-    setCurrentPage(1);
+    setJobs((prev) => [createdJob, ...prev]);
   };
 
   return (
@@ -168,11 +160,10 @@ const ManageJobs = () => {
 
                         <button
                           onClick={() => toggleMenu(job.id)}
-                          className={`w-9 h-9 rounded-full flex items-center justify-center transition-colors ${
-                            activeMenu === job.id
+                          className={`w-9 h-9 rounded-full flex items-center justify-center transition-colors ${activeMenu === job.id
                               ? 'bg-gray-200 text-gray-700'
                               : 'hover:bg-gray-100 text-gray-400'
-                          }`}
+                            }`}
                         >
                           <BsThreeDotsVertical />
                         </button>
@@ -211,11 +202,10 @@ const ManageJobs = () => {
             <button
               onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
               disabled={currentPage === 1}
-              className={`w-10 h-10 rounded-full flex items-center justify-center transition-colors ${
-                currentPage === 1
+              className={`w-10 h-10 rounded-full flex items-center justify-center transition-colors ${currentPage === 1
                   ? 'text-gray-300 cursor-not-allowed'
                   : 'text-[#3AB4E6] hover:bg-blue-50 bg-white shadow-sm border border-gray-100'
-              }`}
+                }`}
             >
               <FaChevronLeft size={12} />
             </button>
@@ -224,11 +214,10 @@ const ManageJobs = () => {
               <button
                 key={page}
                 onClick={() => setCurrentPage(page)}
-                className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm transition-all ${
-                  currentPage === page
+                className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm transition-all ${currentPage === page
                     ? 'bg-[#1967D2] text-white shadow-md'
                     : 'text-gray-500 hover:bg-gray-50'
-                }`}
+                  }`}
               >
                 {page < 10 ? `0${page}` : page}
               </button>
@@ -237,11 +226,10 @@ const ManageJobs = () => {
             <button
               onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
               disabled={currentPage === totalPages}
-              className={`w-10 h-10 rounded-full flex items-center justify-center transition-colors ${
-                currentPage === totalPages
+              className={`w-10 h-10 rounded-full flex items-center justify-center transition-colors ${currentPage === totalPages
                   ? 'text-gray-300 cursor-not-allowed'
                   : 'text-[#3AB4E6] hover:bg-blue-50 bg-white shadow-sm border border-gray-100'
-              }`}
+                }`}
             >
               <FaChevronRight size={12} />
             </button>
