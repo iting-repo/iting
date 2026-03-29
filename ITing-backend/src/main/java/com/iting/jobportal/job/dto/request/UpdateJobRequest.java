@@ -31,9 +31,9 @@ public class UpdateJobRequest {
 
     private LocalDate dueDate;
 
-    private String city;
+    private String province;
 
-    private String district;
+    private String ward;
 
     private String address;
 

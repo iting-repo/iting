@@ -178,8 +178,8 @@ CREATE TABLE Job (
     Due_date DATE,
 
     -- LOCATION
-    City VARCHAR(100),
-    District VARCHAR(100),
+    Province VARCHAR(100),
+    Ward VARCHAR(100),
     Address VARCHAR(500),
     Location VARCHAR(255),
     Loc_id BIGINT,

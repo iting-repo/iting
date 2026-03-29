@@ -85,19 +85,19 @@ public class JobServiceImpl implements JobService {
         }
     }
 
-    private String buildLocation(String address, String district, String city) {
+    private String buildLocation(String address, String ward, String province) {
         StringBuilder sb = new StringBuilder();
 
         if (address != null && !address.isBlank()) {
             sb.append(address.trim());
         }
-        if (district != null && !district.isBlank()) {
+        if (ward != null && !ward.isBlank()) {
             if (sb.length() > 0) sb.append(", ");
-            sb.append(district.trim());
+            sb.append(ward.trim());
         }
-        if (city != null && !city.isBlank()) {
+        if (province != null && !province.isBlank()) {
             if (sb.length() > 0) sb.append(", ");
-            sb.append(city.trim());
+            sb.append(province.trim());
         }
 
         return sb.toString();
@@ -119,8 +119,8 @@ public class JobServiceImpl implements JobService {
                 || request.getSalaryType() != null
                 || request.getDueDate() != null
                 || request.getMaxAccept() != null
-                || request.getCity() != null
-                || request.getDistrict() != null
+                || request.getProvince() != null
+                || request.getWard() != null
                 || request.getAddress() != null
                 || request.getLocation() != null
                 || request.getLocId() != null;
@@ -183,8 +183,8 @@ public class JobServiceImpl implements JobService {
                 .salaryType(request.getSalaryType())
                 .maxAccept(request.getMaxAccept())
                 .dueDate(request.getDueDate())
-                .city(request.getCity())
-                .district(request.getDistrict())
+                .province(request.getProvince())
+                .ward(request.getWard())
                 .address(request.getAddress())
                 .locId(request.getLocId())
                 .description(request.getDescription())
@@ -234,15 +234,15 @@ public class JobServiceImpl implements JobService {
         if (request.getMaxSalary() != null) job.setMaxSalary(request.getMaxSalary());
         if (request.getSalaryType() != null) job.setSalaryType(request.getSalaryType());
         if (request.getDueDate() != null) job.setDueDate(request.getDueDate());
-        if (request.getCity() != null) job.setCity(request.getCity());
-        if (request.getDistrict() != null) job.setDistrict(request.getDistrict());
+        if (request.getProvince() != null) job.setProvince(request.getProvince());
+        if (request.getWard() != null) job.setWard(request.getWard());
         if (request.getAddress() != null) job.setAddress(request.getAddress());
         if (request.getLocId() != null) job.setLocId(request.getLocId());
 
         if (request.getLocation() != null && !request.getLocation().isBlank()) {
             job.setLocation(request.getLocation());
-        } else if (request.getCity() != null || request.getDistrict() != null || request.getAddress() != null) {
-            job.setLocation(buildLocation(job.getAddress(), job.getDistrict(), job.getCity()));
+        } else if (request.getProvince() != null || request.getProvince() != null || request.getAddress() != null) {
+            job.setLocation(buildLocation(job.getAddress(), job.getProvince(), job.getProvince()));
         }
 
         validateSalary(job);
@@ -458,7 +458,7 @@ public class JobServiceImpl implements JobService {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Mô tả công việc không được để trống");
         }
 
-        if (job.getCity() == null || job.getCity().isBlank()) {
+        if (job.getProvince() == null || job.getProvince().isBlank()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Thành phố không được để trống");
         }
 

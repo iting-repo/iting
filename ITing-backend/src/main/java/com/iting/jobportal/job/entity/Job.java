@@ -15,7 +15,7 @@ import java.time.LocalDateTime;
         indexes = {
                 @Index(name = "idx_job_company", columnList = "Company_id"),
                 @Index(name = "idx_job_status", columnList = "Status"),
-                @Index(name = "idx_job_city", columnList = "City")
+                @Index(name = "idx_job_city", columnList = "Province")
         }
 )
 @Getter
@@ -40,6 +40,7 @@ public class Job {
 
     private String position;
 
+    // enums
     @Column(columnDefinition = "TEXT")
     private String techRequired;
 
@@ -65,8 +66,8 @@ public class Job {
     private LocalDate dueDate;
 
     // ===== LOCATION =====
-    private String city;
-    private String district;
+    private String province;
+    private String ward;
     private String address;
     private String location;
 
@@ -130,8 +131,8 @@ public class Job {
         StringBuilder sb = new StringBuilder();
 
         if (address != null) sb.append(address);
-        if (district != null) sb.append(", ").append(district);
-        if (city != null) sb.append(", ").append(city);
+        if (ward != null) sb.append(", ").append(ward);
+        if (province != null) sb.append(", ").append(province);
 
         return sb.toString();
     }

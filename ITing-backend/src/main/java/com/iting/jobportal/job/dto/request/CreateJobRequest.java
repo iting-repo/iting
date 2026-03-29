@@ -49,9 +49,9 @@ public class CreateJobRequest {
     private LocalDate dueDate;
 
     @NotBlank(message = "Thành phố không được để trống")
-    private String city;
+    private String province;
 
-    private String district;
+    private String ward;
 
     @NotBlank(message = "Địa chỉ không được để trống")
     private String address;

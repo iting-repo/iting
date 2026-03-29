@@ -156,7 +156,7 @@ INSERT INTO Job (
     Min_salary, Max_salary, Salary_type,
     Max_accept, Current_accepted,
     Status, Due_date,
-    City, District, Address, Location, Loc_id,
+    Province, Ward, Address, Location, Loc_id,
     Responsibilities, Requirements, Benefits,
     View_count, Application_count,
     Created_at, Last_update,

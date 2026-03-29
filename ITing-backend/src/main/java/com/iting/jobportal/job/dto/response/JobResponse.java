@@ -41,8 +41,8 @@ public class JobResponse {
     private LocalDate dueDate;
 
     // Location
-    private String city;
-    private String district;
+    private String province;
+    private String ward;
     private String address;
     private String location;
     private Long locId; // ✅ GIỮ
@@ -100,8 +100,8 @@ public class JobResponse {
 
                 .dueDate(job.getDueDate())
 
-                .city(job.getCity())
-                .district(job.getDistrict())
+                .province(job.getProvince())
+                .ward(job.getWard())
                 .address(job.getAddress())
                 .location(job.getLocation())
                 .locId(job.getLocId()) // ✅ GIỮ
