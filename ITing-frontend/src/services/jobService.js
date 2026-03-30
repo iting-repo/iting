@@ -5,18 +5,18 @@ const jobService = {
     // 1. Lấy danh sách công việc (có phân trang & lọc)
     // params: { page, limit, keyword, location, ... }
     getJobs: async (params) => {
-        const response = await axiosInstance.get('/public/jobs', { params });
+        const response = await axiosInstance.get('/jobs/search', { params });
         return response;
     },
 
     // 2. Lấy chi tiết công việc theo ID
     getJobDetail: async (id) => {
-        const response = await axiosInstance.get(`/public/jobs/${id}`);
+        const response = await axiosInstance.get(`/jobs/${id}`);
         return response;
     },
 
     getLatestJobs: async(limit = 10) => {
-        const response = await axiosInstance.get(`/api/jobs/latest`,{
+        const response = await axiosInstance.get(`/jobs/latest`,{
             params: {limit}
         });
         return response.data;

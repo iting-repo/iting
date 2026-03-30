@@ -35,6 +35,7 @@ const AdminJobPage = lazy(() => import('../pages/admin/jobs/AdminJobPage'));
 
 
 import { LoadingSpinner } from '../components';
+import { Settings } from 'lucide-react';
 
 const AppRoutes = () => {
   return (
@@ -110,11 +111,11 @@ const AppRoutes = () => {
               <Route path="dashboard" element={<CandidateDashboard />} />
 
               {/* Các trang con khác làm sau, hiện tại để tạm div rỗng để ko lỗi */}
-              <Route path="profile" element={<CandidateProfile />} />
+              <Route path="profile" element={<CandidateProfile defaultTab="personal" />} />
               <Route path="applied-jobs" element={<AppliedJobs />} />
               <Route path="favorite-jobs" element={<FavoriteJobs />} />
               <Route path="job-alerts" element={<JobAlerts />} />
-              <Route path="settings" element={<div>Settings Page</div>} />
+              <Route path="settings" element={<Settings defaultTab="account" />} />
 
             </Route>
           </Route>

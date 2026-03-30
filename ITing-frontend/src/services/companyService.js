@@ -1,12 +1,42 @@
-import axiosInstance from '../utils/axiosInstance';
+import axiosInstance from "../utils/axiosInstance";
 
 const companyService = {
-    // API Get Company Profile
-    getCompanyProfile: async (id) => {
-        // GET /api/companies/{id}
-        const response = await axiosInstance.get(`/companies/${id}`);
-        return response;
-    },
+  getMyCompany: async () => {
+    return await axiosInstance.get("/companies");
+  },
+
+  updateCompanyBasicInfo: async (id, companyData) => {
+    return await axiosInstance.put(`/companies/${id}/basic-info`, companyData);
+  },
+
+  createEmployerJob: async (jobData) => {
+    return await axiosInstance.post("/employer/jobs", jobData);
+  },
+
+  updateEmployerJob: async (id, jobData) => {
+    return await axiosInstance.put(`/employer/jobs/${id}`, jobData);
+  },
+
+  closeEmployerJob: async (id) => {
+    const response = await axiosInstance.post(`/employer/jobs/${id}/close`);
+    return response;
+  },
+
+  reopenEmployerJob: async (id) => {
+    const response = await axiosInstance.post(`/employer/jobs/${id}/reopen`);
+    return response;
+  },
+
+  deleteEmployerJob: async (id) => {
+    const response = await axiosInstance.delete(`/employer/jobs/${id}`);
+    return response;
+  },
+
+  getMyJobs: async (page = 0, size = 10) => {
+    return await axiosInstance.get(
+      `/employer/jobs/my-jobs?page=${page}&size=${size}`,
+    );
+  },
 };
 
 export default companyService;
