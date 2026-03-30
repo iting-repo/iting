@@ -201,36 +201,41 @@ function MultiSelectTagInput({
   );
 }
 
-const PostJob = ({ onClose, onSubmitSuccess, initialData = null }) => {
+const PostJob = ({
+  onClose,
+  onSubmitSuccess,
+  initialData = null,
+  isEdit = false,
+}) => {
   const [formData, setFormData] = useState({
     jobTitle: initialData?.title || "",
     jobPosition: initialData?.position
       ? initialData.position
-        .split(",")
-        .map((x) => x.trim())
-        .filter(Boolean)
+          .split(",")
+          .map((x) => x.trim())
+          .filter(Boolean)
       : [],
     techStack: initialData?.techRequired
       ? initialData.techRequired
-        .split(",")
-        .map((x) => x.trim())
-        .filter(Boolean)
+          .split(",")
+          .map((x) => x.trim())
+          .filter(Boolean)
       : [],
     workType: initialData?.jobType || "",
     experienceLevel: initialData?.experienceLevel || "",
     workingDays: initialData?.workingDays || "",
     quantity: initialData?.maxAccept ?? "",
     deadline: initialData?.dueDate || "",
-    province: "",
-    ward: "",
+    province: initialData?.province || "",
+    ward: initialData?.ward || "",
     address: initialData?.address || "",
     minSalary: initialData?.minSalary ?? "",
     maxSalary: initialData?.maxSalary ?? "",
     salaryType: initialData?.salaryType || "NEGOTIABLE",
     description: initialData?.description || "",
     responsibilities: initialData?.responsibilities || "",
-    provinceCode: "",
-    districtCode: "",
+    requirements: initialData?.requirements || "",
+    benefits: initialData?.benefits || "",
   });
 
   const [errors, setErrors] = useState({});
@@ -247,14 +252,14 @@ const PostJob = ({ onClose, onSubmitSuccess, initialData = null }) => {
 
   useEffect(() => {
     const selectedProvince = provinces.find(
-      (p) => p.name === formData.province
+      (p) => p.name === formData.province,
     );
 
     if (selectedProvince) {
       setLoadingWards(true);
 
       fetch(
-        `https://provinces.open-api.vn/api/v2/p/${selectedProvince.code}?depth=2`
+        `https://provinces.open-api.vn/api/v2/p/${selectedProvince.code}?depth=2`,
       )
         .then((res) => res.json())
         .then((data) => {
@@ -313,7 +318,7 @@ const PostJob = ({ onClose, onSubmitSuccess, initialData = null }) => {
 
     try {
       const selectedProvince = provinces.find(
-        (p) => p.name === formData.province
+        (p) => p.name === formData.province,
       );
 
       const payload = {
@@ -340,26 +345,37 @@ const PostJob = ({ onClose, onSubmitSuccess, initialData = null }) => {
         province: formData.province || null,
         ward: formData.ward || null,
         address: formData.address.trim() || null,
+        locId: selectedProvince ? Number(selectedProvince.code) : null,
 
         description: formData.description.trim() || "",
         responsibilities: formData.responsibilities.trim() || "",
-        requirements: "",
-        benefits: "",
+        requirements: formData.requirements.trim() || "",
+        benefits: formData.benefits.trim() || "",
       };
 
-      const createdJob = await companyService.createEmployerJob(payload);
+      let result;
 
-      toast.success("Đăng bài thành công");
+      if (isEdit && initialData?.id) {
+        result = await companyService.updateEmployerJob(
+          initialData.id,
+          payload,
+        );
+        toast.success("Cập nhật công việc thành công");
+      } else {
+        result = await companyService.createEmployerJob(payload);
+        toast.success("Đăng bài thành công");
+      }
 
       if (onSubmitSuccess) {
-        onSubmitSuccess(createdJob);
+        onSubmitSuccess(result);
       }
 
       onClose();
     } catch (error) {
-      console.error("Lỗi đăng bài:", error);
+      console.error("Lỗi lưu công việc:", error);
       toast.error(
-        error?.response?.data?.message || "Đăng bài thất bại, vui lòng thử lại"
+        error?.response?.data?.message ||
+          "Lưu công việc thất bại, vui lòng thử lại",
       );
     }
   };
@@ -394,9 +410,13 @@ const PostJob = ({ onClose, onSubmitSuccess, initialData = null }) => {
       <div className="w-full max-w-6xl max-h-[92vh] overflow-y-auto bg-white rounded-2xl shadow-2xl border border-gray-100 animate-fade-in">
         <div className="sticky top-0 z-10 bg-white border-b border-gray-100 px-6 py-4 flex items-center justify-between rounded-t-2xl">
           <div>
-            <h2 className="text-2xl font-bold text-gray-800">Đăng công việc</h2>
+            <h2 className="text-2xl font-bold text-gray-800">
+              {isEdit ? "Chỉnh sửa công việc" : "Đăng công việc"}
+            </h2>
             <p className="text-sm text-gray-500 mt-1">
-              Tạo bài đăng tuyển dụng mới
+              {isEdit
+                ? "Cập nhật thông tin tuyển dụng"
+                : "Tạo bài đăng tuyển dụng mới"}
             </p>
           </div>
 
@@ -595,7 +615,9 @@ const PostJob = ({ onClose, onSubmitSuccess, initialData = null }) => {
                     <FaChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 text-xs pointer-events-none" />
                   </div>
                   {errors.province && (
-                    <p className="text-red-500 text-xs mt-1">{errors.province}</p>
+                    <p className="text-red-500 text-xs mt-1">
+                      {errors.province}
+                    </p>
                   )}
                 </div>
 
@@ -779,7 +801,8 @@ const PostJob = ({ onClose, onSubmitSuccess, initialData = null }) => {
                 type="submit"
                 className="bg-[#1967D2] hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-lg transition-colors flex items-center gap-2"
               >
-                Đăng Bài <FaArrowRight size={14} />
+                {isEdit ? "Lưu thay đổi" : "Đăng Bài"}{" "}
+                <FaArrowRight size={14} />
               </button>
             </div>
           </form>
