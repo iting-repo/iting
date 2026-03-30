@@ -84,6 +84,17 @@ public class EmployerJobController {
         return ResponseEntity.ok(jobService.closeJob(employerId, id));
     }
 
+    @PostMapping("/{id}/reopen")
+    @Operation(summary = "Mở lại tin tuyển dụng")
+    public ResponseEntity<JobResponse> reopenJob(
+            @CurrentUser Long employerId,
+            @PathVariable Long id) {
+        if (employerId == null) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Bạn cần đăng nhập để mở lại tin tuyển dụng");
+        }
+        return ResponseEntity.ok(jobService.reopenJob(employerId, id));
+    }
+
     @GetMapping("/my-jobs")
     @Operation(summary = "Lấy danh sách tin tuyển dụng của tôi")
     public ResponseEntity<Page<JobResponse>> getMyJobs(

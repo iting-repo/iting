@@ -18,7 +18,10 @@ public interface JobService {
     
     // Xóa job (Employer)
     void deleteJob(Long employerId, Long jobId);
-    
+
+    JobResponse reopenJob(Long employerId, Long jobId);
+
+
     // Gia hạn job (Employer)
     JobResponse extendJob(Long employerId, Long jobId, int days);
     

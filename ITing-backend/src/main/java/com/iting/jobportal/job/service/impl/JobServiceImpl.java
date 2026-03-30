@@ -331,6 +331,41 @@ public class JobServiceImpl implements JobService {
         return JobResponse.fromEntityWithCompany(saved, company.getName(), company.getLogoUrl());
     }
 
+    @Override
+    @Transactional
+    public JobResponse reopenJob(Long employerId, Long jobId) {
+        Job job = findJobOrThrow(jobId);
+        checkOwnership(job, employerId);
+
+        // ✅ CHỈ cho reopen khi CLOSED
+        if (job.getStatus() != JobStatus.CLOSED) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Chỉ có thể mở lại tin tuyển dụng đã đóng"
+            );
+        }
+
+        // (optional) check hạn
+        if (job.getDueDate() == null || job.getDueDate().isBefore(LocalDate.now())) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Tin tuyển dụng đã hết hạn, vui lòng gia hạn trước"
+            );
+        }
+
+        job.setStatus(JobStatus.ACTIVE);
+        job.setLastUpdate(LocalDateTime.now());
+
+        Job saved = jobRepository.save(job);
+        Company company = findCompanyOrThrow(employerId);
+
+        return JobResponse.fromEntityWithCompany(
+                saved,
+                company.getName(),
+                company.getLogoUrl()
+        );
+    }
+
     // =========================================================
     // GET BY ID
     // =========================================================
