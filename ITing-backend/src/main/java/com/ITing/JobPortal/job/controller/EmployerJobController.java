@@ -95,6 +95,18 @@ public class EmployerJobController {
         return ResponseEntity.ok(jobService.reopenJob(employerId, id));
     }
 
+    @PostMapping("/{id}/move-to-draft")
+    @Operation(summary = "Chuyển tin tuyển dụng từ chờ duyệt về nháp")
+    public ResponseEntity<JobResponse> movePendingToDraft(
+            @CurrentUser Long employerId,
+            @PathVariable Long id) {
+        if (employerId == null) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Bạn cần đăng nhập");
+        }
+        return ResponseEntity.ok(jobService.movePendingToDraft(employerId, id));
+    }
+
+
     @GetMapping("/my-jobs")
     @Operation(summary = "Lấy danh sách tin tuyển dụng của tôi")
     public ResponseEntity<Page<JobResponse>> getMyJobs(

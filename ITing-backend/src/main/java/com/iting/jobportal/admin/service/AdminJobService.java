@@ -23,8 +23,6 @@ public interface AdminJobService {
 
     void rejectJob(Long adminId, Long jobId, String reason);
 
-    void requestJobRevision(Long adminId, Long jobId, String reason);
-
     void featureJob(Long jobId);
 
     void unfeatureJob(Long jobId);

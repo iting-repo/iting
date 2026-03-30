@@ -64,4 +64,6 @@ public class CreateJobRequest {
     private String responsibilities;
     private String requirements;
     private String benefits;
+
+    private Boolean submitForReview;
 }

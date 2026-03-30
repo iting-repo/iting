@@ -501,17 +501,17 @@ INSERT INTO Job (
     NULL
 ),
 
--- NEEDS_REVISION
+-- REJECTED
 (
     11,
-    'Test Job NEEDS_REVISION',
+    'Test Job REJECTED',
     'Backend Developer',
-    'Test trạng thái NEEDS_REVISION',
+    'Test trạng thái REJECTED',
     'Java, Spring',
     'FULL_TIME', 'MIDDLE', 'Thứ 2 - Thứ 6',
     20000000, 30000000, 'MONTH',
     2, 0,
-    'NEEDS_REVISION', '2026-05-30',
+    'REJECTED', '2026-05-30',
     'Hà Nội', 'Cầu Giấy', 'Test Address',
     'Test Address, Cầu Giấy, Hà Nội',
     1,

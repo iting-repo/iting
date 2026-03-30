@@ -68,6 +68,7 @@ public class JobResponse {
     private LocalDateTime createdAt;
     private LocalDateTime lastUpdate;
 
+
     public static JobResponse fromEntity(Job job) {
         return fromEntityWithCompany(
                 job,
@@ -116,7 +117,11 @@ public class JobResponse {
                 .featured(job.getFeatured())
                 .status(job.getStatus())
 
-                .reviewReason(job.getReviewReason())
+                .reviewReason(
+                        job.getStatus() == JobStatus.REJECTED || job.getStatus() == JobStatus.SUSPENDED
+                                ? job.getReviewReason()
+                                : null
+                )
                 .reviewedBy(job.getReviewedBy())
                 .reviewedAt(job.getReviewedAt())
 

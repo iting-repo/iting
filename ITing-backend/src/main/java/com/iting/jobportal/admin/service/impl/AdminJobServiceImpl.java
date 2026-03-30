@@ -129,8 +129,12 @@ public class AdminJobServiceImpl implements AdminJobService {
 
         validateStatus(job, JobStatus.PENDING);
 
+        if (reason == null || reason.isBlank()) {
+            throw new IllegalArgumentException("Lý do không được để trống");
+        }
+
         job.setStatus(JobStatus.REJECTED);
-        job.setReviewReason(reason);
+        job.setReviewReason(reason.trim());
 
         setReviewAudit(job, adminId);
 
@@ -143,22 +147,7 @@ public class AdminJobServiceImpl implements AdminJobService {
     =========================
      */
 
-    @Override
-    @Transactional
-    public void requestJobRevision(Long adminId, Long jobId, String reason) {
 
-        Job job = jobRepository.findById(jobId)
-                .orElseThrow(() -> new RuntimeException("Job not found"));
-
-        validateStatus(job, JobStatus.PENDING);
-
-        job.setStatus(JobStatus.NEEDS_REVISION);
-        job.setReviewReason(reason);
-
-        setReviewAudit(job, adminId);
-
-        jobRepository.save(job);
-    }
 
     /*
     =========================

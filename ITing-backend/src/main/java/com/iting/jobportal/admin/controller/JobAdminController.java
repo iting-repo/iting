@@ -117,20 +117,20 @@ public class JobAdminController {
     ============================
     */
 
-    @PostMapping("/{id}/request-revision")
-    @Operation(summary = "Yêu cầu chỉnh sửa job")
-    public ResponseEntity<?> requestRevision(
-            @PathVariable Long id,
-            @RequestBody ReviewRejectRequest request) {
-
-        Long adminId = 1L;
-
-        adminJobService.requestJobRevision(adminId, id, request.getReason());
-
-        return ResponseEntity.ok(
-                Map.of("message", "Revision requested successfully")
-        );
-    }
+//    @PostMapping("/{id}/request-revision")
+//    @Operation(summary = "Yêu cầu chỉnh sửa job")
+//    public ResponseEntity<?> requestRevision(
+//            @PathVariable Long id,
+//            @RequestBody ReviewRejectRequest request) {
+//
+//        Long adminId = 1L;
+//
+//        adminJobService.requestJobRevision(adminId, id, request.getReason());
+//
+//        return ResponseEntity.ok(
+//                Map.of("message", "Revision requested successfully")
+//        );
+//    }
 
     /*
     ============================

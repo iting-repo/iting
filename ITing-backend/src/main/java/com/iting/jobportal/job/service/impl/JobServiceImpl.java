@@ -161,6 +161,36 @@ public class JobServiceImpl implements JobService {
         };
     }
 
+
+    @Override
+    @Transactional
+    public JobResponse submitJobForReview(Long employerId, Long jobId) {
+        Job job = findJobOrThrow(jobId);
+        checkOwnership(job, employerId);
+
+        Company company = findCompanyOrThrow(employerId);
+
+        if (job.getStatus() != JobStatus.DRAFT
+                && job.getStatus() != JobStatus.REJECTED) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Chỉ có thể gửi duyệt khi tin đang ở trạng thái nháp hoặc bị từ chối"
+            );
+        }
+
+        validateJobBeforeSubmit(job, company);
+
+        job.setReviewReason(null);
+        job.setReviewedBy(null);
+        job.setReviewedAt(null);
+        job.setStatus(JobStatus.PENDING);
+        job.setLastUpdate(LocalDateTime.now());
+
+        Job saved = jobRepository.save(job);
+        return JobResponse.fromEntityWithCompany(saved, company.getName(), company.getLogoUrl());
+    }
+
+
     // =========================================================
     // CREATE
     // =========================================================
@@ -169,6 +199,10 @@ public class JobServiceImpl implements JobService {
     @Transactional
     public JobResponse createJob(Long employerId, CreateJobRequest request) {
         Company company = findCompanyOrThrow(employerId);
+
+        JobStatus initialStatus = Boolean.TRUE.equals(request.getSubmitForReview())
+                ? JobStatus.PENDING
+                : JobStatus.DRAFT;
 
         Job job = Job.builder()
                 .company(company)
@@ -191,10 +225,14 @@ public class JobServiceImpl implements JobService {
                 .responsibilities(request.getResponsibilities())
                 .requirements(request.getRequirements())
                 .benefits(request.getBenefits())
-                .status(JobStatus.DRAFT)
+                .status(initialStatus)
                 .build();
 
         validateSalary(job);
+
+        if (initialStatus == JobStatus.PENDING) {
+            validateJobBeforeSubmit(job, company);
+        }
 
         Job saved = jobRepository.save(job);
 
@@ -228,7 +266,7 @@ public class JobServiceImpl implements JobService {
         if (request.getJobType() != null) job.setJobType(request.getJobType());
         if (request.getExperienceLevel() != null) job.setExperienceLevel(request.getExperienceLevel());
         if (request.getWorkingDays() != null) job.setWorkingDays(request.getWorkingDays());
-        if (request.getStatus() != null) job.setStatus(request.getStatus());
+//        if (request.getStatus() != null) job.setStatus(request.getStatus());
         if (request.getMaxAccept() != null) job.setMaxAccept(request.getMaxAccept());
         if (request.getMinSalary() != null) job.setMinSalary(request.getMinSalary());
         if (request.getMaxSalary() != null) job.setMaxSalary(request.getMaxSalary());
@@ -242,7 +280,7 @@ public class JobServiceImpl implements JobService {
         if (request.getLocation() != null && !request.getLocation().isBlank()) {
             job.setLocation(request.getLocation());
         } else if (request.getProvince() != null || request.getProvince() != null || request.getAddress() != null) {
-            job.setLocation(buildLocation(job.getAddress(), job.getProvince(), job.getProvince()));
+            job.setLocation(buildLocation(job.getAddress(), job.getWard(), job.getProvince()));
         }
 
         validateSalary(job);
@@ -324,6 +362,28 @@ public class JobServiceImpl implements JobService {
         }
 
         job.setStatus(JobStatus.CLOSED);
+
+        Job saved = jobRepository.save(job);
+        Company company = findCompanyOrThrow(employerId);
+
+        return JobResponse.fromEntityWithCompany(saved, company.getName(), company.getLogoUrl());
+    }
+
+    @Override
+    @Transactional
+    public JobResponse movePendingToDraft(Long employerId, Long jobId) {
+        Job job = findJobOrThrow(jobId);
+        checkOwnership(job, employerId);
+
+        if (job.getStatus() != JobStatus.PENDING) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Chỉ có thể chuyển về nháp khi tin đang ở trạng thái chờ duyệt"
+            );
+        }
+
+        job.setStatus(JobStatus.DRAFT);
+        job.setLastUpdate(LocalDateTime.now());
 
         Job saved = jobRepository.save(job);
         Company company = findCompanyOrThrow(employerId);
@@ -459,14 +519,70 @@ public class JobServiceImpl implements JobService {
     // SUBMIT FOR REVIEW
     // =========================================================
 
-    @Override
-    @Transactional
-    public JobResponse submitJobForReview(Long employerId, Long jobId) {
-        Job job = findJobOrThrow(jobId);
-        checkOwnership(job, employerId);
+//    @Override
+//    @Transactional
+//    public JobResponse submitJobForReview(Long employerId, Long jobId) {
+//        Job job = findJobOrThrow(jobId);
+//        checkOwnership(job, employerId);
+//
+//        Company company = findCompanyOrThrow(employerId);
+//
+//        if (company.getCompanyInfoUpdateStatus() != CompanyReviewStatus.APPROVED) {
+//            throw new ResponseStatusException(
+//                    HttpStatus.BAD_REQUEST,
+//                    "Công ty của bạn chưa được phê duyệt. Vui lòng hoàn tất hồ sơ công ty trước."
+//            );
+//        }
+//
+//        if (company.getActive() == null || !company.getActive()) {
+//            throw new ResponseStatusException(
+//                    HttpStatus.BAD_REQUEST,
+//                    "Tài khoản công ty đang bị khóa."
+//            );
+//        }
+//
+//        if (job.getTitle() == null || job.getTitle().isBlank()) {
+//            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Tiêu đề công việc không được để trống");
+//        }
+//
+//        if (job.getPosition() == null || job.getPosition().isBlank()) {
+//            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Vị trí tuyển dụng không được để trống");
+//        }
+//
+//        if (job.getDescription() == null || job.getDescription().isBlank()) {
+//            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Mô tả công việc không được để trống");
+//        }
+//
+//        if (job.getProvince() == null || job.getProvince().isBlank()) {
+//            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Thành phố không được để trống");
+//        }
+//
+//        if (job.getAddress() == null || job.getAddress().isBlank()) {
+//            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Địa chỉ không được để trống");
+//        }
+//
+//        if (job.getMinSalary() == null || job.getMaxSalary() == null) {
+//            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Thông tin lương không được để trống");
+//        }
+//
+//        validateSalary(job);
+//
+//        if (job.getDueDate() == null || job.getDueDate().isBefore(LocalDate.now())) {
+//            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Hạn ứng tuyển không hợp lệ");
+//        }
+//
+//        if (job.getMaxAccept() == null || job.getMaxAccept() <= 0) {
+//            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Số lượng tuyển phải lớn hơn 0");
+//        }
+//
+//        job.setStatus(JobStatus.PENDING);
+//        job.setLastUpdate(LocalDateTime.now());
+//
+//        Job saved = jobRepository.save(job);
+//        return JobResponse.fromEntityWithCompany(saved, company.getName(), company.getLogoUrl());
+//    }
 
-        Company company = findCompanyOrThrow(employerId);
-
+    private void validateJobBeforeSubmit(Job job, Company company) {
         if (company.getCompanyInfoUpdateStatus() != CompanyReviewStatus.APPROVED) {
             throw new ResponseStatusException(
                     HttpStatus.BAD_REQUEST,
@@ -514,11 +630,5 @@ public class JobServiceImpl implements JobService {
         if (job.getMaxAccept() == null || job.getMaxAccept() <= 0) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Số lượng tuyển phải lớn hơn 0");
         }
-
-        job.setStatus(JobStatus.PENDING);
-        job.setLastUpdate(LocalDateTime.now());
-
-        Job saved = jobRepository.save(job);
-        return JobResponse.fromEntityWithCompany(saved, company.getName(), company.getLogoUrl());
     }
 }
