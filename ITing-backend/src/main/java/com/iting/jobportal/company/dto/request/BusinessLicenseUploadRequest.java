@@ -1,22 +1,14 @@
 package com.iting.jobportal.company.dto.request;
 
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.Size;
+import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.constraints.NotNull;
+import lombok.Data;
+import org.springframework.web.multipart.MultipartFile;
 
+@Data
 public class BusinessLicenseUploadRequest {
 
-    @NotBlank(message = "Business license file URL cannot be empty")
-    @Size(max = 1000, message = "File URL must be at most 1000 characters")
-    private String businessLicenseFileUrl;
-
-    public BusinessLicenseUploadRequest() {
-    }
-
-    public String getBusinessLicenseFileUrl() {
-        return businessLicenseFileUrl;
-    }
-
-    public void setBusinessLicenseFileUrl(String businessLicenseFileUrl) {
-        this.businessLicenseFileUrl = businessLicenseFileUrl;
-    }
+    @NotNull(message = "Vui lòng chọn file PDF")
+    @Schema(description = "File giấy phép kinh doanh", type = "string", format = "binary")
+    private MultipartFile file;
 }

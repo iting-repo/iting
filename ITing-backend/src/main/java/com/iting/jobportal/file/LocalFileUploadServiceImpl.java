@@ -33,24 +33,46 @@ public class LocalFileUploadServiceImpl implements FileUploadService {
         return saveFile(file, "avatar");
     }
 
+    @Override
+    public String uploadBusinessLicense(MultipartFile file) {
+        return saveFile(file, "business-license");
+    }
+
+    @Override
+    public void deleteByUrl(String fileUrl) {
+        if (fileUrl == null || fileUrl.isBlank()) return;
+
+        try {
+            String relativePath = fileUrl.startsWith("/") ? fileUrl.substring(1) : fileUrl;
+            Path filePath = Paths.get(relativePath);
+            Files.deleteIfExists(filePath);
+
+        } catch (IOException e) {
+            throw new RuntimeException("Cannot delete file", e);
+        }
+    }
+
+    @Override
+    public String generatePresignedUrl(String fileUrl, int minutes) {
+        // Local thì không cần presigned, trả luôn URL
+        return fileUrl;
+    }
+
     private String saveFile(MultipartFile file, String folder) {
         try {
-            // Tạo folder nếu không tồn tại
             Path uploadPath = Paths.get(UPLOAD_DIR + folder);
             if (!Files.exists(uploadPath)) {
                 Files.createDirectories(uploadPath);
             }
 
-            // Tên file lưu xuống máy
-            String fileName = System.currentTimeMillis() + "_" + file.getOriginalFilename();
+            String originalName = file.getOriginalFilename() != null ? file.getOriginalFilename() : "file";
+            String ext = originalName.contains(".") ? originalName.substring(originalName.lastIndexOf(".")) : "";
+            String fileName = System.currentTimeMillis() + "_" + java.util.UUID.randomUUID() + ext;
 
-            // Đường dẫn cuối cùng
             Path filePath = uploadPath.resolve(fileName);
 
-            // Ghi file xuống ổ đĩa
             file.transferTo(filePath.toFile());
 
-            // Trả về URL (local path)
             return "/" + UPLOAD_DIR + folder + "/" + fileName;
 
         } catch (IOException e) {

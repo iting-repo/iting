@@ -22,6 +22,8 @@ public interface AdminCompanyService {
             int size
     );
 
+    String getCompanyBusinessLicenseViewUrl(Long adminId, Long companyId, int minutes);
+
     void approveCompany(Long adminId, Long companyId, CompanyApprovalRequest request);
 
     void rejectCompany(Long adminId, Long companyId, ReviewRejectRequest request);

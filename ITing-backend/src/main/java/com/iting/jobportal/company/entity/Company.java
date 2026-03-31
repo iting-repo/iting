@@ -1,6 +1,7 @@
 package com.iting.jobportal.company.entity;
 
 import com.iting.jobportal.auth.entity.Account;
+import com.iting.jobportal.company.entity.enums.BusinessDocumentType;
 import com.iting.jobportal.company.entity.enums.CompanyReviewStatus;
 import com.iting.jobportal.company.entity.enums.VerificationLevel;
 import com.iting.jobportal.job.entity.Job;
@@ -79,6 +80,13 @@ public class Company {
 
     @Column(name = "Business_license_file_url", columnDefinition = "TEXT")
     private String businessLicenseFileUrl;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "Business_license_document_type", length = 100)
+    private BusinessDocumentType businessLicenseDocumentType;
+
+    @Column(name = "Business_license_preview_url", columnDefinition = "TEXT")
+    private String businessLicensePreviewUrl;
 
     @Column(name = "Consent_document_file_url", columnDefinition = "TEXT")
     private String consentDocumentFileUrl;

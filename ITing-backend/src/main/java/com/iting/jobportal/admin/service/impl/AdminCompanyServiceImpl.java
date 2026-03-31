@@ -8,6 +8,7 @@ import com.iting.jobportal.company.entity.Company;
 import com.iting.jobportal.company.entity.enums.CompanyReviewStatus;
 import com.iting.jobportal.company.entity.enums.VerificationLevel;
 import com.iting.jobportal.company.repository.CompanyRepository;
+import com.iting.jobportal.file.FileUploadService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.*;
 import org.springframework.stereotype.Service;
@@ -18,6 +19,7 @@ public class AdminCompanyServiceImpl implements AdminCompanyService {
 
     private final CompanyRepository companyRepository;
     private final CompanyMapper companyMapper;
+    private final FileUploadService fileUploadService;
 
     @Override
     public Page<CompanyResponse> getAllCompanies(int page, int size) {
@@ -88,5 +90,18 @@ public class AdminCompanyServiceImpl implements AdminCompanyService {
         company.setActive(true);
 
         companyRepository.save(company);
+    }
+
+    @Override
+    public String getCompanyBusinessLicenseViewUrl(Long adminId, Long companyId, int minutes) {
+        Company company = companyRepository.findById(companyId)
+                .orElseThrow(() -> new RuntimeException("Company not found"));
+
+        String fileUrl = company.getBusinessLicenseFileUrl();
+        if (fileUrl == null || fileUrl.isBlank()) {
+            throw new RuntimeException("Company has not uploaded business license");
+        }
+
+        return fileUploadService.generatePresignedUrl(fileUrl, minutes);
     }
 }

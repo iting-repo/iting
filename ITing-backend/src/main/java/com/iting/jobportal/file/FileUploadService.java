@@ -8,5 +8,11 @@ public interface FileUploadService {
 
     String uploadCV(MultipartFile file);
 
+    String generatePresignedUrl(String fileUrl, int minutes);
+
     String uploadAvatar(MultipartFile file);
+
+    String uploadBusinessLicense(MultipartFile file);
+
+    void deleteByUrl(String fileUrl);
 }

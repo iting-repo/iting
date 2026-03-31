@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
 
+@Tag(name = "10. Admin Company")
 @RestController
 @RequestMapping("/api/admin/companies")
 @RequiredArgsConstructor
@@ -119,5 +120,15 @@ public class CompanyAdminController {
         Long adminId = 1L;
         adminCompanyService.unsuspendCompany(adminId, id);
         return ResponseEntity.ok(Map.of("message", "Company unsuspended successfully"));
+    }
+
+    @GetMapping("/{id}/business-license/view")
+    @Operation(summary = "Admin lấy presigned URL để xem giấy phép kinh doanh của công ty")
+    public ResponseEntity<Map<String, String>> viewCompanyBusinessLicense(
+            @PathVariable Long id
+    ) {
+        Long adminId = 1L; // sau này lấy từ SecurityContext / @CurrentUser
+        String url = adminCompanyService.getCompanyBusinessLicenseViewUrl(adminId, id, 15);
+        return ResponseEntity.ok(Map.of("url", url));
     }
 }

@@ -108,7 +108,6 @@ CREATE TABLE candidate_profiles (
     updated_at TIMESTAMP,
     CONSTRAINT fk_profile_user FOREIGN KEY (id) REFERENCES Users(Id) ON DELETE CASCADE
 );
-
 CREATE TABLE Company (
     company_id BIGINT PRIMARY KEY,
     Name VARCHAR(255) NOT NULL,
@@ -125,17 +124,22 @@ CREATE TABLE Company (
     Representative_phone VARCHAR(20),
     Account_email VARCHAR(255),
     Tax_code VARCHAR(50),
+
     Business_license_file_url TEXT,
+    Business_license_document_type VARCHAR(100),
+    Business_license_preview_url TEXT,
     Consent_document_file_url TEXT,
-    Follower_count INTEGER DEFAULT 0,
+
+    Follower_count BIGINT DEFAULT 0,
     Verification_level VARCHAR(50) DEFAULT 'UNVERIFIED',
     Company_info_update_status VARCHAR(50) DEFAULT 'DRAFT',
     Last_update_request_date TIMESTAMP,
     Last_update TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     Active BOOLEAN DEFAULT TRUE,
-    CONSTRAINT fk_company_account FOREIGN KEY (company_id) REFERENCES Account(Id) ON DELETE CASCADE
-);
 
+    CONSTRAINT fk_company_account
+        FOREIGN KEY (company_id) REFERENCES Account(Id) ON DELETE CASCADE
+);
 -- Table: admin_accounts
 CREATE TABLE admin_accounts (
     id BIGINT PRIMARY KEY,

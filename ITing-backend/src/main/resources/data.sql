@@ -103,44 +103,72 @@ INSERT INTO candidate_profiles (
 -- ============================================================================
 -- COMPANIES
 -- ============================================================================
-
 INSERT INTO Company (
     company_id, Name, Web_link, Address, Logo, Description,
     Company_email, Industry, Company_size, Phone,
     Representative_name, Representative_gender, Representative_phone,
-    Account_email, Tax_code, Verification_level,
-    Company_info_update_status, Active, Follower_count
+    Account_email, Tax_code,
+    Business_license_file_url, Business_license_document_type, Business_license_preview_url,
+    Consent_document_file_url,
+    Verification_level, Company_info_update_status,
+    Active, Follower_count, Last_update
 ) VALUES
-      (11, 'FPT Software', 'https://fpt-software.com', 'Khu CNC Hòa Lạc, Hà Nội',
-       'https://fpt-software.com/logo.png', 'Công ty phần mềm hàng đầu Việt Nam...',
-       'hr@fpt-software.com', 'IT Outsourcing', '30,000+', '0243123456',
-       'Nguyễn Văn A', 'MALE', '0901234567', 'admin_hr@fpt.com',
-       '0101248141', 'PREMIUM', 'APPROVED', true, 12000),
-
-      (12, 'VNG Corporation', 'https://vng.com.vn', '182 Lê Đại Hành, Q11, TP.HCM',
-       'https://vng.com.vn/logo.png', 'Kỳ lân công nghệ Việt Nam...',
-       'recruitment@vng.com.vn', 'Internet Services', '5,000+', '0283962388',
-       'Lê Hồng Minh', 'MALE', '0912345678', 'minhlh@vng.com.vn',
-       '0303867050', 'ADVANCED', 'APPROVED', true, 8500),
-
-      (13, 'VinGroup', 'https://vingroup.net', 'Vinhomes Riverside, Hà Nội',
-       'https://vingroup.net/logo.png', 'Tập đoàn kinh tế tư nhân đa ngành...',
-       'info@vingroup.net', 'Multi-industry', '50,000+', '0243974999',
-       'Phạm Nhật Vượng', 'MALE', '0988888888', 'contact@vingroup.net',
-       '0101245486', 'PREMIUM', 'APPROVED', true, 20000),
-
-      (14, 'Tiki Corporation', 'https://tiki.vn', 'Tòa nhà Rivera Park, Quận 10, TP.HCM',
-       'https://tiki.vn/logo.png', 'Sàn thương mại điện tử hàng đầu...',
-       'jobs@tiki.vn', 'E-commerce', '3,000+', '19006035',
-       'Trần Ngọc Thái Sơn', 'MALE', '0977665544', 'son.tran@tiki.vn',
-       '0309532909', 'ADVANCED', 'APPROVED', true, 6000),
-
-      (15, 'Shopee Vietnam', 'https://shopee.vn', 'Tòa nhà Viettel, Quận 10, TP.HCM',
-       'https://shopee.vn/logo.png', 'Nền tảng thương mại điện tử số 1...',
-       'hr@shopee.vn', 'E-commerce', '2,000+', '0287302007',
-       'Pine Kyaw', 'MALE', '0966554433', 'pine.k@shopee.vn',
-       '0314051252', 'ADVANCED', 'APPROVED', true, 15000);
-
+(
+    11, 'FPT Software', 'https://fpt-software.com', 'Khu CNC Hòa Lạc, Hà Nội',
+    'https://fpt-software.com/logo.png', 'Công ty phần mềm hàng đầu Việt Nam...',
+    'hr@fpt-software.com', 'IT Outsourcing', '30,000+', '0243123456',
+    'Nguyễn Văn A', 'MALE', '0901234567',
+    'admin_hr@fpt.com', '0101248141',
+    'https://cv-upload-iting.s3.ap-southeast-2.amazonaws.com/business-license/c3bd4992-c308-4a54-974e-77c31967e1f7.pdf',
+     NULL, 'https://cv-upload-iting.s3.ap-southeast-2.amazonaws.com/business-license/c3bd4992-c308-4a54-974e-77c31967e1f7.pdf?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Date=20260331T101951Z&X-Amz-SignedHeaders=host&X-Amz-Credential=AKIAS2JDD4JUL6SWCTVV%2F20260331%2Fap-southeast-2%2Fs3%2Faws4_request&X-Amz-Expires=900&X-Amz-Signature=f8d95c1f526eab9449ddccaa77722fd3f40d2346385b97d226e68ce7a2d7b22e',
+    NULL,
+    'PREMIUM', 'APPROVED',
+    TRUE, 12000, CURRENT_TIMESTAMP
+),
+(
+    12, 'VNG Corporation', 'https://vng.com.vn', '182 Lê Đại Hành, Q11, TP.HCM',
+    'https://vng.com.vn/logo.png', 'Kỳ lân công nghệ Việt Nam...',
+    'recruitment@vng.com.vn', 'Internet Services', '5,000+', '0283962388',
+    'Lê Hồng Minh', 'MALE', '0912345678',
+    'minhlh@vng.com.vn', '0303867050',
+    NULL, NULL, NULL,
+    NULL,
+    'ADVANCED', 'APPROVED',
+    TRUE, 8500, CURRENT_TIMESTAMP
+),
+(
+    13, 'VinGroup', 'https://vingroup.net', 'Vinhomes Riverside, Hà Nội',
+    'https://vingroup.net/logo.png', 'Tập đoàn kinh tế tư nhân đa ngành...',
+    'info@vingroup.net', 'Multi-industry', '50,000+', '0243974999',
+    'Phạm Nhật Vượng', 'MALE', '0988888888',
+    'contact@vingroup.net', '0101245486',
+    NULL, NULL, NULL,
+    NULL,
+    'PREMIUM', 'APPROVED',
+    TRUE, 20000, CURRENT_TIMESTAMP
+),
+(
+    14, 'Tiki Corporation', 'https://tiki.vn', 'Tòa nhà Rivera Park, Quận 10, TP.HCM',
+    'https://tiki.vn/logo.png', 'Sàn thương mại điện tử hàng đầu...',
+    'jobs@tiki.vn', 'E-commerce', '3,000+', '19006035',
+    'Trần Ngọc Thái Sơn', 'MALE', '0977665544',
+    'son.tran@tiki.vn', '0309532909',
+    NULL, NULL, NULL,
+    NULL,
+    'ADVANCED', 'APPROVED',
+    TRUE, 6000, CURRENT_TIMESTAMP
+),
+(
+    15, 'Shopee Vietnam', 'https://shopee.vn', 'Tòa nhà Viettel, Quận 10, TP.HCM',
+    'https://shopee.vn/logo.png', 'Nền tảng thương mại điện tử số 1...',
+    'hr@shopee.vn', 'E-commerce', '2,000+', '0287302007',
+    'Pine Kyaw', 'MALE', '0966554433',
+    'pine.k@shopee.vn', '0314051252',
+    NULL, NULL, NULL,
+    NULL,
+    'ADVANCED', 'APPROVED',
+    TRUE, 15000, CURRENT_TIMESTAMP
+);
 -- ============================================================================
 -- JOBS (with realistic embeddings from data_jobweb.sql)
 -- ============================================================================
