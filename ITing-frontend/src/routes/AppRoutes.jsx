@@ -26,7 +26,7 @@ const JobAlerts = lazy(() => import('../pages/candidate/JobAlerts'));
 const FavoriteJobs = lazy(() => import('../pages/candidate/FavoriteJobs'));
 const AdminDashboard = lazy(() => import('../pages/admin/Dashboard'));
 const UserManagement = lazy(() => import('../pages/admin/users/UserManagement'));
-const ReportManagement = lazy(() => import('../pages/admin/reports/ReportManagement'));
+const CompanyManagement = lazy(() => import('../pages/admin/reports/ReportManagement'));
 const ApprovalManagement = lazy(() => import('../pages/admin/approvals/ApprovalManagement'));
 const JobDetailPage = lazy(() => import('../pages/public/JobDetailPage'));
 const AboutPage = lazy(() => import('../pages/public/AboutPage'));
@@ -71,7 +71,7 @@ const AppRoutes = () => {
 
             {/* Các trang Admin khác sẽ thêm vào đây sau này */}
             <Route path="users" element={<UserManagement />} />
-            <Route path="reports" element={<ReportManagement />} />
+            <Route path="companies" element={<CompanyManagement />} />
             {/* <Route path="approvals" element={<ApprovalManagement />} /> */}
             <Route path="approvals" element={<AdminJobPage />} />
             
