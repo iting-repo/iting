@@ -77,6 +77,9 @@ dependencies {
 
     // 🛡️ Rate Limiting
     implementation 'com.bucket4j:bucket4j-core:8.1.0'
+
+    // Database Migration 
+    implementation 'org.flywaydb:flyway-core'
 }
 
 tasks.named('test') {
