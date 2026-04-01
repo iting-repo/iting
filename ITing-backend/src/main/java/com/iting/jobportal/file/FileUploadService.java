@@ -14,5 +14,7 @@ public interface FileUploadService {
 
     String uploadBusinessLicense(MultipartFile file);
 
+    String uploadConsentDocument(MultipartFile file);
+
     void deleteByUrl(String fileUrl);
 }

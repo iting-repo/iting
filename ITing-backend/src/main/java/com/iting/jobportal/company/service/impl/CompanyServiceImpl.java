@@ -187,7 +187,42 @@ public class CompanyServiceImpl implements CompanyService {
     public CompanyResponse updateConsentDocumentByAccountId(Long accountId, ConsentDocumentUploadRequest request) {
         Company company = getCompanyByAccountId(accountId);
 
-        company.setConsentDocumentFileUrl(request.getConsentDocumentFileUrl());
+        MultipartFile file = request.getFile();
+
+        if (file == null || file.isEmpty()) {
+            throw new IllegalArgumentException("File văn bản thỏa thuận không được để trống");
+        }
+
+        String originalFilename = file.getOriginalFilename();
+        if (originalFilename == null) {
+            throw new IllegalArgumentException("Tên file không hợp lệ");
+        }
+
+        String lowerName = originalFilename.toLowerCase();
+        boolean allowed = lowerName.endsWith(".pdf") || lowerName.endsWith(".doc") || lowerName.endsWith(".docx");
+        if (!allowed) {
+            throw new IllegalArgumentException("Chỉ chấp nhận file pdf, doc, docx");
+        }
+
+        if (request.getConfirmed() == null || !request.getConfirmed()) {
+            throw new IllegalArgumentException("Bạn phải xác nhận cam kết trước khi lưu");
+        }
+
+        if (company.getConsentDocumentFileUrl() != null && !company.getConsentDocumentFileUrl().isBlank()) {
+            fileUploadService.deleteByUrl(company.getConsentDocumentFileUrl());
+        }
+
+        String fileUrl = fileUploadService.uploadConsentDocument(file);
+
+        company.setConsentDocumentFileUrl(fileUrl);
+        company.setConsentDocumentConfirmed(true);
+        company.setConsentConfirmedAt(LocalDateTime.now());
+        company.setConsentDocumentVersion(
+                request.getVersion() == null || request.getVersion().isBlank()
+                        ? "v1.0"
+                        : request.getVersion()
+        );
+
         company.setLastUpdateRequestDate(LocalDateTime.now());
         company.setLastUpdate(LocalDateTime.now());
 
@@ -273,6 +308,16 @@ public class CompanyServiceImpl implements CompanyService {
         }
         if (company.getBusinessLicenseFileUrl() == null || company.getBusinessLicenseFileUrl().isBlank()) {
             throw new IllegalArgumentException("Giấy phép kinh doanh không được để trống");
+        }
+
+        if (company.getConsentDocumentFileUrl() == null || company.getConsentDocumentFileUrl().isBlank()) {
+            throw new IllegalArgumentException("Văn bản thỏa thuận dữ liệu cá nhân không được để trống");
+        }
+        if (Boolean.FALSE.equals(company.getConsentDocumentConfirmed())) {
+            throw new IllegalArgumentException("Bạn chưa xác nhận cam kết cho văn bản thỏa thuận");
+        }
+        if (company.getConsentDocumentVersion() == null || company.getConsentDocumentVersion().isBlank()) {
+            throw new IllegalArgumentException("Phiên bản văn bản thỏa thuận không được để trống");
         }
 
         company.setCompanyInfoUpdateStatus(CompanyReviewStatus.PENDING_REVIEW);

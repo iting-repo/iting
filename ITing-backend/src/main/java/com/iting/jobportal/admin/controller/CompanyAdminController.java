@@ -3,6 +3,7 @@ package com.iting.jobportal.admin.controller;
 import com.iting.jobportal.admin.dto.*;
 import com.iting.jobportal.admin.service.*;
 import com.iting.jobportal.company.dto.response.CompanyResponse;
+import com.iting.jobportal.company.entity.enums.CompanyAuditAction;
 import com.iting.jobportal.company.entity.enums.CompanyReviewStatus;
 import com.iting.jobportal.company.entity.enums.VerificationLevel;
 import io.swagger.v3.oas.annotations.Operation;
@@ -11,14 +12,16 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import com.iting.jobportal.admin.dto.CompanyAuditLogResponse;
 
+import java.time.LocalDate;
+import java.util.List;
 import java.util.Map;
 
 @Tag(name = "10. Admin Company")
 @RestController
 @RequestMapping("/api/admin/companies")
 @RequiredArgsConstructor
-@Tag(name = "Admin Company Management", description = "APIs for admin to manage company approvals")
 public class CompanyAdminController {
 
     private final AdminCompanyService adminCompanyService;
@@ -130,5 +133,81 @@ public class CompanyAdminController {
         Long adminId = 1L; // sau này lấy từ SecurityContext / @CurrentUser
         String url = adminCompanyService.getCompanyBusinessLicenseViewUrl(adminId, id, 15);
         return ResponseEntity.ok(Map.of("url", url));
+    }
+
+    @DeleteMapping("/{id}")
+    @Operation(summary = "Xóa công ty")
+    public ResponseEntity<?> deleteCompany(@PathVariable Long id) {
+        Long adminId = 1L;
+        adminCompanyService.deleteCompany(adminId, id);
+        return ResponseEntity.ok(Map.of("message", "Company deleted successfully"));
+    }
+
+    /*
+    ================================
+    BULK ACTIONS
+    ================================
+    */
+
+    @PostMapping("/bulk-approve")
+    @Operation(summary = "Duyệt nhiều công ty")
+    public ResponseEntity<?> bulkApproveCompanies(@RequestBody BulkCompanyApprovalRequest request) {
+        Long adminId = 1L;
+        CompanyApprovalRequest singleReq = new CompanyApprovalRequest();
+        singleReq.setVerificationLevel(request.getVerificationLevel());
+        singleReq.setNote(request.getNote());
+        
+        adminCompanyService.bulkApproveCompanies(adminId, request.getIds(), singleReq);
+        return ResponseEntity.ok(Map.of("message", "Companies approved successfully"));
+    }
+
+    @PostMapping("/bulk-reject")
+    @Operation(summary = "Từ chối nhiều công ty")
+    public ResponseEntity<?> bulkRejectCompanies(@RequestBody BulkReviewRejectRequest request) {
+        Long adminId = 1L;
+        ReviewRejectRequest singleReq = new ReviewRejectRequest();
+        singleReq.setReason(request.getReason());
+
+        adminCompanyService.bulkRejectCompanies(adminId, request.getIds(), singleReq);
+        return ResponseEntity.ok(Map.of("message", "Companies rejected successfully"));
+    }
+
+    @PostMapping("/bulk-suspend")
+    @Operation(summary = "Đình chỉ nhiều công ty")
+    public ResponseEntity<?> bulkSuspendCompanies(@RequestBody BulkReviewRejectRequest request) {
+        Long adminId = 1L;
+        ReviewRejectRequest singleReq = new ReviewRejectRequest();
+        singleReq.setReason(request.getReason());
+
+        adminCompanyService.bulkSuspendCompanies(adminId, request.getIds(), singleReq);
+        return ResponseEntity.ok(Map.of("message", "Companies suspended successfully"));
+    }
+
+    @PostMapping("/bulk-delete")
+    @Operation(summary = "Xóa nhiều công ty")
+    public ResponseEntity<?> bulkDeleteCompanies(@RequestBody BulkActionRequest request) {
+        Long adminId = 1L;
+        adminCompanyService.bulkDeleteCompanies(adminId, request.getIds());
+        return ResponseEntity.ok(Map.of("message", "Companies deleted successfully"));
+    }
+    @GetMapping("/{id}/audit-logs")
+    @Operation(summary = "Lấy lịch sử duyệt công ty")
+    public ResponseEntity<List<CompanyAuditLogResponse>> getCompanyAuditLogs(
+            @PathVariable Long id
+    ) {
+        return ResponseEntity.ok(adminCompanyService.getCompanyAuditLogs(id));
+    }
+
+    @GetMapping("/audit-logs")
+    @Operation(summary = "Lấy toàn bộ lịch sử duyệt công ty, có filter")
+    public ResponseEntity<List<CompanyAuditLogResponse>> getAllCompanyAuditLogs(
+            @RequestParam(required = false) CompanyAuditAction action,
+            @RequestParam(required = false) Long companyId,
+            @RequestParam(required = false) LocalDate fromDate,
+            @RequestParam(required = false) LocalDate toDate
+    ) {
+        return ResponseEntity.ok(
+                adminCompanyService.getAllCompanyAuditLogs(action, companyId, fromDate, toDate)
+        );
     }
 }

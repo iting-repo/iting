@@ -8,6 +8,7 @@ import lombok.Data;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Data
 @Builder
@@ -23,7 +24,8 @@ public class JobResponse {
     // Basic
     private String title;
     private String position;
-    private String techRequired;
+    private List<String> techRequired;
+
     private JobType jobType;
     private ExperienceLevel experienceLevel;
     private String workingDays;
@@ -67,6 +69,8 @@ public class JobResponse {
     // Audit
     private LocalDateTime createdAt;
     private LocalDateTime lastUpdate;
+
+    private List<JobReviewHistoryResponse> reviewHistories;
 
 
     public static JobResponse fromEntity(Job job) {

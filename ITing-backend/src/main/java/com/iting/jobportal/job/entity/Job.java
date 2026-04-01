@@ -1,5 +1,6 @@
 package com.iting.jobportal.job.entity;
 
+import com.iting.jobportal.common.converter.StringListConverter;
 import com.iting.jobportal.company.entity.Company;
 import com.iting.jobportal.job.entity.enums.*;
 import jakarta.persistence.*;
@@ -8,6 +9,7 @@ import lombok.*;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Entity
 @Table(
@@ -40,9 +42,10 @@ public class Job {
 
     private String position;
 
-    // enums
+    @Convert(converter = StringListConverter.class)
     @Column(columnDefinition = "TEXT")
-    private String techRequired;
+    private List<String> techRequired;
+
 
     @Enumerated(EnumType.STRING)
     private JobType jobType;

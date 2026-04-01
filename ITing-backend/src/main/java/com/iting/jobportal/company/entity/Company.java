@@ -91,6 +91,16 @@ public class Company {
     @Column(name = "Consent_document_file_url", columnDefinition = "TEXT")
     private String consentDocumentFileUrl;
 
+    // ===== Consent document xác nhận =====
+    @Column(name = "Consent_document_confirmed")
+    private Boolean consentDocumentConfirmed = false;
+
+    @Column(name = "Consent_confirmed_at")
+    private LocalDateTime consentConfirmedAt;
+    
+    @Column(name = "Consent_document_version")
+    private String consentDocumentVersion;
+
     // ===== Xác thực =====
     @Enumerated(EnumType.STRING)
     @Column(name = "Verification_level", length = 50)

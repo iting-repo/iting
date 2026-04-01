@@ -34,4 +34,12 @@ public interface AdminJobService {
     void unsuspendJob(Long adminId, Long jobId);
 
     void closeJobByAdmin(Long adminId, Long jobId);
+
+    void bulkApproveJobs(Long adminId, java.util.List<Long> jobIds);
+
+    void bulkRejectJobs(Long adminId, java.util.List<Long> jobIds, String reason);
+
+    void bulkSuspendJobs(Long adminId, java.util.List<Long> jobIds, String reason);
+
+    void bulkCloseJobs(Long adminId, java.util.List<Long> jobIds);
 }

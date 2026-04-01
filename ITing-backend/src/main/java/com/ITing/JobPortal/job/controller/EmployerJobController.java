@@ -129,4 +129,34 @@ public class EmployerJobController {
         }
         return ResponseEntity.ok(jobService.submitJobForReview(employerId, id));
     }
+
+    /*
+    ============================
+    BULK ACTIONS
+    ============================
+    */
+
+    @PostMapping("/bulk-delete")
+    @Operation(summary = "Xóa nhiều tin tuyển dụng")
+    public ResponseEntity<?> bulkDeleteJobs(
+            @CurrentUser Long employerId,
+            @RequestBody com.iting.jobportal.admin.dto.BulkActionRequest request) {
+        if (employerId == null) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Bạn cần đăng nhập");
+        }
+        jobService.bulkDeleteJobs(employerId, request.getIds());
+        return ResponseEntity.ok(Map.of("message", "Xóa nhiều tin tuyển dụng thành công"));
+    }
+
+    @PostMapping("/bulk-close")
+    @Operation(summary = "Đóng nhiều tin tuyển dụng")
+    public ResponseEntity<?> bulkCloseJobs(
+            @CurrentUser Long employerId,
+            @RequestBody com.iting.jobportal.admin.dto.BulkActionRequest request) {
+        if (employerId == null) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Bạn cần đăng nhập");
+        }
+        jobService.bulkCloseJobs(employerId, request.getIds());
+        return ResponseEntity.ok(Map.of("message", "Đóng nhiều tin tuyển dụng thành công"));
+    }
 }

@@ -9,4 +9,5 @@ public enum ExperienceLevel {
     EXPERT,     // Chuyên gia (dùng trong data.sql)
     LEAD,       // 7+ năm
     MANAGER     // Quản lý
+    // nên boor sung dấu () phía sau
 }

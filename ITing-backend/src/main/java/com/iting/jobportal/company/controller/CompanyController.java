@@ -49,6 +49,30 @@ public class CompanyController {
         return ResponseEntity.ok(Map.of("url", presignedUrl));
     }
 
+    @PostMapping(value = "/me/consent-document", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @Operation(summary = "Upload văn bản thỏa thuận dữ liệu cá nhân của tôi")
+    public ResponseEntity<CompanyResponse> uploadConsentDocument(
+            @Parameter(hidden = true) @CurrentUser Long userId,
+
+            @io.swagger.v3.oas.annotations.Parameter(
+                    description = "File văn bản thỏa thuận dữ liệu cá nhân",
+                    required = true,
+                    schema = @io.swagger.v3.oas.annotations.media.Schema(type = "string", format = "binary")
+            )
+            @RequestPart("file") MultipartFile file,
+
+            @RequestPart("confirmed") Boolean confirmed,
+
+            @RequestPart(value = "version", required = false) String version
+    ) {
+        ConsentDocumentUploadRequest request = new ConsentDocumentUploadRequest();
+        request.setFile(file);
+        request.setConfirmed(confirmed);
+        request.setVersion(version);
+
+        return ResponseEntity.ok(companyService.updateConsentDocumentByAccountId(userId, request));
+    }
+
     @GetMapping("/me")
     @Operation(summary = "Lấy thông tin công ty của tài khoản đang đăng nhập")
     public ResponseEntity<CompanyResponse> getMyCompany(

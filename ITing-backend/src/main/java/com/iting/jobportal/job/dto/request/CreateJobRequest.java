@@ -11,6 +11,7 @@ import lombok.Data;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.List;
 
 @Data
 public class CreateJobRequest {
@@ -21,7 +22,7 @@ public class CreateJobRequest {
     @NotBlank(message = "Vị trí tuyển dụng không được để trống")
     private String position;
 
-    private String techRequired;
+    private List<String> techRequired;
 
     @NotNull(message = "Loại công việc không được để trống")
     private JobType jobType;

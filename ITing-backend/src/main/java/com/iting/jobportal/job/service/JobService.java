@@ -59,4 +59,8 @@ public interface JobService {
 
     // Gửi duyệt job
     JobResponse submitJobForReview(Long employerId, Long jobId);
+
+    void bulkDeleteJobs(Long employerId, java.util.List<Long> jobIds);
+    
+    void bulkCloseJobs(Long employerId, java.util.List<Long> jobIds);
 }

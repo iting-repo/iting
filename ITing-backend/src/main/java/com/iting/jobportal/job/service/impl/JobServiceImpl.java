@@ -582,6 +582,26 @@ public class JobServiceImpl implements JobService {
 //        return JobResponse.fromEntityWithCompany(saved, company.getName(), company.getLogoUrl());
 //    }
 
+    @Override
+    @Transactional
+    public void bulkDeleteJobs(Long employerId, java.util.List<Long> jobIds) {
+        if (jobIds != null) {
+            for (Long jobId : jobIds) {
+                deleteJob(employerId, jobId);
+            }
+        }
+    }
+
+    @Override
+    @Transactional
+    public void bulkCloseJobs(Long employerId, java.util.List<Long> jobIds) {
+        if (jobIds != null) {
+            for (Long jobId : jobIds) {
+                closeJob(employerId, jobId);
+            }
+        }
+    }
+
     private void validateJobBeforeSubmit(Job job, Company company) {
         if (company.getCompanyInfoUpdateStatus() != CompanyReviewStatus.APPROVED) {
             throw new ResponseStatusException(

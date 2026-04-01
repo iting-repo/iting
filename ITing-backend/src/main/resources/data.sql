@@ -99,17 +99,15 @@ INSERT INTO candidate_profiles (
       (103, 'DevOps Engineer Professional', 'Cầu Giấy, Hà Nội', 3, 'Bách Khoa Hà Nội', 'Kinh nghiệm triển khai CI/CD, K8s...', 'NOT_LOOKING', FALSE, CURRENT_TIMESTAMP),
       (104, 'Fullstack Developer (JS/Python)', 'Quận 2, TP. Hồ Chí Minh', 2, 'UIT', 'Thích làm việc với startup...', 'ACTIVELY_LOOKING', TRUE, CURRENT_TIMESTAMP),
       (105, 'Data Scientist / ML Engineer', 'Đống Đa, Hà Nội', 6, 'Đại học Tổng Hợp', 'Nghiên cứu AI và Big Data...', 'FREELANCE_AVAILABLE', TRUE, CURRENT_TIMESTAMP);
-
--- ============================================================================
--- COMPANIES
--- ============================================================================
 INSERT INTO Company (
     company_id, Name, Web_link, Address, Logo, Description,
     Company_email, Industry, Company_size, Phone,
     Representative_name, Representative_gender, Representative_phone,
     Account_email, Tax_code,
+
     Business_license_file_url, Business_license_document_type, Business_license_preview_url,
-    Consent_document_file_url,
+    Consent_document_file_url, Consent_document_confirmed, Consent_confirmed_at, Consent_document_version,
+
     Verification_level, Company_info_update_status,
     Active, Follower_count, Last_update
 ) VALUES
@@ -119,9 +117,18 @@ INSERT INTO Company (
     'hr@fpt-software.com', 'IT Outsourcing', '30,000+', '0243123456',
     'Nguyễn Văn A', 'MALE', '0901234567',
     'admin_hr@fpt.com', '0101248141',
+
+    -- Business license (KHÔNG dùng presigned URL)
     'https://cv-upload-iting.s3.ap-southeast-2.amazonaws.com/business-license/c3bd4992-c308-4a54-974e-77c31967e1f7.pdf',
-     NULL, 'https://cv-upload-iting.s3.ap-southeast-2.amazonaws.com/business-license/c3bd4992-c308-4a54-974e-77c31967e1f7.pdf?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Date=20260331T101951Z&X-Amz-SignedHeaders=host&X-Amz-Credential=AKIAS2JDD4JUL6SWCTVV%2F20260331%2Fap-southeast-2%2Fs3%2Faws4_request&X-Amz-Expires=900&X-Amz-Signature=f8d95c1f526eab9449ddccaa77722fd3f40d2346385b97d226e68ce7a2d7b22e',
     NULL,
+    'https://cv-upload-iting.s3.ap-southeast-2.amazonaws.com/business-license/c3bd4992-c308-4a54-974e-77c31967e1f7.pdf',
+
+    -- Consent document
+    NULL,
+    FALSE,
+    NULL,
+    'v1.0',
+
     'PREMIUM', 'APPROVED',
     TRUE, 12000, CURRENT_TIMESTAMP
 ),
@@ -131,8 +138,10 @@ INSERT INTO Company (
     'recruitment@vng.com.vn', 'Internet Services', '5,000+', '0283962388',
     'Lê Hồng Minh', 'MALE', '0912345678',
     'minhlh@vng.com.vn', '0303867050',
+
     NULL, NULL, NULL,
-    NULL,
+    NULL, FALSE, NULL, 'v1.0',
+
     'ADVANCED', 'APPROVED',
     TRUE, 8500, CURRENT_TIMESTAMP
 ),
@@ -142,8 +151,10 @@ INSERT INTO Company (
     'info@vingroup.net', 'Multi-industry', '50,000+', '0243974999',
     'Phạm Nhật Vượng', 'MALE', '0988888888',
     'contact@vingroup.net', '0101245486',
+
     NULL, NULL, NULL,
-    NULL,
+    NULL, FALSE, NULL, 'v1.0',
+
     'PREMIUM', 'APPROVED',
     TRUE, 20000, CURRENT_TIMESTAMP
 ),
@@ -153,8 +164,10 @@ INSERT INTO Company (
     'jobs@tiki.vn', 'E-commerce', '3,000+', '19006035',
     'Trần Ngọc Thái Sơn', 'MALE', '0977665544',
     'son.tran@tiki.vn', '0309532909',
+
     NULL, NULL, NULL,
-    NULL,
+    NULL, FALSE, NULL, 'v1.0',
+
     'ADVANCED', 'APPROVED',
     TRUE, 6000, CURRENT_TIMESTAMP
 ),
@@ -164,18 +177,108 @@ INSERT INTO Company (
     'hr@shopee.vn', 'E-commerce', '2,000+', '0287302007',
     'Pine Kyaw', 'MALE', '0966554433',
     'pine.k@shopee.vn', '0314051252',
+
     NULL, NULL, NULL,
-    NULL,
+    NULL, FALSE, NULL, 'v1.0',
+
     'ADVANCED', 'APPROVED',
     TRUE, 15000, CURRENT_TIMESTAMP
 );
+
+
+INSERT INTO company_audit_log (
+    company_id,
+    action,
+    from_status,
+    to_status,
+    reason,
+    note,
+    actor,
+    actor_id,
+    created_at
+) VALUES
+
+-- FPT Software (id = 11)
+(
+    11,
+    'APPROVE',
+    'PENDING_REVIEW',
+    'APPROVED',
+    NULL,
+    'Hồ sơ đầy đủ, MST hợp lệ',
+    'superadmin@iting.com',
+    1,
+    '2026-01-12 09:30:00'
+),
+
+-- ABC Corp (id = 12)
+(
+    12,
+    'REJECT',
+    'PENDING_REVIEW',
+    'REJECTED',
+    'Thiếu giấy phép kinh doanh',
+    'Yêu cầu bổ sung giấy tờ',
+    'superadmin@iting.com',
+    1,
+    '2026-03-07 14:15:00'
+),
+
+-- Scam Company (id = 13)
+(
+    13,
+    'SUSPEND',
+    'APPROVED',
+    'SUSPENDED',
+    'Phát hiện hoạt động lừa đảo',
+    'Nhiều báo cáo từ ứng viên',
+    'superadmin@iting.com',
+    1,
+    '2026-02-22 16:45:00'
+),
+
+-- Resubmission
+(
+    12,
+    'REQUEST_RESUBMISSION',
+    'REJECTED',
+    'NEEDS_RESUBMISSION',
+    'Thiếu thông tin pháp lý',
+    'Vui lòng bổ sung giấy phép',
+    'admin2@iting.com',
+    2,
+    '2026-03-08 10:00:00'
+),
+
+-- Approve lại sau khi bổ sung
+(
+    12,
+    'APPROVE',
+    'NEEDS_RESUBMISSION',
+    'APPROVED',
+    NULL,
+    'Đã bổ sung đầy đủ',
+    'admin2@iting.com',
+    2,
+    '2026-03-10 09:30:00'
+),
+
+-- Unsuspend
+(
+    13,
+    'UNSUSPEND',
+    'SUSPENDED',
+    'APPROVED',
+    NULL,
+    'Đã xác minh lại, không vi phạm',
+    'superadmin@iting.com',
+    1,
+    '2026-03-15 11:00:00'
+);
+
 -- ============================================================================
 -- JOBS (with realistic embeddings from data_jobweb.sql)
 -- ============================================================================
--- ============================================================================
--- JOBS (NEW STRUCTURE - CLEAN DATA)
--- ============================================================================
-
 INSERT INTO Job (
     Company_id,
     Title, Position,
@@ -197,7 +300,7 @@ INSERT INTO Job (
     'Senior Backend Developer (Python)',
     'Backend Developer',
     'Thiết kế và xây dựng hệ thống backend phục vụ hàng triệu request mỗi ngày.',
-    'Python, FastAPI, Redis, PostgreSQL',
+    '["Python","FastAPI","Redis","PostgreSQL"]',
     'FULL_TIME', 'SENIOR', 'Thứ 2 - Thứ 6 (08:30 - 17:30)',
     25000000, 45000000, 'MONTH',
     3, 1,
@@ -219,7 +322,7 @@ INSERT INTO Job (
     'Backend Engineer (Node.js)',
     'Backend Engineer',
     'Xây dựng hệ thống fintech realtime.',
-    'Node.js, MongoDB, AWS',
+    '["Node.js","MongoDB","AWS"]',
     'FULL_TIME', 'MIDDLE', 'Thứ 2 - Thứ 6',
     20000000, 35000000, 'MONTH',
     2, 0,
@@ -241,7 +344,7 @@ INSERT INTO Job (
     'Frontend Developer (React)',
     'Frontend Developer',
     'Xây dựng UI/UX cho nền tảng tuyển dụng.',
-    'React, TypeScript, Redux',
+    '["React","TypeScript","Redux"]',
     'FULL_TIME', 'JUNIOR', 'Thứ 2 - Thứ 6',
     18000000, 32000000, 'MONTH',
     3, 1,
@@ -263,7 +366,7 @@ INSERT INTO Job (
     'DevOps Engineer',
     'DevOps Engineer',
     'Quản lý hệ thống CI/CD và cloud infrastructure.',
-    'AWS, Kubernetes, Terraform',
+    '["AWS","Kubernetes","Terraform"]',
     'FULL_TIME', 'SENIOR', 'Thứ 2 - Thứ 6',
     30000000, 50000000, 'MONTH',
     2, 0,
@@ -285,7 +388,7 @@ INSERT INTO Job (
     'Mobile Developer (Flutter)',
     'Mobile Developer',
     'Phát triển ứng dụng mobile đa nền tảng.',
-    'Flutter, Dart, Firebase',
+    '["Flutter","Dart","Firebase"]',
     'FULL_TIME', 'MIDDLE', 'Thứ 2 - Thứ 6',
     22000000, 38000000, 'MONTH',
     2, 0,
@@ -303,11 +406,11 @@ INSERT INTO Job (
 
 -- 6
 (
-     11,
+    11,
     'AI/ML Engineer',
     'AI Engineer',
     'Xây dựng hệ thống AI recommendation.',
-    'Python, TensorFlow, PyTorch',
+    '["Python","TensorFlow","PyTorch"]',
     'FULL_TIME', 'SENIOR', 'Thứ 2 - Thứ 6',
     35000000, 60000000, 'MONTH',
     2, 1,
@@ -325,11 +428,11 @@ INSERT INTO Job (
 
 -- 7
 (
-     12,
+    12,
     'Data Engineer',
     'Data Engineer',
     'Xây dựng hệ thống data pipeline.',
-    'Python, Spark, Airflow',
+    '["Python","Spark","Airflow"]',
     'FULL_TIME', 'MIDDLE', 'Thứ 2 - Thứ 6',
     24000000, 42000000, 'MONTH',
     2, 0,
@@ -351,7 +454,7 @@ INSERT INTO Job (
     'QA Engineer',
     'QA Engineer',
     'Automation testing hệ thống.',
-    'Selenium, Java, Python',
+    '["Selenium","Java","Python"]',
     'FULL_TIME', 'JUNIOR', 'Thứ 2 - Thứ 6',
     12000000, 22000000, 'MONTH',
     3, 0,
@@ -373,7 +476,7 @@ INSERT INTO Job (
     'Java Backend Developer',
     'Backend Developer',
     'Xây dựng hệ thống E-commerce.',
-    'Java, Spring Boot, MySQL',
+    '["Java","Spring Boot","MySQL"]',
     'FULL_TIME', 'SENIOR', 'Thứ 2 - Thứ 6',
     28000000, 48000000, 'MONTH',
     2, 1,
@@ -395,7 +498,7 @@ INSERT INTO Job (
     'Tech Lead',
     'Tech Lead',
     'Dẫn dắt team kỹ thuật.',
-    'System Design, Leadership',
+    '["System Design","Leadership"]',
     'FULL_TIME', 'LEAD', 'Thứ 2 - Thứ 6',
     45000000, 80000000, 'MONTH',
     1, 0,
@@ -410,12 +513,14 @@ INSERT INTO Job (
     CURRENT_TIMESTAMP, CURRENT_TIMESTAMP,
     NULL
 ),
+
+-- DRAFT
 (
     11,
     'Test Job DRAFT',
     'Backend Developer',
     'Test trạng thái DRAFT',
-    'Java, Spring',
+    '["Java","Spring"]',
     'FULL_TIME', 'MIDDLE', 'Thứ 2 - Thứ 6',
     20000000, 30000000, 'MONTH',
     2, 0,
@@ -435,7 +540,7 @@ INSERT INTO Job (
     'Test Job PENDING',
     'Backend Developer',
     'Test trạng thái PENDING',
-    'Java, Spring',
+    '["Java","Spring"]',
     'FULL_TIME', 'MIDDLE', 'Thứ 2 - Thứ 6',
     20000000, 30000000, 'MONTH',
     2, 0,
@@ -455,7 +560,7 @@ INSERT INTO Job (
     'Test Job ACTIVE',
     'Backend Developer',
     'Test trạng thái ACTIVE',
-    'Java, Spring',
+    '["Java","Spring"]',
     'FULL_TIME', 'MIDDLE', 'Thứ 2 - Thứ 6',
     20000000, 30000000, 'MONTH',
     2, 0,
@@ -475,7 +580,7 @@ INSERT INTO Job (
     'Test Job EXPIRED',
     'Backend Developer',
     'Test trạng thái EXPIRED',
-    'Java, Spring',
+    '["Java","Spring"]',
     'FULL_TIME', 'MIDDLE', 'Thứ 2 - Thứ 6',
     20000000, 30000000, 'MONTH',
     2, 0,
@@ -495,7 +600,7 @@ INSERT INTO Job (
     'Test Job CLOSED',
     'Backend Developer',
     'Test trạng thái CLOSED',
-    'Java, Spring',
+    '["Java","Spring"]',
     'FULL_TIME', 'MIDDLE', 'Thứ 2 - Thứ 6',
     20000000, 30000000, 'MONTH',
     2, 0,
@@ -509,13 +614,13 @@ INSERT INTO Job (
     NULL
 ),
 
--- REJECTED
+-- REJECTED 1
 (
     11,
     'Test Job REJECTED',
     'Backend Developer',
     'Test trạng thái REJECTED',
-    'Java, Spring',
+    '["Java","Spring"]',
     'FULL_TIME', 'MIDDLE', 'Thứ 2 - Thứ 6',
     20000000, 30000000, 'MONTH',
     2, 0,
@@ -529,13 +634,13 @@ INSERT INTO Job (
     NULL
 ),
 
--- REJECTED
+-- REJECTED 2
 (
     11,
     'Test Job REJECTED',
     'Backend Developer',
     'Test trạng thái REJECTED',
-    'Java, Spring',
+    '["Java","Spring"]',
     'FULL_TIME', 'MIDDLE', 'Thứ 2 - Thứ 6',
     20000000, 30000000, 'MONTH',
     2, 0,
@@ -555,7 +660,7 @@ INSERT INTO Job (
     'Test Job SUSPENDED',
     'Backend Developer',
     'Test trạng thái SUSPENDED',
-    'Java, Spring',
+    '["Java","Spring"]',
     'FULL_TIME', 'MIDDLE', 'Thứ 2 - Thứ 6',
     20000000, 30000000, 'MONTH',
     2, 0,

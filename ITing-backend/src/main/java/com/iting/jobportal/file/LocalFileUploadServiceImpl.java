@@ -53,6 +53,11 @@ public class LocalFileUploadServiceImpl implements FileUploadService {
     }
 
     @Override
+    public String uploadConsentDocument(MultipartFile file) {
+        return saveFile(file, "consent-document");
+    }
+
+    @Override
     public String generatePresignedUrl(String fileUrl, int minutes) {
         // Local thì không cần presigned, trả luôn URL
         return fileUrl;
