@@ -1,14 +1,15 @@
 import React, { useState } from 'react';
 import { BsBriefcase, BsCardChecklist, BsThreeDotsVertical, BsEye, BsXCircle } from 'react-icons/bs';
 import { FaUserFriends } from 'react-icons/fa';
-// 1. Thêm import useNavigate
+import { useTranslation } from 'react-i18next'; // 1. Import hook
 import { useNavigate, Link } from 'react-router-dom';
 
 const EmployerDashboard = () => {
-    const navigate = useNavigate(); // 2. Khởi tạo hook điều hướng
+    const { t } = useTranslation(); // 2. Khởi tạo hàm t
+    const navigate = useNavigate();
 
-    // Mock Data (Giữ nguyên)
     const stats = { postedJobs: 10, totalApplications: 100 };
+    const companyName = "(Tên công ty)"; // Sau này lấy từ API hoặc Store
 
     const recentJobs = [
         { id: 1, title: 'UI/UX Designer', type: 'Full Time', daysLeft: 5, status: 'active', applicants: 798 },
@@ -28,16 +29,20 @@ const EmployerDashboard = () => {
     return (
         <div className="p-8 bg-white rounded-xl shadow-sm border border-gray-100 min-h-screen">
 
-            {/* Header & Stats (Giữ nguyên) */}
+            {/* Header & Stats */}
             <div className="mb-10">
-                <h1 className="text-2xl font-bold text-gray-800 mb-2">Xin chào, (Tên công ty)</h1>
-                <p className="text-gray-500 mb-8">Dưới đây là thống kê các công việc và số lượng ứng viên đã ứng tuyển</p>
+                <h1 className="text-2xl font-bold text-gray-800 mb-2">
+                    {t('employer_dashboard.welcome', { name: companyName })}
+                </h1>
+                <p className="text-gray-500 mb-8">
+                    {t('employer_dashboard.description')}
+                </p>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="bg-[#EAF6FF] p-6 rounded-xl flex items-center justify-between shadow-sm">
                         <div>
                             <div className="text-3xl font-bold text-gray-800 mb-1">{stats.postedJobs}</div>
-                            <div className="text-gray-600 font-medium">Công việc đã đăng tải</div>
+                            <div className="text-gray-600 font-medium">{t('employer_dashboard.stats.posted_jobs')}</div>
                         </div>
                         <div className="w-12 h-12 bg-white rounded-lg flex items-center justify-center text-[#3AB4E6] shadow-sm">
                             <BsBriefcase size={24} />
@@ -47,7 +52,7 @@ const EmployerDashboard = () => {
                     <div className="bg-[#FFF6E5] p-6 rounded-xl flex items-center justify-between shadow-sm">
                         <div>
                             <div className="text-3xl font-bold text-gray-800 mb-1">{stats.totalApplications}</div>
-                            <div className="text-gray-600 font-medium">Ứng viên đã nộp hồ sơ</div>
+                            <div className="text-gray-600 font-medium">{t('employer_dashboard.stats.total_applications')}</div>
                         </div>
                         <div className="w-12 h-12 bg-white rounded-lg flex items-center justify-center text-orange-400 shadow-sm">
                             <BsCardChecklist size={24} />
@@ -59,10 +64,9 @@ const EmployerDashboard = () => {
             {/* Recent Jobs Table */}
             <div>
                 <div className="flex justify-between items-center mb-6">
-                    <h2 className="text-lg font-bold text-gray-800">Các công việc đã đăng gần đây</h2>
-                    {/* 3. Cập nhật link Xem tất cả */}
+                    <h2 className="text-lg font-bold text-gray-800">{t('employer_dashboard.recent_jobs')}</h2>
                     <Link to="/employer/manage-jobs" className="text-[#3AB4E6] text-sm font-medium hover:underline flex items-center gap-1">
-                        Xem tất cả &rarr;
+                        {t('employer_dashboard.view_all')} &rarr;
                     </Link>
                 </div>
 
@@ -70,18 +74,16 @@ const EmployerDashboard = () => {
                     <table className="w-full text-left border-collapse">
                         <thead>
                             <tr className="bg-gray-50 text-gray-500 text-xs uppercase tracking-wider">
-                                <th className="p-4">Công việc</th>
-                                <th className="p-4">Trạng thái</th>
-                                <th className="p-4">Số lượng ứng tuyển</th>
-                                <th className="p-4 text-right">Hành động</th>
+                                <th className="p-4">{t('employer_dashboard.table.job')}</th>
+                                <th className="p-4">{t('employer_dashboard.table.status')}</th>
+                                <th className="p-4">{t('employer_dashboard.table.applicants_count')}</th>
+                                <th className="p-4 text-right">{t('employer_dashboard.table.action')}</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-100">
                             {recentJobs.map((job) => (
                                 <tr key={job.id} className="hover:bg-gray-50/50 transition-colors">
-
                                     <td className="p-4">
-                                        {/* 4. Click vào tiêu đề cũng chuyển sang trang chi tiết */}
                                         <div
                                             onClick={() => navigate(`/employer/manage-jobs/${job.id}`)}
                                             className="font-bold text-gray-800 text-base mb-1 cursor-pointer hover:text-[#3AB4E6] transition-colors"
@@ -92,7 +94,9 @@ const EmployerDashboard = () => {
                                             <span className="bg-gray-100 px-2 py-0.5 rounded text-xs">{job.type}</span>
                                             <span className="text-gray-400">•</span>
                                             <span className="text-gray-400 text-xs mt-0.5">
-                                                {job.status === 'active' ? `Còn ${job.daysLeft} ngày` : job.deadline}
+                                                {job.status === 'active'
+                                                    ? t('employer_dashboard.table.days_left', { count: job.daysLeft })
+                                                    : job.deadline}
                                             </span>
                                         </div>
                                     </td>
@@ -100,11 +104,12 @@ const EmployerDashboard = () => {
                                     <td className="p-4">
                                         {job.status === 'active' ? (
                                             <span className="inline-flex items-center gap-1.5 text-green-600 bg-green-50 px-3 py-1 rounded-full text-xs font-bold border border-green-100">
-                                                <span className="w-1.5 h-1.5 rounded-full bg-green-600"></span> Còn hoạt động
+                                                <span className="w-1.5 h-1.5 rounded-full bg-green-600"></span>
+                                                {t('employer_dashboard.table.active')}
                                             </span>
                                         ) : (
                                             <span className="inline-flex items-center gap-1.5 text-red-500 bg-red-50 px-3 py-1 rounded-full text-xs font-bold border border-red-100">
-                                                <BsXCircle /> Đã hết hạn
+                                                <BsXCircle /> {t('employer_dashboard.table.expired')}
                                             </span>
                                         )}
                                     </td>
@@ -122,7 +127,7 @@ const EmployerDashboard = () => {
                                                 onClick={() => navigate(`/employer/job/${job.id}/applications`)}
                                                 className="bg-[#EAF6FF] text-[#3AB4E6] hover:bg-[#3AB4E6] hover:text-white text-xs font-bold px-4 py-2 rounded-lg transition-all shadow-sm"
                                             >
-                                                Xem Hồ Sơ Ứng Viên
+                                                {t('employer_dashboard.table.view_applications')}
                                             </button>
 
                                             <button
@@ -132,19 +137,17 @@ const EmployerDashboard = () => {
                                                 <BsThreeDotsVertical />
                                             </button>
 
-                                            {/* Dropdown Menu Popup */}
                                             {activeMenu === job.id && (
                                                 <div className="absolute right-8 top-12 w-48 bg-white shadow-xl rounded-lg border border-gray-100 z-10 animate-fade-in-up overflow-hidden">
-                                                    {/* 5. Gắn link điều hướng vào nút Xem chi tiết */}
                                                     <button
                                                         onClick={() => navigate(`/employer/manage-jobs/${job.id}`)}
                                                         className="w-full text-left px-4 py-3 text-sm text-gray-600 hover:bg-gray-50 hover:text-[#3AB4E6] flex items-center gap-2 border-b border-gray-50"
                                                     >
-                                                        <BsEye /> Xem chi tiết
+                                                        <BsEye /> {t('employer_dashboard.table.view_detail')}
                                                     </button>
 
                                                     <button className="w-full text-left px-4 py-3 text-sm text-gray-600 hover:bg-red-50 hover:text-red-500 flex items-center gap-2">
-                                                        <BsXCircle /> Đánh dấu hết hạn
+                                                        <BsXCircle /> {t('employer_dashboard.table.mark_expired')}
                                                     </button>
                                                 </div>
                                             )}
@@ -157,7 +160,6 @@ const EmployerDashboard = () => {
                 </div>
             </div>
 
-            {/* Overlay đóng menu */}
             {activeMenu && (
                 <div className="fixed inset-0 z-0" onClick={() => setActiveMenu(null)}></div>
             )}
