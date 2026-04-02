@@ -47,7 +47,7 @@ const JobApplications = () => {
       switch (s) {
          case 'PENDING': return 'bg-yellow-50 text-yellow-600 border-yellow-100';
          case 'REVIEWED': return 'bg-blue-50 text-blue-600 border-blue-100';
-         case 'INTERVIEW': return 'bg-purple-50 text-purple-600 border-purple-100';
+         case 'INTERVIEW': return 'bg-sky-50 text-sky-600 border-sky-100';
          case 'REJECTED': return 'bg-red-50 text-red-600 border-red-100';
          default: return 'bg-gray-50 text-gray-600';
       }

@@ -102,7 +102,7 @@ const AppliedJobs = () => {
   // Helper đổi màu badge loại công việc
   const getTypeStyle = (type) => {
       if (type.includes("Full Time")) return "bg-blue-50 text-blue-600";
-      if (type.includes("Part Time")) return "bg-purple-50 text-purple-600";
+      if (type.includes("Part Time")) return "bg-sky-50 text-sky-600";
       if (type.includes("Remote")) return "bg-green-50 text-green-600";
       return "bg-gray-100 text-gray-600";
   };

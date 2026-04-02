@@ -33,7 +33,7 @@ export const JobDetailDialog = ({ job, open, onClose, onAction }) => {
           <div className="flex flex-wrap gap-2">
             {techList.length > 0 ? (
               techList.map((tech, index) => (
-                <Badge key={index} variant="purple">{tech}</Badge>
+                <Badge key={index} variant="sky">{tech}</Badge>
               ))
             ) : (
               <span className="text-xs text-slate-400 italic">Không có yêu cầu kỹ thuật cụ thể</span>

@@ -208,7 +208,7 @@ const ManageJobs = () => {
     },
     SUSPENDED: {
       label: "Suspended",
-      color: "text-purple-600",
+      color: "text-sky-600",
       icon: <FaBan />,
     },
   };

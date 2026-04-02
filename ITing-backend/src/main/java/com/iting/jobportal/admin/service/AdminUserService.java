@@ -1,8 +1,8 @@
 package com.iting.jobportal.admin.service;
 
-import com.iting.jobportal.admin.dto.BanUserRequest;
-import com.iting.jobportal.admin.dto.UpdateUserRequest;
-import com.iting.jobportal.admin.dto.UserListResponse;
+import com.iting.jobportal.admin.dto.request.BanUserRequest;
+import com.iting.jobportal.admin.dto.request.UpdateUserRequest;
+import com.iting.jobportal.admin.dto.response.UserListResponse;
 import com.iting.jobportal.auth.entity.Enum.AccountStatus;
 import com.iting.jobportal.auth.entity.Enum.Role;
 import org.springframework.data.domain.Page;

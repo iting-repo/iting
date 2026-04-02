@@ -176,7 +176,7 @@ const Header = () => {
                   {user?.avatar ? (
                     <img src={user.avatar} alt="Avatar" className="w-9 h-9 rounded-full object-cover border border-gray-600" />
                   ) : (
-                    <div className="w-9 h-9 rounded-full bg-gradient-to-tr from-blue-500 to-purple-500 flex items-center justify-center text-sm font-bold text-white shadow-inner">
+                    <div className="w-9 h-9 rounded-full bg-gradient-to-tr from-blue-500 to-sky-500 flex items-center justify-center text-sm font-bold text-white shadow-inner">
                       {user?.name?.charAt(0).toUpperCase() || "U"}
                     </div>
                   )}

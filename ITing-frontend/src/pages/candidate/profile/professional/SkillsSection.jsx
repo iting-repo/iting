@@ -86,7 +86,7 @@ const SkillsSection = () => {
                                     <div className="w-full md:w-48">
                                         <label className="block text-xs text-gray-500 mb-1">Mức độ</label>
                                         <select 
-                                            className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-slate-400 focus:ring-2 focus:ring-[#9D5CE9]"
+                                            className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-slate-400 focus:ring-2 focus:ring-[#3AB4E6]"
                                             value={newSkillLevel}
                                             onChange={(e) => setNewSkillLevel(e.target.value)}
                                         >

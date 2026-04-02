@@ -1,6 +1,8 @@
 package com.iting.jobportal.admin.service.impl;
 
-import com.iting.jobportal.admin.dto.*;
+import com.iting.jobportal.admin.dto.request.CompanyApprovalRequest;
+import com.iting.jobportal.admin.dto.request.ReviewRejectRequest;
+import com.iting.jobportal.admin.dto.response.CompanyAuditLogResponse;
 import com.iting.jobportal.admin.service.AdminCompanyService;
 import com.iting.jobportal.company.dto.mapper.CompanyMapper;
 import com.iting.jobportal.company.dto.response.CompanyResponse;
@@ -257,7 +259,7 @@ public class    AdminCompanyServiceImpl implements AdminCompanyService {
         Company company = companyRepository.findById(companyId)
                 .orElseThrow(() -> new RuntimeException("Company not found"));
 
-        return companyAuditLogRepository.findByCompanyIdOrderByCreatedAtDesc(companyId)
+        return companyAuditLogRepository.findByCompany_IdOrderByCreatedAtDesc(companyId)
                 .stream()
                 .map(log -> CompanyAuditLogResponse.builder()
                         .time(log.getCreatedAt())
@@ -271,6 +273,20 @@ public class    AdminCompanyServiceImpl implements AdminCompanyService {
                         .actorId(log.getActorId())
                         .build())
                 .toList();
+    }
+
+    private CompanyAuditLogResponse mapToResponse(com.iting.jobportal.admin.dto.response.CompanyAuditLogView view) {
+        return CompanyAuditLogResponse.builder()
+                .time(view.getCreatedAt())
+                .companyName(view.getCompanyName())
+                .action(view.getAction())
+                .fromStatus(view.getFromStatus())
+                .toStatus(view.getToStatus())
+                .reason(view.getReason())
+                .note(view.getNote())
+                .actor(view.getActor())
+                .actorId(view.getActorId())
+                .build();
     }
 
     @Override
@@ -291,11 +307,13 @@ public class    AdminCompanyServiceImpl implements AdminCompanyService {
                         : java.time.LocalDateTime.of(2999, 12, 31, 23, 59, 59);
 
         return companyAuditLogRepository.findAllWithCompanyFiltered(
-                action,
-                companyId,
-                fromDateTime,
-                toDateTime
-        );
+                        action,
+                        companyId,
+                        fromDateTime,
+                        toDateTime
+                ).stream()
+                .map(this::mapToResponse)
+                .toList();
     }
 
 

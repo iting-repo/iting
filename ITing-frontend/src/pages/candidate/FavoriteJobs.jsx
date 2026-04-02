@@ -85,7 +85,7 @@ const FavoriteJobs = () => {
   // Helper đổi màu Badge
   const getTypeStyle = (type) => {
     if (type === 'Full Time') return 'bg-blue-50 text-blue-600';
-    if (type === 'Internship') return 'bg-purple-50 text-purple-600';
+    if (type === 'Internship') return 'bg-sky-50 text-sky-600';
     if (type === 'Remote') return 'bg-green-50 text-green-600';
     return 'bg-gray-100 text-gray-600';
   };

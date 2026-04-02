@@ -252,7 +252,7 @@ const LoginPage = () => {
             </div>
 
             <div className="bg-white/10 backdrop-blur-md border border-white/10 p-4 rounded-xl flex-1 min-w-[140px]">
-              <div className="w-10 h-10 bg-white/20 rounded-lg flex items-center justify-center mb-3 text-purple-300">
+              <div className="w-10 h-10 bg-white/20 rounded-lg flex items-center justify-center mb-3 text-sky-300">
                 <BsBuilding size={20} />
               </div>
               <div className="text-xl font-bold">97,354</div>

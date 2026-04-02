@@ -1,7 +1,8 @@
 package com.iting.jobportal.admin.controller;
 
-import com.iting.jobportal.admin.dto.ReviewRejectRequest;
-import com.iting.jobportal.admin.service.AdminCompanyService;
+import com.iting.jobportal.admin.dto.request.ReviewRejectRequest;
+import com.iting.jobportal.admin.dto.request.BulkActionRequest;
+import com.iting.jobportal.admin.dto.request.BulkReviewRejectRequest;
 import com.iting.jobportal.admin.service.AdminJobService;
 import com.iting.jobportal.job.dto.response.JobResponse;
 import com.iting.jobportal.job.entity.enums.JobStatus;
@@ -219,7 +220,7 @@ public class JobAdminController {
 
     @PostMapping("/bulk-approve")
     @Operation(summary = "Duyệt nhiều job")
-    public ResponseEntity<?> bulkApproveJobs(@RequestBody com.iting.jobportal.admin.dto.BulkActionRequest request) {
+    public ResponseEntity<?> bulkApproveJobs(@RequestBody BulkActionRequest request) {
         Long adminId = 1L;
         adminJobService.bulkApproveJobs(adminId, request.getIds());
         return ResponseEntity.ok(Map.of("message", "Jobs approved successfully"));
@@ -227,7 +228,7 @@ public class JobAdminController {
 
     @PostMapping("/bulk-reject")
     @Operation(summary = "Từ chối nhiều job")
-    public ResponseEntity<?> bulkRejectJobs(@RequestBody com.iting.jobportal.admin.dto.BulkReviewRejectRequest request) {
+    public ResponseEntity<?> bulkRejectJobs(@RequestBody BulkReviewRejectRequest request) {
         Long adminId = 1L;
         adminJobService.bulkRejectJobs(adminId, request.getIds(), request.getReason());
         return ResponseEntity.ok(Map.of("message", "Jobs rejected successfully"));
@@ -235,7 +236,7 @@ public class JobAdminController {
 
     @PostMapping("/bulk-suspend")
     @Operation(summary = "Đình chỉ nhiều job")
-    public ResponseEntity<?> bulkSuspendJobs(@RequestBody com.iting.jobportal.admin.dto.BulkReviewRejectRequest request) {
+    public ResponseEntity<?> bulkSuspendJobs(@RequestBody BulkReviewRejectRequest request) {
         Long adminId = 1L;
         adminJobService.bulkSuspendJobs(adminId, request.getIds(), request.getReason());
         return ResponseEntity.ok(Map.of("message", "Jobs suspended successfully"));
@@ -243,7 +244,7 @@ public class JobAdminController {
 
     @PostMapping("/bulk-close")
     @Operation(summary = "Đóng nhiều job")
-    public ResponseEntity<?> bulkCloseJobs(@RequestBody com.iting.jobportal.admin.dto.BulkActionRequest request) {
+    public ResponseEntity<?> bulkCloseJobs(@RequestBody BulkActionRequest request) {
         Long adminId = 1L;
         adminJobService.bulkCloseJobs(adminId, request.getIds());
         return ResponseEntity.ok(Map.of("message", "Jobs closed successfully"));

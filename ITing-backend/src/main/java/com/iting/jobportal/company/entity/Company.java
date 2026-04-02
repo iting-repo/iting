@@ -29,6 +29,9 @@ public class Company {
     @OneToMany(mappedBy = "company", fetch = FetchType.LAZY)
     private List<Job> jobs;
 
+    @OneToMany(mappedBy = "company", fetch = FetchType.LAZY)
+    private List<CompanyAuditLog> auditLogs;
+
     // ===== Thông tin cơ bản =====
     @Column(name = "Name", nullable = false, length = 255)
     private String name;

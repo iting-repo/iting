@@ -411,7 +411,7 @@ const HomePage = () => {
                                                     <FaBriefcase className="text-blue-400" /> {job.jobType || "Full-time"}
                                                 </span>
                                                 <span className="flex items-center gap-1.5 bg-gray-50 px-3 py-1.5 rounded-lg border border-gray-100">
-                                                    <FaClock className="text-purple-400" /> {formatSalary(job.minSalary, job.maxSalary)}
+                                                    <FaClock className="text-sky-400" /> {formatSalary(job.minSalary, job.maxSalary)}
                                                 </span>
                                                 {/* Tech Stack */}
                                                 {job.techRequired && (

@@ -1,8 +1,8 @@
 package com.iting.jobportal.admin.service;
 
-import com.iting.jobportal.admin.dto.CompanyApprovalRequest;
-import com.iting.jobportal.admin.dto.CompanyAuditLogResponse;
-import com.iting.jobportal.admin.dto.ReviewRejectRequest;
+import com.iting.jobportal.admin.dto.request.CompanyApprovalRequest;
+import com.iting.jobportal.admin.dto.response.CompanyAuditLogResponse;
+import com.iting.jobportal.admin.dto.request.ReviewRejectRequest;
 import com.iting.jobportal.company.dto.response.CompanyResponse;
 import com.iting.jobportal.company.entity.enums.CompanyReviewStatus;
 import com.iting.jobportal.company.entity.enums.VerificationLevel;

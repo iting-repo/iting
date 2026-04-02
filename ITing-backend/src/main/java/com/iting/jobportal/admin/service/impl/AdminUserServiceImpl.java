@@ -1,6 +1,8 @@
 package com.iting.jobportal.admin.service.impl;
 
-import com.iting.jobportal.admin.dto.*;
+import com.iting.jobportal.admin.dto.request.BanUserRequest;
+import com.iting.jobportal.admin.dto.request.UpdateUserRequest;
+import com.iting.jobportal.admin.dto.response.UserListResponse;
 import com.iting.jobportal.admin.service.AdminUserService;
 import com.iting.jobportal.auth.entity.Account;
 import com.iting.jobportal.auth.entity.Enum.AccountStatus;
@@ -78,6 +80,8 @@ public class AdminUserServiceImpl implements AdminUserService {
                 .email(account.getEmail())
                 .role(account.getRole())
                 .status(account.getStatus())
+                .createdAt(account.getCreatedAt())
+                .lastLoginAt(account.getLastLoginAt())
                 .build();
                 
         Optional<User> userOpt = userRepository.findById(account.getId());

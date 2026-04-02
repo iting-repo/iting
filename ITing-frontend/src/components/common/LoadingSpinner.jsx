@@ -9,7 +9,7 @@ const LoadingSpinner = ({ size = 'md', color = 'primary' }) => {
   };
 
   const colorClasses = {
-    primary: 'text-[#9D5CE9]',
+    primary: 'text-[#3AB4E6]',
     white: 'text-white',
     gray: 'text-gray-400'
   };

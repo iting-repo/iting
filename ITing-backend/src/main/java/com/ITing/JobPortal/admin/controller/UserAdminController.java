@@ -1,8 +1,8 @@
 package com.iting.jobportal.admin.controller;
 
-import com.iting.jobportal.admin.dto.BanUserRequest;
-import com.iting.jobportal.admin.dto.UpdateUserRequest;
-import com.iting.jobportal.admin.dto.UserListResponse;
+import com.iting.jobportal.admin.dto.request.BanUserRequest;
+import com.iting.jobportal.admin.dto.request.UpdateUserRequest;
+import com.iting.jobportal.admin.dto.response.UserListResponse;
 import com.iting.jobportal.admin.service.AdminUserService;
 import com.iting.jobportal.auth.entity.Enum.AccountStatus;
 import com.iting.jobportal.auth.entity.Enum.Role;
@@ -18,7 +18,7 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/admin/users")
 @RequiredArgsConstructor
-@Tag(name = "11. Admin User Management", description = "CRUD operations for users by admin")
+@Tag(name = "12. Admin User Management", description = "CRUD operations for users by admin")
 public class UserAdminController {
 
     private final AdminUserService adminUserService;

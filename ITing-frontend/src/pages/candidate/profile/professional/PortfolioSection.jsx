@@ -100,7 +100,7 @@ const PortfolioSection = () => {
                                         value={formData.description}
                                         onChange={handleChange}
                                         rows="3"
-                                        className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-slate-400 focus:ring-2 focus:ring-[#9D5CE9] transition-all"
+                                        className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-slate-400 focus:ring-2 focus:ring-[#3AB4E6] transition-all"
                                         placeholder="Mô tả ngắn gọn về dự án, vai trò của bạn..."
                                     />
                                 </div>

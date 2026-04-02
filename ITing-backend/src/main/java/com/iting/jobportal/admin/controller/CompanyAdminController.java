@@ -1,6 +1,6 @@
 package com.iting.jobportal.admin.controller;
 
-import com.iting.jobportal.admin.dto.*;
+import com.iting.jobportal.admin.dto.request.*;
 import com.iting.jobportal.admin.service.*;
 import com.iting.jobportal.company.dto.response.CompanyResponse;
 import com.iting.jobportal.company.entity.enums.CompanyAuditAction;
@@ -12,7 +12,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import com.iting.jobportal.admin.dto.CompanyAuditLogResponse;
+import com.iting.jobportal.admin.dto.response.CompanyAuditLogResponse;
 
 import java.time.LocalDate;
 import java.util.List;

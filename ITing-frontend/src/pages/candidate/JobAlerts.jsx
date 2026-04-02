@@ -97,7 +97,7 @@ const JobAlerts = () => {
   // Helper đổi màu Badge loại công việc
   const getTypeStyle = (type) => {
     if (type === 'Full Time') return 'bg-blue-50 text-blue-600';
-    if (type === 'Internship') return 'bg-purple-50 text-purple-600';
+    if (type === 'Internship') return 'bg-sky-50 text-sky-600';
     return 'bg-gray-100 text-gray-600';
   };
 

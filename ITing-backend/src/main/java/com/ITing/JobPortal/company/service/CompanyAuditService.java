@@ -26,7 +26,7 @@ public class CompanyAuditService {
             Long actorId
     ) {
         CompanyAuditLog log = CompanyAuditLog.builder()
-                .companyId(company.getId())
+                .company(company)
                 .action(action)
                 .fromStatus(fromStatus)
                 .toStatus(toStatus)

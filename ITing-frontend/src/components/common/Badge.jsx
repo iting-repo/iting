@@ -7,7 +7,7 @@ const Badge = ({ children, variant = "default", className = "" }) => {
     warning: "bg-amber-100 text-amber-700",
     danger: "bg-red-100 text-red-700",
     info: "bg-blue-100 text-blue-700",
-    purple: "bg-violet-100 text-violet-700",
+    sky: "bg-violet-100 text-violet-700",
   };
   return (
     <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-medium ${variants[variant] || variants.default} ${className}`}>

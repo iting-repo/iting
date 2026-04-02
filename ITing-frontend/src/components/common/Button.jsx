@@ -6,7 +6,7 @@ const Button = ({ children, variant = "default", className = "", ...props }) => 
     outline: "border border-slate-300 bg-white text-slate-700 hover:bg-slate-50",
     destructive: "bg-red-600 text-white hover:bg-red-700",
     secondary: "bg-slate-100 text-slate-800 hover:bg-slate-200",
-    primary: "bg-[#5D5FEF] text-white hover:bg-[#4a4cdb]",
+    primary: "bg-[#3AB4E6] text-white hover:bg-[#2C9ACD]",
   };
   return (
     <button

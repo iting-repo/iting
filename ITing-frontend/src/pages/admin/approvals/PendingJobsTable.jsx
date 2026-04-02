@@ -73,7 +73,7 @@ const PendingJobsTable = () => {
                                 </Td>
                                 <Td className="text-right">
                                     <div className="flex items-center justify-end gap-2">
-                                        <button className="w-8 h-8 rounded-lg flex items-center justify-center bg-purple-100 text-purple-600 hover:bg-purple-200 transition-colors" title="View Details">
+                                        <button className="w-8 h-8 rounded-lg flex items-center justify-center bg-sky-100 text-sky-600 hover:bg-sky-200 transition-colors" title="View Details">
                                             <FaEye size={12} />
                                         </button>
                                         <button className="w-8 h-8 rounded-lg flex items-center justify-center bg-green-100 text-green-600 hover:bg-green-200 transition-colors" title="Approve">

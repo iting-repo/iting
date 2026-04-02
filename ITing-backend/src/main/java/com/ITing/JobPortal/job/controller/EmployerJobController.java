@@ -1,6 +1,6 @@
 package com.iting.jobportal.job.controller;
 
-import com.iting.jobportal.job.controller.CurrentUser;
+import com.iting.jobportal.admin.dto.request.BulkActionRequest;
 import com.iting.jobportal.job.dto.request.CreateJobRequest;
 import com.iting.jobportal.job.dto.request.UpdateJobRequest;
 import com.iting.jobportal.job.dto.response.JobResponse;
@@ -140,7 +140,7 @@ public class EmployerJobController {
     @Operation(summary = "Xóa nhiều tin tuyển dụng")
     public ResponseEntity<?> bulkDeleteJobs(
             @CurrentUser Long employerId,
-            @RequestBody com.iting.jobportal.admin.dto.BulkActionRequest request) {
+            @RequestBody BulkActionRequest request) {
         if (employerId == null) {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Bạn cần đăng nhập");
         }
@@ -152,7 +152,7 @@ public class EmployerJobController {
     @Operation(summary = "Đóng nhiều tin tuyển dụng")
     public ResponseEntity<?> bulkCloseJobs(
             @CurrentUser Long employerId,
-            @RequestBody com.iting.jobportal.admin.dto.BulkActionRequest request) {
+            @RequestBody BulkActionRequest request) {
         if (employerId == null) {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Bạn cần đăng nhập");
         }
