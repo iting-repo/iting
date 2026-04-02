@@ -298,8 +298,20 @@ CREATE TABLE User_contact_company (
 
 CREATE TABLE Notification (
     Id SERIAL PRIMARY KEY,
-    Content TEXT NOT NULL,
-    Time TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    Content TEXT,
+    Time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+    recipient_id BIGINT NOT NULL,
+    recipient_type VARCHAR(20) NOT NULL,
+    type VARCHAR(50) NOT NULL,
+
+    is_read BOOLEAN NOT NULL DEFAULT FALSE,
+    read_at TIMESTAMP,
+
+    entity_type VARCHAR(50),
+    entity_id BIGINT,
+
+    action_url VARCHAR(255)
 );
 
 ALTER TABLE User_follow_company ADD CONSTRAINT fk_follow_notification FOREIGN KEY (Notification_id) REFERENCES Notification(Id) ON DELETE SET NULL;

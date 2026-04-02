@@ -1,0 +1,19 @@
+CREATE TABLE refresh_tokens (
+    id BIGSERIAL PRIMARY KEY,
+
+    token_id VARCHAR(255) NOT NULL UNIQUE,
+    user_id BIGINT NOT NULL,
+    email VARCHAR(255) NOT NULL,
+
+    token TEXT NOT NULL,
+    expiry_date TIMESTAMP NOT NULL,
+
+    is_used BOOLEAN NOT NULL DEFAULT FALSE,
+    is_revoked BOOLEAN NOT NULL DEFAULT FALSE,
+
+    device_info VARCHAR(255),
+    ip_address VARCHAR(255),
+
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
