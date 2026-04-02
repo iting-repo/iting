@@ -1,18 +1,23 @@
 import axiosInstance from "../utils/axiosInstance";
 
 const applicationService = {
-    // Lấy danh sách ứng viên theo Job ID
-    // GET /api/applications/job/{jobId}?employerId=...&page=...&size=...
-    getJobApplications: async (jobId, employerId, params) => {
-        const response = await axiosInstance.get(`/applications/job/${jobId}`, {
-            params: { ...params, employerId }
-        });
+    // 1. Candidate nộp đơn ứng tuyển
+    applyJob: async (data) => {
+        const response = await axiosInstance.post('/candidates/applications/apply', data);
         return response;
     },
 
-    // Nộp đơn ứng tuyển
-    applyJob: async (applicationData) => {
-        const response = await axiosInstance.post('/applications/apply', applicationData);
+    // 2. Employer xem danh sách đơn ứng tuyển theo jobId
+    getEmployerApplications: async (jobId, params) => {
+        const response = await axiosInstance.get(`/employer/applications/job/${jobId}`, { params });
+        return response;
+    },
+
+    // 3. Employer chấp nhận ứng viên
+    acceptApplication: async (id, note = "") => {
+        const response = await axiosInstance.post(`/employer/applications/${id}/accept`, null, {
+            params: { note }
+        });
         return response;
     }
 };

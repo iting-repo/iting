@@ -5,6 +5,7 @@ import lombok.Data;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.List;
 
 @Data
 public class UpdateJobRequest {
@@ -13,7 +14,7 @@ public class UpdateJobRequest {
 
     private String position;
 
-    private String techRequired;
+    private List<String> techRequired;
 
     private JobType jobType;
 
@@ -31,9 +32,9 @@ public class UpdateJobRequest {
 
     private LocalDate dueDate;
 
-    private String city;
+    private String province;
 
-    private String district;
+    private String ward;
 
     private String address;
 

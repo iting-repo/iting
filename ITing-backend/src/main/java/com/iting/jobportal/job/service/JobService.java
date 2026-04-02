@@ -18,7 +18,18 @@ public interface JobService {
     
     // Xóa job (Employer)
     void deleteJob(Long employerId, Long jobId);
-    
+
+    JobResponse movePendingToDraft(Long employerId, Long jobId);
+
+//    JobResponse approveJob(Long adminId, Long jobId);
+//
+//    JobResponse rejectJob(Long adminId, Long jobId, String reason);
+//
+//    JobResponse suspendJob(Long adminId, Long jobId, String reason);
+
+    JobResponse reopenJob(Long employerId, Long jobId);
+
+
     // Gia hạn job (Employer)
     JobResponse extendJob(Long employerId, Long jobId, int days);
     
@@ -48,4 +59,8 @@ public interface JobService {
 
     // Gửi duyệt job
     JobResponse submitJobForReview(Long employerId, Long jobId);
+
+    void bulkDeleteJobs(Long employerId, java.util.List<Long> jobIds);
+    
+    void bulkCloseJobs(Long employerId, java.util.List<Long> jobIds);
 }

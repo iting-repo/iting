@@ -1,13 +1,18 @@
 package com.iting.jobportal.company.service.impl;
 
 import com.iting.jobportal.company.dto.request.*;
+import com.iting.jobportal.company.dto.response.BusinessLicenseFormResponse;
 import com.iting.jobportal.company.dto.response.CompanyResponse;
 import com.iting.jobportal.company.entity.Company;
+import com.iting.jobportal.company.entity.enums.CompanyReviewStatus;
 import com.iting.jobportal.company.repository.CompanyRepository;
-import com.iting.jobportal.company.service.CompanyService;
 import com.iting.jobportal.company.service.CompanyFollowService;
+import com.iting.jobportal.company.service.CompanyService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
+import com.iting.jobportal.file.FileUploadService;
+import com.iting.jobportal.company.entity.enums.BusinessDocumentType;
 
 import java.time.LocalDateTime;
 
@@ -17,19 +22,19 @@ public class CompanyServiceImpl implements CompanyService {
 
     private final CompanyRepository companyRepository;
     private final CompanyFollowService companyFollowService;
+    private final FileUploadService fileUploadService;
 
-
-
-    public CompanyServiceImpl(CompanyRepository companyRepository, CompanyFollowService companyFollowService) {
+    public CompanyServiceImpl(CompanyRepository companyRepository,
+                              CompanyFollowService companyFollowService,
+                              FileUploadService fileUploadService) {
         this.companyRepository = companyRepository;
         this.companyFollowService = companyFollowService;
+        this.fileUploadService = fileUploadService;
     }
-
     @Override
+    @Transactional(readOnly = true)
     public CompanyResponse getMyCompany(Long accountId) {
-        Company company = companyRepository.findById(accountId)
-                .orElseThrow(() -> new RuntimeException("Không tìm thấy công ty của tài khoản này"));
-
+        Company company = getCompanyByAccountId(accountId);
         return mapToResponse(company);
     }
 
@@ -46,12 +51,16 @@ public class CompanyServiceImpl implements CompanyService {
     }
 
     // ====================================
-    // 2. Cập nhật thông tin cơ bản (Trang 1)
+    // 2. Cập nhật thông tin cơ bản
     // ====================================
     @Override
     public CompanyResponse updateBasicInfo(Long id, CompanyBasicInfoRequest request) {
-        Company company = companyRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Company not found with id: " + id));
+        return updateBasicInfoByAccountId(id, request);
+    }
+
+    @Override
+    public CompanyResponse updateBasicInfoByAccountId(Long accountId, CompanyBasicInfoRequest request) {
+        Company company = getCompanyByAccountId(accountId);
 
         company.setName(request.getName());
         company.setLogoUrl(request.getLogoUrl());
@@ -60,7 +69,6 @@ public class CompanyServiceImpl implements CompanyService {
         company.setWebsite(request.getWebsite());
         company.setIndustry(request.getIndustry());
         company.setCompanySize(request.getCompanySize());
-
         company.setLastUpdate(LocalDateTime.now());
 
         Company saved = companyRepository.save(company);
@@ -68,18 +76,21 @@ public class CompanyServiceImpl implements CompanyService {
     }
 
     // ==========================================
-    // 3. Cập nhật người đại diện (Trang 2)
+    // 3. Cập nhật người đại diện
     // ==========================================
     @Override
     public CompanyResponse updateRepresentative(Long id, CompanyRepresentativeRequest request) {
-        Company company = companyRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Company not found with id: " + id));
+        return updateRepresentativeByAccountId(id, request);
+    }
+
+    @Override
+    public CompanyResponse updateRepresentativeByAccountId(Long accountId, CompanyRepresentativeRequest request) {
+        Company company = getCompanyByAccountId(accountId);
 
         company.setRepresentativeName(request.getRepresentativeName());
         company.setRepresentativeGender(request.getRepresentativeGender());
         company.setRepresentativePhone(request.getRepresentativePhone());
         company.setAccountEmail(request.getAccountEmail());
-
         company.setLastUpdate(LocalDateTime.now());
 
         Company saved = companyRepository.save(company);
@@ -87,16 +98,42 @@ public class CompanyServiceImpl implements CompanyService {
     }
 
     // ====================================================
-    // 4. Upload giấy đăng ký doanh nghiệp (Trang 3)
+    // 4. Upload giấy đăng ký doanh nghiệp
     // ====================================================
     @Override
     public CompanyResponse updateBusinessLicense(Long id, BusinessLicenseUploadRequest request) {
-        Company company = companyRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Company not found with id: " + id));
+        return updateBusinessLicenseByAccountId(id, request);
+    }
 
-        company.setBusinessLicenseFileUrl(request.getBusinessLicenseFileUrl());
-        // Có thể set trạng thái yêu cầu cập nhật, ví dụ:
-        // company.setCompanyInfoUpdateStatus("BUSINESS_LICENSE_UPLOADED");
+    @Override
+    public CompanyResponse updateBusinessLicenseByAccountId(Long accountId, BusinessLicenseUploadRequest request) {
+        Company company = getCompanyByAccountId(accountId);
+
+        MultipartFile file = request.getFile();
+
+        if (file == null || file.isEmpty()) {
+            throw new IllegalArgumentException("File không được để trống");
+        }
+
+        String contentType = file.getContentType();
+        if (contentType == null || !contentType.equalsIgnoreCase("application/pdf")) {
+            throw new IllegalArgumentException("Chỉ chấp nhận file PDF");
+        }
+
+        String originalFilename = file.getOriginalFilename();
+        if (originalFilename == null || !originalFilename.toLowerCase().endsWith(".pdf")) {
+            throw new IllegalArgumentException("File phải có đuôi .pdf");
+        }
+
+        if (company.getBusinessLicenseFileUrl() != null && !company.getBusinessLicenseFileUrl().isBlank()) {
+            fileUploadService.deleteByUrl(company.getBusinessLicenseFileUrl());
+        }
+
+        String fileUrl = fileUploadService.uploadBusinessLicense(file);
+
+        company.setBusinessLicenseFileUrl(fileUrl);
+         company.setBusinessLicenseDocumentType(BusinessDocumentType.BUSINESS_LICENSE);
+        // company.setBusinessLicensePreviewUrl(fileUrl);
 
         company.setLastUpdateRequestDate(LocalDateTime.now());
         company.setLastUpdate(LocalDateTime.now());
@@ -105,16 +142,86 @@ public class CompanyServiceImpl implements CompanyService {
         return mapToResponse(saved);
     }
 
+    @Override
+    @Transactional(readOnly = true)
+    public String getBusinessLicensePresignedUrlByAccountId(Long accountId, int minutes) {
+        Company company = getCompanyByAccountId(accountId);
+
+        String fileUrl = company.getBusinessLicenseFileUrl();
+        if (fileUrl == null || fileUrl.isBlank()) {
+            throw new IllegalArgumentException("Công ty chưa tải giấy phép kinh doanh");
+        }
+
+        return fileUploadService.generatePresignedUrl(fileUrl, minutes);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public BusinessLicenseFormResponse getBusinessLicenseForm(Long id) {
+        return getBusinessLicenseFormByAccountId(id);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public BusinessLicenseFormResponse getBusinessLicenseFormByAccountId(Long accountId) {
+        Company company = getCompanyByAccountId(accountId);
+
+        return new BusinessLicenseFormResponse(
+                company.getId(),
+                company.getBusinessLicenseDocumentType(),
+                company.getBusinessLicenseFileUrl(),
+                company.getBusinessLicensePreviewUrl(),
+                company.getCompanyInfoUpdateStatus()
+        );
+    }
+
     // ====================================================
-    // 5. Upload văn bản thỏa thuận dữ liệu cá nhân (Trang 4)
+    // 5. Upload văn bản thỏa thuận dữ liệu cá nhân
     // ====================================================
     @Override
     public CompanyResponse updateConsentDocument(Long id, ConsentDocumentUploadRequest request) {
-        Company company = companyRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Company not found with id: " + id));
+        return updateConsentDocumentByAccountId(id, request);
+    }
 
-        company.setConsentDocumentFileUrl(request.getConsentDocumentFileUrl());
-        // company.setCompanyInfoUpdateStatus("CONSENT_DOCUMENT_UPLOADED");
+    @Override
+    public CompanyResponse updateConsentDocumentByAccountId(Long accountId, ConsentDocumentUploadRequest request) {
+        Company company = getCompanyByAccountId(accountId);
+
+        MultipartFile file = request.getFile();
+
+        if (file == null || file.isEmpty()) {
+            throw new IllegalArgumentException("File văn bản thỏa thuận không được để trống");
+        }
+
+        String originalFilename = file.getOriginalFilename();
+        if (originalFilename == null) {
+            throw new IllegalArgumentException("Tên file không hợp lệ");
+        }
+
+        String lowerName = originalFilename.toLowerCase();
+        boolean allowed = lowerName.endsWith(".pdf") || lowerName.endsWith(".doc") || lowerName.endsWith(".docx");
+        if (!allowed) {
+            throw new IllegalArgumentException("Chỉ chấp nhận file pdf, doc, docx");
+        }
+
+        if (request.getConfirmed() == null || !request.getConfirmed()) {
+            throw new IllegalArgumentException("Bạn phải xác nhận cam kết trước khi lưu");
+        }
+
+        if (company.getConsentDocumentFileUrl() != null && !company.getConsentDocumentFileUrl().isBlank()) {
+            fileUploadService.deleteByUrl(company.getConsentDocumentFileUrl());
+        }
+
+        String fileUrl = fileUploadService.uploadConsentDocument(file);
+
+        company.setConsentDocumentFileUrl(fileUrl);
+        company.setConsentDocumentConfirmed(true);
+        company.setConsentConfirmedAt(LocalDateTime.now());
+        company.setConsentDocumentVersion(
+                request.getVersion() == null || request.getVersion().isBlank()
+                        ? "v1.0"
+                        : request.getVersion()
+        );
 
         company.setLastUpdateRequestDate(LocalDateTime.now());
         company.setLastUpdate(LocalDateTime.now());
@@ -124,19 +231,16 @@ public class CompanyServiceImpl implements CompanyService {
     }
 
     // ==========================================
-    // 6. Xác thực số điện thoại (Trang 5)
+    // 6. Xác thực số điện thoại
     // ==========================================
     @Override
     public void verifyPhone(Long id, VerifyPhoneRequest request) {
-        Company company = companyRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Company not found with id: " + id));
+        verifyPhoneByAccountId(id, request);
+    }
 
-        // Ở đây tuỳ hệ thống:
-        // - Bạn có thể gọi service OTP để verify
-        // - Hoặc kiểm tra mã OTP đã lưu ở nơi khác
-        //
-        // Vì chưa có field lưu trạng thái xác thực phone trong Company entity,
-        // nên tạm thời chỉ demo logic validate dạng đơn giản.
+    @Override
+    public void verifyPhoneByAccountId(Long accountId, VerifyPhoneRequest request) {
+        Company company = getCompanyByAccountId(accountId);
 
         if (request.getPhone() == null || request.getPhone().isBlank()) {
             throw new IllegalArgumentException("Phone must not be blank");
@@ -146,31 +250,28 @@ public class CompanyServiceImpl implements CompanyService {
             throw new IllegalArgumentException("OTP code must not be blank");
         }
 
-        // TODO: Thực hiện logic verify OTP thực tế ở đây.
-        // Ví dụ: otpService.verify(company.getId(), request.getPhone(),
-        // request.getOtpCode());
+        // TODO: Thực hiện logic verify OTP thực tế ở đây
+        // otpService.verify(company.getId(), request.getPhone(), request.getOtpCode());
 
-        // Nếu sau này bạn thêm field kiểu Boolean phoneVerified trong Company,
-        // bạn có thể set:
-        // company.setPhoneVerified(true);
-        // company.setLastUpdate(LocalDateTime.now());
-        // companyRepository.save(company);
+        company.setLastUpdate(LocalDateTime.now());
+        companyRepository.save(company);
     }
 
     // ==========================================
-    // 7. Xác thực giấy tờ doanh nghiệp (Trang 6)
+    // 7. Xác thực giấy tờ doanh nghiệp
     // ==========================================
     @Override
     public CompanyResponse verifyLicense(Long id, VerifyLicenseRequest request) {
-        Company company = companyRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Company not found with id: " + id));
+        return verifyLicenseByAccountId(id, request);
+    }
+
+    @Override
+    public CompanyResponse verifyLicenseByAccountId(Long accountId, VerifyLicenseRequest request) {
+        Company company = getCompanyByAccountId(accountId);
 
         if (request.getVerificationLevel() != null) {
             company.setVerificationLevel(request.getVerificationLevel());
         }
-
-        // Removed direct setting of status if it's incompatible or not needed here
-        // as we use the specific admin/employer flow now.
 
         company.setLastUpdate(LocalDateTime.now());
 
@@ -178,28 +279,65 @@ public class CompanyServiceImpl implements CompanyService {
         return mapToResponse(saved);
     }
 
+    // ==========================================
+    // 8. Submit for Review
+    // ==========================================
     @Override
     public CompanyResponse submitForReview(Long id) {
-        Company company = companyRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Company not found with id: " + id));
+        return submitForReviewByAccountId(id);
+    }
 
-        // Validate mandatory fields as per user request
-        if (company.getName() == null || company.getName().isBlank()) throw new IllegalArgumentException("Tên công ty không được để trống");
-        if (company.getCompanyEmail() == null || company.getCompanyEmail().isBlank()) throw new IllegalArgumentException("Email công ty không được để trống");
-        if (company.getPhone() == null || company.getPhone().isBlank()) throw new IllegalArgumentException("Số điện thoại không được để trống");
-        if (company.getRepresentativeName() == null || company.getRepresentativeName().isBlank()) throw new IllegalArgumentException("Tên người đại diện không được để trống");
-        if (company.getTaxCode() == null || company.getTaxCode().isBlank()) throw new IllegalArgumentException("Mã số thuế không được để trống");
-        if (company.getBusinessLicenseFileUrl() == null || company.getBusinessLicenseFileUrl().isBlank()) throw new IllegalArgumentException("Giấy phép kinh doanh không được để trống");
+    @Override
+    public CompanyResponse submitForReviewByAccountId(Long accountId) {
+        Company company = getCompanyByAccountId(accountId);
 
-        company.setCompanyInfoUpdateStatus(com.iting.jobportal.company.entity.enums.CompanyReviewStatus.PENDING_REVIEW);
+        if (company.getName() == null || company.getName().isBlank()) {
+            throw new IllegalArgumentException("Tên công ty không được để trống");
+        }
+        if (company.getCompanyEmail() == null || company.getCompanyEmail().isBlank()) {
+            throw new IllegalArgumentException("Email công ty không được để trống");
+        }
+        if (company.getPhone() == null || company.getPhone().isBlank()) {
+            throw new IllegalArgumentException("Số điện thoại không được để trống");
+        }
+        if (company.getRepresentativeName() == null || company.getRepresentativeName().isBlank()) {
+            throw new IllegalArgumentException("Tên người đại diện không được để trống");
+        }
+        if (company.getTaxCode() == null || company.getTaxCode().isBlank()) {
+            throw new IllegalArgumentException("Mã số thuế không được để trống");
+        }
+        if (company.getBusinessLicenseFileUrl() == null || company.getBusinessLicenseFileUrl().isBlank()) {
+            throw new IllegalArgumentException("Giấy phép kinh doanh không được để trống");
+        }
+
+        if (company.getConsentDocumentFileUrl() == null || company.getConsentDocumentFileUrl().isBlank()) {
+            throw new IllegalArgumentException("Văn bản thỏa thuận dữ liệu cá nhân không được để trống");
+        }
+        if (Boolean.FALSE.equals(company.getConsentDocumentConfirmed())) {
+            throw new IllegalArgumentException("Bạn chưa xác nhận cam kết cho văn bản thỏa thuận");
+        }
+        if (company.getConsentDocumentVersion() == null || company.getConsentDocumentVersion().isBlank()) {
+            throw new IllegalArgumentException("Phiên bản văn bản thỏa thuận không được để trống");
+        }
+
+        company.setCompanyInfoUpdateStatus(CompanyReviewStatus.PENDING_REVIEW);
         company.setLastUpdateRequestDate(LocalDateTime.now());
         company.setLastUpdate(LocalDateTime.now());
 
-        return mapToResponse(companyRepository.save(company));
+        Company saved = companyRepository.save(company);
+        return mapToResponse(saved);
     }
 
     // ==========================================
-    // 8. Hàm map Company -> CompanyResponse
+    // Helper
+    // ==========================================
+    private Company getCompanyByAccountId(Long accountId) {
+        return companyRepository.findById(accountId)
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy công ty của tài khoản này"));
+    }
+
+    // ==========================================
+    // Map Company -> CompanyResponse
     // ==========================================
     private CompanyResponse mapToResponse(Company company) {
         return new CompanyResponse(
@@ -219,11 +357,14 @@ public class CompanyServiceImpl implements CompanyService {
                 company.getAccountEmail(),
                 company.getTaxCode(),
                 company.getBusinessLicenseFileUrl(),
+                company.getBusinessLicenseDocumentType(),
+                company.getBusinessLicensePreviewUrl(),
                 company.getConsentDocumentFileUrl(),
                 company.getVerificationLevel(),
                 company.getCompanyInfoUpdateStatus(),
                 company.getLastUpdateRequestDate(),
                 company.getLastUpdate(),
-                company.getActive());
+                company.getActive()
+        );
     }
 }

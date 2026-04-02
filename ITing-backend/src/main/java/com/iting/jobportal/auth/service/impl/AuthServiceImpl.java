@@ -17,6 +17,8 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
+
 @Service
 @RequiredArgsConstructor
 public class AuthServiceImpl implements AuthService {
@@ -54,20 +56,24 @@ public class AuthServiceImpl implements AuthService {
         return savedAccount;
     }
 
+    @Transactional
     @Override
     public LoginResponse login(LoginRequest request) {
 
         Account account = accountRepository
                 .findByEmail(request.getEmail())
-                .orElseThrow(() -> new RuntimeException("Invalid email or password"));
+                .orElseThrow(() -> new RuntimeException("Sai mật khẩu hoặc tài khoản"));
 
         if (!passwordEncoder.matches(request.getPassword(), account.getPasswordHash())) {
-            throw new RuntimeException("Invalid email or password");
+            throw new RuntimeException("Sai mật khẩu hoặc tài khoản");
         }
 
         if (account.getStatus() == com.iting.jobportal.auth.entity.Enum.AccountStatus.BANNED) {
             throw new RuntimeException("Tài khoản của bạn đã bị khóa. Vui lòng kiểm tra email để biết thêm chi tiết.");
         }
+
+        account.setLastLoginAt(LocalDateTime.now());
+        accountRepository.save(account);
 
         String primaryRole = account.getRole() != null
                 ? account.getRole().normalizedName()

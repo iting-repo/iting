@@ -1,15 +1,15 @@
 import React, { useEffect, useMemo, useState } from "react";
 import adminCompanyService from '../../../services/adminCompanyService';
-import { 
-    Button, Badge, Input, PageHeader, Card, Table, Td, StatsCard, Pagination
+import {
+  Button, Badge, Input, PageHeader, Card, Table, Td, StatsCard, Pagination
 } from "../../../components";
 import { RowActionMenu } from "../../../components/admin/RowActionMenu";
 import { CompanyDetailDialog } from "../../../components/admin/CompanyDetailDialog";
 import { ActionDialog } from "../../../components/admin/ActionDialog";
-import { 
-  Building2, 
-  Users, 
-  UserCheck, 
+import {
+  Building2,
+  Users,
+  UserCheck,
   UserX,
   FileText,
   ShieldCheck,
@@ -75,7 +75,7 @@ const AdminCompanyManagement = () => {
     }
   };
 
-  
+
 
   const filteredCompanies = useMemo(() => {
     return companies.filter((company) => {
@@ -96,14 +96,14 @@ const AdminCompanyManagement = () => {
   const stats = useMemo(() => {
     return {
       total: totalPages * size || companies.length,
-      pending: companies.filter((c) => 
-        (c.companyInfoUpdateStatus || c.status) === "PENDING_REVIEW" || 
+      pending: companies.filter((c) =>
+        (c.companyInfoUpdateStatus || c.status) === "PENDING_REVIEW" ||
         (c.companyInfoUpdateStatus || c.status) === "PENDING"
       ).length,
-      approved: companies.filter((c) => 
+      approved: companies.filter((c) =>
         (c.companyInfoUpdateStatus || c.status) === "APPROVED"
       ).length,
-      suspended: companies.filter((c) => 
+      suspended: companies.filter((c) =>
         (c.companyInfoUpdateStatus || c.status) === "SUSPENDED"
       ).length,
     };
@@ -159,33 +159,33 @@ const AdminCompanyManagement = () => {
       </PageHeader>
 
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
-        <StatsCard 
-          title="Tổng công ty" 
-          value={stats.total} 
-          icon={<Building2 />} 
-          percentage="12" 
-          isIncrease={true} 
+        <StatsCard
+          title="Tổng công ty"
+          value={stats.total}
+          icon={<Building2 />}
+          percentage="12"
+          isIncrease={true}
         />
-        <StatsCard 
-          title="Chờ duyệt" 
-          value={stats.pending} 
-          icon={<Users />} 
-          percentage="5" 
-          isIncrease={true} 
+        <StatsCard
+          title="Chờ duyệt"
+          value={stats.pending}
+          icon={<Users />}
+          percentage="5"
+          isIncrease={true}
         />
-        <StatsCard 
-          title="Đã duyệt" 
-          value={stats.approved} 
-          icon={<UserCheck />} 
-          percentage="8" 
-          isIncrease={true} 
+        <StatsCard
+          title="Đã duyệt"
+          value={stats.approved}
+          icon={<UserCheck />}
+          percentage="8"
+          isIncrease={true}
         />
-        <StatsCard 
-          title="Bị khóa" 
-          value={stats.suspended} 
-          icon={<UserX />} 
-          percentage="2" 
-          isIncrease={false} 
+        <StatsCard
+          title="Bị khóa"
+          value={stats.suspended}
+          icon={<UserX />}
+          percentage="2"
+          isIncrease={false}
         />
       </div>
 
@@ -203,7 +203,7 @@ const AdminCompanyManagement = () => {
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
-            className="w-full md:w-56 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm focus:border-purple-400 focus:outline-none"
+            className="w-full md:w-56 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm focus:border-sky-400 focus:outline-none"
           >
             <option value="ALL">Tất cả trạng thái</option>
             <option value="PENDING_REVIEW">Chờ duyệt</option>
@@ -234,7 +234,7 @@ const AdminCompanyManagement = () => {
             <tr>
               <Td colSpan={9} className="text-center py-10">
                 <div className="flex justify-center">
-                  <div className="h-6 w-6 animate-spin rounded-full border-2 border-purple-500 border-t-transparent"></div>
+                  <div className="h-6 w-6 animate-spin rounded-full border-2 border-sky-500 border-t-transparent"></div>
                 </div>
               </Td>
             </tr>
@@ -303,7 +303,7 @@ const AdminCompanyManagement = () => {
         onClose={() => setDetailCompany(null)}
         onAction={handleAction}
       />
-      
+
       <ActionDialog
         actionDialog={actionDialog}
         actionNote={actionNote}

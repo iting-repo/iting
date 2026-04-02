@@ -2,12 +2,15 @@ package com.iting.jobportal.auth.entity;
 
 import com.iting.jobportal.auth.entity.Enum.AccountStatus;
 import com.iting.jobportal.auth.entity.Enum.Role;
+import com.iting.jobportal.common.entity.AuditEntity;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
+
+import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "Account")
@@ -16,7 +19,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 @EqualsAndHashCode(callSuper = false)
-public class Account {
+public class Account extends AuditEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -38,4 +41,7 @@ public class Account {
     @Column(name = "Status", nullable = false, length = 20)
     @Builder.Default
     private AccountStatus status = AccountStatus.ACTIVE;
+
+    @Column(name = "last_login_at")
+    private LocalDateTime lastLoginAt;
 }

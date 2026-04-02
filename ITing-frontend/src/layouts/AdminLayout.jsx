@@ -5,23 +5,19 @@ import AdminHeader from '../components/admin/AdminHeader';
 
 const AdminLayout = () => {
   return (
-    <div className="flex bg-[#F3F4F6] min-h-screen font-sans">
-      
-      {/* Fixed Sidebar */}
+    <div className="min-h-screen bg-gray-50 flex font-sans">
+      {/* Header */}
+      <AdminHeader />
+
+      {/* Sidebar */}
       <AdminSidebar />
 
       {/* Main Content Area */}
-      <div className="flex-1 ml-20 p-6 lg:p-8 overflow-x-hidden">
-        
-        {/* Header dùng chung */}
-        <AdminHeader />
-
-        {/* Nội dung thay đổi theo từng trang */}
-        <div className="animate-fade-in-up">
+      <main className="ml-52 mt-14 flex-1 flex flex-col min-w-0">
+        <div className="p-6 md:p-8 flex-1 animate-fade-in-up">
            <Outlet />
         </div>
-        
-      </div>
+      </main>
     </div>
   );
 };

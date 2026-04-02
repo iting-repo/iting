@@ -82,19 +82,19 @@ const chartData = {
         {
             label: 'Job Posts',
             data: [4000, 3000, 2000, 2780, 1890, 2390, 3490],
-            borderColor: '#9D5CE9', // Màu tím chủ đạo
+            borderColor: '#3AB4E6', // Màu tím chủ đạo
             backgroundColor: (context) => {
                 const ctx = context.chart.ctx;
                 const gradient = ctx.createLinearGradient(0, 0, 0, 300);
-                gradient.addColorStop(0, 'rgba(157, 92, 233, 0.4)');
-                gradient.addColorStop(1, 'rgba(157, 92, 233, 0.0)');
+                gradient.addColorStop(0, 'rgba(58, 180, 230, 0.4)');
+                gradient.addColorStop(1, 'rgba(58, 180, 230, 0.0)');
                 return gradient;
             },
             fill: true,
-            pointBackgroundColor: '#9D5CE9',
+            pointBackgroundColor: '#3AB4E6',
             pointBorderColor: '#fff',
             pointHoverBackgroundColor: '#fff',
-            pointHoverBorderColor: '#9D5CE9',
+            pointHoverBorderColor: '#3AB4E6',
         },
         {
             label: 'Users',
@@ -150,7 +150,7 @@ const AdminDashboard = () => {
             {/* ROW 2: JOB ANALYTICS CHART (DÙNG CHART.JS) */}
             <div className="bg-white p-6 rounded-2xl shadow-sm">
                 <h3 className="font-bold text-gray-800 mb-6 flex items-center gap-2">
-                    <span className="w-1 h-6 bg-[#9D5CE9] rounded-full"></span> Job Analytics
+                    <span className="w-1 h-6 bg-[#3AB4E6] rounded-full"></span> Job Analytics
                 </h3>
                 {/* Container cần set chiều cao cố định để ChartJS fill vào */}
                 <div className="h-[350px] w-full">

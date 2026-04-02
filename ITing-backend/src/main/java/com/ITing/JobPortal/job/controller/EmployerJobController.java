@@ -1,6 +1,6 @@
 package com.iting.jobportal.job.controller;
 
-import com.iting.jobportal.job.controller.CurrentUser;
+import com.iting.jobportal.admin.dto.request.BulkActionRequest;
 import com.iting.jobportal.job.dto.request.CreateJobRequest;
 import com.iting.jobportal.job.dto.request.UpdateJobRequest;
 import com.iting.jobportal.job.dto.response.JobResponse;
@@ -84,6 +84,29 @@ public class EmployerJobController {
         return ResponseEntity.ok(jobService.closeJob(employerId, id));
     }
 
+    @PostMapping("/{id}/reopen")
+    @Operation(summary = "Mở lại tin tuyển dụng")
+    public ResponseEntity<JobResponse> reopenJob(
+            @CurrentUser Long employerId,
+            @PathVariable Long id) {
+        if (employerId == null) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Bạn cần đăng nhập để mở lại tin tuyển dụng");
+        }
+        return ResponseEntity.ok(jobService.reopenJob(employerId, id));
+    }
+
+    @PostMapping("/{id}/move-to-draft")
+    @Operation(summary = "Chuyển tin tuyển dụng từ chờ duyệt về nháp")
+    public ResponseEntity<JobResponse> movePendingToDraft(
+            @CurrentUser Long employerId,
+            @PathVariable Long id) {
+        if (employerId == null) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Bạn cần đăng nhập");
+        }
+        return ResponseEntity.ok(jobService.movePendingToDraft(employerId, id));
+    }
+
+
     @GetMapping("/my-jobs")
     @Operation(summary = "Lấy danh sách tin tuyển dụng của tôi")
     public ResponseEntity<Page<JobResponse>> getMyJobs(
@@ -105,5 +128,35 @@ public class EmployerJobController {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Bạn cần đăng nhập để gửi duyệt tin tuyển dụng");
         }
         return ResponseEntity.ok(jobService.submitJobForReview(employerId, id));
+    }
+
+    /*
+    ============================
+    BULK ACTIONS
+    ============================
+    */
+
+    @PostMapping("/bulk-delete")
+    @Operation(summary = "Xóa nhiều tin tuyển dụng")
+    public ResponseEntity<?> bulkDeleteJobs(
+            @CurrentUser Long employerId,
+            @RequestBody BulkActionRequest request) {
+        if (employerId == null) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Bạn cần đăng nhập");
+        }
+        jobService.bulkDeleteJobs(employerId, request.getIds());
+        return ResponseEntity.ok(Map.of("message", "Xóa nhiều tin tuyển dụng thành công"));
+    }
+
+    @PostMapping("/bulk-close")
+    @Operation(summary = "Đóng nhiều tin tuyển dụng")
+    public ResponseEntity<?> bulkCloseJobs(
+            @CurrentUser Long employerId,
+            @RequestBody BulkActionRequest request) {
+        if (employerId == null) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Bạn cần đăng nhập");
+        }
+        jobService.bulkCloseJobs(employerId, request.getIds());
+        return ResponseEntity.ok(Map.of("message", "Đóng nhiều tin tuyển dụng thành công"));
     }
 }

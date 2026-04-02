@@ -26,7 +26,7 @@ const JobAlerts = lazy(() => import('../pages/candidate/JobAlerts'));
 const FavoriteJobs = lazy(() => import('../pages/candidate/FavoriteJobs'));
 const AdminDashboard = lazy(() => import('../pages/admin/Dashboard'));
 const UserManagement = lazy(() => import('../pages/admin/users/UserManagement'));
-const ReportManagement = lazy(() => import('../pages/admin/reports/ReportManagement'));
+const CompanyManagement = lazy(() => import('../pages/admin/reports/ReportManagement'));
 const ApprovalManagement = lazy(() => import('../pages/admin/approvals/ApprovalManagement'));
 const JobDetailPage = lazy(() => import('../pages/public/JobDetailPage'));
 const AboutPage = lazy(() => import('../pages/public/AboutPage'));
@@ -35,6 +35,7 @@ const AdminJobPage = lazy(() => import('../pages/admin/jobs/AdminJobPage'));
 
 
 import { LoadingSpinner } from '../components';
+import { Settings } from 'lucide-react';
 
 const AppRoutes = () => {
   return (
@@ -70,7 +71,7 @@ const AppRoutes = () => {
 
             {/* Các trang Admin khác sẽ thêm vào đây sau này */}
             <Route path="users" element={<UserManagement />} />
-            <Route path="reports" element={<ReportManagement />} />
+            <Route path="companies" element={<CompanyManagement />} />
             {/* <Route path="approvals" element={<ApprovalManagement />} /> */}
             <Route path="approvals" element={<AdminJobPage />} />
             
@@ -110,11 +111,11 @@ const AppRoutes = () => {
               <Route path="dashboard" element={<CandidateDashboard />} />
 
               {/* Các trang con khác làm sau, hiện tại để tạm div rỗng để ko lỗi */}
-              <Route path="profile" element={<CandidateProfile />} />
+              <Route path="profile" element={<CandidateProfile defaultTab="personal" />} />
               <Route path="applied-jobs" element={<AppliedJobs />} />
               <Route path="favorite-jobs" element={<FavoriteJobs />} />
               <Route path="job-alerts" element={<JobAlerts />} />
-              <Route path="settings" element={<div>Settings Page</div>} />
+              <Route path="settings" element={<Settings defaultTab="account" />} />
 
             </Route>
           </Route>

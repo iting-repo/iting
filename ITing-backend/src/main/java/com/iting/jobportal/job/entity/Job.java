@@ -1,5 +1,6 @@
 package com.iting.jobportal.job.entity;
 
+import com.iting.jobportal.common.converter.StringListConverter;
 import com.iting.jobportal.company.entity.Company;
 import com.iting.jobportal.job.entity.enums.*;
 import jakarta.persistence.*;
@@ -8,6 +9,7 @@ import lombok.*;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Entity
 @Table(
@@ -15,7 +17,7 @@ import java.time.LocalDateTime;
         indexes = {
                 @Index(name = "idx_job_company", columnList = "Company_id"),
                 @Index(name = "idx_job_status", columnList = "Status"),
-                @Index(name = "idx_job_city", columnList = "City")
+                @Index(name = "idx_job_city", columnList = "Province")
         }
 )
 @Getter
@@ -40,8 +42,10 @@ public class Job {
 
     private String position;
 
+    @Convert(converter = StringListConverter.class)
     @Column(columnDefinition = "TEXT")
-    private String techRequired;
+    private List<String> techRequired;
+
 
     @Enumerated(EnumType.STRING)
     private JobType jobType;
@@ -65,8 +69,8 @@ public class Job {
     private LocalDate dueDate;
 
     // ===== LOCATION =====
-    private String city;
-    private String district;
+    private String province;
+    private String ward;
     private String address;
     private String location;
 
@@ -130,8 +134,8 @@ public class Job {
         StringBuilder sb = new StringBuilder();
 
         if (address != null) sb.append(address);
-        if (district != null) sb.append(", ").append(district);
-        if (city != null) sb.append(", ").append(city);
+        if (ward != null) sb.append(", ").append(ward);
+        if (province != null) sb.append(", ").append(province);
 
         return sb.toString();
     }

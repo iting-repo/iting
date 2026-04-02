@@ -1,6 +1,7 @@
 package com.iting.jobportal.company.entity;
 
 import com.iting.jobportal.auth.entity.Account;
+import com.iting.jobportal.company.entity.enums.BusinessDocumentType;
 import com.iting.jobportal.company.entity.enums.CompanyReviewStatus;
 import com.iting.jobportal.company.entity.enums.VerificationLevel;
 import com.iting.jobportal.job.entity.Job;
@@ -27,6 +28,9 @@ public class Company {
 
     @OneToMany(mappedBy = "company", fetch = FetchType.LAZY)
     private List<Job> jobs;
+
+    @OneToMany(mappedBy = "company", fetch = FetchType.LAZY)
+    private List<CompanyAuditLog> auditLogs;
 
     // ===== Thông tin cơ bản =====
     @Column(name = "Name", nullable = false, length = 255)
@@ -80,8 +84,25 @@ public class Company {
     @Column(name = "Business_license_file_url", columnDefinition = "TEXT")
     private String businessLicenseFileUrl;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "Business_license_document_type", length = 100)
+    private BusinessDocumentType businessLicenseDocumentType;
+
+    @Column(name = "Business_license_preview_url", columnDefinition = "TEXT")
+    private String businessLicensePreviewUrl;
+
     @Column(name = "Consent_document_file_url", columnDefinition = "TEXT")
     private String consentDocumentFileUrl;
+
+    // ===== Consent document xác nhận =====
+    @Column(name = "Consent_document_confirmed")
+    private Boolean consentDocumentConfirmed = false;
+
+    @Column(name = "Consent_confirmed_at")
+    private LocalDateTime consentConfirmedAt;
+    
+    @Column(name = "Consent_document_version")
+    private String consentDocumentVersion;
 
     // ===== Xác thực =====
     @Enumerated(EnumType.STRING)

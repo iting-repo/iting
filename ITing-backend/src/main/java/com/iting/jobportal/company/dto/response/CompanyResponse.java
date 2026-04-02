@@ -1,5 +1,6 @@
 package com.iting.jobportal.company.dto.response;
 
+import com.iting.jobportal.company.entity.enums.BusinessDocumentType;
 import com.iting.jobportal.company.entity.enums.CompanyReviewStatus;
 import com.iting.jobportal.company.entity.enums.VerificationLevel;
 import lombok.AllArgsConstructor;
@@ -30,6 +31,8 @@ public class CompanyResponse {
 
     private String taxCode;
     private String businessLicenseFileUrl;
+    private BusinessDocumentType businessLicenseDocumentType;
+    private String businessLicensePreviewUrl;
     private String consentDocumentFileUrl;
 
     private VerificationLevel verificationLevel;
@@ -57,6 +60,8 @@ public class CompanyResponse {
                 company.getAccountEmail(),
                 company.getTaxCode(),
                 company.getBusinessLicenseFileUrl(),
+                company.getBusinessLicenseDocumentType(),
+                company.getBusinessLicensePreviewUrl(),
                 company.getConsentDocumentFileUrl(),
                 company.getVerificationLevel(),
                 company.getCompanyInfoUpdateStatus(),

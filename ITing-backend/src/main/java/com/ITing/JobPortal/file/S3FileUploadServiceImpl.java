@@ -8,10 +8,15 @@ import org.springframework.web.multipart.MultipartFile;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
+import software.amazon.awssdk.services.s3.model.GetObjectRequest;
 import software.amazon.awssdk.services.s3.model.ObjectCannedACL;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
+import software.amazon.awssdk.services.s3.presigner.S3Presigner;
+import software.amazon.awssdk.services.s3.presigner.model.GetObjectPresignRequest;
 
 import java.io.IOException;
+import java.net.URL;
+import java.time.Duration;
 import java.util.UUID;
 
 @Service
@@ -20,6 +25,7 @@ import java.util.UUID;
 public class S3FileUploadServiceImpl implements FileUploadService {
 
     private final S3Client s3Client;
+    private final S3Presigner s3Presigner;
 
     @Value("${aws.s3.bucket}")
     private String bucket;
@@ -40,6 +46,44 @@ public class S3FileUploadServiceImpl implements FileUploadService {
     @Override
     public String uploadAvatar(MultipartFile file) {
         return upload(file, "avatar");
+    }
+
+    @Override
+    public String uploadBusinessLicense(MultipartFile file) {
+        return upload(file, "business-license");
+    }
+
+    @Override
+    public String uploadConsentDocument(MultipartFile file) {
+        return upload(file, "consent-document");
+    }
+
+    @Override
+    public String generatePresignedUrl(String fileUrl, int minutes) {
+        if (fileUrl == null || fileUrl.isBlank()) {
+            throw new IllegalArgumentException("fileUrl không được để trống");
+        }
+
+        String prefix = "amazonaws.com/";
+        int idx = fileUrl.indexOf(prefix);
+        if (idx < 0) {
+            throw new IllegalArgumentException("fileUrl không phải URL S3 hợp lệ");
+        }
+
+        String key = fileUrl.substring(idx + prefix.length());
+
+        GetObjectRequest getObjectRequest = GetObjectRequest.builder()
+                .bucket(bucket)
+                .key(key)
+                .build();
+
+        GetObjectPresignRequest presignRequest = GetObjectPresignRequest.builder()
+                .signatureDuration(Duration.ofMinutes(minutes))
+                .getObjectRequest(getObjectRequest)
+                .build();
+
+        URL presignedUrl = s3Presigner.presignGetObject(presignRequest).url();
+        return presignedUrl.toString();
     }
 
     /**

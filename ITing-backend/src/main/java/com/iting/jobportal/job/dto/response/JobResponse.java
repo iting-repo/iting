@@ -8,6 +8,7 @@ import lombok.Data;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Data
 @Builder
@@ -23,7 +24,8 @@ public class JobResponse {
     // Basic
     private String title;
     private String position;
-    private String techRequired;
+    private List<String> techRequired;
+
     private JobType jobType;
     private ExperienceLevel experienceLevel;
     private String workingDays;
@@ -41,8 +43,8 @@ public class JobResponse {
     private LocalDate dueDate;
 
     // Location
-    private String city;
-    private String district;
+    private String province;
+    private String ward;
     private String address;
     private String location;
     private Long locId; // ✅ GIỮ
@@ -67,6 +69,9 @@ public class JobResponse {
     // Audit
     private LocalDateTime createdAt;
     private LocalDateTime lastUpdate;
+
+    private List<JobReviewHistoryResponse> reviewHistories;
+
 
     public static JobResponse fromEntity(Job job) {
         return fromEntityWithCompany(
@@ -100,8 +105,8 @@ public class JobResponse {
 
                 .dueDate(job.getDueDate())
 
-                .city(job.getCity())
-                .district(job.getDistrict())
+                .province(job.getProvince())
+                .ward(job.getWard())
                 .address(job.getAddress())
                 .location(job.getLocation())
                 .locId(job.getLocId()) // ✅ GIỮ
@@ -116,7 +121,11 @@ public class JobResponse {
                 .featured(job.getFeatured())
                 .status(job.getStatus())
 
-                .reviewReason(job.getReviewReason())
+                .reviewReason(
+                        job.getStatus() == JobStatus.REJECTED || job.getStatus() == JobStatus.SUSPENDED
+                                ? job.getReviewReason()
+                                : null
+                )
                 .reviewedBy(job.getReviewedBy())
                 .reviewedAt(job.getReviewedAt())
 

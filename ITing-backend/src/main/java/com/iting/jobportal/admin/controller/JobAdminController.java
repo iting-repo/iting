@@ -1,7 +1,8 @@
 package com.iting.jobportal.admin.controller;
 
-import com.iting.jobportal.admin.dto.ReviewRejectRequest;
-import com.iting.jobportal.admin.service.AdminCompanyService;
+import com.iting.jobportal.admin.dto.request.ReviewRejectRequest;
+import com.iting.jobportal.admin.dto.request.BulkActionRequest;
+import com.iting.jobportal.admin.dto.request.BulkReviewRejectRequest;
 import com.iting.jobportal.admin.service.AdminJobService;
 import com.iting.jobportal.job.dto.response.JobResponse;
 import com.iting.jobportal.job.entity.enums.JobStatus;
@@ -17,10 +18,12 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/admin/jobs")
 @RequiredArgsConstructor
-@Tag(name = "Admin Job Management", description = "Admin quản lý việc làm")
+@Tag(name = "11. Admin Job Management", description = "Admin quản lý việc làm")
 public class JobAdminController {
 
     private final AdminJobService adminJobService;
+
+    // bổ sung review list
 
     /*
     ============================
@@ -117,20 +120,20 @@ public class JobAdminController {
     ============================
     */
 
-    @PostMapping("/{id}/request-revision")
-    @Operation(summary = "Yêu cầu chỉnh sửa job")
-    public ResponseEntity<?> requestRevision(
-            @PathVariable Long id,
-            @RequestBody ReviewRejectRequest request) {
-
-        Long adminId = 1L;
-
-        adminJobService.requestJobRevision(adminId, id, request.getReason());
-
-        return ResponseEntity.ok(
-                Map.of("message", "Revision requested successfully")
-        );
-    }
+//    @PostMapping("/{id}/request-revision")
+//    @Operation(summary = "Yêu cầu chỉnh sửa job")
+//    public ResponseEntity<?> requestRevision(
+//            @PathVariable Long id,
+//            @RequestBody ReviewRejectRequest request) {
+//
+//        Long adminId = 1L;
+//
+//        adminJobService.requestJobRevision(adminId, id, request.getReason());
+//
+//        return ResponseEntity.ok(
+//                Map.of("message", "Revision requested successfully")
+//        );
+//    }
 
     /*
     ============================
@@ -207,5 +210,43 @@ public class JobAdminController {
         return ResponseEntity.ok(
                 Map.of("message","Job unfeatured successfully")
         );
+    }
+
+    /*
+    ============================
+    BULK ACTIONS
+    ============================
+    */
+
+    @PostMapping("/bulk-approve")
+    @Operation(summary = "Duyệt nhiều job")
+    public ResponseEntity<?> bulkApproveJobs(@RequestBody BulkActionRequest request) {
+        Long adminId = 1L;
+        adminJobService.bulkApproveJobs(adminId, request.getIds());
+        return ResponseEntity.ok(Map.of("message", "Jobs approved successfully"));
+    }
+
+    @PostMapping("/bulk-reject")
+    @Operation(summary = "Từ chối nhiều job")
+    public ResponseEntity<?> bulkRejectJobs(@RequestBody BulkReviewRejectRequest request) {
+        Long adminId = 1L;
+        adminJobService.bulkRejectJobs(adminId, request.getIds(), request.getReason());
+        return ResponseEntity.ok(Map.of("message", "Jobs rejected successfully"));
+    }
+
+    @PostMapping("/bulk-suspend")
+    @Operation(summary = "Đình chỉ nhiều job")
+    public ResponseEntity<?> bulkSuspendJobs(@RequestBody BulkReviewRejectRequest request) {
+        Long adminId = 1L;
+        adminJobService.bulkSuspendJobs(adminId, request.getIds(), request.getReason());
+        return ResponseEntity.ok(Map.of("message", "Jobs suspended successfully"));
+    }
+
+    @PostMapping("/bulk-close")
+    @Operation(summary = "Đóng nhiều job")
+    public ResponseEntity<?> bulkCloseJobs(@RequestBody BulkActionRequest request) {
+        Long adminId = 1L;
+        adminJobService.bulkCloseJobs(adminId, request.getIds());
+        return ResponseEntity.ok(Map.of("message", "Jobs closed successfully"));
     }
 }

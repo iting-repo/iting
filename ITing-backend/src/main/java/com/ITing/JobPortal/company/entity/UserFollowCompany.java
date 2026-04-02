@@ -20,13 +20,13 @@ public class UserFollowCompany {
     @Column(name = "company_id")
     private Long companyId;
 
-    @Column(name = "followed_at")
-    private java.time.LocalDateTime followedAt;
+    @Column(name = "follow_date")
+    private java.time.LocalDateTime followDate;
 
     @PrePersist
     protected void onCreate() {
-        if (followedAt == null) {
-            followedAt = java.time.LocalDateTime.now();
+        if (followDate == null) {
+            followDate = java.time.LocalDateTime.now();
         }
     }
 }

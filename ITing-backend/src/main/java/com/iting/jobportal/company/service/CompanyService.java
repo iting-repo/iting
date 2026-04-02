@@ -3,6 +3,7 @@ package com.iting.jobportal.company.service;
 import com.iting.jobportal.company.dto.request.BusinessLicenseUploadRequest;
 import com.iting.jobportal.company.dto.request.CompanyBasicInfoRequest;
 import com.iting.jobportal.company.dto.request.CompanyRepresentativeRequest;
+import com.iting.jobportal.company.dto.response.BusinessLicenseFormResponse;
 import com.iting.jobportal.company.dto.response.CompanyResponse;
 import com.iting.jobportal.company.dto.request.ConsentDocumentUploadRequest;
 import com.iting.jobportal.company.dto.request.VerifyLicenseRequest;
@@ -24,6 +25,8 @@ public interface CompanyService {
     // (C) Business License Upload
     CompanyResponse updateBusinessLicense(Long id, BusinessLicenseUploadRequest request);
 
+    BusinessLicenseFormResponse getBusinessLicenseForm(Long id);
+
     // (D) Consent Document Upload
     CompanyResponse updateConsentDocument(Long id, ConsentDocumentUploadRequest request);
 
@@ -35,4 +38,15 @@ public interface CompanyService {
 
     // (G) Submit for Review
     CompanyResponse submitForReview(Long id);
+
+    String getBusinessLicensePresignedUrlByAccountId(Long accountId, int minutes);
+
+    CompanyResponse updateBasicInfoByAccountId(Long accountId, CompanyBasicInfoRequest request);
+    CompanyResponse updateRepresentativeByAccountId(Long accountId, CompanyRepresentativeRequest request);
+    BusinessLicenseFormResponse getBusinessLicenseFormByAccountId(Long accountId);
+    CompanyResponse updateBusinessLicenseByAccountId(Long accountId, BusinessLicenseUploadRequest request);
+    CompanyResponse updateConsentDocumentByAccountId(Long accountId, ConsentDocumentUploadRequest request);
+    void verifyPhoneByAccountId(Long accountId, VerifyPhoneRequest request);
+    CompanyResponse verifyLicenseByAccountId(Long accountId, VerifyLicenseRequest request);
+    CompanyResponse submitForReviewByAccountId(Long accountId);
 }

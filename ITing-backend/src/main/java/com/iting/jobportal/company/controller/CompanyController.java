@@ -3,6 +3,7 @@ package com.iting.jobportal.company.controller;
 import com.iting.jobportal.auth.entity.Account;
 import com.iting.jobportal.company.dto.request.BusinessLicenseUploadRequest;
 import com.iting.jobportal.company.dto.request.CompanyBasicInfoRequest;
+import com.iting.jobportal.company.dto.response.BusinessLicenseFormResponse;
 import com.iting.jobportal.company.dto.response.CompanyResponse;
 import com.iting.jobportal.company.dto.request.ConsentDocumentUploadRequest;
 import com.iting.jobportal.company.dto.request.VerifyLicenseRequest;
@@ -17,8 +18,10 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.Map;
 
@@ -36,91 +39,127 @@ public class CompanyController {
         this.companyFollowService = companyFollowService;
     }
 
-    // --- (0) Get Company Info
-    @GetMapping
+    @GetMapping("/me/business-license/view")
+    @Operation(summary = "Lấy presigned URL để xem giấy phép kinh doanh của công ty đang đăng nhập")
+    public ResponseEntity<Map<String, String>> viewBusinessLicense(
+            @Parameter(hidden = true) @CurrentUser Long userId) {
+
+        String presignedUrl = companyService.getBusinessLicensePresignedUrlByAccountId(userId, 15);
+
+        return ResponseEntity.ok(Map.of("url", presignedUrl));
+    }
+
+    @PostMapping(value = "/me/consent-document", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @Operation(summary = "Upload văn bản thỏa thuận dữ liệu cá nhân của tôi")
+    public ResponseEntity<CompanyResponse> uploadConsentDocument(
+            @Parameter(hidden = true) @CurrentUser Long userId,
+
+            @io.swagger.v3.oas.annotations.Parameter(
+                    description = "File văn bản thỏa thuận dữ liệu cá nhân",
+                    required = true,
+                    schema = @io.swagger.v3.oas.annotations.media.Schema(type = "string", format = "binary")
+            )
+            @RequestPart("file") MultipartFile file,
+
+            @RequestPart("confirmed") Boolean confirmed,
+
+            @RequestPart(value = "version", required = false) String version
+    ) {
+        ConsentDocumentUploadRequest request = new ConsentDocumentUploadRequest();
+        request.setFile(file);
+        request.setConfirmed(confirmed);
+        request.setVersion(version);
+
+        return ResponseEntity.ok(companyService.updateConsentDocumentByAccountId(userId, request));
+    }
+
+    @GetMapping("/me")
     @Operation(summary = "Lấy thông tin công ty của tài khoản đang đăng nhập")
-    public ResponseEntity<CompanyResponse> getMyCompany(@Parameter(hidden = true) @CurrentUser Long userId) {
+    public ResponseEntity<CompanyResponse> getMyCompany(
+            @Parameter(hidden = true) @CurrentUser Long userId) {
         return ResponseEntity.ok(companyService.getMyCompany(userId));
     }
 
-    // --- (A) Update Basic Info ---
-    @PutMapping("/{id}/basic-info")
+    @PutMapping("/me/basic-info")
+    @Operation(summary = "Cập nhật thông tin cơ bản công ty của tôi")
     public ResponseEntity<CompanyResponse> updateBasicInfo(
-            @PathVariable Long id,
+            @Parameter(hidden = true) @CurrentUser Long userId,
             @Valid @RequestBody CompanyBasicInfoRequest request) {
-        return ResponseEntity.ok(companyService.updateBasicInfo(id, request));
+        return ResponseEntity.ok(companyService.updateBasicInfoByAccountId(userId, request));
     }
 
-    // --- (B) Update Representative Info ---
-    @PutMapping("/{id}/representative")
-    public ResponseEntity<CompanyResponse> CompanyRepresentativeRequest(
-            @PathVariable Long id,
+    @PutMapping("/me/representative")
+    @Operation(summary = "Cập nhật thông tin người đại diện công ty của tôi")
+    public ResponseEntity<CompanyResponse> updateRepresentative(
+            @Parameter(hidden = true) @CurrentUser Long userId,
             @Valid @RequestBody CompanyRepresentativeRequest request) {
-        return ResponseEntity.ok(companyService.updateRepresentative(id, request));
+        return ResponseEntity.ok(companyService.updateRepresentativeByAccountId(userId, request));
     }
 
-    // --- (C) Upload Business License ---
-    @PostMapping("/{id}/business-license")
-    public ResponseEntity<CompanyResponse> uploadBusinessLicense(
-            @PathVariable Long id,
-            @Valid @RequestBody BusinessLicenseUploadRequest request) {
-
-        return ResponseEntity.ok(companyService.updateBusinessLicense(id, request));
+    @GetMapping("/me/business-license")
+    @Operation(summary = "Lấy dữ liệu form giấy đăng ký doanh nghiệp của tôi")
+    public ResponseEntity<BusinessLicenseFormResponse> getBusinessLicenseForm(
+            @Parameter(hidden = true) @CurrentUser Long userId) {
+        return ResponseEntity.ok(companyService.getBusinessLicenseFormByAccountId(userId));
     }
 
-    // --- (D) Upload Consent Document ---
-    @PostMapping("/{id}/consent-document")
+    @PutMapping(value = "/me/business-license", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @Operation(summary = "Upload giấy đăng ký doanh nghiệp của tôi")
+    public ResponseEntity<CompanyResponse> updateBusinessLicense(
+            @Parameter(hidden = true) @CurrentUser Long userId,
+            @io.swagger.v3.oas.annotations.Parameter(
+                    description = "File PDF giấy phép kinh doanh",
+                    required = true,
+                    schema = @io.swagger.v3.oas.annotations.media.Schema(type = "string", format = "binary")
+            )
+            @RequestPart("file") MultipartFile file) {
+
+        BusinessLicenseUploadRequest request = new BusinessLicenseUploadRequest();
+        request.setFile(file);
+
+        return ResponseEntity.ok(companyService.updateBusinessLicenseByAccountId(userId, request));
+    }
+
+    @PostMapping("/me/consent-document")
+    @Operation(summary = "Upload văn bản thỏa thuận dữ liệu cá nhân của tôi")
     public ResponseEntity<CompanyResponse> uploadConsentDocument(
-            @PathVariable Long id,
+            @Parameter(hidden = true) @CurrentUser Long userId,
             @Valid @RequestBody ConsentDocumentUploadRequest request) {
-
-        return ResponseEntity.ok(companyService.updateConsentDocument(id, request));
+        return ResponseEntity.ok(companyService.updateConsentDocumentByAccountId(userId, request));
     }
 
-    // --- (E) Verify Phone ---
-    @PostMapping("{id}/verify-phone")
+    @PostMapping("/me/verify-phone")
+    @Operation(summary = "Xác thực số điện thoại công ty của tôi")
     public ResponseEntity<String> verifyPhone(
-            @PathVariable Long id,
+            @Parameter(hidden = true) @CurrentUser Long userId,
             @Valid @RequestBody VerifyPhoneRequest request) {
-
-        companyService.verifyPhone(id, request);
+        companyService.verifyPhoneByAccountId(userId, request);
         return ResponseEntity.ok("Phone verified successfully");
     }
 
-    // --- (F) Verify License ---
-    @PostMapping("/{id}/verify-license")
+    @PostMapping("/me/verify-license")
+    @Operation(summary = "Xác thực giấy tờ công ty của tôi")
     public ResponseEntity<CompanyResponse> verifyLicense(
-            @PathVariable Long id,
+            @Parameter(hidden = true) @CurrentUser Long userId,
             @Valid @RequestBody VerifyLicenseRequest request) {
-        return ResponseEntity.ok(companyService.verifyLicense(id, request));
+        return ResponseEntity.ok(companyService.verifyLicenseByAccountId(userId, request));
     }
 
-    // --- Get Follower Count (Public) ---
-//    @GetMapping("/{id}/followers/count")
-//    @Operation(summary = "Lấy số lượng người theo dõi công ty")
-//    public ResponseEntity<Map<String, Long>> getFollowerCount(@PathVariable Long id) {
-//        Long count = companyFollowService.getFollowerCount(id);
-//        return ResponseEntity.ok(Map.of("followerCount", count));
-//    }
-
-    // --- Get Follower Count của công ty mình (Sử dụng CurrentUser) ---
-    @GetMapping("/my-followers/count") // Đổi path để tránh trùng lặp hoặc nhầm lẫn
+    @GetMapping("/my-followers/count")
     @Operation(summary = "Lấy số lượng người theo dõi của công ty đang đăng nhập")
     public ResponseEntity<Map<String, Long>> getMyFollowerCount(
             @Parameter(hidden = true) @CurrentUser Long userId) {
 
-        // Bước 1: Lấy thông tin công ty từ userId
         CompanyResponse myCompany = companyService.getMyCompany(userId);
-
-        // Bước 2: Lấy số lượng follower dựa trên ID công ty vừa tìm được
         Long count = companyFollowService.getFollowerCount(myCompany.getId());
 
         return ResponseEntity.ok(Map.of("followerCount", count));
     }
 
-    // --- (G) Submit for Review ---
-    @PostMapping("/{id}/submit-review")
-    public ResponseEntity<CompanyResponse> submitForReview(@PathVariable Long id) {
-        return ResponseEntity.ok(companyService.submitForReview(id));
+    @PostMapping("/me/submit-review")
+    @Operation(summary = "Gửi duyệt thông tin công ty của tôi")
+    public ResponseEntity<CompanyResponse> submitForReview(
+            @Parameter(hidden = true) @CurrentUser Long userId) {
+        return ResponseEntity.ok(companyService.submitForReviewByAccountId(userId));
     }
 }

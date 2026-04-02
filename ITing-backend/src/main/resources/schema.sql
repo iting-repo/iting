@@ -38,6 +38,7 @@ DROP TABLE IF EXISTS VN_location CASCADE;
 DROP TABLE IF EXISTS web_info CASCADE;
 DROP TABLE IF EXISTS Social_network CASCADE;
 DROP TABLE IF EXISTS Ban_history CASCADE;
+DROP TABLE IF EXISTS company_audit_log CASCADE;
 ALTER TABLE IF EXISTS social_link DROP CONSTRAINT IF EXISTS uk_social_profile_platform;
 
 -- ============================================================================
@@ -108,7 +109,6 @@ CREATE TABLE candidate_profiles (
     updated_at TIMESTAMP,
     CONSTRAINT fk_profile_user FOREIGN KEY (id) REFERENCES Users(Id) ON DELETE CASCADE
 );
-
 CREATE TABLE Company (
     company_id BIGINT PRIMARY KEY,
     Name VARCHAR(255) NOT NULL,
@@ -125,17 +125,25 @@ CREATE TABLE Company (
     Representative_phone VARCHAR(20),
     Account_email VARCHAR(255),
     Tax_code VARCHAR(50),
+
     Business_license_file_url TEXT,
+    Business_license_document_type VARCHAR(100),
+    Business_license_preview_url TEXT,
     Consent_document_file_url TEXT,
-    Follower_count INTEGER DEFAULT 0,
+    Consent_document_confirmed BOOLEAN DEFAULT FALSE,
+    Consent_confirmed_at TIMESTAMP,
+    Consent_document_version VARCHAR(50),
+
+    Follower_count BIGINT DEFAULT 0,
     Verification_level VARCHAR(50) DEFAULT 'UNVERIFIED',
     Company_info_update_status VARCHAR(50) DEFAULT 'DRAFT',
     Last_update_request_date TIMESTAMP,
     Last_update TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     Active BOOLEAN DEFAULT TRUE,
-    CONSTRAINT fk_company_account FOREIGN KEY (company_id) REFERENCES Account(Id) ON DELETE CASCADE
-);
 
+    CONSTRAINT fk_company_account
+        FOREIGN KEY (company_id) REFERENCES Account(Id) ON DELETE CASCADE
+);
 -- Table: admin_accounts
 CREATE TABLE admin_accounts (
     id BIGINT PRIMARY KEY,
@@ -178,8 +186,8 @@ CREATE TABLE Job (
     Due_date DATE,
 
     -- LOCATION
-    City VARCHAR(100),
-    District VARCHAR(100),
+    Province VARCHAR(100),
+    Ward VARCHAR(100),
     Address VARCHAR(500),
     Location VARCHAR(255),
     Loc_id BIGINT,
@@ -289,7 +297,7 @@ CREATE TABLE User_contact_company (
 );
 
 CREATE TABLE Notification (
-    Id BIGSERIAL PRIMARY KEY,
+    Id SERIAL PRIMARY KEY,
     Content TEXT NOT NULL,
     Time TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
@@ -406,6 +414,28 @@ CREATE TABLE activity_logs (
     updated_at TIMESTAMP
 );
 
+CREATE TABLE company_audit_log (
+    id BIGSERIAL PRIMARY KEY,
+
+    company_id BIGINT NOT NULL,
+
+    action VARCHAR(50) NOT NULL,
+    from_status VARCHAR(50),
+    to_status VARCHAR(50),
+
+    reason TEXT,
+    note TEXT,
+
+    actor VARCHAR(255), -- email admin
+    actor_id BIGINT,
+
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT fk_company_audit
+        FOREIGN KEY (company_id) REFERENCES Company(company_id)
+        ON DELETE CASCADE
+);
+
 -- ============================================================================
 -- USER PROFILE COMPONENTS (Mapped to entities in userprofile package)
 -- ============================================================================
@@ -501,27 +531,142 @@ CREATE TABLE contact_info (
 
 -- ============================================================================
 -- INDEXES FOR PERFORMANCE
+---- ============================================================================
+--
+--CREATE INDEX idx_user_location ON Users(Loc_id);
+--CREATE INDEX idx_user_last_update ON Users(Last_update);
+--CREATE INDEX idx_profile_updated_at ON candidate_profiles(updated_at);
+--CREATE INDEX idx_company_last_update ON Company(Last_update);
+--CREATE INDEX idx_job_location ON Job(Loc_id);
+--CREATE INDEX idx_job_status ON Job(Status);
+--CREATE INDEX idx_job_due_date ON Job(Due_date);
+--CREATE INDEX idx_job_last_update ON Job(Last_update);
+--
+---- Relationship table indexes
+--CREATE INDEX idx_follow_user ON User_follow_company(User_id);
+--CREATE INDEX idx_follow_company ON User_follow_company(Company_id);
+--CREATE INDEX idx_save_user ON user_save_job(user_id);
+--CREATE INDEX idx_save_job ON user_save_job(job_id);
+--CREATE INDEX idx_upload_job ON Company_upload_job(Job_id);
+--CREATE INDEX idx_apply_job ON Apply_form_user_to_job(Job_id);
+--CREATE INDEX idx_notification_time ON Notification(Time);
+--CREATE INDEX idx_location_province ON VN_location(Province_name);
+
+
+-- ============================================================================
+-- ADDITIONAL INDEXES FOR PERFORMANCE
 -- ============================================================================
 
-CREATE INDEX idx_user_location ON Users(Loc_id);
-CREATE INDEX idx_user_last_update ON Users(Last_update);
-CREATE INDEX idx_profile_updated_at ON candidate_profiles(updated_at);
-CREATE INDEX idx_company_last_update ON Company(Last_update);
-CREATE INDEX idx_job_location ON Job(Loc_id);
-CREATE INDEX idx_job_status ON Job(Status);
-CREATE INDEX idx_job_due_date ON Job(Due_date);
-CREATE INDEX idx_job_last_update ON Job(Last_update);
+-- Account / Admin / Company
+CREATE INDEX IF NOT EXISTS idx_account_role ON Account(Role);
+CREATE INDEX IF NOT EXISTS idx_account_status ON Account(Status);
+CREATE INDEX IF NOT EXISTS idx_admin_active ON admin_accounts(active);
+CREATE INDEX IF NOT EXISTS idx_company_status ON Company(Company_info_update_status);
+CREATE INDEX IF NOT EXISTS idx_company_verification_level ON Company(Verification_level);
+CREATE INDEX IF NOT EXISTS idx_company_active ON Company(Active);
+CREATE INDEX IF NOT EXISTS idx_company_name ON Company(Name);
+CREATE INDEX IF NOT EXISTS idx_company_tax_code ON Company(Tax_code);
+CREATE INDEX IF NOT EXISTS idx_company_email ON Company(Company_email);
+CREATE INDEX IF NOT EXISTS idx_company_account_email ON Company(Account_email);
 
--- Relationship table indexes
-CREATE INDEX idx_follow_user ON User_follow_company(User_id);
-CREATE INDEX idx_follow_company ON User_follow_company(Company_id);
-CREATE INDEX idx_save_user ON user_save_job(user_id);
-CREATE INDEX idx_save_job ON user_save_job(job_id);
-CREATE INDEX idx_upload_job ON Company_upload_job(Job_id);
-CREATE INDEX idx_apply_job ON Apply_form_user_to_job(Job_id);
-CREATE INDEX idx_notification_time ON Notification(Time);
-CREATE INDEX idx_location_province ON VN_location(Province_name);
+-- Company audit log
+CREATE INDEX IF NOT EXISTS idx_company_audit_company_id ON company_audit_log(company_id);
+CREATE INDEX IF NOT EXISTS idx_company_audit_created_at ON company_audit_log(created_at);
+CREATE INDEX IF NOT EXISTS idx_company_audit_action ON company_audit_log(action);
+CREATE INDEX IF NOT EXISTS idx_company_audit_actor_id ON company_audit_log(actor_id);
+CREATE INDEX IF NOT EXISTS idx_company_audit_company_created_at ON company_audit_log(company_id, created_at DESC);
 
+-- Activity logs
+CREATE INDEX IF NOT EXISTS idx_activity_logs_user_id ON activity_logs(user_id);
+CREATE INDEX IF NOT EXISTS idx_activity_logs_action ON activity_logs(action);
+CREATE INDEX IF NOT EXISTS idx_activity_logs_entity_type ON activity_logs(entity_type);
+CREATE INDEX IF NOT EXISTS idx_activity_logs_entity_id ON activity_logs(entity_id);
+CREATE INDEX IF NOT EXISTS idx_activity_logs_created_at ON activity_logs(created_at);
+CREATE INDEX IF NOT EXISTS idx_activity_logs_user_created_at ON activity_logs(user_id, created_at DESC);
+
+-- Users / candidate profile
+CREATE INDEX IF NOT EXISTS idx_users_phone ON Users(Phone_num);
+CREATE INDEX IF NOT EXISTS idx_users_full_name ON Users(full_name);
+CREATE INDEX IF NOT EXISTS idx_candidate_profiles_open_to_work ON candidate_profiles(is_open_to_work);
+CREATE INDEX IF NOT EXISTS idx_candidate_profiles_location ON candidate_profiles(location);
+CREATE INDEX IF NOT EXISTS idx_candidate_profiles_employment_status ON candidate_profiles(employment_status);
+
+-- Job
+CREATE INDEX IF NOT EXISTS idx_job_company_id ON Job(Company_id);
+CREATE INDEX IF NOT EXISTS idx_job_reviewed_by ON Job(Reviewed_by);
+CREATE INDEX IF NOT EXISTS idx_job_featured ON Job(Featured);
+CREATE INDEX IF NOT EXISTS idx_job_company_status ON Job(Company_id, Status);
+CREATE INDEX IF NOT EXISTS idx_job_status_due_date ON Job(Status, Due_date);
+CREATE INDEX IF NOT EXISTS idx_job_company_last_update ON Job(Company_id, Last_update DESC);
+CREATE INDEX IF NOT EXISTS idx_job_province ON Job(Province);
+CREATE INDEX IF NOT EXISTS idx_job_position ON Job(Position);
+CREATE INDEX IF NOT EXISTS idx_job_job_type ON Job(Job_type);
+CREATE INDEX IF NOT EXISTS idx_job_experience_level ON Job(Experience_level);
+
+-- Company upload job
+CREATE INDEX IF NOT EXISTS idx_company_upload_company_id ON Company_upload_job(company_id);
+CREATE INDEX IF NOT EXISTS idx_company_upload_admin_id ON Company_upload_job(admin_id);
+CREATE INDEX IF NOT EXISTS idx_company_upload_status ON Company_upload_job(status);
+CREATE INDEX IF NOT EXISTS idx_company_upload_time ON Company_upload_job(time);
+
+-- Apply form / applications
+CREATE INDEX IF NOT EXISTS idx_apply_form_user_id ON Apply_form(User_id);
+CREATE INDEX IF NOT EXISTS idx_apply_form_cv_id ON Apply_form(Cv_id);
+CREATE INDEX IF NOT EXISTS idx_apply_form_user_to_job_apply_form_id ON Apply_form_user_to_job(Apply_form_id);
+CREATE INDEX IF NOT EXISTS idx_apply_form_user_to_job_status ON Apply_form_user_to_job(status);
+CREATE INDEX IF NOT EXISTS idx_apply_form_user_to_job_time_sent ON Apply_form_user_to_job(Time_sent);
+CREATE INDEX IF NOT EXISTS idx_apply_form_job_status ON Apply_form_user_to_job(Job_id, status);
+
+-- CV / profile components
+CREATE INDEX IF NOT EXISTS idx_cv_profile_id ON CV(profile_id);
+CREATE INDEX IF NOT EXISTS idx_cv_is_default ON CV(Is_default);
+CREATE INDEX IF NOT EXISTS idx_cv_upload_time ON CV(Upload_time);
+
+CREATE INDEX IF NOT EXISTS idx_education_profile_id ON Education(profile_id);
+CREATE INDEX IF NOT EXISTS idx_certificate_profile_id ON Certificate(profile_id);
+CREATE INDEX IF NOT EXISTS idx_skill_profile_id ON Skill(profile_id);
+CREATE INDEX IF NOT EXISTS idx_experience_profile_id ON Experience(profile_id);
+CREATE INDEX IF NOT EXISTS idx_social_link_profile_id ON social_link(profile_id);
+CREATE INDEX IF NOT EXISTS idx_portfolio_profile_id ON Portfolio(profile_id);
+
+-- User-company interactions
+CREATE INDEX IF NOT EXISTS idx_user_contact_company_user_id ON User_contact_company(User_id);
+CREATE INDEX IF NOT EXISTS idx_user_contact_company_company_id ON User_contact_company(Company_id);
+CREATE INDEX IF NOT EXISTS idx_user_contact_company_time ON User_contact_company(Time);
+
+-- Reports / ban history
+CREATE INDEX IF NOT EXISTS idx_ban_history_target_account_id ON Ban_history(Target_account_id);
+CREATE INDEX IF NOT EXISTS idx_ban_history_admin_account_id ON Ban_history(Admin_account_id);
+CREATE INDEX IF NOT EXISTS idx_ban_history_is_active ON Ban_history(Is_active);
+CREATE INDEX IF NOT EXISTS idx_ban_history_banned_at ON Ban_history(Banned_at);
+
+CREATE INDEX IF NOT EXISTS idx_user_reports_reporter_id ON user_reports(reporter_id);
+CREATE INDEX IF NOT EXISTS idx_user_reports_reported_user_id ON user_reports(reported_user_id);
+CREATE INDEX IF NOT EXISTS idx_user_reports_status ON user_reports(status);
+CREATE INDEX IF NOT EXISTS idx_user_reports_handled_by ON user_reports(handled_by);
+CREATE INDEX IF NOT EXISTS idx_user_reports_created_at ON user_reports(created_at);
+
+CREATE INDEX IF NOT EXISTS idx_report_accounts_reported_user_id ON report_accounts(reported_user_id);
+CREATE INDEX IF NOT EXISTS idx_report_accounts_reporter_id ON report_accounts(reporter_id);
+CREATE INDEX IF NOT EXISTS idx_report_accounts_status ON report_accounts(status);
+CREATE INDEX IF NOT EXISTS idx_report_accounts_handled_by ON report_accounts(handled_by);
+CREATE INDEX IF NOT EXISTS idx_report_accounts_created_at ON report_accounts(created_at);
+
+-- Content / categories
+CREATE INDEX IF NOT EXISTS idx_categories_type ON categories(type);
+CREATE INDEX IF NOT EXISTS idx_categories_parent_id ON categories(parent_id);
+CREATE INDEX IF NOT EXISTS idx_categories_active ON categories(active);
+
+CREATE INDEX IF NOT EXISTS idx_static_contents_type ON static_contents(type);
+CREATE INDEX IF NOT EXISTS idx_static_contents_published ON static_contents(published);
+CREATE INDEX IF NOT EXISTS idx_static_contents_author_id ON static_contents(author_id);
+CREATE INDEX IF NOT EXISTS idx_static_contents_published_at ON static_contents(published_at);
+
+-- Reference tables
+CREATE INDEX IF NOT EXISTS idx_social_network_web_info_id ON Social_network(Web_infor_id);
+CREATE INDEX IF NOT EXISTS idx_vn_location_region ON VN_location(Region);
+CREATE INDEX IF NOT EXISTS idx_contact_info_email ON contact_info(email);
+CREATE INDEX IF NOT EXISTS idx_contact_info_phone ON contact_info(phone);
 -- ============================================================================
 -- END OF SCHEMA
 -- ============================================================================
