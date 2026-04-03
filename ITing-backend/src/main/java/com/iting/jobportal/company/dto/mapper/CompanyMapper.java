@@ -22,7 +22,8 @@ public class CompanyMapper {
         res.setLogoUrl(company.getLogoUrl());
         res.setDescription(company.getDescription());
 
-        res.setIndustry(company.getIndustry());
+        res.setCompanyEmail(company.getCompanyEmail());
+        res.setIndustries(company.getIndustries());
         res.setCompanySize(company.getCompanySize());
         res.setPhone(company.getPhone());
 

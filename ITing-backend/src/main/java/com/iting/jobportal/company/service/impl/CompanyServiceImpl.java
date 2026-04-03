@@ -67,7 +67,8 @@ public class CompanyServiceImpl implements CompanyService {
         company.setAddress(request.getAddress());
         company.setDescription(request.getDescription());
         company.setWebsite(request.getWebsite());
-        company.setIndustry(request.getIndustry());
+        company.setCompanyEmail(request.getCompanyEmail());
+        company.setIndustries(request.getIndustries());
         company.setCompanySize(request.getCompanySize());
         company.setLastUpdate(LocalDateTime.now());
 
@@ -340,31 +341,6 @@ public class CompanyServiceImpl implements CompanyService {
     // Map Company -> CompanyResponse
     // ==========================================
     private CompanyResponse mapToResponse(Company company) {
-        return new CompanyResponse(
-                company.getId(),
-                company.getName(),
-                company.getLogoUrl(),
-                company.getAddress(),
-                company.getDescription(),
-                company.getWebsite(),
-                company.getIndustry(),
-                company.getCompanyEmail(),
-                company.getCompanySize(),
-                company.getPhone(),
-                company.getRepresentativeName(),
-                company.getRepresentativeGender(),
-                company.getRepresentativePhone(),
-                company.getAccountEmail(),
-                company.getTaxCode(),
-                company.getBusinessLicenseFileUrl(),
-                company.getBusinessLicenseDocumentType(),
-                company.getBusinessLicensePreviewUrl(),
-                company.getConsentDocumentFileUrl(),
-                company.getVerificationLevel(),
-                company.getCompanyInfoUpdateStatus(),
-                company.getLastUpdateRequestDate(),
-                company.getLastUpdate(),
-                company.getActive()
-        );
+        return CompanyResponse.fromEntity(company);
     }
 }

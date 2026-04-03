@@ -11,6 +11,9 @@ import lombok.Setter;
 @Setter
 public class RegisterRequest {
 
+    @NotBlank(message = "Fullname is required")
+    private String fullName;
+
     @Email(message = "Email is invalid")
     @NotBlank(message = "Email is required")
     private String email;

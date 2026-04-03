@@ -5,10 +5,13 @@ import com.iting.jobportal.auth.dto.response.LoginResponse;
 import com.iting.jobportal.auth.dto.request.ChangePasswordRequest;
 import com.iting.jobportal.auth.dto.request.RegisterRequest;
 import com.iting.jobportal.auth.entity.Account;
+import com.iting.jobportal.auth.entity.Enum.Role;
 import com.iting.jobportal.auth.repository.AccountRepository;
 import com.iting.jobportal.auth.security.JwtTokenUtil;
 import com.iting.jobportal.auth.service.AuthService;
 import com.iting.jobportal.auth.service.RefreshTokenService;
+import com.iting.jobportal.company.entity.Company;
+import com.iting.jobportal.company.repository.CompanyRepository;
 import com.iting.jobportal.user.entity.User;
 import com.iting.jobportal.user.repository.UserRepository;
 
@@ -28,16 +31,15 @@ public class AuthServiceImpl implements AuthService {
     private final PasswordEncoder passwordEncoder;
     private final JwtTokenUtil jwtTokenUtil;
     private final RefreshTokenService refreshTokenService;
+    private final CompanyRepository companyRepository;
 
     @Override
     @Transactional
     public Account register(RegisterRequest request) {
-        // 1. Kiểm tra email trùng
         if (accountRepository.existsByEmail(request.getEmail())) {
             throw new RuntimeException("Email already exists");
         }
 
-        // 2. Tạo Account
         Account account = Account.builder()
                 .email(request.getEmail())
                 .passwordHash(passwordEncoder.encode(request.getPassword()))
@@ -45,15 +47,24 @@ public class AuthServiceImpl implements AuthService {
                 .status(com.iting.jobportal.auth.entity.Enum.AccountStatus.ACTIVE)
                 .build();
 
-        // Lưu Account trước để có ID
-        Account savedAccount = accountRepository.save(account);
+        account = accountRepository.save(account);
 
-        // 3. Tạo Users profile theo schema.sql (PK = Email)
-        User user = new User();
-        user.setAccount(savedAccount);
-        userRepository.save(user);
+        if (request.getRole() == Role.CANDIDATE) {
+            User user = new User();
+            user.setAccount(account); // QUAN TRỌNG
+            user.setFullName(request.getFullName());
+            user.setLastUpdate(LocalDateTime.now());
+            userRepository.save(user);
+        }
 
-        return savedAccount;
+        if (request.getRole() == Role.COMPANY) {
+            Company company = new Company();
+            company.setAccount(account);
+            company.setName(request.getFullName());
+            companyRepository.save(company);
+        }
+
+        return account;
     }
 
     @Transactional

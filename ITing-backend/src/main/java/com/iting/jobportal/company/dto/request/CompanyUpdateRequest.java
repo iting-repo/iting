@@ -1,7 +1,9 @@
 package com.iting.jobportal.company.dto.request;
 
+import com.iting.jobportal.company.entity.enums.Industry;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
+import java.util.List;
 
 public class CompanyUpdateRequest {
 
@@ -22,8 +24,7 @@ public class CompanyUpdateRequest {
     @Size(max = 255, message = "Website link must be at most 255 characters")
     private String website;
 
-    @Size(max = 255, message = "Industry name must be at most 255 characters")
-    private String industry;
+    private List<Industry> industries;
 
     @Size(max = 50, message = "Company size must be at most 50 characters")
     private String companySize;
@@ -89,8 +90,8 @@ public class CompanyUpdateRequest {
         return website;
     }
 
-    public String getIndustry() {
-        return industry;
+    public List<Industry> getIndustries() {
+        return industries;
     }
 
     public String getCompanySize() {
@@ -161,8 +162,8 @@ public class CompanyUpdateRequest {
         this.website = website;
     }
 
-    public void setIndustry(String industry) {
-        this.industry = industry;
+    public void setIndustries(List<Industry> industries) {
+        this.industries = industries;
     }
 
     public void setCompanySize(String companySize) {

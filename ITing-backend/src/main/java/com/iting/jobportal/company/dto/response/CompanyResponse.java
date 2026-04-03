@@ -3,11 +3,13 @@ package com.iting.jobportal.company.dto.response;
 import com.iting.jobportal.company.entity.enums.BusinessDocumentType;
 import com.iting.jobportal.company.entity.enums.CompanyReviewStatus;
 import com.iting.jobportal.company.entity.enums.VerificationLevel;
+import com.iting.jobportal.company.entity.enums.Industry;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Data
 @NoArgsConstructor
@@ -21,7 +23,7 @@ public class CompanyResponse {
     private String description;
     private String website;
     private String companyEmail;
-    private String industry;
+    private List<Industry> industries;
     private String companySize;
     private String phone;
     private String representativeName;
@@ -51,7 +53,7 @@ public class CompanyResponse {
                 company.getDescription(),
                 company.getWebsite(),
                 company.getCompanyEmail(),
-                company.getIndustry(),
+                company.getIndustries(),
                 company.getCompanySize(),
                 company.getPhone(),
                 company.getRepresentativeName(),
