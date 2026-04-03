@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { useEffect } from 'react';
 import { fetchJobsRequest, fetchJobDetailRequest } from '../../store/job/jobSlice';
+import { buildJobDetailPath, getJobPublicKey } from '../../utils/jobUrl';
 
 // FIX: Gom tất cả icon về react-icons/fa để tránh lỗi import undefined
 import {
@@ -20,9 +21,10 @@ const HomePage = () => {
     const { jobs = [], totalJobs = 0, isLoading } = useSelector((state) => state.job || {});
     const [currentPage, setCurrentPage] = useState(1);
 
-    const handleJobClick = (jobId) => {
-        dispatch(fetchJobDetailRequest(jobId));
-        navigate(`/jobs/${jobId}`);
+    const handleJobClick = (job) => {
+        const jobKey = getJobPublicKey(job);
+        dispatch(fetchJobDetailRequest(jobKey));
+        navigate(buildJobDetailPath(job));
     };
 
     useEffect(() => {
@@ -372,7 +374,7 @@ const HomePage = () => {
                         ) : (jobs ?? []).map((job) => (
                                 <div 
                                     key={job.id} 
-                                    onClick={() => handleJobClick(job.id)}
+                                    onClick={() => handleJobClick(job)}
                                     className="group relative border border-gray-100 rounded-2xl p-6 hover:shadow-xl hover:shadow-blue-500/5 transition-all duration-300 bg-white overflow-hidden cursor-pointer">
 
                                     {/* Hiệu ứng: Thanh màu xanh trượt ra khi hover */}

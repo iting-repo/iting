@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { FaUserCircle, FaCamera, FaSave, FaEnvelope } from 'react-icons/fa';
 import axiosInstance from '../../../../utils/axiosInstance';
+import { toast } from 'sonner';
 
 const PersonalInfoTab = () => {
 
@@ -51,10 +52,10 @@ const PersonalInfoTab = () => {
                 phoneNum: formData.phoneNum,
                 avatarUrl: formData.avatarUrl
             });
-            alert("Cập nhật thông tin thành công!");
+            toast.success("Cập nhật thông tin thành công!");
         } catch (error) {
             console.error("Failed to update personal info", error);
-            alert("Có lỗi xảy ra khi cập nhật!");
+            toast.error("Có lỗi xảy ra khi cập nhật!");
         } finally {
             setIsSaving(false);
         }

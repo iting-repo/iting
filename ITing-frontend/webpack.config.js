@@ -23,7 +23,9 @@ module.exports = (env, argv) => {
       port: 3000,
       open: true,
       hot: true,
-      historyApiFallback: true,
+      historyApiFallback: {
+        disableDotRule: true,
+      },
     },
     module: {
       rules: [

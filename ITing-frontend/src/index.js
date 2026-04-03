@@ -18,11 +18,14 @@ import App from './App';
 import './i18n';
 import './index.css';
 
+import { Toaster } from 'sonner';
+
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
   // 2. Bọc Provider ra ngoài cùng (hoặc ngoài BrowserRouter)
   <Provider store={store}>
     <BrowserRouter>
+      <Toaster position="top-right" richColors closeButton />
       <App />
     </BrowserRouter>
   </Provider>

@@ -71,6 +71,21 @@ const DEFAULT_TECH_OPTIONS = [
   "Tailwind CSS",
 ];
 
+const normalizeMultiValueField = (value) => {
+  if (Array.isArray(value)) {
+    return value.map((item) => String(item).trim()).filter(Boolean);
+  }
+
+  if (typeof value === "string") {
+    return value
+      .split(",")
+      .map((item) => item.trim())
+      .filter(Boolean);
+  }
+
+  return [];
+};
+
 function EditorToolbar() {
   return (
     <div className="bg-gray-50 border-b border-gray-200 px-3 py-2 flex gap-4 text-gray-500 mb-2">
@@ -209,18 +224,8 @@ const PostJob = ({
 }) => {
   const [formData, setFormData] = useState({
     jobTitle: initialData?.title || "",
-    jobPosition: initialData?.position
-      ? initialData.position
-          .split(",")
-          .map((x) => x.trim())
-          .filter(Boolean)
-      : [],
-    techStack: initialData?.techRequired
-      ? initialData.techRequired
-          .split(",")
-          .map((x) => x.trim())
-          .filter(Boolean)
-      : [],
+    jobPosition: normalizeMultiValueField(initialData?.position),
+    techStack: normalizeMultiValueField(initialData?.techRequired),
     workType: initialData?.jobType || "",
     experienceLevel: initialData?.experienceLevel || "",
     workingDays: initialData?.workingDays || "",

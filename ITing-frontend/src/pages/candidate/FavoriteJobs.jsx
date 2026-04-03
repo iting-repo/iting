@@ -1,15 +1,16 @@
 import React, { useState } from 'react';
 import { 
-  FaMapMarkerAlt, FaDollarSign, FaCalendarAlt, FaBookmark, 
-  FaArrowRight, FaClock, FaArrowLeft, FaTrashAlt
+  FaMapMarkerAlt, FaDollarSign, FaTrashAlt,
+  FaArrowRight, FaClock, FaArrowLeft
 } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
+import { ConfirmDialog, Table, Td } from "../../components/common";
+import { toast } from 'sonner';
+import { buildJobDetailPath } from '../../utils/jobUrl';
 
 const FavoriteJobs = () => {
   const navigate = useNavigate();
 
-  // 1. MOCK DATA
-  // Danh sách này đều là việc đã lưu
   const savedJobs = [
     {
       id: 1,
@@ -73,8 +74,8 @@ const FavoriteJobs = () => {
     }
   ];
 
-  // 2. PAGINATION STATE
   const [currentPage, setCurrentPage] = useState(1);
+  const [confirmModal, setConfirmModal] = useState({ isOpen: false, id: null });
   const itemsPerPage = 5;
   
   const indexOfLastItem = currentPage * itemsPerPage;
@@ -82,7 +83,6 @@ const FavoriteJobs = () => {
   const currentJobs = savedJobs.slice(indexOfFirstItem, indexOfLastItem);
   const totalPages = Math.ceil(savedJobs.length / itemsPerPage);
 
-  // Helper đổi màu Badge
   const getTypeStyle = (type) => {
     if (type === 'Full Time') return 'bg-blue-50 text-blue-600';
     if (type === 'Internship') return 'bg-sky-50 text-sky-600';
@@ -90,84 +90,95 @@ const FavoriteJobs = () => {
     return 'bg-gray-100 text-gray-600';
   };
 
-  // Hàm xử lý xóa việc đã lưu (Giả lập)
   const handleRemove = (id) => {
-    if(window.confirm("Bạn có chắc muốn bỏ lưu công việc này?")) {
-        console.log("Remove job id:", id);
-        // Logic gọi API xóa...
-    }
-  }
+    setConfirmModal({ isOpen: true, id });
+  };
+
+  const confirmRemove = () => {
+    const id = confirmModal.id;
+    console.log("Remove job id:", id);
+    toast.success("Đã bỏ lưu công việc thành công!");
+  };
 
   return (
     <div className="bg-white rounded-xl p-8 min-h-screen shadow-sm border border-gray-100">
-      
-      {/* Header */}
       <div className="flex items-center justify-between mb-8">
         <h2 className="text-2xl font-bold text-gray-800">
           Công việc đã lưu <span className="text-gray-400 font-normal text-lg">({savedJobs.length})</span>
         </h2>
       </div>
 
-      {/* JOB LIST */}
-      <div className="space-y-4 mb-8">
+      {/* JOB TABLE */}
+      <Table
+        headers={[
+          { label: "Công việc" },
+          { label: "Mức lương" },
+          { label: "Thời gian" },
+          { label: "Hành động", className: "text-right" }
+        ]}
+      >
         {currentJobs.map((job) => (
-          <div 
+          <tr 
             key={job.id} 
-            className="group relative border border-gray-100 rounded-xl p-5 hover:border-[#3AB4E6] hover:shadow-lg transition-all bg-white flex flex-col md:flex-row items-center gap-6"
+            className="hover:bg-gray-50/60 transition-all group"
           >
-             {/* Logo */}
-             <div className="w-14 h-14 shrink-0 bg-white rounded-lg border border-gray-100 p-2 flex items-center justify-center">
-                <img src={job.logo} alt={job.company} className="w-full h-full object-contain" />
-             </div>
-
-             {/* Info */}
-             <div className="flex-1 w-full">
-                <div className="flex flex-wrap items-center gap-3 mb-2">
-                   <h3 
-                     onClick={() => navigate(`/jobs/${job.id}`)}
-                     className="font-bold text-gray-800 text-lg group-hover:text-[#3AB4E6] transition-colors cursor-pointer"
-                   >
-                      {job.title}
-                   </h3>
-                   <span className={`text-xs px-2 py-1 rounded font-bold ${getTypeStyle(job.type)}`}>
-                      {job.type}
-                   </span>
+             <Td>
+                <div className="flex items-center gap-4">
+                   <div className="w-12 h-12 shrink-0 bg-white rounded-lg border border-gray-100 p-2 flex items-center justify-center">
+                      <img src={job.logo} alt={job.company} className="w-full h-full object-contain" />
+                   </div>
+                   <div>
+                      <div className="flex items-center gap-2 mb-1">
+                         <h3 
+                           onClick={() => navigate(buildJobDetailPath(job))}
+                           className="font-bold text-gray-800 text-sm group-hover:text-[#3AB4E6] transition-colors cursor-pointer"
+                         >
+                            {job.title}
+                         </h3>
+                         <span className={`text-[10px] px-2 py-0.5 rounded font-bold uppercase ${getTypeStyle(job.type)}`}>
+                            {job.type}
+                         </span>
+                      </div>
+                      <div className="flex items-center gap-4 text-xs text-gray-500">
+                         <span className="flex items-center gap-1"><FaMapMarkerAlt size={10} className="text-gray-400" /> {job.location}</span>
+                         <span className="font-medium">{job.company}</span>
+                      </div>
+                   </div>
                 </div>
+             </Td>
 
-                <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-sm text-gray-500">
-                   <span className="flex items-center gap-1.5"><FaMapMarkerAlt className="text-gray-400" /> {job.location}</span>
-                   <span className="flex items-center gap-1.5"><FaDollarSign className="text-gray-400" /> {job.salary}</span>
-                   {/* Thời gian đăng */}
-                   <span className="flex items-center gap-1.5 text-xs text-green-600 bg-green-50 px-2 py-0.5 rounded">
-                      <FaClock size={10} /> {job.postedTime}
-                   </span>
+             <Td>
+                <span className="font-bold text-gray-700">{job.salary}</span>
+             </Td>
+
+             <Td>
+                <span className="flex items-center gap-1.5 text-xs text-green-600 bg-green-50 px-2.5 py-1 rounded-full w-fit">
+                   <FaClock size={10} /> {job.postedTime}
+                </span>
+             </Td>
+
+             <Td className="text-right">
+                <div className="flex items-center justify-end gap-3 transition-opacity">
+                    <button 
+                        onClick={() => handleRemove(job.id)}
+                        className="w-10 h-10 rounded-full flex items-center justify-center text-gray-300 hover:text-red-500 hover:bg-red-50 transition-all"
+                        title="Bỏ lưu"
+                    >
+                       <FaTrashAlt size={16} /> 
+                    </button>
+
+                    <button 
+                       onClick={() => navigate(buildJobDetailPath(job))}
+                       className="bg-[#EAF6FF] text-[#3AB4E6] hover:bg-[#3AB4E6] hover:text-white font-bold py-2 px-4 rounded-lg transition-all flex items-center gap-2 text-xs whitespace-nowrap shadow-sm border border-transparent"
+                    >
+                       Chi Tiết <FaArrowRight size={10} />
+                    </button>
                 </div>
-             </div>
-
-             {/* Actions */}
-             <div className="flex items-center gap-4 w-full md:w-auto justify-between md:justify-end">
-                {/* Nút Xóa (Trash Icon) thay vì Bookmark để người dùng dễ hiểu là "Bỏ lưu" */}
-                <button 
-                    onClick={() => handleRemove(job.id)}
-                    className="w-10 h-10 rounded-full flex items-center justify-center text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors tooltip"
-                    title="Bỏ lưu"
-                >
-                   <FaTrashAlt /> 
-                </button>
-
-                {/* Nút Ứng tuyển */}
-                <button 
-                   onClick={() => navigate(`/jobs/${job.id}`)}
-                   className="bg-[#EAF6FF] text-[#3AB4E6] hover:bg-[#3AB4E6] hover:text-white font-bold py-2.5 px-6 rounded-lg transition-all flex items-center gap-2 text-sm whitespace-nowrap"
-                >
-                   Ứng Tuyển <FaArrowRight size={12} />
-                </button>
-             </div>
-          </div>
+             </Td>
+          </tr>
         ))}
-      </div>
+      </Table>
 
-      {/* PAGINATION */}
       {totalPages > 1 && (
         <div className="flex justify-center items-center gap-2">
             <button 
@@ -197,11 +208,19 @@ const FavoriteJobs = () => {
                 disabled={currentPage === totalPages}
                 className={`w-9 h-9 rounded-full flex items-center justify-center transition-colors border ${currentPage === totalPages ? 'border-gray-100 text-gray-300 cursor-not-allowed' : 'border-gray-200 text-[#3AB4E6] hover:bg-blue-50'}`}
             >
-                <FaArrowRight size={10} />
+                <FaArrowLeft className="rotate-180" size={10} />
             </button>
         </div>
       )}
 
+      <ConfirmDialog
+        isOpen={confirmModal.isOpen}
+        onClose={() => setConfirmModal({ isOpen: false, id: null })}
+        onConfirm={confirmRemove}
+        title="Bỏ lưu công việc"
+        message="Bạn có chắc muốn bỏ lưu công việc này?"
+        type="warning"
+      />
     </div>
   );
 };

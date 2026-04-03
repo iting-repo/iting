@@ -10,6 +10,7 @@ import {
   RotateCcw,
 } from "lucide-react";
 import { Dialog, Badge, Button } from "../common";
+import { getIndustryLabel } from "../../constants/industries";
 
 export const CompanyDetailDialog = ({ company, open, onClose, onAction }) => {
   if (!company) return null;
@@ -23,9 +24,14 @@ export const CompanyDetailDialog = ({ company, open, onClose, onAction }) => {
               <Building2 className="h-5 w-5 text-blue-600" />
               {company.name}
             </h3>
-            <p className="mt-1 text-sm text-slate-500">
-              {company.industry} · {company.companySize}
-            </p>
+            <div className="mt-2 flex flex-wrap gap-1">
+              {(company.industries || []).map((industry, index) => (
+                <Badge key={index} variant="info" className="px-2 py-0.5 text-[10px] uppercase font-bold">
+                  {getIndustryLabel(industry)}
+                </Badge>
+              ))}
+              <span className="text-sm text-slate-500 ml-1">· {company.companySize}</span>
+            </div>
           </div>
 
           <div className="flex gap-2">

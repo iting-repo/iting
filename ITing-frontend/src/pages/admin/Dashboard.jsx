@@ -1,6 +1,6 @@
 import React from 'react';
 import { FaUserFriends, FaFileAlt, FaClipboardList, FaHourglassHalf } from 'react-icons/fa';
-import { StatsCard } from '../../components';
+import { StatsCard, Table, Td } from '../../components';
 
 // 1. IMPORT CHART.JS
 import {
@@ -159,38 +159,33 @@ const AdminDashboard = () => {
             </div>
 
             {/* ROW 3: TABLE */}
-            <div className="bg-white p-6 rounded-2xl shadow-sm">
+            <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
                 <h3 className="font-bold text-gray-800 mb-6 flex items-center gap-2">
-                    <span className="w-1 h-6 bg-red-400 rounded-full"></span> Recent Activity
+                    <span className="w-1 h-6 bg-[#3AB4E6] rounded-full"></span> Recent Activity
                 </h3>
-                <div className="overflow-x-auto">
-                    <table className="w-full text-left border-collapse">
-                        <thead className="bg-gray-50 text-xs font-bold text-gray-500 uppercase tracking-wider">
-                            <tr>
-                                <th className="p-4 rounded-tl-lg">Job Title</th>
-                                <th className="p-4">Company</th>
-                                <th className="p-4">Date - Time</th>
-                                <th className="p-4">Applications</th>
-                                <th className="p-4 rounded-tr-lg text-center">Status</th>
-                            </tr>
-                        </thead>
-                        <tbody className="text-sm divide-y divide-gray-100">
-                            {recentJobs.map((job) => (
-                                <tr key={job.id} className="hover:bg-gray-50 transition-colors">
-                                    <td className="p-4 font-bold text-gray-800">{job.title}</td>
-                                    <td className="p-4 text-gray-600">{job.company}</td>
-                                    <td className="p-4 text-gray-500">{job.date}</td>
-                                    <td className="p-4 font-medium">{job.applications}</td>
-                                    <td className="p-4 text-center">
-                                        <span className={`px-3 py-1 rounded-full text-xs font-bold ${getStatusColor(job.status)}`}>
-                                            {job.status}
-                                        </span>
-                                    </td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                </div>
+                <Table
+                    headers={[
+                        { label: "Job Title" },
+                        { label: "Company" },
+                        { label: "Date - Time" },
+                        { label: "Applications" },
+                        { label: "Status", className: "text-center" }
+                    ]}
+                >
+                    {recentJobs.map((job) => (
+                        <tr key={job.id} className="hover:bg-gray-50/60 transition-colors group">
+                            <Td className="font-bold text-gray-800">{job.title}</Td>
+                            <Td className="text-gray-600">{job.company}</Td>
+                            <Td className="text-gray-500">{job.date}</Td>
+                            <Td className="font-medium text-gray-700">{job.applications}</Td>
+                            <Td className="text-center">
+                                <span className={`px-3 py-1 rounded-full text-xs font-bold ${getStatusColor(job.status)}`}>
+                                    {job.status}
+                                </span>
+                            </Td>
+                        </tr>
+                    ))}
+                </Table>
             </div>
         </div>
     );

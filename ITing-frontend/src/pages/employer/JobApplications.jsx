@@ -3,21 +3,24 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { FaSearch, FaFilter, FaFileDownload, FaEye, FaArrowLeft, FaSort } from 'react-icons/fa';
 import CandidateDetailModal from '../../components/employer/CandidateDetailModal';
 import applicationService from '../../services/applicationService';
-import { useTranslation } from 'react-i18next'; // 1. Import hook
+import { useTranslation } from 'react-i18next';
+import { normalizeJobKey } from '../../utils/jobUrl';
+import { Table, Td } from '../../components/common';
 
 const JobApplications = () => {
-   const { t } = useTranslation(); // 2. Khởi tạo hàm t
-   const { id } = useParams();
+   const { t } = useTranslation();
+   const { jobKey } = useParams();
    const navigate = useNavigate();
    const [selectedCandidate, setSelectedCandidate] = useState(null);
    const [candidates, setCandidates] = useState([]);
    const [isLoading, setIsLoading] = useState(false);
+   const normalizedJobKey = normalizeJobKey(jobKey);
 
    useEffect(() => {
       const fetchApplications = async () => {
          try {
             setIsLoading(true);
-            const response = await applicationService.getEmployerApplications(id, { page: 0, size: 10 });
+            const response = await applicationService.getEmployerApplications(normalizedJobKey, { page: 0, size: 10 });
             setCandidates(response.content || []);
          } catch (error) {
             console.error("Failed to fetch applications:", error);
@@ -25,10 +28,12 @@ const JobApplications = () => {
             setIsLoading(false);
          }
       };
-      fetchApplications();
-   }, [id]);
 
-   // Helper để dịch trạng thái
+      if (normalizedJobKey) {
+         fetchApplications();
+      }
+   }, [normalizedJobKey]);
+
    const getStatusLabel = (status) => {
       if (!status) return t('applications.not_updated');
       const s = status.toUpperCase();
@@ -55,15 +60,13 @@ const JobApplications = () => {
 
    return (
       <div className="bg-white rounded-xl p-8 min-h-screen border border-gray-100">
-
-         {/* Header & Toolbar */}
          <div className="flex items-center gap-4 mb-6">
             <button onClick={() => navigate(-1)} className="p-2 hover:bg-gray-100 rounded-full transition-colors text-gray-500">
                <FaArrowLeft />
             </button>
             <div>
                <h2 className="text-2xl font-bold text-gray-800">{t('applications.title')}</h2>
-               <p className="text-gray-500 text-sm">{t('applications.job_label')}: UI/UX Designer (ID: #{id})</p>
+               <p className="text-gray-500 text-sm">{t('applications.job_label')}: #{normalizedJobKey}</p>
             </div>
          </div>
 
@@ -86,80 +89,74 @@ const JobApplications = () => {
             </div>
          </div>
 
-         {/* Candidate Table */}
-         <div className="overflow-x-auto rounded-xl border border-gray-200">
-            <table className="w-full text-left border-collapse">
-               <thead>
-                  <tr className="bg-gray-50 text-gray-600 text-xs uppercase tracking-wider font-semibold">
-                     <th className="p-5">{t('applications.table.candidate')}</th>
-                     <th className="p-5">{t('applications.table.experience')}</th>
-                     <th className="p-5">{t('applications.table.education')}</th>
-                     <th className="p-5">{t('applications.table.applied_date')}</th>
-                     <th className="p-5">{t('applications.table.status')}</th>
-                     <th className="p-5 text-right">{t('applications.table.actions')}</th>
-                  </tr>
-               </thead>
-               <tbody className="divide-y divide-gray-100">
-                  {isLoading ? (
-                     <tr>
-                        <td colSpan="6" className="text-center py-10 text-gray-500">{t('applications.loading')}</td>
-                     </tr>
-                  ) : candidates.length === 0 ? (
-                     <tr>
-                        <td colSpan="6" className="text-center py-10 text-gray-500">{t('applications.no_data')}</td>
-                     </tr>
-                  ) : candidates.map((candidate) => (
-                     <tr key={candidate.id} className="hover:bg-blue-50/30 transition-colors group">
-                        <td className="p-5">
-                           <div className="flex items-center gap-4">
-                              <img src={candidate.avatarUrl || 'https://via.placeholder.com/150'} alt="Avatar" className="w-10 h-10 rounded-full object-cover border border-gray-200" />
-                              <div>
-                                 <div
-                                    className="font-bold text-gray-800 cursor-pointer hover:text-[#3AB4E6] transition-colors"
-                                    onClick={() => setSelectedCandidate(candidate)}
-                                 >
-                                    {candidate.applicantName || t('applications.not_updated')}
-                                 </div>
-                                 <div className="text-xs text-gray-500">{candidate.jobTitle || t('applications.not_updated')}</div>
-                              </div>
+         <Table
+            headers={[
+               { label: t('applications.table.candidate') },
+               { label: t('applications.table.experience') },
+               { label: t('applications.table.education') },
+               { label: t('applications.table.applied_date') },
+               { label: t('applications.table.status') },
+               { label: t('applications.table.actions'), className: "text-right" }
+            ]}
+         >
+            {isLoading ? (
+               <tr>
+                  <Td colSpan="6" className="text-center py-10 text-gray-500">{t('applications.loading')}</Td>
+               </tr>
+            ) : candidates.length === 0 ? (
+               <tr>
+                  <Td colSpan="6" className="text-center py-10 text-gray-500">{t('applications.no_data')}</Td>
+               </tr>
+            ) : candidates.map((candidate) => (
+               <tr key={candidate.id} className="hover:bg-blue-50/30 transition-colors group">
+                  <Td>
+                     <div className="flex items-center gap-4">
+                        <img src={candidate.avatarUrl || 'https://via.placeholder.com/150'} alt="Avatar" className="w-10 h-10 rounded-full object-cover border border-gray-200" />
+                        <div>
+                           <div
+                              className="font-bold text-gray-800 cursor-pointer hover:text-[#3AB4E6] transition-colors text-base"
+                              onClick={() => setSelectedCandidate(candidate)}
+                           >
+                              {candidate.applicantName || t('applications.not_updated')}
                            </div>
-                        </td>
-                        <td className="p-5 text-sm text-gray-600 font-medium">
-                           {candidate.yearsExperience != null
-                              ? `${candidate.yearsExperience} ${t('applications.years')}`
-                              : 'N/A'}
-                        </td>
-                        <td className="p-5 text-sm text-gray-600">{candidate.education || 'N/A'}</td>
-                        <td className="p-5 text-sm text-gray-500">
-                           {candidate.timeSent ? new Date(candidate.timeSent).toLocaleDateString() : 'N/A'}
-                        </td>
-                        <td className="p-5">
-                           <span className={`px-3 py-1 rounded-full text-xs font-bold border ${getStatusColor(candidate.status)}`}>
-                              {getStatusLabel(candidate.status)}
-                           </span>
-                        </td>
-                        <td className="p-5 text-right">
-                           <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                              <button
-                                 className="p-2 bg-gray-100 text-gray-600 rounded-lg hover:bg-blue-100 hover:text-blue-600 tooltip"
-                                 title={t('applications.tooltips.download_cv')}
-                              >
-                                 <FaFileDownload />
-                              </button>
-                              <button
-                                 onClick={() => setSelectedCandidate(candidate)}
-                                 className="p-2 bg-[#EAF6FF] text-[#3AB4E6] rounded-lg hover:bg-[#3AB4E6] hover:text-white transition-colors"
-                                 title={t('applications.tooltips.view_detail')}
-                              >
-                                 <FaEye />
-                              </button>
-                           </div>
-                        </td>
-                     </tr>
-                  ))}
-               </tbody>
-            </table>
-         </div>
+                           <div className="text-xs text-gray-500">{candidate.jobTitle || t('applications.not_updated')}</div>
+                        </div>
+                     </div>
+                  </Td>
+                  <Td className="text-sm text-gray-600 font-medium">
+                     {candidate.yearsExperience != null
+                        ? `${candidate.yearsExperience} ${t('applications.years')}`
+                        : 'N/A'}
+                  </Td>
+                  <Td className="text-sm text-gray-600">{candidate.education || 'N/A'}</Td>
+                  <Td className="text-sm text-gray-500">
+                     {candidate.timeSent ? new Date(candidate.timeSent).toLocaleDateString() : 'N/A'}
+                  </Td>
+                  <Td>
+                     <span className={`px-3 py-1 rounded-full text-xs font-bold border ${getStatusColor(candidate.status)}`}>
+                        {getStatusLabel(candidate.status)}
+                     </span>
+                  </Td>
+                  <Td className="text-right">
+                     <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button
+                           className="p-2 bg-gray-100 text-gray-600 rounded-lg hover:bg-blue-100 hover:text-blue-600 tooltip"
+                           title={t('applications.tooltips.download_cv')}
+                        >
+                           <FaFileDownload />
+                        </button>
+                        <button
+                           onClick={() => setSelectedCandidate(candidate)}
+                           className="p-2 bg-[#EAF6FF] text-[#3AB4E6] rounded-lg hover:bg-[#3AB4E6] hover:text-white transition-colors"
+                           title={t('applications.tooltips.view_detail')}
+                        >
+                           <FaEye />
+                        </button>
+                     </div>
+                  </Td>
+               </tr>
+            ))}
+         </Table>
 
          {selectedCandidate && (
             <CandidateDetailModal
@@ -167,7 +164,6 @@ const JobApplications = () => {
                onClose={() => setSelectedCandidate(null)}
             />
          )}
-
       </div>
    );
 };

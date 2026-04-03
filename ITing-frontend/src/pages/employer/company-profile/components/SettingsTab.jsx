@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { FaEye, FaEyeSlash, FaEnvelope, FaPhone, FaMapMarkerAlt, FaLink } from 'react-icons/fa';
+import { toast } from 'sonner';
 
 const SettingsTab = () => {
   const [showCurrentPass, setShowCurrentPass] = useState(false);
@@ -46,7 +47,10 @@ const SettingsTab = () => {
          </div>
       </div>
 
-      <button className="bg-[#1967D2] text-white font-bold py-3 px-8 rounded-lg hover:bg-blue-700 transition-colors mb-12">
+      <button 
+        onClick={() => toast.success("Cập nhật thông tin liên hệ thành công!")}
+        className="bg-[#1967D2] text-white font-bold py-3 px-8 rounded-lg hover:bg-blue-700 transition-colors mb-12"
+      >
         Lưu Thay Đổi
       </button>
 
@@ -101,7 +105,10 @@ const SettingsTab = () => {
              </div>
           </div>
 
-          <button className="bg-[#1967D2] text-white font-bold py-3 px-8 rounded-lg hover:bg-blue-700 transition-colors">
+          <button 
+            onClick={() => toast.success("Đổi mật khẩu thành công!")}
+            className="bg-[#1967D2] text-white font-bold py-3 px-8 rounded-lg hover:bg-blue-700 transition-colors"
+          >
              Đổi Mật Khẩu
           </button>
       </div>

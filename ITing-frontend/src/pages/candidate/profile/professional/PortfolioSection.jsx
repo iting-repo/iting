@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Layout, Plus, ExternalLink, Trash2 } from 'lucide-react';
-import { Button, Card, Input } from "../../../../components/common";
+import { Button, Card, Input, ConfirmDialog } from "../../../../components/common";
 import axiosInstance from "../../../../utils/axiosInstance";
+import { toast } from 'sonner';
 
 const PortfolioSection = () => {
     const [portfolios, setPortfolios] = useState([]);
@@ -11,6 +12,8 @@ const PortfolioSection = () => {
         url: '',
         description: ''
     });
+
+    const [confirmModal, setConfirmModal] = useState({ isOpen: false, id: null });
 
     useEffect(() => {
         fetchPortfolios();
@@ -45,20 +48,26 @@ const PortfolioSection = () => {
             setFormData({ title: '', url: '', description: '' });
             setIsAdding(false);
             fetchPortfolios();
+            toast.success("Thêm dự án thành công!");
         } catch (error) {
             console.error("Failed to add portfolio", error);
-            alert("Có lỗi xảy ra khi thêm dự án!");
+            toast.error("Có lỗi xảy ra khi thêm dự án!");
         }
     };
 
-    const handleDelete = async (id) => {
-        if (!window.confirm("Bạn có chắc chắn muốn xóa dự án này?")) return;
+    const handleDelete = (id) => {
+        setConfirmModal({ isOpen: true, id });
+    };
+
+    const confirmDelete = async () => {
+        const id = confirmModal.id;
         try {
             await axiosInstance.delete(`/user/professional-profile/portfolio/${id}`);
             fetchPortfolios();
+            toast.success("Xóa dự án thành công!");
         } catch (error) {
             console.error("Failed to delete portfolio", error);
-            alert("Có lỗi xảy ra khi xóa dự án!");
+            toast.error("Có lỗi xảy ra khi xóa dự án!");
         }
     };
 
@@ -146,6 +155,14 @@ const PortfolioSection = () => {
                     Bạn chưa thêm dự án nào vào Portfolio
                 </div>
             )}
+            <ConfirmDialog
+                isOpen={confirmModal.isOpen}
+                onClose={() => setConfirmModal({ isOpen: false, id: null })}
+                onConfirm={confirmDelete}
+                title="Xóa dự án"
+                message="Bạn có chắc chắn muốn xóa dự án này?"
+                type="danger"
+            />
         </Card>
     );
 };

@@ -4,12 +4,11 @@ import {
   FaArrowRight, FaClock, FaArrowLeft
 } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
+import { buildJobDetailPath } from '../../utils/jobUrl';
 
 const JobAlerts = () => {
   const navigate = useNavigate();
 
-  // 1. MOCK DATA
-  // Thêm trường 'postedTime' như bạn yêu cầu
   const alerts = [
     {
       id: 1,
@@ -20,7 +19,7 @@ const JobAlerts = () => {
       location: "Idaho, USA",
       salary: "$15k-$20k",
       remaining: "4 Days Remaining",
-      postedTime: "2 giờ trước", // <-- Thêm thời gian đăng
+      postedTime: "2 giờ trước",
       isSaved: false
     },
     {
@@ -45,13 +44,13 @@ const JobAlerts = () => {
       salary: "$10k-$15k",
       remaining: "4 Days Remaining",
       postedTime: "1 ngày trước",
-      isSaved: true // Ví dụ đã lưu
+      isSaved: true
     },
     {
       id: 4,
       title: "Marketing Officer",
       company: "Reddit", 
-      logo: "https://www.logo.wine/a/logo/Reddit/Reddit-Logo.wine.svg", // Giả lập logo cty khác
+      logo: "https://www.logo.wine/a/logo/Reddit/Reddit-Logo.wine.svg",
       type: "Full Time",
       location: "Montana, USA",
       salary: "$50k-$60k",
@@ -85,7 +84,6 @@ const JobAlerts = () => {
     }
   ];
 
-  // 2. PAGINATION STATE
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 5;
   
@@ -94,7 +92,6 @@ const JobAlerts = () => {
   const currentJobs = alerts.slice(indexOfFirstItem, indexOfLastItem);
   const totalPages = Math.ceil(alerts.length / itemsPerPage);
 
-  // Helper đổi màu Badge loại công việc
   const getTypeStyle = (type) => {
     if (type === 'Full Time') return 'bg-blue-50 text-blue-600';
     if (type === 'Internship') return 'bg-sky-50 text-sky-600';
@@ -103,8 +100,6 @@ const JobAlerts = () => {
 
   return (
     <div className="bg-white rounded-xl p-8 min-h-screen shadow-sm border border-gray-100">
-      
-      {/* Header */}
       <div className="flex items-center justify-between mb-8">
         <h2 className="text-2xl font-bold text-gray-800">
           Thông báo việc làm <span className="bg-blue-100 text-[#3AB4E6] text-sm px-2 py-1 rounded-full ml-2">09</span>
@@ -114,19 +109,16 @@ const JobAlerts = () => {
         </div>
       </div>
 
-      {/* JOB LIST */}
       <div className="space-y-4 mb-8">
         {currentJobs.map((job) => (
           <div 
             key={job.id} 
             className="group relative border border-gray-100 rounded-xl p-5 hover:border-[#3AB4E6] hover:shadow-lg transition-all bg-white flex flex-col md:flex-row items-center gap-6"
           >
-             {/* Left: Logo */}
              <div className="w-14 h-14 shrink-0 bg-white rounded-lg border border-gray-100 p-2 flex items-center justify-center">
                 <img src={job.logo} alt={job.company} className="w-full h-full object-contain" />
              </div>
 
-             {/* Middle: Info */}
              <div className="flex-1 w-full">
                 <div className="flex flex-wrap items-center gap-3 mb-2">
                    <h3 className="font-bold text-gray-800 text-lg group-hover:text-[#3AB4E6] transition-colors cursor-pointer">
@@ -143,22 +135,18 @@ const JobAlerts = () => {
                    <span className="flex items-center gap-1.5"><FaCalendarAlt className="text-gray-400" /> {job.remaining}</span>
                 </div>
 
-                {/* === NEW: THỜI GIAN ĐĂNG TẢI === */}
                 <div className="mt-3 flex items-center gap-1.5 text-xs text-green-600 font-medium">
                    <FaClock /> Đăng tải: {job.postedTime}
                 </div>
              </div>
 
-             {/* Right: Actions */}
              <div className="flex items-center gap-4 w-full md:w-auto justify-between md:justify-end">
-                {/* Bookmark Icon */}
                 <button className="text-gray-400 hover:text-[#3AB4E6] text-xl transition-colors">
                    {job.isSaved ? <FaBookmark className="text-[#3AB4E6]" /> : <FaRegBookmark />}
                 </button>
 
-                {/* Apply Button */}
                 <button 
-                   onClick={() => navigate(`/jobs/${job.id}`)}
+                   onClick={() => navigate(buildJobDetailPath(job))}
                    className="bg-[#EAF6FF] text-[#3AB4E6] hover:bg-[#3AB4E6] hover:text-white font-bold py-2.5 px-6 rounded-lg transition-all flex items-center gap-2 text-sm"
                 >
                    Ứng Tuyển <FaArrowRight size={12} />
@@ -168,7 +156,6 @@ const JobAlerts = () => {
         ))}
       </div>
 
-      {/* PAGINATION */}
       {totalPages > 1 && (
         <div className="flex justify-center items-center gap-2">
             <button 
@@ -202,7 +189,6 @@ const JobAlerts = () => {
             </button>
         </div>
       )}
-
     </div>
   );
 };

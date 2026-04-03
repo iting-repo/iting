@@ -15,7 +15,7 @@ const CandidateDashboard = () => {
         const response = await axiosInstance.get('/api/applications/my-applications', {
           params: { page: 0, size: 5 }
         });
-        setRecentApplications(response.data.content || []);
+        setRecentApplications(response?.content || response?.data?.content || []);
       } catch (error) {
         console.error("Failed to fetch applications:", error);
       } finally {

@@ -47,10 +47,11 @@ function* handleCheckAuth() {
 // Worker Saga: Register
 function* handleRegister(action) {
     try {
-        const { email, password, name, role, phone, address, website, navigate } = action.payload;
+        const { navigate } = action.payload; // Lấy navigate để dùng sau này
 
         // 1. Gọi API Register
-        const data = yield call(authService.register, email, password, name, role, phone, address, website);
+        // Pass cả object payload để service xử lý (có fullName, role, v.v.)
+        const data = yield call(authService.register, action.payload);
 
         // 2. Không Auto Login -> Chuyển về trang Login để người dùng tự đăng nhập
         // (Theo yêu cầu: đăng ký xong về trang login)
@@ -106,7 +107,6 @@ function* handleLogin(action) {
             // 3. Bắn action thành công vào Redux
             yield put(loginSuccess(data));
 
-            // 4. Điều hướng trang tùy theo Role
             if (data.role === 'EMPLOYER') {
                 console.log("✅ Đang chuyển hướng vào Dashboard Employer...");
                 navigate('/employer/dashboard');
