@@ -99,6 +99,7 @@ INSERT INTO candidate_profiles (
       (103, 'DevOps Engineer Professional', 'Cầu Giấy, Hà Nội', 3, 'Bách Khoa Hà Nội', 'Kinh nghiệm triển khai CI/CD, K8s...', 'NOT_LOOKING', FALSE, CURRENT_TIMESTAMP),
       (104, 'Fullstack Developer (JS/Python)', 'Quận 2, TP. Hồ Chí Minh', 2, 'UIT', 'Thích làm việc với startup...', 'ACTIVELY_LOOKING', TRUE, CURRENT_TIMESTAMP),
       (105, 'Data Scientist / ML Engineer', 'Đống Đa, Hà Nội', 6, 'Đại học Tổng Hợp', 'Nghiên cứu AI và Big Data...', 'FREELANCE_AVAILABLE', TRUE, CURRENT_TIMESTAMP);
+
 INSERT INTO Company (
     company_id, Name, Web_link, Address, Logo, Description,
     Company_email, Industry, Company_size, Phone,
@@ -852,6 +853,7 @@ INSERT INTO report_accounts (reported_user_id, reporter_id, report_type, violati
 -- SEQUENCE UPDATES
 -- ============================================================================
 
+SELECT setval('account_id_seq', COALESCE((SELECT MAX(Id) FROM Account), 1), true);
 -- Update sequences to avoid conflicts
 -- SELECT setval('social_network_id_seq', (SELECT MAX(Id) FROM Social_network));
 -- SELECT setval('web_info_id_seq', (SELECT MAX(Id) FROM web_info));

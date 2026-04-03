@@ -90,7 +90,7 @@ public class CompanyFollowServiceImpl implements CompanyFollowService {
                     company.getId(),
                     company.getName(),
                     company.getLogoUrl(),
-                    company.getIndustry(),
+                    company.getIndustries(),
                     follow.getFollowDate()
             );
         });

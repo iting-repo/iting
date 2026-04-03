@@ -15,7 +15,7 @@ export const ActionDialog = ({ actionDialog, actionNote, setActionNote, onClose,
     suspend: `Đình chỉ ${isJob ? 'công việc' : 'công ty'}`,
     unsuspend: `Kích hoạt lại`,
   };
-
+  
   return (
     <Dialog open={!!actionDialog} onClose={onClose} title={actionTitle[actionDialog?.action] || "Xử lý hồ sơ"}>
       <div className="space-y-4">

@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { GraduationCap, Plus, Calendar, MapPin, Trash2, BookOpen } from 'lucide-react';
-import { Button, Card, Input } from "../../../../components/common";
+import { Button, Card, Input, ConfirmDialog } from "../../../../components/common";
 import axiosInstance from "../../../../utils/axiosInstance";
+import { toast } from 'sonner';
 
 const EducationSection = () => {
     const [educationList, setEducationList] = useState([]);
@@ -16,6 +17,8 @@ const EducationSection = () => {
         endDate: '',
         description: ''
     });
+
+    const [confirmModal, setConfirmModal] = useState({ isOpen: false, id: null });
 
     useEffect(() => {
         fetchEducationList();
@@ -55,20 +58,26 @@ const EducationSection = () => {
             });
             setIsAdding(false);
             fetchEducationList();
+            toast.success("Thêm học vấn thành công!");
         } catch (error) {
             console.error("Failed to add education", error);
-            alert("Có lỗi xảy ra khi thêm học vấn!");
+            toast.error("Có lỗi xảy ra khi thêm học vấn!");
         }
     };
 
-    const handleDelete = async (id) => {
-        if (!window.confirm("Bạn có chắc chắn muốn xóa hệ thống học tập này?")) return;
+    const handleDelete = (id) => {
+        setConfirmModal({ isOpen: true, id });
+    };
+
+    const confirmDelete = async () => {
+        const id = confirmModal.id;
         try {
             await axiosInstance.delete(`/user/professional-profile/education/${id}`);
             fetchEducationList();
+            toast.success("Xóa học vấn thành công!");
         } catch (error) {
             console.error("Failed to delete education", error);
-            alert("Có lỗi xảy ra khi xóa!");
+            toast.error("Có lỗi xảy ra khi xóa học vấn!");
         }
     };
 
@@ -193,6 +202,15 @@ const EducationSection = () => {
                     </div>
                 )}
             </div>
+
+            <ConfirmDialog
+                isOpen={confirmModal.isOpen}
+                onClose={() => setConfirmModal({ isOpen: false, id: null })}
+                onConfirm={confirmDelete}
+                title="Xóa học vấn"
+                message="Bạn có chắc chắn muốn xóa học vấn này?"
+                type="danger"
+            />
         </Card>
     );
 };

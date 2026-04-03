@@ -10,4 +10,5 @@ export * from './Table';
 export { default as Textarea } from './Textarea';
 export { default as Select } from './Select';
 export { default as LoadingSpinner } from './LoadingSpinner';
+export { default as ConfirmDialog } from './ConfirmDialog';
 export * from './AppIcons';

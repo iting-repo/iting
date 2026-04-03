@@ -5,7 +5,9 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import com.iting.jobportal.company.entity.enums.Industry;
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Getter
 @Setter
@@ -16,6 +18,6 @@ public class FollowedCompanyResponse {
     private Long companyId;
     private String companyName;
     private String logoUrl;
-    private String industry;
+    private List<Industry> industries;
     private LocalDateTime followedAt;
 }

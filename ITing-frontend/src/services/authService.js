@@ -11,16 +11,13 @@ const authService = {
     },
 
     // API Register
-    register: async (email, password, name, role, phone, address, website) => {
+    register: async (userData) => {
         // Gọi API: POST /auth/register
+        // Đảm bảo gửi fullName và các trường khác
         const response = await axiosInstance.post('/auth/register', {
-            email,
-            password,
-            name,
-            role,
-            phone,
-            address,
-            website
+            ...userData,
+            name: userData.fullName, // Elias name
+            full_name: userData.fullName // Elias full_name cho chắc chắn
         });
         return response;
     },

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { fetchJobDetailRequest } from '../../store/job/jobSlice';
 import {
@@ -8,17 +8,46 @@ import {
     FaAward, FaGraduationCap, FaWallet, FaEnvelope, FaPhone, FaRegComment
 } from 'react-icons/fa';
 import { JobCard, JobApplyModal } from '../../components';
+import {
+    buildJobDetailPath,
+    getJobTitle,
+    normalizeJobKey,
+    slugify,
+} from '../../utils/jobUrl';
+
+const normalizeList = (value, separator = ',') => {
+    if (Array.isArray(value)) {
+        return value.map((item) => String(item).trim()).filter(Boolean);
+    }
+
+    if (typeof value === 'string') {
+        return value.split(separator).map((item) => item.trim()).filter(Boolean);
+    }
+
+    return [];
+};
 
 const JobDetailPage = () => {
-    const { id } = useParams();
+    const { slug, jobKey } = useParams();
+    const navigate = useNavigate();
     const dispatch = useDispatch();
     const { currentJob, isLoading } = useSelector(state => state.job || {});
-    
+    const normalizedJobKey = normalizeJobKey(jobKey);
+
     useEffect(() => {
-        if (id) {
-            dispatch(fetchJobDetailRequest(id));
+        if (normalizedJobKey) {
+            dispatch(fetchJobDetailRequest(normalizedJobKey));
         }
-    }, [id, dispatch]);
+    }, [normalizedJobKey, dispatch]);
+
+    useEffect(() => {
+        if (!currentJob || !normalizedJobKey) return;
+
+        const expectedSlug = slugify(getJobTitle(currentJob)) || 'chi-tiet-viec-lam';
+        if (slug !== expectedSlug) {
+            navigate(buildJobDetailPath(currentJob), { replace: true });
+        }
+    }, [currentJob, navigate, normalizedJobKey, slug]);
 
     const [isApplyModalOpen, setIsApplyModalOpen] = useState(false);
 
@@ -33,15 +62,18 @@ const JobDetailPage = () => {
         return `Up to ${format(max)}`;
     };
 
+    const descriptionList = normalizeList(currentJob.description, '\n');
+    const requirementsList = normalizeList(currentJob.techRequired);
+
     const jobDetail = {
-        title: currentJob.position,
+        title: currentJob.position || currentJob.title,
         company: currentJob.companyName,
         logo: currentJob.companyLogo || "https://via.placeholder.com/100",
         deadline: currentJob.dueDate || "Không có",
         salary: formatSalary(currentJob.minSalary, currentJob.maxSalary),
         location: currentJob.location || "Chưa cập nhật",
-        description: currentJob.description ? currentJob.description.split('\n') : ["Không có mô tả chi tiết"],
-        requirements: currentJob.techRequired ? currentJob.techRequired.split(',') : ["Không có yêu cầu đặc biệt"],
+        description: descriptionList.length > 0 ? descriptionList : ["Không có mô tả chi tiết"],
+        requirements: requirementsList.length > 0 ? requirementsList : ["Không có yêu cầu đặc biệt"],
         priority: [
             "Có khả năng làm việc nhóm và chịu áp lực tốt",
             "Có mong muốn gắn bó lâu dài và phát triển cùng công ty"
@@ -100,13 +132,9 @@ const JobDetailPage = () => {
             />
             <div className="container mx-auto px-4 max-w-7xl">
 
-                {/* LAYOUT GRID: Left (Main) - Right (Sidebar) */}
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
 
-                    {/* ================= LEFT COLUMN (CONTENT) ================= */}
                     <div className="lg:col-span-8 space-y-10">
-
-                        {/* 1. JOB HEADER */}
                         <div className="space-y-6">
                             <div className="flex items-center gap-3">
                                 <span className="bg-[#E6F6FD] text-[#00B4D8] text-xs font-bold px-3 py-1 rounded-full">
@@ -120,7 +148,7 @@ const JobDetailPage = () => {
 
                             <div className="flex gap-4">
                                 <div className="w-20 h-20 rounded-xl border border-gray-100 p-2 flex items-center justify-center shadow-sm">
-                                    <img src={jobDetail.logo} alt="Company Logo" className="w-full h-full object-contain" onError={(e) => e.target.src="https://via.placeholder.com/100"} />
+                                    <img src={jobDetail.logo} alt="Company Logo" className="w-full h-full object-contain" onError={(e) => e.target.src = "https://via.placeholder.com/100"} />
                                 </div>
                                 <div>
                                     <h1 className="text-3xl font-bold text-gray-800 mb-2">{jobDetail.title}</h1>
@@ -128,7 +156,6 @@ const JobDetailPage = () => {
                                 </div>
                             </div>
 
-                            {/* Meta Data Row */}
                             <div className="flex flex-wrap gap-y-3 gap-x-6 text-sm text-gray-500 bg-[#F5F7FA] p-4 rounded-xl">
                                 <div className="flex items-center gap-2">
                                     <span className="bg-white p-2 rounded-full text-[#00B4D8]"><FaBriefcase /></span>
@@ -136,7 +163,7 @@ const JobDetailPage = () => {
                                 </div>
                                 <div className="flex items-center gap-2">
                                     <span className="bg-white p-2 rounded-full text-[#00B4D8]"><FaClock /></span>
-                                    Toàn thời gian
+                                    {jobDetail.jobType}
                                 </div>
                                 <div className="flex items-center gap-2">
                                     <span className="bg-white p-2 rounded-full text-[#00B4D8]"><FaDollarSign /></span>
@@ -151,7 +178,6 @@ const JobDetailPage = () => {
                                 </div>
                             </div>
 
-                            {/* Action Buttons */}
                             <div className="flex gap-3">
                                 <button
                                     onClick={() => setIsApplyModalOpen(true)}
@@ -164,10 +190,7 @@ const JobDetailPage = () => {
                             </div>
                         </div>
 
-                        {/* 2. JOB DESCRIPTION & DETAILS */}
                         <div className="space-y-8 text-gray-700 leading-relaxed">
-
-                            {/* Mô tả */}
                             <section>
                                 <h2 className="text-xl font-bold text-gray-800 mb-4">Mô tả công việc</h2>
                                 <ul className="list-disc pl-5 space-y-2 text-sm">
@@ -175,7 +198,6 @@ const JobDetailPage = () => {
                                 </ul>
                             </section>
 
-                            {/* Yêu cầu */}
                             <section>
                                 <h2 className="text-xl font-bold text-gray-800 mb-4">Yêu cầu ứng viên</h2>
                                 <ul className="list-disc pl-5 space-y-2 text-sm">
@@ -183,7 +205,6 @@ const JobDetailPage = () => {
                                 </ul>
                             </section>
 
-                            {/* Ưu tiên */}
                             <section>
                                 <h2 className="text-xl font-bold text-gray-800 mb-4">Ưu tiên ứng viên</h2>
                                 <ul className="list-disc pl-5 space-y-2 text-sm">
@@ -191,7 +212,6 @@ const JobDetailPage = () => {
                                 </ul>
                             </section>
 
-                            {/* Quyền lợi */}
                             <section>
                                 <h2 className="text-xl font-bold text-gray-800 mb-4">Quyền lợi</h2>
                                 <ul className="list-disc pl-5 space-y-2 text-sm">
@@ -199,7 +219,6 @@ const JobDetailPage = () => {
                                 </ul>
                             </section>
 
-                            {/* Icons Section (Thiết bị & Quyền lợi thêm) */}
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <div className="flex gap-4">
                                     <div className="w-10 h-10 rounded bg-[#E6F6FD] text-[#00B4D8] flex items-center justify-center flex-shrink-0">
@@ -223,7 +242,6 @@ const JobDetailPage = () => {
 
                             <hr className="border-gray-100" />
 
-                            {/* Địa điểm & Thời gian */}
                             <section className="space-y-4">
                                 <div>
                                     <h3 className="font-bold text-gray-800 mb-1">Địa điểm làm việc</h3>
@@ -236,11 +254,10 @@ const JobDetailPage = () => {
                                 <div>
                                     <h3 className="font-bold text-gray-800 mb-1">Cách thức ứng tuyển</h3>
                                     <p className="text-sm text-gray-500">• Ứng viên nộp hồ sơ trực tuyến bằng cách bấm <strong>Ứng tuyển ngay</strong> dưới đây.</p>
-                                    <p className="text-sm text-gray-400 mt-2">Hạn nộp hồ sơ: 30/11/2025</p>
+                                    <p className="text-sm text-gray-400 mt-2">Hạn nộp hồ sơ: {jobDetail.deadline}</p>
                                 </div>
                             </section>
 
-                            {/* Bottom Buttons */}
                             <div className="flex gap-4">
                                 <button
                                     onClick={() => setIsApplyModalOpen(true)}
@@ -252,7 +269,6 @@ const JobDetailPage = () => {
                                 </button>
                             </div>
 
-                            {/* Warning Banner */}
                             <div className="bg-gray-50 p-4 rounded-lg flex gap-3 border border-gray-100 items-start">
                                 <FaExclamationTriangle className="text-yellow-500 mt-1 flex-shrink-0" />
                                 <p className="text-xs text-gray-500">
@@ -260,7 +276,6 @@ const JobDetailPage = () => {
                                 </p>
                             </div>
 
-                            {/* Tags */}
                             <div className="space-y-2">
                                 <h3 className="font-bold text-gray-800">Tags:</h3>
                                 <div className="flex flex-wrap gap-2">
@@ -273,7 +288,6 @@ const JobDetailPage = () => {
                             </div>
                         </div>
 
-                        {/* 3. RELATED JOBS */}
                         <div className="pt-8">
                             <h2 className="text-3xl font-bold text-gray-800 mb-6">Việc làm liên quan</h2>
                             <div className="space-y-4">
@@ -284,10 +298,7 @@ const JobDetailPage = () => {
                         </div>
                     </div>
 
-                    {/* ================= RIGHT COLUMN (SIDEBAR) ================= */}
                     <div className="lg:col-span-4 space-y-8">
-
-                        {/* 1. THÔNG TIN CHUNG CARD */}
                         <div className="bg-[#E6F6FD]/50 p-6 rounded-2xl">
                             <h3 className="font-bold text-gray-800 mb-6">Thông tin chung</h3>
 
@@ -343,7 +354,6 @@ const JobDetailPage = () => {
                                 </div>
                             </div>
 
-                            {/* MAP PLACEHOLDER */}
                             <div className="mt-6 rounded-xl overflow-hidden h-40 border border-gray-200">
                                 <iframe
                                     src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3723.924048679543!2d105.77258331476346!3d21.035727985994535!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x313454b991d80fd5%3A0x53cefc99d6b0bf86!2zUuG6oXAgQ2hp4bq_dSBQaGltIFF14buRYyBHaWE!5e0!3m2!1svi!2s!4v1642672322442!5m2!1svi!2s"
@@ -353,7 +363,6 @@ const JobDetailPage = () => {
                             </div>
                         </div>
 
-                        {/* 2. CONTACT FORM */}
                         <div className="bg-[#E6F6FD]/30 p-6 rounded-2xl border border-[#E6F6FD]">
                             <h3 className="font-bold text-gray-800 mb-6">Gửi tin nhắn đến chúng tôi</h3>
                             <form className="space-y-4">
@@ -378,7 +387,6 @@ const JobDetailPage = () => {
                                 </button>
                             </form>
                         </div>
-
                     </div>
                 </div>
             </div>

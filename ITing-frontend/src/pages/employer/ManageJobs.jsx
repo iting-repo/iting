@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
+import { createPortal } from "react-dom";
 import { useNavigate } from "react-router-dom";
 import {
   FaCheckCircle,
@@ -13,11 +14,15 @@ import {
   FaPauseCircle,
   FaExclamationTriangle,
   FaTrash,
+  FaEdit,
 } from "react-icons/fa";
 import { BsThreeDotsVertical } from "react-icons/bs";
 import { toast } from "sonner";
 import PostJob from "./PostJob";
+import JobPreview from "./JobPreview";
 import companyService from "../../services/companyService";
+import { ConfirmDialog, Table, Td } from "../../components/common";
+import { buildEmployerJobApplicationsPath } from "../../utils/jobUrl";
 
 const ITEMS_PER_PAGE = 5;
 
@@ -62,6 +67,15 @@ const ManageJobs = () => {
   const [isPostJobOpen, setIsPostJobOpen] = useState(false);
   const [loadingJobs, setLoadingJobs] = useState(true);
   const [editingJob, setEditingJob] = useState(null);
+  const [previewJob, setPreviewJob] = useState(null);
+  const [menuPosition, setMenuPosition] = useState({ top: 0, left: 0 });
+  const [confirmModal, setConfirmModal] = useState({
+    isOpen: false,
+    title: "",
+    message: "",
+    onConfirm: () => {},
+    type: "danger",
+  });
 
   const fetchJobs = async () => {
     try {
@@ -97,65 +111,88 @@ const ManageJobs = () => {
   const currentJobs = filteredJobs.slice(indexOfFirstItem, indexOfLastItem);
   const totalPages = Math.ceil(filteredJobs.length / ITEMS_PER_PAGE);
 
-  const toggleMenu = (id) => {
-    setActiveMenu((prev) => (prev === id ? null : id));
+  const toggleMenu = (id, event) => {
+    if (activeMenu === id) {
+      setActiveMenu(null);
+      return;
+    }
+
+    const rect = event.currentTarget.getBoundingClientRect();
+    setMenuPosition({
+      top: rect.bottom + window.scrollY + 8,
+      left: rect.right + window.scrollX - 224, // 224 = w-56
+    });
+    setActiveMenu(id);
   };
 
-  const handleReopenJob = async (jobId) => {
-    const confirmed = window.confirm("Bạn có muốn mở lại tin tuyển dụng này?");
-    if (!confirmed) return;
-
-    try {
-      await companyService.reopenEmployerJob(jobId);
-      toast.success("Mở lại tin tuyển dụng thành công");
-      setActiveMenu(null);
-      await fetchJobs();
-    } catch (err) {
-      console.error("Lỗi reopen job:", err);
-      toast.error(
-        err?.response?.data?.message || "Mở lại tin tuyển dụng thất bại",
-      );
-    }
+  const handleReopenJob = (jobId) => {
+    setConfirmModal({
+      isOpen: true,
+      title: "Mở lại tin tuyển dụng",
+      message: "Bạn có muốn mở lại tin tuyển dụng này?",
+      type: "info",
+      onConfirm: async () => {
+        try {
+          await companyService.reopenEmployerJob(jobId);
+          toast.success("Mở lại tin tuyển dụng thành công");
+          await fetchJobs();
+        } catch (err) {
+          console.error("Lỗi reopen job:", err);
+          toast.error(
+            err?.response?.data?.message || "Mở lại tin tuyển dụng thất bại",
+          );
+        }
+      },
+    });
+    setActiveMenu(null);
   };
 
-  const handleDeleteJob = async (jobId) => {
-    const confirmed = window.confirm("Bạn có chắc chắn muốn xóa?");
-    if (!confirmed) return;
-
-    try {
-      await companyService.deleteEmployerJob(jobId);
-      toast.success("Xóa tin tuyển dụng thành công");
-      setActiveMenu(null);
-      await fetchJobs();
-    } catch (err) {
-      console.error("Lỗi xóa job", err);
-      toast.error(
-        err?.response?.data?.message || "Xóa tin tuyển dụng thất bại",
-      );
-    }
+  const handleRemoveJob = (jobId) => {
+    setConfirmModal({
+      isOpen: true,
+      title: "Xóa tin tuyển dụng",
+      message: "Bạn có chắc chắn muốn xóa tin tuyển dụng này? Hành động này không thể hoàn tác.",
+      type: "danger",
+      onConfirm: async () => {
+        try {
+          await companyService.deleteEmployerJob(jobId);
+          toast.success("Xóa tin tuyển dụng thành công");
+          await fetchJobs();
+        } catch (err) {
+          console.error("Lỗi xóa job", err);
+          toast.error(
+            err?.response?.data?.message || "Xóa tin tuyển dụng thất bại",
+          );
+        }
+      },
+    });
+    setActiveMenu(null);
   };
 
   const handleAddNewJob = async () => {
     await fetchJobs();
   };
 
-  const handleCloseJob = async (jobId) => {
-    const confirmed = window.confirm(
-      "Bạn có chắc muốn đóng tin tuyển dụng này?",
-    );
-    if (!confirmed) return;
-
-    try {
-      await companyService.closeEmployerJob(jobId);
-      toast.success("Đóng tin tuyển dụng thành công");
-      setActiveMenu(null);
-      await fetchJobs();
-    } catch (err) {
-      console.error("Lỗi đóng job:", err);
-      toast.error(
-        err?.response?.data?.message || "Đóng tin tuyển dụng thất bại",
-      );
-    }
+  const handleCloseJob = (jobId) => {
+    setConfirmModal({
+      isOpen: true,
+      title: "Đóng tin tuyển dụng",
+      message: "Bạn có chắc muốn đóng tin tuyển dụng này?",
+      type: "warning",
+      onConfirm: async () => {
+        try {
+          await companyService.closeEmployerJob(jobId);
+          toast.success("Đóng tin tuyển dụng thành công");
+          await fetchJobs();
+        } catch (err) {
+          console.error("Lỗi đóng job:", err);
+          toast.error(
+            err?.response?.data?.message || "Đóng tin tuyển dụng thất bại",
+          );
+        }
+      },
+    });
+    setActiveMenu(null);
   };
 
   const STATUS_FILTER_OPTIONS = [
@@ -265,146 +302,177 @@ const ManageJobs = () => {
           </div>
         </div>
 
-        <div className="overflow-x-auto rounded-t-xl border border-gray-100">
-          <table className="w-full text-left border-collapse">
-            <thead>
-              <tr className="bg-gray-50 text-gray-500 text-xs uppercase tracking-wider font-semibold">
-                <th className="p-5">Công việc</th>
-                <th className="p-5">Trạng thái</th>
-                <th className="p-5">Số lượng hồ sơ</th>
-                <th className="p-5 text-right">Hành động</th>
-              </tr>
-            </thead>
+        <Table
+          headers={[
+            { label: "Công việc" },
+            { label: "Trạng thái" },
+            { label: "Số lượng hồ sơ" },
+            { label: "Hành động", className: "text-right" }
+          ]}
+        >
+          {loadingJobs ? (
+            <tr>
+              <Td colSpan="4" className="text-center py-10 text-gray-500">
+                Đang tải dữ liệu...
+              </Td>
+            </tr>
+          ) : currentJobs.length > 0 ? (
+            currentJobs.map((job) => (
+              <tr
+                key={job.id}
+                className="hover:bg-gray-50/60 transition-colors group"
+              >
+                <Td>
+                  <div className="font-bold text-gray-800 text-base mb-1 group-hover:text-[#3AB4E6] transition-colors cursor-pointer">
+                    {job.title}
+                  </div>
+                  <div className="text-sm text-gray-500 flex items-center gap-2">
+                    <span className="bg-gray-100 px-2 py-0.5 rounded text-xs text-gray-600">
+                      {job.type}
+                    </span>
+                    <span className="text-gray-300">•</span>
+                    <span className="text-gray-400 text-xs">
+                      {job.deadline}
+                    </span>
+                  </div>
+                </Td>
 
-            <tbody className="divide-y divide-gray-100">
-              {loadingJobs ? (
-                <tr>
-                  <td colSpan="4" className="p-8 text-center text-gray-500">
-                    Đang tải dữ liệu...
-                  </td>
-                </tr>
-              ) : currentJobs.length > 0 ? (
-                currentJobs.map((job) => (
-                  <tr
-                    key={job.id}
-                    className="hover:bg-gray-50/60 transition-colors group"
-                  >
-                    <td className="p-5">
-                      <div className="font-bold text-gray-800 text-base mb-1 group-hover:text-[#3AB4E6] transition-colors cursor-pointer">
-                        {job.title}
-                      </div>
-                      <div className="text-sm text-gray-500 flex items-center gap-2">
-                        <span className="bg-gray-100 px-2 py-0.5 rounded text-xs text-gray-600">
-                          {job.type}
-                        </span>
-                        <span className="text-gray-300">•</span>
-                        <span className="text-gray-400 text-xs">
-                          {job.deadline}
-                        </span>
-                      </div>
-                    </td>
+                <Td>
+                  {(() => {
+                    const config = STATUS_CONFIG[job.status] || {
+                      label: job.status,
+                      color: "text-gray-500",
+                      icon: <FaTimesCircle />,
+                    };
 
-                    <td className="p-5">
-                      {(() => {
-                        const config = STATUS_CONFIG[job.status] || {
-                          label: job.status,
-                          color: "text-gray-500",
-                          icon: <FaTimesCircle />,
-                        };
+                    return (
+                      <span
+                        className={`flex items-center gap-2 font-medium text-sm ${config.color}`}
+                      >
+                        {config.icon} {config.label}
+                      </span>
+                    );
+                  })()}
+                </Td>
 
-                        return (
-                          <span
-                            className={`flex items-center gap-2 font-medium text-sm ${config.color}`}
+                <Td>
+                  <div className="flex items-center gap-2 text-gray-600">
+                    <FaUserFriends className="text-gray-400" />
+                    <span className="font-semibold text-sm">
+                      {job.apps} Applications
+                    </span>
+                  </div>
+                </Td>
+
+                <Td className="text-right">
+                  <div className="flex items-center justify-end gap-3 transition-opacity">
+                    <button
+                      onClick={() => navigate(buildEmployerJobApplicationsPath(job.raw))}
+                      className="bg-[#EAF6FF] text-[#3AB4E6] hover:bg-[#3AB4E6] hover:text-white text-xs font-bold px-4 py-2.5 rounded-lg transition-all shadow-sm border border-transparent"
+                    >
+                      View Applications ({job.apps})
+                    </button>
+
+                    <button
+                      onClick={(e) => toggleMenu(job.id, e)}
+                      className={`w-9 h-9 rounded-full flex items-center justify-center transition-colors ${
+                        activeMenu === job.id
+                          ? "bg-gray-200 text-gray-700"
+                          : "hover:bg-gray-100 text-gray-400"
+                      }`}
+                    >
+                      <BsThreeDotsVertical />
+                    </button>
+
+                    {activeMenu &&
+                      createPortal(
+                        <>
+                          <div
+                            className="fixed inset-0 z-40"
+                            onClick={() => setActiveMenu(null)}
+                          />
+                          <div
+                            className="fixed w-56 bg-white rounded-lg border border-black/20 z-50 overflow-hidden shadow-xl"
+                            style={{
+                              top: `${menuPosition.top}px`,
+                              left: `${menuPosition.left}px`,
+                            }}
                           >
-                            {config.icon} {config.label}
-                          </span>
-                        );
-                      })()}
-                    </td>
+                            {(() => {
+                              const selectedJob = jobs.find(
+                                (j) => j.id === activeMenu,
+                              );
+                              if (!selectedJob) return null;
 
-                    <td className="p-5">
-                      <div className="flex items-center gap-2 text-gray-600">
-                        <FaUserFriends className="text-gray-400" />
-                        <span className="font-semibold">
-                          {job.apps} Applications
-                        </span>
-                      </div>
-                    </td>
+                              return (
+                                <>
+                                  <button
+                                    onClick={() => {
+                                      setPreviewJob(selectedJob.raw);
+                                      setActiveMenu(null);
+                                    }}
+                                    className="w-full text-left px-4 py-3 text-sm text-gray-600 hover:bg-gray-50 hover:text-[#3AB4E6] flex items-center gap-2 border-b border-gray-50"
+                                  >
+                                    <FaEye /> Xem thử tin tuyển dụng
+                                  </button>
 
-                    <td className="p-5 text-right relative">
-                      <div className="flex items-center justify-end gap-3">
-                        <button
-                          onClick={() =>
-                            navigate(`/employer/job/${job.id}/applications`)
-                          }
-                          className="bg-[#EAF6FF] text-[#3AB4E6] hover:bg-[#3AB4E6] hover:text-white text-xs font-bold px-4 py-2.5 rounded-lg transition-all shadow-sm"
-                        >
-                          View Applications ({job.apps})
-                        </button>
+                                  <button
+                                    onClick={() => {
+                                      setEditingJob(selectedJob.raw);
+                                      setActiveMenu(null);
+                                    }}
+                                    className="w-full text-left px-4 py-3 text-sm text-gray-600 hover:bg-gray-50 hover:text-[#3AB4E6] flex items-center gap-2 border-b border-gray-50"
+                                  >
+                                    <FaEdit /> Chỉnh sửa tin tuyển dụng
+                                  </button>
 
-                        <button
-                          onClick={() => toggleMenu(job.id)}
-                          className={`w-9 h-9 rounded-full flex items-center justify-center transition-colors ${
-                            activeMenu === job.id
-                              ? "bg-gray-200 text-gray-700"
-                              : "hover:bg-gray-100 text-gray-400"
-                          }`}
-                        >
-                          <BsThreeDotsVertical />
-                        </button>
+                                  {selectedJob.status === "ACTIVE" && (
+                                    <button
+                                      className="w-full text-left px-4 py-3 text-sm text-gray-600 hover:bg-red-50 hover:text-red-500 flex items-center gap-2 border-b border-gray-50"
+                                      onClick={() =>
+                                        handleCloseJob(selectedJob.id)
+                                      }
+                                    >
+                                      <FaBan /> Dừng đăng bài
+                                    </button>
+                                  )}
 
-                        {activeMenu === job.id && (
-                          <div className="absolute right-10 top-12 w-56 bg-white shadow-xl rounded-lg border border-gray-100 z-20 animate-fade-in-up overflow-hidden">
-                            <button
-                              onClick={() => {
-                                setEditingJob(job.raw);
-                                setActiveMenu(null);
-                              }}
-                              className="w-full text-left px-4 py-3 text-sm text-gray-600 hover:bg-gray-50 hover:text-[#3AB4E6] flex items-center gap-2 border-b border-gray-50"
-                            >
-                              <FaEye /> Xem / Chỉnh sửa
-                            </button>
+                                  {selectedJob.status === "CLOSED" && (
+                                    <button
+                                      className="w-full text-left px-4 py-3 text-sm text-green-600 hover:bg-green-50 flex items-center gap-2 border-b border-gray-50"
+                                      onClick={() =>
+                                        handleReopenJob(selectedJob.id)
+                                      }
+                                    >
+                                      <FaCheckCircle /> Đăng bài lại
+                                    </button>
+                                  )}
 
-                            {job.status === "ACTIVE" && (
-                              <button
-                                className="w-full text-left px-4 py-3 text-sm text-gray-600 hover:bg-red-50 hover:text-red-500 flex items-center gap-2 border-b border-gray-50"
-                                onClick={() => handleCloseJob(job.id)}
-                              >
-                                <FaBan /> Dừng đăng bài
-                              </button>
-                            )}
-
-                            {job.status === "CLOSED" && (
-                              <button
-                                className="w-full text-left px-4 py-3 text-sm text-green-600 hover:bg-green-50 flex items-center gap-2 border-b border-gray-50"
-                                onClick={() => handleReopenJob(job.id)}
-                              >
-                                <FaCheckCircle /> Mở lại tin
-                              </button>
-                            )}
-
-                            <button
-                              onClick={() => handleDeleteJob(job.id)}
-                              className="w-full text-left px-4 py-3 text-sm text-red-600 hover:bg-red-50 flex items-center gap-2"
-                            >
-                              <FaTrash /> Xóa tin tuyển dụng
-                            </button>
+                                  <button
+                                    className="w-full text-left px-4 py-3 text-sm text-red-600 hover:bg-red-50 flex items-center gap-2"
+                                    onClick={() => handleRemoveJob(selectedJob.id)}
+                                  >
+                                    <FaTrash /> Xóa bài đăng
+                                  </button>
+                                </>
+                              );
+                            })()}
                           </div>
-                        )}
-                      </div>
-                    </td>
-                  </tr>
-                ))
-              ) : (
-                <tr>
-                  <td colSpan="4" className="p-8 text-center text-gray-500">
-                    Không tìm thấy công việc nào phù hợp.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
+                        </>,
+                        document.body,
+                      )}
+                  </div>
+                </Td>
+              </tr>
+            ))
+          ) : (
+            <tr>
+              <Td colSpan="4" className="text-center py-10 text-gray-500">
+                Không tìm thấy việc làm nào.
+              </Td>
+            </tr>
+          )}
+        </Table>
 
         {!loadingJobs && totalPages > 1 && (
           <div className="flex justify-center items-center gap-2 mt-8">
@@ -479,6 +547,18 @@ const ManageJobs = () => {
           }}
         />
       )}
+      {previewJob && (
+        <JobPreview job={previewJob} onClose={() => setPreviewJob(null)} />
+      )}
+
+      <ConfirmDialog
+        isOpen={confirmModal.isOpen}
+        onClose={() => setConfirmModal((prev) => ({ ...prev, isOpen: false }))}
+        onConfirm={confirmModal.onConfirm}
+        title={confirmModal.title}
+        message={confirmModal.message}
+        type={confirmModal.type}
+      />
     </>
   );
 };

@@ -1,8 +1,11 @@
 package com.iting.jobportal.company.dto.request;
 
+import com.iting.jobportal.company.entity.enums.Industry;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.Size;
+import java.util.List;
 
 public class CompanyBasicInfoRequest {
 
@@ -31,9 +34,8 @@ public class CompanyBasicInfoRequest {
     @Email(message = "Email is not valid")
     private String companyEmail;
 
-    @NotBlank(message = "Industry cannot be empty")
-    @Size(max = 255, message = "Industry must be at most 255 characters")
-    private String industry;
+    @NotEmpty(message = "Industry cannot be empty")
+    private List<Industry> industries;
 
     @NotBlank(message = "Address cannot be empty")
     @Size(max = 500, message = "Address must be at most 500 characters")
@@ -99,12 +101,12 @@ public class CompanyBasicInfoRequest {
         this.companyEmail = companyEmail;
     }
 
-    public String getIndustry() {
-        return industry;
+    public List<Industry> getIndustries() {
+        return industries;
     }
 
-    public void setIndustry(String industry) {
-        this.industry = industry;
+    public void setIndustries(List<Industry> industries) {
+        this.industries = industries;
     }
 
     public String getAddress() {

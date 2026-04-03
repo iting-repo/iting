@@ -3,6 +3,7 @@ import { BsBriefcase, BsCardChecklist, BsThreeDotsVertical, BsEye, BsXCircle } f
 import { FaUserFriends } from 'react-icons/fa';
 import { useTranslation } from 'react-i18next'; // 1. Import hook
 import { useNavigate, Link } from 'react-router-dom';
+import { buildEmployerJobApplicationsPath } from '../../utils/jobUrl';
 
 const EmployerDashboard = () => {
     const { t } = useTranslation(); // 2. Khởi tạo hàm t
@@ -124,7 +125,7 @@ const EmployerDashboard = () => {
                                     <td className="p-4 text-right relative">
                                         <div className="flex items-center justify-end gap-3">
                                             <button
-                                                onClick={() => navigate(`/employer/job/${job.id}/applications`)}
+                                                onClick={() => navigate(buildEmployerJobApplicationsPath(job))}
                                                 className="bg-[#EAF6FF] text-[#3AB4E6] hover:bg-[#3AB4E6] hover:text-white text-xs font-bold px-4 py-2 rounded-lg transition-all shadow-sm"
                                             >
                                                 {t('employer_dashboard.table.view_applications')}

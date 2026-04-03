@@ -25,13 +25,13 @@ const PAGE_SIZE = 10;
 const RoleBadge = ({ role }) => {
     const map = {
         USER: "bg-blue-50 text-blue-700 border border-blue-200",
-        COMPANY: "bg-sky-50 text-sky-700 border border-sky-200",
+        EMPLOYER: "bg-sky-50 text-sky-700 border border-sky-200",
         ADMIN: "bg-amber-50 text-amber-700 border border-amber-200",
     };
 
     const labelMap = {
         USER: "Ứng viên",
-        COMPANY: "Nhà tuyển dụng",
+        EMPLOYER: "Nhà tuyển dụng",
         ADMIN: "Admin",
     };
 
@@ -456,7 +456,7 @@ const UserManagement = () => {
                     >
                         <option value="all">Tất cả vai trò</option>
                         <option value="USER">Ứng viên</option>
-                        <option value="COMPANY">Nhà tuyển dụng</option>
+                        <option value="EMPLOYER">Nhà tuyển dụng</option>
                         <option value="ADMIN">Admin</option>
                     </select>
 

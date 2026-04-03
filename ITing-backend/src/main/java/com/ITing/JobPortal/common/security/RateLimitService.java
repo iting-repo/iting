@@ -14,20 +14,20 @@ public class RateLimitService {
 
     private final Map<String, Bucket> buckets = new ConcurrentHashMap<>();
 
-    // Login: 5 requests per 10 minutes
+    // Login: 20 requests per minute
     public Bucket resolveLoginBucket(String ip) {
         return buckets.computeIfAbsent("login-" + ip, k -> 
             Bucket.builder()
-                .addLimit(Bandwidth.classic(5, Refill.intervally(5, Duration.ofMinutes(10))))
+                .addLimit(Bandwidth.classic(20, Refill.intervally(20, Duration.ofMinutes(1))))
                 .build()
         );
     }
 
-    // Register: 3 requests per hour
+    // Register: 10 requests per minute
     public Bucket resolveRegisterBucket(String ip) {
         return buckets.computeIfAbsent("register-" + ip, k -> 
             Bucket.builder()
-                .addLimit(Bandwidth.classic(3, Refill.intervally(3, Duration.ofHours(1))))
+                .addLimit(Bandwidth.classic(10, Refill.intervally(10, Duration.ofMinutes(1))))
                 .build()
         );
     }

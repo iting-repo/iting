@@ -1,13 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { Cpu, Plus, X, Save } from 'lucide-react';
-import { Button, Card, Input } from "../../../../components/common";
+import { Button, Card, Input, ConfirmDialog } from "../../../../components/common";
 import axiosInstance from "../../../../utils/axiosInstance";
+import { toast } from 'sonner';
 
 const SkillsSection = () => {
     const [skills, setSkills] = useState([]);
     const [isAdding, setIsAdding] = useState(false);
     const [newSkillName, setNewSkillName] = useState('');
     const [newSkillLevel, setNewSkillLevel] = useState('Intermediate');
+    const [confirmModal, setConfirmModal] = useState({ isOpen: false, id: null });
 
     useEffect(() => {
         fetchSkills();
@@ -33,20 +35,26 @@ const SkillsSection = () => {
             setNewSkillName('');
             setIsAdding(false);
             fetchSkills();
+            toast.success("Thêm kỹ năng thành công!");
         } catch (error) {
             console.error("Failed to add skill", error);
-            alert("Có lỗi xảy ra khi thêm kỹ năng!");
+            toast.error("Có lỗi xảy ra khi thêm kỹ năng!");
         }
     };
 
     const handleDeleteSkill = async (id) => {
-        if (!window.confirm("Bạn có chắc chắn muốn xóa kỹ năng này?")) return;
+        setConfirmModal({ isOpen: true, id });
+    };
+
+    const confirmDeleteSkill = async () => {
+        const id = confirmModal.id;
         try {
             await axiosInstance.delete(`/user/professional-profile/skills/${id}`);
             fetchSkills();
+            toast.success("Xóa kỹ năng thành công!");
         } catch (error) {
             console.error("Failed to delete skill", error);
-            alert("Có lỗi xảy ra khi xóa kỹ năng!");
+            toast.error("Có lỗi xảy ra khi xóa kỹ năng!");
         }
     };
 
@@ -132,6 +140,15 @@ const SkillsSection = () => {
                     </div>
                 )}
             </div>
+
+            <ConfirmDialog
+                isOpen={confirmModal.isOpen}
+                onClose={() => setConfirmModal({ isOpen: false, id: null })}
+                onConfirm={confirmDeleteSkill}
+                title="Xóa kỹ năng"
+                message="Bạn có chắc chắn muốn xóa kỹ năng này?"
+                type="danger"
+            />
         </Card>
     );
 };

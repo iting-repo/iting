@@ -3,6 +3,7 @@ package com.iting.jobportal.company.entity;
 import com.iting.jobportal.auth.entity.Account;
 import com.iting.jobportal.company.entity.enums.BusinessDocumentType;
 import com.iting.jobportal.company.entity.enums.CompanyReviewStatus;
+import com.iting.jobportal.company.entity.enums.Industry;
 import com.iting.jobportal.company.entity.enums.VerificationLevel;
 import com.iting.jobportal.job.entity.Job;
 import jakarta.persistence.*;
@@ -53,9 +54,14 @@ public class Company {
 
 
     // enums
-    @Column(name = "Industry", length = 255)
-    private String industry;
+//    @Column(name = "Industry", length = 255)
+//    private String industry;
 
+    @ElementCollection(targetClass = Industry.class)
+    @Enumerated(EnumType.STRING)
+    @CollectionTable(name = "company_industries", joinColumns = @JoinColumn(name = "company_id"))
+    @Column(name = "industry")
+    private List<Industry> industries;
 
     // enums
     @Column(name = "Company_size", length = 100)

@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Briefcase, Plus, Calendar, MapPin, Building2, Trash2 } from 'lucide-react';
-import { Button, Card, Input } from "../../../../components/common";
+import { Button, Card, Input, ConfirmDialog } from "../../../../components/common";
 import axiosInstance from "../../../../utils/axiosInstance";
+import { toast } from 'sonner';
 
 const ExperienceSection = () => {
     const [experiences, setExperiences] = useState([]);
@@ -15,6 +16,8 @@ const ExperienceSection = () => {
         isCurrent: false,
         description: ''
     });
+
+    const [confirmModal, setConfirmModal] = useState({ isOpen: false, id: null });
 
     useEffect(() => {
         fetchExperiences();
@@ -58,20 +61,26 @@ const ExperienceSection = () => {
             });
             setIsAdding(false);
             fetchExperiences();
+            toast.success("Thêm kinh nghiệm thành công!");
         } catch (error) {
             console.error("Failed to add experience", error);
-            alert("Có lỗi xảy ra khi thêm kinh nghiệm!");
+            toast.error("Có lỗi xảy ra khi thêm kinh nghiệm!");
         }
     };
 
-    const handleDelete = async (id) => {
-        if (!window.confirm("Bạn có chắc chắn muốn xóa kinh nghiệm này?")) return;
+    const handleDelete = (id) => {
+        setConfirmModal({ isOpen: true, id });
+    };
+
+    const confirmDelete = async () => {
+        const id = confirmModal.id;
         try {
             await axiosInstance.delete(`/user/professional-profile/experience/${id}`);
             fetchExperiences();
+            toast.success("Xóa kinh nghiệm thành công!");
         } catch (error) {
             console.error("Failed to delete experience", error);
-            alert("Có lỗi xảy ra khi xóa kinh nghiệm!");
+            toast.error("Có lỗi xảy ra khi xóa kinh nghiệm!");
         }
     };
 
@@ -199,6 +208,15 @@ const ExperienceSection = () => {
                     </div>
                 )}
             </div>
+
+            <ConfirmDialog
+                isOpen={confirmModal.isOpen}
+                onClose={() => setConfirmModal({ isOpen: false, id: null })}
+                onConfirm={confirmDelete}
+                title="Xóa kinh nghiệm"
+                message="Bạn có chắc chắn muốn xóa kinh nghiệm này?"
+                type="danger"
+            />
         </Card>
     );
 };
