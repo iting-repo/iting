@@ -39,14 +39,18 @@ services:
     # Environment variables for local PostgreSQL
     environment:
       # Database configuration (Local PostgreSQL)
-      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/iting_job_portal
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/iting_job_portal?currentSchema=testdb
       - SPRING_DATASOURCE_USERNAME=postgres
       - SPRING_DATASOURCE_PASSWORD=250904
       
-      # JPA/Hibernate - use update for local Docker bring-up
+      # JPA/Hibernate - auto-create schema for local dev
       - SPRING_JPA_HIBERNATE_DDL_AUTO=update
       - SPRING_JPA_PROPERTIES_HIBERNATE_DIALECT=org.hibernate.dialect.PostgreSQLDialect
       - SPRING_JPA_PROPERTIES_HIBERNATE_FORMAT_SQL=true
+      - SPRING_JPA_PROPERTIES_HIBERNATE_DEFAULT_SCHEMA=testdb
+      
+      # Flyway - disabled in Docker dev to avoid circular dependency with JPA
+      - SPRING_FLYWAY_ENABLED=false
       
       # SQL Initialization - disabled (schema imported manually)
       - SPRING_SQL_INIT_MODE=never

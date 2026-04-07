@@ -29,6 +29,10 @@ public interface JobRepository extends JpaRepository<Job, Long>, JpaSpecificatio
     @Query("SELECT j FROM Job j WHERE j.company.id = :companyId ORDER BY j.lastUpdate DESC")
     Page<Job> findByCompany_Id(@Param("companyId") Long companyId, Pageable pageable);
 
+    // Lấy jobs của company theo company_id và status
+    @Query("SELECT j FROM Job j WHERE j.company.id = :companyId AND j.status = :status ORDER BY j.createdAt DESC")
+    Page<Job> findByCompany_IdAndStatus(@Param("companyId") Long companyId, @Param("status") JobStatus status, Pageable pageable);
+
     // Tăng view count
     @Modifying
     @Query("UPDATE Job j SET j.viewCount = j.viewCount + 1 WHERE j.id = :id")

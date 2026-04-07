@@ -80,6 +80,9 @@ dependencies {
 
     // Database Migration 
     implementation 'org.flywaydb:flyway-core'
+
+    // Dotenv
+    implementation 'io.github.cdimascio:dotenv-java:3.0.0'
 }
 
 tasks.named('test') {
