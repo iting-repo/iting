@@ -64,6 +64,13 @@ public class    AdminCompanyServiceImpl implements AdminCompanyService {
                 : null;
 
         company.setCompanyInfoUpdateStatus(CompanyReviewStatus.APPROVED);
+        company.setStatusReason(request != null ? request.getNote() : null);
+
+        // Update verificationLevel if provided
+        if (request != null && request.getVerificationLevel() != null) {
+            company.setVerificationLevel(request.getVerificationLevel());
+        }
+
         companyRepository.save(company);
 
         companyAuditService.log(
@@ -89,6 +96,7 @@ public class    AdminCompanyServiceImpl implements AdminCompanyService {
                 : null;
 
         company.setCompanyInfoUpdateStatus(CompanyReviewStatus.REJECTED);
+        company.setStatusReason(request != null ? request.getReason() : null);
         companyRepository.save(company);
 
         companyAuditService.log(
@@ -114,6 +122,7 @@ public class    AdminCompanyServiceImpl implements AdminCompanyService {
                 : null;
 
         company.setCompanyInfoUpdateStatus(CompanyReviewStatus.NEEDS_RESUBMISSION);
+        company.setStatusReason(request != null ? request.getReason() : null);
         companyRepository.save(company);
 
         companyAuditService.log(
@@ -140,6 +149,7 @@ public class    AdminCompanyServiceImpl implements AdminCompanyService {
 
         company.setCompanyInfoUpdateStatus(CompanyReviewStatus.SUSPENDED);
         company.setActive(false);
+        company.setStatusReason(request != null ? request.getReason() : null);
         companyRepository.save(company);
 
         companyAuditService.log(
@@ -166,6 +176,7 @@ public class    AdminCompanyServiceImpl implements AdminCompanyService {
 
         company.setCompanyInfoUpdateStatus(CompanyReviewStatus.APPROVED);
         company.setActive(true);
+        company.setStatusReason(null); // Clear reason when unsuspending
         companyRepository.save(company);
 
         companyAuditService.log(
@@ -316,5 +327,51 @@ public class    AdminCompanyServiceImpl implements AdminCompanyService {
                 .toList();
     }
 
+    @Override
+    public java.io.ByteArrayInputStream exportCompaniesToExcel() {
+        List<Company> companies = companyRepository.findAll();
+        String[] headers = {"ID", "Name", "Tax Code", "Status", "Verification Level", "Email", "Phone"};
+        
+        return com.iting.jobportal.common.excel.ExcelHelper.dataToExcel(
+                companies, 
+                headers, 
+                "Companies",
+                (company, row) -> {
+                    row.createCell(0).setCellValue(company.getId());
+                    row.createCell(1).setCellValue(company.getName());
+                    row.createCell(2).setCellValue(company.getTaxCode());
+                    row.createCell(3).setCellValue(company.getCompanyInfoUpdateStatus() != null ? company.getCompanyInfoUpdateStatus().name() : "");
+                    row.createCell(4).setCellValue(company.getVerificationLevel() != null ? company.getVerificationLevel().name() : "");
+                    row.createCell(5).setCellValue(company.getCompanyEmail());
+                    row.createCell(6).setCellValue(company.getPhone());
+                }
+        );
+    }
 
+    @Override
+    @jakarta.transaction.Transactional
+    public void importCompaniesFromExcel(org.springframework.web.multipart.MultipartFile file) {
+        try {
+            List<Company> companies = com.iting.jobportal.common.excel.ExcelHelper.excelToData(
+                    file.getInputStream(),
+                    row -> {
+                        Company company = new Company();
+                        company.setName(row.getCell(0).getStringCellValue());
+                        company.setTaxCode(row.getCell(1).getStringCellValue());
+                        company.setCompanyInfoUpdateStatus(CompanyReviewStatus.PENDING_REVIEW);
+                        company.setVerificationLevel(VerificationLevel.UNVERIFIED);
+                        return company;
+                    }
+            );
+            companyRepository.saveAll(companies);
+        } catch (java.io.IOException e) {
+            throw new RuntimeException("fail to store excel data: " + e.getMessage());
+        }
+    }
+
+    @Override
+    public java.io.ByteArrayInputStream getImportTemplate() {
+        String[] headers = {"Company Name", "Tax Code"};
+        return com.iting.jobportal.common.excel.ExcelHelper.createTemplate(headers, "Company Import Template");
+    }
 }

@@ -32,6 +32,15 @@ public class ActivityLog extends AuditEntity {
     @Column(length = 500)
     private String description;
 
+    @Column(length = 100)
+    private String targetName;
+
+    @Column(length = 50)
+    private String fromStatus;
+
+    @Column(length = 50)
+    private String toStatus;
+
     @Column(length = 50)
     private String ipAddress;
 

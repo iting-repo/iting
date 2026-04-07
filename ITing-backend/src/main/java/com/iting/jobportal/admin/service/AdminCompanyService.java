@@ -7,7 +7,9 @@ import com.iting.jobportal.company.dto.response.CompanyResponse;
 import com.iting.jobportal.company.entity.enums.CompanyReviewStatus;
 import com.iting.jobportal.company.entity.enums.VerificationLevel;
 import org.springframework.data.domain.Page;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.ByteArrayInputStream;
 import java.util.List;
 
 public interface AdminCompanyService {
@@ -46,6 +48,12 @@ public interface AdminCompanyService {
     void bulkSuspendCompanies(Long adminId, java.util.List<Long> companyIds, ReviewRejectRequest request);
 
     void bulkDeleteCompanies(Long adminId, java.util.List<Long> companyIds);
+
+    ByteArrayInputStream exportCompaniesToExcel();
+
+    void importCompaniesFromExcel(MultipartFile file);
+
+    ByteArrayInputStream getImportTemplate();
 
     List<CompanyAuditLogResponse> getCompanyAuditLogs(Long companyId);
 

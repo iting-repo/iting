@@ -13,6 +13,7 @@ import com.iting.jobportal.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.*;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import java.util.Optional;
 
 @Service
@@ -70,8 +71,79 @@ public class AdminUserServiceImpl implements AdminUserService {
     }
 
     @Override
+    @Transactional
     public void deleteUser(Long adminId, Long userId) {
         accountRepository.deleteById(userId);
+    }
+
+    @Override
+    @Transactional
+    public void bulkBanUsers(java.util.List<Long> userIds, BanUserRequest request) {
+        java.util.List<Account> accounts = accountRepository.findAllById(userIds);
+        accounts.forEach(account -> account.setStatus(AccountStatus.BANNED));
+        accountRepository.saveAll(accounts);
+    }
+
+    @Override
+    @Transactional
+    public void bulkUnbanUsers(java.util.List<Long> userIds) {
+        java.util.List<Account> accounts = accountRepository.findAllById(userIds);
+        accounts.forEach(account -> account.setStatus(AccountStatus.ACTIVE));
+        accountRepository.saveAll(accounts);
+    }
+
+    @Override
+    @Transactional
+    public void bulkDeleteUsers(java.util.List<Long> userIds) {
+        userIds.forEach(accountRepository::deleteById);
+    }
+
+    @Override
+    public java.io.ByteArrayInputStream exportUsersToExcel() {
+        java.util.List<Account> accounts = accountRepository.findAll();
+        String[] headers = {"ID", "Email", "Role", "Status", "Full Name", "Created At"};
+        
+        return com.iting.jobportal.common.excel.ExcelHelper.dataToExcel(
+                accounts, 
+                headers, 
+                "Users",
+                (account, row) -> {
+                    row.createCell(0).setCellValue(account.getId());
+                    row.createCell(1).setCellValue(account.getEmail());
+                    row.createCell(2).setCellValue(account.getRole().toString());
+                    row.createCell(3).setCellValue(account.getStatus().toString());
+                    
+                    Optional<User> userOpt = userRepository.findById(account.getId());
+                    row.createCell(4).setCellValue(userOpt.map(User::getFullName).orElse(""));
+                    row.createCell(5).setCellValue(account.getCreatedAt().toString());
+                }
+        );
+    }
+
+    @Override
+    public void importUsersFromExcel(org.springframework.web.multipart.MultipartFile file) {
+        try {
+            java.util.List<Account> accounts = com.iting.jobportal.common.excel.ExcelHelper.excelToData(
+                    file.getInputStream(),
+                    row -> {
+                        Account account = new Account();
+                        account.setEmail(row.getCell(0).getStringCellValue());
+                        account.setPasswordHash("123456"); // Default password for imported users
+                        account.setRole(Role.valueOf(row.getCell(1).getStringCellValue()));
+                        account.setStatus(AccountStatus.ACTIVE);
+                        return account;
+                    }
+            );
+            accountRepository.saveAll(accounts);
+        } catch (java.io.IOException e) {
+            throw new RuntimeException("fail to store excel data: " + e.getMessage());
+        }
+    }
+
+    @Override
+    public java.io.ByteArrayInputStream getImportTemplate() {
+        String[] headers = {"Email", "Role (CANDIDATE/EMPLOYER/ADMIN)"};
+        return com.iting.jobportal.common.excel.ExcelHelper.createTemplate(headers, "User Import Template");
     }
 
     private UserListResponse mapToResponse(Account account) {

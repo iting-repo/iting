@@ -132,6 +132,12 @@ public class Company {
     @Column(name = "follower_count")
     private Long followerCount;
 
+    @Column(name = "status_reason", columnDefinition = "TEXT")
+    private String statusReason;
+
+    @Column(name = "Profile_setup")
+    private Boolean profileSetup = false;
+
     public Company() {
     }
 }

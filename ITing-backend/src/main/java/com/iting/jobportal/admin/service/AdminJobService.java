@@ -18,6 +18,8 @@ public interface AdminJobService {
     );
 
     JobResponse getJobById(Long jobId);
+    
+    void deleteJob(Long jobId);
 
     void approveJob(Long adminId, Long jobId);
 
@@ -42,4 +44,12 @@ public interface AdminJobService {
     void bulkSuspendJobs(Long adminId, java.util.List<Long> jobIds, String reason);
 
     void bulkCloseJobs(Long adminId, java.util.List<Long> jobIds);
+
+    void bulkDeleteJobs(java.util.List<Long> jobIds);
+
+    java.io.ByteArrayInputStream exportJobsToExcel();
+
+    void importJobsFromExcel(org.springframework.web.multipart.MultipartFile file);
+
+    java.io.ByteArrayInputStream getImportTemplate();
 }

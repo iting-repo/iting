@@ -1,10 +1,14 @@
 package com.iting.jobportal.company.service.impl;
 
+import com.iting.jobportal.auth.entity.Account;
+import com.iting.jobportal.auth.entity.Enum.Role;
+import com.iting.jobportal.auth.repository.AccountRepository;
 import com.iting.jobportal.company.dto.request.*;
 import com.iting.jobportal.company.dto.response.BusinessLicenseFormResponse;
 import com.iting.jobportal.company.dto.response.CompanyResponse;
 import com.iting.jobportal.company.entity.Company;
 import com.iting.jobportal.company.entity.enums.CompanyReviewStatus;
+import com.iting.jobportal.company.entity.enums.VerificationLevel;
 import com.iting.jobportal.company.repository.CompanyRepository;
 import com.iting.jobportal.company.service.CompanyFollowService;
 import com.iting.jobportal.company.service.CompanyService;
@@ -23,18 +27,43 @@ public class CompanyServiceImpl implements CompanyService {
     private final CompanyRepository companyRepository;
     private final CompanyFollowService companyFollowService;
     private final FileUploadService fileUploadService;
+    private final AccountRepository accountRepository;
 
     public CompanyServiceImpl(CompanyRepository companyRepository,
                               CompanyFollowService companyFollowService,
-                              FileUploadService fileUploadService) {
+                              FileUploadService fileUploadService,
+                              AccountRepository accountRepository) {
         this.companyRepository = companyRepository;
         this.companyFollowService = companyFollowService;
         this.fileUploadService = fileUploadService;
+        this.accountRepository = accountRepository;
     }
     @Override
-    @Transactional(readOnly = true)
+    @Transactional
     public CompanyResponse getMyCompany(Long accountId) {
-        Company company = getCompanyByAccountId(accountId);
+        Company company = companyRepository.findById(accountId).orElseGet(() -> {
+            Account account = accountRepository.findById(accountId)
+                    .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy tài khoản"));
+
+            if (account.getRole() == null || account.getRole().normalize() != Role.EMPLOYER) {
+                throw new IllegalArgumentException("Tài khoản này không phải nhà tuyển dụng");
+            }
+
+            Company c = new Company();
+            c.setId(account.getId());
+            c.setAccount(account);
+            c.setName("Chưa cập nhật");
+            c.setAccountEmail(account.getEmail());
+            c.setCompanyEmail(account.getEmail());
+            c.setVerificationLevel(VerificationLevel.UNVERIFIED);
+            c.setCompanyInfoUpdateStatus(CompanyReviewStatus.DRAFT);
+            c.setActive(true);
+            c.setFollowerCount(0L);
+            c.setProfileSetup(false);
+            c.setLastUpdate(LocalDateTime.now());
+            return companyRepository.save(c);
+        });
+
         return mapToResponse(company);
     }
 
@@ -70,7 +99,15 @@ public class CompanyServiceImpl implements CompanyService {
         company.setCompanyEmail(request.getCompanyEmail());
         company.setIndustries(request.getIndustries());
         company.setCompanySize(request.getCompanySize());
+        company.setPhone(request.getPhone());
+        company.setTaxCode(request.getTaxCode());
         company.setLastUpdate(LocalDateTime.now());
+
+        // Chuyển trạng thái sang PENDING_REVIEW khi cập nhật thông tin
+        company.setCompanyInfoUpdateStatus(CompanyReviewStatus.PENDING_REVIEW);
+        company.setLastUpdateRequestDate(LocalDateTime.now());
+        company.setLastUpdate(LocalDateTime.now());
+        company.setProfileSetup(true);
 
         Company saved = companyRepository.save(company);
         return mapToResponse(saved);

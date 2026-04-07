@@ -3,40 +3,45 @@ package com.iting.jobportal.admin.dto;
 import lombok.Builder;
 import lombok.Data;
 import java.util.List;
-import java.util.Map;
 
 @Data
 @Builder
 public class DashboardStats {
     // Tổng quan
     private long totalUsers;
-    private long totalCandidates;
-    private long totalEmployers;
+    private double userChange; // % thay đổi so với hôm qua
+    
     private long totalJobs;
+    private double jobChange; // % thay đổi so với hôm qua
+    
     private long totalApplications;
+    private double applicationChange; // % thay đổi so với hôm qua
     
-    // Trạng thái
-    private long activeUsers;
-    private long bannedUsers;
-    private long activeJobs;
-    private long pendingJobs;
-    private long expiredJobs;
+    private long pendingApplications;
+    private double pendingChange; // % thay đổi so với hôm qua
     
-    // Thống kê theo thời gian
-    private long newUsersToday;
-    private long newUsersThisWeek;
-    private long newUsersThisMonth;
-    private long newJobsToday;
-    private long newJobsThisWeek;
-    private long newJobsThisMonth;
-    private long applicationsToday;
-    private long applicationsThisWeek;
-    private long applicationsThisMonth;
+    // Thống kê biểu đồ (7 ngày gần nhất)
+    private List<ChartRecord> chartData;
     
-    // Top thống kê
-    private List<Map<String, Object>> topCompanies;      // Công ty nhiều job nhất
-    private List<Map<String, Object>> topSkills;         // Kỹ năng được yêu cầu nhiều nhất
-    private List<Map<String, Object>> topLocations;      // Địa điểm tuyển dụng nhiều nhất
-    private List<Map<String, Object>> recentActivities;  // Hoạt động gần đây
+    // Hoạt động gần đây
+    private List<RecentJobActivity> recentActivities;
+
+    @Data
+    @Builder
+    public static class ChartRecord {
+        private String day; // Mon, Tue, ...
+        private long jobPosts;
+        private long users;
+    }
+
+    @Data
+    @Builder
+    public static class RecentJobActivity {
+        private String jobTitle;
+        private String company;
+        private String dateTime;
+        private long applications;
+        private String status;
+    }
 }
 

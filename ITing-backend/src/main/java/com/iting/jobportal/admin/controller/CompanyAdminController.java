@@ -17,6 +17,11 @@ import com.iting.jobportal.admin.dto.response.CompanyAuditLogResponse;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
+import org.springframework.core.io.InputStreamResource;
+import org.springframework.core.io.Resource;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.web.multipart.MultipartFile;
 
 @Tag(name = "10. Admin Company")
 @RestController
@@ -209,5 +214,35 @@ public class CompanyAdminController {
         return ResponseEntity.ok(
                 adminCompanyService.getAllCompanyAuditLogs(action, companyId, fromDate, toDate)
         );
+    }
+    @GetMapping("/export")
+    @Operation(summary = "Xuất danh sách công ty ra file Excel")
+    public ResponseEntity<Resource> exportCompanies() {
+        String filename = "companies.xlsx";
+        InputStreamResource file = new InputStreamResource(adminCompanyService.exportCompaniesToExcel());
+
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=" + filename)
+                .contentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
+                .body(file);
+    }
+
+    @PostMapping("/import")
+    @Operation(summary = "Nhập danh sách công ty từ file Excel")
+    public ResponseEntity<?> importCompanies(@RequestParam("file") MultipartFile file) {
+        adminCompanyService.importCompaniesFromExcel(file);
+        return ResponseEntity.ok(Map.of("message", "Companies imported successfully"));
+    }
+
+    @GetMapping("/template")
+    @Operation(summary = "Tải file mẫu Excel để nhập công ty")
+    public ResponseEntity<Resource> getTemplate() {
+        String filename = "companies_template.xlsx";
+        InputStreamResource file = new InputStreamResource(adminCompanyService.getImportTemplate());
+
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=" + filename)
+                .contentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
+                .body(file);
     }
 }

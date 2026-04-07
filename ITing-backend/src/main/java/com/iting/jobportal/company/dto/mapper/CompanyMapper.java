@@ -26,14 +26,24 @@ public class CompanyMapper {
         res.setIndustries(company.getIndustries());
         res.setCompanySize(company.getCompanySize());
         res.setPhone(company.getPhone());
-
         res.setRepresentativeName(company.getRepresentativeName());
+        res.setRepresentativeGender(company.getRepresentativeGender());
+        res.setRepresentativePhone(company.getRepresentativePhone());
+        res.setAccountEmail(company.getAccountEmail());
         res.setTaxCode(company.getTaxCode());
+
+        res.setBusinessLicenseFileUrl(company.getBusinessLicenseFileUrl());
+        res.setBusinessLicenseDocumentType(company.getBusinessLicenseDocumentType());
+        res.setBusinessLicensePreviewUrl(company.getBusinessLicensePreviewUrl());
+        res.setConsentDocumentFileUrl(company.getConsentDocumentFileUrl());
 
         res.setVerificationLevel(company.getVerificationLevel());
         res.setCompanyInfoUpdateStatus(company.getCompanyInfoUpdateStatus());
-
+        res.setLastUpdateRequestDate(company.getLastUpdateRequestDate());
+        res.setLastUpdate(company.getLastUpdate());
+        res.setStatusReason(company.getStatusReason());
         res.setActive(company.getActive());
+        res.setProfileSetup(company.getProfileSetup());
 
         return res;
     }

@@ -109,7 +109,7 @@ INSERT INTO Company (
     Consent_document_file_url, Consent_document_confirmed, Consent_confirmed_at, Consent_document_version,
 
     Verification_level, Company_info_update_status,
-    Active, Follower_count, Last_update
+    Active, Follower_count, Profile_setup, Last_update
 ) VALUES
 (
     11, 'FPT Software', 'https://fpt-software.com', 'Khu CNC Hòa Lạc, Hà Nội',
@@ -130,7 +130,7 @@ INSERT INTO Company (
     'v1.0',
 
     'PREMIUM', 'APPROVED',
-    TRUE, 12000, CURRENT_TIMESTAMP
+    TRUE, 12000, TRUE, CURRENT_TIMESTAMP
 ),
 (
     12, 'VNG Corporation', 'https://vng.com.vn', '182 Lê Đại Hành, Q11, TP.HCM',
@@ -143,7 +143,7 @@ INSERT INTO Company (
     NULL, FALSE, NULL, 'v1.0',
 
     'ADVANCED', 'APPROVED',
-    TRUE, 8500, CURRENT_TIMESTAMP
+    TRUE, 8500, TRUE, CURRENT_TIMESTAMP
 ),
 (
     13, 'VinGroup', 'https://vingroup.net', 'Vinhomes Riverside, Hà Nội',
@@ -156,7 +156,7 @@ INSERT INTO Company (
     NULL, FALSE, NULL, 'v1.0',
 
     'PREMIUM', 'APPROVED',
-    TRUE, 20000, CURRENT_TIMESTAMP
+    TRUE, 20000, TRUE, CURRENT_TIMESTAMP
 ),
 (
     14, 'Tiki Corporation', 'https://tiki.vn', 'Tòa nhà Rivera Park, Quận 10, TP.HCM',
@@ -169,7 +169,7 @@ INSERT INTO Company (
     NULL, FALSE, NULL, 'v1.0',
 
     'ADVANCED', 'APPROVED',
-    TRUE, 6000, CURRENT_TIMESTAMP
+    TRUE, 6000, TRUE, CURRENT_TIMESTAMP
 ),
 (
     15, 'Shopee Vietnam', 'https://shopee.vn', 'Tòa nhà Viettel, Quận 10, TP.HCM',
@@ -182,7 +182,7 @@ INSERT INTO Company (
     NULL, FALSE, NULL, 'v1.0',
 
     'ADVANCED', 'APPROVED',
-    TRUE, 15000, CURRENT_TIMESTAMP
+    TRUE, 15000, TRUE, CURRENT_TIMESTAMP
 );
 
 

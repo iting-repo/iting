@@ -14,6 +14,11 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
+import org.springframework.core.io.InputStreamResource;
+import org.springframework.core.io.Resource;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.web.multipart.MultipartFile;
 
 @RestController
 @RequestMapping("/api/admin/jobs")
@@ -72,6 +77,13 @@ public class JobAdminController {
     public ResponseEntity<JobResponse> getJobDetail(@PathVariable Long id) {
 
         return ResponseEntity.ok(adminJobService.getJobById(id));
+    }
+
+    @DeleteMapping("/{id}")
+    @Operation(summary = "Xóa job (hard delete)")
+    public ResponseEntity<?> deleteJob(@PathVariable Long id) {
+        adminJobService.deleteJob(id);
+        return ResponseEntity.ok(Map.of("message", "Job deleted successfully"));
     }
 
     /*
@@ -248,5 +260,43 @@ public class JobAdminController {
         Long adminId = 1L;
         adminJobService.bulkCloseJobs(adminId, request.getIds());
         return ResponseEntity.ok(Map.of("message", "Jobs closed successfully"));
+    }
+
+    @PostMapping("/bulk-delete")
+    @Operation(summary = "Xóa nhiều job")
+    public ResponseEntity<?> bulkDeleteJobs(@RequestBody BulkActionRequest request) {
+        adminJobService.bulkDeleteJobs(request.getIds());
+        return ResponseEntity.ok(Map.of("message", "Jobs deleted successfully"));
+    }
+
+    @GetMapping("/export")
+    @Operation(summary = "Xuất danh sách công việc ra file Excel")
+    public ResponseEntity<Resource> exportJobs() {
+        String filename = "jobs.xlsx";
+        InputStreamResource file = new InputStreamResource(adminJobService.exportJobsToExcel());
+
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=" + filename)
+                .contentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
+                .body(file);
+    }
+
+    @PostMapping("/import")
+    @Operation(summary = "Nhập danh sách công việc từ file Excel")
+    public ResponseEntity<?> importJobs(@RequestParam("file") MultipartFile file) {
+        adminJobService.importJobsFromExcel(file);
+        return ResponseEntity.ok(Map.of("message", "Jobs imported successfully"));
+    }
+
+    @GetMapping("/template")
+    @Operation(summary = "Tải file mẫu Excel để nhập công việc")
+    public ResponseEntity<Resource> getTemplate() {
+        String filename = "jobs_template.xlsx";
+        InputStreamResource file = new InputStreamResource(adminJobService.getImportTemplate());
+
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=" + filename)
+                .contentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
+                .body(file);
     }
 }

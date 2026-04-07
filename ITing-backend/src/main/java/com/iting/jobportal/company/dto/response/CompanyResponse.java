@@ -42,7 +42,9 @@ public class CompanyResponse {
     private LocalDateTime lastUpdateRequestDate;
 
     private LocalDateTime lastUpdate;
+    private String statusReason;
     private Boolean active;
+    private Boolean profileSetup;
 
     public static CompanyResponse fromEntity(com.iting.jobportal.company.entity.Company company) {
         return new CompanyResponse(
@@ -69,7 +71,9 @@ public class CompanyResponse {
                 company.getCompanyInfoUpdateStatus(),
                 company.getLastUpdateRequestDate(),
                 company.getLastUpdate(),
-                company.getActive()
+                company.getStatusReason(),
+                company.getActive(),
+                company.getProfileSetup()
         );
     }
 }

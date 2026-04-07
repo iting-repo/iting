@@ -12,6 +12,11 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.core.io.InputStreamResource;
+import org.springframework.core.io.Resource;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.Map;
 
@@ -76,5 +81,58 @@ public class UserAdminController {
         Long adminId = 1L;
         adminUserService.deleteUser(adminId, id);
         return ResponseEntity.ok(Map.of("message", "User deleted successfully"));
+    }
+
+    @PostMapping("/bulk-ban")
+    @Operation(summary = "Ban nhiều người dùng")
+    public ResponseEntity<?> bulkBanUsers(@RequestBody java.util.List<Long> ids) {
+        Long adminId = 1L;
+        adminUserService.bulkBanUsers(ids, new BanUserRequest());
+        return ResponseEntity.ok(Map.of("message", "Users banned successfully"));
+    }
+
+    @PostMapping("/bulk-unban")
+    @Operation(summary = "Bỏ ban nhiều người dùng")
+    public ResponseEntity<?> bulkUnbanUsers(@RequestBody java.util.List<Long> ids) {
+        adminUserService.bulkUnbanUsers(ids);
+        return ResponseEntity.ok(Map.of("message", "Users unbanned successfully"));
+    }
+
+    @PostMapping("/bulk-delete")
+    @Operation(summary = "Xóa nhiều người dùng")
+    public ResponseEntity<?> bulkDeleteUsers(@RequestBody java.util.List<Long> ids) {
+        adminUserService.bulkDeleteUsers(ids);
+        return ResponseEntity.ok(Map.of("message", "Users deleted successfully"));
+    }
+
+    @GetMapping("/export")
+    @Operation(summary = "Xuất danh sách người dùng ra file Excel")
+    public ResponseEntity<Resource> exportUsers() {
+        String filename = "users.xlsx";
+        InputStreamResource file = new InputStreamResource(adminUserService.exportUsersToExcel());
+
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=" + filename)
+                .contentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
+                .body(file);
+    }
+
+    @PostMapping("/import")
+    @Operation(summary = "Nhập danh sách người dùng từ file Excel")
+    public ResponseEntity<?> importUsers(@RequestParam("file") MultipartFile file) {
+        adminUserService.importUsersFromExcel(file);
+        return ResponseEntity.ok(Map.of("message", "Users imported successfully"));
+    }
+
+    @GetMapping("/template")
+    @Operation(summary = "Tải file mẫu Excel để nhập người dùng")
+    public ResponseEntity<Resource> getTemplate() {
+        String filename = "users_template.xlsx";
+        InputStreamResource file = new InputStreamResource(adminUserService.getImportTemplate());
+
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=" + filename)
+                .contentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
+                .body(file);
     }
 }
