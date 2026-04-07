@@ -51,7 +51,7 @@ const ForgotPasswordPage = () => {
         {/* Logo */}
         <div className="flex items-center gap-2 mb-8">
            <BsBriefcaseFill className="text-[#3AB4E6] text-2xl" />
-           <span className="text-2xl font-bold text-gray-800 tracking-tight">ITWork</span>
+           <span className="text-2xl font-bold text-gray-800 tracking-tight">ITing</span>
         </div>
 
         <div className="mt-10">
@@ -170,7 +170,7 @@ const ForgotPasswordPage = () => {
 
         {/* Copyright */}
         <div className="absolute bottom-6 text-xs text-gray-400">
-           © 2024 ITWork. All rights reserved.
+           © 2024 ITing. All rights reserved.
         </div>
       </div>
 

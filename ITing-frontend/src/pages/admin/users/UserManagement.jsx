@@ -8,7 +8,13 @@ import {
     FaUnlock,
     FaUsers,
     FaEllipsisV,
+    FaUpload,
+    FaCheckSquare,
+    FaBan as FaBanIcon,
+    FaTrashAlt,
 } from "react-icons/fa";
+import ImportExcelModal from "../../../components/admin/ImportExcelModal";
+import { toast } from "sonner";
 import {
     Pagination,
     Button,
@@ -302,6 +308,46 @@ const UserManagement = () => {
     const [actionDialog, setActionDialog] = useState(null);
     const [actionNote, setActionNote] = useState("");
     const [openMenuId, setOpenMenuId] = useState(null);
+    const [showImportModal, setShowImportModal] = useState(false);
+    const [selectedIds, setSelectedIds] = useState([]);
+
+    const isAllSelected = users.length > 0 && selectedIds.length === users.length;
+
+    const downloadBlob = (blob, filename) => {
+        const url = window.URL.createObjectURL(new Blob([blob]));
+        const link = document.createElement("a");
+        link.href = url;
+        link.setAttribute("download", filename);
+        document.body.appendChild(link);
+        link.click();
+        link.parentNode.removeChild(link);
+    };
+
+    const handleExportExcel = async () => {
+        try {
+            const res = await adminUserService.exportUsers();
+            downloadBlob(res, "users_list.xlsx");
+            toast.success("Xuất danh sách người dùng thành công!");
+        } catch (error) {
+            console.error("Lỗi xuất Excel:", error);
+            toast.error("Không thể xuất file Excel.");
+        }
+    };
+
+    const handleDownloadTemplate = async () => {
+        try {
+            const res = await adminUserService.downloadTemplate();
+            downloadBlob(res, "user_import_template.xlsx");
+        } catch (error) {
+            console.error("Lỗi tải template:", error);
+            toast.error("Không thể tải file mẫu.");
+        }
+    };
+
+    const handleImportExcel = async (file) => {
+        await adminUserService.importUsers(file);
+        fetchUsers();
+    };
 
     const buildParams = () => {
         const params = {
@@ -379,9 +425,46 @@ const UserManagement = () => {
             setActionDialog(null);
             setActionNote("");
             fetchUsers();
+            toast.success("Thao tác thành công!");
         } catch (error) {
             console.error("Error handling user action:", error);
-            alert("Thao tác thất bại, xem console để biết chi tiết.");
+            toast.error("Thao tác thất bại!");
+        }
+    };
+    
+    const handleSelectAll = (e) => {
+        if (e.target.checked) {
+            setSelectedIds(users.map(u => u.id));
+        } else {
+            setSelectedIds([]);
+        }
+    };
+
+    const handleSelectOne = (id) => {
+        setSelectedIds(prev => 
+            prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]
+        );
+    };
+
+    const handleBulkAction = async (action) => {
+        if (selectedIds.length === 0) return;
+        if (!window.confirm(`Bạn có chắc muốn thực hiện hành động này cho ${selectedIds.length} người dùng đã chọn?`)) return;
+
+        try {
+            if (action === 'ban') {
+                await adminUserService.bulkBan(selectedIds);
+            } else if (action === 'unban') {
+                await adminUserService.bulkUnban(selectedIds);
+            } else if (action === 'delete') {
+                await adminUserService.bulkDelete(selectedIds);
+            }
+            
+            toast.success(`Thanh công cho ${selectedIds.length} mục`);
+            setSelectedIds([]);
+            fetchUsers();
+        } catch (error) {
+            console.error("Bulk action error:", error);
+            toast.error("Thao tác hàng loạt thất bại");
         }
     };
 
@@ -423,7 +506,18 @@ const UserManagement = () => {
                 </div>
 
                 <div className="flex items-center gap-2">
-                    <Button variant="outline" className="flex items-center gap-2">
+                    <Button 
+                        variant="outline" 
+                        className="flex items-center gap-2 border-slate-200 text-slate-600 hover:bg-slate-50"
+                        onClick={() => setShowImportModal(true)}
+                    >
+                        <FaUpload size={14} />
+                        Nhập Excel
+                    </Button>
+                    <Button 
+                        className="flex items-center gap-2 bg-[#1967D2] hover:bg-[#1452A8]"
+                        onClick={handleExportExcel}
+                    >
                         <FaDownload size={14} />
                         Xuất Excel
                     </Button>
@@ -494,6 +588,17 @@ const UserManagement = () => {
 
                 <Table
                     headers={[
+                        { 
+                            label: (
+                                <input 
+                                    type="checkbox" 
+                                    checked={isAllSelected}
+                                    onChange={handleSelectAll}
+                                    className="h-4 w-4 rounded border-slate-300 text-sky-600 focus:ring-sky-500" 
+                                />
+                            ),
+                            className: "w-10"
+                        },
                         { label: "Mã", className: "w-20" },
                         { label: "Người dùng" },
                         { label: "Vai trò", className: "w-40" },
@@ -511,7 +616,18 @@ const UserManagement = () => {
                         </tr>
                     ) : (
                         users.map((user) => (
-                            <tr key={user.id} className="transition-colors hover:bg-slate-50/60">
+                            <tr 
+                                key={user.id} 
+                                className={`transition-colors hover:bg-slate-50/60 ${selectedIds.includes(user.id) ? 'bg-sky-50/50' : ''}`}
+                            >
+                                <Td>
+                                    <input 
+                                        type="checkbox" 
+                                        checked={selectedIds.includes(user.id)}
+                                        onChange={() => handleSelectOne(user.id)}
+                                        className="h-4 w-4 rounded border-slate-300 text-sky-600 focus:ring-sky-500" 
+                                    />
+                                </Td>
                                 <Td className="font-mono text-xs text-slate-500">#{user.id}</Td>
 
                                 <Td>
@@ -590,6 +706,61 @@ const UserManagement = () => {
                 onConfirm={confirmAction}
                 getDisplayName={getDisplayName}
             />
+
+            <ImportExcelModal
+                isOpen={showImportModal}
+                onClose={() => setShowImportModal(false)}
+                title="Nhập người dùng từ Excel"
+                resourceName="người dùng"
+                onDownloadTemplate={handleDownloadTemplate}
+                onImport={handleImportExcel}
+            />
+
+            {/* Bulk Action Bar */}
+            {selectedIds.length > 0 && (
+                <div className="fixed bottom-6 left-1/2 z-[60] flex -translate-x-1/2 items-center gap-6 rounded-2xl border border-sky-100 bg-white px-6 py-4 shadow-2xl animate-in fade-in slide-in-from-bottom-4">
+                    <div className="flex items-center gap-3 border-r border-slate-100 pr-6">
+                        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-sky-100 text-sky-600">
+                            <FaCheckSquare className="h-4 w-4" />
+                        </div>
+                        <div>
+                            <p className="text-sm font-bold text-slate-800">Đã chọn {selectedIds.length} mục</p>
+                            <button 
+                                onClick={() => setSelectedIds([])}
+                                className="text-xs font-medium text-sky-600 hover:underline"
+                            >
+                                Bỏ chọn tất cả
+                            </button>
+                        </div>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                        <button
+                            onClick={() => handleBulkAction('ban')}
+                            className="flex items-center gap-2 rounded-xl bg-orange-500 px-4 py-2.5 text-sm font-bold text-white shadow-lg shadow-orange-100 transition-all hover:bg-orange-600 hover:scale-105 active:scale-95"
+                        >
+                            <FaBanIcon className="h-3.5 w-3.5" />
+                            Khóa hàng loạt
+                        </button>
+                        
+                        <button
+                            onClick={() => handleBulkAction('unban')}
+                            className="flex items-center gap-2 rounded-xl bg-green-500 px-4 py-2.5 text-sm font-bold text-white shadow-lg shadow-green-100 transition-all hover:bg-green-600 hover:scale-105 active:scale-95"
+                        >
+                            <FaUnlock className="h-3.5 w-3.5" />
+                            Mở khóa hàng loạt
+                        </button>
+
+                        <button
+                            onClick={() => handleBulkAction('delete')}
+                            className="flex items-center gap-2 rounded-xl bg-red-500 px-4 py-2.5 text-sm font-bold text-white shadow-lg shadow-red-100 transition-all hover:bg-red-600 hover:scale-105 active:scale-95"
+                        >
+                            <FaTrashAlt className="h-3.5 w-3.5" />
+                            Xóa hàng loạt
+                        </button>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

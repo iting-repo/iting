@@ -134,7 +134,7 @@ const Header = () => {
         {/* LOGO */}
         <Link to={role === 'EMPLOYER' ? '/employer/dashboard' : '/'} className="flex items-center gap-2 select-none group">
           <BsBriefcaseFill className="text-white text-2xl group-hover:text-[#3AB4E6] transition-colors" />
-          <span className="text-2xl font-bold tracking-tight group-hover:text-[#3AB4E6] transition-colors">ITWork</span>
+          <span className="text-2xl font-bold tracking-tight group-hover:text-[#3AB4E6] transition-colors">ITing</span>
         </Link>
 
         {/* NAVIGATION */}

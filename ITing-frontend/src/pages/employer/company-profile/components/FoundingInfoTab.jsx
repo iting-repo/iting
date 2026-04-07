@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
   FaCheckCircle,
   FaRegCircle,
@@ -7,133 +7,346 @@ import {
   FaSpinner,
   FaPlus,
   FaTimes,
+  FaClock,
+  FaExclamationTriangle,
+  FaFileAlt,
+  FaMapMarkerAlt,
 } from "react-icons/fa";
 import { AVAILABLE_INDUSTRIES } from "../../../../constants/industries";
 import companyService from "../../../../services/companyService";
 import { toast } from "sonner";
+import AppModal from "../../../../components/common/AppModal";
+
+const STATUS_CONFIG = {
+  PENDING_REVIEW: {
+    label: "Đang chờ admin duyệt",
+    className: "bg-amber-50 text-amber-700 border-amber-200",
+  },
+  APPROVED: {
+    label: "Đã được duyệt",
+    className: "bg-green-50 text-green-700 border-green-200",
+  },
+  REJECTED: {
+    label: "Bị từ chối",
+    className: "bg-red-50 text-red-700 border-red-200",
+  },
+  CANCELLED: {
+    label: "Đã hủy",
+    className: "bg-gray-50 text-gray-700 border-gray-200",
+  },
+  DRAFT: {
+    label: "Nháp",
+    className: "bg-gray-50 text-gray-700 border-gray-200",
+  },
+  SUSPENDED: {
+    label: "Đang bị đình chỉ",
+    className: "bg-red-50 text-red-700 border-red-200",
+  },
+  NEEDS_RESUBMISSION: {
+    label: "Cần bổ sung hồ sơ",
+    className: "bg-orange-50 text-orange-700 border-orange-200",
+  }
+};
+
+const DEFAULT_LOGO_HINTS = [
+  "default",
+  "placeholder",
+  "company-default",
+  "logo-default",
+];
+
+const emptyRequestForm = {
+  companyName: "",
+  taxCode: "",
+  industries: [],
+  companySize: "",
+  phone: "",
+  email: "",
+  address: "",
+  website: "",
+  description: "",
+  logoUrl: "",
+};
+
+const ReadOnlyField = ({ label, value, multiline = false, extra = null }) => (
+  <div>
+    <div className="flex items-center justify-between mb-2">
+      <label className="block text-sm font-medium text-gray-700">
+        {label}
+      </label>
+      {extra}
+    </div>
+
+    {multiline ? (
+      <div className="min-h-[120px] rounded-lg border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-700 whitespace-pre-wrap">
+        {value || "Chưa có thông tin"}
+      </div>
+    ) : (
+      <div className="rounded-lg border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-700">
+        {value || "Chưa có thông tin"}
+      </div>
+    )}
+  </div>
+);
+
+const StatusBadge = ({ status, onClick, hasReason }) => {
+  const config = STATUS_CONFIG[status] || {
+    label: status || "Không xác định",
+    className: "bg-gray-50 text-gray-700 border-gray-200",
+  };
+
+  return (
+    <div className="flex items-center gap-2">
+      <span
+        className={`inline-flex items-center rounded-full border px-3 py-1 text-xs font-semibold ${config.className}`}
+      >
+        {config.label}
+      </span>
+      {hasReason && (
+        <button
+          onClick={onClick}
+          className="text-xs font-medium text-blue-600 hover:underline flex items-center gap-1"
+        >
+          <FaFileAlt /> Xem lý do
+        </button>
+      )}
+    </div>
+  );
+};
 
 const FoundingInfoTab = () => {
-  const [form, setForm] = useState({
-    id: null,
-    companyName: "",
-    taxCode: "",
-    industries: [],
-    companySize: "",
-    phone: "",
-    email: "",
-    address: "",
-    website: "",
-    description: "",
-    logoUrl: null,
-  });
-
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [errors, setErrors] = useState({});
+  const [company, setCompany] = useState(null);
   const [verificationLevel, setVerificationLevel] = useState("UNVERIFIED");
 
-  useEffect(() => {
-    const fetchCompanyInfo = async () => {
-      try {
-        setLoading(true);
-        const data = await companyService.getMyCompany();
-        if (data) {
-          setForm({
-            id: data.id,
-            companyName: data.name || "",
-            taxCode: data.taxCode || "",
-            industries: data.industries || [],
-            companySize: data.companySize || "",
-            phone: data.phone || "",
-            email: data.companyEmail || "",
-            address: data.address || "",
-            website: data.website || "",
-            description: data.description || "",
-            logoUrl: data.logoUrl || null,
-          });
-          setVerificationLevel(data.verificationLevel);
-        }
-      } catch (error) {
-        console.error("Lỗi khi lấy thông tin công ty:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
+  const [loading, setLoading] = useState(true);
+  const [showRequestModal, setShowRequestModal] = useState(false);
+  const [submittingRequest, setSubmittingRequest] = useState(false);
 
-    fetchCompanyInfo();
+  const [requestForm, setRequestForm] = useState(emptyRequestForm);
+  const [requestErrors, setRequestErrors] = useState({});
+
+  const [showReasonModal, setShowReasonModal] = useState(false);
+  const [latestRequest, setLatestRequest] = useState(null);
+
+  const fetchData = async () => {
+    try {
+      setLoading(true);
+
+      const companyData = await companyService.getMyCompany();
+
+      if (companyData) {
+        setCompany(companyData);
+        setVerificationLevel(companyData.verificationLevel || "UNVERIFIED");
+
+        setRequestForm({
+          companyName: companyData.name || "",
+          taxCode: companyData.taxCode || "",
+          industries: companyData.industries || [],
+          companySize: companyData.companySize || "",
+          phone: companyData.phone || "",
+          email: companyData.companyEmail || "",
+          address: companyData.address || "",
+          website: companyData.website || companyData.webLink || "",
+          description: companyData.description || "",
+          logoUrl: companyData.logoUrl || companyData.logo || "",
+        });
+      }
+
+    } catch (error) {
+      console.error("Lỗi khi lấy thông tin công ty:", error);
+      toast.error("Không thể tải thông tin công ty.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const ReasonModal = ({ reason, onClose, status, isOpen }) => {
+    const isErrorStatus = status === 'REJECTED' || status === 'SUSPENDED';
+
+    return (
+      <AppModal
+        isOpen={isOpen}
+        onClose={onClose}
+        title="Thông báo từ Admin"
+        size="sm"
+        footer={
+          <button
+            onClick={onClose}
+            className="w-full rounded-lg bg-gray-800 py-2.5 text-sm font-bold text-white transition hover:bg-gray-700"
+          >
+            Đã hiểu
+          </button>
+        }
+      >
+        <div className={`mb-4 flex items-center gap-3 rounded-lg p-3 ${
+            isErrorStatus ? 'bg-red-50 text-red-700' : 'bg-orange-50 text-orange-700'
+        }`}>
+          <FaExclamationTriangle className="text-xl shrink-0" />
+          <p className="text-sm font-medium">
+            {status === 'REJECTED' ? 'Yêu cầu của bạn đã bị từ chối' :
+              status === 'SUSPENDED' ? 'Tài khoản của bạn đã bị đình chỉ' :
+                'Hồ sơ của bạn cần bổ sung thông tin'}
+          </p>
+        </div>
+
+        <div className="mb-2">
+          <p className="mb-2 text-xs font-bold uppercase tracking-wider text-gray-400">Lý do cụ thể:</p>
+          <div className="rounded-lg border border-gray-200 bg-gray-50 p-4 text-sm text-gray-700 whitespace-pre-wrap italic">
+            "{reason || "Không có lý do chi tiết"}"
+          </div>
+        </div>
+      </AppModal>
+    );
+  };
+
+  useEffect(() => {
+    fetchData();
   }, []);
 
-  const verificationSteps = [
-    {
-      label: "Xác thực số điện thoại",
-      done: verificationLevel !== "UNVERIFIED",
-    },
-    { label: "Cập nhật thông tin công ty", done: !!form.companyName },
-    {
-      label: "Xác thực Giấy đăng ký doanh nghiệp",
-      done: verificationLevel === "VERIFIED_LEVEL_2",
-    },
-  ];
+  const verificationSteps = useMemo(() => {
+    return [
+      {
+        label: "Xác thực số điện thoại",
+        done: verificationLevel !== "UNVERIFIED",
+      },
+      {
+        label: "Cập nhật thông tin công ty",
+        done: !!company?.name,
+      },
+      {
+        label: "Xác thực Giấy đăng ký doanh nghiệp",
+        done:
+          verificationLevel === "VERIFIED_LEVEL_2" ||
+          verificationLevel === "VERIFIED",
+      },
+    ];
+  }, [verificationLevel, company]);
 
   const completedCount = verificationSteps.filter((item) => item.done).length;
   const percentage = Math.round(
     (completedCount / verificationSteps.length) * 100,
   );
 
-  const validate = () => {
+  const isUsingDefaultLogo = useMemo(() => {
+    const logo = company?.logoUrl || company?.logo || "";
+    if (!logo) return true;
+    return DEFAULT_LOGO_HINTS.some((hint) =>
+      logo.toLowerCase().includes(hint.toLowerCase()),
+    );
+  }, [company]);
+
+  const hasPendingRequest = company?.companyInfoUpdateStatus === "PENDING_REVIEW";
+
+  const validateRequest = () => {
     const newErrors = {};
 
-    if (!form.companyName.trim())
+    if (!requestForm.companyName.trim()) {
       newErrors.companyName = "Vui lòng nhập tên công ty";
-    if (!form.taxCode.trim()) newErrors.taxCode = "Vui lòng nhập mã số thuế";
-    if (!form.phone.trim()) newErrors.phone = "Vui lòng nhập số điện thoại";
-    if (!form.address.trim()) newErrors.address = "Vui lòng nhập địa chỉ";
-    if (!form.website.trim()) newErrors.website = "Vui lòng nhập website";
+    }
+    if (!requestForm.taxCode.trim()) {
+      newErrors.taxCode = "Vui lòng nhập mã số thuế";
+    }
+    if (!requestForm.phone.trim()) {
+      newErrors.phone = "Vui lòng nhập số điện thoại";
+    }
+    if (!requestForm.email.trim()) {
+      newErrors.email = "Vui lòng nhập email công ty";
+    }
+    if (!requestForm.address.trim()) {
+      newErrors.address = "Vui lòng nhập địa chỉ công ty";
+    }
+    if (!requestForm.website.trim()) {
+      newErrors.website = "Vui lòng nhập website";
+    }
 
     return newErrors;
   };
 
-  const handleChange = (field, value) => {
-    setForm((prev) => ({
+  const openCreateRequestModal = () => {
+    if (!company) return;
+
+    setRequestErrors({});
+    setRequestForm({
+      companyName: company.name || "",
+      taxCode: company.taxCode || "",
+      industries: company.industries || [],
+      companySize: company.companySize || "",
+      phone: company.phone || "",
+      email: company.companyEmail || "",
+      address: company.address || "",
+      website: company.website || company.webLink || "",
+      description: company.description || "",
+      logoUrl: company.logoUrl || company.logo || "",
+    });
+    setShowRequestModal(true);
+  };
+
+  const handleRequestFieldChange = (field, value) => {
+    setRequestForm((prev) => ({
       ...prev,
       [field]: value,
     }));
   };
 
-  const handleSave = async () => {
-    const newErrors = validate();
-    setErrors(newErrors);
+  const handleSubmitUpdateRequest = async () => {
+    const newErrors = validateRequest();
+    setRequestErrors(newErrors);
 
-    if (Object.keys(newErrors).length === 0) {
-      try {
-        setSaving(true);
-        const companyData = {
-          name: form.companyName,
-          logoUrl: form.logoUrl || "",
-          taxCode: form.taxCode,
-          website: form.website,
-          companySize: form.companySize,
-          companyEmail: form.email,
-          industries: form.industries,
-          address: form.address,
-          phone: form.phone,
-          description: form.description,
-        };
-        await companyService.updateCompanyBasicInfo(companyData);
-        toast.success("Cập nhật thông tin công ty thành công!");
-      } catch (error) {
-        console.error("Lỗi khi lưu thông tin:", error);
-        toast.error(error?.message || "Không thể cập nhật thông tin công ty.");
-      } finally {
-        setSaving(false);
-      }
+    if (Object.keys(newErrors).length > 0) return;
+
+    try {
+      setSubmittingRequest(true);
+
+      const payload = {
+        name: requestForm.companyName,
+        taxCode: requestForm.taxCode,
+        industries: requestForm.industries,
+        companySize: requestForm.companySize,
+        phone: requestForm.phone,
+        companyEmail: requestForm.email,
+        address: requestForm.address,
+        website: requestForm.website,
+        description: requestForm.description,
+        logoUrl: requestForm.logoUrl,
+      };
+
+      await companyService.createCompanyUpdateRequest(payload);
+
+      toast.success("Đã gửi yêu cầu cập nhật thông tin tới admin.");
+      setShowRequestModal(false);
+      await fetchData();
+    } catch (error) {
+      console.error("Lỗi khi gửi yêu cầu cập nhật:", error);
+      toast.error(
+        error?.message || "Không thể gửi yêu cầu cập nhật. Vui lòng thử lại.",
+      );
+    } finally {
+      setSubmittingRequest(false);
     }
+  };
+
+  const renderIndustries = (industries = []) => {
+    if (!industries.length) return "Chưa có thông tin";
+
+    return (
+      <div className="flex flex-wrap gap-2">
+        {industries.map((industry, index) => (
+          <span
+            key={`${industry}-${index}`}
+            className="inline-flex items-center rounded-md border border-sky-200 bg-sky-50 px-2.5 py-1 text-xs font-semibold text-sky-700"
+          >
+            {AVAILABLE_INDUSTRIES.find((i) => i.value === industry)?.label ||
+              industry}
+          </span>
+        ))}
+      </div>
+    );
   };
 
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center p-20">
-        <FaSpinner className="animate-spin text-4xl text-[#3AB4E6] mb-4" />
+        <FaSpinner className="mb-4 text-4xl text-[#3AB4E6] animate-spin" />
         <p className="text-gray-500">Đang tải thông tin công ty...</p>
       </div>
     );
@@ -141,24 +354,32 @@ const FoundingInfoTab = () => {
 
   return (
     <div className="space-y-6">
+      <ReasonModal
+        isOpen={showReasonModal}
+        reason={company?.statusReason}
+        onClose={() => setShowReasonModal(false)}
+        status={company?.companyInfoUpdateStatus}
+      />
+      {/* Tổng quan xác thực */}
       <div className="rounded-xl border border-green-200 bg-green-50 p-6">
-        <div className="flex items-center gap-3 mb-3">
+        <div className="mb-3 flex items-center gap-3">
           <h3 className="text-lg font-semibold text-gray-800">
             Tài khoản xác thực: Cấp {completedCount}/{verificationSteps.length}
           </h3>
         </div>
 
-        <p className="text-sm text-gray-600 mb-4">
-          Nâng cấp tài khoản để tăng độ tin cậy và mở thêm quyền quản lý hồ sơ
-          công ty.
+        <p className="mb-4 text-sm text-gray-600">
+          Thông tin công ty là thông tin xác thực. Bạn không thể chỉnh sửa trực
+          tiếp. Mọi thay đổi phải được gửi thành yêu cầu để admin xem xét và
+          duyệt trước khi cập nhật chính thức.
         </p>
 
-        <p className="text-sm text-gray-600 mb-2">Xác thực thông tin</p>
+        <p className="mb-2 text-sm text-gray-600">Xác thực thông tin</p>
 
-        <div className="flex items-center gap-3 mb-5">
-          <div className="flex-1 h-2 bg-gray-200 rounded-full overflow-hidden">
+        <div className="mb-5 flex items-center gap-3">
+          <div className="h-2 flex-1 overflow-hidden rounded-full bg-gray-200">
             <div
-              className="h-full bg-green-500 rounded-full transition-all"
+              className="h-full rounded-full bg-green-500 transition-all"
               style={{ width: `${percentage}%` }}
             />
           </div>
@@ -172,282 +393,502 @@ const FoundingInfoTab = () => {
             <div key={index} className="flex items-center justify-between py-2">
               <div className="flex items-center gap-3">
                 {step.done ? (
-                  <FaCheckCircle className="text-green-500 text-lg" />
+                  <FaCheckCircle className="text-lg text-green-500" />
                 ) : (
-                  <FaRegCircle className="text-gray-400 text-lg" />
+                  <FaRegCircle className="text-lg text-gray-400" />
                 )}
 
                 <span
-                  className={`text-sm ${
-                    step.done ? "text-gray-400 line-through" : "text-gray-700"
-                  }`}
+                  className={`text-sm ${step.done ? "text-gray-400 line-through" : "text-gray-700"
+                    }`}
                 >
                   {step.label}
                 </span>
               </div>
 
-              <FaArrowRight className="text-gray-400 text-sm" />
+              <FaArrowRight className="text-sm text-gray-400" />
             </div>
           ))}
         </div>
       </div>
 
+      {/* Cảnh báo logo mặc định */}
+      {isUsingDefaultLogo && (
+        <div className="rounded-xl border border-yellow-200 bg-yellow-50 p-4">
+          <div className="flex items-start gap-3">
+            <FaExclamationTriangle className="mt-0.5 text-yellow-600" />
+            <div>
+              <p className="font-semibold text-yellow-800">
+                Bạn đang sử dụng logo mặc định.
+              </p>
+              <p className="mt-1 text-sm text-yellow-700">
+                Bổ sung Logo Công ty giúp tin tuyển dụng uy tín, nổi bật hơn và
+                tăng lượt xem tin tuyển dụng. Cập nhật ngay.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Trạng thái yêu cầu gần nhất */}
       <div className="rounded-xl border border-gray-200 bg-white p-6">
-        <h3 className="text-lg font-semibold text-gray-800 mb-6">
-          Cập nhật thông tin công ty
-        </h3>
+        <div className="mb-4 flex items-center justify-between gap-4">
+          <div>
+            <h3 className="text-lg font-semibold text-gray-800">
+              Yêu cầu cập nhật thông tin
+            </h3>
+            <p className="mt-1 text-sm text-gray-500">
+              Thông tin hiển thị bên dưới là dữ liệu cuối cùng đã được duyệt.
+            </p>
+          </div>
 
-        <div className="md:col-span-4">
-          <div className=" rounded-xl p-6 h-full flex flex-col items-center justify-center text-center">
-            <p className="text-sm text-gray-500 mb-4">Logo công ty</p>
+          <button
+            type="button"
+            onClick={openCreateRequestModal}
+            disabled={hasPendingRequest}
+            className="inline-flex items-center gap-2 rounded-lg bg-[#3AB4E6] px-4 py-2.5 text-sm font-medium text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            <FaPlus />
+            Tạo yêu cầu
+          </button>
+        </div>
 
-            <div className="w-28 h-28 rounded-full bg-gray-100 flex items-center justify-center text-gray-500 font-semibold text-3xl mb-4 overflow-hidden">
-              {form.logoUrl ? (
-                <img
-                  src={form.logoUrl}
-                  alt="Company Logo"
-                  className="w-full h-full object-cover"
-                />
+        <div className="mb-3 flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+          <div className="flex items-center gap-2">
+            <FaClock className="text-gray-500" />
+            <span className="text-sm font-medium text-gray-700">
+              Trạng thái hiện tại
+            </span>
+          </div>
+          <StatusBadge
+            status={company?.companyInfoUpdateStatus}
+            hasReason={!!company?.statusReason && ['REJECTED', 'SUSPENDED', 'NEEDS_RESUBMISSION'].includes(company?.companyInfoUpdateStatus)}
+            onClick={() => setShowReasonModal(true)}
+          />
+        </div>
+
+        <div className="grid grid-cols-1 gap-4 text-sm text-gray-600 md:grid-cols-2">
+          <div>
+            <span className="font-medium text-gray-800">Cập nhật cuối:</span>{" "}
+            {company?.lastUpdate
+              ? new Date(company.lastUpdate).toLocaleString("vi-VN")
+              : "—"}
+          </div>
+
+          <div>
+            <span className="font-medium text-gray-800">Mức xác thực:</span>{" "}
+            <span className="text-green-600 font-semibold">{company?.verificationLevel || "UNVERIFIED"}</span>
+          </div>
+        </div>
+
+        {hasPendingRequest && (
+          <p className="mt-3 text-sm text-amber-700 font-medium bg-amber-50 p-2 rounded border border-amber-200">
+            Lưu ý: Thông tin đang chờ admin duyệt. Mọi thay đổi sẽ không được hiển thị cho đến khi được chấp thuận.
+          </p>
+        )}
+      </div>
+
+      {/* Thông tin công ty đã duyệt - chỉ xem */}
+      <div className="rounded-xl border border-gray-200 bg-white p-6">
+        <div className="mb-6 flex items-start justify-between gap-4">
+          <div>
+            <h3 className="text-lg font-semibold text-gray-800">
+              Thông tin công ty đã duyệt
+            </h3>
+            <p className="mt-1 text-sm text-gray-500">
+              Đây là dữ liệu cuối cùng đang hiển thị công khai. Không thể chỉnh
+              sửa trực tiếp.
+            </p>
+          </div>
+        </div>
+
+        <div className="mb-8 flex flex-col items-center rounded-xl bg-gray-50 p-6 text-center">
+          <p className="mb-4 text-sm text-gray-500">Logo công ty</p>
+
+          <div className="mb-4 flex h-28 w-28 items-center justify-center overflow-hidden rounded-full bg-gray-100 text-3xl font-semibold text-gray-500">
+            {company?.logoUrl ? (
+              <img
+                src={company.logoUrl}
+                alt="Company Logo"
+                className="h-full w-full object-cover"
+              />
+            ) : (
+              company?.name?.charAt(0) || "C"
+            )}
+          </div>
+
+          <div className="inline-flex items-center gap-2 text-sm text-gray-500">
+            <FaCamera />
+            Chỉ hiển thị. Muốn thay đổi logo, hãy tạo yêu cầu cập nhật.
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
+          <ReadOnlyField label="Tên công ty" value={company?.name} />
+          <ReadOnlyField label="Mã số thuế" value={company?.taxCode} />
+
+          <div>
+            <label className="mb-2 block text-sm font-medium text-gray-700">
+              Lĩnh vực
+            </label>
+            <div className="min-h-[52px] rounded-lg border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-700">
+              {renderIndustries(company?.industries || [])}
+            </div>
+          </div>
+
+          <ReadOnlyField label="Quy mô công ty" value={company?.companySize} />
+          <ReadOnlyField label="Số điện thoại" value={company?.phone} />
+          <ReadOnlyField
+            label="Website"
+            value={company?.website || company?.webLink}
+          />
+          <ReadOnlyField label="Email công ty" value={company?.companyEmail} />
+          <ReadOnlyField 
+            label="Địa chỉ công ty" 
+            value={company?.address} 
+            extra={
+              company?.address && (
+                <a
+                  href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(company.address)}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-xs font-bold text-blue-600 hover:text-blue-700 flex items-center gap-1.5 bg-blue-50 px-2 py-1 rounded-md border border-blue-100 transition-all hover:bg-blue-100"
+                >
+                  <FaMapMarkerAlt className="text-blue-500" /> Xem trên Map
+                </a>
+              )
+            }
+          />
+
+          <div className="md:col-span-2">
+            <ReadOnlyField
+              label="Giới thiệu công ty"
+              value={company?.description}
+              multiline
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* Modal tạo yêu cầu */}
+      <AppModal
+        isOpen={showRequestModal}
+        onClose={() => setShowRequestModal(false)}
+        title="Tạo yêu cầu cập nhật thông tin"
+        subtitle="Yêu cầu sẽ được gửi sang admin để xét duyệt. Thông tin hiện tại sẽ không đổi cho đến khi được chấp thuận."
+        size="lg"
+        footer={
+          <div className="flex justify-end gap-3">
+            <button
+              type="button"
+              onClick={() => setShowRequestModal(false)}
+              disabled={submittingRequest}
+              className="rounded-lg border border-gray-300 bg-white px-6 py-2.5 text-sm font-medium text-gray-700 transition hover:bg-gray-50 disabled:opacity-50"
+            >
+              Hủy
+            </button>
+            <button
+              type="button"
+              onClick={handleSubmitUpdateRequest}
+              disabled={submittingRequest}
+              className="flex items-center gap-2 rounded-lg bg-[#3AB4E6] px-8 py-2.5 text-sm font-bold text-white transition hover:opacity-90 disabled:opacity-50 shadow-md shadow-sky-500/20"
+            >
+              {submittingRequest ? (
+                <>
+                  <FaSpinner className="animate-spin" />
+                  Đang gửi...
+                </>
               ) : (
-                form.companyName.charAt(0) || "C"
+                "Gửi admin duyệt"
+              )}
+            </button>
+          </div>
+        }
+      >
+        <div className="space-y-6">
+          <div className="rounded-xl border border-blue-200 bg-blue-50 p-4 text-sm text-blue-800">
+            Bạn không đang sửa trực tiếp hồ sơ công ty. Bạn đang tạo một yêu cầu thay đổi để admin kiểm tra và duyệt.
+          </div>
+
+          <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
+            <div>
+              <label className="mb-2 block text-sm font-medium text-gray-700">
+                Tên công ty
+              </label>
+              <input
+                type="text"
+                value={requestForm.companyName}
+                onChange={(e) =>
+                  handleRequestFieldChange("companyName", e.target.value)
+                }
+                placeholder="Nhập tên công ty"
+                className={`w-full rounded-lg border px-4 py-3 text-sm outline-none transition ${requestErrors.companyName
+                  ? "border-red-500"
+                  : "border-gray-300 focus:border-[#3AB4E6]"
+                  }`}
+              />
+              {requestErrors.companyName && (
+                <p className="mt-1 text-sm text-red-500">
+                  {requestErrors.companyName}
+                </p>
               )}
             </div>
 
-            <button className="flex items-center justify-center gap-2 text-base font-medium text-[#3AB4E6] hover:underline">
-              <FaCamera className="text-lg" />
-              Đổi logo
-            </button>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mt-6 mb-6">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Tên công ty
-            </label>
-            <input
-              type="text"
-              value={form.companyName}
-              onChange={(e) => handleChange("companyName", e.target.value)}
-              placeholder="Nhập tên công ty"
-              className={`w-full rounded-lg border px-4 py-3 text-sm outline-none transition ${
-                errors.companyName
+            <div>
+              <label className="mb-2 block text-sm font-medium text-gray-700">
+                Mã số thuế
+              </label>
+              <input
+                type="text"
+                value={requestForm.taxCode}
+                onChange={(e) =>
+                  handleRequestFieldChange("taxCode", e.target.value)
+                }
+                placeholder="Nhập mã số thuế"
+                className={`w-full rounded-lg border px-4 py-3 text-sm outline-none transition ${requestErrors.taxCode
                   ? "border-red-500"
                   : "border-gray-300 focus:border-[#3AB4E6]"
-              }`}
-            />
-            {errors.companyName && (
-              <p className="text-red-500 text-sm mt-1">{errors.companyName}</p>
-            )}
-          </div>
+                  }`}
+              />
+              {requestErrors.taxCode && (
+                <p className="mt-1 text-sm text-red-500">
+                  {requestErrors.taxCode}
+                </p>
+              )}
+            </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Mã số thuế
-            </label>
-            <input
-              type="text"
-              value={form.taxCode}
-              onChange={(e) => handleChange("taxCode", e.target.value)}
-              placeholder="Nhập mã số thuế"
-              className={`w-full rounded-lg border px-4 py-3 text-sm outline-none transition ${
-                errors.taxCode
-                  ? "border-red-500"
-                  : "border-gray-300 focus:border-[#3AB4E6]"
-              }`}
-            />
-            {errors.taxCode && (
-              <p className="text-red-500 text-sm mt-1">{errors.taxCode}</p>
-            )}
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Lĩnh vực
-            </label>
-            <div className="flex flex-wrap items-center gap-2 w-full min-h-[52px] rounded-lg border border-gray-300 p-2 focus-within:border-[#3AB4E6] transition bg-white group relative">
-              {form.industries.map((industry, index) => (
-                <div
-                  key={index}
-                  className="flex items-center gap-2 px-2.5 py-1.5 bg-[#f0f9ff] text-[#0369a1] text-xs font-semibold rounded-md border border-[#bae6fd]"
-                >
-                  <span>{AVAILABLE_INDUSTRIES.find(i => i.value === industry)?.label || industry}</span>
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      const newIndustries = form.industries.filter((_, i) => i !== index);
-                      setForm(prev => ({ ...prev, industries: newIndustries }));
-                    }}
-                    className="hover:text-red-500 transition-colors"
-                  >
-                    <FaTimes className="text-[10px]" />
-                  </button>
-                </div>
-              ))}
-              
-              <div className="flex-1 min-w-[120px] relative">
-                <select
-                  value=""
-                  onChange={(e) => {
-                    const val = e.target.value;
-                    if (val && !form.industries.includes(val)) {
-                      setForm(prev => ({
-                        ...prev,
-                        industries: [...prev.industries, val]
-                      }));
-                    }
-                  }}
-                  className="w-full h-full opacity-0 absolute inset-0 cursor-pointer z-10"
-                >
-                  <option value="" disabled>Thêm lĩnh vực...</option>
-                  {AVAILABLE_INDUSTRIES.filter(item => !form.industries.includes(item.value)).map((item) => (
-                    <option key={item.value} value={item.value}>
-                      {item.label}
-                    </option>
+            <div>
+              <label className="mb-2 block text-sm font-medium text-gray-700">
+                Lĩnh vực
+              </label>
+              <div className="group relative min-h-[52px] w-full rounded-lg border border-gray-300 bg-white p-2 transition focus-within:border-[#3AB4E6]">
+                <div className="flex flex-wrap items-center gap-2">
+                  {requestForm.industries.map((industry, index) => (
+                    <div
+                      key={index}
+                      className="flex items-center gap-2 rounded-md border border-sky-200 bg-sky-50 px-2.5 py-1.5 text-xs font-semibold text-sky-700"
+                    >
+                      <span>
+                        {AVAILABLE_INDUSTRIES.find(
+                          (i) => i.value === industry,
+                        )?.label || industry}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleRequestFieldChange(
+                            "industries",
+                            requestForm.industries.filter(
+                              (_, i) => i !== index,
+                            ),
+                          );
+                        }}
+                        className="transition-colors hover:text-red-500"
+                      >
+                        <FaTimes className="text-[10px]" />
+                      </button>
+                    </div>
                   ))}
-                </select>
-                <div className="flex items-center justify-between px-2 text-gray-400 pointer-events-none group-focus-within:text-[#3AB4E6]">
-                  <span className="text-sm truncate">
-                    {form.industries.length === 0 ? "Chọn lĩnh vực từ danh sách..." : "Thêm mới..."}
-                  </span>
-                  <FaPlus className="text-xs" />
+
+                  <div className="relative min-w-[120px] flex-1">
+                    <select
+                      value=""
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        if (
+                          value &&
+                          !requestForm.industries.includes(value)
+                        ) {
+                          handleRequestFieldChange("industries", [
+                            ...requestForm.industries,
+                            value,
+                          ]);
+                        }
+                      }}
+                      className="absolute inset-0 z-10 h-full w-full cursor-pointer opacity-0"
+                    >
+                      <option value="" disabled>
+                        Thêm lĩnh vực...
+                      </option>
+                      {AVAILABLE_INDUSTRIES.filter(
+                        (item) =>
+                          !requestForm.industries.includes(item.value),
+                      ).map((item) => (
+                        <option key={item.value} value={item.value}>
+                          {item.label}
+                        </option>
+                      ))}
+                    </select>
+
+                    <div className="pointer-events-none flex items-center justify-between px-2 text-gray-400 group-focus-within:text-[#3AB4E6]">
+                      <span className="truncate text-sm">
+                        {requestForm.industries.length === 0
+                          ? "Chọn lĩnh vực từ danh sách..."
+                          : "Thêm mới..."}
+                      </span>
+                      <FaPlus className="text-xs" />
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Quy mô công ty
-            </label>
-            <select
-              value={form.companySize}
-              onChange={(e) => handleChange("companySize", e.target.value)}
-              className="w-full rounded-lg border border-gray-300 px-4 py-3 text-sm outline-none focus:border-[#3AB4E6] transition"
-            >
-              <option value="">Chọn quy mô</option>
-              <option value="1-10">1 - 10 nhân sự</option>
-              <option value="11-50">11 - 50 nhân sự</option>
-              <option value="51-100">51 - 100 nhân sự</option>
-              <option value="100+">Trên 100 nhân sự</option>
-            </select>
-          </div>
+            <div>
+              <label className="mb-2 block text-sm font-medium text-gray-700">
+                Quy mô công ty
+              </label>
+              <select
+                value={requestForm.companySize}
+                onChange={(e) =>
+                  handleRequestFieldChange("companySize", e.target.value)
+                }
+                className="w-full rounded-lg border border-gray-300 px-4 py-3 text-sm outline-none transition focus:border-[#3AB4E6]"
+              >
+                <option value="">Chọn quy mô</option>
+                <option value="1-10">1 - 10 nhân sự</option>
+                <option value="11-50">11 - 50 nhân sự</option>
+                <option value="51-100">51 - 100 nhân sự</option>
+                <option value="100+">Trên 100 nhân sự</option>
+              </select>
+            </div>
 
-          <div>
-            <div className="flex items-center gap-3 mb-2">
-              <label className="text-sm font-medium text-gray-700">
+            <div>
+              <label className="mb-2 block text-sm font-medium text-gray-700">
                 Số điện thoại
               </label>
+              <input
+                type="text"
+                value={requestForm.phone}
+                onChange={(e) =>
+                  handleRequestFieldChange("phone", e.target.value)
+                }
+                placeholder="Nhập số điện thoại"
+                className={`w-full rounded-lg border px-4 py-3 text-sm outline-none transition ${requestErrors.phone
+                  ? "border-red-500"
+                  : "border-gray-300 focus:border-[#3AB4E6]"
+                  }`}
+              />
+              {requestErrors.phone && (
+                <p className="mt-1 text-sm text-red-500">
+                  {requestErrors.phone}
+                </p>
+              )}
             </div>
-            <input
-              type="text"
-              value={form.phone}
-              onChange={(e) => handleChange("phone", e.target.value)}
-              placeholder="Nhập số điện thoại"
-              className={`w-full rounded-lg border px-4 py-3 text-sm outline-none transition ${
-                errors.phone
+
+            <div>
+              <label className="mb-2 block text-sm font-medium text-gray-700">
+                Email công ty
+              </label>
+              <input
+                type="text"
+                value={requestForm.email}
+                onChange={(e) =>
+                  handleRequestFieldChange("email", e.target.value)
+                }
+                placeholder="Nhập email công ty"
+                className={`w-full rounded-lg border px-4 py-3 text-sm outline-none transition ${requestErrors.email
                   ? "border-red-500"
                   : "border-gray-300 focus:border-[#3AB4E6]"
-              }`}
-            />
-            {errors.phone && (
-              <p className="text-red-500 text-sm mt-1">{errors.phone}</p>
-            )}
-          </div>
+                  }`}
+              />
+              {requestErrors.email && (
+                <p className="mt-1 text-sm text-red-500">
+                  {requestErrors.email}
+                </p>
+              )}
+            </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Website
-            </label>
-            <input
-              type="text"
-              value={form.website}
-              onChange={(e) => handleChange("website", e.target.value)}
-              placeholder="https://example.com"
-              className={`w-full rounded-lg border px-4 py-3 text-sm outline-none transition ${
-                errors.website
+            <div>
+              <label className="mb-2 block text-sm font-medium text-gray-700">
+                Website
+              </label>
+              <input
+                type="text"
+                value={requestForm.website}
+                onChange={(e) =>
+                  handleRequestFieldChange("website", e.target.value)
+                }
+                placeholder="https://example.com"
+                className={`w-full rounded-lg border px-4 py-3 text-sm outline-none transition ${requestErrors.website
                   ? "border-red-500"
                   : "border-gray-300 focus:border-[#3AB4E6]"
-              }`}
-            />
-            {errors.website && (
-              <p className="text-red-500 text-sm mt-1">{errors.website}</p>
-            )}
-          </div>
+                  }`}
+              />
+              {requestErrors.website && (
+                <p className="mt-1 text-sm text-red-500">
+                  {requestErrors.website}
+                </p>
+              )}
+            </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Email công ty
-            </label>
-            <input
-              type="text"
-              value={form.email}
-              onChange={(e) => handleChange("email", e.target.value)}
-              placeholder="Nhập email công ty"
-              className="w-full rounded-lg border border-gray-300 px-4 py-3 text-sm outline-none transition focus:border-[#3AB4E6]"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Địa chỉ công ty
-            </label>
-            <input
-              type="text"
-              value={form.address}
-              onChange={(e) => handleChange("address", e.target.value)}
-              placeholder="Nhập địa chỉ công ty"
-              className={`w-full rounded-lg border px-4 py-3 text-sm outline-none transition ${
-                errors.address
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <label className="block text-sm font-medium text-gray-700">
+                  Địa chỉ công ty
+                </label>
+                {requestForm.address && (
+                  <a
+                    href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(requestForm.address)}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-[10px] uppercase tracking-tighter font-bold text-gray-500 hover:text-blue-600 flex items-center gap-1 transition-colors"
+                  >
+                    <FaMapMarkerAlt /> Kiểm tra trên Map
+                  </a>
+                )}
+              </div>
+              <input
+                type="text"
+                value={requestForm.address}
+                onChange={(e) =>
+                  handleRequestFieldChange("address", e.target.value)
+                }
+                placeholder="Nhập địa chỉ công ty"
+                className={`w-full rounded-lg border px-4 py-3 text-sm outline-none transition ${requestErrors.address
                   ? "border-red-500"
                   : "border-gray-300 focus:border-[#3AB4E6]"
-              }`}
-            />
-            {errors.address && (
-              <p className="text-red-500 text-sm mt-1">{errors.address}</p>
-            )}
-          </div>
+                  }`}
+              />
+              {requestErrors.address && (
+                <p className="mt-1 text-sm text-red-500">
+                  {requestErrors.address}
+                </p>
+              )}
+            </div>
 
-          <div className="md:col-span-2">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Giới thiệu công ty
-            </label>
-            <textarea
-              rows="5"
-              value={form.description}
-              onChange={(e) => handleChange("description", e.target.value)}
-              placeholder="Nhập mô tả ngắn về công ty"
-              className="w-full rounded-lg border border-gray-300 px-4 py-3 text-sm outline-none focus:border-[#3AB4E6] transition resize-none"
-            />
+            <div>
+              <label className="mb-2 block text-sm font-medium text-gray-700">
+                Logo URL
+              </label>
+              <input
+                type="text"
+                value={requestForm.logoUrl}
+                onChange={(e) =>
+                  handleRequestFieldChange("logoUrl", e.target.value)
+                }
+                placeholder="Dán đường dẫn logo công ty"
+                className="w-full rounded-lg border border-gray-300 px-4 py-3 text-sm outline-none transition focus:border-[#3AB4E6]"
+              />
+            </div>
+
+            <div className="md:col-span-2">
+              <label className="mb-2 block text-sm font-medium text-gray-700">
+                Giới thiệu công ty
+              </label>
+              <textarea
+                rows="5"
+                value={requestForm.description}
+                onChange={(e) =>
+                  handleRequestFieldChange("description", e.target.value)
+                }
+                placeholder="Nhập mô tả ngắn về công ty"
+                className="w-full resize-none rounded-lg border border-gray-300 px-4 py-3 text-sm outline-none transition focus:border-[#3AB4E6]"
+              />
+            </div>
           </div>
         </div>
-
-        <div className="flex justify-end gap-3">
-          <button
-            type="button"
-            disabled={saving}
-            className="px-5 py-2.5 rounded-lg border border-gray-300 text-gray-700 text-sm font-medium hover:bg-gray-50 transition disabled:opacity-50"
-          >
-            Hủy
-          </button>
-          <button
-            type="button"
-            onClick={handleSave}
-            disabled={saving}
-            className="px-5 py-2.5 rounded-lg bg-[#3AB4E6] text-white text-sm font-medium hover:opacity-90 transition flex items-center gap-2 disabled:opacity-50"
-          >
-            {saving ? (
-              <>
-                <FaSpinner className="animate-spin" />
-                Đang lưu...
-              </>
-            ) : (
-              "Lưu"
-            )}
-          </button>
-        </div>
-      </div>
+      </AppModal>
     </div>
   );
 };

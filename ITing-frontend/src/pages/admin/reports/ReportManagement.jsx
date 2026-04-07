@@ -13,8 +13,17 @@ import {
   UserX,
   FileText,
   ShieldCheck,
-  Search
+  Search,
+  Download,
+  FileUp,
+  CheckSquare,
+  Trash2,
+  Ban,
+  XCircle,
+  CheckCircle2
 } from "lucide-react";
+import ImportExcelModal from "../../../components/admin/ImportExcelModal";
+import { toast } from "sonner";
 
 const AdminCompanyManagement = () => {
   const [companies, setCompanies] = useState([]);
@@ -24,6 +33,46 @@ const AdminCompanyManagement = () => {
   const [actionDialog, setActionDialog] = useState(null);
   const [actionNote, setActionNote] = useState("");
   const [openMenuId, setOpenMenuId] = useState(null);
+  const [showImportModal, setShowImportModal] = useState(false);
+  const [selectedIds, setSelectedIds] = useState([]);
+
+  const isAllSelected = companies.length > 0 && selectedIds.length === companies.length;
+
+  const downloadBlob = (blob, filename) => {
+    const url = window.URL.createObjectURL(new Blob([blob]));
+    const link = document.createElement("a");
+    link.href = url;
+    link.setAttribute("download", filename);
+    document.body.appendChild(link);
+    link.click();
+    link.parentNode.removeChild(link);
+  };
+
+  const handleExportExcel = async () => {
+    try {
+      const res = await adminCompanyService.exportCompanies();
+      downloadBlob(res, "companies_list.xlsx");
+      toast.success("Xuất danh sách công ty thành công!");
+    } catch (error) {
+      console.error("Lỗi xuất Excel:", error);
+      toast.error("Không thể xuất file Excel.");
+    }
+  };
+
+  const handleDownloadTemplate = async () => {
+    try {
+      const res = await adminCompanyService.downloadTemplate();
+      downloadBlob(res, "company_import_template.xlsx");
+    } catch (error) {
+      console.error("Lỗi tải template:", error);
+      toast.error("Không thể tải file mẫu.");
+    }
+  };
+
+  const handleImportExcel = async (file) => {
+    await adminCompanyService.importCompanies(file);
+    fetchCompanies();
+  };
   const [loading, setLoading] = useState(false);
   const [page, setPage] = useState(0);
   const [size] = useState(10);
@@ -83,7 +132,7 @@ const AdminCompanyManagement = () => {
       const matchesSearch =
         !q ||
         company.name.toLowerCase().includes(q) ||
-        company.id.toLowerCase().includes(q) ||
+        String(company.id).toLowerCase().includes(q) ||
         (company.taxCode || "").toLowerCase().includes(q) ||
         (company.companyEmail || "").toLowerCase().includes(q);
 
@@ -136,23 +185,86 @@ const AdminCompanyManagement = () => {
         await adminCompanyService.suspendCompany(company.id, actionNote);
       } else if (action === "unsuspend") {
         await adminCompanyService.unsuspendCompany(company.id);
+      } else if (action === "delete") {
+        await adminCompanyService.deleteCompany(company.id);
       }
 
       setActionDialog(null);
       setActionNote("");
       fetchCompanies();
+      toast.success("Cập nhật trạng thái thành công!");
     } catch (error) {
       console.error("Lỗi xử lý action công ty:", error);
+      toast.error("Cập nhật trạng thái thất bại!");
+    }
+  };
+
+  const handleSelectAll = (e) => {
+    if (e.target.checked) {
+      setSelectedIds(companies.map(c => c.id));
+    } else {
+      setSelectedIds([]);
+    }
+  };
+
+  const handleSelectOne = (id) => {
+    setSelectedIds(prev => 
+      prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]
+    );
+  };
+
+  const handleBulkAction = async (action) => {
+    if (selectedIds.length === 0) return;
+    
+    // For simplicity, we skip reasons in bulk action for now or we could open a generic dialog
+    // But let's support them via a confirmation or similar
+    if (!window.confirm(`Bạn có chắc muốn thực hiện hành động này cho ${selectedIds.length} mục đã chọn?`)) return;
+
+    try {
+      setLoading(true);
+      if (action === 'approve') {
+        await adminCompanyService.bulkApprove(selectedIds, "BASIC", "Duyệt hàng loạt");
+      } else if (action === 'reject') {
+        await adminCompanyService.bulkReject(selectedIds, "Từ chối hàng loạt");
+      } else if (action === 'suspend') {
+        await adminCompanyService.bulkSuspend(selectedIds, "Đình chỉ hàng loạt");
+      } else if (action === 'delete') {
+        await adminCompanyService.bulkDelete(selectedIds);
+      }
+      
+      toast.success(`Đã thực hiện ${action} cho ${selectedIds.length} mục`);
+      setSelectedIds([]);
+      fetchCompanies();
+    } catch (error) {
+      console.error("Bulk action error:", error);
+      toast.error("Thao tác hàng loạt thất bại");
+    } finally {
+      setLoading(false);
     }
   };
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 pb-32">
       <PageHeader
         title="Quản lý Công ty"
         description="Duyệt hồ sơ đăng ký doanh nghiệp và quản lý trạng thái hoạt động."
       >
-        <Button variant="outline">Xuất báo cáo</Button>
-        <Button>
+        <Button 
+          variant="outline" 
+          className="flex items-center gap-2 border-slate-200 text-slate-600 hover:bg-slate-50"
+          onClick={() => setShowImportModal(true)}
+        >
+          <FileUp className="h-4 w-4 text-slate-500" />
+          Nhập Excel
+        </Button>
+        <Button 
+          variant="outline" 
+          className="flex items-center gap-2 border-[#1967D2] text-[#1967D2] hover:bg-blue-50"
+          onClick={handleExportExcel}
+        >
+          <Download className="h-4 w-4" />
+          Xuất Excel
+        </Button>
+        <Button className="bg-[#1967D2] hover:bg-[#1452A8]">
           <ShieldCheck className="mr-2 h-4 w-4" />
           Duyệt nhanh
         </Button>
@@ -219,6 +331,17 @@ const AdminCompanyManagement = () => {
       <Card className="!p-0 overflow-hidden shadow-sm">
         <Table
           headers={[
+            { 
+              label: (
+                <input 
+                  type="checkbox" 
+                  checked={isAllSelected}
+                  onChange={handleSelectAll}
+                  className="h-4 w-4 rounded border-slate-300 text-sky-600 focus:ring-sky-500" 
+                />
+              ),
+              className: "w-10"
+            },
             { label: "Mã công ty" },
             { label: "Tên công ty" },
             { label: "Mã số thuế" },
@@ -240,7 +363,18 @@ const AdminCompanyManagement = () => {
             </tr>
           ) : filteredCompanies.length > 0 ? (
             filteredCompanies.map((company) => (
-              <tr key={company.id} className="hover:bg-slate-50/50 transition-colors">
+              <tr 
+                key={company.id} 
+                className={`hover:bg-slate-50/50 transition-colors ${selectedIds.includes(company.id) ? 'bg-sky-50/50' : ''}`}
+              >
+                <Td>
+                   <input 
+                      type="checkbox" 
+                      checked={selectedIds.includes(company.id)}
+                      onChange={() => handleSelectOne(company.id)}
+                      className="h-4 w-4 rounded border-slate-300 text-sky-600 focus:ring-sky-500" 
+                    />
+                </Td>
                 <Td className="font-medium text-slate-500">{company.id}</Td>
                 <Td className="font-bold text-slate-700">{company.name || "N/A"}</Td>
                 <Td>{company.taxCode || company.tax_code || "---"}</Td>
@@ -270,7 +404,11 @@ const AdminCompanyManagement = () => {
                     setOpenMenuId={setOpenMenuId}
                     onViewDetail={async (company) => {
                       try {
-                        const detail = await adminCompanyService.getCompanyDetail(company.id);
+                        const [detail, logs] = await Promise.all([
+                          adminCompanyService.getCompanyDetail(company.id),
+                          adminCompanyService.getCompanyAuditLogs(company.id)
+                        ]);
+                        detail.reviewHistory = logs || [];
                         setDetailCompany(detail);
                       } catch (error) {
                         console.error("Lỗi lấy chi tiết công ty:", error);
@@ -310,6 +448,69 @@ const AdminCompanyManagement = () => {
         setActionNote={setActionNote}
         onClose={() => setActionDialog(null)}
         onConfirm={confirmAction}
+      />
+
+      {/* Bulk Action Bar */}
+      {selectedIds.length > 0 && (
+        <div className="fixed bottom-6 left-1/2 z-[60] flex -translate-x-1/2 items-center gap-6 rounded-2xl border border-sky-100 bg-white px-6 py-4 shadow-2xl animate-in fade-in slide-in-from-bottom-4">
+          <div className="flex items-center gap-3 border-r border-slate-100 pr-6">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-sky-100 text-sky-600">
+              <CheckSquare className="h-5 w-5" />
+            </div>
+            <div>
+              <p className="text-sm font-bold text-slate-800">Đã chọn {selectedIds.length} mục</p>
+              <button 
+                onClick={() => setSelectedIds([])}
+                className="text-xs font-medium text-sky-600 hover:underline"
+              >
+                Bỏ chọn tất cả
+              </button>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <button
+               onClick={() => handleBulkAction('approve')}
+               className="flex items-center gap-2 rounded-xl bg-emerald-500 px-4 py-2.5 text-sm font-bold text-white shadow-lg shadow-emerald-100 transition-all hover:bg-emerald-600 hover:scale-105 active:scale-95"
+            >
+              <CheckCircle2 className="h-4 w-4" />
+              Duyệt
+            </button>
+            
+            <button
+               onClick={() => handleBulkAction('reject')}
+               className="flex items-center gap-2 rounded-xl bg-amber-500 px-4 py-2.5 text-sm font-bold text-white shadow-lg shadow-amber-100 transition-all hover:bg-amber-600 hover:scale-105 active:scale-95"
+            >
+              <XCircle className="h-4 w-4" />
+              Từ chối
+            </button>
+
+            <button
+               onClick={() => handleBulkAction('suspend')}
+               className="flex items-center gap-2 rounded-xl bg-slate-700 px-4 py-2.5 text-sm font-bold text-white shadow-lg shadow-slate-100 transition-all hover:bg-slate-800 hover:scale-105 active:scale-95"
+            >
+              <Ban className="h-4 w-4" />
+              Đình chỉ
+            </button>
+
+            <button
+               onClick={() => handleBulkAction('delete')}
+               className="flex items-center gap-2 rounded-xl bg-red-500 px-4 py-2.5 text-sm font-bold text-white shadow-lg shadow-red-100 transition-all hover:bg-red-600 hover:scale-105 active:scale-95"
+            >
+              <Trash2 className="h-4 w-4" />
+              Xóa
+            </button>
+          </div>
+        </div>
+      )}
+
+      <ImportExcelModal
+        isOpen={showImportModal}
+        onClose={() => setShowImportModal(false)}
+        title="Nhập công ty từ Excel"
+        resourceName="công ty"
+        onDownloadTemplate={handleDownloadTemplate}
+        onImport={handleImportExcel}
       />
     </div>
   );
