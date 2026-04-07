@@ -222,16 +222,16 @@ const JobApplyModal = ({ isOpen, onClose, jobTitle, jobId }) => {
               Lưu ý:
             </p>
             <p>
-              ITWork khuyên tất cả các bạn hãy luôn cẩn trọng trong quá trình
+              ITing khuyên tất cả các bạn hãy luôn cẩn trọng trong quá trình
               tìm việc và chủ động nghiên cứu về thông tin công ty, vị trí việc
               làm trước khi ứng tuyển.
             </p>
             <p>
               Ứng viên cần có trách nhiệm với hành vi ứng tuyển của mình. Nếu
               bạn gặp phải tin tuyển dụng hoặc nhận được liên lạc đáng ngờ, hãy
-              báo cáo ngay cho ITWork qua email{" "}
+              báo cáo ngay cho ITing qua email{" "}
               <span className="text-[#00B4D8] cursor-pointer">
-                hotro@itwork.vn
+                hotro@iting.vn
               </span>{" "}
               để được hỗ trợ kịp thời.
             </p>

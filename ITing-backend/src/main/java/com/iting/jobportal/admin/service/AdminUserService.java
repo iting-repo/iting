@@ -21,4 +21,15 @@ public interface AdminUserService {
 
     void deleteUser(Long adminId, Long userId);
 
+    void bulkBanUsers(java.util.List<Long> userIds, BanUserRequest request);
+
+    void bulkUnbanUsers(java.util.List<Long> userIds);
+
+    void bulkDeleteUsers(java.util.List<Long> userIds);
+
+    java.io.ByteArrayInputStream exportUsersToExcel();
+
+    void importUsersFromExcel(org.springframework.web.multipart.MultipartFile file);
+
+    java.io.ByteArrayInputStream getImportTemplate();
 }

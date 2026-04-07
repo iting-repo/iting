@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.iting.jobportal.auth.dto.response.LoginResponse;
 import com.iting.jobportal.auth.dto.request.ChangePasswordRequest;
 import com.iting.jobportal.auth.dto.request.RegisterRequest;
+import com.iting.jobportal.auth.dto.request.GoogleLoginRequest;
 
 @Tag(name ="01. Auth")
 @RestController
@@ -31,6 +32,11 @@ public class AuthController {
     @PostMapping("/login")
     public LoginResponse login(@Valid @RequestBody LoginRequest request) {
         return authService.login(request);
+    }
+
+    @PostMapping("/google")
+    public LoginResponse googleLogin(@Valid @RequestBody GoogleLoginRequest request) {
+        return authService.loginWithGoogle(request.getTokenId());
     }
 
     @PostMapping("/change-password")

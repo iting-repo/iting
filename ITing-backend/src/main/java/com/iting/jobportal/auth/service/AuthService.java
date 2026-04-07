@@ -10,6 +10,8 @@ public interface AuthService {
 
     LoginResponse login(LoginRequest request);
 
+    LoginResponse loginWithGoogle(String tokenId);
+
     void changePassword(Long accountId, ChangePasswordRequest request);
 
     Account getAccountByEmail(String email);

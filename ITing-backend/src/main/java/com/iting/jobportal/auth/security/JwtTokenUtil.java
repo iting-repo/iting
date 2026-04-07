@@ -61,4 +61,13 @@ public class JwtTokenUtil {
     public String getRoleFromToken(String token) {
         return (String) getClaims(token).get("role");
     }
+
+    public Long getUserIdFromHeader(jakarta.servlet.http.HttpServletRequest request) {
+        String authHeader = request.getHeader("Authorization");
+        if (authHeader != null && authHeader.startsWith("Bearer ")) {
+            String token = authHeader.substring(7);
+            return getUserIdFromToken(token);
+        }
+        return null;
+    }
 }

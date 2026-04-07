@@ -71,6 +71,44 @@ const adminUserService = {
       throw error;
     }
   },
+
+  exportUsers: async () => {
+    const response = await axiosInstance.get("/admin/users/export", {
+      responseType: "blob",
+    });
+    return response;
+  },
+
+  importUsers: async (file) => {
+    const formData = new FormData();
+    formData.append("file", file);
+    return await axiosInstance.post("/admin/users/import", formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+  },
+
+  deleteUser: async (userId) => {
+    return await axiosInstance.delete(`/admin/users/${userId}`);
+  },
+
+  bulkBan: async (ids) => {
+    return await axiosInstance.post('/admin/users/bulk-ban', ids);
+  },
+
+  bulkUnban: async (ids) => {
+    return await axiosInstance.post('/admin/users/bulk-unban', ids);
+  },
+
+  bulkDelete: async (ids) => {
+    return await axiosInstance.post('/admin/users/bulk-delete', ids);
+  },
+
+  downloadTemplate: async () => {
+    const response = await axiosInstance.get("/admin/users/template", {
+      responseType: "blob",
+    });
+    return response;
+  },
 };
 
 export default adminUserService;

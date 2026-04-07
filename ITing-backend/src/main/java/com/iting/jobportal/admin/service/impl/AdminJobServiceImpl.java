@@ -100,6 +100,12 @@ public class AdminJobServiceImpl implements AdminJobService {
         return enrichDetailWithCompanyAndHistory(job);
     }
 
+    @Override
+    @Transactional
+    public void deleteJob(Long jobId) {
+        jobRepository.deleteById(jobId);
+    }
+
 
 
 
@@ -318,6 +324,12 @@ public class AdminJobServiceImpl implements AdminJobService {
         }
     }
 
+    @Override
+    @Transactional
+    public void bulkDeleteJobs(java.util.List<Long> jobIds) {
+        jobIds.forEach(jobRepository::deleteById);
+    }
+
     /*
     =========================
     PRIVATE
@@ -390,4 +402,48 @@ public class AdminJobServiceImpl implements AdminJobService {
         job.setReviewedAt(LocalDateTime.now());
     }
 
+    @Override
+    public java.io.ByteArrayInputStream exportJobsToExcel() {
+        java.util.List<Job> jobs = jobRepository.findAll();
+        String[] headers = {"ID", "Title", "Company", "Status", "Province", "Work Type"};
+        
+        return com.iting.jobportal.common.excel.ExcelHelper.dataToExcel(
+                jobs, 
+                headers, 
+                "Jobs",
+                (job, row) -> {
+                    row.createCell(0).setCellValue(job.getId());
+                    row.createCell(1).setCellValue(job.getTitle());
+                    row.createCell(2).setCellValue(job.getCompany() != null ? job.getCompany().getName() : "");
+                    row.createCell(3).setCellValue(job.getStatus().toString());
+                    row.createCell(4).setCellValue(job.getProvince());
+                    row.createCell(5).setCellValue(job.getJobType() != null ? job.getJobType().toString() : "");
+                }
+        );
+    }
+
+    @Override
+    @Transactional
+    public void importJobsFromExcel(org.springframework.web.multipart.MultipartFile file) {
+        try {
+            java.util.List<Job> jobs = com.iting.jobportal.common.excel.ExcelHelper.excelToData(
+                    file.getInputStream(),
+                    row -> {
+                        Job job = new Job();
+                        job.setTitle(row.getCell(0).getStringCellValue());
+                        job.setStatus(JobStatus.PENDING);
+                        return job;
+                    }
+            );
+            jobRepository.saveAll(jobs);
+        } catch (java.io.IOException e) {
+            throw new RuntimeException("fail to store excel data: " + e.getMessage());
+        }
+    }
+
+    @Override
+    public java.io.ByteArrayInputStream getImportTemplate() {
+        String[] headers = {"Job Title"};
+        return com.iting.jobportal.common.excel.ExcelHelper.createTemplate(headers, "Job Import Template");
+    }
 }

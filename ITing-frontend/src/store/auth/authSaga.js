@@ -1,8 +1,9 @@
 import { call, put, takeLatest } from 'redux-saga/effects';
 import authService from '../../services/authService';
+import googleAuthService from '../../services/googleAuthService';
 import { storage } from '../../utils/storage';
 import {
-    loginRequest, loginSuccess, loginFailure,
+    loginRequest, loginSuccess, loginFailure, googleLoginRequest,
     registerRequest, registerSuccess, registerFailure,
     checkAuth
 } from './authSlice';
@@ -15,30 +16,21 @@ function* handleCheckAuth() {
 
         if (!token) return;
 
-        // 1. Ưu tiên: Restore từ localStorage ngay lập tức để UI không bị "nháy"
         if (userInfo) {
             yield put(loginSuccess(userInfo));
         }
 
-        // 2. Gọi service check token (để verify xem token còn sống không)
-        // Nếu API này lỗi 401, axiosInstance sẽ tự clear token và saga sẽ catch lỗi
         try {
             const response = yield call(authService.getCurrentUser);
-            // Update lại info mới nhất từ server (nếu có)
             if (response) {
                 yield put(loginSuccess(response));
-                // Cập nhật lại localStorage luôn cho đồng bộ
                 storage.setUserInfo(response);
             }
         } catch (apiError) {
             console.warn("CheckAuth API Warning:", apiError);
-            // Chỉ logout nếu thực sự lỗi Auth (401). 
-            // Các lỗi khác (mạng, server 500) thì tạm thời giữ session local để user dùng tiếp.
-            // (Lưu ý: axiosInstance interceptor đã handle vụ 401 -> clear storage rồi)
         }
 
     } catch (error) {
-        // Token không hợp lệ hoặc parse lỗi
         console.error("Auth Saga Error:", error);
         storage.clearAuth();
     }
@@ -47,42 +39,41 @@ function* handleCheckAuth() {
 // Worker Saga: Register
 function* handleRegister(action) {
     try {
-        const { navigate } = action.payload; // Lấy navigate để dùng sau này
-
-        // 1. Gọi API Register
-        // Pass cả object payload để service xử lý (có fullName, role, v.v.)
-        const data = yield call(authService.register, action.payload);
-
-        // 2. Không Auto Login -> Chuyển về trang Login để người dùng tự đăng nhập
-        // (Theo yêu cầu: đăng ký xong về trang login)
-
-        // const token = data.token; // Nếu backend có trả về cũng không lưu
-        yield put(registerSuccess(null)); // Tắt loading, không set currentUser
-
-        // 3. Điều hướng về trang Login
+        const { navigate } = action.payload;
+        yield call(authService.register, action.payload);
+        yield put(registerSuccess(null));
         navigate('/login');
-
-        /* 
-        // Logic cũ: Auto Login
-        if (data.token) {
-            storage.setAuth(data.token, data.role, data);
-            yield put(registerSuccess(data));
-        } else {
-            yield put(registerSuccess(null)); 
-        }
-
-        if (role === 'EMPLOYER') {
-            navigate('/employer/dashboard');
-        } else if (role === 'CANDIDATE') {
-            navigate('/');
-        } else {
-            navigate('/');
-        } 
-        */
     } catch (error) {
-        // Lấy message từ error response (đã handle trong axiosInstance hoặc lấy mặc định)
-        const message = error.message || "Đăng ký thất bại";
+        const message = error.error || error.message || "Đăng ký thất bại";
         yield put(registerFailure(message));
+    }
+}
+
+// Worker Saga: Google Login
+function* handleGoogleLogin(action) {
+    try {
+        const { tokenId, navigate } = action.payload;
+        console.log("Starting Google login request...");
+        
+        const data = yield call(googleAuthService.loginWithGoogle, tokenId);
+        console.log("Google Login success:", data);
+
+        const token = data.token || data.accessToken;
+        if (token) {
+            data.token = token;
+            storage.setAuth(token, data.role, data);
+            yield put(loginSuccess(data));
+
+            if (data.role === 'EMPLOYER') {
+                navigate('/employer/dashboard');
+            } else {
+                navigate('/');
+            }
+        }
+    } catch (error) {
+        console.error("Google Login saga error:", error);
+        const message = error.error || error.message || "Đăng nhập Google thất bại";
+        yield put(loginFailure(message));
     }
 }
 
@@ -90,35 +81,20 @@ function* handleRegister(action) {
 function* handleLogin(action) {
     try {
         const { email, password, navigate } = action.payload;
-
-        // 1. Gọi API
         console.log("Starting login request for:", email);
         const data = yield call(authService.login, email, password);
-        console.log("Login success, response data:", data);
-
-        // Chuẩn hóa token do API có thể trả về `accessToken` thay vì `token`
+        
         const token = data.token || data.accessToken;
-
-        // 2. Lưu thông tin quan trọng vào LocalStorage
         if (token) {
             data.token = token;
             storage.setAuth(token, data.role, data);
-
-            // 3. Bắn action thành công vào Redux
             yield put(loginSuccess(data));
 
             if (data.role === 'EMPLOYER') {
-                console.log("✅ Đang chuyển hướng vào Dashboard Employer...");
                 navigate('/employer/dashboard');
-            } else if (data.role === 'CANDIDATE') {
-                console.log("✅ Đang chuyển hướng vào Jobs...");
-                navigate('/');
             } else if (data.role === 'ADMIN') {
-                console.log("✅ Đang chuyển hướng vào Admin Dashboard...");
                 navigate('/admin/dashboard');
             } else {
-                // Trường hợp role khác
-                console.log("⚠️ Role unknown or generic, navigating to home:", data.role);
                 navigate('/');
             }
         } else {
@@ -126,9 +102,8 @@ function* handleLogin(action) {
         }
 
     } catch (error) {
-        // 5. Bắn lỗi
         console.error("Login saga error:", error);
-        const message = error.message || "Đăng nhập thất bại";
+        const message = error.error || error.message || "Đăng nhập thất bại";
         yield put(loginFailure(message));
     }
 }
@@ -136,6 +111,7 @@ function* handleLogin(action) {
 // Watcher Saga
 export default function* authSaga() {
     yield takeLatest(loginRequest.type, handleLogin);
+    yield takeLatest(googleLoginRequest.type, handleGoogleLogin);
     yield takeLatest(registerRequest.type, handleRegister);
     yield takeLatest(checkAuth.type, handleCheckAuth);
 }

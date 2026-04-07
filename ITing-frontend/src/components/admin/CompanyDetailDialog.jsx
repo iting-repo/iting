@@ -48,17 +48,17 @@ export const CompanyDetailDialog = ({ company, open, onClose, onAction }) => {
 
           <div className="flex items-center gap-2 text-sm">
             <Phone className="h-4 w-4 text-slate-400" />
-            {company.representativePhone}
+            {company.representativePhone || company.phone || "---"}
           </div>
 
           <div className="flex items-center gap-2 text-sm">
             <User className="h-4 w-4 text-slate-400" />
-            {company.representativeName}
+            {company.representativeName || "---"}
           </div>
 
           <div className="flex items-center gap-2 text-sm">
             <Shield className="h-4 w-4 text-slate-400" />
-            MST: {company.taxCode}
+            MST: {company.taxCode || "---"}
           </div>
         </div>
 
@@ -73,7 +73,7 @@ export const CompanyDetailDialog = ({ company, open, onClose, onAction }) => {
             {[
               { label: "Tên công ty", ok: !!company.name },
               { label: "Email công ty", ok: !!company.companyEmail },
-              { label: "Số điện thoại", ok: !!company.representativePhone },
+              { label: "Số điện thoại", ok: !!(company.representativePhone || company.phone) },
               { label: "Người đại diện", ok: !!company.representativeName },
               { label: "Mã số thuế", ok: !!company.taxCode && company.taxCode !== "0000000000" },
               { label: "Giấy phép kinh doanh", ok: !!company.businessLicenseFileUrl },
@@ -127,6 +127,39 @@ export const CompanyDetailDialog = ({ company, open, onClose, onAction }) => {
               <RotateCcw className="mr-2 h-4 w-4" />
               Resubmit
             </Button>
+          </div>
+        )}
+
+        {/* Lịch sử duyệt */}
+        {company.reviewHistory && company.reviewHistory.length > 0 && (
+          <div className="border-t border-slate-200 pt-6">
+            <h4 className="text-sm font-semibold mb-4 text-slate-800">Lịch sử duyệt</h4>
+            <div className="space-y-6 border-l-2 border-slate-100 ml-3 pl-6">
+              {company.reviewHistory.map((entry, i) => (
+                <div key={i} className="relative">
+                  <div className="absolute -left-[31px] top-1.5 h-3 w-3 rounded-full bg-blue-500 border-2 border-white ring-4 ring-blue-50" />
+                  <div className="flex items-center justify-between">
+                    <p className="text-sm font-bold text-slate-800">{entry.action}</p>
+                    <time className="text-[10px] uppercase tracking-wider font-bold text-slate-400">
+                      {new Date(entry.time).toLocaleString('vi-VN')}
+                    </time>
+                  </div>
+                  <p className="text-xs text-slate-500 mt-0.5">
+                    Thực hiện bởi: <span className="font-medium text-slate-700">{entry.actor || "Hệ thống"}</span>
+                  </p>
+                  {(entry.note || entry.reason) && (
+                    <div className="mt-2 text-xs text-slate-600 bg-slate-50 border border-slate-100 p-3 rounded-xl italic">
+                      {entry.note || entry.reason}
+                    </div>
+                  )}
+                  {entry.fromStatus && entry.toStatus && (
+                    <p className="text-[10px] mt-2 text-slate-400">
+                       Thay đổi trạng thái: <span className="text-slate-500 font-medium">{entry.fromStatus}</span> → <span className="text-slate-600 font-bold">{entry.toStatus}</span>
+                    </p>
+                  )}
+                </div>
+              ))}
+            </div>
           </div>
         )}
       </div>

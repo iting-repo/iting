@@ -124,7 +124,7 @@ const JobPage = () => {
                         <div className="pt-12">
                             <div className="text-center mb-10">
                                 <h2 className="text-3xl font-bold text-gray-800 mb-3">Thương hiệu lớn tiêu biểu</h2>
-                                <p className="text-gray-500">Hàng trăm thương hiệu lớn đang tuyển dụng trên ITWork</p>
+                                <p className="text-gray-500">Hàng trăm thương hiệu lớn đang tuyển dụng trên ITing</p>
                             </div>
 
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">

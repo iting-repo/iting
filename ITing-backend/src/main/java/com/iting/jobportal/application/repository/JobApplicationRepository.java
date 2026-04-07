@@ -15,5 +15,9 @@ public interface JobApplicationRepository extends JpaRepository<ApplyFormSentToJ
 
     @Query("SELECT s FROM ApplyFormSentToJob s JOIN ApplyForm f ON f.id = s.id.applyFormId WHERE f.userId = :userId")
     Page<ApplyFormSentToJob> findByUserId(@Param("userId") Long userId, Pageable pageable);
+
+    long countByStatus(com.iting.jobportal.application.entity.enums.ApplicationStatus status);
+    long countByTimeSentAfter(java.time.LocalDateTime dateTime);
+    long countByTimeSentBefore(java.time.LocalDateTime dateTime);
 }
 

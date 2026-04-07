@@ -65,8 +65,55 @@ const adminCompanyService = {
       `/admin/companies/${companyId}/unsuspend`
     );
     return response;
-  }
+  },
 
+  exportCompanies: async () => {
+    return await axiosInstance.get("/admin/companies/export", {
+      responseType: "blob",
+    });
+  },
+
+  importCompanies: async (file) => {
+    const formData = new FormData();
+    formData.append("file", file);
+    return await axiosInstance.post("/admin/companies/import", formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+  },
+
+  downloadTemplate: async () => {
+    return await axiosInstance.get("/admin/companies/template", {
+      responseType: "blob",
+    });
+  },
+
+  bulkApprove: async (ids, verificationLevel, note) => {
+    return await axiosInstance.post('/admin/companies/bulk-approve', { 
+      ids, 
+      verificationLevel, 
+      note 
+    });
+  },
+
+  bulkReject: async (ids, reason) => {
+    return await axiosInstance.post('/admin/companies/bulk-reject', { ids, reason });
+  },
+
+  bulkSuspend: async (ids, reason) => {
+    return await axiosInstance.post('/admin/companies/bulk-suspend', { ids, reason });
+  },
+
+  bulkDelete: async (ids) => {
+    return await axiosInstance.post('/admin/companies/bulk-delete', { ids });
+  },
+
+  deleteCompany: async (id) => {
+    return await axiosInstance.delete(`/admin/companies/${id}`);
+  },
+
+  getCompanyAuditLogs: async (companyId) => {
+    return await axiosInstance.get(`/admin/companies/${companyId}/audit-logs`);
+  }
 };
 
 export default adminCompanyService;

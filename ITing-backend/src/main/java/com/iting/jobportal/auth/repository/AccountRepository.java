@@ -12,4 +12,7 @@ public interface AccountRepository extends JpaRepository<Account, Long> {
     // Basic CRUD operations
     Optional<Account> findByEmail(String email);
     boolean existsByEmail(String email);
+
+    long countByCreatedAtAfter(java.time.LocalDateTime dateTime);
+    long countByCreatedAtBefore(java.time.LocalDateTime dateTime);
 }

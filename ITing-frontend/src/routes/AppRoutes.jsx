@@ -17,6 +17,9 @@ const ManageJobs = lazy(() => import('../pages/employer/ManageJobs'));
 const EditJob = lazy(() => import('../pages/employer/EditJob'));
 const JobApplications = lazy(() => import('../pages/employer/JobApplications'));
 const LegacyEmployerJobApplicationsRedirect = lazy(() => import('../pages/employer/LegacyEmployerJobApplicationsRedirect'));
+const Verification = lazy(() => import('../pages/employer/Verification'));
+const DataProcessing = lazy(() => import('../pages/employer/DataProcessing'));
+const FindCandidate = lazy(() => import('../pages/employer/FindCandidate'));
 const CandidateDashboard = lazy(() => import('../pages/candidate/CandidateDashboard'));
 const CandidateLayout = lazy(() => import('../layouts/CandidateLayout'));
 const CandidateProfile = lazy(() => import('../pages/candidate/profile/CandidateProfile'));
@@ -31,6 +34,8 @@ const LegacyJobRedirect = lazy(() => import('../pages/public/LegacyJobRedirect')
 const AboutPage = lazy(() => import('../pages/public/AboutPage'));
 const ContactPage = lazy(() => import('../pages/public/ContactPage'));
 const AdminJobPage = lazy(() => import('../pages/admin/jobs/AdminJobPage'));
+const AuditLogPage = lazy(() => import('../pages/admin/audit/AuditLogPage'));
+const SystemConfig = lazy(() => import('../pages/admin/config/SystemConfig'));
 
 import { LoadingSpinner } from '../components';
 import { Settings } from 'lucide-react';
@@ -59,6 +64,8 @@ const AppRoutes = () => {
             <Route path="users" element={<UserManagement />} />
             <Route path="companies" element={<CompanyManagement />} />
             <Route path="approvals" element={<AdminJobPage />} />
+            <Route path="audit" element={<AuditLogPage />} />
+            <Route path="config" element={<SystemConfig />} />
           </Route>
         </Route>
 
@@ -68,12 +75,14 @@ const AppRoutes = () => {
               <Route index element={<Navigate to="dashboard" replace />} />
               <Route path="dashboard" element={<EmployerDashboard />} />
               <Route path="company-profile" element={<CompanyProfile />} />
+              <Route path="verification" element={<Verification />} />
+              <Route path="data-processing" element={<DataProcessing />} />
               <Route path="post-job" element={<PostJob />} />
               <Route path="manage-jobs" element={<ManageJobs />} />
               <Route path="manage-jobs/:id" element={<EditJob />} />
               <Route path="job/:id/applications" element={<LegacyEmployerJobApplicationsRedirect />} />
               <Route path="job/:slug/:jobKey/applications" element={<JobApplications />} />
-              <Route path="find-cv" element={<div>Trang Tìm Ứng Viên</div>} />
+              <Route path="find-cv" element={<FindCandidate />} />
             </Route>
           </Route>
         </Route>

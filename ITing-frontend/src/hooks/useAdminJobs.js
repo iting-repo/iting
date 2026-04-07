@@ -118,6 +118,20 @@ export const useAdminJobs = () => {
     }
   };
 
+  // =========================
+  // DELETE JOB
+  // =========================
+
+  const deleteJob = async (jobId) => {
+    try {
+      await adminJobService.deleteJob(jobId);
+      setJobs((prev) => prev.filter((job) => job.id !== jobId));
+    } catch (err) {
+      console.error("Delete job error", err);
+      throw err;
+    }
+  };
+
   return {
     jobs,
     loading,
@@ -136,5 +150,6 @@ export const useAdminJobs = () => {
     rejectJob,
     requestRevision,
     closeJob,
+    deleteJob
   };
 };

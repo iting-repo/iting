@@ -8,7 +8,7 @@ const AdminHeader = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const { currentUser } = useSelector((state) => state.auth);
-  const user = currentUser ? currentUser : { name: "Super Admin", email: "admin@itwork.vn" };
+  const user = currentUser ? currentUser : { name: "Super Admin", email: "admin@iting.vn" };
 
   const handleLogout = () => {
     navigate('/');
@@ -24,7 +24,7 @@ const AdminHeader = () => {
           <div className="w-7 h-7 rounded-lg bg-white flex items-center justify-center">
             <span className="text-[#3AB4E6] font-bold text-sm">IT</span>
           </div>
-          <span className="text-white font-bold text-lg font-display">ITWork Admin</span>
+          <span className="text-white font-bold text-lg font-display">ITing Admin</span>
         </div>
         <div className="relative ml-4">
           <input
@@ -45,7 +45,7 @@ const AdminHeader = () => {
           </div>
           <div className="text-right mr-2 hidden sm:block">
             <p className="text-white text-sm font-medium">{user.name || "Super Admin"}</p>
-            <p className="text-white/80 text-xs">{user.email || "admin@itwork.vn"}</p>
+            <p className="text-white/80 text-xs">{user.email || "admin@iting.vn"}</p>
           </div>
           <button 
             onClick={handleLogout}

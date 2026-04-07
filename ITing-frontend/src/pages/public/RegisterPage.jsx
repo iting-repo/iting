@@ -138,7 +138,7 @@ const RegisterPage = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
-  const { currentUser } = useSelector((state) => state.auth);
+  const { currentUser, isLoading, error } = useSelector((state) => state.auth);
   const navigate = useNavigate();
 
   // Redirect nếu đã login
@@ -213,7 +213,7 @@ const RegisterPage = () => {
         >
           <BsBriefcaseFill className="text-[#3AB4E6] text-2xl" />
           <span className="text-2xl font-semibold text-gray-800 tracking-tight">
-            ITWork
+            ITing
           </span>
         </Link>
 
@@ -263,6 +263,11 @@ const RegisterPage = () => {
 
           {/* Form */}
           <form onSubmit={handleRegister} className="space-y-4">
+            {error && (
+              <div className="p-3 bg-red-50 border border-red-200 text-red-600 rounded-lg text-sm mb-4 animate-shake">
+                {error}
+              </div>
+            )}
             {/* --- PHẦN RIÊNG CHO NHÀ TUYỂN DỤNG --- */}
 
             {/* --- HÀNG 1: TÊN + USERNAME --- */}
@@ -403,17 +408,29 @@ const RegisterPage = () => {
                 <a href="#" className="text-[#3AB4E6] hover:underline">
                   Chính sách bảo mật
                 </a>{" "}
-                của ITWork.
+                của ITing.
               </label>
             </div>
 
             {/* --- BUTTON SUBMIT --- */}
             <button
               type="submit"
-              className="w-full bg-[#3AB4E6] hover:bg-[#19A4DD] text-white font-bold py-3.5 rounded-lg transition duration-200 flex items-center justify-center gap-2 shadow-lg shadow-blue-500/30"
+              disabled={isLoading}
+              className={`w-full bg-[#3AB4E6] hover:bg-[#19A4DD] text-white font-bold py-3.5 rounded-lg transition duration-200 flex items-center justify-center gap-2 shadow-lg shadow-blue-500/30 ${
+                isLoading ? "opacity-70 cursor-not-allowed" : ""
+              }`}
             >
-              Đăng Ký {role === "EMPLOYER" ? "(Chờ duyệt)" : ""}{" "}
-              <FaArrowRight size={14} />
+              {isLoading ? (
+                <div className="flex items-center gap-2">
+                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                  Đang xử lý...
+                </div>
+              ) : (
+                <>
+                  Đăng Ký {role === "EMPLOYER" ? "(Chờ duyệt)" : ""}{" "}
+                  <FaArrowRight size={14} />
+                </>
+              )}
             </button>
           </form>
 

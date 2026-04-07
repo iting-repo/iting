@@ -9,6 +9,8 @@ export { default as StatsCard } from './StatsCard';
 export * from './Table';
 export { default as Textarea } from './Textarea';
 export { default as Select } from './Select';
+export { default as Switch } from './Switch';
+export { default as Separator } from './Separator';
 export { default as LoadingSpinner } from './LoadingSpinner';
 export { default as ConfirmDialog } from './ConfirmDialog';
 export * from './AppIcons';

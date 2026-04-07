@@ -38,8 +38,11 @@ public interface JobRepository extends JpaRepository<Job, Long>, JpaSpecificatio
     @Query("UPDATE Job j SET j.viewCount = j.viewCount + 1 WHERE j.id = :id")
     void incrementViewCount(@Param("id") Long id);
 
-    // Tăng application count
     @Modifying
     @Query("UPDATE Job j SET j.applicationCount = j.applicationCount + 1 WHERE j.id = :id")
     void incrementApplicationCount(@Param("id") Long id);
+
+    long countByCreatedAtAfter(java.time.LocalDateTime dateTime);
+    long countByCreatedAtBefore(java.time.LocalDateTime dateTime);
+    long countByStatus(JobStatus status);
 }
