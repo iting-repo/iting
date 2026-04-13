@@ -6,6 +6,7 @@ import com.iting.jobportal.job.entity.enums.JobStatus;
 import jakarta.persistence.criteria.Predicate;
 import org.springframework.data.jpa.domain.Specification;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -57,8 +58,16 @@ public class JobSpecification {
                 predicates.add(cb.equal(root.get("jobType"), req.getJobType()));
             }
 
+            if (req.getJobTypes() != null && !req.getJobTypes().isEmpty()) {
+                predicates.add(root.get("jobType").in(req.getJobTypes()));
+            }
+
             if (req.getExperienceLevel() != null) {
                 predicates.add(cb.equal(root.get("experienceLevel"), req.getExperienceLevel()));
+            }
+
+            if (req.getExperienceLevels() != null && !req.getExperienceLevels().isEmpty()) {
+                predicates.add(root.get("experienceLevel").in(req.getExperienceLevels()));
             }
 
             if (req.getMinSalary() != null) {
@@ -77,6 +86,11 @@ public class JobSpecification {
                                 req.getMaxSalary()
                         )
                 );
+            }
+
+            if (req.getPostedWithinHours() != null && req.getPostedWithinHours() > 0) {
+                LocalDateTime fromTime = LocalDateTime.now().minusHours(req.getPostedWithinHours());
+                predicates.add(cb.greaterThanOrEqualTo(root.get("createdAt"), fromTime));
             }
 
             return cb.and(predicates.toArray(new Predicate[0]));

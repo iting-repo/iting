@@ -3,8 +3,8 @@ package com.iting.jobportal.user.service;
 import com.iting.jobportal.application.repository.ApplyFormSentToJobRepository;
 import com.iting.jobportal.application.entity.ApplyFormSentToJob;
 import com.iting.jobportal.application.entity.ApplyForm;
+import com.iting.jobportal.company.entity.Company;
 import com.iting.jobportal.job.entity.Job;
-import com.iting.jobportal.job.entity.Company;
 import com.iting.jobportal.job.repository.JobRepository;
 import com.iting.jobportal.job.repository.UserSaveJobRepository;
 import com.iting.jobportal.notification.enums.RecipientType;
@@ -75,7 +75,7 @@ public class CandidateDashboardService {
             recentApplications.add(CandidateDashboardStats.RecentApplicationResponse.builder()
                     .id(formId)
                     .companyName(company != null ? company.getName() : "Công ty ẩn danh")
-                    .companyLogo(company != null ? company.getLogo() : null)
+                    .companyLogo(company != null ? company.getLogoUrl() : null)
                     .jobPosition(job != null ? job.getTitle() : "Không rõ vị trí")
                     .appliedAt(app.getTimeSent() != null ? app.getTimeSent().toString() : null)
                     .status(app.getStatus() != null ? app.getStatus().name() : "PENDING")

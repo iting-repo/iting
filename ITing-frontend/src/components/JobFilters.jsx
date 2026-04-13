@@ -1,155 +1,202 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { FaSearch, FaMapMarkerAlt } from 'react-icons/fa';
 
-const JobFilters = () => {
-    const [salaryRange, setSalaryRange] = useState(5000);
+const jobTypeOptions = [
+    { label: 'Toan thoi gian', value: 'FULL_TIME' },
+    { label: 'Ban thoi gian', value: 'PART_TIME' },
+    { label: 'Freelance', value: 'FREELANCE' },
+    { label: 'Thuc tap', value: 'INTERNSHIP' },
+    { label: 'Hop dong', value: 'CONTRACT' },
+    { label: 'Remote', value: 'REMOTE' },
+];
 
-    // Component con hiển thị checkbox
-    const FilterCheckbox = ({ label, count }) => (
+const experienceOptions = [
+    { label: 'Moi ra truong', value: 'FRESHER' },
+    { label: 'Junior', value: 'JUNIOR' },
+    { label: 'Mid-level', value: 'MID_LEVEL' },
+    { label: 'Middle', value: 'MIDDLE' },
+    { label: 'Senior', value: 'SENIOR' },
+    { label: 'Expert', value: 'EXPERT' },
+    { label: 'Lead', value: 'LEAD' },
+    { label: 'Manager', value: 'MANAGER' },
+];
+
+const postedTimeOptions = [
+    { label: 'Tat ca', value: '' },
+    { label: '1 gio qua', value: '1' },
+    { label: '24 gio qua', value: '24' },
+    { label: '7 ngay qua', value: '168' },
+    { label: '30 ngay qua', value: '720' },
+];
+
+const JobFilters = ({
+    filters,
+    provinces,
+    onFieldChange,
+    onApply,
+    onReset,
+}) => {
+    const selectedJobTypeSet = new Set(filters.jobTypes || []);
+    const selectedExperienceSet = new Set(filters.experienceLevels || []);
+
+    const toggleMulti = (field, value) => {
+        const current = Array.isArray(filters[field]) ? filters[field] : [];
+        const next = current.includes(value)
+            ? current.filter((v) => v !== value)
+            : [...current, value];
+        onFieldChange(field, next);
+    };
+
+    const FilterCheckbox = ({ label, value, checked, onToggle }) => (
         <label className="flex items-center justify-between cursor-pointer group mb-2 last:mb-0">
             <div className="flex items-center gap-2">
                 <input
                     type="checkbox"
+                    checked={checked}
+                    onChange={() => onToggle(value)}
                     className="w-4 h-4 text-[#00B4D8] rounded border-gray-300 focus:ring-[#00B4D8] cursor-pointer"
                 />
                 <span className="text-gray-600 group-hover:text-[#00B4D8] text-sm transition-colors">
                     {label}
                 </span>
             </div>
-            <span className="text-xs text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full min-w-[24px] text-center font-medium">
-                {count}
-            </span>
         </label>
     );
 
     return (
         <div className="space-y-6">
-
-            {/* KHỐI 1: TÌM KIẾM & ĐỊA ĐIỂM (Nền xanh nhạt giống ảnh) */}
             <div className="bg-[#E6F6FD] p-5 rounded-xl border border-[#E6F6FD] space-y-5">
-                {/* Tìm kiếm theo Chức danh */}
                 <div>
-                    <h3 className="font-bold text-gray-800 mb-3 text-sm">Tìm kiếm theo Chức danh</h3>
+                    <h3 className="font-bold text-gray-800 mb-3 text-sm">Tim kiem theo Chuc danh</h3>
                     <div className="relative">
                         <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs" />
                         <input
                             type="text"
-                            placeholder="Chức danh hoặc tên Công ty"
+                            value={filters.keyword}
+                            onChange={(e) => onFieldChange('keyword', e.target.value)}
+                            placeholder="Chuc danh hoac ten Cong ty"
                             className="w-full pl-9 pr-3 py-2.5 bg-white border border-transparent focus:border-[#00B4D8] rounded-lg outline-none text-sm transition-all placeholder-gray-400 shadow-sm"
                         />
                     </div>
                 </div>
 
-                {/* Địa điểm làm việc */}
                 <div>
-                    <h3 className="font-bold text-gray-800 mb-3 text-sm">Địa điểm làm việc</h3>
+                    <h3 className="font-bold text-gray-800 mb-3 text-sm">Dia diem lam viec</h3>
                     <div className="relative">
                         <FaMapMarkerAlt className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs" />
-                        <select className="w-full pl-9 pr-3 py-2.5 bg-white border border-transparent focus:border-[#00B4D8] rounded-lg outline-none text-sm appearance-none cursor-pointer text-gray-600 shadow-sm">
-                            <option>Chọn thành phố</option>
-                            <option>Hồ Chí Minh</option>
-                            <option>Hà Nội</option>
-                            <option>Đà Nẵng</option>
+                        <select
+                            value={filters.location}
+                            onChange={(e) => onFieldChange('location', e.target.value)}
+                            className="w-full pl-9 pr-3 py-2.5 bg-white border border-transparent focus:border-[#00B4D8] rounded-lg outline-none text-sm appearance-none cursor-pointer text-gray-600 shadow-sm"
+                        >
+                            <option value="">Chon thanh pho</option>
+                            {provinces.map((province) => (
+                                <option key={province.code} value={province.name}>{province.name}</option>
+                            ))}
                         </select>
                     </div>
                 </div>
+
+                <button
+                    onClick={onApply}
+                    className="w-full py-2 bg-[#00B4D8] hover:bg-[#0096B4] text-white text-xs font-bold rounded-lg transition-colors shadow-sm"
+                >
+                    Tim kiem
+                </button>
             </div>
 
-            {/* KHỐI 2: CÁC BỘ LỌC CHI TIẾT (Nền trắng) */}
             <div className="bg-[#E6F6FD] p-5 rounded-xl border border-gray-100 shadow-sm space-y-7">
-
-                {/* LĨNH VỰC */}
                 <div>
-                    <h3 className="font-bold text-gray-800 mb-3 text-sm">Lĩnh vực</h3>
+                    <h3 className="font-bold text-gray-800 mb-3 text-sm">Hinh thuc lam viec</h3>
                     <div className="space-y-1">
-                        <FilterCheckbox label="Software Development" count={10} />
-                        <FilterCheckbox label="DevOps & Cloud" count={10} />
-                        <FilterCheckbox label="Cybersecurity" count={10} />
-                        <FilterCheckbox label="Data & AI" count={10} />
-                        <FilterCheckbox label="Web Development" count={10} />
-                    </div>
-                    <button className="w-full mt-3 py-2 bg-[#00B4D8] hover:bg-[#0096B4] text-white text-xs font-bold rounded-lg transition-colors shadow-sm">
-                        Xem Thêm
-                    </button>
-                </div>
-
-                <hr className="border-gray-100" />
-
-                {/* HÌNH THỨC LÀM VIỆC */}
-                <div>
-                    <h3 className="font-bold text-gray-800 mb-3 text-sm">Hình thức làm việc</h3>
-                    <div className="space-y-1">
-                        <FilterCheckbox label="Toàn thời gian" count={10} />
-                        <FilterCheckbox label="Bán thời gian" count={10} />
-                        <FilterCheckbox label="Freelance" count={10} />
-                        <FilterCheckbox label="Thực tập" count={10} />
-                        <FilterCheckbox label="Khác" count={10} />
-                    </div>
-                </div>
-
-                <hr className="border-gray-100" />
-
-                {/* CẤP BẬC */}
-                <div>
-                    <h3 className="font-bold text-gray-800 mb-3 text-sm">Cấp bậc</h3>
-                    <div className="space-y-1">
-                        <FilterCheckbox label="Thực tập" count={10} />
-                        <FilterCheckbox label="Nhân viên mới" count={10} />
-                        <FilterCheckbox label="Chuyên viên" count={10} />
-                        <FilterCheckbox label="Trưởng phòng" count={10} />
-                    </div>
-                </div>
-
-                <hr className="border-gray-100" />
-
-                {/* THỜI GIAN ĐĂNG */}
-                <div>
-                    <h3 className="font-bold text-gray-800 mb-3 text-sm">Thời gian đăng</h3>
-                    <div className="space-y-1">
-                        <FilterCheckbox label="Tất cả" count={10} />
-                        <FilterCheckbox label="Giờ trước" count={10} />
-                        <FilterCheckbox label="24 Giờ trước" count={10} />
-                        <FilterCheckbox label="7 Ngày trước" count={10} />
-                        <FilterCheckbox label="30 Ngày trước" count={10} />
-                    </div>
-                </div>
-
-                <hr className="border-gray-100" />
-
-                {/* MỨC LƯƠNG */}
-                <div>
-                    <h3 className="font-bold text-gray-800 mb-3 text-sm">Mức lương</h3>
-                    <div className="px-1 mb-4">
-                        <input
-                            type="range"
-                            min="0" max="10000"
-                            value={salaryRange}
-                            onChange={(e) => setSalaryRange(e.target.value)}
-                            className="w-full h-1.5 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-[#00B4D8]"
-                        />
-                    </div>
-                    <div className="flex justify-between items-center">
-                        <div className="text-xs font-bold text-gray-600">
-                            <p>Lương: <span className="text-gray-900">0đ - {salaryRange}đ</span></p>
-                        </div>
-                        <button className="px-3 py-1.5 text-[10px] font-bold text-white bg-[#00B4D8] rounded hover:bg-[#0096B4] transition-colors">
-                            Áp dụng
-                        </button>
-                    </div>
-                </div>
-
-                <hr className="border-gray-100" />
-
-                {/* TAGS */}
-                <div>
-                    <h3 className="font-bold text-gray-800 mb-3 text-sm">Tags</h3>
-                    <div className="flex flex-wrap gap-2">
-                        {['engineering', 'design', 'ui/ux', 'marketing', 'management', 'soft', 'construction'].map((tag, idx) => (
-                            <span key={idx} className="px-3 py-1 bg-[#E6F6FD] text-[#00B4D8] text-xs font-medium rounded-md cursor-pointer hover:bg-[#d0f0fd] transition-colors">
-                                {tag}
-                            </span>
+                        {jobTypeOptions.map((item) => (
+                            <FilterCheckbox
+                                key={item.value}
+                                label={item.label}
+                                value={item.value}
+                                checked={selectedJobTypeSet.has(item.value)}
+                                onToggle={(value) => toggleMulti('jobTypes', value)}
+                            />
                         ))}
                     </div>
+                </div>
+
+                <hr className="border-gray-100" />
+
+                <div>
+                    <h3 className="font-bold text-gray-800 mb-3 text-sm">Cap bac</h3>
+                    <div className="space-y-1 max-h-48 overflow-y-auto pr-1">
+                        {experienceOptions.map((item) => (
+                            <FilterCheckbox
+                                key={item.value}
+                                label={item.label}
+                                value={item.value}
+                                checked={selectedExperienceSet.has(item.value)}
+                                onToggle={(value) => toggleMulti('experienceLevels', value)}
+                            />
+                        ))}
+                    </div>
+                </div>
+
+                <hr className="border-gray-100" />
+
+                <div>
+                    <h3 className="font-bold text-gray-800 mb-3 text-sm">Thoi gian dang</h3>
+                    <div className="space-y-1">
+                        {postedTimeOptions.map((item) => (
+                            <label key={item.label} className="flex items-center gap-2 cursor-pointer group mb-2 last:mb-0">
+                                <input
+                                    type="radio"
+                                    name="postedWithinHours"
+                                    checked={String(filters.postedWithinHours || '') === item.value}
+                                    onChange={() => onFieldChange('postedWithinHours', item.value)}
+                                    className="w-4 h-4 text-[#00B4D8] border-gray-300 focus:ring-[#00B4D8] cursor-pointer"
+                                />
+                                <span className="text-gray-600 group-hover:text-[#00B4D8] text-sm transition-colors">
+                                    {item.label}
+                                </span>
+                            </label>
+                        ))}
+                    </div>
+                </div>
+
+                <hr className="border-gray-100" />
+
+                <div>
+                    <h3 className="font-bold text-gray-800 mb-3 text-sm">Muc luong</h3>
+                    <div className="grid grid-cols-2 gap-2">
+                        <input
+                            type="number"
+                            min="0"
+                            value={filters.minSalary}
+                            onChange={(e) => onFieldChange('minSalary', e.target.value)}
+                            placeholder="Tu"
+                            className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg outline-none text-sm"
+                        />
+                        <input
+                            type="number"
+                            min="0"
+                            value={filters.maxSalary}
+                            onChange={(e) => onFieldChange('maxSalary', e.target.value)}
+                            placeholder="Den"
+                            className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg outline-none text-sm"
+                        />
+                    </div>
+                </div>
+
+                <div className="flex gap-2">
+                    <button
+                        onClick={onApply}
+                        className="flex-1 py-2 bg-[#00B4D8] hover:bg-[#0096B4] text-white text-xs font-bold rounded-lg transition-colors"
+                    >
+                        Ap dung
+                    </button>
+                    <button
+                        onClick={onReset}
+                        className="flex-1 py-2 bg-white border border-gray-200 text-gray-700 text-xs font-bold rounded-lg hover:bg-gray-50 transition-colors"
+                    >
+                        Dat lai
+                    </button>
                 </div>
             </div>
         </div>

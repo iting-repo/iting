@@ -35,6 +35,9 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+
+    env_file:
+      - .env
     
     # Environment variables for local PostgreSQL
     environment:
@@ -92,6 +95,7 @@ services:
       - AWS_SECRET_KEY=${AWS_SECRET_KEY:-local-dev-secret-key}
       - AWS_REGION=${AWS_REGION:-ap-southeast-1}
       - AWS_S3_BUCKET=${AWS_S3_BUCKET:-datn-jobweb}
+      - AWS_ENABLED=${AWS_ENABLED:-true}
     
     ports:
       - "8081:8080"

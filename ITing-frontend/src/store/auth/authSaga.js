@@ -1,6 +1,7 @@
 import { call, put, takeLatest } from 'redux-saga/effects';
 import authService from '../../services/authService';
 import googleAuthService from '../../services/googleAuthService';
+import axiosInstance from '../../utils/axiosInstance';
 import { storage } from '../../utils/storage';
 import {
     loginRequest, loginSuccess, loginFailure, googleLoginRequest,
@@ -8,27 +9,82 @@ import {
     checkAuth
 } from './authSlice';
 
+function buildFallbackUser(baseUser = {}) {
+    const displayName =
+        baseUser.name ||
+        baseUser.fullName ||
+        baseUser.companyName ||
+        baseUser.email ||
+        'User';
+
+    return {
+        ...baseUser,
+        name: displayName,
+        fullName: baseUser.fullName || displayName,
+        avatar: baseUser.avatar || baseUser.avatarUrl || baseUser.logoUrl || '',
+        avatarUrl: baseUser.avatarUrl || baseUser.avatar || '',
+    };
+}
+
+function* hydrateUserProfile(baseUser) {
+    const role = baseUser?.role;
+
+    try {
+        if (role === 'CANDIDATE') {
+            const profile = yield call(axiosInstance.get, '/user/profile');
+            return buildFallbackUser({
+                ...baseUser,
+                userId: profile?.userId || baseUser?.userId,
+                name: profile?.fullName || baseUser?.name,
+                fullName: profile?.fullName || baseUser?.fullName,
+                avatar: profile?.avatarUrl || baseUser?.avatar,
+                avatarUrl: profile?.avatarUrl || baseUser?.avatarUrl,
+                phoneNum: profile?.phoneNum || baseUser?.phoneNum,
+            });
+        }
+
+        if (role === 'EMPLOYER') {
+            const company = yield call(axiosInstance.get, '/companies/me');
+            return buildFallbackUser({
+                ...baseUser,
+                companyId: company?.id || baseUser?.companyId,
+                name: company?.name || baseUser?.name,
+                companyName: company?.name || baseUser?.companyName,
+                avatar: company?.logoUrl || baseUser?.avatar,
+                logoUrl: company?.logoUrl || baseUser?.logoUrl,
+                email: company?.accountEmail || baseUser?.email,
+            });
+        }
+    } catch (error) {
+        console.warn('Hydrate user profile warning:', error);
+    }
+
+    return buildFallbackUser(baseUser);
+}
+
 // Worker Saga: Check Auth (Khôi phục session)
 function* handleCheckAuth() {
     try {
         const token = storage.getToken();
         const userInfo = storage.getUserInfo();
+        const role = storage.getRole() || userInfo?.role;
 
-        if (!token) return;
-
-        if (userInfo) {
-            yield put(loginSuccess(userInfo));
+        if (!token) {
+            return;
         }
 
-        try {
-            const response = yield call(authService.getCurrentUser);
-            if (response) {
-                yield put(loginSuccess(response));
-                storage.setUserInfo(response);
-            }
-        } catch (apiError) {
-            console.warn("CheckAuth API Warning:", apiError);
+        if (!userInfo && !role) {
+            return;
         }
+
+        const baseUser = buildFallbackUser({
+            ...(userInfo || {}),
+            role: role || userInfo?.role,
+        });
+
+        const hydratedUser = yield call(hydrateUserProfile, baseUser);
+        yield put(loginSuccess(hydratedUser));
+        storage.setUserInfo(hydratedUser);
 
     } catch (error) {
         console.error("Auth Saga Error:", error);
@@ -61,8 +117,9 @@ function* handleGoogleLogin(action) {
         const token = data.token || data.accessToken;
         if (token) {
             data.token = token;
-            storage.setAuth(token, data.role, data);
-            yield put(loginSuccess(data));
+            const hydratedUser = yield call(hydrateUserProfile, data);
+            storage.setAuth(token, data.role, hydratedUser);
+            yield put(loginSuccess(hydratedUser));
 
             if (data.role === 'EMPLOYER') {
                 navigate('/employer/dashboard');
@@ -87,8 +144,9 @@ function* handleLogin(action) {
         const token = data.token || data.accessToken;
         if (token) {
             data.token = token;
-            storage.setAuth(token, data.role, data);
-            yield put(loginSuccess(data));
+            const hydratedUser = yield call(hydrateUserProfile, data);
+            storage.setAuth(token, data.role, hydratedUser);
+            yield put(loginSuccess(hydratedUser));
 
             if (data.role === 'EMPLOYER') {
                 navigate('/employer/dashboard');

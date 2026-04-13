@@ -1,9 +1,9 @@
 package com.iting.jobportal.job.service.impl;
 
 import com.iting.jobportal.company.entity.UserFollowCompany;
+import com.iting.jobportal.company.entity.Company;
 import com.iting.jobportal.company.repository.UserFollowCompanyRepository;
 import com.iting.jobportal.job.dto.FollowedCompanyJobResponse;
-import com.iting.jobportal.job.entity.Company;
 import com.iting.jobportal.job.entity.Job;
 import com.iting.jobportal.job.entity.enums.JobStatus;
 import com.iting.jobportal.job.repository.JobRepository;
@@ -75,12 +75,12 @@ public class JobAlertServiceImpl implements JobAlertService {
                 .title(job.getTitle())
                 .position(job.getPosition())
                 .companyName(company != null ? company.getName() : null)
-                .companyLogo(company != null ? company.getLogo() : null)
+                .companyLogo(company != null ? company.getLogoUrl() : null)
                 .jobType(job.getJobType() != null ? job.getJobType().name() : null)
                 .location(job.getLocation())
                 .minSalary(job.getMinSalary())
                 .maxSalary(job.getMaxSalary())
-                .salaryType(job.getSalaryType())
+                .salaryType(job.getSalaryType() != null ? job.getSalaryType().name() : null)
                 .dueDate(job.getDueDate())
                 .createdAt(job.getCreatedAt())
                 .isSaved(isSaved)

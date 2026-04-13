@@ -1,6 +1,9 @@
 package com.iting.jobportal.userprofile.service.impl;
 
 import com.iting.jobportal.common.service.S3Service;
+import com.iting.jobportal.user.entity.User;
+import com.iting.jobportal.user.repository.UserRepository;
+import jakarta.persistence.EntityManager;
 import com.iting.jobportal.userprofile.dto.response.CVResponse;
 import com.iting.jobportal.userprofile.entity.CV;
 import com.iting.jobportal.userprofile.entity.UserProfile;
@@ -26,15 +29,16 @@ public class CVServiceImpl implements CVService {
 
     private final CVRepository cvRepository;
     private final UserProfileRepository userProfileRepository;
+    private final UserRepository userRepository;
     private final S3Service s3Service;
+    private final EntityManager entityManager;
 
     private static final int MAX_CVS_PER_USER = 3;
 
     @Override
     @Transactional(readOnly = true)
     public List<CVResponse> getRecentCVs(Long userId) {
-        UserProfile profile = userProfileRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("User profile not found with id: " + userId));
+        UserProfile profile = getOrCreateProfile(userId);
 
         List<CV> recentCVs = cvRepository.findTop3ByProfileIdOrderByUploadedAtDesc(
                 profile.getId(), 
@@ -49,8 +53,7 @@ public class CVServiceImpl implements CVService {
     @Override
     @Transactional
     public CVResponse uploadCV(Long userId, MultipartFile file, String title) throws IOException {
-        UserProfile profile = userProfileRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("User profile not found with id: " + userId));
+        UserProfile profile = getOrCreateProfile(userId);
 
         // Check if user has reached the limit
         long cvCount = cvRepository.countByProfile_Id(profile.getId());
@@ -59,7 +62,6 @@ public class CVServiceImpl implements CVService {
         }
 
         // Upload to S3
-        String s3Key = s3Service.generateCvS3Key(userId, file.getOriginalFilename());
         String uploadedS3Key = s3Service.uploadFile(file, "cvs/user_" + userId);
         
         // Get pre-signed URL for accessing the file
@@ -85,8 +87,7 @@ public class CVServiceImpl implements CVService {
     @Override
     @Transactional
     public void manageUserCVLimit(Long userId) {
-        UserProfile profile = userProfileRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("User profile not found with id: " + userId));
+        UserProfile profile = getOrCreateProfile(userId);
 
         long cvCount = cvRepository.countByProfile_Id(profile.getId());
         
@@ -120,5 +121,24 @@ public class CVServiceImpl implements CVService {
                 .fileUrl(cv.getFileUrl())
                 .uploadedAt(cv.getUploadedAt())
                 .build();
+    }
+
+    private UserProfile getOrCreateProfile(Long userId) {
+        UserProfile existingProfile = userProfileRepository.findById(userId).orElse(null);
+        if (existingProfile != null) {
+            return existingProfile;
+        }
+
+        if (!userRepository.existsById(userId)) {
+            throw new RuntimeException("User not found with id: " + userId);
+        }
+
+        User userRef = entityManager.getReference(User.class, userId);
+        UserProfile profile = new UserProfile();
+        profile.setUser(userRef);
+        userProfileRepository.saveAndFlush(profile);
+
+        return userProfileRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("Failed to initialize user profile with id: " + userId));
     }
 }
