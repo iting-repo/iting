@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { useEffect } from 'react';
 import { fetchJobsRequest, fetchJobDetailRequest } from '../../store/job/jobSlice';
@@ -18,8 +18,11 @@ import heroBg from '../../assets/bg_login.jpg';
 const HomePage = () => {
     const dispatch = useDispatch();
     const navigate = useNavigate();
+    const [searchParams, setSearchParams] = useSearchParams();
     const { jobs = [], totalJobs = 0, isLoading } = useSelector((state) => state.job || {});
     const [currentPage, setCurrentPage] = useState(1);
+    const [provinces, setProvinces] = useState([]);
+    const [selectedLocationFilter, setSelectedLocationFilter] = useState(searchParams.get('location') || '');
 
     const handleJobClick = (job) => {
         const jobKey = getJobPublicKey(job);
@@ -28,13 +31,30 @@ const HomePage = () => {
     };
 
     useEffect(() => {
+        const locationFromUrl = searchParams.get('location') || '';
+        setSelectedLocationFilter(locationFromUrl);
+        setSearchForm((prev) => ({ ...prev, location: locationFromUrl }));
         dispatch(fetchJobsRequest({
+            location: locationFromUrl || undefined,
             page: 0,
             size: 10,
             sortBy: 'lastUpdate',
             sortOrder: 'desc',
         }));
     }, [dispatch]);
+
+    useEffect(() => {
+        fetch('https://provinces.open-api.vn/api/v2/p/')
+            .then((res) => res.json())
+            .then((data) => {
+                if (Array.isArray(data)) {
+                    setProvinces(data);
+                }
+            })
+            .catch(() => {
+                setProvinces([]);
+            });
+    }, []);
 
     // Helper: Format Salary
     const formatSalary = (min, max) => {
@@ -69,6 +89,18 @@ const HomePage = () => {
             [field]: value,
             page: 0,
         }));
+
+        if (field === 'location') {
+            setSelectedLocationFilter(value);
+        }
+    };
+
+    const updateLocationQuery = (locationValue) => {
+        if (locationValue) {
+            setSearchParams({ location: locationValue });
+            return;
+        }
+        setSearchParams({});
     };
 
     const handlePageChange = (newPage) => {
@@ -87,6 +119,7 @@ const HomePage = () => {
             experienceLevel: updatedForm.experienceLevel || undefined,
             techRequired: updatedForm.techRequired || undefined,
         };
+        updateLocationQuery(updatedForm.location);
         dispatch(fetchJobsRequest(params));
     };
 
@@ -109,6 +142,7 @@ const HomePage = () => {
             techRequired: searchForm.techRequired || undefined,
         };
 
+        updateLocationQuery(searchForm.location);
         dispatch(fetchJobsRequest(params));
     };
 
@@ -188,8 +222,6 @@ const HomePage = () => {
         }
     ];
 
-    const locations = ["Thành phố Hồ Chí Minh", "Quận 1", "Quận 2", "Quận 3", "Quận 4", "Quận 5", "Quận 6", "Quận 7"];
-
     return (
         <div className="bg-white font-sans">
 
@@ -231,8 +263,8 @@ const HomePage = () => {
                                 className="w-full outline-none text-gray-700 text-sm bg-transparent"
                             >
                                 <option value="">Địa điểm</option>
-                                {locations.map((loc, i) => (
-                                    <option key={i} value={loc}>{loc}</option>
+                                {provinces.map((province) => (
+                                    <option key={province.code} value={province.name}>{province.name}</option>
                                 ))}
                             </select>
                         </div>
@@ -337,13 +369,38 @@ const HomePage = () => {
                             </button>
 
                             <div className="flex gap-3 overflow-x-auto no-scrollbar px-1 py-1 scroll-smooth flex-1">
-                                {locations.map((loc, i) => (
-                                    <button key={i} className={`flex-shrink-0 px-5 py-2 rounded-full text-xs font-bold transition-all border
-                      ${i === 0
-                                            ? 'bg-[#3AB4E6] border-[#3AB4E6] text-white shadow-md shadow-blue-200'
-                                            : 'bg-white border-gray-200 text-gray-500 hover:border-gray-300 hover:bg-gray-50'
-                                        }`}>
-                                        {loc}
+                                {provinces.map((province) => (
+                                    <button
+                                        key={province.code}
+                                        onClick={() => {
+                                            const newLocation = selectedLocationFilter === province.name ? '' : province.name;
+                                            setSelectedLocationFilter(newLocation);
+                                            setSearchForm((prev) => ({ ...prev, location: newLocation, page: 0 }));
+                                            setCurrentPage(1);
+
+                                            const params = {
+                                                ...searchForm,
+                                                location: newLocation || undefined,
+                                                page: 0,
+                                                minSalary: searchForm.minSalary || undefined,
+                                                maxSalary: searchForm.maxSalary || undefined,
+                                                companyId: searchForm.companyId || undefined,
+                                                keyword: searchForm.keyword || undefined,
+                                                jobType: searchForm.jobType || undefined,
+                                                experienceLevel: searchForm.experienceLevel || undefined,
+                                                techRequired: searchForm.techRequired || undefined,
+                                            };
+
+                                            updateLocationQuery(newLocation);
+                                            dispatch(fetchJobsRequest(params));
+                                        }}
+                                        className={`flex-shrink-0 px-5 py-2 rounded-full text-xs font-bold transition-all border
+                      ${selectedLocationFilter === province.name
+                                             ? 'bg-[#3AB4E6] border-[#3AB4E6] text-white shadow-md shadow-blue-200'
+                                             : 'bg-white border-gray-200 text-gray-500 hover:border-gray-300 hover:bg-gray-50'
+                                        }`}
+                                    >
+                                        {province.name}
                                     </button>
                                 ))}
                             </div>

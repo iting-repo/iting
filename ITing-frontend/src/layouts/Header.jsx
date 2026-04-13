@@ -17,6 +17,9 @@ const Header = () => {
   const { currentUser } = useSelector((state) => state.auth);
   const role = currentUser ? currentUser.role : 'guest';
   const user = currentUser ? currentUser : null;
+  const displayName = user?.name || user?.fullName || user?.companyName || user?.email || 'User';
+  const displayAvatar = user?.avatar || user?.avatarUrl || user?.logoUrl || '';
+  const initial = displayName?.charAt(0)?.toUpperCase() || 'U';
 
   const handleLogout = () => {
     // 1. Navigate về trang chủ trước (để thoát khỏi PrivateRoute)
@@ -173,11 +176,11 @@ const Header = () => {
                   onClick={() => setIsDropdownOpen(!isDropdownOpen)}
                   className="flex items-center gap-2 hover:bg-gray-900 py-1 px-2 rounded-lg transition-colors border border-transparent focus:border-gray-700"
                 >
-                  {user?.avatar ? (
-                    <img src={user.avatar} alt="Avatar" className="w-9 h-9 rounded-full object-cover border border-gray-600" />
+                  {displayAvatar ? (
+                    <img src={displayAvatar} alt="Avatar" className="w-9 h-9 rounded-full object-cover border border-gray-600" />
                   ) : (
                     <div className="w-9 h-9 rounded-full bg-gradient-to-tr from-blue-500 to-sky-500 flex items-center justify-center text-sm font-bold text-white shadow-inner">
-                      {user?.name?.charAt(0).toUpperCase() || "U"}
+                      {initial}
                     </div>
                   )}
                   <FaChevronDown className={`text-xs text-gray-400 transition-transform duration-200 ${isDropdownOpen ? 'rotate-180' : ''}`} />
@@ -189,7 +192,7 @@ const Header = () => {
 
                     {/* Header của dropdown */}
                     <div className="px-4 py-3 border-b border-gray-100 bg-gray-50/50">
-                      <p className="text-sm font-bold text-gray-900 truncate">{user?.name || "User"}</p>
+                      <p className="text-sm font-bold text-gray-900 truncate">{displayName}</p>
                       <p className="text-xs text-gray-500 truncate mt-0.5">
                         {role === 'CANDIDATE' ? 'Ứng viên' : 'Nhà tuyển dụng'}
                       </p>

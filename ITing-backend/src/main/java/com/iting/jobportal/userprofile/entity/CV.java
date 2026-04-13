@@ -25,8 +25,14 @@ public class CV {
     @Column(name = "Title", length = 255)
     private String title;
 
+    @Column(name = "File_name", length = 255)
+    private String fileName;
+
     @Column(name = "File_path", columnDefinition = "TEXT", nullable = false)
     private String fileUrl;
+
+    @Column(name = "S3_key", length = 500)
+    private String s3Key;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "Cv_status", length = 50)

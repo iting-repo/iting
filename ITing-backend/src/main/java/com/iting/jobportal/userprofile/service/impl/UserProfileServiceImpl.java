@@ -1,6 +1,7 @@
 package com.iting.jobportal.userprofile.service.impl;
 
 import com.iting.jobportal.auth.exception.ResourceNotFoundException;
+import com.iting.jobportal.file.FileUploadService;
 import com.iting.jobportal.user.entity.User;
 import com.iting.jobportal.user.repository.UserRepository;
 import com.iting.jobportal.userprofile.dto.request.*;
@@ -30,6 +31,7 @@ public class UserProfileServiceImpl implements UserProfileService {
     private final PortfolioRepository portfolioRepo;
     private final CVRepository cvRepo;
     private final SocialLinkRepository socialRepo;
+    private final FileUploadService fileUploadService;
 
     private UserProfile getProfileOrThrow(Long userId) {
         return userProfileRepo.findById(userId)
@@ -297,7 +299,14 @@ public class UserProfileServiceImpl implements UserProfileService {
 
     @Override
     public void deleteCV(Long cvId) {
-        cvRepo.deleteById(cvId);
+        CV cv = cvRepo.findById(cvId)
+                .orElseThrow(() -> new ResourceNotFoundException("CV not found"));
+
+        if (cv.getFileUrl() != null && !cv.getFileUrl().isBlank()) {
+            fileUploadService.deleteByUrl(cv.getFileUrl());
+        }
+
+        cvRepo.delete(cv);
     }
 
     // Social Links
