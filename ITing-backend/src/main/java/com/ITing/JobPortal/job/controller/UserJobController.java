@@ -13,7 +13,10 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Locale;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/jobs")
@@ -29,9 +32,12 @@ public class UserJobController {
             @RequestParam(required = false) String keyword,
             @RequestParam(required = false) String location,
             @RequestParam(required = false) String jobType,
+            @RequestParam(required = false) String jobTypes,
             @RequestParam(required = false) String experienceLevel,
+            @RequestParam(required = false) String experienceLevels,
             @RequestParam(required = false) BigDecimal minSalary,
             @RequestParam(required = false) BigDecimal maxSalary,
+            @RequestParam(required = false) Integer postedWithinHours,
             @RequestParam(required = false) Long companyId,
             @RequestParam(required = false) String techRequired,
             @RequestParam(required = false, defaultValue = "lastUpdate") String sortBy,
@@ -46,12 +52,19 @@ public class UserJobController {
         if (jobType != null) {
             request.setJobType(JobType.valueOf(jobType));
         }
+        if (jobTypes != null && !jobTypes.isBlank()) {
+            request.setJobTypes(parseJobTypes(jobTypes));
+        }
         if (experienceLevel != null) {
             request.setExperienceLevel(ExperienceLevel.valueOf(experienceLevel));
+        }
+        if (experienceLevels != null && !experienceLevels.isBlank()) {
+            request.setExperienceLevels(parseExperienceLevels(experienceLevels));
         }
 
         request.setMinSalary(minSalary);
         request.setMaxSalary(maxSalary);
+        request.setPostedWithinHours(postedWithinHours);
         request.setCompanyId(companyId);
         request.setTechRequired(techRequired);
         request.setSortBy(sortBy);
@@ -60,6 +73,22 @@ public class UserJobController {
         request.setSize(size);
 
         return ResponseEntity.ok(jobService.searchJobs(request));
+    }
+
+    private List<JobType> parseJobTypes(String rawValues) {
+        return Arrays.stream(rawValues.split(","))
+                .map(String::trim)
+                .filter(value -> !value.isEmpty())
+                .map(value -> JobType.valueOf(value.toUpperCase(Locale.ROOT)))
+                .collect(Collectors.toList());
+    }
+
+    private List<ExperienceLevel> parseExperienceLevels(String rawValues) {
+        return Arrays.stream(rawValues.split(","))
+                .map(String::trim)
+                .filter(value -> !value.isEmpty())
+                .map(value -> ExperienceLevel.valueOf(value.toUpperCase(Locale.ROOT)))
+                .collect(Collectors.toList());
     }
 
     @GetMapping("/{id}")

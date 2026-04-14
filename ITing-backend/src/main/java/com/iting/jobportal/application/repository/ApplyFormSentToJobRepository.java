@@ -20,6 +20,9 @@ public interface ApplyFormSentToJobRepository extends JpaRepository<ApplyFormSen
     @Query("SELECT s FROM ApplyFormSentToJob s JOIN ApplyForm f ON f.id = s.id.applyFormId WHERE f.userId = :userId")
     Page<ApplyFormSentToJob> findByUserId(@Param("userId") Long userId, Pageable pageable);
 
+    @Query("SELECT COUNT(s) FROM ApplyFormSentToJob s JOIN ApplyForm f ON f.id = s.id.applyFormId WHERE f.userId = :userId")
+    long countByUserId(@Param("userId") Long userId);
+
     // ✅ Kiểm tra ứng viên (Long) đã ứng tuyển Job (Long) chưa
     @Query("SELECT COUNT(s) > 0 FROM ApplyFormSentToJob s JOIN ApplyForm f ON f.id = s.id.applyFormId WHERE f.userId = :userId AND s.id.jobId = :jobId")
     boolean existsByUserIdAndJobId(@Param("userId") Long userId, @Param("jobId") Long jobId);

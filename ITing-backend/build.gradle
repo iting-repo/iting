@@ -80,6 +80,16 @@ dependencies {
 
     // Database Migration 
     implementation 'org.flywaydb:flyway-core'
+
+    // Dotenv
+    implementation 'io.github.cdimascio:dotenv-java:3.0.0'
+
+    // Google API client
+    implementation 'com.google.api-client:google-api-client:2.2.0'
+
+    // Excel (Apache POI)
+    implementation 'org.apache.poi:poi:5.2.3'
+    implementation 'org.apache.poi:poi-ooxml:5.2.3'
 }
 
 tasks.named('test') {

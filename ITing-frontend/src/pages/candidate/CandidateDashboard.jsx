@@ -7,40 +7,49 @@ const CandidateDashboard = () => {
   const navigate = useNavigate();
 
   const [recentApplications, setRecentApplications] = useState([]);
+  const [savedJobsCount, setSavedJobsCount] = useState(0);
+  const [unreadNotificationCount, setUnreadNotificationCount] = useState(0);
+  const [fullName, setFullName] = useState('');
+  const [avatarUrl, setAvatarUrl] = useState('');
+  const [profileCompleted, setProfileCompleted] = useState(false);
+  const [profileCompletionPercent, setProfileCompletionPercent] = useState(0);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchApplications = async () => {
+    const fetchDashboardStats = async () => {
       try {
-        const response = await axiosInstance.get('/api/applications/my-applications', {
-          params: { page: 0, size: 5 }
-        });
-        setRecentApplications(response?.content || response?.data?.content || []);
+        const response = await axiosInstance.get('/candidates/dashboard/stats');
+        setFullName(response.fullName || '');
+        setAvatarUrl(response.avatarUrl || '');
+        setProfileCompleted(response.profileCompleted || false);
+        setProfileCompletionPercent(response.profileCompletionPercent || 0);
+        setSavedJobsCount(response.savedJobsCount || 0);
+        setUnreadNotificationCount(response.unreadNotificationCount || 0);
+        setRecentApplications(response.recentApplications || []);
       } catch (error) {
-        console.error("Failed to fetch applications:", error);
+        console.error("Failed to fetch dashboard stats:", error);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchApplications();
+    fetchDashboardStats();
   }, []);
-
 
   return (
     <div className="bg-white rounded-xl p-8 shadow-sm border border-gray-100 min-h-screen animate-fade-in">
       
       {/* HEADER: Chào mừng */}
       <div className="mb-8">
-        <h1 className="text-2xl font-bold text-gray-800 mb-2">Hello, Ely!</h1>
+        <h1 className="text-2xl font-bold text-gray-800 mb-2">Hello, {fullName || 'Bạn'}!</h1>
         <p className="text-gray-500 mb-8">Đây là các hoạt động hằng ngày và thông báo việc làm của bạn.</p>
 
         {/* STATS CARDS */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* Card 1 */}
+          {/* Card 1: Saved Jobs */}
           <div className="bg-[#FFF6E5] p-6 rounded-xl flex items-center justify-between shadow-sm border border-orange-100 transition-transform hover:-translate-y-1">
             <div>
-              <div className="text-3xl font-bold text-gray-800 mb-1">...</div>
+              <div className="text-3xl font-bold text-gray-800 mb-1">{savedJobsCount}</div>
               <div className="text-gray-600 font-medium">Công việc yêu thích</div>
             </div>
             <div className="w-14 h-14 bg-white rounded-xl flex items-center justify-center text-orange-400 shadow-sm text-2xl">
@@ -48,10 +57,10 @@ const CandidateDashboard = () => {
             </div>
           </div>
 
-          {/* Card 2 */}
+          {/* Card 2: Notifications */}
           <div className="bg-[#E6F8EF] p-6 rounded-xl flex items-center justify-between shadow-sm border border-green-100 transition-transform hover:-translate-y-1">
             <div>
-              <div className="text-3xl font-bold text-gray-800 mb-1">...</div>
+              <div className="text-3xl font-bold text-gray-800 mb-1">{unreadNotificationCount}</div>
               <div className="text-gray-600 font-medium">Thông báo việc làm</div>
             </div>
             <div className="w-14 h-14 bg-white rounded-xl flex items-center justify-center text-green-600 shadow-sm text-2xl">
@@ -61,27 +70,29 @@ const CandidateDashboard = () => {
         </div>
       </div>
 
-      {/* BANNER: Nhắc nhở hồ sơ (Màu đỏ) */}
-      <div className="bg-[#D93025] rounded-xl p-6 mb-10 flex flex-col md:flex-row items-center justify-between shadow-lg shadow-red-200 text-white relative overflow-hidden group">
-         <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/3 blur-2xl group-hover:bg-white/20 transition-all"></div>
+      {/* BANNER: Nhắc nhở hồ sơ */}
+      {!profileCompleted && (
+        <div className="bg-[#D93025] rounded-xl p-6 mb-10 flex flex-col md:flex-row items-center justify-between shadow-lg shadow-red-200 text-white relative overflow-hidden group">
+           <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/3 blur-2xl group-hover:bg-white/20 transition-all"></div>
 
-         <div className="flex items-center gap-6 relative z-10">
-            <div className="w-16 h-16 rounded-full border-2 border-white overflow-hidden shrink-0 shadow-md">
-               <img src="https://i.pravatar.cc/150?img=12" alt="Avatar" className="w-full h-full object-cover" />
-            </div>
-            <div>
-               <h3 className="text-lg font-bold mb-1">Hồ sơ của bạn chưa hoàn thành</h3>
-               <p className="text-white/90 text-sm">Hoàn thiện hồ sơ của bạn và tạo CV theo cách riêng.</p>
-            </div>
-         </div>
+           <div className="flex items-center gap-6 relative z-10">
+              <div className="w-16 h-16 rounded-full border-2 border-white overflow-hidden shrink-0 shadow-md">
+                 <img src={avatarUrl || "https://i.pravatar.cc/150?img=12"} alt="Avatar" className="w-full h-full object-cover" />
+              </div>
+              <div>
+                 <h3 className="text-lg font-bold mb-1">Hồ sơ của bạn chưa hoàn thành ({profileCompletionPercent}%)</h3>
+                 <p className="text-white/90 text-sm">Hoàn thiện hồ sơ của bạn và tạo CV theo cách riêng.</p>
+              </div>
+           </div>
 
-         <button 
-            onClick={() => navigate('/candidate/profile')}
-            className="mt-4 md:mt-0 bg-white text-[#D93025] hover:bg-gray-100 px-6 py-3 rounded-lg font-bold text-sm flex items-center gap-2 transition-colors shadow-md relative z-10"
-         >
-            Chỉnh Sửa Hồ Sơ <FaArrowRight />
-         </button>
-      </div>
+           <button 
+              onClick={() => navigate('/candidate/profile')}
+              className="mt-4 md:mt-0 bg-white text-[#D93025] hover:bg-gray-100 px-6 py-3 rounded-lg font-bold text-sm flex items-center gap-2 transition-colors shadow-md relative z-10"
+           >
+              Chỉnh Sửa Hồ Sơ <FaArrowRight />
+           </button>
+        </div>
+      )}
 
       {/* TABLE: Ứng tuyển gần đây */}
       <div>
@@ -116,7 +127,7 @@ const CandidateDashboard = () => {
                         <td className="p-4">
                            <div className="flex items-center gap-4">
                               <div className="w-12 h-12 rounded-lg flex items-center justify-center bg-gray-50 overflow-hidden shrink-0 border border-gray-100">
-                                 <img src={"https://via.placeholder.com/50"} alt="Logo" className="w-full h-full object-cover" />
+                                 <img src={app.companyLogo || "https://via.placeholder.com/50"} alt="Logo" className="w-full h-full object-cover" />
                               </div>
                               <div>
                                  <div className="font-bold text-gray-800 text-base mb-1">{app.companyName || "Công ty ẩn danh"}</div>
@@ -126,7 +137,7 @@ const CandidateDashboard = () => {
                               </div>
                            </div>
                         </td>
-                        <td className="p-4 text-gray-500">{app.appliedAt ? new Date(app.appliedAt).toLocaleDateString() : ''}</td>
+                        <td className="p-4 text-gray-500">{app.appliedAt ? new Date(app.appliedAt).toLocaleDateString('vi-VN') : ''}</td>
                         <td className="p-4">
                            <span className="inline-flex items-center gap-1.5 text-green-600 font-medium px-3 py-1 rounded-full bg-green-50 border border-green-100 text-xs">
                               <FaCheck size={10} /> {app.status}
