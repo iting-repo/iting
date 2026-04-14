@@ -40,6 +40,14 @@
     "saveChanges": "Lưu thay đổi",
     "cancel": "Hủy bỏ"
   },
+  "company_profile": {
+    "title": "Hồ sơ công ty",
+    "tabs": {
+      "founding": "Thông tin chung",
+      "social": "Mạng xã hội",
+      "settings": "Thiết lập"
+    }
+  },
   "employer_dashboard": {
     "welcome": "Xin chào, {{name}}",
     "description": "Dưới đây là thống kê các công việc và số lượng ứng viên đã ứng tuyển",

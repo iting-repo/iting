@@ -5,7 +5,10 @@ import com.iting.jobportal.company.entity.Company;
 import org.springframework.stereotype.Component;
 
 @Component
+@lombok.RequiredArgsConstructor
 public class CompanyMapper {
+
+    private final com.iting.jobportal.file.FileUploadService fileUploadService;
 
     public CompanyResponse toResponse(Company company) {
 
@@ -19,7 +22,17 @@ public class CompanyMapper {
         res.setName(company.getName());
         res.setWebsite(company.getWebsite());
         res.setAddress(company.getAddress());
-        res.setLogoUrl(company.getLogoUrl());
+        
+        // Presign Logo URL if exists
+        String logoUrl = company.getLogoUrl();
+        if (logoUrl != null && !logoUrl.isBlank()) {
+            try {
+                res.setLogoUrl(fileUploadService.generatePresignedUrl(logoUrl, 120));
+            } catch (Exception e) {
+                res.setLogoUrl(logoUrl);
+            }
+        }
+
         res.setDescription(company.getDescription());
 
         res.setCompanyEmail(company.getCompanyEmail());
@@ -34,11 +47,22 @@ public class CompanyMapper {
 
         res.setBusinessLicenseFileUrl(company.getBusinessLicenseFileUrl());
         res.setBusinessLicenseDocumentType(company.getBusinessLicenseDocumentType());
-        res.setBusinessLicensePreviewUrl(company.getBusinessLicensePreviewUrl());
+        
+        // Presign Business License Preview if exists
+        String licenseUrl = company.getBusinessLicenseFileUrl();
+        if (licenseUrl != null && !licenseUrl.isBlank()) {
+            try {
+                res.setBusinessLicensePreviewUrl(fileUploadService.generatePresignedUrl(licenseUrl, 60));
+            } catch (Exception e) {
+                res.setBusinessLicensePreviewUrl(company.getBusinessLicensePreviewUrl());
+            }
+        }
+
         res.setConsentDocumentFileUrl(company.getConsentDocumentFileUrl());
 
         res.setVerificationLevel(company.getVerificationLevel());
         res.setCompanyInfoUpdateStatus(company.getCompanyInfoUpdateStatus());
+        res.setDocumentReviewStatus(company.getDocumentReviewStatus());
         res.setLastUpdateRequestDate(company.getLastUpdateRequestDate());
         res.setLastUpdate(company.getLastUpdate());
         res.setStatusReason(company.getStatusReason());

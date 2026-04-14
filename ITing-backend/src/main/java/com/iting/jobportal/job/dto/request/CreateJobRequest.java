@@ -31,12 +31,10 @@ public class CreateJobRequest {
 
     private String workingDays;
 
-    @NotNull(message = "Lương tối thiểu không được để trống")
-    @DecimalMin(value = "0.0", inclusive = false, message = "Lương tối thiểu phải lớn hơn 0")
+    // Nullable khi salaryType = NEGOTIABLE
     private BigDecimal minSalary;
 
-    @NotNull(message = "Lương tối đa không được để trống")
-    @DecimalMin(value = "0.0", inclusive = false, message = "Lương tối đa phải lớn hơn 0")
+    // Nullable khi salaryType = NEGOTIABLE
     private BigDecimal maxSalary;
 
     @NotNull(message = "Hình thức trả lương không được để trống")

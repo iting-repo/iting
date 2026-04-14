@@ -108,13 +108,13 @@ const AdminDashboard = () => {
     }, []);
 
     if (loading) return <div className="flex justify-center items-center h-64"><LoadingSpinner /></div>;
-    if (!stats) return <div className="p-8 text-center text-gray-500">Failed to load dashboard data.</div>;
+    if (!stats) return <div className="p-8 text-center text-gray-500">Không thể tải dữ liệu Dashboard.</div>;
 
     const chartData = {
         labels: stats.chartData.map(d => d.day),
         datasets: [
             {
-                label: 'Job Posts',
+                label: 'Tin tuyển dụng',
                 data: stats.chartData.map(d => d.jobPosts),
                 borderColor: '#3AB4E6',
                 backgroundColor: (context) => {
@@ -128,7 +128,7 @@ const AdminDashboard = () => {
                 pointBackgroundColor: '#3AB4E6',
             },
             {
-                label: 'Users',
+                label: 'Người dùng',
                 data: stats.chartData.map(d => d.users),
                 borderColor: '#34D399',
                 backgroundColor: (context) => {
@@ -147,33 +147,33 @@ const AdminDashboard = () => {
     return (
         <div className="space-y-8 animate-in fade-in duration-500">
             {/* TITLE */}
-            <h2 className="text-2xl font-bold text-gray-800">Dashboard Overview</h2>
+            <h2 className="text-2xl font-bold text-gray-800">Tổng quan Dashboard</h2>
 
             {/* ROW 1: STATS CARDS */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                 <StatsCard 
-                    title="Total Users" 
+                    title="Tổng người dùng" 
                     value={formatter.format(stats.totalUsers)} 
                     icon={<FaUserFriends />} 
                     percentage={Math.abs(stats.userChange).toFixed(1)} 
                     isIncrease={stats.userChange >= 0} 
                 />
                 <StatsCard 
-                    title="Total Job Posts" 
+                    title="Tổng tin tuyển dụng" 
                     value={formatter.format(stats.totalJobs)} 
                     icon={<FaFileAlt />} 
                     percentage={Math.abs(stats.jobChange).toFixed(1)} 
                     isIncrease={stats.jobChange >= 0} 
                 />
                 <StatsCard 
-                    title="Total Applications" 
+                    title="Tổng lượt ứng tuyển" 
                     value={formatter.format(stats.totalApplications)} 
                     icon={<FaClipboardList />} 
                     percentage={Math.abs(stats.applicationChange).toFixed(1)} 
                     isIncrease={stats.applicationChange >= 0} 
                 />
                 <StatsCard 
-                    title="Pending Applications" 
+                    title="Ứng tuyển chờ duyệt" 
                     value={formatter.format(stats.pendingApplications)} 
                     icon={<FaHourglassHalf />} 
                     percentage={Math.abs(stats.pendingChange).toFixed(1)} 
@@ -184,7 +184,7 @@ const AdminDashboard = () => {
             {/* ROW 2: JOB ANALYTICS CHART */}
             <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
                 <h3 className="font-bold text-gray-800 mb-6 flex items-center gap-2">
-                    <span className="w-1 h-6 bg-[#3AB4E6] rounded-full"></span> Job Analytics
+                    <span className="w-1 h-6 bg-[#3AB4E6] rounded-full"></span> Phân tích tuyển dụng
                 </h3>
                 <div className="h-[350px] w-full">
                     <Line options={chartOptions} data={chartData} />
@@ -194,15 +194,15 @@ const AdminDashboard = () => {
             {/* ROW 3: TABLE */}
             <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
                 <h3 className="font-bold text-gray-800 mb-6 flex items-center gap-2">
-                    <span className="w-1 h-6 bg-[#3AB4E6] rounded-full"></span> Recent Activity
+                    <span className="w-1 h-6 bg-[#3AB4E6] rounded-full"></span> Hoạt động gần đây
                 </h3>
                 <Table
                     headers={[
-                        { label: "Job Title" },
-                        { label: "Company" },
-                        { label: "Date - Time" },
-                        { label: "Applications" },
-                        { label: "Status", className: "text-center" }
+                        { label: "Tiêu đề công việc" },
+                        { label: "Công ty" },
+                        { label: "Ngày - Giờ" },
+                        { label: "Lượt ứng tuyển" },
+                        { label: "Trạng thái", className: "text-center" }
                     ]}
                 >
                     {stats.recentActivities.length > 0 ? stats.recentActivities.map((job, idx) => (
@@ -219,7 +219,7 @@ const AdminDashboard = () => {
                         </tr>
                     )) : (
                         <tr>
-                            <td colSpan="5" className="py-8 text-center text-gray-400 text-sm">No recent activities available.</td>
+                            <td colSpan="5" className="py-8 text-center text-gray-400 text-sm">Không có hoạt động gần đây.</td>
                         </tr>
                     )}
                 </Table>

@@ -8,12 +8,41 @@ import {
   CheckCircle2,
   XCircle,
   RotateCcw,
+  Eye,
+  ExternalLink,
+  Loader2,
 } from "lucide-react";
 import { Dialog, Badge, Button } from "../common";
 import { getIndustryLabel } from "../../constants/industries";
+import adminCompanyService from "../../services/adminCompanyService";
+import { toast } from "sonner";
 
 export const CompanyDetailDialog = ({ company, open, onClose, onAction }) => {
+  const [showLicensePreview, setShowLicensePreview] = React.useState(false);
+  const [previewUrl, setPreviewUrl] = React.useState(null);
+  const [previewTitle, setPreviewTitle] = React.useState("");
+  const [loadingPreview, setLoadingPreview] = React.useState(false);
   if (!company) return null;
+
+  const handleViewDoc = async (type) => {
+    try {
+      setLoadingPreview(true);
+      let res;
+      if (type === "license") {
+        res = await adminCompanyService.getBusinessLicenseViewUrl(company.id);
+        setPreviewTitle("Giấy phép kinh doanh");
+      } else {
+        res = await adminCompanyService.getConsentDocumentViewUrl(company.id);
+        setPreviewTitle("Văn bản thỏa thuận dữ liệu");
+      }
+      setPreviewUrl(res.url);
+      setShowLicensePreview(true);
+    } catch (err) {
+      toast.error("Không thể tải file xem trước. Vui lòng thử lại.");
+    } finally {
+      setLoadingPreview(false);
+    }
+  };
 
   return (
     <Dialog open={open} onClose={onClose} title="Chi tiết công ty">
@@ -68,7 +97,7 @@ export const CompanyDetailDialog = ({ company, open, onClose, onAction }) => {
         </div>
 
         <div>
-          <h4 className="mb-2 text-sm font-semibold">Checklist duyệt</h4>
+          <h4 className="mb-2 text-sm font-semibold text-blue-600">Checklist duyệt thông tin</h4>
           <div className="space-y-2">
             {[
               { label: "Tên công ty", ok: !!company.name },
@@ -76,18 +105,85 @@ export const CompanyDetailDialog = ({ company, open, onClose, onAction }) => {
               { label: "Số điện thoại", ok: !!(company.representativePhone || company.phone) },
               { label: "Người đại diện", ok: !!company.representativeName },
               { label: "Mã số thuế", ok: !!company.taxCode && company.taxCode !== "0000000000" },
-              { label: "Giấy phép kinh doanh", ok: !!company.businessLicenseFileUrl },
               { label: "Tài khoản active", ok: company.active },
             ].map((item, i) => (
               <div key={i} className="flex items-center gap-2 text-sm">
-                {item.ok ? (
-                  <CheckCircle2 className="h-4 w-4 text-emerald-600" />
-                ) : (
-                  <XCircle className="h-4 w-4 text-red-500" />
-                )}
+                {item.ok ? <CheckCircle2 className="h-4 w-4 text-emerald-600" /> : <XCircle className="h-4 w-4 text-red-500" />}
                 <span className={item.ok ? "text-slate-700" : "text-red-500"}>{item.label}</span>
               </div>
             ))}
+          </div>
+
+          <div className="mt-4 flex gap-2">
+             <Button
+                className="h-8 text-xs"
+                onClick={() => onAction(company, "approve-info")}
+                disabled={company.companyInfoUpdateStatus === "APPROVED"}
+              >
+                Duyệt thông tin
+              </Button>
+              <Button
+                variant="destructive"
+                className="h-8 text-xs"
+                onClick={() => onAction(company, "reject-info")}
+                disabled={company.companyInfoUpdateStatus === "REJECTED"}
+              >
+                Từ chối thông tin
+              </Button>
+          </div>
+        </div>
+
+        <div className="border-t border-slate-100 pt-4">
+          <h4 className="mb-2 text-sm font-semibold text-emerald-600">Checklist duyệt giấy tờ</h4>
+          <div className="space-y-2">
+            {[
+              {
+                label: "Giấy phép kinh doanh",
+                ok: !!company.businessLicenseFileUrl,
+                action: () => handleViewDoc("license")
+              },
+              {
+                label: "Giấy thỏa thuận dữ liệu",
+                ok: !!company.consentDocumentFileUrl,
+                action: () => handleViewDoc("consent")
+              },
+            ].map((item, i) => (
+              <div key={i} className="flex items-center gap-2 text-sm">
+                {item.ok ? <CheckCircle2 className="h-4 w-4 text-emerald-600" /> : <XCircle className="h-4 w-4 text-red-500" />}
+                <div className="flex items-center gap-2">
+                  <span className={item.ok ? "text-slate-700" : "text-red-500"}>{item.label}</span>
+                  {item.ok && (
+                    <button
+                      type="button"
+                      onClick={item.action}
+                      disabled={loadingPreview}
+                      className="inline-flex items-center gap-1 rounded bg-blue-50 px-2 py-0.5 text-[11px] font-bold text-blue-600 transition-colors hover:bg-blue-100 disabled:opacity-50"
+                    >
+                      {loadingPreview ? <Loader2 className="h-3 w-3 animate-spin" /> : <Eye className="h-3 w-3" />}
+                      XEM
+                    </button>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div className="mt-4 flex gap-2">
+             <Button
+                className="h-8 text-xs"
+                onClick={() => onAction(company, "approve-documents")}
+                disabled={company.documentReviewStatus === "APPROVED"}
+              >
+                Duyệt giấy tờ
+              </Button>
+              <Button
+                variant="destructive"
+                className="h-8 text-xs"
+                onClick={() => onAction(company, "reject-documents")}
+                disabled={company.documentReviewStatus === "REJECTED"}
+              >
+                Từ chối giấy tờ
+              </Button>
           </div>
         </div>
 
@@ -163,6 +259,53 @@ export const CompanyDetailDialog = ({ company, open, onClose, onAction }) => {
           </div>
         )}
       </div>
+
+      {/* Document Preview Modal */}
+      <Dialog
+        open={showLicensePreview}
+        onClose={() => { setShowLicensePreview(false); setPreviewUrl(null); }}
+        title={previewTitle}
+      >
+        <div className="flex flex-col items-center">
+          {previewUrl ? (
+            <div className="w-full">
+              {previewUrl.includes('.pdf') || previewUrl.includes('pdf') ? (
+                <iframe
+                  src={previewUrl}
+                  className="w-full rounded-lg border border-slate-200"
+                  style={{ height: '70vh' }}
+                  title={previewTitle}
+                />
+              ) : (
+                <img
+                  src={previewUrl}
+                  alt={previewTitle}
+                  className="w-full rounded-lg shadow-lg border border-slate-200"
+                />
+              )}
+              <div className="mt-4 flex justify-center gap-3">
+                <a
+                  href={previewUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 rounded-lg bg-slate-800 px-4 py-2 text-sm font-bold text-white transition hover:bg-slate-700"
+                >
+                  <ExternalLink className="h-4 w-4" />
+                  Mở tab mới
+                </a>
+                <Button variant="outline" onClick={() => { setShowLicensePreview(false); setPreviewUrl(null); }}>
+                  Đóng
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <div className="py-20 text-center">
+              <XCircle className="mx-auto h-12 w-12 text-slate-200 mb-4" />
+              <p className="text-slate-500">Tài liệu không tìm thấy hoặc chưa được tải lên.</p>
+            </div>
+          )}
+        </div>
+      </Dialog>
     </Dialog>
   );
 };

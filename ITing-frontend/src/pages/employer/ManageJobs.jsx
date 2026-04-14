@@ -28,11 +28,11 @@ const ITEMS_PER_PAGE = 5;
 
 const formatJobType = (jobType) => {
   const map = {
-    FULL_TIME: "Full Time",
-    PART_TIME: "Part Time",
-    REMOTE: "Remote",
-    FREELANCE: "Freelance",
-    INTERN: "Internship",
+    FULL_TIME: "Toàn thời gian",
+    PART_TIME: "Bán thời gian",
+    REMOTE: "Làm từ xa",
+    FREELANCE: "Tự do",
+    INTERN: "Thực tập",
   };
 
   return map[jobType] || jobType || "Chưa cập nhật";
@@ -76,6 +76,7 @@ const ManageJobs = () => {
     onConfirm: () => {},
     type: "danger",
   });
+  const [rejectionModal, setRejectionModal] = useState(null); // { title, reason }
 
   const fetchJobs = async () => {
     try {
@@ -199,7 +200,6 @@ const ManageJobs = () => {
     { value: "All", label: "Tất cả" },
     { value: "ACTIVE", label: "Đang hoạt động" },
     { value: "PENDING", label: "Chờ duyệt" },
-    { value: "DRAFT", label: "Nháp" },
     { value: "EXPIRED", label: "Hết hạn" },
     { value: "CLOSED", label: "Đã đóng" },
     { value: "REJECTED", label: "Bị từ chối" },
@@ -209,42 +209,37 @@ const ManageJobs = () => {
 
   const STATUS_CONFIG = {
     ACTIVE: {
-      label: "Active",
+      label: "Đang hoạt động",
       color: "text-green-600",
       icon: <FaCheckCircle />,
     },
     PENDING: {
-      label: "Pending",
+      label: "Đang chờ duyệt",
       color: "text-orange-500",
       icon: <FaClock />,
     },
-    DRAFT: {
-      label: "Draft",
-      color: "text-gray-500",
-      icon: <FaPauseCircle />,
-    },
     EXPIRED: {
-      label: "Expired",
+      label: "Đã hết hạn",
       color: "text-red-500",
       icon: <FaTimesCircle />,
     },
     CLOSED: {
-      label: "Closed",
+      label: "Đã đóng",
       color: "text-gray-700",
       icon: <FaBan />,
     },
     REJECTED: {
-      label: "Rejected",
+      label: "Bị từ chối",
       color: "text-red-600",
       icon: <FaTimesCircle />,
     },
     NEEDS_REVISION: {
-      label: "Needs Revision",
+      label: "Cần chỉnh sửa",
       color: "text-yellow-600",
       icon: <FaExclamationTriangle />,
     },
     SUSPENDED: {
-      label: "Suspended",
+      label: "Bị đình chỉ",
       color: "text-sky-600",
       icon: <FaBan />,
     },
@@ -345,10 +340,43 @@ const ManageJobs = () => {
                       icon: <FaTimesCircle />,
                     };
 
-                    return (
-                      <span
-                        className={`flex items-center gap-2 font-medium text-sm ${config.color}`}
-                      >
+                    const hasReason = ["REJECTED", "NEEDS_REVISION", "SUSPENDED"].includes(job.status)
+                      && job.raw?.reviewReason;
+
+                    const tooltipTitle =
+                      job.status === "REJECTED" ? "Lý do từ chối" :
+                      job.status === "NEEDS_REVISION" ? "Cần chỉnh sửa" :
+                      "Lý do đình chỉ";
+
+                    const MAX_CHARS = 120;
+                    const shortReason = hasReason && job.raw.reviewReason.length > MAX_CHARS
+                      ? job.raw.reviewReason.slice(0, MAX_CHARS) + "..."
+                      : job.raw.reviewReason;
+
+                    return hasReason ? (
+                      <div className="relative group/status inline-flex">
+                        <span
+                          className={`flex items-center gap-2 font-medium text-sm ${config.color} cursor-pointer`}
+                          onClick={() => setRejectionModal({ title: tooltipTitle, reason: job.raw.reviewReason })}
+                        >
+                          {config.icon} {config.label}
+                        </span>
+
+                        {/* Hover tooltip – rộng hơn, giới hạn ký tự */}
+                        <div className="absolute bottom-full left-0 mb-2 z-50 hidden group-hover/status:flex flex-col" style={{ minWidth: "320px", maxWidth: "420px" }}>
+                          <div className="bg-gray-900 text-white text-xs rounded-xl px-4 py-3 shadow-xl leading-relaxed w-full">
+                            <p className="font-bold mb-1.5 text-gray-300 text-[11px] uppercase tracking-wide">{tooltipTitle}</p>
+                            <p className="text-white break-words">{shortReason}</p>
+                            {job.raw.reviewReason.length > MAX_CHARS && (
+                              <p className="mt-2 text-blue-300 italic text-[10px]">Click để xem đầy đủ →</p>
+                            )}
+                          </div>
+                          {/* Arrow */}
+                          <div className="w-3 h-3 bg-gray-900 rotate-45 ml-4 -mt-1.5 shrink-0" />
+                        </div>
+                      </div>
+                    ) : (
+                      <span className={`flex items-center gap-2 font-medium text-sm ${config.color}`}>
                         {config.icon} {config.label}
                       </span>
                     );
@@ -359,7 +387,7 @@ const ManageJobs = () => {
                   <div className="flex items-center gap-2 text-gray-600">
                     <FaUserFriends className="text-gray-400" />
                     <span className="font-semibold text-sm">
-                      {job.apps} Applications
+                      {job.apps} Hồ sơ ứng tuyển
                     </span>
                   </div>
                 </Td>
@@ -370,7 +398,7 @@ const ManageJobs = () => {
                       onClick={() => navigate(buildEmployerJobApplicationsPath(job.raw))}
                       className="bg-[#EAF6FF] text-[#3AB4E6] hover:bg-[#3AB4E6] hover:text-white text-xs font-bold px-4 py-2.5 rounded-lg transition-all shadow-sm border border-transparent"
                     >
-                      View Applications ({job.apps})
+                      Xem hồ sơ ({job.apps})
                     </button>
 
                     <button
@@ -559,6 +587,53 @@ const ManageJobs = () => {
         message={confirmModal.message}
         type={confirmModal.type}
       />
+
+      {/* Modal lý do từ chối / đình chỉ */}
+      {rejectionModal && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm px-4"
+          onClick={() => setRejectionModal(null)}
+        >
+          <div
+            className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[80vh] flex flex-col"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header */}
+            <div className="flex items-center gap-4 px-8 py-5 border-b border-gray-100">
+              <div className="w-11 h-11 rounded-xl bg-red-50 flex items-center justify-center text-red-500 shrink-0">
+                <FaTimesCircle size={20} />
+              </div>
+              <div>
+                <h3 className="text-xl font-bold text-gray-800">{rejectionModal.title}</h3>
+                <p className="text-xs text-gray-400 mt-0.5">Phản hồi từ Admin</p>
+              </div>
+              <button
+                onClick={() => setRejectionModal(null)}
+                className="ml-auto w-8 h-8 rounded-full hover:bg-gray-100 flex items-center justify-center text-gray-400 hover:text-gray-600 transition-colors"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Body – scrollable */}
+            <div className="flex-1 overflow-y-auto px-8 py-6">
+              <div className="bg-red-50 border border-red-100 rounded-xl p-5 text-sm text-red-800 leading-7 whitespace-pre-wrap break-words">
+                {rejectionModal.reason || "Không có lý do cụ thể."}
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="flex justify-end px-8 py-4 border-t border-gray-100">
+              <button
+                onClick={() => setRejectionModal(null)}
+                className="bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold px-6 py-2.5 rounded-lg text-sm transition-colors"
+              >
+                Đóng
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 };

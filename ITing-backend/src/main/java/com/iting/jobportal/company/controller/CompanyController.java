@@ -16,8 +16,11 @@ import com.iting.jobportal.job.controller.CurrentUser;
 import com.iting.jobportal.user.entity.User;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
+import com.iting.jobportal.common.ratelimit.RateLimitingService;
+import io.github.bucket4j.Bucket;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -33,10 +36,12 @@ public class CompanyController {
 
     private final CompanyService companyService;
     private final CompanyFollowService companyFollowService;
+    private final RateLimitingService rateLimitingService;
 
-    public CompanyController(CompanyService companyService, CompanyFollowService companyFollowService) {
+    public CompanyController(CompanyService companyService, CompanyFollowService companyFollowService, RateLimitingService rateLimitingService) {
         this.companyService = companyService;
         this.companyFollowService = companyFollowService;
+        this.rateLimitingService = rateLimitingService;
     }
 
     @GetMapping("/me/business-license/view")
@@ -156,10 +161,47 @@ public class CompanyController {
         return ResponseEntity.ok(Map.of("followerCount", count));
     }
 
-    @PostMapping("/me/submit-review")
-    @Operation(summary = "Gửi duyệt thông tin công ty của tôi")
-    public ResponseEntity<CompanyResponse> submitForReview(
+    @PostMapping("/me/submit-info-review")
+    @Operation(summary = "Gửi duyệt thông tin cơ bản công ty của tôi")
+    public ResponseEntity<?> submitInfoReview(
             @Parameter(hidden = true) @CurrentUser Long userId) {
-        return ResponseEntity.ok(companyService.submitForReviewByAccountId(userId));
+
+        Bucket bucket = rateLimitingService.resolveBucket("submit_info_" + userId);
+        if (!bucket.tryConsume(1)) {
+            return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
+                    .body(Map.of("message", "Bạn thao tác quá nhanh. Vui lòng thử lại sau 5 phút."));
+        }
+
+        return ResponseEntity.ok(companyService.submitInfoReviewByAccountId(userId));
+    }
+
+    @PostMapping("/me/submit-document-review")
+    @Operation(summary = "Gửi duyệt toàn bộ giấy tờ pháp lý công ty của tôi")
+    public ResponseEntity<CompanyResponse> submitDocumentReview(
+            @Parameter(hidden = true) @CurrentUser Long userId) {
+        return ResponseEntity.ok(companyService.submitDocumentReviewByAccountId(userId));
+    }
+
+    @PostMapping("/me/submit-business-license-review")
+    @Operation(summary = "Gửi duyệt Giấy phép kinh doanh của tôi (độc lập)")
+    public ResponseEntity<CompanyResponse> submitBusinessLicenseReview(
+            @Parameter(hidden = true) @CurrentUser Long userId) {
+        return ResponseEntity.ok(companyService.submitBusinessLicenseReviewByAccountId(userId));
+    }
+
+    @PostMapping("/me/submit-consent-document-review")
+    @Operation(summary = "Gửi duyệt Văn bản thỏa thuận dữ liệu cá nhân của tôi (độc lập)")
+    public ResponseEntity<CompanyResponse> submitConsentDocumentReview(
+            @Parameter(hidden = true) @CurrentUser Long userId) {
+        return ResponseEntity.ok(companyService.submitConsentDocumentReviewByAccountId(userId));
+    }
+
+    @PostMapping(value = "/me/logo/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @Operation(summary = "Upload logo công ty của tôi")
+    public ResponseEntity<Map<String, String>> uploadLogo(
+            @Parameter(hidden = true) @CurrentUser Long userId,
+            @RequestPart("file") MultipartFile file) {
+        String url = companyService.uploadLogoByAccountId(userId, file);
+        return ResponseEntity.ok(Map.of("logoUrl", url));
     }
 }

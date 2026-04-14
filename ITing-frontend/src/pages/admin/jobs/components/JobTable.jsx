@@ -1,13 +1,13 @@
 import React from "react";
 import { Table, Badge, Td } from "../../../../components";
 import { RowActionMenu } from "../../../../components/admin/RowActionMenu";
-export const JobTable = ({ 
-  jobs, 
-  loading, 
-  onPreview, 
-  onDetail, 
-  onAction, 
-  openMenuId, 
+export const JobTable = ({
+  jobs,
+  loading,
+  onPreview,
+  onDetail,
+  onAction,
+  openMenuId,
   setOpenMenuId,
   selectedIds = [],
   onSelectAll,
@@ -18,22 +18,22 @@ export const JobTable = ({
     <Table
       className="!overflow-visible"
       headers={[
-        { 
+        {
           label: (
-            <input 
-              type="checkbox" 
+            <input
+              type="checkbox"
               checked={isAllSelected}
               onChange={onSelectAll}
-              className="h-4 w-4 rounded border-slate-300 text-sky-600 focus:ring-sky-500" 
+              className="h-4 w-4 rounded border-slate-300 text-sky-600 focus:ring-sky-500"
             />
           ),
           className: "w-10"
         },
-        { label: "Job ID" },
-        { label: "Job Details" },
-        { label: "Location" },
-        { label: "Status" },
-        { label: "Actions", className: "text-right" }
+        { label: "Mã công việc" },
+        { label: "Thông tin chi tiết" },
+        { label: "Địa điểm", className: "w-48" },
+        { label: "Trạng thái", className: "w-40 whitespace-nowrap" },
+        { label: "Thao tác", className: "text-right" }
       ]}
     >
       {loading ? (
@@ -50,16 +50,16 @@ export const JobTable = ({
         </tr>
       ) : (
         jobs.map((job) => (
-          <tr 
-            key={job.id} 
+          <tr
+            key={job.id}
             className={`hover:bg-gray-50/80 transition-colors group ${selectedIds.includes(job.id) ? 'bg-sky-50/50' : ''}`}
           >
             <Td>
-              <input 
-                type="checkbox" 
+              <input
+                type="checkbox"
                 checked={selectedIds.includes(job.id)}
                 onChange={() => onSelectOne(job.id)}
-                className="h-4 w-4 rounded border-slate-300 text-sky-600 focus:ring-sky-500" 
+                className="h-4 w-4 rounded border-slate-300 text-sky-600 focus:ring-sky-500"
               />
             </Td>
             <Td>{job.id}</Td>
@@ -74,11 +74,11 @@ export const JobTable = ({
               <div className="text-xs text-gray-500 mt-1">{job.company || job.companyName}</div>
             </Td>
 
-            <Td>{job.location}</Td>
+            <Td className="max-w-[200px] truncate">{job.location}</Td>
 
-            <Td>
+            <Td className="whitespace-nowrap">
               <Badge variant={job.status === "ACTIVE" ? "success" : job.status === "PENDING" ? "warning" : "danger"}>
-                {job.status}
+                {job.status === "ACTIVE" ? "Đang hoạt động" : job.status === "PENDING" ? "Chờ duyệt" : job.status === "REJECTED" ? "Bị từ chối" : job.status}
               </Badge>
             </Td>
 

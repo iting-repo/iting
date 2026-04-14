@@ -9,6 +9,34 @@ const DataProcessing = () => {
   const [agreed, setAgreed] = useState(false);
   const [errors, setErrors] = useState({});
   const [submitting, setSubmitting] = useState(false);
+  const [company, setCompany] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  React.useEffect(() => {
+    fetchCompany();
+  }, []);
+
+  const fetchCompany = async () => {
+    try {
+      setLoading(true);
+      const data = await companyService.getMyCompany();
+      setCompany(data);
+    } catch (err) {
+      console.error("Lỗi lấy thông tin công ty:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const statusMap = {
+    MISSING: { label: "Chưa cập nhật", color: "bg-gray-100 text-gray-500" },
+    UPLOADED: { label: "Đã tải lên", color: "bg-blue-100 text-blue-600" },
+    PENDING_REVIEW: { label: "Đang chờ duyệt", color: "bg-amber-100 text-amber-600" },
+    APPROVED: { label: "Đã duyệt", color: "bg-emerald-100 text-emerald-600" },
+    REJECTED: { label: "Bị từ chối", color: "bg-red-100 text-red-600" },
+  };
+
+  const currentStatus = statusMap[company?.documentReviewStatus] || statusMap.MISSING;
 
   const handleFileChange = (e) => {
     const f = e.target.files?.[0];
@@ -29,7 +57,7 @@ const DataProcessing = () => {
 
   const handleSave = async () => {
     const errs = {};
-    if (!file) errs.file = "Vui lòng chọn file để tải lên";
+    if (!file && !company?.consentDocumentFileUrl) errs.file = "Vui lòng chọn file để tải lên";
     if (!agreed) errs.agreed = "Vui lòng xác nhận cam đoan";
     setErrors(errs);
 
@@ -37,15 +65,33 @@ const DataProcessing = () => {
 
     try {
       setSubmitting(true);
-      await companyService.uploadConsentDocument(file, agreed);
-      toast.success("Tải lên văn bản thỏa thuận thành công!");
+
+      // Nếu có file mới chọn, upload trước
+      if (file) {
+        await companyService.uploadConsentDocument(file, agreed);
+      }
+
+      // Gửi duyệt Thỏa thuận dữ liệu độc lập
+      await companyService.submitConsentDocumentReview();
+      toast.success("Văn bản thỏa thuận đã được gửi đi xét duyệt!");
+      setFile(null);
+      setAgreed(false);
+      await fetchCompany();
     } catch (err) {
       console.error("Lỗi:", err);
-      toast.error(err?.response?.data?.message || "Tải lên thất bại. Vui lòng thử lại.");
+      toast.error(err?.response?.data?.message || err?.response?.data?.error || "Gửi duyệt thất bại. Vui lòng thử lại.");
     } finally {
       setSubmitting(false);
     }
   };
+
+  if (loading) {
+     return (
+        <div className="flex h-64 items-center justify-center">
+           <div className="h-8 w-8 animate-spin rounded-full border-4 border-[#3AB4E6] border-t-transparent"></div>
+        </div>
+     );
+  }
 
   return (
     <div className="space-y-6 animate-fade-in pb-10">
@@ -59,8 +105,10 @@ const DataProcessing = () => {
         <div className="mb-8">
           <h2 className="text-lg font-bold text-gray-800 mb-1 flex items-center gap-2">
             <FileText className="w-5 h-5 text-[#3AB4E6]" />
-            Thỏa thuận xử lý Dữ liệu cá nhân
-            <span className="ml-2 text-xs font-medium bg-gray-100 text-gray-500 px-2 py-1 rounded-full">Chưa cập nhật</span>
+            Thỏa thuận dữ liệu cá nhân
+            <span className={`ml-2 text-xs font-bold px-3 py-1 rounded-full ${currentStatus.color}`}>
+              {currentStatus.label}
+            </span>
           </h2>
           <p className="text-sm text-gray-500">
             Xem mục đích sử dụng và hướng dẫn đăng tải <button className="text-[#3AB4E6] font-medium hover:underline">Tại đây</button>
@@ -154,10 +202,16 @@ const DataProcessing = () => {
         <div className="flex justify-end mt-10 pt-6 border-t border-gray-100">
           <Button 
             onClick={handleSave} 
-            disabled={submitting} 
+            disabled={submitting || company?.documentReviewStatus === 'PENDING_REVIEW'} 
             className="px-10 py-6 min-w-[200px] text-base font-bold shadow-lg shadow-blue-500/20"
           >
-             {submitting ? "Đang xử lý..." : "Lưu và Cập nhật"}
+            {submitting
+              ? "Đang xử lý..."
+              : company?.documentReviewStatus === 'PENDING_REVIEW'
+                ? "Đang chờ duyệt"
+                : file
+                  ? "Tải lên & Gửi xét duyệt"
+                  : "Gửi xét duyệt"}
           </Button>
         </div>
       </div>

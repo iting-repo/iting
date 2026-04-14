@@ -24,6 +24,13 @@ import {
     Td,
     Dialog,
 } from "../../../components";
+import { ActionMenuPortal } from "../../../components/admin/ActionMenuPortal";
+import { 
+    Eye as LucideEye, 
+    Ban as LucideBan, 
+    Unlock as LucideUnlock, 
+    Trash2 as LucideTrash 
+} from "lucide-react";
 import adminUserService from "../../../services/adminUserService";
 
 const PAGE_SIZE = 10;
@@ -64,7 +71,11 @@ const StatusBadge = ({ status }) => {
             className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold ${map[status] || "bg-gray-50 text-gray-700 border border-gray-200"
                 }`}
         >
-            {status || "UNKNOWN"}
+            {status === "ACTIVE" ? "Đang hoạt động" : 
+             status === "BANNED" ? "Bị khóa" : 
+             status === "INACTIVE" ? "Chưa kích hoạt" : 
+             status === "PENDING" ? "Chờ duyệt" : 
+             status || "Không xác định"}
         </span>
     );
 };
@@ -76,141 +87,46 @@ const UserRowActionMenu = ({
     onViewDetail,
     onAction,
 }) => {
-    const isOpen = openMenuId === user.id;
+    const actions = [
+        {
+            label: "Xem chi tiết",
+            icon: LucideEye,
+            onClick: () => onViewDetail(user),
+            className: "text-slate-700 font-medium"
+        },
+        {
+            label: "Khóa tài khoản",
+            icon: LucideBan,
+            onClick: () => onAction(user, "ban"),
+            className: "text-orange-600 font-medium",
+            hidden: user.status !== "ACTIVE"
+        },
+        {
+            label: "Mở khóa tài khoản",
+            icon: LucideUnlock,
+            onClick: () => onAction(user, "unban"),
+            className: "text-green-600 font-medium",
+            hidden: user.status !== "BANNED"
+        },
+        {
+            label: "Xóa người dùng",
+            icon: LucideTrash,
+            onClick: () => onAction(user, "delete"),
+            className: "text-red-600 font-medium border-t border-slate-50"
+        }
+    ];
 
     return (
-        <div className="relative inline-block text-left">
-            <button
-                onClick={() => setOpenMenuId(isOpen ? null : user.id)}
-                className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 shadow-sm hover:bg-slate-50"
-            >
-                <FaEllipsisV size={12} />
-            </button>
-
-            {isOpen && (
-                <div className="absolute right-0 z-50 mt-2 w-52 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-lg">
-                    <button
-                        onClick={() => {
-                            onViewDetail(user);
-                            setOpenMenuId(null);
-                        }}
-                        className="flex w-full items-center gap-2 px-4 py-3 text-left text-sm text-slate-700 hover:bg-slate-50"
-                    >
-                        <FaEye size={13} />
-                        Xem chi tiết
-                    </button>
-
-                    {user.status === "ACTIVE" && (
-                        <button
-                            onClick={() => {
-                                onAction(user, "ban");
-                                setOpenMenuId(null);
-                            }}
-                            className="flex w-full items-center gap-2 px-4 py-3 text-left text-sm text-orange-600 hover:bg-orange-50"
-                        >
-                            <FaBan size={13} />
-                            Khóa tài khoản
-                        </button>
-                    )}
-
-                    {user.status === "BANNED" && (
-                        <button
-                            onClick={() => {
-                                onAction(user, "unban");
-                                setOpenMenuId(null);
-                            }}
-                            className="flex w-full items-center gap-2 px-4 py-3 text-left text-sm text-green-600 hover:bg-green-50"
-                        >
-                            <FaUnlock size={13} />
-                            Mở khóa tài khoản
-                        </button>
-                    )}
-
-                    <button
-                        onClick={() => {
-                            onAction(user, "delete");
-                            setOpenMenuId(null);
-                        }}
-                        className="flex w-full items-center gap-2 px-4 py-3 text-left text-sm text-red-600 hover:bg-red-50"
-                    >
-                        <FaTrash size={13} />
-                        Xóa người dùng
-                    </button>
-                </div>
-            )}
-        </div>
+        <ActionMenuPortal
+            id={user.id}
+            openMenuId={openMenuId}
+            setOpenMenuId={setOpenMenuId}
+            actions={actions}
+        />
     );
 };
 
-const UserDetailDialog = ({ user, open, onClose, formatDateTime, getDisplayName }) => {
-    if (!user) return null;
-
-    return (
-        <Dialog open={open} onClose={onClose} title="Chi tiết người dùng">
-            <div className="space-y-4">
-                <div className="flex items-center gap-4 border-b border-slate-100 pb-4">
-                    <img
-                        src={
-                            user.avatarUrl ||
-                            `https://ui-avatars.com/api/?name=${encodeURIComponent(
-                                getDisplayName(user)
-                            )}&background=random`
-                        }
-                        alt={getDisplayName(user)}
-                        className="h-14 w-14 rounded-full border border-slate-200 object-cover"
-                    />
-                    <div>
-                        <h3 className="text-lg font-bold text-slate-800">{getDisplayName(user)}</h3>
-                        <p className="text-sm text-slate-500">{user.email}</p>
-                    </div>
-                </div>
-
-                <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-                    <div className="rounded-lg bg-slate-50 p-3">
-                        <p className="mb-1 text-xs text-slate-500">ID</p>
-                        <p className="font-medium text-slate-800">#{user.id}</p>
-                    </div>
-
-                    <div className="rounded-lg bg-slate-50 p-3">
-                        <p className="mb-1 text-xs text-slate-500">Vai trò</p>
-                        <RoleBadge role={user.role} />
-                    </div>
-
-                    <div className="rounded-lg bg-slate-50 p-3">
-                        <p className="mb-1 text-xs text-slate-500">Trạng thái</p>
-                        <StatusBadge status={user.status} />
-                    </div>
-
-                    <div className="rounded-lg bg-slate-50 p-3">
-                        <p className="mb-1 text-xs text-slate-500">Email</p>
-                        <p className="break-all font-medium text-slate-800">{user.email || "—"}</p>
-                    </div>
-
-                    <div className="rounded-lg bg-slate-50 p-3">
-                        <p className="mb-1 text-xs text-slate-500">Created At</p>
-                        <p className="font-medium text-slate-800">{formatDateTime(user.createdAt)}</p>
-                    </div>
-
-                    <div className="rounded-lg bg-slate-50 p-3">
-                        <p className="mb-1 text-xs text-slate-500">Last Login At</p>
-                        <p className="font-medium text-slate-800">{formatDateTime(user.lastLoginAt)}</p>
-                    </div>
-
-                    <div className="rounded-lg bg-slate-50 p-3 md:col-span-2">
-                        <p className="mb-1 text-xs text-slate-500">Tên hiển thị</p>
-                        <p className="font-medium text-slate-800">{getDisplayName(user)}</p>
-                    </div>
-                </div>
-
-                <div className="flex justify-end pt-2">
-                    <Button variant="outline" onClick={onClose}>
-                        Đóng
-                    </Button>
-                </div>
-            </div>
-        </Dialog>
-    );
-};
+import { UserDetailDialog } from "../../../components/admin/UserDetailDialog";
 
 const UserActionDialog = ({
     actionDialog,
@@ -484,7 +400,7 @@ const UserManagement = () => {
     };
 
     const getDisplayName = (user) => {
-        return user.companyName || user.fullName || user.email?.split("@")[0] || "Unknown User";
+        return user.companyName || user.fullName || user.email?.split("@")[0] || "Người dùng không xác định";
     };
 
     const stats = useMemo(() => {
@@ -563,10 +479,10 @@ const UserManagement = () => {
                         }}
                     >
                         <option value="all">Tất cả trạng thái</option>
-                        <option value="ACTIVE">Active</option>
-                        <option value="INACTIVE">Inactive</option>
-                        <option value="BANNED">Banned</option>
-                        <option value="PENDING">Pending</option>
+                        <option value="ACTIVE">Đang hoạt động</option>
+                        <option value="INACTIVE">Chưa kích hoạt</option>
+                        <option value="BANNED">Đã bị khóa</option>
+                        <option value="PENDING">Đang chờ</option>
                     </select>
 
                     <Button className="bg-[#3AB4E6] hover:bg-[#2C9ACD]" onClick={handleSearch}>
@@ -601,10 +517,10 @@ const UserManagement = () => {
                         },
                         { label: "Mã", className: "w-20" },
                         { label: "Người dùng" },
-                        { label: "Vai trò", className: "w-40" },
-                        { label: "Trạng thái", className: "w-36" },
-                        { label: "Created At", className: "w-48" },
-                        { label: "Last Login At", className: "w-48" },
+                        { label: "Vai trò", className: "w-40 whitespace-nowrap" },
+                        { label: "Trạng thái", className: "w-40 whitespace-nowrap" },
+                        { label: "Ngày tạo", className: "w-48 whitespace-nowrap" },
+                        { label: "Lần cuối đăng nhập", className: "w-48 whitespace-nowrap" },
                         { label: "Thao tác", className: "text-right w-40" },
                     ]}
                 >
@@ -649,19 +565,19 @@ const UserManagement = () => {
                                     </div>
                                 </Td>
 
-                                <Td>
+                                <Td className="whitespace-nowrap">
                                     <RoleBadge role={user.role} />
                                 </Td>
 
-                                <Td>
+                                <Td className="whitespace-nowrap">
                                     <StatusBadge status={user.status} />
                                 </Td>
 
-                                <Td className="text-sm text-slate-500">
+                                <Td className="text-sm text-slate-500 whitespace-nowrap">
                                     {formatDateTime(user.createdAt)}
                                 </Td>
 
-                                <Td className="text-sm text-slate-500">
+                                <Td className="text-sm text-slate-500 whitespace-nowrap">
                                     {formatDateTime(user.lastLoginAt)}
                                 </Td>
 
@@ -691,8 +607,6 @@ const UserManagement = () => {
                 user={detailUser}
                 open={!!detailUser}
                 onClose={() => setDetailUser(null)}
-                formatDateTime={formatDateTime}
-                getDisplayName={getDisplayName}
             />
 
             <UserActionDialog

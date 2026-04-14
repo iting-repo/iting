@@ -7,6 +7,7 @@ const Button = ({ children, variant = "default", className = "", ...props }) => 
     destructive: "bg-red-600 text-white hover:bg-red-700",
     secondary: "bg-slate-100 text-slate-800 hover:bg-slate-200",
     primary: "bg-[#3AB4E6] text-white hover:bg-[#2C9ACD]",
+    ghost: "bg-transparent text-slate-600 hover:bg-slate-100",
   };
   return (
     <button

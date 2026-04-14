@@ -59,6 +59,11 @@ public class S3FileUploadServiceImpl implements FileUploadService {
     }
 
     @Override
+    public String uploadLogo(MultipartFile file) {
+        return upload(file, "company-logo");
+    }
+
+    @Override
     public String generatePresignedUrl(String fileUrl, int minutes) {
         if (fileUrl == null || fileUrl.isBlank()) {
             throw new IllegalArgumentException("fileUrl không được để trống");

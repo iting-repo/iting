@@ -1,23 +1,23 @@
 import React, { useState, useEffect, useCallback } from "react";
-import { 
-  Search, 
-  Download, 
-  Clock, 
-  User, 
-  Building2, 
-  Briefcase, 
-  Settings, 
+import {
+  Search,
+  Download,
+  Clock,
+  User,
+  Building2,
+  Briefcase,
+  Settings,
   Shield,
   LayoutDashboard,
   Calendar
 } from "lucide-react";
-import { 
-  Button, 
-  Badge, 
-  Input, 
-  Card, 
-  CardContent, 
-  Table, 
+import {
+  Button,
+  Badge,
+  Input,
+  Card,
+  CardContent,
+  Table,
   Td,
   Select,
   LoadingSpinner,
@@ -26,7 +26,7 @@ import {
 import { toast } from "sonner";
 import adminAuditService from "../../../services/adminAuditService";
 import { format } from "date-fns";
-import { vi } from "date-fns/locale";
+import { vi } from "date-fns/locale/vi";
 
 const CATEGORY_MAP = {
   company: { label: "Công ty", icon: <Building2 className="w-3 px-0 h-4" />, color: "bg-blue-100 text-blue-700 border-blue-200" },
@@ -42,7 +42,7 @@ const AuditLogPage = () => {
   const [totalElements, setTotalElements] = useState(0);
   const [page, setPage] = useState(0);
   const [pageSize] = useState(10);
-  
+
   // Filters
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("all");
@@ -96,7 +96,7 @@ const AuditLogPage = () => {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-6 rounded-2xl border border-slate-100 shadow-sm">
         <div className="flex items-center gap-4">
           <div className="w-12 h-12 bg-sky-50 rounded-xl flex items-center justify-center text-sky-600">
-             <Shield className="w-6 h-6" />
+            <Shield className="w-6 h-6" />
           </div>
           <div>
             <h1 className="text-xl font-black text-slate-900 tracking-tight">Audit Log</h1>
@@ -110,42 +110,42 @@ const AuditLogPage = () => {
 
       {/* Stats - Quick Overview */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-         <div className="bg-white p-4 rounded-xl border border-slate-100 shadow-sm text-center space-y-1">
-            <p className="text-2xl font-black text-slate-900">{totalElements}</p>
-            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Tổng bản ghi</p>
-         </div>
-         <div className="bg-white p-4 rounded-xl border border-slate-100 shadow-sm text-center space-y-1">
-            <p className="text-2xl font-black text-indigo-600">Admin</p>
-            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Người thực hiện</p>
-         </div>
-         <div className="bg-white p-4 rounded-xl border border-slate-100 shadow-sm text-center space-y-1">
-            <p className="text-2xl font-black text-emerald-600">Tháng {new Date().getMonth() + 1}</p>
-            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Thời gian</p>
-         </div>
-         <div className="bg-white p-4 rounded-xl border border-slate-100 shadow-sm text-center space-y-1">
-            <Badge variant="sky" className="px-3 py-1 font-black">ACTIVE</Badge>
-            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Trạng thái audit</p>
-         </div>
+        <div className="bg-white p-4 rounded-xl border border-slate-100 shadow-sm text-center space-y-1">
+          <p className="text-2xl font-black text-slate-900">{totalElements}</p>
+          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Tổng bản ghi</p>
+        </div>
+        <div className="bg-white p-4 rounded-xl border border-slate-100 shadow-sm text-center space-y-1">
+          <p className="text-2xl font-black text-indigo-600">Admin</p>
+          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Người thực hiện</p>
+        </div>
+        <div className="bg-white p-4 rounded-xl border border-slate-100 shadow-sm text-center space-y-1">
+          <p className="text-2xl font-black text-emerald-600">Tháng {new Date().getMonth() + 1}</p>
+          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Thời gian</p>
+        </div>
+        <div className="bg-white p-4 rounded-xl border border-slate-100 shadow-sm text-center space-y-1">
+          <Badge variant="sky" className="px-3 py-1 font-black">ACTIVE</Badge>
+          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Trạng thái audit</p>
+        </div>
       </div>
 
       {/* Toolbar */}
       <div className="flex flex-col md:flex-row gap-4">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-          <Input 
-            className="pl-10 h-11 border-slate-200" 
-            placeholder="Tìm theo hành động, đối tượng hoặc chi tiết..." 
-            value={search} 
-            onChange={(e) => { setSearch(e.target.value); setPage(0); }} 
+          <Input
+            className="pl-10 h-11 border-slate-200"
+            placeholder="Tìm theo hành động, đối tượng hoặc chi tiết..."
+            value={search}
+            onChange={(e) => { setSearch(e.target.value); setPage(0); }}
           />
         </div>
         <div className="w-full md:w-64">
-           <Select value={category} onValueChange={(v) => { setCategory(v); setPage(0); }}>
-                <option value="all">Tất cả danh mục</option>
-                {Object.entries(CATEGORY_MAP).map(([key, item]) => (
-                  <option key={key} value={key}>{item.label}</option>
-                ))}
-           </Select>
+          <Select value={category} onValueChange={(v) => { setCategory(v); setPage(0); }}>
+            <option value="all">Tất cả danh mục</option>
+            {Object.entries(CATEGORY_MAP).map(([key, item]) => (
+              <option key={key} value={key}>{item.label}</option>
+            ))}
+          </Select>
         </div>
       </div>
 
@@ -181,12 +181,12 @@ const AuditLogPage = () => {
                       </Badge>
                     </Td>
                     <Td>
-                       <div className="space-y-1">
-                          <p className="text-sm font-bold text-slate-800">{log.action}</p>
-                          <p className="text-[11px] text-slate-500 line-clamp-1 group-hover:line-clamp-none transition-all" title={log.detail}>
-                             {log.detail}
-                          </p>
-                       </div>
+                      <div className="space-y-1">
+                        <p className="text-sm font-bold text-slate-800">{log.action}</p>
+                        <p className="text-[11px] text-slate-500 line-clamp-1 group-hover:line-clamp-none transition-all" title={log.detail}>
+                          {log.detail}
+                        </p>
+                      </div>
                     </Td>
                     <Td className="font-bold text-sky-600 text-xs">
                       {log.target}
@@ -203,15 +203,15 @@ const AuditLogPage = () => {
                       )}
                     </Td>
                     <Td>
-                       <div className="flex items-center gap-2">
-                          <div className="w-7 h-7 rounded-full bg-slate-100 flex items-center justify-center text-slate-500">
-                             <User className="w-4 h-4" />
-                          </div>
-                          <div>
-                             <p className="text-xs font-bold text-slate-700">{log.performer}</p>
-                             <p className="text-[10px] font-medium text-slate-400 uppercase tracking-tighter">{log.performerRole}</p>
-                          </div>
-                       </div>
+                      <div className="flex items-center gap-2">
+                        <div className="w-7 h-7 rounded-full bg-slate-100 flex items-center justify-center text-slate-500">
+                          <User className="w-4 h-4" />
+                        </div>
+                        <div>
+                          <p className="text-xs font-bold text-slate-700">{log.performer}</p>
+                          <p className="text-[10px] font-medium text-slate-400 uppercase tracking-tighter">{log.performerRole}</p>
+                        </div>
+                      </div>
                     </Td>
                   </tr>
                 );

@@ -90,6 +90,7 @@ const adminJobService = {
 
   // Unfeature job
   unfeatureJob: async (jobId) => {
+    const response = await axiosInstance.post(`/admin/jobs/${jobId}/unfeature`);
     return response;
   },
 

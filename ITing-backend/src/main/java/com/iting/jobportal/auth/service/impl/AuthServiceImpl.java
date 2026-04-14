@@ -175,8 +175,7 @@ public class AuthServiceImpl implements AuthService {
 
         Company company = new Company();
 
-        // quan trọng với shared primary key
-        company.setId(account.getId());
+        // quan trọng với shared primary key: Hibernate tự lấy ID từ account nhờ @MapsId
         company.setAccount(account);
 
         String defaultName =

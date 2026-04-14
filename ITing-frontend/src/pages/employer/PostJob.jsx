@@ -29,11 +29,11 @@ const EXPERIENCE_LEVEL_OPTIONS = [
 ];
 
 const JOB_TYPE_OPTIONS = [
-  { value: "FULL_TIME", label: "Full-time" },
-  { value: "PART_TIME", label: "Part-time" },
-  { value: "REMOTE", label: "Remote" },
-  { value: "FREELANCE", label: "Freelance" },
-  { value: "INTERN", label: "Internship" },
+  { value: "FULL_TIME", label: "Toàn thời gian" },
+  { value: "PART_TIME", label: "Bán thời gian" },
+  { value: "REMOTE", label: "Làm từ xa" },
+  { value: "FREELANCE", label: "Tự do" },
+  { value: "INTERN", label: "Thực tập" },
 ];
 
 const SALARY_TYPE_OPTIONS = [
@@ -222,7 +222,7 @@ const PostJob = ({
   initialData = null,
   isEdit = false,
 }) => {
-  const [formData, setFormData] = useState({
+  const initialFormState = useMemo(() => ({
     jobTitle: initialData?.title || "",
     jobPosition: normalizeMultiValueField(initialData?.position),
     techStack: normalizeMultiValueField(initialData?.techRequired),
@@ -241,7 +241,14 @@ const PostJob = ({
     responsibilities: initialData?.responsibilities || "",
     requirements: initialData?.requirements || "",
     benefits: initialData?.benefits || "",
-  });
+  }), [initialData]);
+
+  const [formData, setFormData] = useState(initialFormState);
+
+  const hasChanges = useMemo(() => {
+    if (!isEdit) return true;
+    return JSON.stringify(formData) !== JSON.stringify(initialFormState);
+  }, [formData, initialFormState, isEdit]);
 
   const [errors, setErrors] = useState({});
   const [provinces, setProvinces] = useState([]);
@@ -329,7 +336,7 @@ const PostJob = ({
       const payload = {
         title: formData.jobTitle.trim(),
         position: formData.jobPosition.join(", "),
-        techRequired: formData.techStack.join(", "),
+        techRequired: formData.techStack,
         jobType: formData.workType || null,
         experienceLevel: formData.experienceLevel || null,
         workingDays: formData.workingDays.trim() || null,
@@ -350,7 +357,7 @@ const PostJob = ({
         province: formData.province || null,
         ward: formData.ward || null,
         address: formData.address.trim() || null,
-        locId: selectedProvince ? Number(selectedProvince.code) : null,
+        locId: null,
 
         description: formData.description.trim() || "",
         responsibilities: formData.responsibilities.trim() || "",
@@ -765,7 +772,7 @@ const PostJob = ({
                     name="description"
                     value={formData.description}
                     className="w-full p-4 h-40 focus:outline-none resize-none text-sm text-gray-600"
-                    placeholder="Add your job description..."
+                    placeholder="Thêm mô tả công việc tại đây..."
                     onChange={handleChange}
                   />
                 </div>
@@ -786,14 +793,14 @@ const PostJob = ({
                     name="responsibilities"
                     value={formData.responsibilities}
                     className="w-full p-4 h-40 focus:outline-none resize-none text-sm text-gray-600"
-                    placeholder="Add your job responsibilities..."
+                    placeholder="Thêm trách nhiệm công việc tại đây..."
                     onChange={handleChange}
                   />
                 </div>
               </div>
             </div>
 
-            <div className="flex items-center justify-end gap-3 pt-2">
+            <div className="flex items-center justify-end gap-3 pt-4 border-t border-gray-100">
               <button
                 type="button"
                 onClick={onClose}
@@ -804,9 +811,14 @@ const PostJob = ({
 
               <button
                 type="submit"
-                className="bg-[#1967D2] hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-lg transition-colors flex items-center gap-2"
+                disabled={!hasChanges}
+                className={`flex items-center gap-2 font-bold py-3 px-8 rounded-lg transition-all ${
+                  hasChanges 
+                    ? "bg-[#1967D2] hover:bg-blue-700 text-white shadow-lg shadow-blue-200" 
+                    : "bg-gray-300 text-gray-500 cursor-not-allowed grayscale"
+                }`}
               >
-                {isEdit ? "Lưu thay đổi" : "Đăng Bài"}{" "}
+                {isEdit ? "Cập nhật → Chờ duyệt lại" : "Đăng bài → Chờ duyệt"}
                 <FaArrowRight size={14} />
               </button>
             </div>

@@ -30,10 +30,10 @@ const CompanyProfile = () => {
 
   const renderTabContent = () => {
     switch (activeTab) {
-      case 'founding': return <FoundingInfoTab />;
-      case 'social': return <SocialMediaTab />;
-      case 'settings': return <SettingsTab />;
-      default: return <FoundingInfoTab />;
+      case 'founding': return <FoundingInfoTab onTabChange={setActiveTab} />;
+      case 'social': return <SocialMediaTab onTabChange={setActiveTab} />;
+      case 'settings': return <SettingsTab onTabChange={setActiveTab} />;
+      default: return <FoundingInfoTab onTabChange={setActiveTab} />;
     }
   };
 

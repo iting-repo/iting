@@ -111,7 +111,7 @@ public class Job {
     // ===== AUTO LOGIC =====
     @PrePersist
     protected void onCreate() {
-        if (status == null) status = JobStatus.DRAFT;
+        if (status == null) status = JobStatus.PENDING;
         if (createdAt == null) createdAt = LocalDateTime.now();
         if (lastUpdate == null) lastUpdate = LocalDateTime.now();
         if (viewCount == null) viewCount = 0;

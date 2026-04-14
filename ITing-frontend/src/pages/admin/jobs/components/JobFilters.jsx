@@ -10,7 +10,7 @@ export const JobFilters = ({
   return (
     <div className="flex gap-4">
       <Input
-        placeholder="Search job..."
+        placeholder="Tìm kiếm công việc..."
         value={search}
         onChange={(e) => setSearch(e.target.value)}
       />
@@ -19,10 +19,10 @@ export const JobFilters = ({
         value={statusFilter}
         onChange={(e) => setStatusFilter(e.target.value)}
       >
-        <option value="all">All Status</option>
-        <option value="PENDING">Pending</option>
-        <option value="ACTIVE">Active</option>
-        <option value="REJECTED">Rejected</option>
+        <option value="all">Tất cả trạng thái</option>
+        <option value="PENDING">Chờ duyệt</option>
+        <option value="ACTIVE">Đang hoạt động</option>
+        <option value="REJECTED">Bị từ chối</option>
       </Select>
     </div>
   );

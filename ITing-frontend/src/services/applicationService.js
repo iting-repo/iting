@@ -16,6 +16,11 @@ const applicationService = {
             params: { note }
         });
         return response;
+    },
+
+    viewApplication: async (id) => {
+        const response = await axiosInstance.get(`/employer/applications/${id}`);
+        return response;
     }
 };
 

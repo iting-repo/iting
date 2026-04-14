@@ -44,7 +44,24 @@ public class ApplicationMapperUtil {
         String cvFileName = null;
         String cvFileType = null;
         String cvUrl = null;
-        if (applyForm.getCvTitle() != null && applyForm.getCvTitle().startsWith("CV_")) {
+        if (applyForm.getCv() != null) {
+            CV cv = applyForm.getCv();
+            cvUrl = cv.getFileUrl();
+            if (cvUrl != null) {
+                String path = cvUrl.contains("/") ? cvUrl.substring(cvUrl.lastIndexOf('/') + 1) : cvUrl;
+                int dotIdx = path.lastIndexOf('.');
+                if (dotIdx > 0) {
+                    cvFileName = path.substring(0, dotIdx);
+                    cvFileType = path.substring(dotIdx + 1).toUpperCase();
+                } else {
+                    cvFileName = path;
+                    cvFileType = "PDF";
+                }
+            }
+            if (cvFileName == null) {
+                cvFileName = cv.getTitle() != null ? cv.getTitle() : applyForm.getCvTitle();
+            }
+        } else if (applyForm.getCvTitle() != null && applyForm.getCvTitle().startsWith("CV_")) {
             try {
                 Long cvId = Long.parseLong(applyForm.getCvTitle().substring(3));
                 Optional<CV> cvOpt = cvRepository.findById(cvId);
@@ -66,6 +83,8 @@ public class ApplicationMapperUtil {
             } catch (NumberFormatException ignored) {
                 cvFileName = applyForm.getCvTitle();
             }
+        } else {
+            cvFileName = applyForm.getCvTitle();
         }
 
         String phoneNumber = null;

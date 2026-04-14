@@ -28,7 +28,8 @@ const JobAlerts = lazy(() => import('../pages/candidate/JobAlerts'));
 const FavoriteJobs = lazy(() => import('../pages/candidate/FavoriteJobs'));
 const AdminDashboard = lazy(() => import('../pages/admin/Dashboard'));
 const UserManagement = lazy(() => import('../pages/admin/users/UserManagement'));
-const CompanyManagement = lazy(() => import('../pages/admin/reports/ReportManagement'));
+const CompanyManagement = lazy(() => import('../pages/admin/companies/CompanyManagement'));
+const ReportManagement = lazy(() => import('../pages/admin/reports/ReportManagement'));
 const JobDetailPage = lazy(() => import('../pages/public/JobDetailPage'));
 const LegacyJobRedirect = lazy(() => import('../pages/public/LegacyJobRedirect'));
 const AboutPage = lazy(() => import('../pages/public/AboutPage'));
@@ -36,6 +37,7 @@ const ContactPage = lazy(() => import('../pages/public/ContactPage'));
 const AdminJobPage = lazy(() => import('../pages/admin/jobs/AdminJobPage'));
 const AuditLogPage = lazy(() => import('../pages/admin/audit/AuditLogPage'));
 const SystemConfig = lazy(() => import('../pages/admin/config/SystemConfig'));
+const NotificationManagement = lazy(() => import('../pages/admin/notifications/NotificationManagement'));
 
 import { LoadingSpinner } from '../components';
 import { Settings } from 'lucide-react';
@@ -63,9 +65,11 @@ const AppRoutes = () => {
             <Route path="dashboard" element={<AdminDashboard />} />
             <Route path="users" element={<UserManagement />} />
             <Route path="companies" element={<CompanyManagement />} />
+            <Route path="reports" element={<ReportManagement />} />
             <Route path="approvals" element={<AdminJobPage />} />
             <Route path="audit" element={<AuditLogPage />} />
             <Route path="config" element={<SystemConfig />} />
+            <Route path="notifications" element={<NotificationManagement />} />
           </Route>
         </Route>
 

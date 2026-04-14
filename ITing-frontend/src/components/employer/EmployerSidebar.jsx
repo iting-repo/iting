@@ -29,7 +29,7 @@ const EmployerSidebar = () => {
   const [showVerificationPopover, setShowVerificationPopover] = useState(false);
   const [company, setCompany] = useState(null);
   const popoverRef = useRef(null);
-  
+
   const user = currentUser || { name: "Nghia Vo", role: "EMPLOYER" };
 
   useEffect(() => {
@@ -125,20 +125,20 @@ const EmployerSidebar = () => {
                   Tài khoản xác thực: <span className="text-[#3AB4E6] font-bold">{getVerificationLevel()}</span>
                 </span>
                 <div className="relative">
-                  <FaQuestionCircle 
-                    className="text-[10px] text-[#3AB4E6] cursor-pointer hover:text-[#2A94C6] transition-colors" 
+                  <FaQuestionCircle
+                    className="text-[10px] text-[#3AB4E6] cursor-pointer hover:text-[#2A94C6] transition-colors"
                     onClick={() => setShowVerificationPopover(!showVerificationPopover)}
                   />
-                  
+
                   {showVerificationPopover && (
-                    <div 
+                    <div
                       ref={popoverRef}
                       className="absolute left-0 top-6 z-[70] w-80 rounded-2xl bg-white p-6 shadow-2xl ring-1 ring-black/5 animate-in fade-in slide-in-from-top-2 border border-slate-100"
                     >
                       <h5 className="text-base font-bold text-gray-900 mb-4">
                         Tài khoản xác thực: <span className="text-[#3AB4E6]">{getVerificationLevel()}</span>
                       </h5>
-                      
+
                       <div className="flex items-start gap-3 bg-blue-50/50 p-3 rounded-xl mb-6">
                         <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-blue-50 text-[#3AB4E6] border-2 border-white shadow-sm">
                           <FaArrowUp className="text-sm" />
@@ -156,7 +156,7 @@ const EmployerSidebar = () => {
 
                       <div className="space-y-4">
                         <p className="text-[11px] text-gray-400 font-medium">Trạng thái xác thực hiện tại:</p>
-                        
+
                         <div className="space-y-3">
                           <div className="flex items-center justify-between">
                             <span className="text-sm font-bold text-gray-800">Xác thực thông tin</span>
@@ -170,8 +170,8 @@ const EmployerSidebar = () => {
                         </div>
 
                         <div className="space-y-1 pt-2">
-                          <Link 
-                            to="/employer/company-profile" 
+                          <Link
+                            to="/employer/company-profile"
                             onClick={() => setShowVerificationPopover(false)}
                             className="flex items-center justify-between group p-2 hover:bg-gray-50 rounded-lg transition-colors cursor-pointer"
                           >
@@ -188,8 +188,8 @@ const EmployerSidebar = () => {
                             <FaChevronRight className="text-[10px] text-gray-300 group-hover:text-[#3AB4E6] group-hover:translate-x-1 transition-all" />
                           </Link>
 
-                          <Link 
-                            to="/employer/company-profile" 
+                          <Link
+                            to="/employer/company-profile"
                             onClick={() => setShowVerificationPopover(false)}
                             className="flex items-center justify-between group p-2 hover:bg-gray-50 rounded-lg transition-colors cursor-pointer"
                           >
@@ -206,8 +206,8 @@ const EmployerSidebar = () => {
                             <FaChevronRight className="text-[10px] text-gray-300 group-hover:text-[#3AB4E6] group-hover:translate-x-1 transition-all" />
                           </Link>
 
-                          <Link 
-                            to="/employer/verification" 
+                          <Link
+                            to="/employer/verification"
                             onClick={() => setShowVerificationPopover(false)}
                             className="flex items-center justify-between group p-2 hover:bg-gray-50 rounded-lg transition-colors cursor-pointer"
                           >
@@ -236,7 +236,7 @@ const EmployerSidebar = () => {
             </div>
           </div>
 
-          <NavLink 
+          <NavLink
             to="/employer/verification"
             className="flex items-center justify-between w-full bg-[#D13B35] hover:bg-[#B1312C] text-white px-3 py-2.5 rounded-full transition-all group overflow-hidden shadow-lg shadow-red-100"
           >

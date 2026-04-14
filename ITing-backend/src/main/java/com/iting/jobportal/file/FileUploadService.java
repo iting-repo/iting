@@ -16,5 +16,7 @@ public interface FileUploadService {
 
     String uploadConsentDocument(MultipartFile file);
 
+    String uploadLogo(MultipartFile file);
+
     void deleteByUrl(String fileUrl);
 }

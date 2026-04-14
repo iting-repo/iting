@@ -1,6 +1,4 @@
 import React, { useState } from "react";
-import AdminHeader from "../../../components/admin/AdminHeader";
-import AdminSidebar from "../../../components/admin/AdminSidebar";
 import { PageHeader, Pagination, Button } from "../../../components";
 import { 
   Download, 
@@ -10,7 +8,7 @@ import {
   XCircle, 
   Ban, 
   Trash2, 
-  Clock 
+  Clock,
 } from "lucide-react";
 import ImportExcelModal from "../../../components/admin/ImportExcelModal";
 import adminJobService from "../../../services/adminJobService";
@@ -25,6 +23,7 @@ import { ActionDialog } from "../../../components/admin/ActionDialog";
 
 import { useAdminJobs } from "../../../hooks/useAdminJobs";
 
+
 const AdminJobPage = () => {
   const {
     jobs,
@@ -38,6 +37,8 @@ const AdminJobPage = () => {
     rejectJob,
     closeJob,
     requestRevision,
+    suspendJob,
+    unsuspendJob,
     deleteJob,
   } = useAdminJobs();
 
@@ -138,31 +139,26 @@ const AdminJobPage = () => {
 
   const confirmAction = async () => {
     if (!actionDialog) return;
-
     const { job, action } = actionDialog;
-
     try {
       if (action === "approve") {
         await approveJob(job.id, actionNote);
-      }
-
-      if (action === "reject") {
+      } else if (action === "reject") {
+        if (!actionNote.trim()) { toast.error("Vui lòng nhập lý do từ chối!"); return; }
         await rejectJob(job.id, actionNote);
-      }
-
-      if (action === "revision") {
+      } else if (action === "revision") {
+        if (!actionNote.trim()) { toast.error("Vui lòng nhập lý do yêu cầu chỉnh sửa!"); return; }
         await requestRevision(job.id, actionNote);
-      }
-
-      if (action === "close") {
+      } else if (action === "suspend") {
+        if (!actionNote.trim()) { toast.error("Vui lòng nhập lý do đình chỉ!"); return; }
+        await suspendJob(job.id, actionNote);
+      } else if (action === "unsuspend") {
+        await unsuspendJob(job.id);
+      } else if (action === "close") {
         await closeJob(job.id);
-      }
-      
-      if (action === "delete") {
+      } else if (action === "delete") {
         await deleteJob(job.id);
-        toast.success("Xóa Job thành công!");
       }
-
       setActionDialog(null);
       setActionNote("");
       setPreviewJob(null);
@@ -175,71 +171,66 @@ const AdminJobPage = () => {
   const pendingCount = jobs.filter((j) => j.status === "PENDING").length;
 
   return (
-    <div className="flex min-h-screen bg-slate-50">
-      <AdminSidebar />
-
-      <div className="flex flex-1 flex-col">
-        <AdminHeader />
-
-        <main className="space-y-6 p-6 pb-40">
-          <PageHeader
-            title="Quản lý Job"
-            description={`${pendingCount} job đang chờ duyệt`}
+    <>
+      <div className="space-y-6 pb-60">
+      <PageHeader
+        title="Quản lý Job"
+        description={`${pendingCount} job đang chờ duyệt`}
+      >
+        <div className="flex gap-2">
+          <Button 
+            variant="outline" 
+            className="flex items-center gap-2 border-slate-200 text-slate-600 hover:bg-slate-50"
+            onClick={() => setShowImportModal(true)}
           >
-            <div className="flex gap-2">
-              <Button 
-                variant="outline" 
-                className="flex items-center gap-2 border-slate-200 text-slate-600 hover:bg-slate-50"
-                onClick={() => setShowImportModal(true)}
-              >
-                <FileUp className="h-4 w-4" />
-                Nhập Job (Excel)
-              </Button>
-              <Button 
-                variant="outline" 
-                className="flex items-center gap-2 border-[#1967D2] text-[#1967D2] hover:bg-blue-50"
-                onClick={handleExportExcel}
-              >
-                <Download className="h-4 w-4" />
-                Xuất Excel
-              </Button>
-            </div>
-          </PageHeader>
+            <FileUp className="h-4 w-4" />
+            Nhập Job (Excel)
+          </Button>
+          <Button 
+            variant="outline" 
+            className="flex items-center gap-2 border-[#1967D2] text-[#1967D2] hover:bg-blue-50"
+            onClick={handleExportExcel}
+          >
+            <Download className="h-4 w-4" />
+            Xuất Excel
+          </Button>
+        </div>
+      </PageHeader>
 
-          <JobStats jobs={jobs} />
+      <JobStats jobs={jobs} />
 
-          <JobFilters
-            search={filters.keyword || ""}
-            setSearch={(value) =>
-              setFilters((prev) => ({ ...prev, keyword: value }))
-            }
-            statusFilter={filters.status || "all"}
-            setStatusFilter={(value) =>
-              setFilters((prev) => ({ ...prev, status: value }))
-            }
-          />
+      <JobFilters
+        search={filters.keyword || ""}
+        setSearch={(value) =>
+          setFilters((prev) => ({ ...prev, keyword: value }))
+        }
+        statusFilter={filters.status || "all"}
+        setStatusFilter={(value) =>
+          setFilters((prev) => ({ ...prev, status: value }))
+        }
+      />
 
-          <JobTable
-            jobs={jobs}
-            loading={loading}
-            onPreview={setPreviewJob}
-            onDetail={setDetailJob}
-            onAction={handleAction}
-            openMenuId={openMenuId}
-            setOpenMenuId={setOpenMenuId}
-            selectedIds={selectedIds}
-            onSelectAll={handleSelectAll}
-            onSelectOne={handleSelectOne}
-            isAllSelected={isAllSelected}
-          />
+      <JobTable
+        jobs={jobs}
+        loading={loading}
+        onPreview={setPreviewJob}
+        onDetail={setDetailJob}
+        onAction={handleAction}
+        openMenuId={openMenuId}
+        setOpenMenuId={setOpenMenuId}
+        selectedIds={selectedIds}
+        onSelectAll={handleSelectAll}
+        onSelectOne={handleSelectOne}
+        isAllSelected={isAllSelected}
+      />
 
-          <Pagination
-            page={page}
-            totalPages={totalPages}
-            onPageChange={setPage}
-          />
-        </main>
-      </div>
+      <Pagination
+        page={page}
+        totalPages={totalPages}
+        onPageChange={setPage}
+      />
+    </div>
+
 
       <JobPreviewDialog
         job={previewJob}
@@ -293,7 +284,7 @@ const AdminJobPage = () => {
           <div className="flex items-center gap-2">
             <button
                onClick={() => handleBulkAction('approve')}
-               className="flex items-center gap-2 rounded-xl bg-emerald-500 px-4 py-2.5 text-sm font-bold text-white shadow-lg shadow-emerald-100 transition-all hover:bg-emerald-600 hover:scale-105 active:scale-95"
+               className="flex items-center gap-2 whitespace-nowrap rounded-xl bg-emerald-500 px-5 py-2.5 text-sm font-bold text-white shadow-lg shadow-emerald-100 transition-all hover:bg-emerald-600 hover:scale-105 active:scale-95"
             >
               <CheckCircle2 className="h-4 w-4" />
               Duyệt
@@ -301,7 +292,7 @@ const AdminJobPage = () => {
             
             <button
                onClick={() => handleBulkAction('reject')}
-               className="flex items-center gap-2 rounded-xl bg-amber-500 px-4 py-2.5 text-sm font-bold text-white shadow-lg shadow-amber-100 transition-all hover:bg-amber-600 hover:scale-105 active:scale-95"
+               className="flex items-center gap-2 whitespace-nowrap rounded-xl bg-amber-500 px-5 py-2.5 text-sm font-bold text-white shadow-lg shadow-amber-100 transition-all hover:bg-amber-600 hover:scale-105 active:scale-95"
             >
               <XCircle className="h-4 w-4" />
               Từ chối
@@ -309,7 +300,7 @@ const AdminJobPage = () => {
 
             <button
                onClick={() => handleBulkAction('suspend')}
-               className="flex items-center gap-2 rounded-xl bg-orange-600 px-4 py-2.5 text-sm font-bold text-white shadow-lg shadow-orange-100 transition-all hover:bg-orange-700 hover:scale-105 active:scale-95"
+               className="flex items-center gap-2 whitespace-nowrap rounded-xl bg-orange-600 px-5 py-2.5 text-sm font-bold text-white shadow-lg shadow-orange-100 transition-all hover:bg-orange-700 hover:scale-105 active:scale-95"
             >
               <Ban className="h-4 w-4" />
               Đình chỉ
@@ -317,7 +308,7 @@ const AdminJobPage = () => {
 
             <button
                onClick={() => handleBulkAction('close')}
-               className="flex items-center gap-2 rounded-xl bg-slate-700 px-4 py-2.5 text-sm font-bold text-white shadow-lg shadow-slate-100 transition-all hover:bg-slate-800 hover:scale-105 active:scale-95"
+               className="flex items-center gap-2 whitespace-nowrap rounded-xl bg-slate-700 px-5 py-2.5 text-sm font-bold text-white shadow-lg shadow-slate-100 transition-all hover:bg-slate-800 hover:scale-105 active:scale-95"
             >
               <Clock className="h-4 w-4" />
               Đóng
@@ -325,7 +316,7 @@ const AdminJobPage = () => {
 
             <button
                onClick={() => handleBulkAction('delete')}
-               className="flex items-center gap-2 rounded-xl bg-red-500 px-4 py-2.5 text-sm font-bold text-white shadow-lg shadow-red-100 transition-all hover:bg-red-600 hover:scale-105 active:scale-95"
+               className="flex items-center gap-2 whitespace-nowrap rounded-xl bg-red-500 px-5 py-2.5 text-sm font-bold text-white shadow-lg shadow-red-100 transition-all hover:bg-red-600 hover:scale-105 active:scale-95"
             >
               <Trash2 className="h-4 w-4" />
               Xóa
@@ -333,7 +324,7 @@ const AdminJobPage = () => {
           </div>
         </div>
       )}
-    </div>
+    </>
   );
 };
 

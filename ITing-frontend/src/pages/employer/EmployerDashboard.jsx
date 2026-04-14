@@ -13,11 +13,11 @@ const EmployerDashboard = () => {
     const companyName = "(Tên công ty)"; // Sau này lấy từ API hoặc Store
 
     const recentJobs = [
-        { id: 1, title: 'UI/UX Designer', type: 'Full Time', daysLeft: 5, status: 'active', applicants: 798 },
-        { id: 2, title: 'Senior UX Designer', type: 'Internship', daysLeft: 8, status: 'active', applicants: 185 },
-        { id: 3, title: 'Technical Support Specialist', type: 'Part Time', daysLeft: 4, status: 'active', applicants: 556 },
-        { id: 4, title: 'Junior Graphic Designer', type: 'Full Time', daysLeft: 3, status: 'active', applicants: 583 },
-        { id: 5, title: 'Front End Developer', type: 'Full Time', deadline: '30/10/2025', status: 'expired', applicants: 740 },
+        { id: 1, title: 'UI/UX Designer', type: 'FULL_TIME', daysLeft: 5, status: 'active', applicants: 798 },
+        { id: 2, title: 'Senior UX Designer', type: 'INTERN', daysLeft: 8, status: 'active', applicants: 185 },
+        { id: 3, title: 'Technical Support Specialist', type: 'PART_TIME', daysLeft: 4, status: 'active', applicants: 556 },
+        { id: 4, title: 'Junior Graphic Designer', type: 'FULL_TIME', daysLeft: 3, status: 'active', applicants: 583 },
+        { id: 5, title: 'Front End Developer', type: 'FULL_TIME', deadline: '30/10/2025', status: 'expired', applicants: 740 },
     ];
 
     const [activeMenu, setActiveMenu] = useState(null);
@@ -92,7 +92,9 @@ const EmployerDashboard = () => {
                                             {job.title}
                                         </div>
                                         <div className="text-sm text-gray-500 flex gap-2">
-                                            <span className="bg-gray-100 px-2 py-0.5 rounded text-xs">{job.type}</span>
+                                            <span className="bg-gray-100 px-2 py-0.5 rounded text-xs">
+                                                {t(`manage_jobs.job_types.${job.type}`, { defaultValue: job.type })}
+                                            </span>
                                             <span className="text-gray-400">•</span>
                                             <span className="text-gray-400 text-xs mt-0.5">
                                                 {job.status === 'active'

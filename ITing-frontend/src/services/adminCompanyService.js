@@ -36,12 +36,40 @@ const adminCompanyService = {
     return response;
   },
 
+  approveCompanyInfo: async (companyId, note) => {
+    return await axiosInstance.post(
+      `/admin/companies/${companyId}/approve-info`,
+      { note }
+    );
+  },
+
+  approveCompanyDocuments: async (companyId, note) => {
+    return await axiosInstance.post(
+      `/admin/companies/${companyId}/approve-documents`,
+      { note }
+    );
+  },
+
   rejectCompany: async (companyId, reason) => {
     const response = await axiosInstance.post(
       `/admin/companies/${companyId}/reject`,
       { reason }
     );
     return response;
+  },
+
+  rejectCompanyInfo: async (companyId, reason) => {
+    return await axiosInstance.post(
+      `/admin/companies/${companyId}/reject-info`,
+      { reason }
+    );
+  },
+
+  rejectCompanyDocuments: async (companyId, reason) => {
+    return await axiosInstance.post(
+      `/admin/companies/${companyId}/reject-documents`,
+      { reason }
+    );
   },
 
   requestResubmission: async (companyId, reason) => {
@@ -113,7 +141,22 @@ const adminCompanyService = {
 
   getCompanyAuditLogs: async (companyId) => {
     return await axiosInstance.get(`/admin/companies/${companyId}/audit-logs`);
-  }
+  },
+
+  // Lấy presigned URL để xem giấy phép kinh doanh (tránh AccessDenied S3)
+  getBusinessLicenseViewUrl: async (companyId, minutes = 15) => {
+    return await axiosInstance.get(`/admin/companies/${companyId}/business-license/view`, { params: { minutes } });
+  },
+
+  // Lấy presigned URL để xem thỏa thuận dữ liệu (tránh AccessDenied S3)
+  getConsentDocumentViewUrl: async (companyId, minutes = 15) => {
+    return await axiosInstance.get(`/admin/companies/${companyId}/consent-document/view`, { params: { minutes } });
+  },
+
+  // Lấy presigned URL để xem logo công ty (tránh AccessDenied S3)
+  getCompanyLogoViewUrl: async (companyId, minutes = 60) => {
+    return await axiosInstance.get(`/admin/companies/${companyId}/logo/view`, { params: { minutes } });
+  },
 };
 
 export default adminCompanyService;

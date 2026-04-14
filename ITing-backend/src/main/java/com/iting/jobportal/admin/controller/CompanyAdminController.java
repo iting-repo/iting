@@ -8,6 +8,7 @@ import com.iting.jobportal.company.entity.enums.CompanyReviewStatus;
 import com.iting.jobportal.company.entity.enums.VerificationLevel;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
@@ -53,11 +54,38 @@ public class CompanyAdminController {
         return ResponseEntity.ok(companies);
     }
 
+    @GetMapping("/pending-reviews")
+    @Operation(summary = "Lấy danh sách các công ty đang chờ duyệt")
+    public ResponseEntity<Page<CompanyResponse>> getPendingReviewCompanies(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size
+    ) {
+        return ResponseEntity.ok(adminCompanyService.getPendingReviewCompanies(page, size));
+    }
+
     /*
     ================================
-    CHI TIẾT CÔNG TY
+    CHI TIẾT CÔNG TY & GHI CHÚ
     ================================
     */
+
+    @GetMapping("/{id}/notes")
+    @Operation(summary = "Lấy danh sách ghi chú nội bộ của công ty")
+    public ResponseEntity<List<com.iting.jobportal.admin.dto.response.KybNoteResponse>> getCompanyKybNotes(
+            @PathVariable Long id
+    ) {
+        return ResponseEntity.ok(adminCompanyService.getCompanyKybNotes(id));
+    }
+
+    @PostMapping("/{id}/notes")
+    @Operation(summary = "Thêm ghi chú nội bộ cho công ty")
+    public ResponseEntity<com.iting.jobportal.admin.dto.response.KybNoteResponse> addCompanyKybNote(
+            @PathVariable Long id,
+            @Valid @RequestBody com.iting.jobportal.admin.dto.request.CreateKybNoteRequest request
+    ) {
+        Long adminId = 1L; // Real app would get from token
+        return ResponseEntity.ok(adminCompanyService.addCompanyKybNote(adminId, id, request));
+    }
 
     @GetMapping("/{id}")
     @Operation(summary = "Lấy chi tiết công ty")
@@ -82,7 +110,7 @@ public class CompanyAdminController {
     }
 
     @PostMapping("/{id}/approve")
-    @Operation(summary = "Duyệt công ty")
+    @Operation(summary = "Duyệt toàn bộ công ty (cũ)")
     public ResponseEntity<?> approveCompany(
             @PathVariable Long id,
             @RequestBody CompanyApprovalRequest request) {
@@ -92,14 +120,54 @@ public class CompanyAdminController {
         return ResponseEntity.ok(Map.of("message", "Company approved successfully"));
     }
 
+    @PostMapping("/{id}/approve-info")
+    @Operation(summary = "Duyệt thông tin cơ bản công ty")
+    public ResponseEntity<?> approveCompanyInfo(
+            @PathVariable Long id,
+            @RequestBody CompanyApprovalRequest request) {
+        Long adminId = 1L; 
+        adminCompanyService.approveCompanyInfo(adminId, id, request);
+        return ResponseEntity.ok(Map.of("message", "Company info approved successfully"));
+    }
+
+    @PostMapping("/{id}/approve-documents")
+    @Operation(summary = "Duyệt giấy tờ pháp lý công ty")
+    public ResponseEntity<?> approveCompanyDocuments(
+            @PathVariable Long id,
+            @RequestBody CompanyApprovalRequest request) {
+        Long adminId = 1L; 
+        adminCompanyService.approveCompanyDocuments(adminId, id, request);
+        return ResponseEntity.ok(Map.of("message", "Company documents approved successfully"));
+    }
+
     @PostMapping("/{id}/reject")
-    @Operation(summary = "Từ chối công ty")
+    @Operation(summary = "Từ chối toàn bộ công ty (cũ)")
     public ResponseEntity<?> rejectCompany(
             @PathVariable Long id,
             @RequestBody ReviewRejectRequest request) {
         Long adminId = 1L;
         adminCompanyService.rejectCompany(adminId, id, request);
         return ResponseEntity.ok(Map.of("message", "Company rejected successfully"));
+    }
+
+    @PostMapping("/{id}/reject-info")
+    @Operation(summary = "Từ chối thông tin cơ bản công ty")
+    public ResponseEntity<?> rejectCompanyInfo(
+            @PathVariable Long id,
+            @RequestBody ReviewRejectRequest request) {
+        Long adminId = 1L;
+        adminCompanyService.rejectCompanyInfo(adminId, id, request);
+        return ResponseEntity.ok(Map.of("message", "Company info rejected successfully"));
+    }
+
+    @PostMapping("/{id}/reject-documents")
+    @Operation(summary = "Từ chối giấy tờ pháp lý công ty")
+    public ResponseEntity<?> rejectCompanyDocuments(
+            @PathVariable Long id,
+            @RequestBody ReviewRejectRequest request) {
+        Long adminId = 1L;
+        adminCompanyService.rejectCompanyDocuments(adminId, id, request);
+        return ResponseEntity.ok(Map.of("message", "Company documents rejected successfully"));
     }
 
     @PostMapping("/{id}/request-resubmission")
@@ -135,8 +203,17 @@ public class CompanyAdminController {
     public ResponseEntity<Map<String, String>> viewCompanyBusinessLicense(
             @PathVariable Long id
     ) {
-        Long adminId = 1L; // sau này lấy từ SecurityContext / @CurrentUser
+        Long adminId = 1L;
         String url = adminCompanyService.getCompanyBusinessLicenseViewUrl(adminId, id, 15);
+        return ResponseEntity.ok(Map.of("url", url));
+    }
+
+    @GetMapping("/{id}/consent-document/view")
+    @Operation(summary = "Admin lấy presigned URL để xem văn bản thỏa thuận dữ liệu")
+    public ResponseEntity<Map<String, String>> viewCompanyConsentDocument(
+            @PathVariable Long id
+    ) {
+        String url = adminCompanyService.getCompanyConsentDocumentViewUrl(id, 15);
         return ResponseEntity.ok(Map.of("url", url));
     }
 

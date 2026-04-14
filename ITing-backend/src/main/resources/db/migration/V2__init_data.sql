@@ -525,7 +525,7 @@ INSERT INTO Job (
     'FULL_TIME', 'MIDDLE', 'Thứ 2 - Thứ 6',
     20000000, 30000000, 'MONTH',
     2, 0,
-    'DRAFT', '2026-05-30',
+    'PENDING', '2026-05-30',
     'Hà Nội', 'Cầu Giấy', 'Test Address',
     'Test Address, Cầu Giấy, Hà Nội',
     1,

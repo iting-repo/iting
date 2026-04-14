@@ -64,6 +64,13 @@ const companyService = {
     );
   },
 
+  // Lấy presigned URL để preview giấy phép kinh doanh của chính mình
+  getBusinessLicensePresignedUrl: async (minutes = 30) => {
+    return await axiosInstance.get("/companies/me/business-license/view", {
+      params: { minutes }
+    });
+  },
+
   uploadBusinessLicense: async (file) => {
     const formData = new FormData();
     formData.append("file", file);
@@ -83,6 +90,39 @@ const companyService = {
       headers: {
         "Content-Type": "multipart/form-data",
       },
+    });
+  },
+
+  uploadCompanyLogo: async (file) => {
+    const formData = new FormData();
+    formData.append("file", file);
+    return await axiosInstance.post("/companies/me/logo/upload", formData, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    });
+  },
+
+  submitInfoReview: async () => {
+    return await axiosInstance.post("/companies/me/submit-info-review");
+  },
+
+  submitDocumentReview: async () => {
+    return await axiosInstance.post("/companies/me/submit-document-review");
+  },
+
+  submitBusinessLicenseReview: async () => {
+    return await axiosInstance.post("/companies/me/submit-business-license-review");
+  },
+
+  submitConsentDocumentReview: async () => {
+    return await axiosInstance.post("/companies/me/submit-consent-document-review");
+  },
+
+  // Lấy presigned URL để xem logo của chính mình
+  getLogoPresignedUrl: async (minutes = 60) => {
+    return await axiosInstance.get("/companies/me/logo/view", {
+      params: { minutes }
     });
   },
 };

@@ -8,6 +8,7 @@ import com.iting.jobportal.company.dto.response.BusinessLicenseFormResponse;
 import com.iting.jobportal.company.dto.response.CompanyResponse;
 import com.iting.jobportal.company.entity.Company;
 import com.iting.jobportal.company.entity.enums.CompanyReviewStatus;
+import com.iting.jobportal.company.entity.enums.DocumentReviewStatus;
 import com.iting.jobportal.company.entity.enums.VerificationLevel;
 import com.iting.jobportal.company.repository.CompanyRepository;
 import com.iting.jobportal.company.service.CompanyFollowService;
@@ -15,6 +16,8 @@ import com.iting.jobportal.company.service.CompanyService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.context.ApplicationEventPublisher;
+import com.iting.jobportal.company.event.CompanyInfoSubmittedEvent;
 import com.iting.jobportal.file.FileUploadService;
 import com.iting.jobportal.company.entity.enums.BusinessDocumentType;
 
@@ -28,15 +31,18 @@ public class CompanyServiceImpl implements CompanyService {
     private final CompanyFollowService companyFollowService;
     private final FileUploadService fileUploadService;
     private final AccountRepository accountRepository;
+    private final ApplicationEventPublisher eventPublisher;
 
     public CompanyServiceImpl(CompanyRepository companyRepository,
                               CompanyFollowService companyFollowService,
                               FileUploadService fileUploadService,
-                              AccountRepository accountRepository) {
+                              AccountRepository accountRepository,
+                              ApplicationEventPublisher eventPublisher) {
         this.companyRepository = companyRepository;
         this.companyFollowService = companyFollowService;
         this.fileUploadService = fileUploadService;
         this.accountRepository = accountRepository;
+        this.eventPublisher = eventPublisher;
     }
     @Override
     @Transactional
@@ -50,13 +56,13 @@ public class CompanyServiceImpl implements CompanyService {
             }
 
             Company c = new Company();
-            c.setId(account.getId());
             c.setAccount(account);
             c.setName("Chưa cập nhật");
             c.setAccountEmail(account.getEmail());
             c.setCompanyEmail(account.getEmail());
             c.setVerificationLevel(VerificationLevel.UNVERIFIED);
             c.setCompanyInfoUpdateStatus(CompanyReviewStatus.DRAFT);
+            c.setDocumentReviewStatus(DocumentReviewStatus.MISSING);
             c.setActive(true);
             c.setFollowerCount(0L);
             c.setProfileSetup(false);
@@ -103,9 +109,10 @@ public class CompanyServiceImpl implements CompanyService {
         company.setTaxCode(request.getTaxCode());
         company.setLastUpdate(LocalDateTime.now());
 
-        // Chuyển trạng thái sang PENDING_REVIEW khi cập nhật thông tin
-        company.setCompanyInfoUpdateStatus(CompanyReviewStatus.PENDING_REVIEW);
-        company.setLastUpdateRequestDate(LocalDateTime.now());
+        // Chuyển trạng thái sang DRAFT khi cập nhật thông tin. Cần bấm "Gửi duyệt" để sang PENDING_REVIEW.
+        if (company.getCompanyInfoUpdateStatus() != CompanyReviewStatus.PENDING_REVIEW) {
+            company.setCompanyInfoUpdateStatus(CompanyReviewStatus.DRAFT);
+        }
         company.setLastUpdate(LocalDateTime.now());
         company.setProfileSetup(true);
 
@@ -154,13 +161,32 @@ public class CompanyServiceImpl implements CompanyService {
         }
 
         String contentType = file.getContentType();
-        if (contentType == null || !contentType.equalsIgnoreCase("application/pdf")) {
-            throw new IllegalArgumentException("Chỉ chấp nhận file PDF");
+        if (contentType == null) {
+            throw new IllegalArgumentException("Không xác định được loại file");
+        }
+
+        boolean isValidType = contentType.equalsIgnoreCase("application/pdf") ||
+                             contentType.equalsIgnoreCase("image/jpeg") ||
+                             contentType.equalsIgnoreCase("image/jpg") ||
+                             contentType.equalsIgnoreCase("image/png");
+
+        if (!isValidType) {
+            throw new IllegalArgumentException("Chỉ chấp nhận file PDF hoặc hình ảnh (JPEG, PNG)");
         }
 
         String originalFilename = file.getOriginalFilename();
-        if (originalFilename == null || !originalFilename.toLowerCase().endsWith(".pdf")) {
-            throw new IllegalArgumentException("File phải có đuôi .pdf");
+        if (originalFilename == null) {
+             throw new IllegalArgumentException("Tên file không hợp lệ");
+        }
+        
+        String lowerName = originalFilename.toLowerCase();
+        boolean isValidExt = lowerName.endsWith(".pdf") || 
+                            lowerName.endsWith(".jpg") || 
+                            lowerName.endsWith(".jpeg") || 
+                            lowerName.endsWith(".png");
+                            
+        if (!isValidExt) {
+            throw new IllegalArgumentException("Phần mở rộng file không hợp lệ. Chỉ chấp nhận .pdf, .jpg, .jpeg, .png");
         }
 
         if (company.getBusinessLicenseFileUrl() != null && !company.getBusinessLicenseFileUrl().isBlank()) {
@@ -170,8 +196,9 @@ public class CompanyServiceImpl implements CompanyService {
         String fileUrl = fileUploadService.uploadBusinessLicense(file);
 
         company.setBusinessLicenseFileUrl(fileUrl);
-         company.setBusinessLicenseDocumentType(BusinessDocumentType.BUSINESS_LICENSE);
+        company.setBusinessLicenseDocumentType(BusinessDocumentType.BUSINESS_LICENSE);
         // company.setBusinessLicensePreviewUrl(fileUrl);
+        company.setDocumentReviewStatus(DocumentReviewStatus.UPLOADED);
 
         company.setLastUpdateRequestDate(LocalDateTime.now());
         company.setLastUpdate(LocalDateTime.now());
@@ -321,12 +348,12 @@ public class CompanyServiceImpl implements CompanyService {
     // 8. Submit for Review
     // ==========================================
     @Override
-    public CompanyResponse submitForReview(Long id) {
-        return submitForReviewByAccountId(id);
+    public CompanyResponse submitInfoReview(Long id) {
+        return submitInfoReviewByAccountId(id);
     }
 
     @Override
-    public CompanyResponse submitForReviewByAccountId(Long accountId) {
+    public CompanyResponse submitInfoReviewByAccountId(Long accountId) {
         Company company = getCompanyByAccountId(accountId);
 
         if (company.getName() == null || company.getName().isBlank()) {
@@ -344,6 +371,27 @@ public class CompanyServiceImpl implements CompanyService {
         if (company.getTaxCode() == null || company.getTaxCode().isBlank()) {
             throw new IllegalArgumentException("Mã số thuế không được để trống");
         }
+
+        company.setCompanyInfoUpdateStatus(CompanyReviewStatus.PENDING_REVIEW);
+        company.setLastUpdateRequestDate(LocalDateTime.now());
+        company.setLastUpdate(LocalDateTime.now());
+
+        Company saved = companyRepository.save(company);
+        
+        eventPublisher.publishEvent(new CompanyInfoSubmittedEvent(this, saved.getId(), saved.getName()));
+        
+        return mapToResponse(saved);
+    }
+
+    @Override
+    public CompanyResponse submitDocumentReview(Long id) {
+        return submitDocumentReviewByAccountId(id);
+    }
+
+    @Override
+    public CompanyResponse submitDocumentReviewByAccountId(Long accountId) {
+        Company company = getCompanyByAccountId(accountId);
+
         if (company.getBusinessLicenseFileUrl() == null || company.getBusinessLicenseFileUrl().isBlank()) {
             throw new IllegalArgumentException("Giấy phép kinh doanh không được để trống");
         }
@@ -358,7 +406,42 @@ public class CompanyServiceImpl implements CompanyService {
             throw new IllegalArgumentException("Phiên bản văn bản thỏa thuận không được để trống");
         }
 
-        company.setCompanyInfoUpdateStatus(CompanyReviewStatus.PENDING_REVIEW);
+        company.setDocumentReviewStatus(DocumentReviewStatus.PENDING_REVIEW);
+        company.setLastUpdateRequestDate(LocalDateTime.now());
+        company.setLastUpdate(LocalDateTime.now());
+
+        Company saved = companyRepository.save(company);
+        return mapToResponse(saved);
+    }
+
+    @Override
+    public CompanyResponse submitBusinessLicenseReviewByAccountId(Long accountId) {
+        Company company = getCompanyByAccountId(accountId);
+
+        if (company.getBusinessLicenseFileUrl() == null || company.getBusinessLicenseFileUrl().isBlank()) {
+            throw new IllegalArgumentException("Bạn chưa tải lên Giấy phép kinh doanh");
+        }
+
+        company.setDocumentReviewStatus(DocumentReviewStatus.PENDING_REVIEW);
+        company.setLastUpdateRequestDate(LocalDateTime.now());
+        company.setLastUpdate(LocalDateTime.now());
+
+        Company saved = companyRepository.save(company);
+        return mapToResponse(saved);
+    }
+
+    @Override
+    public CompanyResponse submitConsentDocumentReviewByAccountId(Long accountId) {
+        Company company = getCompanyByAccountId(accountId);
+
+        if (company.getConsentDocumentFileUrl() == null || company.getConsentDocumentFileUrl().isBlank()) {
+            throw new IllegalArgumentException("Bạn chưa tải lên Văn bản thỏa thuận dữ liệu cá nhân");
+        }
+        if (Boolean.FALSE.equals(company.getConsentDocumentConfirmed())) {
+            throw new IllegalArgumentException("Bạn chưa xác nhận cam kết cho văn bản thỏa thuận");
+        }
+
+        company.setDocumentReviewStatus(DocumentReviewStatus.PENDING_REVIEW);
         company.setLastUpdateRequestDate(LocalDateTime.now());
         company.setLastUpdate(LocalDateTime.now());
 
@@ -379,5 +462,21 @@ public class CompanyServiceImpl implements CompanyService {
     // ==========================================
     private CompanyResponse mapToResponse(Company company) {
         return CompanyResponse.fromEntity(company);
+    }
+
+    @Override
+    public String uploadLogoByAccountId(Long accountId, MultipartFile file) {
+        Company company = getCompanyByAccountId(accountId);
+
+        if (company.getLogoUrl() != null && !company.getLogoUrl().isBlank()) {
+            fileUploadService.deleteByUrl(company.getLogoUrl());
+        }
+
+        String url = fileUploadService.uploadLogo(file);
+        company.setLogoUrl(url);
+        company.setLastUpdate(LocalDateTime.now());
+        companyRepository.save(company);
+
+        return url;
     }
 }

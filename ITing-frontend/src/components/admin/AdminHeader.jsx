@@ -47,7 +47,7 @@ const AdminHeader = () => {
             <p className="text-white text-sm font-medium">{user.name || "Super Admin"}</p>
             <p className="text-white/80 text-xs">{user.email || "admin@iting.vn"}</p>
           </div>
-          <button 
+          <button
             onClick={handleLogout}
             className="p-1.5 text-white/80 hover:text-white hover:bg-white/20 rounded-lg transition-colors ml-1"
             title="Đăng xuất"

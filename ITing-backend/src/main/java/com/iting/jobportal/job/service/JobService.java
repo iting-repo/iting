@@ -19,8 +19,6 @@ public interface JobService {
     // Xóa job (Employer)
     void deleteJob(Long employerId, Long jobId);
 
-    JobResponse movePendingToDraft(Long employerId, Long jobId);
-
 //    JobResponse approveJob(Long adminId, Long jobId);
 //
 //    JobResponse rejectJob(Long adminId, Long jobId, String reason);

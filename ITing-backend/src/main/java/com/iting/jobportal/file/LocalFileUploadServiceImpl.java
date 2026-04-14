@@ -58,6 +58,11 @@ public class LocalFileUploadServiceImpl implements FileUploadService {
     }
 
     @Override
+    public String uploadLogo(MultipartFile file) {
+        return saveFile(file, "company-logo");
+    }
+
+    @Override
     public String generatePresignedUrl(String fileUrl, int minutes) {
         // Local thì không cần presigned, trả luôn URL
         return fileUrl;

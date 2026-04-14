@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Upload, AlertTriangle, FileText, CheckCircle } from "lucide-react";
 import { Button } from "../../components/common";
 import companyService from "../../services/companyService";
@@ -7,8 +7,47 @@ import { toast } from "sonner";
 const Verification = () => {
   const [selectedType, setSelectedType] = useState("business");
   const [file, setFile] = useState(null);
+  const [filePreviewUrl, setFilePreviewUrl] = useState(null); // local blob preview
+  const [serverPreviewUrl, setServerPreviewUrl] = useState(null); // presigned S3 URL
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [company, setCompany] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchCompany();
+  }, []);
+
+  const fetchCompany = async () => {
+    try {
+      setLoading(true);
+      const data = await companyService.getMyCompany();
+      setCompany(data);
+      // Nếu đã có file trên server, lấy presigned URL để preview
+      if (data?.businessLicenseFileUrl) {
+        try {
+          const res = await companyService.getBusinessLicensePresignedUrl();
+          setServerPreviewUrl(res?.url || null);
+        } catch (_) {
+          // ignore - chỉ ảnh hưởng preview
+        }
+      }
+    } catch (err) {
+      console.error("Lỗi lấy thông tin công ty:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const statusMap = {
+    MISSING: { label: "Chưa cập nhật", color: "bg-gray-100 text-gray-500" },
+    UPLOADED: { label: "Đã tải lên", color: "bg-blue-100 text-blue-600" },
+    PENDING_REVIEW: { label: "Đang chờ duyệt", color: "bg-amber-100 text-amber-600" },
+    APPROVED: { label: "Đã xác thực", color: "bg-emerald-100 text-emerald-600" },
+    REJECTED: { label: "Bị từ chối", color: "bg-red-100 text-red-600" },
+  };
+
+  const currentStatus = statusMap[company?.documentReviewStatus] || statusMap.MISSING;
 
   const handleFileChange = (e) => {
     const f = e.target.files?.[0];
@@ -23,11 +62,13 @@ const Verification = () => {
         return;
       }
       setFile(f);
+      // Tạo local preview
+      setFilePreviewUrl(URL.createObjectURL(f));
       setError("");
     }
   };
 
-  const handleSave = async () => {
+  const handleUpload = async () => {
     if (!file) {
       setError("Vui lòng chọn file để tải lên");
       return;
@@ -36,15 +77,62 @@ const Verification = () => {
     try {
       setSubmitting(true);
       await companyService.uploadBusinessLicense(file);
-      toast.success("Tải lên giấy phép kinh doanh thành công! Admin sẽ sớm xét duyệt hồ sơ của bạn.");
+      toast.success("Đã tải lên tài liệu thành công. Bạn có thể gửi duyệt ngay bây giờ.");
+      setFile(null);
+      setFilePreviewUrl(null);
       setError("");
+      await fetchCompany();
     } catch (err) {
       console.error("Lỗi upload:", err);
-      toast.error(err?.response?.data?.message || "Tải lên thất bại. Vui lòng thử lại.");
+      toast.error(err?.response?.data?.error || err?.response?.data?.message || "Tải lên thất bại. Vui lòng thử lại.");
     } finally {
       setSubmitting(false);
     }
   };
+
+  const handleSubmitReview = async () => {
+    try {
+      setSubmitting(true);
+      
+      // Nếu có file mới được chọn, tải lên trước
+      if (file) {
+        await companyService.uploadBusinessLicense(file);
+        setFile(null);
+        setFilePreviewUrl(null);
+      }
+
+      // Gửi duyệt GPKD độc lập
+      await companyService.submitBusinessLicenseReview();
+      toast.success("Giấy phép kinh doanh đã được gửi đi xét duyệt!");
+      await fetchCompany();
+    } catch (err) {
+      console.error("Lỗi gửi duyệt:", err);
+      toast.error(err?.response?.data?.error || err?.response?.data?.message || "Không thể gửi duyệt. Vui lòng thử lại.");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  // Lấy tên file từ URL S3
+  const getFilenameFromUrl = (url) => {
+    if (!url) return null;
+    try {
+      const parts = url.split('/');
+      return decodeURIComponent(parts[parts.length - 1].split('?')[0]);
+    } catch { return url; }
+  };
+
+  const activePreviewUrl = filePreviewUrl || serverPreviewUrl;
+  const activeFilename = file?.name || getFilenameFromUrl(company?.businessLicenseFileUrl);
+  const isPdf = activeFilename?.toLowerCase().endsWith('.pdf');
+
+  if (loading) {
+     return (
+        <div className="flex h-64 items-center justify-center">
+           <div className="h-8 w-8 animate-spin rounded-full border-4 border-[#3AB4E6] border-t-transparent"></div>
+        </div>
+     );
+  }
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -59,7 +147,9 @@ const Verification = () => {
           <h2 className="text-lg font-bold text-gray-800 mb-1 flex items-center gap-2">
             <FileText className="w-5 h-5 text-[#3AB4E6]" />
             Thông tin Giấy đăng ký doanh nghiệp
-            <span className="ml-2 text-xs font-medium bg-gray-100 text-gray-500 px-2 py-1 rounded-full">Chưa cập nhật</span>
+            <span className={`ml-2 text-xs font-bold px-3 py-1 rounded-full ${currentStatus.color}`}>
+              {currentStatus.label}
+            </span>
           </h2>
           <p className="text-sm text-gray-500">
             Vui lòng chọn phương thức đăng tải, xem hướng dẫn đăng tải{" "}
@@ -106,10 +196,19 @@ const Verification = () => {
                     <input type="file" className="hidden" accept=".jpeg,.jpg,.png,.pdf" onChange={handleFileChange} />
                   </label>
 
-                  {file && (
-                    <div className="mt-4 flex items-center justify-center gap-2 text-green-600 font-bold text-sm bg-green-50 py-2 rounded-lg border border-green-100 animate-scale-up">
-                      <CheckCircle className="w-4 h-4" />
-                      {file.name}
+                  {/* Hiển thị file đang chọn hoặc file đã upload trên server */}
+                  {(file || company?.businessLicenseFileUrl) && (
+                    <div className="mt-4 flex items-center gap-2 text-sm px-3 py-2.5 rounded-lg border font-medium"
+                      style={file
+                        ? { background: '#f0fdf4', borderColor: '#bbf7d0', color: '#16a34a' }
+                        : { background: '#eff6ff', borderColor: '#bfdbfe', color: '#2563eb' }
+                      }
+                    >
+                      <CheckCircle className="w-4 h-4 shrink-0" />
+                      <span className="truncate max-w-[200px]">{activeFilename}</span>
+                      {!file && (
+                        <span className="text-[10px] uppercase tracking-wide opacity-60 ml-1">• đã lưu</span>
+                      )}
                     </div>
                   )}
                 </div>
@@ -138,14 +237,42 @@ const Verification = () => {
 
               <div className="w-64 shrink-0">
                 <p className="text-sm font-bold text-gray-700 mb-3 border-b pb-2">HƯỚNG DẪN MINH HỌA</p>
-                <div className="bg-gray-100 rounded-xl aspect-[3/4] flex flex-col items-center justify-center text-center p-4 border border-gray-200">
-                  <div className="w-16 h-20 border-2 border-gray-300 rounded mb-4 flex items-center justify-center bg-white shadow-sm overflow-hidden">
-                    <div className="w-full h-2 bg-blue-500/20 mb-1"></div>
-                    <div className="w-2/3 h-1 bg-gray-200 mb-1"></div>
-                    <div className="w-1/2 h-1 bg-gray-200"></div>
+                {activePreviewUrl ? (
+                  <div className="rounded-xl overflow-hidden border border-gray-200 bg-gray-50 aspect-[3/4] relative group">
+                    {isPdf ? (
+                      <iframe
+                        src={activePreviewUrl}
+                        className="w-full h-full"
+                        title="Preview"
+                      />
+                    ) : (
+                      <img
+                        src={activePreviewUrl}
+                        alt="Preview"
+                        className="w-full h-full object-cover"
+                      />
+                    )}
+                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-all flex items-center justify-center opacity-0 group-hover:opacity-100">
+                      <a
+                        href={activePreviewUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="bg-white rounded-lg px-3 py-1.5 text-xs font-bold text-gray-700 shadow-lg"
+                      >
+                        Xem đầy đủ ↗
+                      </a>
+                    </div>
                   </div>
-                  <p className="text-xs text-gray-400 font-medium">Bản scan rõ nét, không bị lóa sáng hoặc mất góc</p>
-                </div>
+                ) : (
+                  <div className="bg-gray-100 rounded-xl aspect-[3/4] flex flex-col items-center justify-center text-center p-4 border border-gray-200">
+                    <div className="w-16 h-20 border-2 border-gray-300 rounded mb-4 flex items-center justify-center bg-white shadow-sm overflow-hidden">
+                      <div className="w-full h-2 bg-blue-500/20 mb-1"></div>
+                      <div className="w-2/3 h-1 bg-gray-200 mb-1"></div>
+                      <div className="w-1/2 h-1 bg-gray-200"></div>
+                    </div>
+                    <p className="text-xs text-gray-400 font-medium">Tải lên tài liệu để xem trước tại đây</p>
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -165,13 +292,30 @@ const Verification = () => {
           </label>
         </div>
 
-        <div className="flex justify-end mt-10 pt-6 border-t border-gray-100">
+        <div className="flex justify-end mt-10 pt-6 border-t border-gray-100 gap-4">
+          {file && (
+            <Button
+              variant="outline"
+              onClick={handleUpload}
+              disabled={submitting}
+              className="px-8 py-6 text-base font-bold border-[#3AB4E6] text-[#3AB4E6] hover:bg-blue-50"
+            >
+              {submitting ? "Đang tải lên..." : "Tải lên tài liệu"}
+            </Button>
+          )}
+
           <Button
-            onClick={handleSave}
-            disabled={submitting || !file}
+            onClick={handleSubmitReview}
+            disabled={submitting || company?.documentReviewStatus === 'PENDING_REVIEW' || (!file && !company?.businessLicenseFileUrl)}
             className="px-10 py-6 min-w-[200px] text-base font-bold shadow-lg shadow-blue-500/20"
           >
-            {submitting ? "Đang xử lý..." : "Lưu và Gửi duyệt"}
+            {submitting
+              ? "Đang xử lý..."
+              : company?.documentReviewStatus === 'PENDING_REVIEW'
+                ? "Đang chờ duyệt"
+                : file
+                  ? "Tải lên & Gửi xét duyệt"
+                  : "Gửi hồ sơ xét duyệt"}
           </Button>
         </div>
       </div>

@@ -10,10 +10,12 @@ public interface UserReportRepository extends JpaRepository<UserReport, Long> {
     
     Page<UserReport> findByStatusOrderByCreatedAtDesc(String status, Pageable pageable);
     
-    List<UserReport> findByReportedUserId(Long reportedUserId);
+    List<UserReport> findByTargetTypeAndTargetId(String targetType, Long targetId);
     
     long countByStatus(String status);
     
-    long countByReportedUserId(Long reportedUserId);
+    long countByPriority(String priority);
+    
+    long countByTargetType(String targetType);
 }
 

@@ -10,10 +10,10 @@ export const JobStats = ({ jobs }) => {
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-      <StatsCard title="Total Jobs" value={total} icon={<Briefcase />} />
-      <StatsCard title="Pending Review" value={pending} icon={<Clock />} />
-      <StatsCard title="Active Jobs" value={active} icon={<CheckCircle2 />} />
-      <StatsCard title="Rejected Jobs" value={rejected} icon={<XCircle />} />
+      <StatsCard title="Tổng tin tuyển dụng" value={total} icon={<Briefcase />} />
+      <StatsCard title="Chờ duyệt" value={pending} icon={<Clock />} />
+      <StatsCard title="Đang hiển thị" value={active} icon={<CheckCircle2 />} />
+      <StatsCard title="Bị từ chối" value={rejected} icon={<XCircle />} />
     </div>
   );
 };

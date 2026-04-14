@@ -3,6 +3,7 @@ package com.iting.jobportal.company.entity;
 import com.iting.jobportal.auth.entity.Account;
 import com.iting.jobportal.company.entity.enums.BusinessDocumentType;
 import com.iting.jobportal.company.entity.enums.CompanyReviewStatus;
+import com.iting.jobportal.company.entity.enums.DocumentReviewStatus;
 import com.iting.jobportal.company.entity.enums.Industry;
 import com.iting.jobportal.company.entity.enums.VerificationLevel;
 import com.iting.jobportal.job.entity.Job;
@@ -118,6 +119,10 @@ public class Company {
     @Enumerated(EnumType.STRING)
     @Column(name = "Company_info_update_status", length = 50)
     private CompanyReviewStatus companyInfoUpdateStatus = CompanyReviewStatus.DRAFT;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "Document_review_status", length = 50)
+    private DocumentReviewStatus documentReviewStatus = DocumentReviewStatus.MISSING;
 
     @Column(name = "Last_update_request_date")
     private LocalDateTime lastUpdateRequestDate;

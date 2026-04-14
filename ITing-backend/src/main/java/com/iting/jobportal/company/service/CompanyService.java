@@ -37,7 +37,8 @@ public interface CompanyService {
     CompanyResponse verifyLicense(Long id, VerifyLicenseRequest request);
 
     // (G) Submit for Review
-    CompanyResponse submitForReview(Long id);
+    CompanyResponse submitInfoReview(Long id);
+    CompanyResponse submitDocumentReview(Long id);
 
     String getBusinessLicensePresignedUrlByAccountId(Long accountId, int minutes);
 
@@ -48,5 +49,10 @@ public interface CompanyService {
     CompanyResponse updateConsentDocumentByAccountId(Long accountId, ConsentDocumentUploadRequest request);
     void verifyPhoneByAccountId(Long accountId, VerifyPhoneRequest request);
     CompanyResponse verifyLicenseByAccountId(Long accountId, VerifyLicenseRequest request);
-    CompanyResponse submitForReviewByAccountId(Long accountId);
+    CompanyResponse submitInfoReviewByAccountId(Long accountId);
+    CompanyResponse submitDocumentReviewByAccountId(Long accountId);
+    CompanyResponse submitBusinessLicenseReviewByAccountId(Long accountId);
+    CompanyResponse submitConsentDocumentReviewByAccountId(Long accountId);
+
+    String uploadLogoByAccountId(Long accountId, org.springframework.web.multipart.MultipartFile file);
 }

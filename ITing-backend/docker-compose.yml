@@ -1,128 +1,26 @@
-# ==========================================
-# DOCKER-COMPOSE FOR LOCAL DEVELOPMENT
-# PostgreSQL + Spring Boot Application
-# ==========================================
+version: '3.8'
 
 services:
-  # PostgreSQL Database
-  postgres:
-    image: postgres:16-alpine
-    container_name: iting-postgres
-    restart: unless-stopped
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.4.0
+    container_name: zookeeper
     environment:
-      - POSTGRES_DB=iting_job_portal
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=250904
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
     ports:
-      - "5433:5432"
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-    networks:
-      - iting-network
+      - "2181:2181"
 
-  # Spring Boot Application
-  app:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    container_name: iting-app
-    restart: unless-stopped
+  kafka:
+    image: confluentinc/cp-kafka:7.4.0
+    container_name: kafka
     depends_on:
-      postgres:
-        condition: service_healthy
-    
-    # Environment variables for local PostgreSQL
-    environment:
-      # Database configuration (Local PostgreSQL)
-      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/iting_job_portal
-      - SPRING_DATASOURCE_USERNAME=postgres
-      - SPRING_DATASOURCE_PASSWORD=250904
-      
-      # JPA/Hibernate - use update for local Docker bring-up
-      - SPRING_JPA_HIBERNATE_DDL_AUTO=update
-      - SPRING_JPA_PROPERTIES_HIBERNATE_DIALECT=org.hibernate.dialect.PostgreSQLDialect
-      - SPRING_JPA_PROPERTIES_HIBERNATE_FORMAT_SQL=true
-      
-      # SQL Initialization - disabled (schema imported manually)
-      - SPRING_SQL_INIT_MODE=never
-      
-      # Logging
-      - LOGGING_LEVEL_ROOT=INFO
-      - LOGGING_LEVEL_COM_ITING=DEBUG
-      
-      # Server config
-      - SERVER_PORT=8080
-      - SERVER_SHUTDOWN=graceful
-      
-      # Actuator
-      - MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE=health,info,metrics
-      - MANAGEMENT_ENDPOINT_HEALTH_SHOW_DETAILS=when_authorized
-      - MANAGEMENT_HEALTH_MAIL_ENABLED=false
-      
-      # Application name
-      - SPRING_APPLICATION_NAME=iting-job-portal
-      
-      # Swagger / OpenAPI
-      - SPRINGDOC_API_DOCS_ENABLED=true
-      - SPRINGDOC_API_DOCS_PATH=/v3/api-docs
-      - SPRINGDOC_SWAGGER_UI_ENABLED=true
-      - SPRINGDOC_SWAGGER_UI_PATH=/swagger-ui.html
-      
-      # JWT configuration
-      - JWT_SECRET=404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970
-      - JWT_EXPIRATION=86400000
-      - JWT_REFRESH_SECRET=7134743777217A25432A462D4A614E645267556B58703272357538782F413F4428472B4B6250645367566B5970
-      - JWT_REFRESH_EXPIRATION=604800000
-      - JWT_REFRESH_MAX_TOKENS_PER_USER=5
-      
-      # Security logging
-      - LOGGING_LEVEL_ORG_SPRINGFRAMEWORK_SECURITY=DEBUG
-      
-      # AWS S3 (optional - remove if not needed)
-      - AWS_ACCESS_KEY=${AWS_ACCESS_KEY:-local-dev-access-key}
-      - AWS_SECRET_KEY=${AWS_SECRET_KEY:-local-dev-secret-key}
-      - AWS_REGION=${AWS_REGION:-ap-southeast-1}
-      - AWS_S3_BUCKET=${AWS_S3_BUCKET:-datn-jobweb}
-    
+      - zookeeper
     ports:
-      - "8081:8080"
-    
-    # Health check
-    healthcheck:
-      test: ["CMD-SHELL", "wget -qO- http://localhost:8080/actuator/health | grep -q UP || exit 1"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 45s
-    
-    # Resource limits for optimal performance
-    deploy:
-      resources:
-        limits:
-          memory: 1G
-        reservations:
-          memory: 512M
-    
-    # Logging configuration
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "10m"
-        max-file: "3"
-    
-    networks:
-      - iting-network
-
-# Networks
-networks:
-  iting-network:
-    driver: bridge
-
-# Volumes
-volumes:
-  postgres_data:
+      - "9092:9092"
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092,PLAINTEXT_INTERNAL://kafka:29092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_INTERNAL:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT_INTERNAL
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1

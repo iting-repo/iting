@@ -9,6 +9,7 @@ import com.iting.jobportal.job.dto.request.UpdateJobRequest;
 import com.iting.jobportal.job.dto.response.JobResponse;
 import com.iting.jobportal.job.entity.Job;
 import com.iting.jobportal.job.entity.enums.JobStatus;
+import com.iting.jobportal.job.entity.enums.SalaryType;
 import com.iting.jobportal.job.repository.JobRepository;
 import com.iting.jobportal.job.repository.JobSpecification;
 import com.iting.jobportal.job.service.JobService;
@@ -170,11 +171,10 @@ public class JobServiceImpl implements JobService {
 
         Company company = findCompanyOrThrow(employerId);
 
-        if (job.getStatus() != JobStatus.DRAFT
-                && job.getStatus() != JobStatus.REJECTED) {
+        if (job.getStatus() != JobStatus.REJECTED) {
             throw new ResponseStatusException(
                     HttpStatus.BAD_REQUEST,
-                    "Chỉ có thể gửi duyệt khi tin đang ở trạng thái nháp hoặc bị từ chối"
+                    "Chỉ có thể gửi duyệt lại khi tin đang bị từ chối"
             );
         }
 
@@ -200,9 +200,7 @@ public class JobServiceImpl implements JobService {
     public JobResponse createJob(Long employerId, CreateJobRequest request) {
         Company company = findCompanyOrThrow(employerId);
 
-        JobStatus initialStatus = Boolean.TRUE.equals(request.getSubmitForReview())
-                ? JobStatus.PENDING
-                : JobStatus.DRAFT;
+        JobStatus initialStatus = JobStatus.PENDING;
 
         Job job = Job.builder()
                 .company(company)
@@ -230,9 +228,7 @@ public class JobServiceImpl implements JobService {
 
         validateSalary(job);
 
-        if (initialStatus == JobStatus.PENDING) {
-            validateJobBeforeSubmit(job, company);
-        }
+        validateJobBeforeSubmit(job, company);
 
         Job saved = jobRepository.save(job);
 
@@ -285,8 +281,9 @@ public class JobServiceImpl implements JobService {
 
         validateSalary(job);
 
-        if (job.getStatus() == JobStatus.ACTIVE && isImportantFieldUpdated(request)) {
+        if (isImportantFieldUpdated(request)) {
             job.setStatus(JobStatus.PENDING);
+            job.setReviewReason(null);
         }
 
         Job saved = jobRepository.save(job);
@@ -369,27 +366,6 @@ public class JobServiceImpl implements JobService {
         return JobResponse.fromEntityWithCompany(saved, company.getName(), company.getLogoUrl());
     }
 
-    @Override
-    @Transactional
-    public JobResponse movePendingToDraft(Long employerId, Long jobId) {
-        Job job = findJobOrThrow(jobId);
-        checkOwnership(job, employerId);
-
-        if (job.getStatus() != JobStatus.PENDING) {
-            throw new ResponseStatusException(
-                    HttpStatus.BAD_REQUEST,
-                    "Chỉ có thể chuyển về nháp khi tin đang ở trạng thái chờ duyệt"
-            );
-        }
-
-        job.setStatus(JobStatus.DRAFT);
-        job.setLastUpdate(LocalDateTime.now());
-
-        Job saved = jobRepository.save(job);
-        Company company = findCompanyOrThrow(employerId);
-
-        return JobResponse.fromEntityWithCompany(saved, company.getName(), company.getLogoUrl());
-    }
 
     @Override
     @Transactional
@@ -637,11 +613,13 @@ public class JobServiceImpl implements JobService {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Địa chỉ không được để trống");
         }
 
-        if (job.getMinSalary() == null || job.getMaxSalary() == null) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Thông tin lương không được để trống");
+        // Chỉ validate lương khi không phải Thỏa thuận
+        if (job.getSalaryType() != SalaryType.NEGOTIABLE) {
+            if (job.getMinSalary() == null || job.getMaxSalary() == null) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Thông tin lương không được để trống");
+            }
+            validateSalary(job);
         }
-
-        validateSalary(job);
 
         if (job.getDueDate() == null || job.getDueDate().isBefore(LocalDate.now())) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Hạn ứng tuyển không hợp lệ");
