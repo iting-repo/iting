@@ -4,6 +4,7 @@ import com.iting.jobportal.auth.dto.request.LoginRequest;
 import com.iting.jobportal.auth.dto.response.LoginResponse;
 import com.iting.jobportal.auth.dto.request.ChangePasswordRequest;
 import com.iting.jobportal.auth.dto.request.RegisterRequest;
+import com.iting.jobportal.auth.dto.response.UserMeResponse;
 import com.iting.jobportal.auth.entity.Account;
 import com.iting.jobportal.auth.entity.Enum.AccountStatus;
 import com.iting.jobportal.auth.entity.Enum.Role;
@@ -262,5 +263,38 @@ public class AuthServiceImpl implements AuthService {
     public Account getAccountByEmail(String email) {
         return accountRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("Account not found"));
+    }
+
+    @Override
+    public UserMeResponse getMeResponse(Long accountId) {
+        Account account = accountRepository.findById(accountId)
+                .orElseThrow(() -> new RuntimeException("Account not found"));
+
+        String fullName = account.getEmail();
+        String avatarUrl = null;
+
+        Role role = account.getRole().normalize();
+
+        if (role == Role.CANDIDATE) {
+            User user = userRepository.findById(accountId).orElse(null);
+            if (user != null) {
+                fullName = user.getFullName();
+                avatarUrl = user.getAvatarUrl();
+            }
+        } else if (role == Role.EMPLOYER) {
+            Company company = companyRepository.findById(accountId).orElse(null);
+            if (company != null) {
+                fullName = company.getName();
+                avatarUrl = company.getLogoUrl();
+            }
+        }
+
+        return UserMeResponse.builder()
+                .id(account.getId())
+                .email(account.getEmail())
+                .role(account.getRole().normalizedName())
+                .fullName(fullName)
+                .avatarUrl(avatarUrl)
+                .build();
     }
 }

@@ -26,15 +26,15 @@ const PendingCompaniesTable = () => {
             {/* HEADER */}
             <CardHeader
                 className="px-6 pt-6 mb-4"
-                title={<span className="text-gray-800">Company Profile Reviews</span>}
+                title={<span className="text-gray-800">Duyệt hồ sơ công ty</span>}
                 icon={<FaUserFriends className="text-blue-500" />}
                 action={
                     <div className="flex gap-2">
                         <Button variant="outline" className="flex items-center gap-2">
-                            <FaFilter size={12} /> Filter
+                            <FaFilter size={12} /> Lọc
                         </Button>
                         <Button className="flex items-center gap-2 bg-green-500 hover:bg-green-600 text-white border-0">
-                            <FaCheck size={12} /> Approve All
+                            <FaCheck size={12} /> Duyệt tất cả
                         </Button>
                     </div>
                 }
@@ -43,11 +43,11 @@ const PendingCompaniesTable = () => {
             {/* TABLE */}
             <Table
                 headers={[
-                    { label: "Profile ID" },
-                    { label: "Name" },
-                    { label: "Type" },
-                    { label: "Registration Date" },
-                    { label: "Actions", className: "text-right" }
+                    { label: "Mã hồ sơ" },
+                    { label: "Tên" },
+                    { label: "Loại" },
+                    { label: "Ngày đăng ký" },
+                    { label: "Thao tác", className: "text-right" }
                 ]}
             >
                         {profiles.map((profile) => (

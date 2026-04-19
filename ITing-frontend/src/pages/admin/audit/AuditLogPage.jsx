@@ -99,7 +99,7 @@ const AuditLogPage = () => {
             <Shield className="w-6 h-6" />
           </div>
           <div>
-            <h1 className="text-xl font-black text-slate-900 tracking-tight">Audit Log</h1>
+            <h1 className="text-xl font-black text-slate-900 tracking-tight">Nhật ký kiểm tra</h1>
             <p className="text-sm text-slate-500 font-medium">Lịch sử mọi hành động thay đổi trên hệ thống</p>
           </div>
         </div>
@@ -115,7 +115,7 @@ const AuditLogPage = () => {
           <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Tổng bản ghi</p>
         </div>
         <div className="bg-white p-4 rounded-xl border border-slate-100 shadow-sm text-center space-y-1">
-          <p className="text-2xl font-black text-indigo-600">Admin</p>
+          <p className="text-2xl font-black text-indigo-600">Quản trị viên</p>
           <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Người thực hiện</p>
         </div>
         <div className="bg-white p-4 rounded-xl border border-slate-100 shadow-sm text-center space-y-1">

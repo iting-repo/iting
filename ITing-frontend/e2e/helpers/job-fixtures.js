@@ -16,6 +16,13 @@ const primaryJob = {
   createdAt: '2026-04-01T08:00:00.000Z',
   applicationCount: 12,
   status: 'ACTIVE',
+  aiReview: {
+    status: 'APPROVED',
+    score: 0.04,
+    reason: 'AI không phát hiện nội dung nhạy cảm.',
+    action: 'AUTO_APPROVE_CANDIDATE_VISIBLE',
+    sensitiveTerms: [],
+  },
 };
 
 const employerJobsPage = {
@@ -118,6 +125,13 @@ const adminJobsPage = {
       company: 'ITing Software',
       location: 'Ho Chi Minh',
       status: 'PENDING',
+      aiReview: {
+        status: 'APPROVED',
+        score: 0.03,
+        reason: 'AI đề xuất phê duyệt, admin chỉ cần kiểm tra lại.',
+        action: 'AUTO_APPROVE_AFTER_ADMIN_DOUBLE_CHECK',
+        sensitiveTerms: [],
+      },
       techRequired: ['Java', 'Spring Boot'],
       description: 'Build backend services',
     },
@@ -130,6 +144,14 @@ const adminJobsPage = {
       company: 'ITing Software',
       location: 'Da Nang',
       status: 'ACTIVE',
+      aiReview: {
+        status: 'CLEANED',
+        score: 0.31,
+        reason: 'AI đã loại bỏ một số cụm từ nhạy cảm trong mô tả.',
+        action: 'REVIEW_CLEANED_CONTENT',
+        sensitiveTerms: ['cam kết lương cao'],
+        cleanedDescription: 'Build frontend interfaces with clear role expectations.',
+      },
       techRequired: ['React', 'Tailwind'],
       description: 'Build frontend interfaces',
     },

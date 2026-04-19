@@ -6,15 +6,15 @@ const SIDEBAR_SECTIONS = [
   {
     title: "TỔNG QUAN",
     items: [
-      { path: "/admin/dashboard", label: "Dashboard", icon: LayoutDashboard },
+      { path: "/admin/dashboard", label: "Bảng điều khiển", icon: LayoutDashboard },
       { path: "/admin/notifications", label: "Thông báo", icon: Bell },
     ],
   },
   {
     title: "QUẢN LÝ",
     items: [
-      { path: "/admin/approvals", label: "Duyệt công việc", icon: CheckCircle },
-      { path: "/admin/companies", label: "Duyệt công ty", icon: Building2 },
+      { path: "/admin/jobs", label: "Quản lý công việc", icon: BookOpen },
+      { path: "/admin/companies", label: "Quản lý công ty", icon: Building2 },
       { path: "/admin/users", label: "Người dùng", icon: Users },
       { path: "/admin/reports", label: "Báo cáo", icon: FileText },
     ],
@@ -33,7 +33,7 @@ const SIDEBAR_SECTIONS = [
     title: "HỆ THỐNG",
     items: [
       { path: "/admin/roles", label: "Phân quyền", icon: Shield },
-      { path: "/admin/audit", label: "Audit Log", icon: FileText },
+      { path: "/admin/audit", label: "Nhật ký kiểm tra", icon: FileText },
       { path: "/admin/stats", label: "Thống kê", icon: BarChart3 },
       { path: "/admin/config", label: "Cấu hình", icon: Settings },
     ],

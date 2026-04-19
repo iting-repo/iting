@@ -20,25 +20,29 @@ import companyService from "../../services/companyService";
 
 const EXPERIENCE_LEVEL_OPTIONS = [
   { value: "INTERN", label: "Thực tập sinh" },
-  { value: "FRESHER", label: "Fresher" },
-  { value: "JUNIOR", label: "Junior" },
-  { value: "MIDDLE", label: "Middle" },
-  { value: "SENIOR", label: "Senior" },
-  { value: "LEAD", label: "Lead" },
-  { value: "MANAGER", label: "Manager" },
+  { value: "FRESHER", label: "Mới ra trường / Fresher" },
+  { value: "JUNIOR", label: "Junior (1-2 năm)" },
+  { value: "MIDDLE", label: "Middle (2-4 năm)" },
+  { value: "MID_LEVEL", label: "Mid-level (2-4 năm)" },
+  { value: "SENIOR", label: "Senior (4-7 năm)" },
+  { value: "LEAD", label: "Lead (7+ năm)" },
+  { value: "EXPERT", label: "Chuyên gia" },
+  { value: "MANAGER", label: "Quản lý" },
 ];
 
 const JOB_TYPE_OPTIONS = [
   { value: "FULL_TIME", label: "Toàn thời gian" },
   { value: "PART_TIME", label: "Bán thời gian" },
-  { value: "REMOTE", label: "Làm từ xa" },
+  { value: "CONTRACT", label: "Hợp đồng" },
+  { value: "INTERNSHIP", label: "Thực tập" },
+  { value: "REMOTE", label: "Làm việc từ xa" },
   { value: "FREELANCE", label: "Tự do" },
-  { value: "INTERN", label: "Thực tập" },
 ];
 
 const SALARY_TYPE_OPTIONS = [
   { value: "NEGOTIABLE", label: "Thỏa thuận" },
   { value: "MONTH", label: "Theo tháng" },
+  { value: "YEAR", label: "Theo năm" },
   { value: "PROJECT", label: "Theo dự án" },
   { value: "HOUR", label: "Theo giờ" },
 ];
@@ -385,10 +389,13 @@ const PostJob = ({
       onClose();
     } catch (error) {
       console.error("Lỗi lưu công việc:", error);
-      toast.error(
-        error?.response?.data?.message ||
-          "Lưu công việc thất bại, vui lòng thử lại",
-      );
+      // Kiểm tra lỗi từ axios interceptor (đã unwrap error.response.data)
+      const errorMessage = error?.error || 
+                          error?.message || 
+                          error?.response?.data?.error || 
+                          error?.response?.data?.message || 
+                          "Lưu công việc thất bại, vui lòng thử lại";
+      toast.error(errorMessage);
     }
   };
 

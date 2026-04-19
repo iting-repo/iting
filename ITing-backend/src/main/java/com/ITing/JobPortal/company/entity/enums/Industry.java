@@ -11,5 +11,6 @@ public enum Industry {
     CYBERSECURITY,
     BLOCKCHAIN,
     GAME_DEVELOPMENT,
-    QA_TESTING
+    QA_TESTING,
+    IT_SOFTWARE
 }

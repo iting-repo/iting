@@ -11,7 +11,7 @@ const RoleBadge = ({ role }) => {
     const labelMap = {
         USER: "Ứng viên",
         EMPLOYER: "Nhà tuyển dụng",
-        ADMIN: "Admin",
+        ADMIN: "Quản trị viên",
     };
 
     return (
@@ -59,7 +59,7 @@ export const UserDetailDialog = ({ user, open, onClose }) => {
     };
 
     const getDisplayName = (user) => {
-        return user.companyName || user.fullName || user.email?.split("@")[0] || "Unknown User";
+        return user.companyName || user.fullName || user.email?.split("@")[0] || "Người dùng chưa xác định";
     };
 
     return (

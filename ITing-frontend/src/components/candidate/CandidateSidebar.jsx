@@ -28,7 +28,7 @@ const CandidateSidebar = () => {
   return (
     <div className="w-[17rem] bg-white min-h-screen border-r border-gray-100 hidden lg:block sticky top-20 h-[calc(100vh-80px)]">
       <div className="p-6">
-        <h3 className="text-xs font-bold text-gray-400 uppercase mb-4 tracking-wider">Candidate Dashboard</h3>
+        <h3 className="text-xs font-bold text-gray-400 uppercase mb-4 tracking-wider">Tổng quan ứng viên</h3>
         <ul className="space-y-2">
           {menuItems.map((item) => (
             <li key={item.path}>

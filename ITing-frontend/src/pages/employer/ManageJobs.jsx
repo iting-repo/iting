@@ -30,12 +30,39 @@ const formatJobType = (jobType) => {
   const map = {
     FULL_TIME: "Toàn thời gian",
     PART_TIME: "Bán thời gian",
-    REMOTE: "Làm từ xa",
+    CONTRACT: "Hợp đồng",
+    INTERNSHIP: "Thực tập",
+    REMOTE: "Làm việc từ xa",
     FREELANCE: "Tự do",
-    INTERN: "Thực tập",
   };
 
   return map[jobType] || jobType || "Chưa cập nhật";
+};
+
+const formatExperienceLevel = (level) => {
+  const map = {
+    INTERN: "Thực tập sinh",
+    FRESHER: "Mới ra trường / Fresher",
+    JUNIOR: "Junior (1-2 năm)",
+    MIDDLE: "Middle (2-4 năm)",
+    MID_LEVEL: "Mid-level (2-4 năm)",
+    SENIOR: "Senior (4-7 năm)",
+    LEAD: "Lead (7+ năm)",
+    EXPERT: "Chuyên gia",
+    MANAGER: "Quản lý",
+  };
+  return map[level] || level || "Chưa cập nhật";
+};
+
+const formatSalaryType = (type) => {
+  const map = {
+    NEGOTIABLE: "Thỏa thuận",
+    MONTH: "Theo tháng",
+    YEAR: "Theo năm",
+    PROJECT: "Theo dự án",
+    HOUR: "Theo giờ",
+  };
+  return map[type] || type || "Chưa cập nhật";
 };
 
 const formatDeadline = (dueDate) => {
@@ -140,7 +167,11 @@ const ManageJobs = () => {
         } catch (err) {
           console.error("Lỗi reopen job:", err);
           toast.error(
-            err?.response?.data?.message || "Mở lại tin tuyển dụng thất bại",
+            err?.error || 
+            err?.message || 
+            err?.response?.data?.error || 
+            err?.response?.data?.message || 
+            "Mở lại tin tuyển dụng thất bại",
           );
         }
       },
@@ -162,7 +193,11 @@ const ManageJobs = () => {
         } catch (err) {
           console.error("Lỗi xóa job", err);
           toast.error(
-            err?.response?.data?.message || "Xóa tin tuyển dụng thất bại",
+            err?.error || 
+            err?.message || 
+            err?.response?.data?.error || 
+            err?.response?.data?.message || 
+            "Xóa tin tuyển dụng thất bại",
           );
         }
       },
@@ -188,7 +223,11 @@ const ManageJobs = () => {
         } catch (err) {
           console.error("Lỗi đóng job:", err);
           toast.error(
-            err?.response?.data?.message || "Đóng tin tuyển dụng thất bại",
+            err?.error || 
+            err?.message || 
+            err?.response?.data?.error || 
+            err?.response?.data?.message || 
+            "Đóng tin tuyển dụng thất bại",
           );
         }
       },

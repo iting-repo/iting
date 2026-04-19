@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { FaCheck, FaArrowLeft, FaArrowRight, FaClock, FaTimes, FaEye } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
+import { buildJobDetailPath } from '../../utils/jobUrl';
 import axiosInstance from '../../utils/axiosInstance';
 
 const AppliedJobs = () => {
@@ -101,15 +102,21 @@ const AppliedJobs = () => {
                   <td className="p-4">
                     <div className="flex items-center gap-4">
                       <div className="w-12 h-12 rounded-lg flex items-center justify-center overflow-hidden shrink-0 border border-gray-100 bg-white">
-                        <img src={app.avatarUrl || "https://via.placeholder.com/50"} alt="Avatar" className="w-full h-full object-cover" />
+                        <img 
+                          src={app.companyLogo || "https://via.placeholder.com/50?text=Job"} 
+                          alt="Company Logo" 
+                          className="w-full h-full object-cover" 
+                          onError={(e) => { e.target.src = "https://via.placeholder.com/50?text=Job"; }}
+                        />
                       </div>
                       <div>
-                        <div className="flex items-center gap-2 mb-1">
-                          <span className="font-bold text-gray-800 text-base">{app.applicantName || "Ứng viên"}</span>
+                        <div className="flex items-center gap-2 mb-0.5">
+                          <span className="font-bold text-gray-900 text-base hover:text-[#3AB4E6] cursor-pointer">
+                            {app.jobTitle || "Không rõ vị trí"}
+                          </span>
                         </div>
-                        <div className="text-gray-500 text-xs">
-                          {app.jobTitle || "Không rõ vị trí"}
-                          {app.education && <span className="ml-2">🎓 {app.education}</span>}
+                        <div className="text-[#3AB4E6] font-medium text-xs">
+                          {app.companyName || "Công ty chưa xác định"}
                         </div>
                       </div>
                     </div>
@@ -127,7 +134,11 @@ const AppliedJobs = () => {
 
                   <td className="p-4 text-right">
                     <button
-                      onClick={() => navigate(`/candidate/applied-jobs/${app.jobId}`)}
+                      onClick={() => navigate(buildJobDetailPath({ 
+                        id: app.jobId, 
+                        title: app.jobTitle,
+                        jobKey: app.jobKey // optional if backend provides it
+                      }))}
                       className="bg-gray-100 hover:bg-[#3AB4E6] hover:text-white text-gray-500 text-xs font-bold px-5 py-2.5 rounded-lg transition-all shadow-sm"
                     >
                       Xem Chi Tiết

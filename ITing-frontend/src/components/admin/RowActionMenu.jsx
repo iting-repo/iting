@@ -5,9 +5,9 @@ import {
   Eye,
   CheckCircle2,
   XCircle,
-  RotateCcw,
   Ban,
   ShieldCheck,
+  Sparkles,
   Trash2
 } from "lucide-react";
 
@@ -16,7 +16,6 @@ export const RowActionMenu = ({ company, onViewDetail, onAction, openMenuId, set
   const menuRef = useRef(null);
   const [position, setPosition] = useState({ top: 0, left: 0 });
   
-  // 'company' here can be either a company or a job object
   const id = company.id;
   const status = company.status || company.companyInfoUpdateStatus;
   const isOpen = openMenuId === id;
@@ -71,7 +70,6 @@ export const RowActionMenu = ({ company, onViewDetail, onAction, openMenuId, set
 
       {isOpen && createPortal(
         <>
-          {/* Backdrop/Overlay for easier clicking outside on mobile or capturing clicks */}
           <div 
             className="fixed inset-0 z-[299]"
             onClick={() => setOpenMenuId(null)}
@@ -105,13 +103,28 @@ export const RowActionMenu = ({ company, onViewDetail, onAction, openMenuId, set
                 e.stopPropagation();
                 setOpenMenuId(null);
                 requestAnimationFrame(() => {
+                  onAction(company, "ai-review");
+                });
+              }}
+              className="flex w-full items-center gap-2 px-4 py-3 text-left text-sm text-blue-600 hover:bg-slate-50 transition-colors font-medium"
+            >
+              <Sparkles className="h-4 w-4" />
+              Chạy AI kiểm duyệt
+            </button>
+
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                setOpenMenuId(null);
+                requestAnimationFrame(() => {
                   onAction(company, "approve");
                 });
               }}
               className="flex w-full items-center gap-2 px-4 py-3 text-left text-sm text-emerald-600 hover:bg-slate-50 transition-colors font-medium"
             >
               <CheckCircle2 className="h-4 w-4" />
-              Phê duyệt (Approve)
+              Phê duyệt
             </button>
 
             <button
@@ -126,23 +139,10 @@ export const RowActionMenu = ({ company, onViewDetail, onAction, openMenuId, set
               className="flex w-full items-center gap-2 px-4 py-3 text-left text-sm text-red-500 hover:bg-slate-50 transition-colors font-medium"
             >
               <XCircle className="h-4 w-4" />
-              Từ chối (Reject)
+              Từ chối
             </button>
 
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                setOpenMenuId(null);
-                requestAnimationFrame(() => {
-                  onAction(company, "resubmit");
-                });
-              }}
-              className="flex w-full items-center gap-2 px-4 py-3 text-left text-sm text-blue-500 hover:bg-slate-50 transition-colors"
-            >
-              <RotateCcw className="h-4 w-4" />
-              Yêu cầu nộp lại / Chỉnh sửa
-            </button>
+            {/* Nút 'Yêu cầu nộp lại' đã được loại bỏ theo yêu cầu nghiệp vụ */}
 
             {status === "SUSPENDED" ? (
               <button
@@ -157,7 +157,7 @@ export const RowActionMenu = ({ company, onViewDetail, onAction, openMenuId, set
                 className="flex w-full items-center gap-2 px-4 py-3 text-left text-sm text-indigo-600 hover:bg-slate-50 transition-colors"
               >
                 <ShieldCheck className="h-4 w-4" />
-                Kích hoạt lại (Unsuspend)
+                Kích hoạt lại
               </button>
             ) : (
               <button
@@ -172,7 +172,7 @@ export const RowActionMenu = ({ company, onViewDetail, onAction, openMenuId, set
                 className="flex w-full items-center gap-2 px-4 py-3 text-left text-sm text-orange-600 hover:bg-slate-50 transition-colors"
               >
                 <Ban className="h-4 w-4" />
-                Đình chỉ (Suspend)
+                Đình chỉ
               </button>
             )}
 
@@ -190,7 +190,7 @@ export const RowActionMenu = ({ company, onViewDetail, onAction, openMenuId, set
               className="flex w-full items-center gap-2 px-4 py-3 text-left text-sm text-red-600 hover:bg-red-50 transition-colors font-medium"
             >
               <Trash2 className="h-4 w-4" />
-              Xóa (Delete)
+              Xóa
             </button>
           </div>
         </>,
@@ -199,4 +199,3 @@ export const RowActionMenu = ({ company, onViewDetail, onAction, openMenuId, set
     </div>
   );
 };
-

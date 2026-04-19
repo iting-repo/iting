@@ -13,6 +13,10 @@ import com.iting.jobportal.job.entity.Job;
 import com.iting.jobportal.application.repository.EmployerApplicationRepository;
 import com.iting.jobportal.application.service.EmployerApplicationService;
 import com.iting.jobportal.application.util.ApplicationMapperUtil;
+import com.iting.jobportal.notification.dto.request.CreateNotificationRequest;
+import com.iting.jobportal.notification.enums.NotificationType;
+import com.iting.jobportal.notification.enums.RecipientType;
+import com.iting.jobportal.notification.service.NotificationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -34,6 +38,7 @@ public class EmployerApplicationServiceImpl implements EmployerApplicationServic
     private final ApplyFormRepository applyFormRepository;
     private final JobRepository jobRepository;
     private final ApplicationMapperUtil applicationMapperUtil;
+    private final NotificationService notificationService;
 
     private Job verifyJobOwnership(Long employerId, Long jobId) {
         Job job = jobRepository.findById(jobId)
@@ -83,10 +88,36 @@ public class EmployerApplicationServiceImpl implements EmployerApplicationServic
         ApplyFormSentToJob sent = employerApplicationRepository.findByIdApplyFormId(applicationId)
                 .orElseThrow(() -> new RuntimeException("Application job mapping not found: " + applicationId));
         verifyJobOwnership(employerId, sent.getId().getJobId());
-        
+        return toResponse(sent);
+    }
+
+    @Override
+    @Transactional
+    public ApplicationResponse markApplicationAsViewed(Long employerId, Long applicationId) {
+        ApplyFormSentToJob sent = employerApplicationRepository.findByIdApplyFormId(applicationId)
+                .orElseThrow(() -> new RuntimeException("Application job mapping not found: " + applicationId));
+        verifyJobOwnership(employerId, sent.getId().getJobId());
+
         if (sent.getStatus() == ApplicationStatus.PENDING) {
             sent.setStatus(ApplicationStatus.VIEWED);
             employerApplicationRepository.save(sent);
+
+            // Gửi thông báo cho ứng viên
+            ApplyForm form = applyFormRepository.findById(applicationId)
+                    .orElseThrow(() -> new RuntimeException("ApplyForm not found: " + applicationId));
+            Job job = jobRepository.findById(sent.getId().getJobId())
+                    .orElseThrow(() -> new RuntimeException("Job not found: " + sent.getId().getJobId()));
+
+            CreateNotificationRequest notificationRequest = CreateNotificationRequest.builder()
+                    .recipientId(form.getUserId())
+                    .recipientType(RecipientType.USER)
+                    .type(NotificationType.APPLICATION_VIEWED)
+                    .content("Nhà tuyển dụng " + job.getCompany().getName() + " đã xem hồ sơ của bạn cho vị trí " + job.getTitle())
+                    .entityType("APPLICATION")
+                    .entityId(applicationId)
+                    .actionUrl("/applications/" + applicationId)
+                    .build();
+            notificationService.createNotification(notificationRequest);
         }
         return toResponse(sent);
     }

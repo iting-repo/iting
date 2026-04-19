@@ -36,11 +36,25 @@ public class CompanyFollowServiceImpl implements CompanyFollowService {
             throw new RuntimeException("Bạn đã theo dõi công ty này rồi");
         }
 
-        // Create notification for this follow action
-        Notification notification = Notification.builder()
+        // Create notification for the user (The one who followed)
+        Notification userNotification = Notification.builder()
                 .content("Bạn đã theo dõi công ty " + company.getName())
+                .recipientId(userId)
+                .recipientType(com.iting.jobportal.notification.enums.RecipientType.USER)
+                .type(com.iting.jobportal.notification.enums.NotificationType.SYSTEM)
+                .time(java.time.LocalDateTime.now())
                 .build();
-        notification = notificationRepository.save(notification);
+        notificationRepository.save(userNotification);
+
+        // Create notification for the company (The one being followed)
+        Notification companyNotification = Notification.builder()
+                .content("Công ty bạn vừa có thêm người theo dõi mới")
+                .recipientId(companyId)
+                .recipientType(com.iting.jobportal.notification.enums.RecipientType.COMPANY)
+                .type(com.iting.jobportal.notification.enums.NotificationType.COMPANY_NEW_FOLLOWER)
+                .time(java.time.LocalDateTime.now())
+                .build();
+        notificationRepository.save(companyNotification);
 
         // Create follow relationship
         UserFollowCompany follow = UserFollowCompany.builder()

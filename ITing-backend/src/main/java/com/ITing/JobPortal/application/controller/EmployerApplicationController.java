@@ -69,11 +69,19 @@ public class EmployerApplicationController {
     }
 
     @GetMapping("/{id}")
-    @Operation(summary = "Xem chi tiết đơn ứng tuyển và Đánh dấu đã xem")
-    public ResponseEntity<ApplicationResponse> viewApplication(
+    @Operation(summary = "Xem chi tiết đơn ứng tuyển")
+    public ResponseEntity<ApplicationResponse> getApplication(
             @CurrentUser Long employerId,
             @PathVariable Long id) {
         return ResponseEntity.ok(employerApplicationService.viewApplication(employerId, id));
+    }
+
+    @PostMapping("/{id}/view")
+    @Operation(summary = "Đánh dấu đã xem hồ sơ (Trigger viewed status & notification)")
+    public ResponseEntity<ApplicationResponse> markAsViewed(
+            @CurrentUser Long employerId,
+            @PathVariable Long id) {
+        return ResponseEntity.ok(employerApplicationService.markApplicationAsViewed(employerId, id));
     }
 
     @PutMapping("/{id}/status")

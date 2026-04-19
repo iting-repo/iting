@@ -87,6 +87,20 @@ const getStatusColor = (status) => {
     }
 };
 
+const getStatusLabel = (status) => {
+    const map = {
+        ACTIVE: 'Đang hoạt động',
+        PENDING: 'Chờ duyệt',
+        CLOSED: 'Đã đóng',
+        REJECTED: 'Bị từ chối',
+        EXPIRED: 'Hết hạn',
+        SUSPENDED: 'Bị đình chỉ',
+        NEEDS_REVISION: 'Cần chỉnh sửa',
+    };
+
+    return map[status] || status || 'Chưa cập nhật';
+};
+
 const formatter = new Intl.NumberFormat('en-US');
 
 const AdminDashboard = () => {
@@ -108,7 +122,7 @@ const AdminDashboard = () => {
     }, []);
 
     if (loading) return <div className="flex justify-center items-center h-64"><LoadingSpinner /></div>;
-    if (!stats) return <div className="p-8 text-center text-gray-500">Không thể tải dữ liệu Dashboard.</div>;
+    if (!stats) return <div className="p-8 text-center text-gray-500">Không thể tải dữ liệu bảng điều khiển.</div>;
 
     const chartData = {
         labels: stats.chartData.map(d => d.day),
@@ -147,7 +161,7 @@ const AdminDashboard = () => {
     return (
         <div className="space-y-8 animate-in fade-in duration-500">
             {/* TITLE */}
-            <h2 className="text-2xl font-bold text-gray-800">Tổng quan Dashboard</h2>
+            <h2 className="text-2xl font-bold text-gray-800">Tổng quan hệ thống</h2>
 
             {/* ROW 1: STATS CARDS */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -213,7 +227,7 @@ const AdminDashboard = () => {
                             <Td className="font-medium text-gray-700">{formatter.format(job.applications)}</Td>
                             <Td className="text-center">
                                 <span className={`px-3 py-1 rounded-full text-xs font-bold ${getStatusColor(job.status)}`}>
-                                    {job.status}
+                                    {getStatusLabel(job.status)}
                                 </span>
                             </Td>
                         </tr>

@@ -10,6 +10,7 @@ const ACTION_CONFIG = {
   unsuspend:  { title: "Bỏ đình chỉ công việc",   needsNote: false, noteLabel: "Ghi chú (tuỳ chọn)",       variant: "default"     },
   close:      { title: "Đóng công việc",           needsNote: false, noteLabel: "Ghi chú (tuỳ chọn)",       variant: "default"     },
   delete:     { title: "Xóa công việc",            needsNote: false, noteLabel: "Ghi chú (tuỳ chọn)",       variant: "destructive" },
+  "ai-review": { title: "Chạy AI kiểm duyệt", needsNote: false, noteLabel: "Ghi chú cho lần kiểm duyệt này", variant: "default" },
   // Company actions
   "approve-info":      { title: "Duyệt thông tin công ty",   needsNote: false, noteLabel: "Ghi chú", variant: "default"     },
   "approve-documents": { title: "Duyệt giấy tờ pháp lý",    needsNote: false, noteLabel: "Ghi chú", variant: "default"     },

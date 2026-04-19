@@ -39,6 +39,9 @@ public class UserJobController {
             @RequestParam(required = false) BigDecimal maxSalary,
             @RequestParam(required = false) Integer postedWithinHours,
             @RequestParam(required = false) Long companyId,
+            @RequestParam(required = false) String domain,
+            @RequestParam(required = false) String subDomains,
+            @RequestParam(required = false) String techs,
             @RequestParam(required = false) String techRequired,
             @RequestParam(required = false, defaultValue = "lastUpdate") String sortBy,
             @RequestParam(required = false, defaultValue = "desc") String sortOrder,
@@ -66,6 +69,9 @@ public class UserJobController {
         request.setMaxSalary(maxSalary);
         request.setPostedWithinHours(postedWithinHours);
         request.setCompanyId(companyId);
+        request.setDomain(domain);
+        request.setSubDomains(parseCsv(subDomains));
+        request.setTechs(parseCsv(techs));
         request.setTechRequired(techRequired);
         request.setSortBy(sortBy);
         request.setSortOrder(sortOrder);
@@ -80,6 +86,14 @@ public class UserJobController {
                 .map(String::trim)
                 .filter(value -> !value.isEmpty())
                 .map(value -> JobType.valueOf(value.toUpperCase(Locale.ROOT)))
+                .collect(Collectors.toList());
+    }
+
+    private java.util.List<String> parseCsv(String rawValues) {
+        if (rawValues == null || rawValues.isBlank()) return null;
+        return Arrays.stream(rawValues.split(","))
+                .map(String::trim)
+                .filter(v -> !v.isEmpty())
                 .collect(Collectors.toList());
     }
 

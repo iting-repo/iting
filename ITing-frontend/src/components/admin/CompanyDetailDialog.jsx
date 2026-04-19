@@ -105,7 +105,7 @@ export const CompanyDetailDialog = ({ company, open, onClose, onAction }) => {
               { label: "Số điện thoại", ok: !!(company.representativePhone || company.phone) },
               { label: "Người đại diện", ok: !!company.representativeName },
               { label: "Mã số thuế", ok: !!company.taxCode && company.taxCode !== "0000000000" },
-              { label: "Tài khoản active", ok: company.active },
+              { label: "Tài khoản đang hoạt động", ok: company.active },
             ].map((item, i) => (
               <div key={i} className="flex items-center gap-2 text-sm">
                 {item.ok ? <CheckCircle2 className="h-4 w-4 text-emerald-600" /> : <XCircle className="h-4 w-4 text-red-500" />}
@@ -197,7 +197,7 @@ export const CompanyDetailDialog = ({ company, open, onClose, onAction }) => {
               }}
             >
               <CheckCircle2 className="mr-2 h-4 w-4" />
-              Approve
+              Duyệt
             </Button>
 
             <Button
@@ -209,7 +209,7 @@ export const CompanyDetailDialog = ({ company, open, onClose, onAction }) => {
               }}
             >
               <XCircle className="mr-2 h-4 w-4" />
-              Reject
+              Từ chối
             </Button>
 
             <Button
@@ -221,7 +221,7 @@ export const CompanyDetailDialog = ({ company, open, onClose, onAction }) => {
               }}
             >
               <RotateCcw className="mr-2 h-4 w-4" />
-              Resubmit
+              Yêu cầu nộp lại
             </Button>
           </div>
         )}

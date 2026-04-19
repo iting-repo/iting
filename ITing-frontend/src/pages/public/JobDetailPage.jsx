@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
+import { formatDistanceToNowStrict, parseISO } from 'date-fns';
+import { vi } from 'date-fns/locale';
 import { fetchJobDetailRequest } from '../../store/job/jobSlice';
 import {
     FaMapMarkerAlt, FaDollarSign, FaClock, FaBriefcase, FaRegBookmark,
@@ -14,6 +16,7 @@ import {
     normalizeJobKey,
     slugify,
 } from '../../utils/jobUrl';
+import applicationService from '../../services/applicationService';
 
 const normalizeList = (value, separator = ',') => {
     if (Array.isArray(value)) {
@@ -32,7 +35,9 @@ const JobDetailPage = () => {
     const navigate = useNavigate();
     const dispatch = useDispatch();
     const { currentJob, isLoading } = useSelector(state => state.job || {});
+    const { user, isAuthenticated } = useSelector(state => state.auth || {});
     const normalizedJobKey = normalizeJobKey(jobKey);
+    const [hasApplied, setHasApplied] = useState(false);
 
     useEffect(() => {
         if (normalizedJobKey) {
@@ -49,6 +54,20 @@ const JobDetailPage = () => {
         }
     }, [currentJob, navigate, normalizedJobKey, slug]);
 
+    useEffect(() => {
+        const checkAppStatus = async () => {
+            if (isAuthenticated && user?.role === 'CANDIDATE' && currentJob?.id) {
+                try {
+                    const res = await applicationService.checkApplied(currentJob.id);
+                    setHasApplied(res?.hasApplied || false);
+                } catch (err) {
+                    console.error("Check applied error:", err);
+                }
+            }
+        };
+        checkAppStatus();
+    }, [isAuthenticated, user, currentJob]);
+
     const [isApplyModalOpen, setIsApplyModalOpen] = useState(false);
 
     if (isLoading) return <div className="text-center py-20 font-bold text-gray-500">Đang tải chi tiết công việc...</div>;
@@ -63,27 +82,56 @@ const JobDetailPage = () => {
     };
 
     const descriptionList = normalizeList(currentJob.description, '\n');
-    const requirementsList = normalizeList(currentJob.techRequired);
+    const responsibilitiesList = normalizeList(currentJob.responsibilities, '\n');
+    const requirementsList = normalizeList(currentJob.requirements, '\n');
+    const benefitsList = normalizeList(currentJob.benefits, '\n');
+    const techList = currentJob.techRequired || [];
+
+    const formatJobType = (type) => {
+        const map = {
+            'FULL_TIME': 'Toàn thời gian',
+            'PART_TIME': 'Bán thời gian',
+            'CONTRACT': 'Hợp đồng',
+            'INTERNSHIP': 'Thực tập',
+            'REMOTE': 'Làm việc từ xa',
+            'FREELANCE': 'Tự do'
+        };
+        return map[type] || type || "Toàn thời gian";
+    };
+
+    const formatExperience = (level) => {
+        const map = {
+            'INTERN': 'Thực tập sinh',
+            'FRESHER': 'Mới ra trường / Fresher',
+            'JUNIOR': 'Junior (1-2 năm)',
+            'MIDDLE': 'Middle (2-4 năm)',
+            'MID_LEVEL': 'Mid-level (2-4 năm)',
+            'SENIOR': 'Senior (4-7 năm)',
+            'LEAD': 'Lead (7+ năm)',
+            'EXPERT': 'Chuyên gia',
+            'MANAGER': 'Quản lý'
+        };
+        return map[level] || level || "Chưa cập nhật";
+    };
 
     const jobDetail = {
-        title: currentJob.position || currentJob.title,
+        title: currentJob.title || currentJob.position,
+        position: currentJob.position,
         company: currentJob.companyName,
         logo: currentJob.companyLogo || "https://via.placeholder.com/100",
         deadline: currentJob.dueDate || "Không có",
         salary: formatSalary(currentJob.minSalary, currentJob.maxSalary),
         location: currentJob.location || "Chưa cập nhật",
-        description: descriptionList.length > 0 ? descriptionList : ["Không có mô tả chi tiết"],
-        requirements: requirementsList.length > 0 ? requirementsList : ["Không có yêu cầu đặc biệt"],
-        priority: [
-            "Có khả năng làm việc nhóm và chịu áp lực tốt",
-            "Có mong muốn gắn bó lâu dài và phát triển cùng công ty"
-        ],
-        benefits: [
-            "Đóng BHXH, BHYT, BHTN theo quy định",
-            "Môi trường làm việc năng động, chuyên nghiệp"
-        ],
-        jobType: currentJob.jobType || "Toàn thời gian",
-        experience: currentJob.experienceLevel || "Không yêu cầu kinh nghiệm"
+        description: descriptionList.length > 0 ? descriptionList : ["Chưa có mô tả chi tiết"],
+        responsibilities: responsibilitiesList.length > 0 ? responsibilitiesList : ["Chưa có thông tin trách nhiệm"],
+        requirements: requirementsList.length > 0 ? requirementsList : ["Chưa có thông tin yêu cầu"],
+        benefits: benefitsList.length > 0 ? benefitsList : ["Chưa có thông tin quyền lợi"],
+        techs: techList,
+        jobType: formatJobType(currentJob.jobType),
+        experience: formatExperience(currentJob.experienceLevel),
+        domain: currentJob.domain || "Công nghệ thông tin",
+        province: currentJob.province || "Việt Nam",
+        postedTime: currentJob.createdAt ? formatDistanceToNowStrict(parseISO(currentJob.createdAt), { addSuffix: true, locale: vi }) : "Vừa xong"
     };
 
     const relatedJobs = [
@@ -127,6 +175,10 @@ const JobDetailPage = () => {
             <JobApplyModal
                 isOpen={isApplyModalOpen}
                 onClose={() => setIsApplyModalOpen(false)}
+                onSuccess={() => {
+                    setIsApplyModalOpen(false);
+                    setHasApplied(true);
+                }}
                 jobTitle={jobDetail.title}
                 jobId={currentJob.id}
             />
@@ -138,7 +190,7 @@ const JobDetailPage = () => {
                         <div className="space-y-6">
                             <div className="flex items-center gap-3">
                                 <span className="bg-[#E6F6FD] text-[#00B4D8] text-xs font-bold px-3 py-1 rounded-full">
-                                    10 phút trước
+                                    {jobDetail.postedTime}
                                 </span>
                                 <span className="flex-1"></span>
                                 <button className="flex items-center gap-2 text-[#00B4D8] text-sm font-bold border border-[#00B4D8] px-4 py-2 rounded-lg hover:bg-[#E6F6FD] transition-colors">
@@ -159,7 +211,7 @@ const JobDetailPage = () => {
                             <div className="flex flex-wrap gap-y-3 gap-x-6 text-sm text-gray-500 bg-[#F5F7FA] p-4 rounded-xl">
                                 <div className="flex items-center gap-2">
                                     <span className="bg-white p-2 rounded-full text-[#00B4D8]"><FaBriefcase /></span>
-                                    Marketing/Quảng cáo
+                                    {jobDetail.domain}
                                 </div>
                                 <div className="flex items-center gap-2">
                                     <span className="bg-white p-2 rounded-full text-[#00B4D8]"><FaClock /></span>
@@ -180,9 +232,14 @@ const JobDetailPage = () => {
 
                             <div className="flex gap-3">
                                 <button
-                                    onClick={() => setIsApplyModalOpen(true)}
-                                    className="flex-1 py-3 bg-[#00B4D8] text-white font-bold rounded-lg hover:bg-[#0096B4] shadow-md transition-all transform hover:-translate-y-0.5">
-                                    Ứng Tuyển Ngay
+                                    onClick={() => !hasApplied && setIsApplyModalOpen(true)}
+                                    disabled={hasApplied}
+                                    className={`flex-1 py-3 font-bold rounded-lg shadow-md transition-all transform ${
+                                        hasApplied 
+                                        ? 'bg-gray-100 text-gray-400 cursor-not-allowed border border-gray-200' 
+                                        : 'bg-[#00B4D8] text-white hover:bg-[#0096B4] hover:-translate-y-0.5'
+                                    }`}>
+                                    {hasApplied ? 'Đã Ứng Tuyển' : 'Ứng Tuyển Ngay'}
                                 </button>
                                 <button className="px-4 py-3 border border-gray-200 rounded-lg hover:bg-gray-50 text-gray-400 hover:text-red-500 transition-colors">
                                     <FaRegBookmark size={20} />
@@ -199,16 +256,16 @@ const JobDetailPage = () => {
                             </section>
 
                             <section>
-                                <h2 className="text-xl font-bold text-gray-800 mb-4">Yêu cầu ứng viên</h2>
+                                <h2 className="text-xl font-bold text-gray-800 mb-4">Trách nhiệm công việc</h2>
                                 <ul className="list-disc pl-5 space-y-2 text-sm">
-                                    {jobDetail.requirements.map((item, idx) => <li key={idx}>{item}</li>)}
+                                    {jobDetail.responsibilities.map((item, idx) => <li key={idx}>{item}</li>)}
                                 </ul>
                             </section>
 
                             <section>
-                                <h2 className="text-xl font-bold text-gray-800 mb-4">Ưu tiên ứng viên</h2>
+                                <h2 className="text-xl font-bold text-gray-800 mb-4">Yêu cầu ứng viên</h2>
                                 <ul className="list-disc pl-5 space-y-2 text-sm">
-                                    {jobDetail.priority.map((item, idx) => <li key={idx}>{item}</li>)}
+                                    {jobDetail.requirements.map((item, idx) => <li key={idx}>{item}</li>)}
                                 </ul>
                             </section>
 
@@ -260,9 +317,14 @@ const JobDetailPage = () => {
 
                             <div className="flex gap-4">
                                 <button
-                                    onClick={() => setIsApplyModalOpen(true)}
-                                    className="px-6 py-2.5 bg-[#00B4D8] text-white font-bold rounded hover:bg-[#0096B4] transition-colors">
-                                    Ứng Tuyển Ngay
+                                    onClick={() => !hasApplied && setIsApplyModalOpen(true)}
+                                    disabled={hasApplied}
+                                    className={`px-6 py-2.5 font-bold rounded transition-colors ${
+                                        hasApplied
+                                        ? 'bg-gray-100 text-gray-400 cursor-not-allowed border border-gray-200'
+                                        : 'bg-[#00B4D8] text-white hover:bg-[#0096B4]'
+                                    }`}>
+                                    {hasApplied ? 'Đã Ứng Tuyển' : 'Ứng Tuyển Ngay'}
                                 </button>
                                 <button className="px-6 py-2.5 border border-[#00B4D8] text-[#00B4D8] font-bold rounded hover:bg-[#E6F6FD] transition-colors">
                                     Lưu Tin
@@ -279,11 +341,13 @@ const JobDetailPage = () => {
                             <div className="space-y-2">
                                 <h3 className="font-bold text-gray-800">Tags:</h3>
                                 <div className="flex flex-wrap gap-2">
-                                    {['Full time', 'Commerce', 'New - York', 'Corporate', 'Location'].map((tag, idx) => (
+                                    {jobDetail.techs.length > 0 ? jobDetail.techs.map((tag, idx) => (
                                         <span key={idx} className="px-3 py-1 bg-[#E6F6FD] text-[#00B4D8] text-xs font-medium rounded hover:bg-[#d0f0fd] cursor-pointer">
                                             {tag}
                                         </span>
-                                    ))}
+                                    )) : (
+                                        <span className="text-gray-400 text-xs italic">Không có tag</span>
+                                    )}
                                 </div>
                             </div>
                         </div>
@@ -321,7 +385,7 @@ const JobDetailPage = () => {
                                     <div className="mt-1 text-[#00B4D8]"><FaBriefcase /></div>
                                     <div>
                                         <p className="font-bold text-gray-800 text-sm">Lĩnh vực</p>
-                                        <p className="text-gray-500 text-sm">Tài chính</p>
+                                        <p className="text-gray-500 text-sm">{jobDetail.domain}</p>
                                     </div>
                                 </div>
                                 <div className="flex gap-3">

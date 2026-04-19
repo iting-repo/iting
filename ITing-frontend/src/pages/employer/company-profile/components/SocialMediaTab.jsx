@@ -64,7 +64,7 @@ const SocialMediaTab = () => {
                 <div className="flex-1">
                     <input 
                         type="text" 
-                        placeholder="Profile link/url..." 
+                        placeholder="Dán liên kết hồ sơ tại đây..." 
                         value={item.url}
                         className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:border-[#3AB4E6]"
                         onChange={(e) => {

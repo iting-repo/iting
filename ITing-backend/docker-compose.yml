@@ -1,9 +1,10 @@
-version: '3.8'
+version: "3.8"
 
 services:
   zookeeper:
     image: confluentinc/cp-zookeeper:7.4.0
     container_name: zookeeper
+    restart: unless-stopped
     environment:
       ZOOKEEPER_CLIENT_PORT: 2181
       ZOOKEEPER_TICK_TIME: 2000
@@ -13,75 +14,9 @@ services:
   kafka:
     image: confluentinc/cp-kafka:7.4.0
     container_name: kafka
+    restart: unless-stopped
     depends_on:
-<<<<<<< HEAD
       - zookeeper
-=======
-      postgres:
-        condition: service_healthy
-
-    env_file:
-      - .env
-    
-    # Environment variables for local PostgreSQL
-    environment:
-      # Database configuration (Local PostgreSQL)
-      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/iting_job_portal?currentSchema=testdb
-      - SPRING_DATASOURCE_USERNAME=postgres
-      - SPRING_DATASOURCE_PASSWORD=250904
-      
-      # JPA/Hibernate - auto-create schema for local dev
-      - SPRING_JPA_HIBERNATE_DDL_AUTO=update
-      - SPRING_JPA_PROPERTIES_HIBERNATE_DIALECT=org.hibernate.dialect.PostgreSQLDialect
-      - SPRING_JPA_PROPERTIES_HIBERNATE_FORMAT_SQL=true
-      - SPRING_JPA_PROPERTIES_HIBERNATE_DEFAULT_SCHEMA=testdb
-      
-      # Flyway - disabled in Docker dev to avoid circular dependency with JPA
-      - SPRING_FLYWAY_ENABLED=false
-      
-      # SQL Initialization - disabled (schema imported manually)
-      - SPRING_SQL_INIT_MODE=never
-      
-      # Logging
-      - LOGGING_LEVEL_ROOT=INFO
-      - LOGGING_LEVEL_COM_ITING=DEBUG
-      
-      # Server config
-      - SERVER_PORT=8080
-      - SERVER_SHUTDOWN=graceful
-      
-      # Actuator
-      - MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE=health,info,metrics
-      - MANAGEMENT_ENDPOINT_HEALTH_SHOW_DETAILS=when_authorized
-      - MANAGEMENT_HEALTH_MAIL_ENABLED=false
-      
-      # Application name
-      - SPRING_APPLICATION_NAME=iting-job-portal
-      
-      # Swagger / OpenAPI
-      - SPRINGDOC_API_DOCS_ENABLED=true
-      - SPRINGDOC_API_DOCS_PATH=/v3/api-docs
-      - SPRINGDOC_SWAGGER_UI_ENABLED=true
-      - SPRINGDOC_SWAGGER_UI_PATH=/swagger-ui.html
-      
-      # JWT configuration
-      - JWT_SECRET=404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970
-      - JWT_EXPIRATION=86400000
-      - JWT_REFRESH_SECRET=7134743777217A25432A462D4A614E645267556B58703272357538782F413F4428472B4B6250645367566B5970
-      - JWT_REFRESH_EXPIRATION=604800000
-      - JWT_REFRESH_MAX_TOKENS_PER_USER=5
-      
-      # Security logging
-      - LOGGING_LEVEL_ORG_SPRINGFRAMEWORK_SECURITY=DEBUG
-      
-      # AWS S3 (optional - remove if not needed)
-      - AWS_ACCESS_KEY=${AWS_ACCESS_KEY:-local-dev-access-key}
-      - AWS_SECRET_KEY=${AWS_SECRET_KEY:-local-dev-secret-key}
-      - AWS_REGION=${AWS_REGION:-ap-southeast-1}
-      - AWS_S3_BUCKET=${AWS_S3_BUCKET:-datn-jobweb}
-      - AWS_ENABLED=${AWS_ENABLED:-true}
-    
->>>>>>> d176f3b92064d5c177e48148648be264bc8db609
     ports:
       - "9092:9092"
     environment:
@@ -91,3 +26,77 @@ services:
       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_INTERNAL:PLAINTEXT
       KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT_INTERNAL
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+
+  postgres:
+    image: postgres:16
+    container_name: postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: iting_job_portal
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: 250904
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d iting_job_portal"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build: .
+    container_name: iting-backend
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_started
+    env_file:
+      - .env
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/iting_job_portal?currentSchema=testdb
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: 250904
+
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update
+      SPRING_JPA_PROPERTIES_HIBERNATE_DIALECT: org.hibernate.dialect.PostgreSQLDialect
+      SPRING_JPA_PROPERTIES_HIBERNATE_FORMAT_SQL: true
+      SPRING_JPA_PROPERTIES_HIBERNATE_DEFAULT_SCHEMA: testdb
+
+      SPRING_FLYWAY_ENABLED: false
+      SPRING_SQL_INIT_MODE: never
+
+      LOGGING_LEVEL_ROOT: INFO
+      LOGGING_LEVEL_COM_ITING: DEBUG
+      LOGGING_LEVEL_ORG_SPRINGFRAMEWORK_SECURITY: DEBUG
+
+      SERVER_PORT: 8080
+      SERVER_SHUTDOWN: graceful
+
+      MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE: health,info,metrics
+      MANAGEMENT_ENDPOINT_HEALTH_SHOW_DETAILS: when_authorized
+      MANAGEMENT_HEALTH_MAIL_ENABLED: false
+
+      SPRING_APPLICATION_NAME: iting-job-portal
+
+      SPRINGDOC_API_DOCS_ENABLED: true
+      SPRINGDOC_API_DOCS_PATH: /v3/api-docs
+      SPRINGDOC_SWAGGER_UI_ENABLED: true
+      SPRINGDOC_SWAGGER_UI_PATH: /swagger-ui.html
+
+      JWT_SECRET: 404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970
+      JWT_EXPIRATION: 86400000
+      JWT_REFRESH_SECRET: 7134743777217A25432A462D4A614E645267556B58703272357538782F413F4428472B4B6250645367566B5970
+      JWT_REFRESH_EXPIRATION: 604800000
+      JWT_REFRESH_MAX_TOKENS_PER_USER: 5
+
+      AWS_ACCESS_KEY: ${AWS_ACCESS_KEY:-local-dev-access-key}
+      AWS_SECRET_KEY: ${AWS_SECRET_KEY:-local-dev-secret-key}
+      AWS_REGION: ${AWS_REGION:-ap-southeast-1}
+      AWS_S3_BUCKET: ${AWS_S3_BUCKET:-datn-jobweb}
+      AWS_ENABLED: ${AWS_ENABLED:-true}
+    ports:
+      - "8080:8080"

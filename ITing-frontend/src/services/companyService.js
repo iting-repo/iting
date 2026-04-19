@@ -125,6 +125,34 @@ const companyService = {
       params: { minutes }
     });
   },
+
+  // PUBLIC
+  searchCompanies: async (params) => {
+    return await axiosInstance.get("/public/companies", { params });
+  },
+
+  getCompanyDetail: async (id) => {
+    return await axiosInstance.get(`/public/companies/${id}`);
+  },
+
+  // FOLLOW
+  followCompany: async (companyId) => {
+    return await axiosInstance.post("/companies/follow", { companyId });
+  },
+
+  unfollowCompany: async (companyId) => {
+    return await axiosInstance.delete(`/companies/follow/${companyId}`);
+  },
+
+  checkFollowing: async (companyId) => {
+    return await axiosInstance.get(`/companies/follow/check/${companyId}`);
+  },
+
+  getMyFollowedCompanies: async (page = 0, size = 100) => {
+    return await axiosInstance.get("/companies/follow/my-followed", {
+      params: { page, size }
+    });
+  }
 };
 
 export default companyService;

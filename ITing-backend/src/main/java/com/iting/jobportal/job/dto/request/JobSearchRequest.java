@@ -20,6 +20,10 @@ public class JobSearchRequest {
     private Integer postedWithinHours;    // Lọc theo thời gian đăng (số giờ gần nhất)
     private Long companyId;         // Lọc theo công ty
     private String techRequired;    // Lọc theo công nghệ
+    // Deep filter: industry/domain and sub-categories (e.g. IT -> Software, DevOps)
+    private String domain;          // Industry / domain keyword (e.g. "IT")
+    private java.util.List<String> subDomains; // Subcategories or domain keywords
+    private java.util.List<String> techs; // Multiple tech filters (e.g. ["java","react"]) 
     
     // Sắp xếp
     private String sortBy;          // createdAt, salary, relevance

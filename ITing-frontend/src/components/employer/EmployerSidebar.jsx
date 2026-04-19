@@ -119,7 +119,7 @@ const EmployerSidebar = () => {
               <h4 className="text-sm font-bold text-gray-900 leading-tight truncate max-w-[140px]">
                 {company?.name || user.name || user.fullName || "Loading..."}
               </h4>
-              <p className="text-xs font-medium text-gray-500">Employer</p>
+              <p className="text-xs font-medium text-gray-500">Nhà tuyển dụng</p>
               <div className="flex items-center gap-1.5 mt-0.5">
                 <span className="text-[11px] text-gray-600">
                   Tài khoản xác thực: <span className="text-[#3AB4E6] font-bold">{getVerificationLevel()}</span>
@@ -251,7 +251,7 @@ const EmployerSidebar = () => {
         </div>
 
         <h3 className="text-xs font-bold text-gray-400 uppercase mb-4 tracking-wider">
-          Employers
+          Khu vực nhà tuyển dụng
         </h3>
         <ul className="space-y-2">
           {menuItems.map((item) => (

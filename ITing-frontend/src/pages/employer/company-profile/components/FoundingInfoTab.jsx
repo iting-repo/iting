@@ -369,7 +369,11 @@ const FoundingInfoTab = ({ onTabChange }) => {
     } catch (error) {
       console.error("Lỗi khi gửi yêu cầu cập nhật:", error);
       toast.error(
-        error?.message || "Không thể gửi yêu cầu cập nhật. Vui lòng thử lại.",
+        error?.error || 
+        error?.message || 
+        error?.response?.data?.error || 
+        error?.response?.data?.message || 
+        "Không thể gửi yêu cầu cập nhật. Vui lòng thử lại.",
       );
     } finally {
       setSubmittingRequest(false);
@@ -445,7 +449,13 @@ const FoundingInfoTab = ({ onTabChange }) => {
       await fetchData();
     } catch (error) {
       console.error("Lỗi upload license:", error);
-      toast.error(error?.response?.data?.message || "Không thể upload giấy phép.");
+      toast.error(
+        error?.error || 
+        error?.message || 
+        error?.response?.data?.error || 
+        error?.response?.data?.message || 
+        "Không thể upload giấy phép."
+      );
     } finally {
       setLoading(false);
     }
@@ -553,7 +563,13 @@ const FoundingInfoTab = ({ onTabChange }) => {
                     toast.success("Hồ sơ đã được gửi đi. Vui lòng chờ Admin xét duyệt.");
                     await fetchData();
                   } catch (error) {
-                    toast.error(error?.response?.data?.message || "Không thể gửi duyệt");
+                    toast.error(
+                      error?.error || 
+                      error?.message || 
+                      error?.response?.data?.error || 
+                      error?.response?.data?.message || 
+                      "Không thể gửi duyệt"
+                    );
                   } finally {
                     setLoading(false);
                   }

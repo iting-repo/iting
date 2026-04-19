@@ -54,8 +54,9 @@ public class SecurityConfig {
 
             .authorizeHttpRequests(auth -> auth
 
-                // ── Public: Auth (register, login, refresh) ───────────────
-                .requestMatchers("/api/auth/**").permitAll()
+                // ── Public: Auth (register, login, etc) ──────────────────
+                .requestMatchers("/api/auth/login", "/api/auth/register", "/api/auth/google", "/api/auth/refresh").permitAll()
+                .requestMatchers("/api/auth/forgot-password", "/api/auth/reset-password").permitAll()
 
                 // ── Public: Swagger / API Docs ────────────────────────────
                 .requestMatchers(
@@ -91,6 +92,9 @@ public class SecurityConfig {
 
                 // ── Public: Company (xem thông tin công ty) ───────────────
                 .requestMatchers(HttpMethod.GET, "/api/companies/{id}").permitAll()
+
+                // ── CANDIDATE: Follow Company ────────────────────────────
+                .requestMatchers("/api/companies/follow/**").hasRole("CANDIDATE")
 
                 // ── EMPLOYER: Quản lý Company profile ────────────────────
                 .requestMatchers(HttpMethod.PUT, "/api/companies/**").hasRole("EMPLOYER")

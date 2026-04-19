@@ -55,6 +55,8 @@ public class CreateJobRequest {
     @NotBlank(message = "Địa chỉ không được để trống")
     private String address;
 
+    private String location;
+
     private Long locId;
 
     @NotBlank(message = "Mô tả công việc không được để trống")

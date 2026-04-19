@@ -4,6 +4,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { useEffect } from 'react';
 import { fetchJobsRequest, fetchJobDetailRequest } from '../../store/job/jobSlice';
 import { buildJobDetailPath, getJobPublicKey } from '../../utils/jobUrl';
+import publicService from '../../services/publicService';
 
 // FIX: Gom tất cả icon về react-icons/fa để tránh lỗi import undefined
 import {
@@ -23,6 +24,7 @@ const HomePage = () => {
     const [currentPage, setCurrentPage] = useState(1);
     const [provinces, setProvinces] = useState([]);
     const [selectedLocationFilter, setSelectedLocationFilter] = useState(searchParams.get('location') || '');
+    const [stats, setStats] = useState({ totalJobs: 0, totalCandidates: 0, totalCompanies: 0 });
 
     const handleJobClick = (job) => {
         const jobKey = getJobPublicKey(job);
@@ -54,6 +56,18 @@ const HomePage = () => {
             .catch(() => {
                 setProvinces([]);
             });
+    }, []);
+    
+    useEffect(() => {
+        const fetchStats = async () => {
+            try {
+                const data = await publicService.getHomeStats();
+                setStats(data || { totalJobs: 0, totalCandidates: 0, totalCompanies: 0 });
+            } catch (error) {
+                console.error("Failed to fetch home stats:", error);
+            }
+        };
+        fetchStats();
     }, []);
 
     // Helper: Format Salary
@@ -237,7 +251,7 @@ const HomePage = () => {
                         Tìm việc làm IT <span className="text-white">chất lượng trên toàn quốc</span>
                     </h1>
                     <p className="text-gray-400 mb-10 text-sm md:text-base max-w-2xl mx-auto">
-                        Tiếp cận 60.000+ tin tuyển dụng việc làm mỗi ngày từ hàng nghìn doanh nghiệp uy tín tại Việt Nam
+                        Tiếp cận {stats.totalJobs.toLocaleString('vi-VN')}+ tin tuyển dụng việc làm mỗi ngày từ hàng nghìn doanh nghiệp uy tín tại Việt Nam
                     </p>
 
                     {/* Search Box */}
@@ -308,19 +322,34 @@ const HomePage = () => {
                             <div className="w-12 h-12 rounded-full bg-[#3AB4E6] flex items-center justify-center shadow-lg shadow-blue-500/30">
                                 <FaBriefcase className="text-white text-xl" />
                             </div>
-                            <div><div className="text-2xl font-bold text-white">25,850</div><div className="text-gray-400 text-xs">Công việc</div></div>
+                            <div>
+                                <div className="text-2xl font-bold text-white">
+                                    {stats.totalJobs.toLocaleString('vi-VN')}
+                                </div>
+                                <div className="text-gray-400 text-xs">Công việc</div>
+                            </div>
                         </div>
                         <div className="flex items-center gap-3 text-left">
                             <div className="w-12 h-12 rounded-full bg-[#3AB4E6] flex items-center justify-center shadow-lg shadow-blue-500/30">
                                 <FaUserFriends className="text-white text-xl" />
                             </div>
-                            <div><div className="text-2xl font-bold text-white">10,250</div><div className="text-gray-400 text-xs">Ứng viên</div></div>
+                            <div>
+                                <div className="text-2xl font-bold text-white">
+                                    {stats.totalCandidates.toLocaleString('vi-VN')}
+                                </div>
+                                <div className="text-gray-400 text-xs">Ứng viên</div>
+                            </div>
                         </div>
                         <div className="flex items-center gap-3 text-left">
                             <div className="w-12 h-12 rounded-full bg-[#3AB4E6] flex items-center justify-center shadow-lg shadow-blue-500/30">
                                 <FaBuilding className="text-white text-xl" />
                             </div>
-                            <div><div className="text-2xl font-bold text-white">18,400</div><div className="text-gray-400 text-xs">Công ty</div></div>
+                            <div>
+                                <div className="text-2xl font-bold text-white">
+                                    {stats.totalCompanies.toLocaleString('vi-VN')}
+                                </div>
+                                <div className="text-gray-400 text-xs">Công ty</div>
+                            </div>
                         </div>
                     </div>
                 </div>

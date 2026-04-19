@@ -8,11 +8,72 @@ import {
 } from "react-icons/fa";
 import { toast } from "sonner";
 import applicationService from "../services/applicationService";
+import cvService from "../services/cvService";
+import authService from "../services/authService";
 
-const JobApplyModal = ({ isOpen, onClose, jobTitle, jobId }) => {
+const JobApplyModal = ({ isOpen, onClose, onSuccess, jobTitle, jobId }) => {
   const [cvMethod, setCvMethod] = useState("recent"); // 'recent', 'library', 'upload'
   const [coverLetter, setCoverLetter] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  
+  // Stats
+  const [recentCV, setRecentCV] = useState(null);
+  const [libraryCVs, setLibraryCVs] = useState([]);
+  const [user, setUser] = useState(null);
+  const [selectedLibraryId, setSelectedLibraryId] = useState(null);
+  const [uploadedFile, setUploadedFile] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  React.useEffect(() => {
+    if (isOpen) {
+      loadInitialData();
+    }
+  }, [isOpen]);
+
+  const loadInitialData = async () => {
+    try {
+      setIsLoading(true);
+      const [cvs, userInfo] = await Promise.all([
+        cvService.getRecentCVs(),
+        authService.getCurrentUser()
+      ]);
+      
+      setLibraryCVs(cvs || []);
+      if (cvs && cvs.length > 0) {
+        setRecentCV(cvs[0]);
+        setSelectedLibraryId(cvs[0].id);
+      }
+      setUser(userInfo);
+    } catch (error) {
+      console.error("Failed to load apply data:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleFileChange = (e) => {
+    const file = e.target.files?.[0] || null;
+    if (file && file.type !== 'application/pdf') {
+        toast.error('Chỉ chấp nhận file PDF');
+        return;
+    }
+    if (file && file.size > 5 * 1024 * 1024) {
+        toast.error('Kích thước CV tối đa là 5MB');
+        return;
+    }
+    setUploadedFile(file);
+  };
+
+  const previewCV = (url) => {
+    if (!url) return;
+    window.open(url, '_blank');
+  };
+
+  const previewLocalFile = () => {
+    if (!uploadedFile) return;
+    const url = URL.createObjectURL(uploadedFile);
+    window.open(url, '_blank');
+  };
 
   if (!isOpen) return null;
 
@@ -22,21 +83,56 @@ const JobApplyModal = ({ isOpen, onClose, jobTitle, jobId }) => {
       return;
     }
 
-    const payload = {
-      jobId: jobId,
-      cvUrl: "pdf",
-      cvId: 1,
-      coverLetter: coverLetter || "toi rat gioi",
-    };
-
     try {
       setIsSubmitting(true);
+      let finalCvId = null;
+      let finalCvUrl = "";
+
+      if (cvMethod === 'recent' && recentCV) {
+        finalCvId = recentCV.id;
+        finalCvUrl = recentCV.fileUrl;
+      } else if (cvMethod === 'library' && selectedLibraryId) {
+        const selected = libraryCVs.find(c => c.id === selectedLibraryId);
+        finalCvId = selected?.id;
+        finalCvUrl = selected?.fileUrl;
+      } else if (cvMethod === 'upload') {
+        if (!uploadedFile) {
+          toast.error("Vui lòng chọn file CV để tải lên!");
+          setIsSubmitting(false);
+          return;
+        }
+        // Upload to S3 first
+        const formData = new FormData();
+        formData.append('file', uploadedFile);
+        formData.append('title', uploadedFile.name.replace(/\.pdf$/i, ''));
+        const uploadedCv = await cvService.uploadCV(formData);
+        finalCvId = uploadedCv.id;
+        finalCvUrl = uploadedCv.fileUrl;
+      }
+
+      if (!finalCvId) {
+        toast.error("Vui lòng chọn hoặc tải lên CV!");
+        setIsSubmitting(false);
+        return;
+      }
+
+      const payload = {
+        jobId: jobId,
+        cvUrl: finalCvUrl,
+        cvId: finalCvId,
+        coverLetter: coverLetter.trim() || undefined,
+      };
+
       await applicationService.applyJob(payload);
       toast.success("Ứng tuyển thành công!");
-      onClose();
+      if (onSuccess) {
+        onSuccess();
+      } else {
+        onClose();
+      }
     } catch (error) {
       console.error("Lỗi khi ứng tuyển:", error);
-      toast.error("Có lỗi xảy ra khi nộp hồ sơ.");
+      toast.error(error?.message || "Có lỗi xảy ra khi nộp hồ sơ.");
     } finally {
       setIsSubmitting(false);
     }
@@ -74,7 +170,7 @@ const JobApplyModal = ({ isOpen, onClose, jobTitle, jobId }) => {
               cvMethod === "recent"
                 ? "border-[#00B4D8] bg-[#E6F6FD]/30"
                 : "border-gray-200 hover:border-[#00B4D8]"
-            }`}
+            } ${!recentCV ? 'opacity-60 cursor-not-allowed' : ''}`}
           >
             <div className="flex items-center gap-3 mb-3">
               <div
@@ -87,54 +183,90 @@ const JobApplyModal = ({ isOpen, onClose, jobTitle, jobId }) => {
                 )}
               </div>
               <span className="font-bold text-[#00B4D8] text-sm flex items-center gap-2">
-                CV ứng tuyển gần nhất: CV.pdf
+                CV ứng tuyển gần nhất: {recentCV ? recentCV.title : "Chưa có CV nào"}
               </span>
-              <span className="ml-auto text-xs text-[#00B4D8] hover:underline">
-                Xem
-              </span>
+              {recentCV && (
+                <span 
+                  onClick={(e) => { e.stopPropagation(); previewCV(recentCV.fileUrl); }}
+                  className="ml-auto text-xs text-[#00B4D8] hover:underline"
+                >
+                  Xem
+                </span>
+              )}
             </div>
 
             <div className="pl-8 text-sm text-gray-600 space-y-1">
               <p>
                 <span className="text-gray-400">Họ và tên:</span>{" "}
                 <span className="font-medium text-gray-800">
-                  Võ Lê Anh Nghĩa
+                  {user?.fullName || user?.name || "Đang tải..."}
                 </span>
               </p>
               <p>
                 <span className="text-gray-400">Email:</span>{" "}
                 <span className="font-medium text-gray-800">
-                  meaningful@gmail.com
+                  {user?.email || "..."}
                 </span>
               </p>
-              <p>
-                <span className="text-gray-400">Số điện thoại:</span>{" "}
-                <span className="font-medium text-gray-800">0123456789</span>
-              </p>
+              {user?.phoneNum && (
+                <p>
+                  <span className="text-gray-400">Số điện thoại:</span>{" "}
+                  <span className="font-medium text-gray-800">{user.phoneNum}</span>
+                </p>
+              )}
             </div>
           </div>
 
           {/* OPTION 2: Chọn từ thư viện */}
           <div
             onClick={() => setCvMethod("library")}
-            className={`border rounded-lg p-4 cursor-pointer flex items-center gap-3 transition-all ${
+            className={`border rounded-lg p-4 cursor-pointer transition-all ${
               cvMethod === "library"
                 ? "border-[#00B4D8]"
                 : "border-gray-200 hover:border-[#00B4D8]"
             }`}
           >
-            <div
-              className={`w-5 h-5 rounded-full border flex items-center justify-center ${
-                cvMethod === "library" ? "border-[#00B4D8]" : "border-gray-300"
-              }`}
-            >
-              {cvMethod === "library" && (
-                <div className="w-3 h-3 bg-[#00B4D8] rounded-full"></div>
-              )}
+            <div className="flex items-center gap-3">
+              <div
+                className={`w-5 h-5 rounded-full border flex items-center justify-center ${
+                  cvMethod === "library" ? "border-[#00B4D8]" : "border-gray-300"
+                }`}
+              >
+                {cvMethod === "library" && (
+                  <div className="w-3 h-3 bg-[#00B4D8] rounded-full"></div>
+                )}
+              </div>
+              <span className="font-medium text-gray-700 text-sm">
+                Chọn CV khác trong thư viện CV của tôi
+              </span>
             </div>
-            <span className="font-medium text-gray-700 text-sm">
-              Chọn CV khác trong thư viện CV của tôi
-            </span>
+            
+            {cvMethod === "library" && libraryCVs.length > 0 && (
+              <div className="ml-8 mt-3 grid grid-cols-1 gap-2">
+                {libraryCVs.map(cv => (
+                  <div 
+                    key={cv.id}
+                    onClick={(e) => { e.stopPropagation(); setSelectedLibraryId(cv.id); }}
+                    className={`flex items-center justify-between p-2 rounded-lg border text-sm transition-all ${selectedLibraryId === cv.id ? 'border-[#00B4D8] bg-[#E6F6FD]/20 border-l-4' : 'border-gray-100 hover:bg-gray-50'}`}
+                  >
+                    <div className="flex items-center gap-2 truncate">
+                      <FaFilePdf size={14} className="text-red-500 shrink-0" />
+                      <span className="truncate">{cv.title}</span>
+                    </div>
+                    <button 
+                      onClick={(e) => { e.stopPropagation(); previewCV(cv.fileUrl); }}
+                      className="text-[#00B4D8] text-xs font-bold hover:underline shrink-0"
+                    >
+                      Xem
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+            
+            {cvMethod === "library" && libraryCVs.length === 0 && (
+              <p className="ml-8 mt-2 text-xs text-gray-400 italic">Thư viện trống. Vui lòng tải CV mới.</p>
+            )}
           </div>
 
           {/* OPTION 3: Upload */}
@@ -162,14 +294,47 @@ const JobApplyModal = ({ isOpen, onClose, jobTitle, jobId }) => {
             </div>
 
             {cvMethod === "upload" && (
-              <div className="ml-8 mt-2 border-2 border-dashed border-gray-300 rounded-lg p-6 flex flex-col items-center justify-center bg-gray-50 text-gray-500">
-                <FaCloudUploadAlt size={32} className="text-gray-400 mb-2" />
-                <p className="text-sm">
-                  Hỗ trợ định dạng .doc, .docx, pdf có kích thước dưới 5MB
-                </p>
-                <button className="mt-3 px-4 py-1.5 bg-white border border-gray-300 rounded text-sm font-medium hover:bg-gray-100">
-                  Chọn CV
-                </button>
+              <div className="ml-8 mt-2 border-2 border-dashed border-gray-300 rounded-lg p-6 flex flex-col items-center justify-center bg-gray-50 text-gray-500 relative group overflow-hidden">
+                {!uploadedFile ? (
+                  <>
+                    <FaCloudUploadAlt size={32} className="text-gray-400 mb-2 group-hover:scale-110 transition-transform" />
+                    <p className="text-sm text-center">
+                      Hỗ trợ định dạng .pdf có kích thước dưới 5MB
+                    </p>
+                    <label className="mt-3 px-4 py-1.5 bg-white border border-gray-300 rounded text-sm font-medium hover:bg-gray-100 cursor-pointer shadow-sm">
+                      Chọn file
+                      <input type="file" className="hidden" accept="application/pdf" onChange={handleFileChange} />
+                    </label>
+                  </>
+                ) : (
+                  <div className="w-full flex items-center justify-between bg-white p-3 rounded-lg border border-[#00B4D8] shadow-sm">
+                    <div className="flex items-center gap-3 truncate">
+                      <div className="w-10 h-10 bg-red-50 rounded flex items-center justify-center text-red-500 shrink-0">
+                        <FaFilePdf size={20} />
+                      </div>
+                      <div className="truncate">
+                        <p className="text-sm font-bold text-gray-800 truncate">{uploadedFile.name}</p>
+                        <p className="text-[10px] text-gray-400">{(uploadedFile.size / 1024 / 1024).toFixed(2)} MB • PDF</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <button 
+                         type="button"
+                         onClick={(e) => { e.stopPropagation(); previewLocalFile(); }}
+                         className="text-[#00B4D8] text-xs font-bold hover:underline"
+                      >
+                         Xem
+                      </button>
+                      <button 
+                         type="button"
+                         onClick={(e) => { e.stopPropagation(); setUploadedFile(null); }}
+                         className="text-gray-400 hover:text-red-500"
+                      >
+                         ✕
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
           </div>
