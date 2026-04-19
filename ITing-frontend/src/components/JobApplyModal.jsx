@@ -1,42 +1,119 @@
-import React, { useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
   FaTimes,
   FaCloudUploadAlt,
   FaPen,
-  FaFilePdf,
-  FaInfoCircle,
 } from "react-icons/fa";
 import { toast } from "sonner";
 import applicationService from "../services/applicationService";
+import axiosInstance from "../utils/axiosInstance";
+import { storage } from "../utils/storage";
 
 const JobApplyModal = ({ isOpen, onClose, jobTitle, jobId }) => {
   const [cvMethod, setCvMethod] = useState("recent"); // 'recent', 'library', 'upload'
   const [coverLetter, setCoverLetter] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [recentCVs, setRecentCVs] = useState([]);
+  const [allCVs, setAllCVs] = useState([]);
+  const [selectedCVId, setSelectedCVId] = useState(null);
+  const [uploadFile, setUploadFile] = useState(null);
+  const [uploadTitle, setUploadTitle] = useState("");
+  const [isLoadingCVs, setIsLoadingCVs] = useState(false);
+
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const loadCVs = async () => {
+      if (!storage.getToken()) return;
+      setIsLoadingCVs(true);
+      try {
+        const [recent, all] = await Promise.all([
+          axiosInstance.get('/candidates/cvs/recent'),
+          axiosInstance.get('/user/professional-profile/cv'),
+        ]);
+        const recentList = Array.isArray(recent) ? recent : [];
+        const allList = Array.isArray(all) ? all : [];
+
+        setRecentCVs(recentList);
+        setAllCVs(allList);
+
+        const defaultCv = allList.find((cv) => cv.isDefault) || recentList[0] || allList[0] || null;
+        setSelectedCVId(defaultCv?.id || null);
+
+        if (!defaultCv) {
+          setCvMethod("upload");
+        } else {
+          setCvMethod("recent");
+        }
+      } catch {
+        setRecentCVs([]);
+        setAllCVs([]);
+        setSelectedCVId(null);
+      } finally {
+        setIsLoadingCVs(false);
+      }
+    };
+
+    loadCVs();
+  }, [isOpen]);
+
+  const selectedCV = useMemo(
+    () => allCVs.find((cv) => cv.id === selectedCVId) || recentCVs.find((cv) => cv.id === selectedCVId) || null,
+    [allCVs, recentCVs, selectedCVId]
+  );
 
   if (!isOpen) return null;
 
   const handleSubmit = async () => {
+    if (!storage.getToken()) {
+      toast.error("Vui long dang nhap de ung tuyen");
+      return;
+    }
+
     if (!jobId) {
       toast.error("Không tìm thấy thông tin công việc!");
       return;
     }
 
-    const payload = {
-      jobId: jobId,
-      cvUrl: "pdf",
-      cvId: 1,
-      coverLetter: coverLetter || "toi rat gioi",
-    };
-
     try {
       setIsSubmitting(true);
+      let finalCvId = selectedCVId;
+
+      if (cvMethod === "upload") {
+        if (!uploadFile) {
+          toast.error("Vui long chon file CV de tai len");
+          return;
+        }
+
+        const form = new FormData();
+        form.append("file", uploadFile);
+        if (uploadTitle.trim()) {
+          form.append("title", uploadTitle.trim());
+        }
+
+        const uploaded = await axiosInstance.post('/candidates/cvs/upload', form, {
+          headers: { 'Content-Type': 'multipart/form-data' },
+        });
+        finalCvId = uploaded?.id;
+      }
+
+      if (!finalCvId) {
+        toast.error("Vui long chon CV de ung tuyen");
+        return;
+      }
+
+      const payload = {
+        jobId: jobId,
+        cvId: finalCvId,
+        coverLetter: coverLetter || "Toi rat quan tam co hoi nay va mong duoc trao doi them.",
+      };
+
       await applicationService.applyJob(payload);
       toast.success("Ứng tuyển thành công!");
       onClose();
     } catch (error) {
       console.error("Lỗi khi ứng tuyển:", error);
-      toast.error("Có lỗi xảy ra khi nộp hồ sơ.");
+      toast.error(error?.message || "Có lỗi xảy ra khi nộp hồ sơ.");
     } finally {
       setIsSubmitting(false);
     }
@@ -87,30 +164,38 @@ const JobApplyModal = ({ isOpen, onClose, jobTitle, jobId }) => {
                 )}
               </div>
               <span className="font-bold text-[#00B4D8] text-sm flex items-center gap-2">
-                CV ứng tuyển gần nhất: CV.pdf
+                CV ứng tuyển gần nhất: {recentCVs[0]?.title || recentCVs[0]?.fileName || "Chua co"}
               </span>
-              <span className="ml-auto text-xs text-[#00B4D8] hover:underline">
-                Xem
-              </span>
+              {recentCVs[0]?.fileUrl ? (
+                <a
+                  href={recentCVs[0].fileUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="ml-auto text-xs text-[#00B4D8] hover:underline"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  Xem
+                </a>
+              ) : null}
             </div>
 
             <div className="pl-8 text-sm text-gray-600 space-y-1">
-              <p>
-                <span className="text-gray-400">Họ và tên:</span>{" "}
-                <span className="font-medium text-gray-800">
-                  Võ Lê Anh Nghĩa
-                </span>
-              </p>
-              <p>
-                <span className="text-gray-400">Email:</span>{" "}
-                <span className="font-medium text-gray-800">
-                  meaningful@gmail.com
-                </span>
-              </p>
-              <p>
-                <span className="text-gray-400">Số điện thoại:</span>{" "}
-                <span className="font-medium text-gray-800">0123456789</span>
-              </p>
+              {isLoadingCVs ? (
+                <p>Dang tai CV...</p>
+              ) : selectedCV ? (
+                <>
+                  <p>
+                    <span className="text-gray-400">Tieu de CV:</span>{" "}
+                    <span className="font-medium text-gray-800">{selectedCV.title || selectedCV.fileName || 'CV'}</span>
+                  </p>
+                  <p>
+                    <span className="text-gray-400">Trang thai:</span>{" "}
+                    <span className="font-medium text-gray-800">{selectedCV.isDefault ? 'Mac dinh' : 'Da tai len'}</span>
+                  </p>
+                </>
+              ) : (
+                <p>Chua co CV gan day.</p>
+              )}
             </div>
           </div>
 
@@ -136,6 +221,37 @@ const JobApplyModal = ({ isOpen, onClose, jobTitle, jobId }) => {
               Chọn CV khác trong thư viện CV của tôi
             </span>
           </div>
+
+          {cvMethod === "library" && (
+            <div className="ml-8 mt-2 border border-gray-200 rounded-lg p-3 space-y-2">
+              {allCVs.length === 0 ? (
+                <p className="text-sm text-gray-500">Ban chua co CV trong thu vien.</p>
+              ) : (
+                allCVs.map((cv) => (
+                  <label key={cv.id} className="flex items-center gap-3 text-sm cursor-pointer">
+                    <input
+                      type="radio"
+                      name="selectedCv"
+                      checked={selectedCVId === cv.id}
+                      onChange={() => setSelectedCVId(cv.id)}
+                    />
+                    <span className="flex-1 text-gray-700">{cv.title || cv.fileName || `CV #${cv.id}`}</span>
+                    {cv.fileUrl ? (
+                      <a
+                        href={cv.fileUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        onClick={(e) => e.stopPropagation()}
+                        className="text-xs text-[#00B4D8] hover:underline"
+                      >
+                        Xem
+                      </a>
+                    ) : null}
+                  </label>
+                ))
+              )}
+            </div>
+          )}
 
           {/* OPTION 3: Upload */}
           <div
@@ -167,9 +283,22 @@ const JobApplyModal = ({ isOpen, onClose, jobTitle, jobId }) => {
                 <p className="text-sm">
                   Hỗ trợ định dạng .doc, .docx, pdf có kích thước dưới 5MB
                 </p>
-                <button className="mt-3 px-4 py-1.5 bg-white border border-gray-300 rounded text-sm font-medium hover:bg-gray-100">
-                  Chọn CV
-                </button>
+                <input
+                  type="file"
+                  accept=".pdf,.doc,.docx"
+                  className="mt-3 text-sm"
+                  onChange={(e) => setUploadFile(e.target.files?.[0] || null)}
+                />
+                <input
+                  type="text"
+                  placeholder="Ten CV (tuy chon)"
+                  value={uploadTitle}
+                  onChange={(e) => setUploadTitle(e.target.value)}
+                  className="mt-3 w-full max-w-sm px-3 py-2 border border-gray-200 rounded text-sm"
+                />
+                {uploadFile ? (
+                  <p className="mt-2 text-xs text-gray-600">Da chon: {uploadFile.name}</p>
+                ) : null}
               </div>
             )}
           </div>

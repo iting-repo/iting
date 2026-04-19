@@ -22,10 +22,11 @@ const EXPERIENCE_LEVEL_OPTIONS = [
   { value: "INTERN", label: "Thực tập sinh" },
   { value: "FRESHER", label: "Fresher" },
   { value: "JUNIOR", label: "Junior" },
-  { value: "MIDDLE", label: "Middle" },
+  { value: "MID_LEVEL", label: "Middle" },
   { value: "SENIOR", label: "Senior" },
   { value: "LEAD", label: "Lead" },
   { value: "MANAGER", label: "Manager" },
+  { value: "EXPERT", label: "Expert" },
 ];
 
 const JOB_TYPE_OPTIONS = [
@@ -86,6 +87,12 @@ const normalizeMultiValueField = (value) => {
   return [];
 };
 
+const normalizeExperienceLevel = (value) => {
+  if (!value) return "";
+  if (value === "MIDDLE") return "MID_LEVEL";
+  return value;
+};
+
 function EditorToolbar() {
   return (
     <div className="bg-gray-50 border-b border-gray-200 px-3 py-2 flex gap-4 text-gray-500 mb-2">
@@ -121,6 +128,7 @@ function MultiSelectTagInput({
   setSelectedValues,
   options,
   placeholder,
+  error,
 }) {
   const [customValue, setCustomValue] = useState("");
 
@@ -212,6 +220,8 @@ function MultiSelectTagInput({
           </div>
         </div>
       </div>
+
+      {error ? <p className="text-red-500 text-xs mt-1">{error}</p> : null}
     </div>
   );
 }
@@ -227,7 +237,7 @@ const PostJob = ({
     jobPosition: normalizeMultiValueField(initialData?.position),
     techStack: normalizeMultiValueField(initialData?.techRequired),
     workType: initialData?.jobType || "",
-    experienceLevel: initialData?.experienceLevel || "",
+    experienceLevel: normalizeExperienceLevel(initialData?.experienceLevel),
     workingDays: initialData?.workingDays || "",
     quantity: initialData?.maxAccept ?? "",
     deadline: initialData?.dueDate || "",
@@ -251,6 +261,7 @@ const PostJob = ({
   }, [formData, initialFormState, isEdit]);
 
   const [errors, setErrors] = useState({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [provinces, setProvinces] = useState([]);
   const [wards, setWards] = useState([]);
   const [loadingWards, setLoadingWards] = useState(false);
@@ -297,6 +308,9 @@ const PostJob = ({
     if (!formData.experienceLevel) newErrors.experienceLevel = "Bắt buộc";
     if (!formData.workingDays.trim()) newErrors.workingDays = "Bắt buộc";
     if (!formData.quantity) newErrors.quantity = "Bắt buộc";
+    if (formData.quantity && Number(formData.quantity) <= 0) {
+      newErrors.quantity = "Số lượng cần tuyển phải lớn hơn 0";
+    }
     if (!formData.deadline) newErrors.deadline = "Bắt buộc";
     if (!formData.province) newErrors.province = "Bắt buộc";
     if (!formData.ward) newErrors.ward = "Bắt buộc";
@@ -326,9 +340,13 @@ const PostJob = ({
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!validate()) return;
+    if (!validate()) {
+      toast.error("Vui long kiem tra lai cac truong bat buoc.");
+      return;
+    }
 
     try {
+      setIsSubmitting(true);
       const selectedProvince = provinces.find(
         (p) => p.name === formData.province,
       );
@@ -386,9 +404,11 @@ const PostJob = ({
     } catch (error) {
       console.error("Lỗi lưu công việc:", error);
       toast.error(
-        error?.response?.data?.message ||
+        error?.message ||
           "Lưu công việc thất bại, vui lòng thử lại",
       );
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -473,6 +493,7 @@ const PostJob = ({
                   }
                   options={DEFAULT_POSITION_OPTIONS}
                   placeholder="Nhập vị trí mới"
+                  error={errors.jobPosition}
                 />
 
                 <MultiSelectTagInput
@@ -483,6 +504,7 @@ const PostJob = ({
                   }
                   options={DEFAULT_TECH_OPTIONS}
                   placeholder="Nhập công nghệ mới"
+                  error={errors.techStack}
                 />
               </div>
 
@@ -567,6 +589,7 @@ const PostJob = ({
                   <input
                     type="number"
                     name="quantity"
+                    min="1"
                     value={formData.quantity}
                     placeholder="Nhập số lượng"
                     className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:border-[#3AB4E6] text-sm"
@@ -656,6 +679,9 @@ const PostJob = ({
                     </select>
                     <FaChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 text-xs pointer-events-none" />
                   </div>
+                  {errors.ward && (
+                    <p className="text-red-500 text-xs mt-1">{errors.ward}</p>
+                  )}
                 </div>
 
                 <div>
@@ -811,14 +837,16 @@ const PostJob = ({
 
               <button
                 type="submit"
-                disabled={!hasChanges}
+                disabled={!hasChanges || isSubmitting}
                 className={`flex items-center gap-2 font-bold py-3 px-8 rounded-lg transition-all ${
-                  hasChanges 
+                  hasChanges && !isSubmitting
                     ? "bg-[#1967D2] hover:bg-blue-700 text-white shadow-lg shadow-blue-200" 
                     : "bg-gray-300 text-gray-500 cursor-not-allowed grayscale"
                 }`}
               >
-                {isEdit ? "Cập nhật → Chờ duyệt lại" : "Đăng bài → Chờ duyệt"}
+                {isSubmitting
+                  ? "Dang xu ly..."
+                  : (isEdit ? "Cập nhật → Chờ duyệt lại" : "Đăng bài → Chờ duyệt")}
                 <FaArrowRight size={14} />
               </button>
             </div>

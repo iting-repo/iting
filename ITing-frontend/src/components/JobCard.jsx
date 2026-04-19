@@ -1,14 +1,80 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FaMapMarkerAlt, FaDollarSign, FaClock, FaBriefcase, FaRegBookmark } from 'react-icons/fa';
+import { FaMapMarkerAlt, FaDollarSign, FaClock, FaBriefcase, FaRegBookmark, FaBookmark } from 'react-icons/fa';
 import { toast } from 'sonner';
 import { buildJobDetailPath } from '../utils/jobUrl';
+import axiosInstance from '../utils/axiosInstance';
+import { storage } from '../utils/storage';
 
 const JobCard = ({ job }) => {
     const navigate = useNavigate();
+    const [isSaved, setIsSaved] = useState(false);
+    const [isSaving, setIsSaving] = useState(false);
+
+    const token = storage.getToken();
+    const canSave = Boolean(token);
+
+    useEffect(() => {
+        if (!canSave || !job?.id) {
+            setIsSaved(false);
+            return;
+        }
+
+        let active = true;
+
+        const checkSaved = async () => {
+            try {
+                const response = await axiosInstance.get(`/candidates/saved-jobs/${job.id}/check`);
+                if (active) {
+                    setIsSaved(Boolean(response?.saved));
+                }
+            } catch {
+                if (active) {
+                    setIsSaved(false);
+                }
+            }
+        };
+
+        checkSaved();
+
+        return () => {
+            active = false;
+        };
+    }, [canSave, job?.id]);
 
     const handleNavigate = () => {
         navigate(buildJobDetailPath(job));
+    };
+
+    const handleToggleSave = async (event) => {
+        event.stopPropagation();
+
+        if (!canSave) {
+            toast.error('Vui long dang nhap de luu cong viec.');
+            return;
+        }
+
+        if (!job?.id || isSaving) {
+            return;
+        }
+
+        setIsSaving(true);
+        try {
+            if (isSaved) {
+                await axiosInstance.delete(`/candidates/saved-jobs/${job.id}`);
+                setIsSaved(false);
+                toast.success('Da bo luu cong viec.');
+            } else {
+                await axiosInstance.post(`/candidates/saved-jobs/${job.id}`);
+                setIsSaved(true);
+                toast.success('Da luu tin tuyen dung thanh cong!');
+            }
+        } catch (error) {
+            const message = error?.message || 'Khong the luu cong viec luc nay.';
+            toast.error(message);
+        } finally {
+            setIsSaving(false);
+        }
     };
 
     return (
@@ -18,10 +84,11 @@ const JobCard = ({ job }) => {
                     {job.timePosted}
                 </span>
                 <button 
-                  onClick={() => toast.success("Đã lưu tin tuyển dụng thành công!")}
-                  className="text-gray-300 hover:text-[#00B4D8] transition-colors"
+                  onClick={handleToggleSave}
+                  disabled={isSaving}
+                  className={`transition-colors ${isSaved ? 'text-[#00B4D8]' : 'text-gray-300 hover:text-[#00B4D8]'} ${isSaving ? 'opacity-60 cursor-not-allowed' : ''}`}
                 >
-                    <FaRegBookmark size={16} />
+                    {isSaved ? <FaBookmark size={16} /> : <FaRegBookmark size={16} />}
                 </button>
             </div>
 

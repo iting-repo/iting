@@ -38,6 +38,7 @@ const AdminJobPage = lazy(() => import('../pages/admin/jobs/AdminJobPage'));
 const AuditLogPage = lazy(() => import('../pages/admin/audit/AuditLogPage'));
 const SystemConfig = lazy(() => import('../pages/admin/config/SystemConfig'));
 const NotificationManagement = lazy(() => import('../pages/admin/notifications/NotificationManagement'));
+const MessagesPage = lazy(() => import('../pages/messages/MessagesPage'));
 
 import { LoadingSpinner } from '../components';
 import { Settings } from 'lucide-react';
@@ -102,6 +103,12 @@ const AppRoutes = () => {
               <Route path="job-alerts" element={<JobAlerts />} />
               <Route path="settings" element={<Settings defaultTab="account" />} />
             </Route>
+          </Route>
+        </Route>
+
+        <Route path="/messages" element={<PrivateRoute allowedRoles={['CANDIDATE', 'EMPLOYER']} />}>
+          <Route element={<MainLayout />}>
+            <Route index element={<MessagesPage />} />
           </Route>
         </Route>
 

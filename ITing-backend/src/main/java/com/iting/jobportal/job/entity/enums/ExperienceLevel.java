@@ -1,6 +1,7 @@
 package com.iting.jobportal.job.entity.enums;
 
 public enum ExperienceLevel {
+    INTERN,     // Thực tập
     FRESHER,    // Mới ra trường
     JUNIOR,     // 1-2 năm
     MID_LEVEL,  // 2-4 năm (dùng trong data.sql)
@@ -9,5 +10,4 @@ public enum ExperienceLevel {
     EXPERT,     // Chuyên gia (dùng trong data.sql)
     LEAD,       // 7+ năm
     MANAGER     // Quản lý
-    // nên boor sung dấu () phía sau
 }

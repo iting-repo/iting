@@ -2,6 +2,10 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
 import { logout } from '../store/auth/authSlice';
+import messageService from '../services/messageService';
+import chatRealtimeService from '../services/chatRealtimeService';
+import { formatChatTime, sortConversationsForInbox } from '../utils/chatFormat';
+import ChatDockBox from '../components/chat/ChatDockBox';
 // Import Icons
 import { BsBriefcaseFill, BsBell, BsEnvelope } from 'react-icons/bs';
 import {
@@ -34,6 +38,44 @@ const Header = () => {
   // State cho Dropdown User
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const dropdownRef = useRef(null);
+  const [isMessagesOpen, setIsMessagesOpen] = useState(false);
+  const [isQuickChatMinimized, setIsQuickChatMinimized] = useState(false);
+  const [recentConversations, setRecentConversations] = useState([]);
+  const [unreadMessageCount, setUnreadMessageCount] = useState(0);
+  const [activeQuickConversation, setActiveQuickConversation] = useState(null);
+  const messageDropdownRef = useRef(null);
+
+  const updateRecentOnIncomingMessage = (msg) => {
+    if (!msg?.conversationId) return;
+    setRecentConversations((prev) => {
+      const found = prev.find((item) => item.id === msg.conversationId);
+      if (!found) return prev;
+
+      const myActorId = role === 'EMPLOYER'
+        ? (currentUser?.companyId || currentUser?.userId)
+        : currentUser?.userId;
+      const shouldIncreaseUnread = msg.senderId !== myActorId;
+
+      const updated = prev.map((item) => {
+        if (item.id !== msg.conversationId) return item;
+        return {
+          ...item,
+          lastMessageContent: msg.content,
+          lastMessageTime: msg.createdAt,
+          unreadCount: shouldIncreaseUnread ? (item.unreadCount || 0) + 1 : item.unreadCount,
+        };
+      });
+
+      return sortConversationsForInbox(updated);
+    });
+
+    const myActorId = role === 'EMPLOYER'
+      ? (currentUser?.companyId || currentUser?.userId)
+      : currentUser?.userId;
+    if (msg.senderId !== myActorId) {
+      setUnreadMessageCount((prev) => prev + 1);
+    }
+  };
 
   // Đóng dropdown khi click ra ngoài
   useEffect(() => {
@@ -41,10 +83,94 @@ const Header = () => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
         setIsDropdownOpen(false);
       }
+      if (messageDropdownRef.current && !messageDropdownRef.current.contains(event.target)) {
+        setIsMessagesOpen(false);
+      }
     };
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
+
+  useEffect(() => {
+    if (role === 'guest') {
+      chatRealtimeService.disconnect();
+      setRecentConversations([]);
+      setUnreadMessageCount(0);
+      return;
+    }
+
+    let cancelled = false;
+
+    const loadMessages = async () => {
+      try {
+        const [conversationData, unreadData] = await Promise.all([
+          messageService.getConversations({ page: 0, size: 12 }),
+          messageService.getUnreadCount(),
+        ]);
+
+        if (cancelled) return;
+        const sorted = sortConversationsForInbox(conversationData?.conversations || []);
+        setRecentConversations(sorted);
+        setUnreadMessageCount(unreadData?.unreadCount || 0);
+      } catch {
+        if (!cancelled) {
+          setRecentConversations([]);
+          setUnreadMessageCount(0);
+        }
+      }
+    };
+
+    loadMessages();
+    const intervalId = setInterval(loadMessages, 15000);
+
+    return () => {
+      cancelled = true;
+      clearInterval(intervalId);
+    };
+  }, [role]);
+
+  useEffect(() => {
+    if (role === 'guest') return;
+    const token = localStorage.getItem('access_token');
+    chatRealtimeService.connect(token);
+
+    chatRealtimeService.subscribe('/topic/messages', 'header-topic-messages', (msg) => {
+      updateRecentOnIncomingMessage(msg);
+    });
+
+    return () => {
+      chatRealtimeService.unsubscribe('header-topic-messages');
+    };
+  }, [role, currentUser?.userId, currentUser?.companyId]);
+
+  const topConversations = sortConversationsForInbox(recentConversations).slice(0, 4);
+
+  const handleOpenQuickChat = async (conversation) => {
+    setActiveQuickConversation(conversation);
+    setIsQuickChatMinimized(false);
+    setIsMessagesOpen(false);
+
+    try {
+      await messageService.markConversationAsRead(conversation.id);
+      setRecentConversations((prev) =>
+        prev.map((item) => (item.id === conversation.id ? { ...item, unreadCount: 0 } : item))
+      );
+      setUnreadMessageCount((prev) => Math.max(0, prev - (conversation.unreadCount || 0)));
+    } catch {
+      // ignore read errors for quick open
+    }
+  };
+
+  const handleQuickMessageSent = (message) => {
+    setRecentConversations((prev) => {
+      const updated = prev.map((item) =>
+        item.id === message.conversationId
+          ? { ...item, lastMessageContent: message.content, lastMessageTime: message.createdAt }
+          : item
+      );
+      return sortConversationsForInbox(updated);
+    });
+  };
 
 
   // --- HÀM RENDER MENU GIỮA (NAVIGATION) ---
@@ -131,6 +257,7 @@ const Header = () => {
   };
 
   return (
+    <>
     <header className="bg-black text-white h-20 sticky top-0 z-40 shadow-md">
       <div className="container mx-auto px-12 h-full flex items-center justify-between">
 
@@ -160,15 +287,79 @@ const Header = () => {
           ) : (
             <>
               {/* Icons */}
-              <div className="flex items-center gap-3 mr-2">
-                <button className="w-10 h-10 rounded-full bg-gray-800 hover:bg-gray-700 flex items-center justify-center transition-colors relative">
-                  <BsEnvelope className="text-lg" />
-                </button>
-                <button className="w-10 h-10 rounded-full bg-gray-800 hover:bg-gray-700 flex items-center justify-center transition-colors relative">
-                  <BsBell className="text-lg" />
-                  <span className="absolute top-2 right-2.5 w-2 h-2 bg-[#3AB4E6] rounded-full animate-pulse"></span>
-                </button>
-              </div>
+                <div className="relative flex items-center gap-3 mr-2" ref={messageDropdownRef}>
+                 <button
+                   onClick={() => setIsMessagesOpen((prev) => !prev)}
+                   className="w-10 h-10 rounded-full bg-gray-800 hover:bg-gray-700 flex items-center justify-center transition-colors relative"
+                 >
+                   <BsEnvelope className="text-lg" />
+                   {unreadMessageCount > 0 ? (
+                     <span className="absolute -top-1 -right-1 min-w-5 h-5 px-1 rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center">
+                       {unreadMessageCount > 99 ? '99+' : unreadMessageCount}
+                     </span>
+                   ) : null}
+                 </button>
+                 {isMessagesOpen && (
+                   <div className="absolute top-14 right-14 w-[360px] max-w-[calc(100vw-16px)] bg-white text-gray-800 rounded-2xl border border-gray-100 shadow-2xl overflow-hidden z-[120]">
+                     <div className="px-4 py-3 border-b border-gray-100">
+                       <p className="font-bold text-gray-900">Tin nhan gan day</p>
+                       <p className="text-xs text-gray-500 mt-0.5">Uu tien cuoc tro chuyen chua doc</p>
+                     </div>
+                     <div className="max-h-80 overflow-y-auto">
+                       {topConversations.length === 0 ? (
+                         <p className="text-sm text-gray-500 p-4">Chua co cuoc tro chuyen.</p>
+                       ) : (
+                         topConversations.map((conv) => (
+                           <button
+                             key={conv.id}
+                             onClick={() => handleOpenQuickChat(conv)}
+                             className="w-full text-left px-4 py-3 border-b border-gray-100 hover:bg-gray-50"
+                           >
+                             <div className="flex items-center gap-3">
+                               <div className="w-10 h-10 rounded-full bg-slate-200 overflow-hidden flex-shrink-0">
+                                 {conv.otherParticipantAvatar ? (
+                                   <img src={conv.otherParticipantAvatar} alt={conv.otherParticipantName} className="w-full h-full object-cover" />
+                                 ) : null}
+                               </div>
+                               <div className="min-w-0 flex-1">
+                                 <div className="flex justify-between items-start gap-2">
+                                   <p className={`text-sm truncate ${conv.unreadCount > 0 ? 'font-bold text-gray-900' : 'font-medium text-gray-700'}`}>
+                                     {conv.otherParticipantName || 'Unknown'}
+                                   </p>
+                                   <span className="text-[11px] text-gray-400">{formatChatTime(conv.lastMessageTime)}</span>
+                                 </div>
+                                 <p className={`text-xs truncate ${conv.unreadCount > 0 ? 'font-semibold text-gray-700' : 'text-gray-500'}`}>
+                                   {conv.lastMessageContent || 'Chua co tin nhan'}
+                                 </p>
+                               </div>
+                               {conv.unreadCount > 0 ? (
+                                 <span className="min-w-5 h-5 px-1 rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center">
+                                   {conv.unreadCount}
+                                 </span>
+                               ) : null}
+                             </div>
+                           </button>
+                         ))
+                       )}
+                     </div>
+                     <div className="px-4 py-3 border-t border-gray-100 bg-gray-50">
+                       <button
+                         onClick={() => {
+                           setIsMessagesOpen(false);
+                           navigate('/messages');
+                         }}
+                         className="w-full h-10 rounded-xl bg-slate-900 text-white text-sm font-semibold hover:bg-black transition-colors"
+                       >
+                         Hien thi toan bo cuoc tro chuyen
+                       </button>
+                     </div>
+                   </div>
+                 )}
+                 <button className="w-10 h-10 rounded-full bg-gray-800 hover:bg-gray-700 flex items-center justify-center transition-colors relative">
+                   <BsBell className="text-lg" />
+                   <span className="absolute top-2 right-2.5 w-2 h-2 bg-[#3AB4E6] rounded-full animate-pulse"></span>
+                 </button>
+               </div>
 
               {/* Avatar Dropdown */}
               <div className="relative" ref={dropdownRef}>
@@ -219,6 +410,26 @@ const Header = () => {
         </div>
       </div>
     </header>
+
+    {activeQuickConversation && !isQuickChatMinimized ? (
+      <ChatDockBox
+        conversation={activeQuickConversation}
+        currentUser={currentUser}
+        onClose={() => setActiveQuickConversation(null)}
+        onMinimize={() => setIsQuickChatMinimized(true)}
+        onSent={handleQuickMessageSent}
+      />
+    ) : null}
+
+    {activeQuickConversation && isQuickChatMinimized ? (
+      <button
+        onClick={() => setIsQuickChatMinimized(false)}
+        className="fixed bottom-4 right-4 z-[130] h-12 px-4 rounded-xl bg-slate-900 text-white shadow-xl"
+      >
+        Mo chat: {activeQuickConversation.otherParticipantName || 'Tin nhan'}
+      </button>
+    ) : null}
+    </>
   );
 };
 
