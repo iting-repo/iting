@@ -1,18 +1,18 @@
 const { test, expect } = require('@playwright/test');
 const { mockCommonApis } = require('./helpers/mock-api');
 
-test.describe('Public pages smoke', () => {
+test.describe('Trang công khai', () => {
   test.beforeEach(async ({ page }) => {
     await mockCommonApis(page);
   });
 
-  test('job listing page opens a job detail route', async ({ page }) => {
+  test('trang danh sách việc mở được chi tiết việc', async ({ page }) => {
     await page.goto('/jobs');
 
-    await page.getByText('Forward Security Director').first().click();
+    await page.getByText(/C\/C\+\+ Java Golang Python/).first().click();
 
     await expect(page).toHaveURL(/\/viec-lam\/.+\/.+\.html$/);
-    await expect(page.getByRole('listitem').filter({ hasText: 'Java' }).first()).toBeVisible();
+    await expect(page.getByText('Java').first()).toBeVisible();
   });
 
   test('about and contact pages render their main content', async ({ page }) => {

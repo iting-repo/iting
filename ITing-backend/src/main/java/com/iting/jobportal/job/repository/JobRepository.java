@@ -42,6 +42,10 @@ public interface JobRepository extends JpaRepository<Job, Long>, JpaSpecificatio
     @Query("UPDATE Job j SET j.applicationCount = j.applicationCount + 1 WHERE j.id = :id")
     void incrementApplicationCount(@Param("id") Long id);
 
+    @Modifying
+    @Query("UPDATE Job j SET j.applicationCount = CASE WHEN j.applicationCount > 0 THEN j.applicationCount - 1 ELSE 0 END WHERE j.id = :id")
+    void decrementApplicationCount(@Param("id") Long id);
+
     long countByCreatedAtAfter(java.time.LocalDateTime dateTime);
     long countByCreatedAtBefore(java.time.LocalDateTime dateTime);
     long countByStatus(JobStatus status);

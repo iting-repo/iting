@@ -1,5 +1,6 @@
 import React from "react";
-import { Table, Badge, Td } from "../../../../components";
+import { Table, Td } from "../../../../components/common/Table";
+import Badge from "../../../../components/common/Badge";
 import { RowActionMenu } from "../../../../components/admin/RowActionMenu";
 import {
   getAiReview,
@@ -49,8 +50,9 @@ export const JobTable = ({
           ),
           className: "w-10",
         },
-        { label: "Mã công việc" },
-        { label: "Thông tin chi tiết" },
+        { label: "Mã Job" },
+        { label: "Tiêu đề công việc" },
+        { label: "Tên công ty" },
         { label: "Địa điểm", className: "w-48" },
         { label: "Trạng thái", className: "w-40 whitespace-nowrap" },
         { label: "AI kiểm duyệt", className: "w-52 whitespace-nowrap" },
@@ -59,13 +61,13 @@ export const JobTable = ({
     >
       {loading ? (
         <tr>
-          <Td colSpan="7" className="text-center py-10 text-gray-500 italic">
+          <Td colSpan="8" className="text-center py-10 text-gray-500 italic">
             Đang tải danh sách công việc...
           </Td>
         </tr>
       ) : jobs.length === 0 ? (
         <tr>
-          <Td colSpan="7" className="text-center py-10 text-gray-500 italic">
+          <Td colSpan="8" className="text-center py-10 text-gray-500 italic">
             Không tìm thấy công việc nào.
           </Td>
         </tr>
@@ -90,9 +92,12 @@ export const JobTable = ({
                 className="font-bold text-blue-600 hover:text-blue-800 transition-colors text-left"
                 onClick={() => onPreview(job)}
               >
-                {job.position}
+                {job.title || job.position}
               </button>
-              <div className="text-xs text-gray-500 mt-1">
+            </Td>
+
+            <Td>
+              <div className="font-medium text-slate-700">
                 {job.company || job.companyName}
               </div>
             </Td>
@@ -100,9 +105,16 @@ export const JobTable = ({
             <Td className="max-w-[200px] truncate">{job.location}</Td>
 
             <Td className="whitespace-nowrap">
-              <Badge variant={job.status === "ACTIVE" ? "success" : job.status === "PENDING" ? "warning" : "danger"}>
-                {getJobStatusLabel(job.status)}
-              </Badge>
+              <div className="flex flex-col gap-1">
+                <Badge variant={job.status === "ACTIVE" ? "success" : job.status === "PENDING" ? "warning" : "danger"}>
+                  {getJobStatusLabel(job.status)}
+                </Badge>
+                {job.status === "PENDING" && job.dueDate && new Date(job.dueDate) < new Date().setHours(0, 0, 0, 0) && (
+                  <Badge variant="danger" className="text-[10px] py-0 px-1">
+                    Quá hạn
+                  </Badge>
+                )}
+              </div>
             </Td>
 
             <Td className="whitespace-nowrap">

@@ -1,5 +1,7 @@
 import React from "react";
-import { Dialog, Badge, Button } from "../../../../components";
+import Dialog from "../../../../components/common/Dialog";
+import Badge from "../../../../components/common/Badge";
+import Button from "../../../../components/common/Button";
 import { 
   Briefcase, 
   MapPin, 

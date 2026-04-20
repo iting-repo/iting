@@ -21,8 +21,9 @@ import { toast } from "sonner";
 import PostJob from "./PostJob";
 import JobPreview from "./JobPreview";
 import companyService from "../../services/companyService";
-import { ConfirmDialog, Table, Td } from "../../components/common";
+import { ConfirmDialog, Table, Td, Breadcrumb } from "../../components/common";
 import { buildEmployerJobApplicationsPath } from "../../utils/jobUrl";
+import { differenceInDays, parseISO } from "date-fns";
 
 const ITEMS_PER_PAGE = 5;
 
@@ -68,7 +69,20 @@ const formatSalaryType = (type) => {
 const formatDeadline = (dueDate) => {
   if (!dueDate) return "Chưa có hạn";
   try {
-    return new Date(dueDate).toLocaleDateString("vi-VN");
+    const deadline = parseISO(dueDate);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    // Đưa deadline về 0h để tính khoảng cách ngày chính xác
+    const deadlineDate = new Date(deadline);
+    deadlineDate.setHours(0, 0, 0, 0);
+
+    const diffDays = differenceInDays(deadlineDate, today);
+    const formattedDate = deadline.toLocaleDateString("vi-VN");
+
+    if (diffDays < 0) return `${formattedDate} (Hết hạn)`;
+    if (diffDays === 0) return `${formattedDate} (Hôm nay)`;
+    return `${formattedDate} (Còn ${diffDays} ngày)`;
   } catch {
     return dueDate;
   }
@@ -287,6 +301,11 @@ const ManageJobs = () => {
   return (
     <>
       <div className="bg-white rounded-xl p-8 shadow-sm border border-gray-100 min-h-screen">
+        <Breadcrumb 
+            items={[
+                { label: 'Quản lý công việc' }
+            ]} 
+        />
         <div className="flex flex-col md:flex-row justify-between items-end md:items-center mb-8 gap-4">
           <div>
             <h2 className="text-2xl font-bold text-gray-800">

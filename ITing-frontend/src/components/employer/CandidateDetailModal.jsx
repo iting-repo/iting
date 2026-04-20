@@ -7,6 +7,7 @@ import {
 import { toast } from 'sonner';
 import applicationService from '../../services/applicationService';
 import reportService from '../../services/reportService';
+import favoriteCandidateService from '../../services/favoriteCandidateService';
 
 const REPORT_REASONS = [
     { value: 'SPAM', label: 'Spam / Tin nhắn rác', priority: 'LOW' },
@@ -25,6 +26,7 @@ const CandidateDetailModal = ({ candidate, onClose, onStatusUpdate }) => {
         description: ''
     });
     const [isReporting, setIsReporting] = useState(false);
+    const [isFavorited, setIsFavorited] = useState(false);
 
     useEffect(() => {
         if (candidate && candidate.status === 'PENDING') {
@@ -36,9 +38,23 @@ const CandidateDetailModal = ({ candidate, onClose, onStatusUpdate }) => {
                 })
                 .catch(err => console.error("Could not mark as viewed", err));
         }
+        // Check favorite status
+        if (candidate) {
+            setIsFavorited(favoriteCandidateService.isFavorite(candidate.id));
+        }
     }, [candidate, onStatusUpdate]);
 
     if (!candidate) return null;
+
+    const handleToggleFavorite = () => {
+        const newStatus = favoriteCandidateService.toggleFavorite(candidate);
+        setIsFavorited(newStatus);
+        if (newStatus) {
+            toast.success(`Đã thêm ${candidate.applicantName} vào danh sách yêu thích!`);
+        } else {
+            toast('Đã xóa khỏi danh sách yêu thích.', { icon: '🗑️' });
+        }
+    };
 
     const handleAccept = async () => {
         try {
@@ -65,7 +81,7 @@ const CandidateDetailModal = ({ candidate, onClose, onStatusUpdate }) => {
             const selectedReason = REPORT_REASONS.find(r => r.value === reportData.type);
 
             await reportService.createReport({
-                targetId: candidate.userId || candidate.applicantId, // Giả sử ID người dùng
+                targetId: candidate.userId || candidate.applicantId,
                 targetType: 'USER',
                 targetName: candidate.applicantName,
                 type: reportData.type,
@@ -146,10 +162,15 @@ const CandidateDetailModal = ({ candidate, onClose, onStatusUpdate }) => {
                                 <FaExclamationTriangle size={18} />
                             </button>
                             <button
-                                className="p-2.5 text-slate-400 hover:text-amber-500 hover:bg-amber-50 rounded-xl transition-all"
-                                title="Lưu hồ sơ"
+                                onClick={handleToggleFavorite}
+                                className={`p-2.5 rounded-xl transition-all ${
+                                    isFavorited
+                                        ? 'text-amber-500 bg-amber-50 hover:bg-amber-100'
+                                        : 'text-slate-400 hover:text-amber-500 hover:bg-amber-50'
+                                }`}
+                                title={isFavorited ? 'Bỏ yêu thích' : 'Thêm yêu thích'}
                             >
-                                <FaStar size={18} />
+                                {isFavorited ? <FaStar size={18} /> : <FaRegStar size={18} />}
                             </button>
                         </div>
                         <button
@@ -172,7 +193,14 @@ const CandidateDetailModal = ({ candidate, onClose, onStatusUpdate }) => {
                             <div>
                                 <h2 className="text-2xl font-black text-slate-800 tracking-tight leading-7">{candidate.applicantName || "Chưa cập nhật"}</h2>
                                 <p className="text-blue-600 font-bold text-sm mt-1">{candidate.jobTitle || "Vị trí ứng tuyển"}</p>
-                                <p className="text-slate-400 text-xs mt-0.5">ID: #{candidate.id}</p>
+                                <div className="flex items-center gap-2 mt-1">
+                                    <p className="text-slate-400 text-xs">ID: #{candidate.id}</p>
+                                    {isFavorited && (
+                                        <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-amber-50 text-amber-600 text-[10px] font-bold rounded-full border border-amber-100">
+                                            <FaStar size={8} /> Đã yêu thích
+                                        </span>
+                                    )}
+                                </div>
                             </div>
                         </div>
 

@@ -2,14 +2,26 @@ const { test, expect } = require('@playwright/test');
 const { fulfillJson, mockCommonApis, setEmployerSession } = require('./helpers/mock-api');
 const { companyProfile } = require('./helpers/job-fixtures');
 
-test.describe('Employer company profile', () => {
+test.describe('Hồ sơ công ty nhà tuyển dụng', () => {
   test.beforeEach(async ({ page }) => {
     await setEmployerSession(page);
     await mockCommonApis(page);
   });
 
-  test('updates basic company info with the expected payload schema', async ({ page }) => {
+  test('tạo yêu cầu cập nhật thông tin công ty đúng payload', async ({ page }) => {
     let updatePayload = null;
+
+    await page.route('**/api/companies/me', async (route) => {
+      if (route.request().method() === 'GET') {
+        await fulfillJson(route, {
+          ...companyProfile,
+          profileSetup: true,
+          companyInfoUpdateStatus: 'DRAFT',
+        });
+        return;
+      }
+      await route.fallback();
+    });
 
     await page.route('**/api/companies/me/basic-info', async (route) => {
       updatePayload = JSON.parse(route.request().postData() || '{}');
@@ -21,25 +33,24 @@ test.describe('Employer company profile', () => {
 
     await page.goto('/employer/company-profile');
 
-    await expect(page.locator('input').first()).toHaveValue('ITing Software');
+    await expect(page.getByText('ITing Software').first()).toBeVisible();
+    await page.getByRole('button', { name: /Ch.*nh s.*a|Chinh sua/i }).click();
 
-    await page.getByPlaceholder('Nhập tên công ty').fill('ITing Software JSC');
-    await page.getByPlaceholder('https://example.com').fill('https://jobs.iting.vn');
-    await page.getByPlaceholder('Nhập email công ty').fill('talent@iting.vn');
-    await page.getByRole('button', { name: 'Lưu' }).click();
+    const modal = page.locator('.fixed.inset-0').last();
+    await expect(modal).toBeVisible();
+
+    const inputs = modal.locator('input[type="text"]');
+    await inputs.nth(0).fill('ITing Software JSC');
+    await inputs.nth(3).fill('talent@iting.vn');
+    await inputs.nth(4).fill('https://jobs.iting.vn');
+
+    await modal.getByRole('button', { name: /G.*i admin duy.*t|Gui admin duyet/i }).click();
 
     await expect.poll(() => updatePayload).not.toBeNull();
     expect(updatePayload).toMatchObject({
       name: 'ITing Software JSC',
-      logoUrl: companyProfile.logoUrl,
-      taxCode: companyProfile.taxCode,
       website: 'https://jobs.iting.vn',
-      companySize: companyProfile.companySize,
       companyEmail: 'talent@iting.vn',
-      industry: companyProfile.industry,
-      address: companyProfile.address,
-      phone: companyProfile.phone,
-      description: companyProfile.description,
     });
   });
 });

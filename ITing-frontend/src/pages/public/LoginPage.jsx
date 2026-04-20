@@ -76,8 +76,8 @@ const LoginPage = () => {
   return (
     <div className="min-h-screen flex bg-white font-sans animate-in fade-in duration-500">
       <div className="w-full lg:w-[50%] flex flex-col px-8 md:px-20 xl:px-32 relative z-10 h-full overflow-y-auto no-scrollbar py-12">
-        <Link to="/" className="flex items-center gap-2 mb-8 w-fit hover:opacity-80 transition-opacity">
-          <img src="/assets/logo.png" alt="ITing Logo" className="h-10 w-auto object-contain" />
+        <Link to="/" className="flex items-center gap-2 mb-6 w-fit hover:opacity-80 transition-opacity">
+          <img src="/assets/logo_white.png" alt="ITing Logo" className="h-20 w-auto object-contain drop-shadow-sm" />
         </Link>
         <div>
           <h1 className="text-[30px] font-semibold text-[#1F2937] mb-6">

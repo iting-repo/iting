@@ -1,8 +1,8 @@
 const { test, expect } = require('@playwright/test');
 const { mockAuthApis, mockCommonApis } = require('./helpers/mock-api');
 
-test.describe('Login flow', () => {
-  test('candidate login redirects successfully to home page', async ({ page }) => {
+test.describe('Đăng nhập', () => {
+  test('ứng viên đăng nhập thành công về trang chủ', async ({ page }) => {
     await mockCommonApis(page);
     await mockAuthApis(page, 'CANDIDATE');
 
@@ -12,16 +12,16 @@ test.describe('Login flow', () => {
     await page.locator('input[type="password"]').fill('secret123');
     await page.locator('button[type="submit"]').click();
 
-    await expect(page).toHaveURL('/jobs');
+    await expect(page).toHaveURL('/');
     await expect.poll(async () => page.evaluate(() => localStorage.getItem('user_role'))).toBe('CANDIDATE');
-    await expect(page.getByText('Forward Security Director')).toBeVisible();
+    await expect(page.getByRole('heading', { name: /C\/C\+\+ Java Golang Python/ })).toBeVisible();
   });
 
-  test('admin login redirects to admin dashboard', async ({ page }) => {
+  test('admin đăng nhập về bảng điều khiển', async ({ page }) => {
     await mockAuthApis(page, 'ADMIN');
 
     await page.goto('/login');
-    await page.getByRole('button', { name: /Admin/i }).click();
+    await page.locator('button[type="button"]').nth(1).click();
     await page.locator('input[type="email"]').fill('admin@example.com');
     await page.locator('input[type="password"]').fill('secret123');
     await page.locator('button[type="submit"]').click();

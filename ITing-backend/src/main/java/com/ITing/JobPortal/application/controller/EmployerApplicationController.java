@@ -51,7 +51,7 @@ public class EmployerApplicationController {
             @RequestParam(required = false) Long jobId,
             @RequestParam(required = false) String status,
             @RequestParam(required = false) String keyword,
-            @RequestParam(defaultValue = "appliedAt") String sortBy,
+            @RequestParam(defaultValue = "timeSent") String sortBy,
             @RequestParam(defaultValue = "desc") String sortOrder,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {

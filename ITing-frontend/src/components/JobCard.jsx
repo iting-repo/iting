@@ -2,7 +2,8 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FaMapMarkerAlt, FaDollarSign, FaClock, FaBriefcase, FaRegBookmark } from 'react-icons/fa';
 import { toast } from 'sonner';
-import { buildJobDetailPath } from '../utils/jobUrl';
+import { buildJobDetailPath, getCompanyLogoUrl } from '../utils/jobUrl';
+import { CompanyLogo } from './common';
 
 const JobCard = ({ job }) => {
     const navigate = useNavigate();
@@ -30,7 +31,11 @@ const JobCard = ({ job }) => {
                     onClick={handleNavigate}
                     className="w-12 h-12 rounded-lg flex-shrink-0 border border-gray-100 p-1.5 bg-white flex items-center justify-center cursor-pointer"
                 >
-                    <img src={job.logo} alt={job.company} className="w-full h-full object-contain" />
+                    <CompanyLogo 
+                        logoUrl={job.logo || job.companyLogo}
+                        companyId={job.companyId}
+                        className="w-full h-full object-contain"
+                    />
                 </div>
 
                 <div className="flex-1">

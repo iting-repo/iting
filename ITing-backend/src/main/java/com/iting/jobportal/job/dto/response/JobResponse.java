@@ -66,6 +66,9 @@ public class JobResponse {
     private Long reviewedBy;
     private LocalDateTime reviewedAt;
 
+    private String aiReviewStatus;
+    private String aiReviewReason;
+
     // Audit
     private LocalDateTime createdAt;
     private LocalDateTime lastUpdate;
@@ -128,6 +131,9 @@ public class JobResponse {
                 )
                 .reviewedBy(job.getReviewedBy())
                 .reviewedAt(job.getReviewedAt())
+
+                .aiReviewStatus(job.getAiReviewStatus())
+                .aiReviewReason(job.getAiReviewReason())
 
                 .createdAt(job.getCreatedAt())
                 .lastUpdate(job.getLastUpdate())

@@ -12,10 +12,17 @@ import com.iting.jobportal.job.repository.JobReviewHistoryRepository;
 import com.iting.jobportal.job.repository.JobSpecification;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.*;
+import com.iting.jobportal.notification.dto.request.CreateNotificationRequest;
+import com.iting.jobportal.notification.enums.NotificationType;
+import com.iting.jobportal.notification.enums.RecipientType;
+import com.iting.jobportal.notification.service.NotificationService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.server.ResponseStatusException;
 import java.util.stream.Collectors;
 
 @Service
@@ -25,6 +32,8 @@ public class AdminJobServiceImpl implements AdminJobService {
     private final JobRepository jobRepository;
     private final CompanyRepository companyRepository;
     private final JobReviewHistoryRepository jobReviewHistoryRepository;
+    private final com.iting.jobportal.common.service.GeminiService geminiService;
+    private final NotificationService notificationService;
 
     /*
     =========================
@@ -125,12 +134,35 @@ public class AdminJobServiceImpl implements AdminJobService {
         // VALIDATION
         validateStatus(job, JobStatus.PENDING);
 
+        // KIỂM TRA NGHIỆP VỤ: Nếu Job đã quá hạn nộp hồ sơ thì không được duyệt
+        if (job.getDueDate() != null && job.getDueDate().isBefore(LocalDate.now())) {
+            job.setStatus(JobStatus.EXPIRED);
+            job.setReviewReason("Job đã quá hạn nộp hồ sơ (" + job.getDueDate() + ") trước khi được duyệt.");
+            jobRepository.save(job);
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, 
+                "Không thể duyệt Job này vì đã quá hạn nộp hồ sơ (" + job.getDueDate() + "). Hệ thống đã tự chuyển sang trạng thái Hết hạn.");
+        }
+
         job.setStatus(JobStatus.ACTIVE);
         job.setReviewReason(null);
 
         setReviewAudit(job, adminId);
 
         jobRepository.save(job);
+
+        // THÔNG BÁO CHO EMPLOYER
+        try {
+            CreateNotificationRequest notifRequest = CreateNotificationRequest.builder()
+                    .recipientId(job.getCompany().getId())
+                    .recipientType(RecipientType.COMPANY)
+                    .type(NotificationType.SYSTEM)
+                    .content("Tin tuyển dụng '" + (job.getTitle() != null ? job.getTitle() : job.getPosition()) + "' của bạn đã được PHÊ DUYỆT và đang hiển thị.")
+                    .actionUrl("/employer/manage-jobs")
+                    .build();
+            notificationService.createNotification(notifRequest);
+        } catch (Exception e) {
+            // ignore
+        }
     }
 
     /*
@@ -158,6 +190,20 @@ public class AdminJobServiceImpl implements AdminJobService {
         setReviewAudit(job, adminId);
 
         jobRepository.save(job);
+
+        // THÔNG BÁO CHO EMPLOYER
+        try {
+            CreateNotificationRequest notifRequest = CreateNotificationRequest.builder()
+                    .recipientId(job.getCompany().getId())
+                    .recipientType(RecipientType.COMPANY)
+                    .type(NotificationType.SYSTEM)
+                    .content("Tin tuyển dụng '" + (job.getTitle() != null ? job.getTitle() : job.getPosition()) + "' của bạn đã bị TỪ CHỐI. Lý do: " + reason)
+                    .actionUrl("/employer/manage-jobs")
+                    .build();
+            notificationService.createNotification(notifRequest);
+        } catch (Exception e) {
+            // ignore
+        }
     }
 
     /*
@@ -445,5 +491,51 @@ public class AdminJobServiceImpl implements AdminJobService {
     public java.io.ByteArrayInputStream getImportTemplate() {
         String[] headers = {"Job Title"};
         return com.iting.jobportal.common.excel.ExcelHelper.createTemplate(headers, "Job Import Template");
+    }
+
+    @Override
+    @Transactional
+    public Object aiReviewJob(Long jobId) {
+        Job job = jobRepository.findById(jobId)
+                .orElseThrow(() -> new RuntimeException("Job not found"));
+
+        String reviewResult = geminiService.reviewJob(job);
+        
+        // Luôn luôn lưu kết quả AI vào các field mới để frontend hiển thị
+        job.setAiReviewReason(reviewResult);
+        
+        // Tự động xử lý trạng thái nếu AI đưa ra quyết định dứt khoát
+        boolean autoRejected = false;
+        boolean autoApproved = false;
+
+        if (reviewResult.contains("FINAL_DECISION: [REJECT]")) {
+            job.setAiReviewStatus("REJECTED");
+            job.setStatus(JobStatus.REJECTED);
+            // Lấy nội dung review làm lý do từ chối (bỏ phần tag kỹ thuật)
+            String reason = reviewResult.replace("FINAL_DECISION: [REJECT]", "").trim();
+            job.setReviewReason("AI Kiểm Duyệt: " + (reason.length() > 250 ? reason.substring(0, 247) + "..." : reason));
+            job.setReviewedAt(LocalDateTime.now());
+            autoRejected = true;
+        } else if (reviewResult.contains("FINAL_DECISION: [APPROVE]")) {
+            job.setAiReviewStatus("APPROVED");
+            job.setStatus(JobStatus.ACTIVE); // Chuyển sang trạng thái hoạt động ngay lập tức
+            job.setReviewReason("AI Kiểm Duyệt: Tin tuyển dụng hợp lệ.");
+            job.setReviewedAt(LocalDateTime.now());
+            autoApproved = true;
+        } else {
+            job.setAiReviewStatus("NEEDS_REVIEW");
+        }
+
+        jobRepository.save(job);
+
+        return java.util.Map.of(
+            "id", jobId,
+            "reviewResult", reviewResult,
+            "autoRejected", autoRejected,
+            "autoApproved", autoApproved,
+            "status", job.getStatus(),
+            "aiReviewStatus", job.getAiReviewStatus(),
+            "aiReviewReason", job.getAiReviewReason()
+        );
     }
 }

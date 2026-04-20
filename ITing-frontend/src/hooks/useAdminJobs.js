@@ -6,6 +6,7 @@ export const useAdminJobs = () => {
 
   const [jobs, setJobs] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [loadingAi, setLoadingAi] = useState(false);
 
   const [page, setPage] = useState(1);
   const [size] = useState(10);
@@ -103,15 +104,24 @@ export const useAdminJobs = () => {
 
   const runAiReview = async (jobId) => {
     try {
-      const reviewedJob = await adminJobService.runAiReview(jobId);
+      setLoadingAi(true);
+      const result = await adminJobService.runAiReview(jobId);
       setJobs((prev) =>
-        prev.map((job) => job.id === jobId ? { ...job, ...reviewedJob } : job)
+        prev.map((job) => job.id === jobId ? { ...job, ...result } : job)
       );
-      toast.success("AI đã kiểm duyệt tin tuyển dụng!");
+      if (result.autoRejected) {
+        toast.warning("AI đã tự động TỪ CHỐI tin tuyển dụng này do vi phạm!");
+      } else if (result.autoApproved) {
+        toast.success("AI đã tự động PHÊ DUYỆT tin tuyển dụng này!");
+      } else {
+        toast.success("AI đã hoàn tất kiểm duyệt!");
+      }
     } catch (err) {
       console.error("AI review job error", err);
       toast.error(err?.response?.data?.error || "Kiểm duyệt AI thất bại");
       throw err;
+    } finally {
+      setLoadingAi(false);
     }
   };
 
@@ -188,6 +198,7 @@ export const useAdminJobs = () => {
   return {
     jobs,
     loading,
+    loadingAi,
     page,
     setPage,
     totalPages,

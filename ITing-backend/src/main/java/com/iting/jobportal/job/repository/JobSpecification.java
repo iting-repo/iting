@@ -30,6 +30,12 @@ public class JobSpecification {
             // USER chỉ xem ACTIVE job
             predicates.add(cb.equal(root.get("status"), JobStatus.ACTIVE));
 
+            // CHỈ XEM JOB CÒN HẠN: dueDate >= hôm nay hoặc dueDate là null
+            predicates.add(cb.or(
+                    cb.isNull(root.get("dueDate")),
+                    cb.greaterThanOrEqualTo(root.get("dueDate"), java.time.LocalDate.now())
+            ));
+
             // Join company to allow filtering by company fields (industry/domain)
             Join<Job, Company> companyJoin = root.join("company", JoinType.LEFT);
             // Ensure distinct when joining

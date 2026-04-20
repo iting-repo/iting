@@ -21,5 +21,7 @@ public interface CandidateApplicationRepository extends JpaRepository<ApplyFormS
     @Query("SELECT COUNT(s) FROM ApplyFormSentToJob s JOIN ApplyForm f ON f.id = s.id.applyFormId WHERE f.userId = :userId")
     long countByUserId(@Param("userId") Long userId);
 
+    java.util.Optional<ApplyFormSentToJob> findByIdApplyFormId(Long applyFormId);
+
     void deleteByIdApplyFormId(Long applyFormId);
 }

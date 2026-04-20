@@ -233,7 +233,11 @@ const Header = () => {
     <header className="bg-black text-white h-20 sticky top-0 z-40 shadow-md">
       <div className="container mx-auto px-12 h-full flex items-center justify-between">
         <Link to={role === 'EMPLOYER' ? '/employer/dashboard' : '/'} className="flex items-center gap-2 select-none group">
-          <img src="/assets/logo.png" alt="ITing Logo" className="h-10 w-auto object-contain transition-transform group-hover:scale-105" />
+          <img 
+            src="/assets/logo.png" 
+            alt="ITing Logo" 
+            className="h-14 w-auto object-contain transition-all duration-500 group-hover:scale-110 group-hover:drop-shadow-[0_0_15px_rgba(58,180,230,0.6)]" 
+          />
         </Link>
 
         <nav className="hidden md:flex items-center gap-8">

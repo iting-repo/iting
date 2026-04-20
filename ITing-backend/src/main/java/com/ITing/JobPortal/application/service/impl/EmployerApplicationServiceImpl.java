@@ -76,10 +76,30 @@ public class EmployerApplicationServiceImpl implements EmployerApplicationServic
 
     @Override
     public Page<ApplicationResponse> searchApplications(Long employerId, ApplicationSearchRequest request) {
-        if (request.getJobId() != null) {
-            return getApplicationsByJob(employerId, request.getJobId(), request.getPage(), request.getSize());
+        if (employerId == null) throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Yêu cầu đăng nhập");
+        
+        Pageable pageable = PageRequest.of(request.getPage(), request.getSize(), 
+                Sort.by(request.getSortOrder().equalsIgnoreCase("asc") ? Sort.Direction.ASC : Sort.Direction.DESC, 
+                request.getSortBy()));
+
+        String normalizedKeyword = null;
+        if (request.getKeyword() != null && !request.getKeyword().isBlank()) {
+            normalizedKeyword = "%" + request.getKeyword().toLowerCase() + "%";
         }
-        return getAllApplicationsForEmployer(employerId, request.getPage(), request.getSize());
+
+        if (request.getJobId() != null) {
+            verifyJobOwnership(employerId, request.getJobId());
+            return employerApplicationRepository.searchByJob(request.getJobId(), request.getStatus(), normalizedKeyword, pageable)
+                    .map(this::toResponse);
+        }
+        
+        // Search across all jobs of the employer
+        var jobs = jobRepository.findByCompany_Id(employerId, PageRequest.of(0, 1000));
+        if (jobs.isEmpty()) return Page.empty();
+        var jobIds = jobs.stream().map(Job::getId).toList();
+        
+        return employerApplicationRepository.searchAll(jobIds, request.getStatus(), normalizedKeyword, pageable)
+                .map(this::toResponse);
     }
 
     @Override
@@ -161,7 +181,18 @@ public class EmployerApplicationServiceImpl implements EmployerApplicationServic
 
     @Override
     public ApplicationStats getStatsForEmployer(Long employerId) {
-        return ApplicationStats.builder().total(0L).build(); // Mock stat
+        var jobs = jobRepository.findByCompany_Id(employerId, PageRequest.of(0, 1000));
+        if (jobs.isEmpty()) {
+            return ApplicationStats.builder().total(0L).build();
+        }
+        
+        List<Long> jobIds = jobs.stream().map(Job::getId).toList();
+        long total = employerApplicationRepository.countByIdJobIdIn(jobIds);
+        
+        // You could add count by status here if needed in the future
+        return ApplicationStats.builder()
+                .total(total)
+                .build();
     }
 
     @Override

@@ -20,6 +20,7 @@ import org.springframework.context.ApplicationEventPublisher;
 import com.iting.jobportal.company.event.CompanyInfoSubmittedEvent;
 import com.iting.jobportal.file.FileUploadService;
 import com.iting.jobportal.company.entity.enums.BusinessDocumentType;
+import com.iting.jobportal.company.dto.mapper.CompanyMapper;
 import com.iting.jobportal.company.entity.enums.Industry;
 import com.iting.jobportal.job.entity.enums.JobStatus;
 import com.iting.jobportal.job.repository.JobRepository;
@@ -44,19 +45,22 @@ public class CompanyServiceImpl implements CompanyService {
     private final AccountRepository accountRepository;
     private final JobRepository jobRepository;
     private final ApplicationEventPublisher eventPublisher;
+    private final CompanyMapper companyMapper;
 
     public CompanyServiceImpl(CompanyRepository companyRepository,
                               CompanyFollowService companyFollowService,
                               FileUploadService fileUploadService,
                               AccountRepository accountRepository,
                               JobRepository jobRepository,
-                              ApplicationEventPublisher eventPublisher) {
+                              ApplicationEventPublisher eventPublisher,
+                              CompanyMapper companyMapper) {
         this.companyRepository = companyRepository;
         this.companyFollowService = companyFollowService;
         this.fileUploadService = fileUploadService;
         this.accountRepository = accountRepository;
         this.jobRepository = jobRepository;
         this.eventPublisher = eventPublisher;
+        this.companyMapper = companyMapper;
     }
     @Override
     @Transactional
@@ -475,7 +479,7 @@ public class CompanyServiceImpl implements CompanyService {
     // Map Company -> CompanyResponse
     // ==========================================
     private CompanyResponse mapToResponse(Company company) {
-        CompanyResponse response = CompanyResponse.fromEntity(company);
+        CompanyResponse response = companyMapper.toResponse(company);
         response.setActiveJobCount((int) jobRepository.countByCompany_IdAndStatus(company.getId(), JobStatus.ACTIVE));
         response.setFollowerCount(companyFollowService.getFollowerCount(company.getId()));
         return response;

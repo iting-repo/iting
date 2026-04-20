@@ -1,20 +1,25 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
-import { formatDistanceToNowStrict, parseISO } from 'date-fns';
+import { formatDistanceToNowStrict, parseISO, differenceInDays } from 'date-fns';
 import { vi } from 'date-fns/locale';
 import { fetchJobDetailRequest } from '../../store/job/jobSlice';
 import {
     FaMapMarkerAlt, FaDollarSign, FaClock, FaBriefcase, FaRegBookmark,
     FaExclamationTriangle, FaBell, FaLaptop, FaGift, FaUser,
-    FaAward, FaGraduationCap, FaWallet, FaEnvelope, FaPhone, FaRegComment
+    FaAward, FaGraduationCap, FaWallet, FaEnvelope, FaPhone, FaRegComment,
+    FaExternalLinkAlt, FaUsers, FaLayers
 } from 'react-icons/fa';
-import { JobCard, JobApplyModal } from '../../components';
+import JobCard from '../../components/JobCard';
+import JobApplyModal from '../../components/JobApplyModal';
+import companyService from '../../services/companyService';
+import { Breadcrumb, CompanyLogo } from '../../components/common';
 import {
     buildJobDetailPath,
     getJobTitle,
     normalizeJobKey,
     slugify,
+    getCompanyLogoUrl,
 } from '../../utils/jobUrl';
 import applicationService from '../../services/applicationService';
 
@@ -68,6 +73,22 @@ const JobDetailPage = () => {
         checkAppStatus();
     }, [isAuthenticated, user, currentJob]);
 
+    const [companyInfo, setCompanyInfo] = useState(null);
+
+    useEffect(() => {
+        const fetchCompany = async () => {
+            if (currentJob?.companyId) {
+                try {
+                    const res = await companyService.getCompanyDetail(currentJob.companyId);
+                    setCompanyInfo(res);
+                } catch (err) {
+                    console.error("Fetch company detail error:", err);
+                }
+            }
+        };
+        fetchCompany();
+    }, [currentJob?.companyId]);
+
     const [isApplyModalOpen, setIsApplyModalOpen] = useState(false);
 
     if (isLoading) return <div className="text-center py-20 font-bold text-gray-500">Đang tải chi tiết công việc...</div>;
@@ -114,12 +135,33 @@ const JobDetailPage = () => {
         return map[level] || level || "Chưa cập nhật";
     };
 
+    const formatDeadline = (dueDate) => {
+        if (!dueDate) return "Không có";
+        try {
+            const deadline = parseISO(dueDate);
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+
+            const deadlineDate = new Date(deadline);
+            deadlineDate.setHours(0, 0, 0, 0);
+
+            const diffDays = differenceInDays(deadlineDate, today);
+            const formattedDate = deadline.toLocaleDateString("vi-VN");
+
+            if (diffDays < 0) return `${formattedDate} (Hết hạn)`;
+            if (diffDays === 0) return `${formattedDate} (Hôm nay)`;
+            return `${formattedDate} (Còn ${diffDays} ngày)`;
+        } catch {
+            return dueDate;
+        }
+    };
+
     const jobDetail = {
         title: currentJob.title || currentJob.position,
         position: currentJob.position,
         company: currentJob.companyName,
-        logo: currentJob.companyLogo || "https://via.placeholder.com/100",
-        deadline: currentJob.dueDate || "Không có",
+        logo: getCompanyLogoUrl(companyInfo?.logoUrl || currentJob.companyLogo),
+        deadline: formatDeadline(currentJob.dueDate),
         salary: formatSalary(currentJob.minSalary, currentJob.maxSalary),
         location: currentJob.location || "Chưa cập nhật",
         description: descriptionList.length > 0 ? descriptionList : ["Chưa có mô tả chi tiết"],
@@ -139,7 +181,7 @@ const JobDetailPage = () => {
             id: 1,
             title: "Internal Creative Coordinator",
             company: "Green Group",
-            logo: "https://logo.clearbit.com/spotify.com",
+            logo: "",
             category: "Commerce",
             type: "Full time",
             salary: "$44000-$46000",
@@ -150,7 +192,7 @@ const JobDetailPage = () => {
             id: 2,
             title: "District Intranet Director",
             company: "VonRueden - Weber Co",
-            logo: "https://logo.clearbit.com/slack.com",
+            logo: "",
             category: "Commerce",
             type: "Full time",
             salary: "$42000-$48000",
@@ -161,7 +203,7 @@ const JobDetailPage = () => {
             id: 3,
             title: "Corporate Tactics Facilitator",
             company: "Cormier, Turner and Flatley Inc",
-            logo: "https://logo.clearbit.com/google.com",
+            logo: "",
             category: "Commerce",
             type: "Full time",
             salary: "$38000-$40000",
@@ -183,7 +225,12 @@ const JobDetailPage = () => {
                 jobId={currentJob.id}
             />
             <div className="container mx-auto px-4 max-w-7xl">
-
+                <Breadcrumb 
+                    items={[
+                        { label: 'Tìm việc làm', link: '/jobs' },
+                        { label: jobDetail.title }
+                    ]} 
+                />
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
 
                     <div className="lg:col-span-8 space-y-10">
@@ -200,7 +247,11 @@ const JobDetailPage = () => {
 
                             <div className="flex gap-4">
                                 <div className="w-20 h-20 rounded-xl border border-gray-100 p-2 flex items-center justify-center shadow-sm">
-                                    <img src={jobDetail.logo} alt="Company Logo" className="w-full h-full object-contain" onError={(e) => e.target.src = "https://via.placeholder.com/100"} />
+                                    <CompanyLogo 
+                                        logoUrl={companyInfo?.logoUrl || currentJob.companyLogo}
+                                        companyId={currentJob.companyId}
+                                        className="w-full h-full object-contain"
+                                    />
                                 </div>
                                 <div>
                                     <h1 className="text-3xl font-bold text-gray-800 mb-2">{jobDetail.title}</h1>
@@ -225,8 +276,15 @@ const JobDetailPage = () => {
                                     <span className="bg-white p-2 rounded-full text-[#00B4D8]"><FaMapMarkerAlt /></span>
                                     {jobDetail.location}
                                 </div>
-                                <div className="w-full pt-2 mt-2 border-t border-gray-200 text-gray-400 text-xs">
-                                    <span className="bg-gray-200 text-gray-600 px-2 py-1 rounded mr-2">Hạn nộp hồ sơ: {jobDetail.deadline}</span>
+                                <div className="w-full pt-2 mt-2 border-t border-gray-200 text-gray-400 text-xs flex items-center justify-between">
+                                    <span className="bg-gray-200 text-gray-600 px-2 py-1 rounded">Hạn nộp hồ sơ: {jobDetail.deadline}</span>
+                                    <Link 
+                                        to="/salary-lookup" 
+                                        className="text-[#3AB4E6] font-bold flex items-center gap-1 hover:underline hover:scale-105 transition-transform"
+                                    >
+                                        <FaDollarSign size={12} />
+                                        Xem mức lương thị trường
+                                    </Link>
                                 </div>
                             </div>
 
@@ -276,27 +334,6 @@ const JobDetailPage = () => {
                                 </ul>
                             </section>
 
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <div className="flex gap-4">
-                                    <div className="w-10 h-10 rounded bg-[#E6F6FD] text-[#00B4D8] flex items-center justify-center flex-shrink-0">
-                                        <FaLaptop size={20} />
-                                    </div>
-                                    <div>
-                                        <h3 className="font-bold text-gray-800">Thiết bị làm việc</h3>
-                                        <p className="text-sm text-gray-500">Được cấp máy tính</p>
-                                    </div>
-                                </div>
-                                <div className="flex gap-4">
-                                    <div className="w-10 h-10 rounded bg-[#E6F6FD] text-[#00B4D8] flex items-center justify-center flex-shrink-0">
-                                        <FaGift size={20} />
-                                    </div>
-                                    <div>
-                                        <h3 className="font-bold text-gray-800">Quyền lợi</h3>
-                                        <p className="text-sm text-gray-500">Bảo hiểm xã hội, Team building, Du lịch hàng năm, Thưởng tháng 13...</p>
-                                    </div>
-                                </div>
-                            </div>
-
                             <hr className="border-gray-100" />
 
                             <section className="space-y-4">
@@ -314,22 +351,6 @@ const JobDetailPage = () => {
                                     <p className="text-sm text-gray-400 mt-2">Hạn nộp hồ sơ: {jobDetail.deadline}</p>
                                 </div>
                             </section>
-
-                            <div className="flex gap-4">
-                                <button
-                                    onClick={() => !hasApplied && setIsApplyModalOpen(true)}
-                                    disabled={hasApplied}
-                                    className={`px-6 py-2.5 font-bold rounded transition-colors ${
-                                        hasApplied
-                                        ? 'bg-gray-100 text-gray-400 cursor-not-allowed border border-gray-200'
-                                        : 'bg-[#00B4D8] text-white hover:bg-[#0096B4]'
-                                    }`}>
-                                    {hasApplied ? 'Đã Ứng Tuyển' : 'Ứng Tuyển Ngay'}
-                                </button>
-                                <button className="px-6 py-2.5 border border-[#00B4D8] text-[#00B4D8] font-bold rounded hover:bg-[#E6F6FD] transition-colors">
-                                    Lưu Tin
-                                </button>
-                            </div>
 
                             <div className="bg-gray-50 p-4 rounded-lg flex gap-3 border border-gray-100 items-start">
                                 <FaExclamationTriangle className="text-yellow-500 mt-1 flex-shrink-0" />
@@ -350,6 +371,29 @@ const JobDetailPage = () => {
                                     )}
                                 </div>
                             </div>
+
+                            <hr className="border-gray-100" />
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div className="flex gap-4">
+                                    <div className="w-10 h-10 rounded bg-[#E6F6FD] text-[#00B4D8] flex items-center justify-center flex-shrink-0">
+                                        <FaLaptop size={20} />
+                                    </div>
+                                    <div>
+                                        <h3 className="font-bold text-gray-800">Thiết bị làm việc</h3>
+                                        <p className="text-sm text-gray-500">Được cấp máy tính</p>
+                                    </div>
+                                </div>
+                                <div className="flex gap-4">
+                                    <div className="w-10 h-10 rounded bg-[#E6F6FD] text-[#00B4D8] flex items-center justify-center flex-shrink-0">
+                                        <FaGift size={20} />
+                                    </div>
+                                    <div>
+                                        <h3 className="font-bold text-gray-800">Quyền lợi</h3>
+                                        <p className="text-sm text-gray-500">Bảo hiểm xã hội, Team building, Du lịch hàng năm, Thưởng tháng 13...</p>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
 
                         <div className="pt-8">
@@ -363,6 +407,46 @@ const JobDetailPage = () => {
                     </div>
 
                     <div className="lg:col-span-4 space-y-8">
+                        {/* Company Card */}
+                        <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
+                            <div className="flex items-center gap-4 mb-6">
+                                <div className="w-16 h-16 rounded-xl border border-gray-100 p-2 flex items-center justify-center shrink-0">
+                                    <CompanyLogo 
+                                        logoUrl={companyInfo?.logoUrl || currentJob.companyLogo}
+                                        companyId={currentJob.companyId}
+                                        className="w-full h-full object-contain"
+                                    />
+                                </div>
+                                <h3 className="font-bold text-gray-800 leading-tight">{jobDetail.company}</h3>
+                            </div>
+                            
+                            <div className="space-y-4 mb-6">
+                                <div className="flex items-center gap-3 text-[13px]">
+                                    <FaUsers className="text-gray-400 w-4 flex-shrink-0" />
+                                    <span className="text-gray-400 min-w-[70px]">Quy mô:</span>
+                                    <span className="text-gray-600 font-medium">{currentJob?.companySize || "25-99 nhân viên"}</span>
+                                </div>
+                                <div className="flex items-center gap-3 text-[13px]">
+                                    <FaBriefcase className="text-gray-400 w-4 flex-shrink-0" />
+                                    <span className="text-gray-400 min-w-[70px]">Lĩnh vực:</span>
+                                    <span className="text-gray-600 font-medium">{jobDetail.domain}</span>
+                                </div>
+                                <div className="flex items-start gap-3 text-[13px]">
+                                    <FaMapMarkerAlt className="text-gray-400 w-4 flex-shrink-0 mt-0.5" />
+                                    <span className="text-gray-400 min-w-[70px]">Địa điểm:</span>
+                                    <span className="text-gray-600 font-medium">{jobDetail.location}</span>
+                                </div>
+                            </div>
+
+                            <Link 
+                                to={`/companies/${currentJob?.companyId || currentJob?.companyCode || '#'}`} 
+                                className="flex items-center justify-center gap-2 text-[#3AB4E6] font-bold py-2.5 border border-[#3AB4E6] rounded-xl hover:bg-[#3AB4E6] hover:text-white transition-all duration-300 group mt-2"
+                            >
+                                <span>Xem trang công ty</span>
+                                <FaExternalLinkAlt className="text-xs transition-transform group-hover:translate-x-1" />
+                            </Link>
+                        </div>
+
                         <div className="bg-[#E6F6FD]/50 p-6 rounded-2xl">
                             <h3 className="font-bold text-gray-800 mb-6">Thông tin chung</h3>
 

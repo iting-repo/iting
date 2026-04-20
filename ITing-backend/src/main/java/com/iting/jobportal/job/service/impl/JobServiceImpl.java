@@ -585,6 +585,22 @@ public class JobServiceImpl implements JobService {
     }
 
     private void validateJobBeforeSubmit(Job job, Company company) {
+        // 1. Kiểm tra từ khóa đen (Blacklist) cho các hành vi phạm pháp chuyên biệt
+        String title = job.getTitle() != null ? job.getTitle().toLowerCase() : "";
+        String description = job.getDescription() != null ? job.getDescription().toLowerCase() : "";
+        
+        List<String> blacklist = List.of("cướp", "lừa đảo", "đánh bạc", "ma túy", "buôn lậu", "tống tiền");
+        for (String word : blacklist) {
+            if (title.contains(word) || description.contains(word)) {
+                job.setStatus(JobStatus.REJECTED);
+                job.setReviewReason("Tin tuyển dụng vi phạm chính sách an toàn (chứa nội dung bị cấm).");
+                throw new ResponseStatusException(
+                        HttpStatus.BAD_REQUEST,
+                        "Tin tuyển dụng bị hệ thống tự động từ chối do chứa nội dung không hợp lệ hoặc vi phạm pháp luật."
+                );
+            }
+        }
+
         if (company.getCompanyInfoUpdateStatus() != CompanyReviewStatus.APPROVED) {
             throw new ResponseStatusException(
                     HttpStatus.BAD_REQUEST,

@@ -21,6 +21,7 @@ const LegacyEmployerJobApplicationsRedirect = lazy(() => import('../pages/employ
 const Verification = lazy(() => import('../pages/employer/Verification'));
 const DataProcessing = lazy(() => import('../pages/employer/DataProcessing'));
 const FindCandidate = lazy(() => import('../pages/employer/FindCandidate'));
+const FavoriteCandidates = lazy(() => import('../pages/employer/FavoriteCandidates'));
 const CandidateDashboard = lazy(() => import('../pages/candidate/CandidateDashboard'));
 const CandidateLayout = lazy(() => import('../layouts/CandidateLayout'));
 const CandidateProfile = lazy(() => import('../pages/candidate/profile/CandidateProfile'));
@@ -42,6 +43,7 @@ const SystemConfig = lazy(() => import('../pages/admin/config/SystemConfig'));
 const NotificationManagement = lazy(() => import('../pages/admin/notifications/NotificationManagement'));
 const CompaniesPage = lazy(() => import('../pages/public/CompaniesPage'));
 const CompanyDetailPage = lazy(() => import('../pages/public/CompanyDetailPage'));
+const SalaryLookupPage = lazy(() => import('../pages/public/SalaryLookupPage'));
 
 import { LoadingSpinner } from '../components';
 import { Settings } from 'lucide-react';
@@ -60,6 +62,7 @@ const AppRoutes = () => {
           <Route path="/jobs" element={<JobPage />} />
           <Route path="/companies" element={<CompaniesPage />} />
           <Route path="/companies/:id" element={<CompanyDetailPage />} />
+          <Route path="/salary-lookup" element={<SalaryLookupPage />} />
           <Route path="/jobs/:id" element={<LegacyJobRedirect />} />
           <Route path="/viec-lam/:slug/:jobKey" element={<JobDetailPage />} />
           <Route path="/about" element={<AboutPage />} />
@@ -94,6 +97,7 @@ const AppRoutes = () => {
               <Route path="job/:id/applications" element={<LegacyEmployerJobApplicationsRedirect />} />
               <Route path="job/:slug/:jobKey/applications" element={<JobApplications />} />
               <Route path="find-cv" element={<FindCandidate />} />
+              <Route path="favorite-candidates" element={<FavoriteCandidates />} />
             </Route>
           </Route>
         </Route>

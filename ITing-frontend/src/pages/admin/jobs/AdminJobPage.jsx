@@ -1,5 +1,7 @@
 import React, { useState } from "react";
-import { PageHeader, Pagination, Button } from "../../../components";
+import { PageHeader } from "../../../components/common/PageHeader";
+import Pagination from "../../../components/common/Pagination";
+import Button from "../../../components/common/Button";
 import { 
   Download, 
   FileUp, 
@@ -20,9 +22,8 @@ import { JobTable } from "./components/JobTable";
 import { JobPreviewDialog } from "./components/JobPreviewDialog";
 import { JobDetailDialog } from "../../../components/admin/JobDetailDialog";
 import { ActionDialog } from "../../../components/admin/ActionDialog";
-
+import AiLoadingOverlay from "../../../components/admin/AiLoadingOverlay";
 import { useAdminJobs } from "../../../hooks/useAdminJobs";
-
 
 const AdminJobPage = () => {
   const {
@@ -41,6 +42,7 @@ const AdminJobPage = () => {
     suspendJob,
     unsuspendJob,
     deleteJob,
+    loadingAi,
   } = useAdminJobs();
 
   const [previewJob, setPreviewJob] = useState(null);
@@ -175,6 +177,7 @@ const AdminJobPage = () => {
 
   return (
     <>
+      <AiLoadingOverlay isVisible={loadingAi} />
       <div className="space-y-6 pb-60">
       <PageHeader
         title="Quản lý Job"

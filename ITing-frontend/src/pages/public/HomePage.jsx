@@ -3,8 +3,9 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { useEffect } from 'react';
 import { fetchJobsRequest, fetchJobDetailRequest } from '../../store/job/jobSlice';
-import { buildJobDetailPath, getJobPublicKey } from '../../utils/jobUrl';
+import { buildJobDetailPath, getJobPublicKey, getCompanyLogoUrl } from '../../utils/jobUrl';
 import publicService from '../../services/publicService';
+import { CompanyLogo } from '../../components/common';
 
 // FIX: Gom tất cả icon về react-icons/fa để tránh lỗi import undefined
 import {
@@ -469,11 +470,10 @@ const HomePage = () => {
                                     <div className="flex flex-col md:flex-row gap-6">
                                         {/* Logo */}
                                         <div className="shrink-0">
-                                            <img
-                                                src={job.companyLogo || "https://via.placeholder.com/100"}
-                                                alt="Logo"
-                                                className="w-14 h-14 rounded-xl object-contain bg-gray-50 p-1 border border-gray-100"
-                                                onError={(e) => e.target.src = "https://via.placeholder.com/100"}
+                                            <CompanyLogo 
+                                                logoUrl={job.companyLogo} 
+                                                companyId={job.companyId}
+                                                className="w-14 h-14 rounded-xl object-contain bg-gray-50 p-1 border border-gray-100" 
                                             />
                                         </div>
 
