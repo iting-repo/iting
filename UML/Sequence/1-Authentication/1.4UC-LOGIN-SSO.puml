@@ -1,0 +1,21 @@
+@startuml
+actor Guest
+participant FE
+participant AuthSvc
+participant Google
+database DB
+
+
+Guest -> FE : Click "Login with Google"
+FE -> Google : OAuth authorize
+Google --> FE : authCode
+FE -> AuthSvc : exchange(authCode)
+AuthSvc -> Google : tokenRequest
+Google --> AuthSvc : id_token, profile
+AuthSvc -> DB : findUserByEmail(profile.email)
+alt tồn tại
+AuthSvc --> FE : success(session)
+else không tồn tại
+AuthSvc --> FE : suggestRegisterSSO
+end
+@enduml

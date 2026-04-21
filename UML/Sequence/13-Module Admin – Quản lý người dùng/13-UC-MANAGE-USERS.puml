@@ -1,0 +1,20 @@
+@startuml
+actor Admin
+participant FE
+participant UserSvc
+database DB
+
+
+Admin -> FE : Mở Quản lý người dùng
+FE -> UserSvc : listUsers(filters)
+UserSvc -> DB : SELECT users
+DB --> UserSvc : rows
+UserSvc --> FE : list
+opt Thêm/Sửa/Xóa
+Admin -> FE : Submit action
+FE -> UserSvc : create/update/delete(...)
+UserSvc -> DB : INSERT/UPDATE/DELETE
+DB --> UserSvc : ok
+UserSvc --> FE : success
+end
+@enduml

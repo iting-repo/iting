@@ -23,11 +23,11 @@ const experienceOptions = [
 ];
 
 const postedTimeOptions = [
-    { label: 'Tat ca', value: '' },
-    { label: '1 gio qua', value: '1' },
-    { label: '24 gio qua', value: '24' },
-    { label: '7 ngay qua', value: '168' },
-    { label: '30 ngay qua', value: '720' },
+    { label: 'Tất cả', value: '' },
+    { label: '1 giờ qua', value: '1' },
+    { label: '24 giờ qua', value: '24' },
+    { label: '7 ngày qua', value: '168' },
+    { label: '30 ngày qua', value: '720' },
 ];
 
 const JobFilters = ({
@@ -68,21 +68,21 @@ const JobFilters = ({
         <div className="space-y-6">
             <div className="bg-[#E6F6FD] p-5 rounded-xl border border-[#E6F6FD] space-y-5">
                 <div>
-                    <h3 className="font-bold text-gray-800 mb-3 text-sm">Tim kiem theo Chuc danh</h3>
+                    <h3 className="font-bold text-gray-800 mb-3 text-sm">Tìm kiếm theo Chức danh</h3>
                     <div className="relative">
                         <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs" />
                         <input
                             type="text"
                             value={filters.keyword}
                             onChange={(e) => onFieldChange('keyword', e.target.value)}
-                            placeholder="Chuc danh hoac ten Cong ty"
+                            placeholder="Chức danh hoặc tên Công ty"
                             className="w-full pl-9 pr-3 py-2.5 bg-white border border-transparent focus:border-[#00B4D8] rounded-lg outline-none text-sm transition-all placeholder-gray-400 shadow-sm"
                         />
                     </div>
                 </div>
 
                 <div>
-                    <h3 className="font-bold text-gray-800 mb-3 text-sm">Dia diem lam viec</h3>
+                    <h3 className="font-bold text-gray-800 mb-3 text-sm">Địa điểm làm việc</h3>
                     <div className="relative">
                         <FaMapMarkerAlt className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs" />
                         <select
@@ -90,7 +90,7 @@ const JobFilters = ({
                             onChange={(e) => onFieldChange('location', e.target.value)}
                             className="w-full pl-9 pr-3 py-2.5 bg-white border border-transparent focus:border-[#00B4D8] rounded-lg outline-none text-sm appearance-none cursor-pointer text-gray-600 shadow-sm"
                         >
-                            <option value="">Chon thanh pho</option>
+                            <option value="">Chọn thành phố</option>
                             {provinces.map((province) => (
                                 <option key={province.code} value={province.name}>{province.name}</option>
                             ))}
@@ -102,13 +102,13 @@ const JobFilters = ({
                     onClick={onApply}
                     className="w-full py-2 bg-[#00B4D8] hover:bg-[#0096B4] text-white text-xs font-bold rounded-lg transition-colors shadow-sm"
                 >
-                    Tim kiem
+                    Tìm kiếm
                 </button>
             </div>
 
             <div className="bg-[#E6F6FD] p-5 rounded-xl border border-gray-100 shadow-sm space-y-7">
                 <div>
-                    <h3 className="font-bold text-gray-800 mb-3 text-sm">Hinh thuc lam viec</h3>
+                    <h3 className="font-bold text-gray-800 mb-3 text-sm">Hình thức làm việc</h3>
                     <div className="space-y-1">
                         {jobTypeOptions.map((item) => (
                             <FilterCheckbox
@@ -125,7 +125,7 @@ const JobFilters = ({
                 <hr className="border-gray-100" />
 
                 <div>
-                    <h3 className="font-bold text-gray-800 mb-3 text-sm">Cap bac</h3>
+                    <h3 className="font-bold text-gray-800 mb-3 text-sm">Cấp bậc</h3>
                     <div className="space-y-1 max-h-48 overflow-y-auto pr-1">
                         {experienceOptions.map((item) => (
                             <FilterCheckbox
@@ -142,7 +142,7 @@ const JobFilters = ({
                 <hr className="border-gray-100" />
 
                 <div>
-                    <h3 className="font-bold text-gray-800 mb-3 text-sm">Thoi gian dang</h3>
+                    <h3 className="font-bold text-gray-800 mb-3 text-sm">Thời gian đăng</h3>
                     <div className="space-y-1">
                         {postedTimeOptions.map((item) => (
                             <label key={item.label} className="flex items-center gap-2 cursor-pointer group mb-2 last:mb-0">
@@ -164,14 +164,14 @@ const JobFilters = ({
                 <hr className="border-gray-100" />
 
                 <div>
-                    <h3 className="font-bold text-gray-800 mb-3 text-sm">Muc luong</h3>
+                    <h3 className="font-bold text-gray-800 mb-3 text-sm">Mức lương</h3>
                     <div className="grid grid-cols-2 gap-2">
                         <input
                             type="number"
                             min="0"
                             value={filters.minSalary}
                             onChange={(e) => onFieldChange('minSalary', e.target.value)}
-                            placeholder="Tu"
+                            placeholder="Từ"
                             className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg outline-none text-sm"
                         />
                         <input
@@ -179,7 +179,7 @@ const JobFilters = ({
                             min="0"
                             value={filters.maxSalary}
                             onChange={(e) => onFieldChange('maxSalary', e.target.value)}
-                            placeholder="Den"
+                            placeholder="Đến"
                             className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg outline-none text-sm"
                         />
                     </div>
@@ -190,13 +190,13 @@ const JobFilters = ({
                         onClick={onApply}
                         className="flex-1 py-2 bg-[#00B4D8] hover:bg-[#0096B4] text-white text-xs font-bold rounded-lg transition-colors"
                     >
-                        Ap dung
+                        Áp dụng
                     </button>
                     <button
                         onClick={onReset}
                         className="flex-1 py-2 bg-white border border-gray-200 text-gray-700 text-xs font-bold rounded-lg hover:bg-gray-50 transition-colors"
                     >
-                        Dat lai
+                        Đặt lại
                     </button>
                 </div>
             </div>

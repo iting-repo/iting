@@ -12,6 +12,7 @@ import companyService from "../../services/companyService";
 import jobService from "../../services/jobService";
 import Badge from "../../components/common/Badge";
 import Button from "../../components/common/Button";
+import { CompanyLogo } from "../../components/common";
 import { formatDistanceToNowStrict, parseISO } from "date-fns";
 import { vi } from "date-fns/locale";
 
@@ -134,11 +135,10 @@ const CompanyDetailPage = () => {
           <div className="flex flex-col md:flex-row gap-8 items-start">
             {/* Logo */}
             <div className="w-32 h-32 rounded-3xl border border-gray-100 p-4 bg-white shadow-xl shadow-gray-100 flex items-center justify-center shrink-0">
-              <img 
-                src={company.logoUrl || "https://via.placeholder.com/150?text=Company"} 
-                alt={company.name} 
+              <CompanyLogo 
+                logoUrl={company.logoUrl} 
+                companyName={company.name} 
                 className="w-full h-full object-contain"
-                onError={(e) => e.target.src = "https://via.placeholder.com/150?text=Company"}
               />
             </div>
 
@@ -384,11 +384,7 @@ const CompanyDetailPage = () => {
                 </div>
               </div>
 
-              <div className="mt-8 pt-8 border-t border-gray-100">
-                 <p className="text-xs text-center text-gray-400 font-medium">
-                    Mã số thuế: {company.taxCode || "N/A"}
-                 </p>
-              </div>
+              {/* Tax Code removed as requested */}
             </div>
 
             {/* QR or Contact Section */}

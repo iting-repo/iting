@@ -1,0 +1,13 @@
+@startuml
+actor Candidate
+participant FE
+participant ProfileSvc
+database DB
+
+
+Candidate -> FE : Thêm/Sửa/Xóa mục hồ sơ -> Lưu
+FE -> ProfileSvc : upsertItem(userId, type, payload)
+ProfileSvc -> DB : INSERT/UPDATE/DELETE ...
+DB --> ProfileSvc : ok
+ProfileSvc --> FE : success
+@enduml

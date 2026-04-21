@@ -109,6 +109,9 @@ public class Job {
     @Column(columnDefinition = "TEXT")
     private String aiReviewReason;
 
+    @Column(columnDefinition = "TEXT")
+    private String jobEmbedding;
+
     // ===== AUDIT =====
     private LocalDateTime createdAt;
     private LocalDateTime lastUpdate;

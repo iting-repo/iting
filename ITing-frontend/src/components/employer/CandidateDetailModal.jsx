@@ -8,6 +8,8 @@ import { toast } from 'sonner';
 import applicationService from '../../services/applicationService';
 import reportService from '../../services/reportService';
 import favoriteCandidateService from '../../services/favoriteCandidateService';
+import messageService from '../../services/messageService';
+import { useNavigate } from 'react-router-dom';
 
 const REPORT_REASONS = [
     { value: 'SPAM', label: 'Spam / Tin nhắn rác', priority: 'LOW' },
@@ -19,6 +21,7 @@ const REPORT_REASONS = [
 ];
 
 const CandidateDetailModal = ({ candidate, onClose, onStatusUpdate }) => {
+    const navigate = useNavigate();
     const [isAccepting, setIsAccepting] = useState(false);
     const [showReportModal, setShowReportModal] = useState(false);
     const [reportData, setReportData] = useState({
@@ -27,6 +30,7 @@ const CandidateDetailModal = ({ candidate, onClose, onStatusUpdate }) => {
     });
     const [isReporting, setIsReporting] = useState(false);
     const [isFavorited, setIsFavorited] = useState(false);
+    const [isStartingChat, setIsStartingChat] = useState(false);
 
     useEffect(() => {
         if (candidate && candidate.status === 'PENDING') {
@@ -99,6 +103,32 @@ const CandidateDetailModal = ({ candidate, onClose, onStatusUpdate }) => {
             toast.error('Gửi báo cáo thất bại. Vui lòng thử lại.');
         } finally {
             setIsReporting(false);
+        }
+    };
+
+    const handleStartConversation = async () => {
+        const candidateUserId = candidate?.userId || candidate?.applicantId;
+        if (!candidateUserId) {
+            toast.error('Khong xac dinh duoc ung vien de nhan tin.');
+            return;
+        }
+
+        setIsStartingChat(true);
+        try {
+            const sent = await messageService.sendMessage({
+                receiverId: candidateUserId,
+                receiverType: 'USER',
+                senderType: 'COMPANY',
+                content: 'Chao ban, chung toi muon ket noi ve co hoi cong viec.',
+            });
+
+            onClose();
+            navigate(`/messages?conversationId=${sent.conversationId}`);
+            toast.success('Da mo cuoc tro chuyen voi ung vien.');
+        } catch (error) {
+            toast.error(error?.message || 'Khong the tao cuoc tro chuyen luc nay.');
+        } finally {
+            setIsStartingChat(false);
         }
     };
 
@@ -235,8 +265,12 @@ const CandidateDetailModal = ({ candidate, onClose, onStatusUpdate }) => {
 
                         {/* Footer Section - Action Buttons */}
                         <div className="pt-4 flex flex-col gap-3">
-                            <button className="w-full flex justify-center items-center gap-2 px-6 py-4 bg-white border-2 border-slate-200 text-slate-700 font-bold rounded-2xl hover:bg-slate-50 hover:border-slate-300 transition-all active:scale-95">
-                                <FaEnvelope /> Gửi tin nhắn
+                            <button
+                                onClick={handleStartConversation}
+                                disabled={isStartingChat}
+                                className="w-full flex justify-center items-center gap-2 px-6 py-4 bg-white border-2 border-slate-200 text-slate-700 font-bold rounded-2xl hover:bg-slate-50 hover:border-slate-300 transition-all active:scale-95 disabled:opacity-60"
+                            >
+                                <FaEnvelope /> {isStartingChat ? 'Dang mo chat...' : 'Gui tin nhan'}
                             </button>
                             <button
                                 onClick={handleAccept}

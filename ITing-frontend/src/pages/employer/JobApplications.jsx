@@ -103,7 +103,9 @@ const JobApplications = () => {
                     <FaArrowLeft />
                 </button>
                 <div>
-                    <h2 className="text-2xl font-bold text-gray-800">Danh sách ứng viên</h2>
+                    <h2 className="text-2xl font-bold text-gray-800">
+                        Danh sách ứng viên {pagination.totalItems > 0 && <span className="text-[#1967D2]">({pagination.totalItems})</span>}
+                    </h2>
                     <p className="text-gray-500 text-sm">Tin tuyển dụng ID: #{normalizedJobKey}</p>
                 </div>
             </div>

@@ -98,7 +98,7 @@ function* handleRegister(action) {
         const { navigate } = action.payload;
         yield call(authService.register, action.payload);
         yield put(registerSuccess(null));
-        navigate('/login');
+        navigate('/verify-otp', { state: { email: action.payload.email } });
     } catch (error) {
         const message = error.error || error.message || "Đăng ký thất bại";
         yield put(registerFailure(message));

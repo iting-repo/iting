@@ -1,0 +1,25 @@
+@startuml
+title ACT-ADMIN-CORE
+|Admin|
+start
+:Chọn chức năng (Users / Categories / Content / Reports);
+
+if (Users) then (U)
+  |BE/User| :List / Create / Update / Delete;
+  |FE| :Hiển thị kết quả;
+elseif (Categories) then (C)
+  |BE/Catalog| :List / Upsert / Delete;
+  |FE| :Hiển thị kết quả;
+elseif (Content) then (S)
+  |BE/Content| :List / Upsert / Delete;
+  |FE| :Hiển thị kết quả;
+else (Reports)
+  |BE/Report| :Chạy thống kê theo bộ lọc;
+  |FE| :Render charts/tables;
+  if (Export?) then (Yes)
+    |BE/Report| :Render file (async nếu lớn);
+    |FE| :Tải về;
+  endif
+endif
+stop
+@enduml

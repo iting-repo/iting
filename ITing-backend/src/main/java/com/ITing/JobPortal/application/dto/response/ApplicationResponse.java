@@ -21,10 +21,11 @@ public class ApplicationResponse {
     private Long id;
     private Long userId;
     private Long jobId;
+    private Long companyId;
+    private String companyName;
     private String applicantName;
     private String avatarUrl;
     private String jobTitle;
-    private String companyName;
     private String companyLogo;
     private String introduction;
     
@@ -77,6 +78,8 @@ public class ApplicationResponse {
                 .id(form.getId())
                 .userId(form.getUserId())
                 .jobId(sent.getId().getJobId())
+                .companyId(null)
+                .companyName(null)
                 .applicantName(form.getApplicantName())
                 .introduction(form.getIntroduction())
                 .cvFileName(fileName)

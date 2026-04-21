@@ -46,7 +46,12 @@ const applicationService = {
     getEmployerStats: async () => {
         const response = await axiosInstance.get('/employer/applications/stats');
         return response;
-    }
+    },
+
+    getMyApplications: async (params) => {
+        const response = await axiosInstance.get('/candidates/applications/my-applications', { params });
+        return response;
+    },
 };
 
 export default applicationService;

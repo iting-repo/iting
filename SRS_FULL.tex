@@ -1,0 +1,1787 @@
+\documentclass[12pt, a4paper]{report}
+
+% ========================
+% PACKAGES
+% ========================
+\usepackage[utf8]{inputenc}
+\usepackage[T5]{fontenc}
+\usepackage[vietnamese,english]{babel}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{graphicx}
+\usepackage{longtable}
+\usepackage{booktabs}
+\usepackage{tabularx}
+\usepackage{xcolor}
+\usepackage{listings}
+\usepackage{geometry}
+\usepackage{fancyhdr}
+\usepackage{titlesec}
+\usepackage{hyperref}
+\usepackage{enumitem}
+\usepackage{float}
+\usepackage{array}
+\usepackage{multirow}
+\usepackage{tcolorbox}
+\usepackage{mdframed}
+\usepackage{setspace}
+\usepackage{parskip}
+
+\geometry{a4paper, top=2.5cm, bottom=2.5cm, left=3cm, right=2.5cm}
+\setstretch{1.3}
+
+% ========================
+% COLORS
+% ========================
+\definecolor{primaryblue}{RGB}{37, 99, 235}
+\definecolor{lightblue}{RGB}{219, 234, 254}
+\definecolor{successgreen}{RGB}{16, 185, 129}
+\definecolor{warningorange}{RGB}{245, 158, 11}
+\definecolor{dangered}{RGB}{239, 68, 68}
+\definecolor{codebg}{RGB}{248, 250, 252}
+\definecolor{codefg}{RGB}{51, 65, 85}
+
+% ========================
+% CODE LISTING STYLE
+% ========================
+\lstdefinestyle{javastyle}{
+    backgroundcolor=\color{codebg},
+    commentstyle=\color{successgreen},
+    keywordstyle=\color{primaryblue}\bfseries,
+    stringstyle=\color{dangered},
+    basicstyle=\ttfamily\small,
+    breaklines=true,
+    frame=single,
+    rulecolor=\color{lightblue},
+    language=Java
+}
+
+\lstdefinestyle{sqlstyle}{
+    backgroundcolor=\color{codebg},
+    commentstyle=\color{successgreen},
+    keywordstyle=\color{primaryblue}\bfseries,
+    stringstyle=\color{dangered},
+    basicstyle=\ttfamily\small,
+    breaklines=true,
+    frame=single,
+    language=SQL
+}
+
+% ========================
+% HEADER & FOOTER
+% ========================
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\small\textit{ITing -- Software Requirements Specification}}
+\fancyhead[R]{\small\textit{Phiên bản 2.0}}
+\fancyfoot[C]{\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+
+% ========================
+% BOX STYLES
+% ========================
+\tcbuselibrary{skins, breakable}
+\newtcolorbox{requirementbox}[1]{
+    colback=lightblue!30,
+    colframe=primaryblue,
+    fonttitle=\bfseries,
+    title=#1,
+    breakable
+}
+
+\newtcolorbox{notebox}{
+    colback=yellow!10,
+    colframe=warningorange,
+    fonttitle=\bfseries,
+    title=Ghi chú,
+    breakable
+}
+
+% ========================
+% TITLE PAGE
+% ========================
+\begin{document}
+
+\begin{titlepage}
+\centering
+\vspace*{2cm}
+
+{\huge\bfseries\color{primaryblue} TRƯỜNG ĐẠI HỌC CÔNG NGHỆ THÔNG TIN\\
+ĐHQG-HCM}
+
+\vspace{0.5cm}
+{\large Khoa Công nghệ Phần mềm}
+
+\vspace{2cm}
+\rule{\linewidth}{0.5mm}
+\vspace{0.5cm}
+
+{\Huge\bfseries SOFTWARE REQUIREMENTS\\[0.3cm] SPECIFICATION (SRS)}
+
+\vspace{0.3cm}
+{\LARGE\bfseries\color{primaryblue} Hệ thống Tuyển dụng Công nghệ}
+
+\vspace{0.2cm}
+{\huge\bfseries\color{dangered} ITING}
+
+\vspace{0.5cm}
+\rule{\linewidth}{0.5mm}
+
+\vspace{2cm}
+
+\begin{tabular}{ll}
+\textbf{Phiên bản:} & 2.0 \\[0.3cm]
+\textbf{Ngày:} & 21/04/2026 \\[0.3cm]
+\textbf{Trạng thái:} & Hoàn thiện \\[0.3cm]
+\textbf{Công nghệ Backend:} & Spring Boot 3.x, PostgreSQL, JWT \\[0.3cm]
+\textbf{Công nghệ Frontend:} & ReactJS 18, Vite \\[0.3cm]
+\textbf{Công nghệ AI:} & Gemma Embedding 300M, Sentence-Transformers \\
+\end{tabular}
+
+\vfill
+{\small Tài liệu này mô tả đầy đủ yêu cầu phần mềm cho hệ thống ITing,\\
+bao gồm tất cả chức năng nghiệp vụ, yêu cầu kỹ thuật và kiến trúc hệ thống.}
+
+\end{titlepage}
+
+% ========================
+% TABLE OF CONTENTS
+% ========================
+\tableofcontents
+\newpage
+
+% ========================
+% CHAPTER 1: GIỚI THIỆU
+% ========================
+\chapter{Giới Thiệu (Introduction)}
+
+\section{Mục Đích Tài Liệu}
+
+Tài liệu này là Đặc tả Yêu cầu Phần mềm (Software Requirements Specification -- SRS) cho hệ thống tuyển dụng công nghệ ITing. Mục đích của tài liệu nhằm:
+
+\begin{itemize}
+    \item Cung cấp mô tả toàn diện và chi tiết về các yêu cầu chức năng và phi chức năng của hệ thống.
+    \item Làm cơ sở tham chiếu chính thức giữa nhóm phát triển và các bên liên quan.
+    \item Hướng dẫn quá trình thiết kế, phát triển và kiểm thử hệ thống.
+    \item Là tài liệu đánh giá kết quả cuối cùng của dự án đồ án tốt nghiệp.
+\end{itemize}
+
+\section{Phạm Vi Hệ Thống}
+
+\textbf{ITing} là nền tảng tuyển dụng công nghệ thông tin trực tuyến kết nối ứng viên (Candidate) với nhà tuyển dụng (Employer) trong ngành IT. Hệ thống cung cấp:
+
+\begin{itemize}
+    \item \textbf{Cho Ứng viên}: Tìm kiếm việc làm thông minh, nộp đơn trực tuyến, quản lý hồ sơ chuyên môn.
+    \item \textbf{Cho Nhà tuyển dụng}: Đăng tin tuyển dụng, quản lý hồ sơ ứng viên, tìm kiếm ứng viên phù hợp bằng AI.
+    \item \textbf{Cho Quản trị viên}: Quản lý toàn bộ hệ thống, kiểm duyệt nội dung, thống kê báo cáo.
+    \item \textbf{Tính năng AI}: Khớp hồ sơ thông minh dựa trên Semantic Search (Gemma Embedding Model).
+\end{itemize}
+
+\section{Định Nghĩa, Viết Tắt và Thuật Ngữ}
+
+\begin{longtable}{|p{4cm}|p{10cm}|}
+\hline
+\textbf{Thuật ngữ} & \textbf{Định nghĩa} \\
+\hline
+\endfirsthead
+\hline
+\textbf{Thuật ngữ} & \textbf{Định nghĩa} \\
+\hline
+\endhead
+SRS & Software Requirements Specification -- Đặc tả yêu cầu phần mềm \\
+\hline
+RBAC & Role-Based Access Control -- Kiểm soát quyền truy cập theo vai trò \\
+\hline
+JWT & JSON Web Token -- Token xác thực \\
+\hline
+OTP & One-Time Password -- Mật khẩu sử dụng một lần \\
+\hline
+JD & Job Description -- Mô tả công việc \\
+\hline
+CV & Curriculum Vitae -- Hồ sơ ứng tuyển \\
+\hline
+KYB & Know Your Business -- Xác thực doanh nghiệp \\
+\hline
+API & Application Programming Interface \\
+\hline
+REST & Representational State Transfer \\
+\hline
+CRUD & Create, Read, Update, Delete \\
+\hline
+Embedding & Biểu diễn văn bản dưới dạng vector số \\
+\hline
+Semantic Search & Tìm kiếm dựa trên ngữ nghĩa \\
+\hline
+Cosine Similarity & Độ đo tương đồng cosine giữa hai vector \\
+\hline
+SockJS/Stomp & Giao thức WebSocket cho chat thời gian thực \\
+\hline
+PENDING & Trạng thái chờ duyệt \\
+\hline
+ACTIVE & Trạng thái hoạt động/đã duyệt \\
+\hline
+REJECTED & Trạng thái bị từ chối \\
+\hline
+\end{longtable}
+
+\section{Tổng Quan Tài Liệu}
+
+Tài liệu được tổ chức theo cấu trúc sau:
+\begin{itemize}
+    \item \textbf{Chương 2}: Mô tả tổng quan hệ thống.
+    \item \textbf{Chương 3}: Đặc tả chi tiết chức năng Authentication.
+    \item \textbf{Chương 4}: Đặc tả chức năng tìm kiếm và khám phá việc làm.
+    \item \textbf{Chương 5}: Đặc tả quy trình ứng tuyển.
+    \item \textbf{Chương 6}: Đặc tả chức năng quản lý hồ sơ ứng viên.
+    \item \textbf{Chương 7}: Đặc tả chức năng Nhà tuyển dụng.
+    \item \textbf{Chương 8}: Đặc tả chức năng Quản trị viên.
+    \item \textbf{Chương 9}: Đặc tả tính năng AI Matching.
+    \item \textbf{Chương 10}: Đặc tả hệ thống Chat \& Thông báo.
+    \item \textbf{Chương 11}: Yêu cầu phi chức năng.
+    \item \textbf{Chương 12}: Kiến trúc hệ thống.
+    \item \textbf{Chương 13}: Cơ sở dữ liệu.
+\end{itemize}
+
+% ========================
+% CHAPTER 2: MÔ TẢ TỔNG QUAN
+% ========================
+\chapter{Mô Tả Tổng Quan Hệ Thống}
+
+\section{Bối Cảnh và Động Lực}
+
+Thị trường tuyển dụng IT tại Việt Nam đang phát triển mạnh mẽ, với hàng nghìn cơ hội việc làm mới xuất hiện mỗi tháng. Tuy nhiên, quá trình kết nối giữa nhà tuyển dụng và ứng viên vẫn còn nhiều bất cập:
+
+\begin{itemize}
+    \item Ứng viên mất nhiều thời gian tìm kiếm vị trí phù hợp với kỹ năng thực tế.
+    \item Nhà tuyển dụng nhận được hàng trăm hồ sơ không phù hợp, gây tốn thời gian sàng lọc.
+    \item Cơ chế tìm kiếm từ khóa truyền thống không nắm bắt được ngữ nghĩa chuyên môn.
+\end{itemize}
+
+\textbf{ITing} ra đời để giải quyết những vấn đề này thông qua việc tích hợp trí tuệ nhân tạo (AI) vào quy trình tuyển dụng, giúp tối ưu hóa khả năng kết nối giữa hai phía.
+
+\section{Các Tác Nhân Hệ Thống (System Actors)}
+
+\begin{longtable}{|p{3cm}|p{5cm}|p{6cm}|}
+\hline
+\textbf{Tác nhân} & \textbf{Mô tả} & \textbf{Quyền hạn chính} \\
+\hline
+\endfirsthead
+\hline
+\textbf{Tác nhân} & \textbf{Mô tả} & \textbf{Quyền hạn chính} \\
+\hline
+\endhead
+Guest & Người dùng chưa đăng nhập & Xem tin, Tìm kiếm \\
+\hline
+Candidate & Ứng viên đã đăng ký & Nộp đơn, Quản lý hồ sơ, Chat \\
+\hline
+Employer (HR) & Nhà tuyển dụng & Đăng tin, Quản lý ứng viên, Xác thực công ty \\
+\hline
+Admin & Quản trị viên hệ thống & Toàn quyền: Duyệt tin, Duyệt công ty, Quản lý người dùng \\
+\hline
+AI System & Hệ thống AI nội bộ & Phân tích CV/JD, Gợi ý, Kiểm duyệt tự động \\
+\hline
+\end{longtable}
+
+\section{Kiến Trúc Tổng Quan}
+
+Hệ thống được xây dựng theo mô hình \textbf{Client-Server} với kiến trúc phân tầng rõ ràng:
+
+\begin{itemize}
+    \item \textbf{Presentation Layer}: ReactJS 18 (Vite) -- Giao diện web responsive.
+    \item \textbf{API Gateway Layer}: Spring Boot REST API -- Xử lý tất cả request từ client.
+    \item \textbf{Business Logic Layer}: Các Service class xử lý nghiệp vụ.
+    \item \textbf{Data Access Layer}: Spring Data JPA/Hibernate -- Tương tác với cơ sở dữ liệu.
+    \item \textbf{Database Layer}: PostgreSQL -- Lưu trữ dữ liệu chính.
+    \item \textbf{AI Layer}: Python (Sentence Transformers) -- Xử lý Embedding và Matching.
+    \item \textbf{File Storage}: AWS S3 -- Lưu trữ CV, hình ảnh công ty.
+    \item \textbf{Real-time Layer}: WebSocket (SockJS/STOMP) -- Chat thời gian thực.
+\end{itemize}
+
+\section{Quy Trình Nghiệp Vụ Tổng Quát}
+
+\subsection{Quy Trình Cốt Lõi của Ứng Viên}
+\begin{enumerate}
+    \item Đăng ký tài khoản và xác thực Email qua OTP.
+    \item Xây dựng hồ sơ chuyên môn (Education, Skills, Experience, CV).
+    \item Tìm kiếm và khám phá việc làm phù hợp (AI-powered).
+    \item Nộp đơn ứng tuyển kèm CV và Cover Letter.
+    \item Theo dõi trạng thái đơn và nhận thông báo từ HR.
+    \item Giao tiếp trực tiếp với HR qua chat thời gian thực.
+\end{enumerate}
+
+\subsection{Quy Trình Cốt Lõi của Nhà Tuyển Dụng}
+\begin{enumerate}
+    \item Đăng ký, xác thực công ty (KYB) để nâng cao mức độ tin cậy.
+    \item Đăng tin tuyển dụng và chờ Admin kiểm duyệt.
+    \item Xem và quản lý danh sách hồ sơ ứng viên.
+    \item Chấp nhận/Từ chối hồ sơ và gửi thông báo cho ứng viên.
+    \item Tìm kiếm chủ động ứng viên phù hợp bằng công cụ AI.
+\end{enumerate}
+
+\subsection{Quy Trình Kiểm Duyệt của Admin}
+\begin{enumerate}
+    \item Nhận danh sách tin tuyển dụng và công ty chờ duyệt.
+    \item Sử dụng tính năng AI Review để hỗ trợ kiểm duyệt.
+    \item Phê duyệt hoặc từ chối kèm lý do.
+    \item Xử lý báo cáo vi phạm từ người dùng.
+    \item Quản lý và giám sát toàn bộ hoạt động của hệ thống.
+\end{enumerate}
+
+% ========================
+% CHAPTER 3: AUTHENTICATION
+% ========================
+\chapter{Đặc Tả Chức Năng Xác Thực (Authentication)}
+
+\section{Tổng Quan Module Authentication}
+
+Module xác thực quản lý vòng đời tài khoản người dùng từ đăng ký đến đăng xuất. Hệ thống sử dụng JWT (Access Token + Refresh Token) kết hợp OTP Email để đảm bảo bảo mật.
+
+\section{UC-AUTH-01: Đăng Ký Tài Khoản}
+
+\begin{requirementbox}{UC-AUTH-01: Đăng ký tài khoản mới}
+\textbf{Actor}: Guest \\
+\textbf{Endpoint}: POST /api/auth/register \\
+\textbf{Điều kiện tiên quyết}: Email chưa tồn tại trong hệ thống \\
+\textbf{Phân loại}: Bắt buộc
+\end{requirementbox}
+
+\subsection{Mô Tả Nghiệp Vụ}
+
+Người dùng chưa có tài khoản cung cấp email, mật khẩu và vai trò đăng ký (Candidate/Employer). Hệ thống tạo tài khoản với trạng thái \texttt{PENDING} và gửi OTP đến email để xác thực.
+
+\subsection{Luồng Sự Kiện Chính}
+
+\begin{enumerate}
+    \item Người dùng điền form: \{email, password, confirmPassword, role\}.
+    \item Frontend validate: email đúng định dạng, mật khẩu $\geq$ 8 ký tự, hai mật khẩu khớp nhau.
+    \item Gọi API: POST /api/auth/register với body JSON.
+    \item Backend kiểm tra email chưa tồn tại trong bảng Account.
+    \item Backend tạo bản ghi Account với trạng thái = PENDING.
+    \item Dựa theo role, Backend tạo bản ghi profile tương ứng:
+    \begin{itemize}
+        \item CANDIDATE: Tạo CandidateProfile.
+        \item EMPLOYER: Tạo Company (skeleton record).
+    \end{itemize}
+    \item Backend tạo OTP (6 chữ số) lưu vào bảng otp\_code với TTL = 10 phút.
+    \item Backend gửi email chứa mã OTP đến địa chỉ email đã đăng ký.
+    \item Frontend chuyển đến trang nhập OTP.
+\end{enumerate}
+
+\subsection{Luồng Exception}
+
+\begin{itemize}
+    \item \textbf{E1}: Email đã tồn tại $\rightarrow$ Trả về HTTP 409 Conflict với message ``Email already registered''.
+    \item \textbf{E2}: Mật khẩu không đủ độ phức tạp $\rightarrow$ HTTP 400 Bad Request.
+    \item \textbf{E3}: Gửi email thất bại $\rightarrow$ HTTP 500 Internal Server Error, tài khoản không được tạo (Rollback).
+\end{itemize}
+
+\subsection{Dữ Liệu Request/Response}
+
+\textbf{Request Body}:
+\begin{lstlisting}[style=javastyle]
+{
+  "email": "candidate@example.com",
+  "password": "SecurePass123!",
+  "confirmPassword": "SecurePass123!",
+  "role": "CANDIDATE"  // "CANDIDATE" | "EMPLOYER"
+}
+\end{lstlisting}
+
+\textbf{Response (200 OK)}:
+\begin{lstlisting}[style=javastyle]
+{
+  "success": true,
+  "message": "OTP sent to email. Please verify.",
+  "data": {
+    "email": "candidate@example.com"
+  }
+}
+\end{lstlisting}
+
+\section{UC-AUTH-02: Xác Thực OTP}
+
+\begin{requirementbox}{UC-AUTH-02: Xác thực OTP kích hoạt tài khoản}
+\textbf{Actor}: Guest (đã đăng ký, chờ kích hoạt) \\
+\textbf{Endpoint}: POST /api/auth/verify-otp \\
+\textbf{Điều kiện tiên quyết}: Tài khoản đang ở trạng thái PENDING, OTP còn hiệu lực \\
+\textbf{Phân loại}: Bắt buộc
+\end{requirementbox}
+
+\subsection{Mô Tả Nghiệp Vụ}
+
+Người dùng nhập mã OTP 6 chữ số nhận qua email. Hệ thống kiểm tra tính hợp lệ và chuyển trạng thái tài khoản từ PENDING sang ACTIVE.
+
+\subsection{Luồng Sự Kiện Chính}
+
+\begin{enumerate}
+    \item Người dùng nhập mã OTP vào form.
+    \item Gọi API: POST /api/auth/verify-otp với \{email, otp\}.
+    \item Backend truy vấn bảng otp\_code theo email.
+    \item So sánh mã OTP và kiểm tra TTL (chưa quá 10 phút).
+    \item Nếu hợp lệ: Cập nhật Account.Status = ACTIVE.
+    \item Xóa bản ghi OTP khỏi cơ sở dữ liệu.
+    \item Trả về JWT Access Token + Refresh Token.
+    \item Frontend lưu token và chuyển hướng đến trang chủ.
+\end{enumerate}
+
+\subsection{Cơ Chế OTP}
+
+\begin{itemize}
+    \item Mã OTP: 6 chữ số được tạo ngẫu nhiên.
+    \item Thời gian hiệu lực (TTL): 10 phút.
+    \item Số lần nhập sai tối đa: 5 lần (sau đó tài khoản bị khóa tạm thời).
+    \item Có thể gửi lại OTP sau 60 giây (endpoint: POST /api/auth/resend-otp).
+\end{itemize}
+
+\section{UC-AUTH-03: Đăng Nhập}
+
+\begin{requirementbox}{UC-AUTH-03: Đăng nhập bằng Email/Mật khẩu}
+\textbf{Actor}: Guest \\
+\textbf{Endpoint}: POST /api/auth/login \\
+\textbf{Điều kiện tiên quyết}: Tài khoản đã kích hoạt (ACTIVE) \\
+\textbf{Phân loại}: Bắt buộc
+\end{requirementbox}
+
+\subsection{Luồng Sự Kiện Chính}
+
+\begin{enumerate}
+    \item Người dùng nhập email và mật khẩu.
+    \item Backend truy vấn Account theo email.
+    \item Kiểm tra Account.Status = ACTIVE.
+    \item So khớp mật khẩu với BCrypt (strength 10).
+    \item Nếu hợp lệ: Tạo JWT Access Token (TTL: 15 phút) và Refresh Token (TTL: 7 ngày).
+    \item Lưu Refresh Token vào database và trả về Client.
+    \item Frontend lưu token vào localStorage và điều hướng theo Role.
+\end{enumerate}
+
+\subsection{Cơ Chế JWT}
+
+\textbf{Access Token}: Chứa payload \{userId, email, role, iat, exp\}. Thời gian hiệu lực ngắn (15 phút) để giảm rủi ro bảo mật.
+
+\textbf{Refresh Token}: Token có thời gian sống dài (7 ngày), dùng để lấy Access Token mới khi hết hạn mà không cần đăng nhập lại.
+
+\textbf{Token Rotation}: Mỗi lần refresh, hệ thống vô hiệu hóa Refresh Token cũ và cấp phát token mới.
+
+\section{UC-AUTH-04: Quên Mật Khẩu}
+
+\begin{requirementbox}{UC-AUTH-04: Đặt lại mật khẩu qua Email}
+\textbf{Actor}: Guest \\
+\textbf{Endpoint}: POST /api/auth/forgot-password \\
+\textbf{Phân loại}: Bắt buộc
+\end{requirementbox}
+
+\subsection{Luồng Sự Kiện Chính}
+
+\begin{enumerate}
+    \item Người dùng nhập email trên trang quên mật khẩu.
+    \item Backend tạo OTP reset password và gửi email.
+    \item Người dùng nhập OTP và mật khẩu mới.
+    \item Backend xác thực OTP, cập nhật mật khẩu (BCrypt hash).
+    \item Vô hiệu hóa tất cả Refresh Token hiện có của người dùng.
+\end{enumerate}
+
+% ========================
+% CHAPTER 4: JOB DISCOVERY
+% ========================
+\chapter{Tìm Kiếm và Khám Phá Việc Làm}
+
+\section{Tổng Quan Module Job Discovery}
+
+Module này cho phép tất cả người dùng (bao gồm Guest chưa đăng nhập) tìm kiếm, lọc và xem chi tiết tin tuyển dụng. Hệ thống hỗ trợ hai cơ chế tìm kiếm: từ khóa truyền thống và Semantic Search bằng AI.
+
+\section{UC-SEARCH-01: Tìm Kiếm Việc Làm Cơ Bản}
+
+\begin{requirementbox}{UC-SEARCH-01: Tìm kiếm việc làm theo từ khóa}
+\textbf{Actor}: Guest, Candidate \\
+\textbf{Endpoint}: GET /api/jobs/search \\
+\textbf{Phân loại}: Bắt buộc
+\end{requirementbox}
+
+\subsection{Các Tham Số Tìm Kiếm}
+
+\begin{longtable}{|p{3.5cm}|p{2.5cm}|p{2.5cm}|p{5cm}|}
+\hline
+\textbf{Tham số} & \textbf{Kiểu dữ liệu} & \textbf{Bắt buộc} & \textbf{Mô tả} \\
+\hline
+\endfirsthead
+\hline
+\textbf{Tham số} & \textbf{Kiểu dữ liệu} & \textbf{Bắt buộc} & \textbf{Mô tả} \\
+\hline
+\endhead
+keyword & String & Không & Từ khóa tìm kiếm (title, description) \\
+\hline
+type\_keyword & Integer & Không & Phạm vi tìm kiếm (1=Tiêu đề, 2=Mô tả, 3=Kỹ năng) \\
+\hline
+sba & Integer & Không & Scroll-based anchor (phân trang vô hạn) \\
+\hline
+province & String & Không & Tỉnh/Thành phố làm việc \\
+\hline
+jobType & Enum & Không & FULL\_TIME, PART\_TIME, REMOTE, CONTRACT \\
+\hline
+experienceLevel & Enum & Không & JUNIOR, MID, SENIOR, LEAD \\
+\hline
+minSalary & BigDecimal & Không & Mức lương tối thiểu \\
+\hline
+maxSalary & BigDecimal & Không & Mức lương tối đa \\
+\hline
+page & Integer & Không & Trang hiện tại (default: 0) \\
+\hline
+size & Integer & Không & Số kết quả mỗi trang (default: 10) \\
+\hline
+sortBy & String & Không & Trường sắp xếp (lastUpdate, viewCount) \\
+\hline
+sortOrder & String & Không & asc hoặc desc \\
+\hline
+\end{longtable}
+
+\subsection{Cấu Trúc URL Tìm Kiếm}
+
+Hệ thống sử dụng URL thân thiện với SEO:
+\begin{center}
+\texttt{https://www.iting.vn/tim-viec-lam-backend?type\_keyword=1\&sba=1}
+\end{center}
+
+\subsection{Điều Kiện Hiển Thị Tin}
+
+Chỉ hiển thị các tin tuyển dụng đáp ứng đồng thời các điều kiện:
+\begin{itemize}
+    \item \texttt{Job.Status = ACTIVE}
+    \item \texttt{Job.dueDate $\geq$ currentDate} (còn hạn nộp)
+    \item Công ty đăng tin đang hoạt động (\texttt{Company.Active = true})
+\end{itemize}
+
+\section{UC-SEARCH-02: Xem Chi Tiết Tin Tuyển Dụng}
+
+\begin{requirementbox}{UC-SEARCH-02: Xem chi tiết tin tuyển dụng}
+\textbf{Actor}: Guest, Candidate \\
+\textbf{Endpoint}: GET /api/jobs/\{id\} \\
+\textbf{Phân loại}: Bắt buộc
+\end{requirementbox}
+
+\subsection{Thông Tin Hiển Thị}
+
+Trang chi tiết tin tuyển dụng gồm các thông tin:
+
+\begin{itemize}
+    \item \textbf{Thông tin cơ bản}: Tiêu đề, Vị trí, Công ty, Địa điểm, Loại hình công việc.
+    \item \textbf{Mức lương}: Khoảng lương (minSalary - maxSalary), đơn vị (VND/USD/MONTH).
+    \item \textbf{Yêu cầu}: Kinh nghiệm, Kỹ thuật bắt buộc (techRequired), Mô tả chi tiết.
+    \item \textbf{Quyền lợi}: Phúc lợi, chế độ làm việc.
+    \item \textbf{Hạn nộp}: Ngày hết hạn ứng tuyển.
+    \item \textbf{Thông tin công ty}: Tên, logo, quy mô, lĩnh vực.
+    \item \textbf{Trạng thái ứng tuyển}: (Nếu đã đăng nhập) Hiển thị nút ``Nộp đơn'' hoặc ``Đã ứng tuyển''.
+\end{itemize}
+
+\subsection{Cơ Chế Đếm Lượt Xem}
+
+Mỗi lần xem chi tiết tin, hệ thống tăng \texttt{Job.viewCount} lên 1 đơn vị để phục vụ thống kê.
+
+\section{UC-SEARCH-03: Lưu Tin Yêu Thích}
+
+\begin{requirementbox}{UC-SEARCH-03: Lưu và quản lý tin yêu thích}
+\textbf{Actor}: Candidate (đã đăng nhập) \\
+\textbf{Endpoint}: POST /api/jobs/\{id\}/save \\
+\textbf{Phân loại}: Bắt buộc
+\end{requirementbox}
+
+Ứng viên có thể lưu tin tuyển dụng vào danh sách yêu thích để xem lại sau. Hệ thống lưu thông tin vào bảng \texttt{user\_save\_job}.
+
+% ========================
+% CHAPTER 5: APPLICATION
+% ========================
+\chapter{Quy Trình Ứng Tuyển (Application)}
+
+\section{Tổng Quan Module Application}
+
+Module ứng tuyển quản lý toàn bộ vòng đời của một đơn ứng tuyển từ khi nộp đến khi được chấp nhận hoặc từ chối. Hệ thống ngăn chặn nộp đơn trùng lặp và đảm bảo tính nhất quán dữ liệu.
+
+\section{Trạng Thái Đơn Ứng Tuyển}
+
+\begin{center}
+\begin{tabular}{|c|p{4cm}|p{7cm}|}
+\hline
+\textbf{Trạng thái} & \textbf{Tên hiển thị} & \textbf{Ý nghĩa} \\
+\hline
+PENDING & Chờ xem xét & Đơn vừa nộp, HR chưa xem \\
+\hline
+VIEWED & Đã xem & HR đã mở xem hồ sơ \\
+\hline
+ACCEPTED & Trúng tuyển & HR chấp nhận ứng viên \\
+\hline
+REJECTED & Không phù hợp & HR từ chối hồ sơ \\
+\hline
+WITHDRAWN & Đã rút & Ứng viên tự rút đơn \\
+\hline
+\end{tabular}
+\end{center}
+
+\section{UC-APPLY-01: Nộp Đơn Ứng Tuyển}
+
+\begin{requirementbox}{UC-APPLY-01: Nộp đơn ứng tuyển}
+\textbf{Actor}: Candidate \\
+\textbf{Endpoint}: POST /api/candidate/applications \\
+\textbf{Điều kiện tiên quyết}: Ứng viên đã đăng nhập, tin tuyển dụng đang ACTIVE \\
+\textbf{Phân loại}: Bắt buộc
+\end{requirementbox}
+
+\subsection{Luồng Sự Kiện Chính}
+
+\begin{enumerate}
+    \item Ứng viên nhấn nút ``Ứng tuyển ngay'' trên trang chi tiết tin.
+    \item Hệ thống kiểm tra ứng viên đã đăng nhập chưa; nếu chưa, chuyển hướng đến trang đăng nhập.
+    \item Hệ thống kiểm tra điều kiện đủ điều kiện ứng tuyển:
+    \begin{itemize}
+        \item Tin tuyển dụng đang ở trạng thái ACTIVE.
+        \item Chưa quá hạn nộp (dueDate $\geq$ today).
+        \item Ứng viên chưa nộp đơn vào tin này trước đó.
+    \end{itemize}
+    \item Nếu đủ điều kiện: Hiển thị form nộp đơn:
+    \begin{itemize}
+        \item Chọn CV từ danh sách CV đã upload (mặc định CV đã được đặt là default).
+        \item Nhập Cover Letter (thư giới thiệu -- tùy chọn).
+        \item Điền thông tin bổ sung (nếu tin yêu cầu).
+    \end{itemize}
+    \item Ứng viên xác nhận và gửi đơn.
+    \item Backend tạo bản ghi \texttt{ApplicationForm} với \texttt{status = PENDING}.
+    \item Tăng \texttt{Job.applicationCount} lên 1.
+    \item Gửi thông báo cho HR về đơn ứng tuyển mới.
+    \item Hiển thị thông báo thành công và cập nhật nút thành ``Đã ứng tuyển''.
+\end{enumerate}
+
+\subsection{Kiểm Tra Chống Nộp Trùng}
+
+\begin{lstlisting}[style=javastyle, caption=Logic kiểm tra nộp trùng]
+// Backend check: CandidateApplicationServiceImpl
+boolean alreadyApplied = applicationRepository
+    .existsByApplicantIdAndJobId(candidateId, jobId);
+if (alreadyApplied) {
+    throw new AlreadyAppliedException(
+        "You have already applied for this job.");
+}
+\end{lstlisting}
+
+\subsection{Cấu Trúc Request}
+
+\begin{lstlisting}[style=javastyle]
+POST /api/candidate/applications
+{
+  "jobId": 123,
+  "cvId": 45,
+  "coverLetter": "Dear Hiring Manager, I am excited..."
+}
+\end{lstlisting}
+
+\section{UC-APPLY-02: Rút Đơn Ứng Tuyển}
+
+\begin{requirementbox}{UC-APPLY-02: Rút đơn ứng tuyển}
+\textbf{Actor}: Candidate \\
+\textbf{Endpoint}: DELETE /api/candidate/applications/\{id\} \\
+\textbf{Điều kiện tiên quyết}: Đơn đang ở trạng thái PENDING hoặc VIEWED \\
+\textbf{Phân loại}: Bắt buộc
+\end{requirementbox}
+
+Ứng viên chỉ có thể rút đơn nếu trạng thái chưa được quyết định (PENDING hoặc VIEWED). Sau khi rút, trạng thái chuyển thành WITHDRAWN và không thể nộp lại vào cùng tin đó.
+
+\section{UC-APPLY-03: Theo Dõi Trạng Thái Đơn}
+
+\begin{requirementbox}{UC-APPLY-03: Danh sách đơn ứng tuyển}
+\textbf{Actor}: Candidate \\
+\textbf{Endpoint}: GET /api/candidate/applications \\
+\textbf{Phân loại}: Bắt buộc
+\end{requirementbox}
+
+Ứng viên xem danh sách tất cả các đơn đã nộp, bao gồm trạng thái hiện tại, tên công ty, vị trí và thời gian nộp. Hỗ trợ lọc theo trạng thái.
+
+% ========================
+% CHAPTER 6: CANDIDATE PROFILE
+% ========================
+\chapter{Quản Lý Hồ Sơ Ứng Viên}
+
+\section{Tổng Quan Module Profile}
+
+Module hồ sơ cho phép ứng viên xây dựng và duy trì hồ sơ chuyên môn đầy đủ. Hồ sơ càng đầy đủ, cơ hội được hệ thống AI gợi ý và hiển thị với HR càng cao.
+
+\section{Cấu Trúc Hồ Sơ Ứng Viên}
+
+Hồ sơ ứng viên gồm các thành phần:
+
+\begin{center}
+\begin{tabular}{|p{4cm}|p{4cm}|p{6cm}|}
+\hline
+\textbf{Thành phần} & \textbf{Bảng DB} & \textbf{Thông tin chính} \\
+\hline
+Thông tin cơ bản & candidate\_profiles & Họ tên, SĐT, vị trí mong muốn \\
+\hline
+Học vấn & Education & Trường, Chuyên ngành, Năm TN \\
+\hline
+Kinh nghiệm & Experience & Vị trí, Công ty, Thời gian \\
+\hline
+Kỹ năng & Skill & Tên kỹ năng, Mức độ thành thạo \\
+\hline
+Chứng chỉ & Certificate & Tên chứng chỉ, Tổ chức cấp, Năm \\
+\hline
+Portfolio & Portfolio & Link dự án, Mô tả \\
+\hline
+Mạng xã hội & SocialLink & GitHub, LinkedIn, Personal Web \\
+\hline
+CV & CV & File CV (S3), Tiêu đề, CV mặc định \\
+\hline
+\end{tabular}
+\end{center}
+
+\section{UC-PROFILE-01: Cập Nhật Thông Tin Chuyên Môn}
+
+\begin{requirementbox}{UC-PROFILE-01: Cập nhật hồ sơ chuyên môn}
+\textbf{Actor}: Candidate \\
+\textbf{Endpoint}: PUT /api/user/professional-profile \\
+\textbf{Phân loại}: Bắt buộc
+\end{requirementbox}
+
+Ứng viên cập nhật thông tin tổng quan: giới thiệu bản thân, mục tiêu nghề nghiệp, mức lương kỳ vọng, khu vực làm việc mong muốn.
+
+\section{UC-PROFILE-02: Quản Lý CV}
+
+\begin{requirementbox}{UC-PROFILE-02: Quản lý danh sách CV}
+\textbf{Actor}: Candidate \\
+\textbf{Endpoints}: /api/user/professional-profile/cv \\
+\textbf{Phân loại}: Bắt buộc
+\end{requirementbox}
+
+\subsection{Các Chức Năng Quản Lý CV}
+
+\begin{itemize}
+    \item \textbf{Upload CV}: POST /cv -- Tải lên file CV mới (PDF, DOC, DOCX), lưu lên AWS S3.
+    \item \textbf{Đặt CV mặc định}: PATCH /cv/\{id\}/default -- Chọn CV sẽ được tự động gắn khi nộp đơn.
+    \item \textbf{Đổi tên CV}: PATCH /cv/\{id\}/title -- Đặt tên dễ nhận biết (ví dụ: ``CV Backend Java'').
+    \item \textbf{Xóa CV}: DELETE /cv/\{id\} -- Xóa CV (không xóa nếu CV đang được dùng trong đơn ứng tuyển chưa xử lý).
+\end{itemize}
+
+\subsection{Quy Tắc Nghiệp Vụ CV}
+
+\begin{itemize}
+    \item Mỗi ứng viên có thể upload tối đa 5 CV.
+    \item Chỉ có một CV được đặt là ``mặc định'' tại một thời điểm.
+    \item Định dạng cho phép: PDF, DOC, DOCX.
+    \item Kích thước tối đa: 5MB.
+\end{itemize}
+
+\section{UC-PROFILE-03: Quản Lý Kinh Nghiệm Làm Việc}
+
+\begin{requirementbox}{UC-PROFILE-03: Thêm/Sửa/Xóa kinh nghiệm}
+\textbf{Actor}: Candidate \\
+\textbf{Endpoints}: /api/user/professional-profile/experience \\
+\textbf{Phân loại}: Bắt buộc
+\end{requirementbox}
+
+Ứng viên quản lý danh sách kinh nghiệm làm việc, mỗi entry bao gồm: Tên công ty, Vị trí đảm nhiệm, Thời gian (từ tháng/năm đến tháng/năm), Mô tả công việc.
+
+% ========================
+% CHAPTER 7: EMPLOYER
+% ========================
+\chapter{Chức Năng Nhà Tuyển Dụng (Employer)}
+
+\section{Tổng Quan Module Employer}
+
+Nhà tuyển dụng (HR) có hai nhóm chức năng chính: (1) Quản lý tin tuyển dụng và (2) Quản lý hồ sơ ứng viên. Ngoài ra có xác thực công ty (KYB) để nâng cao mức độ tin cậy.
+
+\section{UC-HR-JOB-01: Đăng Tin Tuyển Dụng}
+
+\begin{requirementbox}{UC-HR-JOB-01: Tạo tin tuyển dụng mới}
+\textbf{Actor}: Employer (HR) \\
+\textbf{Endpoint}: POST /api/employer/jobs \\
+\textbf{Điều kiện tiên quyết}: HR đã đăng nhập, Công ty đang hoạt động \\
+\textbf{Phân loại}: Bắt buộc
+\end{requirementbox}
+
+\subsection{Thông Tin Tin Tuyển Dụng}
+
+\begin{longtable}{|p{4cm}|p{2.5cm}|c|p{5cm}|}
+\hline
+\textbf{Trường} & \textbf{Kiểu dữ liệu} & \textbf{Bắt buộc} & \textbf{Mô tả} \\
+\hline
+\endfirsthead
+\hline
+\textbf{Trường} & \textbf{Kiểu dữ liệu} & \textbf{Bắt buộc} & \textbf{Mô tả} \\
+\hline
+\endhead
+title & String & Có & Tiêu đề vị trí (tối đa 200 ký tự) \\
+\hline
+position & String & Có & Tên vị trí chính thức \\
+\hline
+description & Text & Có & Mô tả công việc chi tiết \\
+\hline
+requirements & Text & Có & Yêu cầu ứng viên \\
+\hline
+responsibilities & Text & Không & Trách nhiệm công việc \\
+\hline
+benefits & Text & Không & Quyền lợi và phúc lợi \\
+\hline
+minSalary & BigDecimal & Không & Mức lương tối thiểu \\
+\hline
+maxSalary & BigDecimal & Không & Mức lương tối đa \\
+\hline
+salaryType & Enum & Có & MONTHLY, HOURLY, NEGOTIABLE \\
+\hline
+jobType & Enum & Có & FULL\_TIME, PART\_TIME, REMOTE, CONTRACT \\
+\hline
+experienceLevel & Enum & Có & INTERN, JUNIOR, MID, SENIOR, LEAD \\
+\hline
+techRequired & List$<$String$>$ & Không & Danh sách công nghệ yêu cầu \\
+\hline
+province & String & Có & Tỉnh/Thành phố \\
+\hline
+address & String & Không & Địa chỉ cụ thể \\
+\hline
+maxAccept & Integer & Không & Số lượng tuyển dụng \\
+\hline
+dueDate & LocalDate & Có & Hạn nộp hồ sơ \\
+\hline
+\end{longtable}
+
+\subsection{Vòng Đời Trạng Thái Tin}
+
+\begin{center}
+\begin{tabular}{|c|c|p{7cm}|}
+\hline
+\textbf{Trạng thái} & \textbf{Màu sắc} & \textbf{Ý nghĩa} \\
+\hline
+PENDING & Vàng & Chờ Admin kiểm duyệt \\
+\hline
+ACTIVE & Xanh lá & Đang hiển thị công khai \\
+\hline
+REJECTED & Đỏ & Bị Admin từ chối \\
+\hline
+CLOSED & Xám & HR đóng tin (không nhận thêm ứng viên) \\
+\hline
+EXPIRED & Cam & Hết hạn nộp tự động \\
+\hline
+SUSPENDED & Tím & Bị Admin đình chỉ vi phạm \\
+\hline
+\end{tabular}
+\end{center}
+
+\subsection{Quy Tắc Chuyển Trạng Thái}
+
+\begin{itemize}
+    \item \textbf{PENDING $\rightarrow$ ACTIVE}: Admin phê duyệt.
+    \item \textbf{PENDING $\rightarrow$ REJECTED}: Admin từ chối (kèm lý do).
+    \item \textbf{ACTIVE $\rightarrow$ CLOSED}: HR chủ động đóng.
+    \item \textbf{ACTIVE $\rightarrow$ SUSPENDED}: Admin đình chỉ vi phạm.
+    \item \textbf{ACTIVE $\rightarrow$ EXPIRED}: Hệ thống tự động khi quá dueDate.
+    \item \textbf{CLOSED $\rightarrow$ ACTIVE}: HR mở lại (nếu chưa quá hạn).
+\end{itemize}
+
+\section{UC-HR-JOB-02: Chỉnh Sửa Tin Tuyển Dụng}
+
+\begin{requirementbox}{UC-HR-JOB-02: Cập nhật tin tuyển dụng}
+\textbf{Actor}: Employer (HR) \\
+\textbf{Endpoint}: PUT /api/employer/jobs/\{id\} \\
+\textbf{Điều kiện tiên quyết}: HR là chủ tin, tin đang ACTIVE hoặc PENDING \\
+\textbf{Phân loại}: Bắt buộc
+\end{requirementbox}
+
+Khi HR chỉnh sửa tin đang ACTIVE, tin sẽ quay về PENDING để Admin kiểm duyệt lại. Điều này đảm bảo mọi nội dung được kiểm soát chất lượng.
+
+\section{UC-HR-APP-01: Xem Danh Sách Hồ Sơ Ứng Viên}
+
+\begin{requirementbox}{UC-HR-APP-01: Quản lý danh sách ứng viên}
+\textbf{Actor}: Employer (HR) \\
+\textbf{Endpoint}: GET /api/employer/applications \\
+\textbf{Phân loại}: Bắt buộc
+\end{requirementbox}
+
+\subsection{Tham Số Lọc}
+
+\begin{itemize}
+    \item \textbf{jobId}: Lọc theo tin tuyển dụng cụ thể.
+    \item \textbf{status}: PENDING, VIEWED, ACCEPTED, REJECTED.
+    \item \textbf{keyword}: Tìm kiếm theo tên hoặc email ứng viên.
+    \item \textbf{dateFrom, dateTo}: Lọc theo khoảng thời gian nộp đơn.
+    \item \textbf{page, size}: Phân trang.
+\end{itemize}
+
+\section{UC-HR-APP-02: Xem Chi Tiết Hồ Sơ và Kích Hoạt VIEWED}
+
+\begin{requirementbox}{UC-HR-APP-02: Xem chi tiết hồ sơ ứng viên}
+\textbf{Actor}: Employer (HR) \\
+\textbf{Endpoint}: GET /api/employer/applications/\{id\} \\
+\textbf{Phân loại}: Bắt buộc
+\end{requirementbox}
+
+\subsection{Cơ Chế Tự Động Chuyển Trạng Thái VIEWED}
+
+Khi HR mở xem chi tiết hồ sơ lần đầu tiên, hệ thống tự động:
+\begin{enumerate}
+    \item Kiểm tra \texttt{ApplicationForm.status == PENDING}.
+    \item Cập nhật \texttt{status = VIEWED}.
+    \item Gửi thông báo đến ứng viên: ``Nhà tuyển dụng đã xem hồ sơ của bạn''.
+\end{enumerate}
+
+Cơ chế này giúp ứng viên biết hồ sơ của mình đã được chú ý mà không cần HR phải tự nhớ bấm nút.
+
+\section{UC-HR-APP-03: Chấp Nhận}
+
+\begin{requirementbox}{UC-HR-APP-03: Chấp nhận hồ sơ ứng viên}
+\textbf{Actor}: Employer (HR) \\
+\textbf{Endpoint}: POST /api/employer/applications/\{id\}/accept \\
+\textbf{Phân loại}: Bắt buộc
+\end{requirementbox}
+
+\subsection{Luồng Sự Kiện}
+
+\begin{enumerate}
+    \item HR xem chi tiết hồ sơ và quyết định chấp nhận.
+    \item HR có thể ghi chú nội bộ (không hiển thị với ứng viên).
+    \item Backend cập nhật \texttt{ApplicationForm.status = ACCEPTED}.
+    \item Backend tạo thông báo \texttt{APPLICATION\_ACCEPTED} gửi cho ứng viên.
+    \item Frontend cập nhật giao diện và hiển thị badge ``Trúng tuyển''.
+\end{enumerate}
+
+\section{UC-HR-APP-04: Từ Chối}
+
+\begin{requirementbox}{UC-HR-APP-04: Từ chối hồ sơ ứng viên}
+\textbf{Actor}: Employer (HR) \\
+\textbf{Endpoint}: POST /api/employer/applications/\{id\}/reject \\
+\textbf{Phân loại}: Bắt buộc
+\end{requirementbox}
+
+HR từ chối hồ sơ, Backend cập nhật \texttt{status = REJECTED} và gửi thông báo \texttt{APPLICATION\_REJECTED} cho ứng viên. HR có thể viết lý do từ chối (tùy chọn, có thể hiển thị hoặc ẩn với ứng viên).
+
+% ========================
+% CHAPTER 8: ADMIN
+% ========================
+\chapter{Chức Năng Quản Trị Viên (Admin)}
+
+\section{Tổng Quan Module Admin}
+
+Quản trị viên có quyền cao nhất trong hệ thống, chịu trách nhiệm kiểm duyệt nội dung, xác thực doanh nghiệp và đảm bảo chất lượng toàn bộ nền tảng.
+
+\section{UC-ADMIN-JOB-01: Duyệt Tin Tuyển Dụng}
+
+\begin{requirementbox}{UC-ADMIN-JOB-01: Kiểm duyệt tin tuyển dụng}
+\textbf{Actor}: Admin \\
+\textbf{Endpoints}: POST /api/admin/jobs/\{id\}/approve, /reject \\
+\textbf{Phân loại}: Bắt buộc
+\end{requirementbox}
+
+\subsection{Quy Trình Kiểm Duyệt}
+
+\begin{enumerate}
+    \item Admin vào mục ``Quản lý tin chờ duyệt'' (GET /api/admin/jobs/filter?status=PENDING).
+    \item Admin đọc nội dung tin và đánh giá.
+    \item \textbf{Tùy chọn AI Review}: Admin có thể kích hoạt tính năng AI để tự động phân tích nội dung (POST /api/admin/jobs/\{id\}/ai-review):
+    \begin{itemize}
+        \item AI phân tích ngôn từ, độ tin cậy, nội dung không phù hợp.
+        \item AI trả về điểm số và danh sách cảnh báo.
+    \end{itemize}
+    \item Admin quyết định:
+    \begin{itemize}
+        \item \textbf{Phê duyệt}: Tin chuyển ACTIVE, HR nhận thông báo.
+        \item \textbf{Từ chối}: Admin nhập lý do, tin chuyển REJECTED, HR nhận thông báo kèm lý do.
+    \end{itemize}
+\end{enumerate}
+
+\subsection{Thao Tác Hàng Loạt (Bulk Actions)}
+
+Admin có thể thực hiện các thao tác với nhiều tin cùng lúc:
+\begin{itemize}
+    \item POST /api/admin/jobs/bulk-approve
+    \item POST /api/admin/jobs/bulk-reject
+    \item POST /api/admin/jobs/bulk-suspend
+    \item POST /api/admin/jobs/bulk-close
+    \item POST /api/admin/jobs/bulk-delete
+\end{itemize}
+
+\section{UC-ADMIN-COMPANY-01: Xác Thực Công Ty (KYB)}
+
+\begin{requirementbox}{UC-ADMIN-COMPANY-01: Xác thực pháp lý doanh nghiệp}
+\textbf{Actor}: Admin \\
+\textbf{Endpoints}: /api/admin/companies/\{id\}/approve, /reject \\
+\textbf{Phân loại}: Bắt buộc
+\end{requirementbox}
+
+\subsection{Cấp Độ Xác Thực (VerificationLevel)}
+
+\begin{center}
+\begin{tabular}{|c|p{4cm}|p{7cm}|}
+\hline
+\textbf{Cấp độ} & \textbf{Tên} & \textbf{Quyền lợi} \\
+\hline
+UNVERIFIED & Chưa xác thực & Đăng tin cơ bản, chờ kiểm duyệt gắt hơn \\
+\hline
+BASIC & Xác thực cơ bản & Đăng tin không giới hạn, hiển thị badge \\
+\hline
+VERIFIED & Xác thực pháp lý & Badge xanh tick, ưu tiên hiển thị \\
+\hline
+PREMIUM & Đối tác cao cấp & Tính năng premium, Analytics nâng cao \\
+\hline
+\end{tabular}
+\end{center}
+
+\subsection{Quy Trình KYB Chi Tiết}
+
+\begin{enumerate}
+    \item Employer upload Giấy phép kinh doanh và tài liệu pháp lý.
+    \item Admin vào mục ``Công ty chờ duyệt'' (GET /api/admin/companies/pending-reviews).
+    \item Admin xem Giấy phép qua Presigned URL (GET /api/admin/companies/\{id\}/business-license/view).
+    \item Admin thêm ghi chú nội bộ nếu cần làm rõ (POST /api/admin/companies/\{id\}/notes).
+    \item Có 3 quyết định:
+    \begin{itemize}
+        \item \textbf{Duyệt thông tin}: approve-info -- Xác nhận thông tin cơ bản hợp lệ.
+        \item \textbf{Duyệt tài liệu}: approve-documents -- Xác nhận giấy tờ pháp lý hợp lệ.
+        \item \textbf{Yêu cầu bổ sung}: request-resubmission -- Yêu cầu công ty cung cấp thêm tài liệu.
+        \item \textbf{Từ chối}: reject -- Từ chối với lý do.
+    \end{itemize}
+    \item Sau khi duyệt đủ các bước, Admin cấp VerificationLevel phù hợp.
+\end{enumerate}
+
+\section{UC-ADMIN-REPORT-01: Xử Lý Báo Cáo Vi Phạm}
+
+\begin{requirementbox}{UC-ADMIN-REPORT-01: Xử lý báo cáo vi phạm}
+\textbf{Actor}: Admin \\
+\textbf{Endpoint}: POST /api/admin/reports/\{id\}/handle \\
+\textbf{Phân loại}: Bắt buộc
+\end{requirementbox}
+
+\subsection{Trạng Thái Báo Cáo}
+
+\begin{center}
+\begin{tabular}{|c|p{10cm}|}
+\hline
+\textbf{Trạng thái} & \textbf{Ý nghĩa} \\
+\hline
+PENDING & Báo cáo mới chưa xử lý \\
+\hline
+REVIEWING & Admin đang xem xét \\
+\hline
+RESOLVED & Đã xử lý xong (vi phạm có thật) \\
+\hline
+DISMISSED & Bác bỏ (không tìm thấy vi phạm) \\
+\hline
+\end{tabular}
+\end{center}
+
+% ========================
+% CHAPTER 9: AI FEATURES
+% ========================
+\chapter{Đặc Tả Tính Năng AI (AI Specifications)}
+
+\section{Tổng Quan Hệ Thống AI}
+
+Tính năng AI của ITing được xây dựng trên nền tảng \textbf{Sentence Transformers} và mô hình ngôn ngữ \textbf{Gemma Embedding (300M tham số)} của Google. Hệ thống AI phục vụ 4 nhóm chức năng:
+
+\begin{enumerate}
+    \item \textbf{CV-Job Matching}: Khớp hồ sơ ứng viên với tin tuyển dụng.
+    \item \textbf{Job Recommendation}: Gợi ý việc làm thông minh cho ứng viên.
+    \item \textbf{Candidate Search}: Tìm kiếm ứng viên phù hợp cho HR.
+    \item \textbf{AI Job Review}: Tự động kiểm duyệt nội dung tin tuyển dụng.
+\end{enumerate}
+
+\section{UC-AI-01: CV-Job Matching Engine}
+
+\subsection{Đầu Vào (Input Data)}
+
+\begin{itemize}
+    \item \textbf{Job Description (JD)}: Tiêu đề job, mô tả, yêu cầu kỹ thuật, kinh nghiệm.
+    \item \textbf{Candidate CV}: Tóm tắt kỹ năng, kinh nghiệm, danh sách công nghệ, vị trí mong muốn.
+\end{itemize}
+
+\subsection{Kiến Trúc Mô Hình}
+
+\textbf{Base Model}: \texttt{google/embedding-gemma-300m}
+\begin{itemize}
+    \item Số tham số: 300 triệu.
+    \item Kích thước Embedding vector: 1024 chiều.
+    \item Baseline performnace trên tập IT Recruitment.
+\end{itemize}
+
+\textbf{Fine-tuned Model}: \texttt{gemma-it-matching-best}
+\begin{itemize}
+    \item Được tinh chỉnh (Fine-tuned) trên dataset tuyển dụng IT Việt Nam.
+    \item Sử dụng kỹ thuật Contrastive Learning để tăng khả năng phân hóa.
+    \item Cải thiện đáng kể khả năng phân biệt ứng viên phù hợp và không phù hợp.
+\end{itemize}
+
+\subsection{Thuật Toán Matching}
+
+\begin{enumerate}
+    \item \textbf{Encoding}: Chuyển đổi văn bản JD và CV sang vector đặc trưng.
+    \begin{equation}
+        V_{JD} = E(text_{JD}) \in \mathbb{R}^{1024}
+    \end{equation}
+    \begin{equation}
+        V_{CV_i} = E(text_{CV_i}) \in \mathbb{R}^{1024}
+    \end{equation}
+
+    \item \textbf{Cosine Similarity}: Tính điểm tương đồng.
+    \begin{equation}
+        \text{Score}(JD, CV_i) = \frac{V_{JD} \cdot V_{CV_i}}{\|V_{JD}\| \cdot \|V_{CV_i}\|}
+    \end{equation}
+
+    \item \textbf{Ranking}: Sắp xếp theo điểm số giảm dần.
+    \begin{equation}
+        \text{Rank} = \text{argsort}\left(-[\text{Score}(JD, CV_i)]_{i=1}^{n}\right)
+    \end{equation}
+\end{enumerate}
+
+\subsection{Kết Quả Thực Nghiệm -- Khả Năng Phân Hóa}
+
+Bảng dưới đây so sánh Model gốc và Model Fine-tuned trên JD ``Backend Java Spring Boot, >1 năm kinh nghiệm, Docker/Microservices'':
+
+\begin{longtable}{|p{5.5cm}|c|c|c|}
+\hline
+\textbf{Nội dung CV} & \textbf{Điểm Gốc} & \textbf{Điểm Train} & \textbf{Đánh giá} \\
+\hline
+\endfirsthead
+\hline
+\textbf{Nội dung CV} & \textbf{Điểm Gốc} & \textbf{Điểm Train} & \textbf{Đánh giá} \\
+\hline
+\endhead
+Backend Java, >1 năm, Docker, Microservices & 0.9085 & 0.8981 & Top Match \\
+\hline
+Backend Java, <1 năm, Docker, Microservices & 0.9173 & 0.8667 & Sát nút \\
+\hline
+Backend C\# .NET, Microservices, Docker & 0.7870 & 0.7243 & Khác ngôn ngữ \\
+\hline
+Java mới TN, chưa có Docker & 0.7536 & 0.4250 & Đẩy ra xa \\
+\hline
+Frontend ReactJS, 2 năm & 0.6379 & 0.5607 & Không liên quan \\
+\hline
+Fullstack Node.js/ReactJS, Docker & 0.7031 & 0.5782 & Khác stack \\
+\hline
+\end{longtable}
+
+\textbf{Nhận xét}: Model Fine-tuned giảm điểm mạnh cho ``Java mới TN'' từ 0.75 xuống 0.42 (giảm 44\%), trong khi vẫn duy trì thứ bậc ``Backend Java >1 năm'' ở vị trí số 1. Điều này thể hiện khả năng phân biệt chính xác hơn dựa trên kinh nghiệm thực tế.
+
+\section{UC-AI-02: Gợi Ý Việc Làm Thông Minh}
+
+\begin{requirementbox}{UC-AI-02: Hệ thống gợi ý việc làm}
+\textbf{Actor}: Candidate \\
+\textbf{Endpoint}: GET /api/recommendations/homepage?limit=8 \\
+\textbf{Phân loại}: Bắt buộc
+\end{requirementbox}
+
+\subsection{Thuật Toán Hybrid Recommendation}
+
+Hệ thống sử dụng phương pháp \textbf{Hybrid Recommendation} kết hợp 3 chiến lược:
+
+\begin{enumerate}
+    \item \textbf{Content-Based Filtering (40\%)}: So sánh Job Embedding với Profile Embedding của ứng viên (kỹ năng, kinh nghiệm).
+    \item \textbf{Collaborative Filtering (35\%)}: Dựa trên hành vi của ứng viên tương tự (đã xem, đã lưu, đã ứng tuyển).
+    \item \textbf{Popularity Boost (25\%)}: Ưu tiên tin được xem nhiều, mới đăng và còn thời hạn.
+\end{enumerate}
+
+\subsection{Dữ Liệu Đầu Vào}
+
+\begin{itemize}
+    \item Lịch sử tìm kiếm (\texttt{user\_search\_history}).
+    \item Hành vi tương tác (\texttt{user\_job\_interactions}: VIEW, SAVE, APPLY).
+    \item Hồ sơ kỹ năng (Skills, Experience, Position).
+    \item Job Embeddings được lưu trữ sẵn trong DB (\texttt{Job.jobEmbedding}).
+\end{itemize}
+
+\section{UC-AI-03: Tìm Kiếm Ứng Viên bằng AI (HR)}
+
+\begin{requirementbox}{UC-AI-03: Tìm ứng viên bằng CV/Keyword}
+\textbf{Actor}: Employer (HR) \\
+\textbf{Endpoints}: POST /api/employer/applications/search-by-cv, /search-by-keyword \\
+\textbf{Phân loại}: Mở rộng (Planned)
+\end{requirementbox}
+
+HR có thể upload file CV mẫu hoặc nhập từ khóa kỹ năng, hệ thống tìm kiếm các ứng viên đã nộp đơn có CV tương đồng nhất (Semantic Similarity).
+
+\section{UC-AI-04: Kiểm Duyệt Tin Bằng AI}
+
+\begin{requirementbox}{UC-AI-04: AI Review tin tuyển dụng}
+\textbf{Actor}: Admin \\
+\textbf{Endpoint}: POST /api/admin/jobs/\{id\}/ai-review \\
+\textbf{Phân loại}: Bắt buộc
+\end{requirementbox}
+
+AI phân tích nội dung tin tuyển dụng để phát hiện:
+\begin{itemize}
+    \item Nội dung lừa đảo hoặc không hợp pháp.
+    \item Mức lương bất thường (quá cao hoặc quá thấp so với vị trí).
+    \item Từ ngữ phân biệt đối xử.
+    \item Thiếu thông tin bắt buộc.
+\end{itemize}
+
+% ========================
+% CHAPTER 10: CHAT & NOTIFICATION
+% ========================
+\chapter{Chat và Thông Báo}
+
+\section{UC-CHAT-01: Chat Thời Gian Thực}
+
+\begin{requirementbox}{UC-CHAT-01: Nhắn tin giữa Candidate và HR}
+\textbf{Actor}: Candidate, Employer (HR) \\
+\textbf{Protocol}: WebSocket (SockJS/STOMP) \\
+\textbf{Phân loại}: Bắt buộc
+\end{requirementbox}
+
+\subsection{Kiến Trúc Chat}
+
+\begin{itemize}
+    \item \textbf{Kết nối}: Client kết nối WebSocket tại \texttt{/ws} qua SockJS.
+    \item \textbf{Gửi tin}: Client publish đến \texttt{/app/chat.sendMessage}.
+    \item \textbf{Nhận tin}: Client subscribe kênh \texttt{/topic/room/\{roomId\}}.
+    \item \textbf{Lưu trữ}: Tin nhắn được lưu vào bảng \texttt{messages} với Index tối ưu.
+\end{itemize}
+
+\subsection{Cấu Trúc Database Chat}
+
+\begin{lstlisting}[style=sqlstyle]
+-- Bảng conversations (phòng chat giữa 2 người dùng)
+CREATE TABLE conversations (
+    id BIGSERIAL PRIMARY KEY,
+    participant1_id BIGINT NOT NULL,
+    participant2_id BIGINT NOT NULL,
+    last_message_time TIMESTAMP,
+    UNIQUE(participant1_id, participant2_id)
+);
+
+-- Bảng messages
+CREATE TABLE messages (
+    id BIGSERIAL PRIMARY KEY,
+    conversation_id BIGINT NOT NULL REFERENCES conversations(id),
+    sender_id BIGINT NOT NULL,
+    receiver_id BIGINT NOT NULL,
+    content TEXT NOT NULL,
+    is_read BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMP DEFAULT NOW()
+);
+\end{lstlisting}
+
+\section{UC-NOTIFY-01: Hệ Thống Thông Báo}
+
+\begin{requirementbox}{UC-NOTIFY-01: Thông báo trong ứng dụng}
+\textbf{Actor}: Candidate, Employer (HR) \\
+\textbf{Phân loại}: Bắt buộc
+\end{requirementbox}
+
+\subsection{Các Loại Thông Báo}
+
+\begin{longtable}{|p{5cm}|p{4cm}|p{5cm}|}
+\hline
+\textbf{Loại (Type)} & \textbf{Người nhận} & \textbf{Nội dung} \\
+\hline
+\endfirsthead
+\hline
+\textbf{Loại (Type)} & \textbf{Người nhận} & \textbf{Nội dung} \\
+\hline
+\endhead
+APPLICATION\_RECEIVED & HR & Có ứng viên mới nộp đơn \\
+\hline
+APPLICATION\_VIEWED & Candidate & HR đã xem hồ sơ của bạn \\
+\hline
+APPLICATION\_ACCEPTED & Candidate & Chúc mừng! Bạn đã trúng tuyển \\
+\hline
+APPLICATION\_REJECTED & Candidate & Cảm ơn bạn đã ứng tuyển \\
+\hline
+JOB\_APPROVED & HR & Tin tuyển dụng đã được phê duyệt \\
+\hline
+JOB\_REJECTED & HR & Tin của bạn bị từ chối (kèm lý do) \\
+\hline
+JOB\_SUSPENDED & HR & Tin của bạn bị đình chỉ \\
+\hline
+COMPANY\_VERIFIED & HR & Công ty đã được xác thực \\
+\hline
+NEW\_MESSAGE & Candidate/HR & Tin nhắn mới từ đối tác \\
+\hline
+\end{longtable}
+
+% ========================
+% CHAPTER 11: NFR
+% ========================
+\chapter{Yêu Cầu Phi Chức Năng (Non-Functional Requirements)}
+
+\section{Yêu Cầu Hiệu Năng (Performance)}
+
+\subsection{Thời Gian Phản Hồi API}
+
+\begin{longtable}{|p{6cm}|c|p{5cm}|}
+\hline
+\textbf{API} & \textbf{SLA} & \textbf{Ghi chú} \\
+\hline
+\endfirsthead
+\hline
+\textbf{API} & \textbf{SLA} & \textbf{Ghi chú} \\
+\hline
+\endhead
+Tìm kiếm việc làm (Keyword) & < 1.0s & Có Index DB \\
+\hline
+Tìm kiếm AI (Vector Search) & < 2.5s & Bao gồm Embedding \\
+\hline
+Gợi ý trang chủ (Recommendation) & < 3.0s & Lấy từ Cache \\
+\hline
+Đăng nhập / Xác thực & < 500ms & BCrypt hash \\
+\hline
+Tải chi tiết tin & < 800ms & Có Cache \\
+\hline
+Gửi/Nhận tin nhắn Chat & < 100ms & WebSocket low-latency \\
+\hline
+Upload CV (lên S3) & < 5.0s & Phụ thuộc mạng \\
+\hline
+\end{longtable}
+
+\subsection{Khả Năng Chịu Tải}
+
+\begin{itemize}
+    \item \textbf{Concurrent Users}: Hỗ trợ tối thiểu 500 người dùng đồng thời.
+    \item \textbf{Peak Traffic}: Không tăng SLA quá 50\% khi đạt 80\% capacity.
+    \item \textbf{Database Connections}: Connection pool tối thiểu 20 connections.
+\end{itemize}
+
+\section{Yêu Cầu Bảo Mật (Security)}
+
+\subsection{Xác Thực và Ủy Quyền}
+
+\begin{itemize}
+    \item \textbf{JWT}: Access Token TTL = 15 phút, Refresh Token TTL = 7 ngày.
+    \item \textbf{Token Rotation}: Mỗi refresh vô hiệu hóa token cũ.
+    \item \textbf{RBAC}: Phân quyền theo 4 Role: GUEST, CANDIDATE, EMPLOYER, ADMIN.
+    \item \textbf{Ownership Verification}: HR chỉ thao tác được dữ liệu của Company mình.
+\end{itemize}
+
+\subsection{Bảo Vệ Dữ Liệu}
+
+\begin{itemize}
+    \item Mật khẩu được mã hóa bằng BCrypt (Strength Factor = 10).
+    \item Toàn bộ kết nối Client-Server sử dụng HTTPS/TLS 1.3.
+    \item Mọi input đều được validate qua Jakarta Validation trước khi xử lý.
+    \item SQL Injection được ngăn chặn 100\% bởi JPA Parameterized Queries.
+    \item XSS: React tự động escape HTML trong JSX.
+\end{itemize}
+
+\subsection{Bảo Mật File}
+
+\begin{itemize}
+    \item CV và tài liệu công ty được lưu trên AWS S3 với quyền Private.
+    \item Truy cập file được cấp thông qua \textbf{Presigned URL} với TTL = 15 phút.
+    \item Chỉ những người có quyền (HR xem CV của ứng viên đã nộp đơn) mới nhận được Presigned URL.
+\end{itemize}
+
+\section{Yêu Cầu Độ Tin Cậy (Reliability)}
+
+\begin{itemize}
+    \item \textbf{Uptime}: Tối thiểu 99.9\% (Downtime tối đa $\approx$ 8.7 giờ/năm).
+    \item \textbf{Data Integrity}: Tất cả thao tác ghi quan trọng sử dụng \texttt{@Transactional}.
+    \item \textbf{Error Handling}: Trả về HTTP status code chuẩn và message rõ ràng qua \texttt{ApiResponse} wrapper.
+    \item \textbf{Logging}: Ghi log tất cả lỗi 500 kèm Stacktrace để debug.
+\end{itemize}
+
+\section{Yêu Cầu Khả Năng Mở Rộng (Scalability)}
+
+\begin{itemize}
+    \item Kiến trúc Module hóa, tách biệt theo domain (Auth, Job, Application, etc.).
+    \item Sẵn sàng horizontal scaling cho Backend stateless.
+    \item Lưu trữ file trên AWS S3 -- không phụ thuộc local disk.
+    \item Database Index được thiết kế cho các truy vấn hay gặp.
+\end{itemize}
+
+\section{Yêu Cầu Tính Khả Dụng (Usability)}
+
+\begin{itemize}
+    \item Giao diện responsive hoạt động trên mọi thiết bị (Mobile, Tablet, Desktop).
+    \item Hỗ trợ các trình duyệt hiện đại: Chrome 90+, Firefox 90+, Safari 14+, Edge 90+.
+    \item Thời gian tải trang đầu (First Contentful Paint): < 2 giây.
+    \item Hỗ trợ ngôn ngữ: Tiếng Việt (chính), Tiếng Anh (phụ).
+\end{itemize}
+
+% ========================
+% CHAPTER 12: ARCHITECTURE
+% ========================
+\chapter{Kiến Trúc Hệ Thống}
+
+\section{Kiến Trúc Tổng Quan}
+
+\subsection{Technology Stack}
+
+\begin{longtable}{|p{4cm}|p{4cm}|p{6cm}|}
+\hline
+\textbf{Tầng} & \textbf{Công nghệ} & \textbf{Phiên bản / Ghi chú} \\
+\hline
+\endfirsthead
+\hline
+\textbf{Tầng} & \textbf{Công nghệ} & \textbf{Phiên bản / Ghi chú} \\
+\hline
+\endhead
+Frontend & ReactJS & v18.x, Vite bundler \\
+\hline
+UI Library & Chakra UI / Custom CSS & Responsive design \\
+\hline
+State Management & React Context + useState & Không dùng Redux \\
+\hline
+HTTP Client & Axios & Interceptor tự động gắn JWT \\
+\hline
+Real-time & SockJS + STOMP & WebSocket chat \\
+\hline
+Backend & Spring Boot & v3.x, Java 17 \\
+\hline
+Security & Spring Security + JWT & io.jsonwebtoken \\
+\hline
+ORM & Spring Data JPA / Hibernate & PostgreSQL dialect \\
+\hline
+Database & PostgreSQL & v15.x \\
+\hline
+Migration & Flyway & Versioned migrations \\
+\hline
+File Storage & AWS S3 & Presigned URL \\
+\hline
+Email & JavaMail / SMTP & OTP delivery \\
+\hline
+AI/ML & Python + Sentence Transformers & Gemma 300M \\
+\hline
+\end{longtable}
+
+\subsection{Mô Hình Phân Tầng Backend}
+
+\begin{enumerate}
+    \item \textbf{Controller Layer}: Nhận request, validate input, gọi Service, trả response.
+    \item \textbf{Service Layer}: Chứa business logic, gọi Repository.
+    \item \textbf{Repository Layer}: Tương tác với database qua JPA.
+    \item \textbf{Entity Layer}: Ánh xạ bảng DB, định nghĩa quan hệ.
+    \item \textbf{DTO Layer}: Request/Response object, tách biệt với Entity.
+\end{enumerate}
+
+\section{Bảo Mật Kiến Trúc}
+
+\subsection{Spring Security Filter Chain}
+
+\begin{enumerate}
+    \item Request đến Backend.
+    \item \texttt{JwtAuthenticationFilter}: Extract JWT từ Header, validate, set SecurityContext.
+    \item \texttt{SpringSecurity}: Kiểm tra Role (RBAC) dựa trên Annotation \texttt{@PreAuthorize}.
+    \item Controller xử lý business logic.
+\end{enumerate}
+
+\section{Cấu Trúc Package Backend}
+
+\begin{lstlisting}[style=javastyle]
+com.iting.jobportal/
+├── auth/                  -- Authentication (Register, Login, OTP)
+├── job/                   -- Job CRUD, Search, Status
+├── application/           -- Apply, Review, Status Update
+├── userprofile/           -- Candidate Profile, CV, Skills
+├── company/               -- Company Info, Logo, Follow
+├── recommendation/        -- AI Recommendation Engine
+├── admin/                 -- Admin Dashboard, Reports
+├── notification/          -- Notification System
+├── chat/                  -- WebSocket Chat
+├── config/                -- Security, CORS, Swagger
+└── common/               -- DTOs, Utilities, Exceptions
+\end{lstlisting}
+
+% ========================
+% CHAPTER 13: DATABASE
+% ========================
+\chapter{Cơ Sở Dữ Liệu}
+
+\section{Tổng Quan Schema}
+
+Hệ thống sử dụng PostgreSQL với 30+ bảng, được quản lý bởi Flyway Migration (V1 đến V37). Schema được thiết kế chuẩn hóa đến 3NF với hỗ trợ Full-text Search.
+
+\section{Các Bảng Chính}
+
+\subsection{Bảng Account}
+
+\begin{lstlisting}[style=sqlstyle]
+CREATE TABLE Account (
+    id          BIGSERIAL PRIMARY KEY,
+    email       VARCHAR(255) UNIQUE NOT NULL,
+    password    VARCHAR(255) NOT NULL,        -- BCrypt hash
+    role        VARCHAR(50)  NOT NULL,         -- CANDIDATE/EMPLOYER/ADMIN
+    status      VARCHAR(50)  DEFAULT 'PENDING', -- PENDING/ACTIVE/BANNED
+    created_at  TIMESTAMP    DEFAULT NOW(),
+    last_update TIMESTAMP    DEFAULT NOW()
+);
+CREATE INDEX idx_account_role   ON Account(Role);
+CREATE INDEX idx_account_status ON Account(Status);
+\end{lstlisting}
+
+\subsection{Bảng Job}
+
+\begin{lstlisting}[style=sqlstyle]
+CREATE TABLE Job (
+    id                  BIGSERIAL PRIMARY KEY,
+    company_id          BIGINT NOT NULL REFERENCES Company(id),
+    title               VARCHAR(200) NOT NULL,
+    position            VARCHAR(200),
+    description         TEXT,
+    requirements        TEXT,
+    responsibilities    TEXT,
+    benefits            TEXT,
+    tech_required       TEXT,                -- JSON array as string
+    job_type            VARCHAR(50),          -- FULL_TIME, PART_TIME, ...
+    experience_level    VARCHAR(50),          -- JUNIOR, MID, SENIOR, ...
+    min_salary          DECIMAL(15,2),
+    max_salary          DECIMAL(15,2),
+    salary_type         VARCHAR(50),          -- MONTHLY, HOURLY, NEGOTIABLE
+    province            VARCHAR(100),
+    ward                VARCHAR(100),
+    address             VARCHAR(500),
+    location            VARCHAR(700),
+    max_accept          INTEGER DEFAULT 0,
+    current_accepted    INTEGER DEFAULT 0,
+    due_date            DATE,
+    view_count          INTEGER DEFAULT 0,
+    application_count   INTEGER DEFAULT 0,
+    featured            BOOLEAN DEFAULT FALSE,
+    status              VARCHAR(50) DEFAULT 'PENDING',
+    review_reason       TEXT,
+    reviewed_by         BIGINT,
+    reviewed_at         TIMESTAMP,
+    ai_review_status    VARCHAR(50),
+    ai_review_reason    TEXT,
+    job_embedding       TEXT,                -- Vector as JSON
+    created_at          TIMESTAMP DEFAULT NOW(),
+    last_update         TIMESTAMP DEFAULT NOW()
+);
+CREATE INDEX idx_job_company ON Job(company_id);
+CREATE INDEX idx_job_status  ON Job(status);
+CREATE INDEX idx_job_city    ON Job(province);
+\end{lstlisting}
+
+\subsection{Bảng Apply\_Form}
+
+\begin{lstlisting}[style=sqlstyle]
+CREATE TABLE Apply_form_user_to_job (
+    id            BIGSERIAL PRIMARY KEY,
+    applicant_id  BIGINT NOT NULL REFERENCES Account(id),
+    job_id        BIGINT NOT NULL REFERENCES Job(id),
+    cv_id         BIGINT REFERENCES CV(id),
+    cover_letter  TEXT,
+    status        VARCHAR(50) DEFAULT 'PENDING',
+    applied_at    TIMESTAMP DEFAULT NOW(),
+    updated_at    TIMESTAMP DEFAULT NOW(),
+    UNIQUE(applicant_id, job_id)   -- Chống nộp trùng
+);
+\end{lstlisting}
+
+\subsection{Bảng Notification}
+
+\begin{lstlisting}[style=sqlstyle]
+CREATE TABLE Notification (
+    id          BIGSERIAL PRIMARY KEY,
+    user_id     BIGINT NOT NULL REFERENCES Account(id),
+    type        VARCHAR(100) NOT NULL,   -- APPLICATION_ACCEPTED, ...
+    title       VARCHAR(500),
+    message     TEXT,
+    is_read     BOOLEAN DEFAULT FALSE,
+    ref_id      BIGINT,                  -- ID tham chiếu (jobId, appId,...)
+    created_at  TIMESTAMP DEFAULT NOW()
+);
+\end{lstlisting}
+
+\subsection{OTP Code Table}
+
+\begin{lstlisting}[style=sqlstyle]
+CREATE TABLE otp_code (
+    id          BIGSERIAL PRIMARY KEY,
+    email       VARCHAR(255) NOT NULL,
+    otp         VARCHAR(10) NOT NULL,
+    created_at  TIMESTAMP DEFAULT NOW(),
+    expires_at  TIMESTAMP NOT NULL       -- TTL = 10 phút
+);
+CREATE INDEX idx_otp_code_email ON otp_code(email);
+\end{lstlisting}
+
+\section{Chính Sách Index}
+
+Các bảng có chính sách Index được thiết kế cho các truy vấn phổ biến:
+
+\begin{itemize}
+    \item \texttt{Job(status, province, due\_date)}: Phục vụ tìm kiếm và lọc.
+    \item \texttt{Apply\_form(applicant\_id, job\_id)}: Phục vụ truy vấn lịch sử.
+    \item \texttt{Notification(user\_id, is\_read)}: Phục vụ lọc thông báo chưa đọc.
+    \item \texttt{messages(conversation\_id, created\_at)}: Phục vụ tải lịch sử chat.
+    \item \texttt{otp\_code(email)}: Phục vụ tra cứu OTP nhanh.
+\end{itemize}
+
+% ========================
+% CHAPTER 14: API DESIGN
+% ========================
+\chapter{Thiết Kế API}
+
+\section{Nguyên Tắc Thiết Kế API}
+
+Hệ thống tuân theo nguyên tắc RESTful API với các quy tắc:
+\begin{itemize}
+    \item Sử dụng HTTP methods đúng ngữ nghĩa: GET (đọc), POST (tạo), PUT (cập nhật toàn bộ), PATCH (cập nhật một phần), DELETE (xóa).
+    \item URL resource-based: \texttt{/api/\{domain\}/\{resource\}/\{id\}/\{action\}}.
+    \item Chuẩn hóa response format qua \texttt{ApiResponse<T>} wrapper.
+    \item Phiên bản API qua URL prefix (\texttt{/api/v1/...}).
+\end{itemize}
+
+\section{Cấu Trúc Response Chuẩn}
+
+\begin{lstlisting}[style=javastyle]
+// ApiResponse<T> wrapper
+{
+  "success": true | false,
+  "message": "Operation successful",
+  "data": {
+    // Payload tùy theo API
+  },
+  "error": null | "Error details",
+  "timestamp": "2026-04-21T00:00:00Z"
+}
+\end{lstlisting}
+
+\section{Danh Sách API Chính}
+
+\subsection{Authentication APIs}
+
+\begin{longtable}{|c|p{5cm}|p{2cm}|p{4cm}|}
+\hline
+\textbf{Method} & \textbf{Endpoint} & \textbf{Auth} & \textbf{Mô tả} \\
+\hline
+\endfirsthead
+\hline
+\textbf{Method} & \textbf{Endpoint} & \textbf{Auth} & \textbf{Mô tả} \\
+\hline
+\endhead
+POST & /api/auth/register & Public & Đăng ký tài khoản \\
+\hline
+POST & /api/auth/verify-otp & Public & Xác thực OTP \\
+\hline
+POST & /api/auth/login & Public & Đăng nhập \\
+\hline
+POST & /api/auth/refresh & Public & Làm mới Access Token \\
+\hline
+POST & /api/auth/logout & Logged & Đăng xuất \\
+\hline
+POST & /api/auth/forgot-password & Public & Quên mật khẩu \\
+\hline
+POST & /api/auth/reset-password & Public & Đặt lại mật khẩu \\
+\hline
+POST & /api/auth/resend-otp & Public & Gửi lại OTP \\
+\hline
+\end{longtable}
+
+\subsection{Job APIs (Public)}
+
+\begin{longtable}{|c|p{5cm}|p{2cm}|p{4cm}|}
+\hline
+\textbf{Method} & \textbf{Endpoint} & \textbf{Auth} & \textbf{Mô tả} \\
+\hline
+\endfirsthead
+\hline
+\textbf{Method} & \textbf{Endpoint} & \textbf{Auth} & \textbf{Mô tả} \\
+\hline
+\endhead
+GET & /api/jobs/search & Public & Tìm kiếm việc làm \\
+\hline
+GET & /api/jobs/\{id\} & Public & Chi tiết tin \\
+\hline
+GET & /api/jobs/homepage & Public & Danh sách trang chủ \\
+\hline
+POST & /api/jobs/\{id\}/save & Candidate & Lưu tin yêu thích \\
+\hline
+DELETE & /api/jobs/\{id\}/save & Candidate & Bỏ lưu \\
+\hline
+GET & /api/recommendations/homepage & Candidate & Gợi ý AI \\
+\hline
+\end{longtable}
+
+\subsection{Employer APIs}
+
+\begin{longtable}{|c|p{5cm}|p{2cm}|p{4cm}|}
+\hline
+\textbf{Method} & \textbf{Endpoint} & \textbf{Auth} & \textbf{Mô tả} \\
+\hline
+\endfirsthead
+\hline
+\textbf{Method} & \textbf{Endpoint} & \textbf{Auth} & \textbf{Mô tả} \\
+\hline
+\endhead
+GET & /api/employer/jobs & HR & Danh sách tin của tôi \\
+\hline
+POST & /api/employer/jobs & HR & Đăng tin mới \\
+\hline
+PUT & /api/employer/jobs/\{id\} & HR & Cập nhật tin \\
+\hline
+DELETE & /api/employer/jobs/\{id\} & HR & Xóa tin \\
+\hline
+POST & /api/employer/jobs/\{id\}/close & HR & Đóng tin \\
+\hline
+GET & /api/employer/applications & HR & Danh sách ứng viên \\
+\hline
+GET & /api/employer/applications/\{id\} & HR & Chi tiết hồ sơ \\
+\hline
+POST & /api/employer/applications/\{id\}/accept & HR & Chấp nhận \\
+\hline
+POST & /api/employer/applications/\{id\}/reject & HR & Từ chối \\
+\hline
+GET & /api/employer/applications/stats & HR & Thống kê nhanh \\
+\hline
+\end{longtable}
+
+% ========================
+% CHAPTER 15: CONCLUSION
+% ========================
+\chapter{Kết Luận và Hướng Phát Triển}
+
+\section{Tóm Tắt}
+
+Tài liệu SRS này đã mô tả toàn diện hệ thống ITing -- nền tảng tuyển dụng IT tích hợp AI. Các điểm nổi bật của hệ thống:
+
+\begin{itemize}
+    \item \textbf{AI-Powered Matching}: Sử dụng mô hình Gemma Embedding (Fine-tuned) để khớp CV với JD chính xác hơn 40\% so với tìm kiếm từ khóa thông thường.
+    \item \textbf{Full Workflow}: Bao phủ toàn bộ vòng đời tuyển dụng từ đăng ký đến chấp nhận tuyển dụng.
+    \item \textbf{Trust Ecosystem}: Hệ thống KYB 4 cấp (Unverified $\rightarrow$ Premium) tạo môi trường tin cậy.
+    \item \textbf{Real-time}: Chat WebSocket và thông báo push đảm bảo trải nghiệm tức thì.
+    \item \textbf{Security First}: JWT Rotation, RBAC, BCrypt, HTTPS, Ownership Verification.
+\end{itemize}
+
+\section{Hướng Phát Triển Tương Lai}
+
+\begin{itemize}
+    \item \textbf{Mobile App}: Phát triển ứng dụng di động Android/iOS (React Native).
+    \item \textbf{Advanced Analytics}: Dashboard phân tích sâu cho HR (tỉ lệ conversion, funnel ứng tuyển).
+    \item \textbf{Video Interview}: Tích hợp phỏng vấn video trực tuyến trong ứng dụng.
+    \item \textbf{Employer Branding}: Trang hồ sơ công ty nâng cao với video giới thiệu.
+    \item \textbf{Multi-language}: Hỗ trợ thêm Tiếng Anh và Tiếng Nhật cho thị trường offshore.
+    \item \textbf{Premium Subscriptions}: Gói đăng ký trả phí với tính năng nâng cao cho HR.
+\end{itemize}
+
+\section{Phụ Lục -- Danh Sách UML Diagrams}
+
+\subsection{Activity Diagrams (/UML/Activity/)}
+\begin{enumerate}
+    \item ACT-REGISTER-EMAIL.puml -- Đăng ký tài khoản và OTP
+    \item ACT-GUEST-SEARCH-FILTER-VIEW.puml -- Tìm kiếm và lọc việc làm
+    \item ACT-APPLY-JOB.puml -- Quy trình ứng tuyển
+    \item ACT-HR-MANAGE-JOBS.puml -- HR quản lý tin tuyển dụng
+    \item ACT-HR-MANAGE-APPLICANTS.puml -- HR quản lý hồ sơ ứng viên
+    \item ACT-REPORT-VIOLATION.puml -- Báo cáo vi phạm
+    \item ACT-CANDIDATE-MANAGE-PROFILE.puml -- Quản lý hồ sơ ứng viên
+    \item ACT-ADMIN-REVIEW-JOB.puml -- Admin duyệt tin
+    \item ACT-EMPLOYER-VERIFICATION.puml -- Xác thực công ty KYB
+    \item ACT-CHAT-INTERACTION.puml -- Chat thời gian thực
+\end{enumerate}
+
+\subsection{Use Case Diagrams (/UML/UseCase/)}
+\begin{enumerate}
+    \item UC-Auth.puml -- Authentication
+    \item UC-JobDiscovery.puml -- Tìm kiếm việc làm
+    \item UC-Application.puml -- Ứng tuyển
+    \item UC-HR-JobManagement.puml -- HR quản lý tin
+    \item UC-HR-ApplicantManagement.puml -- HR quản lý ứng viên
+    \item UC-CandidateProfile.puml -- Hồ sơ ứng viên
+    \item UC-AdminReview.puml -- Admin duyệt tin
+    \item UC-CompanyVerification.puml -- Xác thực công ty
+    \item UC-Reporting.puml -- Báo cáo vi phạm
+    \item UC-Interaction.puml -- Chat và tương tác
+    \item UC-AIFeatures.puml -- Tính năng AI
+\end{enumerate}
+
+\bigskip
+\begin{center}
+\rule{0.5\linewidth}{0.4pt}\\[0.3cm]
+\textit{Tài liệu SRS được duy trì bởi nhóm phát triển ITing.}\\
+\textit{Mọi thay đổi cần được ghi nhận vào lịch sử phiên bản.}\\[0.2cm]
+\textbf{Phiên bản 2.0 -- Cập nhật: 21/04/2026}
+\end{center}
+
+\end{document}

@@ -23,7 +23,7 @@ public interface EmployerApplicationRepository extends JpaRepository<ApplyFormSe
     @Query("SELECT s FROM ApplyFormSentToJob s JOIN ApplyForm f ON s.id.applyFormId = f.id " +
            "WHERE s.id.jobId = :jobId " +
            "AND (:status IS NULL OR s.status = :status) " +
-           "AND (CAST(:keyword AS string) IS NULL OR LOWER(f.applicantName) LIKE :keyword)")
+           "AND (:keyword IS NULL OR LOWER(CAST(f.applicantName AS string)) LIKE :keyword)")
     Page<ApplyFormSentToJob> searchByJob(@Param("jobId") Long jobId,
                                          @Param("status") com.iting.jobportal.application.entity.enums.ApplicationStatus status,
                                          @Param("keyword") String keyword,
@@ -32,11 +32,13 @@ public interface EmployerApplicationRepository extends JpaRepository<ApplyFormSe
     @Query("SELECT s FROM ApplyFormSentToJob s JOIN ApplyForm f ON s.id.applyFormId = f.id " +
            "WHERE s.id.jobId IN :jobIds " +
            "AND (:status IS NULL OR s.status = :status) " +
-           "AND (CAST(:keyword AS string) IS NULL OR LOWER(f.applicantName) LIKE :keyword)")
+           "AND (:keyword IS NULL OR LOWER(CAST(f.applicantName AS string)) LIKE :keyword)")
     Page<ApplyFormSentToJob> searchAll(@Param("jobIds") List<Long> jobIds,
                                        @Param("status") com.iting.jobportal.application.entity.enums.ApplicationStatus status,
                                        @Param("keyword") String keyword,
                                        Pageable pageable);
+
+
 
     @Query("SELECT COUNT(s) FROM ApplyFormSentToJob s WHERE s.id.jobId = :jobId")
     long countByIdJobId(@Param("jobId") Long jobId);

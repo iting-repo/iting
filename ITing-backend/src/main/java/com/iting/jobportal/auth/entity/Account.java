@@ -40,7 +40,7 @@ public class Account extends AuditEntity {
     @Enumerated(EnumType.STRING)
     @Column(name = "Status", nullable = false, length = 20)
     @Builder.Default
-    private AccountStatus status = AccountStatus.ACTIVE;
+    private AccountStatus status = AccountStatus.PENDING;
 
     @Column(name = "last_login_at")
     private LocalDateTime lastLoginAt;

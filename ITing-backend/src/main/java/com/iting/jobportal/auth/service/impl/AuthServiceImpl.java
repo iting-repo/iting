@@ -19,8 +19,12 @@ import com.iting.jobportal.company.entity.enums.VerificationLevel;
 import com.iting.jobportal.company.repository.CompanyRepository;
 import com.iting.jobportal.user.entity.User;
 import com.iting.jobportal.user.repository.UserRepository;
-
+import com.iting.jobportal.auth.repository.OtpCodeRepository;
+import com.iting.jobportal.auth.entity.OtpCode;
+import com.iting.jobportal.common.service.EmailService;
+import com.iting.jobportal.common.service.EmailTemplateService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -29,6 +33,7 @@ import java.time.LocalDateTime;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class AuthServiceImpl implements AuthService {
 
     private final AccountRepository accountRepository;
@@ -38,6 +43,9 @@ public class AuthServiceImpl implements AuthService {
     private final RefreshTokenService refreshTokenService;
     private final CompanyRepository companyRepository;
     private final GoogleAuthService googleAuthService;
+    private final OtpCodeRepository otpCodeRepository;
+    private final EmailService emailService;
+    private final EmailTemplateService emailTemplateService;
 
     @Override
     @Transactional
@@ -115,39 +123,110 @@ public class AuthServiceImpl implements AuthService {
             throw new RuntimeException("Role must not be null");
         }
 
-        Account existingAccount = accountRepository.findByEmail(request.getEmail().trim()).orElse(null);
-        if (existingAccount != null) {
-            Role requestedRole = request.getRole().normalize();
-            Role existingRoleNormalized = existingAccount.getRole().normalize();
+        String normalizedEmail = request.getEmail().trim().toLowerCase();
+        Account account = accountRepository.findByEmail(normalizedEmail).orElse(null);
+        
+        if (account != null) {
+            boolean isPending = account.getStatus() == AccountStatus.PENDING;
+            boolean neverLoggedIn = account.getLastLoginAt() == null;
             
-            if (existingRoleNormalized != requestedRole) {
-                String roleName = existingRoleNormalized == Role.CANDIDATE ? "Ứng viên" : "Nhà tuyển dụng";
-                throw new RuntimeException("Email này đã được đăng ký với vai trò " + roleName + ". Vui lòng sử dụng email khác hoặc đăng nhập.");
+            if (!isPending && !neverLoggedIn) {
+                Role requestedRole = request.getRole().normalize();
+                Role existingRoleNormalized = account.getRole().normalize();
+                
+                if (existingRoleNormalized != requestedRole) {
+                    String roleName = existingRoleNormalized == Role.CANDIDATE ? "Ứng viên" : "Nhà tuyển dụng";
+                    throw new RuntimeException("Email này đã được đăng ký với vai trò " + roleName + ". Vui lòng sử dụng email khác hoặc đăng nhập.");
+                }
+                throw new RuntimeException("Email này đã được sử dụng. Vui lòng sử dụng email khác.");
             }
-            throw new RuntimeException("Email này đã được sử dụng. Vui lòng sử dụng email khác.");
+            
+            // Cập nhật thông tin mới cho tài khoản cũ
+            account.setPasswordHash(passwordEncoder.encode(request.getPassword()));
+            account.setRole(request.getRole().normalize());
+            account.setStatus(AccountStatus.PENDING);
+        } else {
+            // Tạo tài khoản mới
+            account = Account.builder()
+                    .email(normalizedEmail)
+                    .passwordHash(passwordEncoder.encode(request.getPassword()))
+                    .role(request.getRole().normalize())
+                    .status(AccountStatus.PENDING)
+                    .build();
         }
-
-        Role normalizedRole = request.getRole().normalize();
-
-        Account account = Account.builder()
-                .email(request.getEmail().trim())
-                .passwordHash(passwordEncoder.encode(request.getPassword()))
-                .role(normalizedRole) // luôn lưu role chuẩn
-                .status(AccountStatus.ACTIVE)
-                .build();
 
         Account savedAccount = accountRepository.save(account);
 
-        switch (normalizedRole) {
+        // Đảm bảo Profile cũng được tạo/cập nhật
+        switch (savedAccount.getRole()) {
             case CANDIDATE -> createUserIfNeeded(savedAccount, request);
             case EMPLOYER -> createCompanyIfNeeded(savedAccount, request);
-            case ADMIN -> {
-                // không tạo user/company profile tự động cho admin
-            }
-            default -> throw new RuntimeException("Unsupported role: " + normalizedRole);
+            default -> {}
         }
 
+        // Gửi OTP mới
+        sendVerificationOtp(savedAccount.getEmail());
         return savedAccount;
+    }
+
+    private void sendVerificationOtp(String email) {
+        String otp = String.format("%06d", (int) (Math.random() * 1000000));
+        
+        // Save to DB
+        otpCodeRepository.deleteByEmail(email);
+        OtpCode otpCode = OtpCode.builder()
+                .email(email)
+                .code(otp)
+                .expiryTime(LocalDateTime.now().plusMinutes(5))
+                .isVerification(true)
+                .build();
+        otpCodeRepository.save(otpCode);
+
+        // Send Email
+        String html = emailTemplateService.getOtpTemplate(email, otp, "VERIFY_ACCOUNT");
+        emailService.sendHtmlEmail(email, "[ITing] Mã xác thực đăng ký tài khoản", html);
+    }
+
+    @Override
+    @Transactional
+    public void verifyOtp(String email, String code) {
+        String normalizedEmail = email != null ? email.trim().toLowerCase() : "";
+        String normalizedCode = code != null ? code.trim() : "";
+
+        OtpCode otpCode = otpCodeRepository.findTopByEmailAndIsVerificationOrderByExpiryTimeDesc(normalizedEmail, true)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy mã xác thực cho email: " + normalizedEmail));
+
+        if (!otpCode.getCode().equals(normalizedCode)) {
+            throw new RuntimeException("Mã xác thực không chính xác");
+        }
+
+        if (otpCode.getExpiryTime().isBefore(LocalDateTime.now())) {
+            throw new RuntimeException("Mã xác thực đã hết hạn");
+        }
+
+        Account account = accountRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy tài khoản"));
+
+        account.setStatus(AccountStatus.ACTIVE);
+        accountRepository.save(account);
+        
+        // Sử dụng normalizedEmail để xóa sạch mã OTP
+        otpCodeRepository.deleteByEmail(normalizedEmail);
+
+        log.info("Account verified successfully and activated: {}", normalizedEmail);
+    }
+
+    @Override
+    public void resendOtp(String email) {
+        String normalizedEmail = email != null ? email.trim().toLowerCase() : "";
+        Account account = accountRepository.findByEmail(normalizedEmail)
+                .orElseThrow(() -> new RuntimeException("Tài khoản không tồn tại: " + normalizedEmail));
+        
+        if (account.getStatus() == AccountStatus.ACTIVE) {
+            throw new RuntimeException("Tài khoản đã được kích hoạt");
+        }
+
+        sendVerificationOtp(normalizedEmail);
     }
 
     private void createUserIfNeeded(Account account, RegisterRequest request) {

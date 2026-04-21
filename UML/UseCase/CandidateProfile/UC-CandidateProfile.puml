@@ -1,0 +1,18 @@
+@startuml
+left to right direction
+actor "Candidate" as c
+
+rectangle "Profile Management" {
+  usecase "Cập nhật thông tin chuyên môn" as UC1
+  usecase "Quản lý kinh nghiệm làm việc" as UC2
+  usecase "Quản lý học vấn" as UC3
+  usecase "Quản lý kỹ năng & chứng chỉ" as UC4
+  usecase "Quản lý danh sách CV" as UC5
+}
+
+c --> UC1
+c --> UC2
+c --> UC3
+c --> UC4
+c --> UC5
+@enduml

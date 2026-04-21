@@ -15,8 +15,8 @@ const JobPromo = () => {
 
             {/* Content */}
             <div className="absolute top-8 left-6 right-6">
-                <h3 className="text-white text-3xl font-bold leading-tight mb-2">
-                    WE ARE <br /> HIRING
+                <h3 className="text-white text-3xl font-bold leading-tight mb-2 uppercase">
+                    Chúng tôi <br /> đang tuyển
                 </h3>
                 <p className="text-white/80 text-sm font-medium">Ứng tuyển ngay!</p>
             </div>

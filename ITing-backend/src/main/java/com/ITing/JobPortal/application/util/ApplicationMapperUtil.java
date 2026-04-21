@@ -40,20 +40,21 @@ public class ApplicationMapperUtil {
         Long userId = applyForm.getUserId();
 
         String jobTitle = null;
+        Long companyId = null;
         String companyName = null;
         String companyLogo = null;
-        
+
         Optional<Job> jobOpt = jobRepository.findById(jobId);
         if (jobOpt.isPresent()) {
             Job job = jobOpt.get();
             jobTitle = job.getPosition();
             Company company = job.getCompany();
             if (company != null) {
+                companyId = company.getId();
                 companyName = company.getName();
                 companyLogo = company.getLogoUrl();
             }
         }
-        
         String avatarUrl = userRepository.findById(userId).map(User::getAvatarUrl).orElse(null);
 
         String cvFileName = null;
@@ -139,6 +140,8 @@ public class ApplicationMapperUtil {
                 .id(applyForm.getId())
                 .userId(userId)
                 .jobId(jobId)
+                .companyId(companyId)
+                .companyName(companyName)
                 .applicantName(applyForm.getApplicantName())
                 .avatarUrl(avatarUrl)
                 .jobTitle(jobTitle)

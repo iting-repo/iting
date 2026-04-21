@@ -8,7 +8,7 @@ import { useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { toast } from "sonner";
 import companyService from "../../services/companyService";
-import { Breadcrumb } from "../../components/common";
+import { Breadcrumb, CompanyLogo } from "../../components/common";
 
 const PROVINCES = [
   "Hồ Chí Minh", "Hà Nội", "Đà Nẵng", "Bình Dương", "Đồng Nai", "Cần Thơ", "Hải Phòng"
@@ -227,11 +227,10 @@ const CompaniesPage = () => {
                 {/* Header Info */}
                 <div className="flex justify-between items-start mb-6">
                   <div className="w-20 h-20 rounded-2xl border border-gray-50 p-3 bg-white shadow-sm flex items-center justify-center group-hover:scale-105 transition-transform duration-300">
-                    <img 
-                      src={company.logoUrl || "https://via.placeholder.com/100?text=ITing"} 
-                      alt={company.name} 
+                    <CompanyLogo 
+                      logoUrl={company.logoUrl} 
+                      companyName={company.name} 
                       className="w-full h-full object-contain"
-                      onError={(e) => e.target.src = "https://via.placeholder.com/100?text=Company"}
                     />
                   </div>
                   <button 

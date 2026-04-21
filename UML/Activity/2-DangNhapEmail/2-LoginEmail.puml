@@ -1,0 +1,75 @@
+@startuml
+title ACT-LOGIN-EMAIL (Detailed, 2FA optional)
+
+|User|
+start
+:Open Login Page;
+:Nhập email/mật khẩu;
+:Chọn "Nhớ tôi"?;
+
+|FE|
+:Validate form (client);
+if (Form hợp lệ?) then (Yes)
+  :Gửi yêu cầu đăng nhập;
+else (No)
+  :Hiển thị lỗi theo trường;
+  stop
+endif
+
+|Auth|
+:Chuẩn hóa email;
+:Tra user theo email;
+if (User tồn tại?) then (Yes)
+  :Kiểm tra trạng thái (active/locked);
+  if (Locked?) then (Yes)
+    |FE|
+    :Thông báo tài khoản bị khóa tạm thời;
+    stop
+  endif
+
+  |Auth|
+  :Verify password hash;
+  if (Đúng mật khẩu?) then (Yes)
+    if (Bật 2FA?) then (Yes)
+      :Tạo OTP + TTL;
+      |Mail/OTP|
+      :Gửi OTP;
+      |FE|
+      :Hiển thị form nhập OTP;
+      |User|
+      :Nhập OTP;
+      |Auth|
+      if (OTP hợp lệ?) then (Yes)
+        :Tạo session/JWT;
+        |FE|
+        :Lưu cookie (remember me);
+        :Chuyển trang Dashboard;
+        stop
+      else (No)
+        |FE|
+        :OTP sai/hết hạn;
+        stop
+      endif
+    else (No)
+      |Auth|
+      :Tạo session/JWT;
+      |FE|
+      :Lưu cookie (remember me);
+      :Chuyển trang Dashboard;
+      stop
+    endif
+  else (No)
+    :Tăng bộ đếm sai mật khẩu;
+    if (Vượt ngưỡng?) then (Yes)
+      :Khóa tạm thời tài khoản;
+    endif
+    |FE|
+    :Email hoặc mật khẩu không chính xác;
+    stop
+  endif
+else (No)
+  |FE|
+  :Email hoặc mật khẩu không chính xác;
+  stop
+endif
+@enduml

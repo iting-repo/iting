@@ -26,7 +26,7 @@ test.describe("Admin quản lý tin tuyển dụng", () => {
     await expect(targetRow).toContainText(/Đang hoạt động|Dang hoat dong/i);
 
     await targetRow.locator("button").last().click();
-    await page.locator('.fixed.z-\\[300\\] button').filter({ hasText: /nh.*ch/i }).click({ force: true });
+    await page.locator('.fixed.z-\\[300\\] button').filter({ hasText: /nh.*ch/i }).click();
 
     const suspendDialog = page.locator(".fixed.inset-0").last();
     await expect(suspendDialog).toBeVisible();

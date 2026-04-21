@@ -21,6 +21,10 @@ public interface JobRepository extends JpaRepository<Job, Long>, JpaSpecificatio
     @Query("SELECT j FROM Job j WHERE j.status = :status ORDER BY j.applicationCount DESC, j.viewCount DESC")
     Page<Job> findHotJobs(@Param("status") JobStatus status, Pageable pageable);
 
+    List<Job> findTop50ByStatusOrderByCreatedAtDesc(JobStatus status);
+
+    List<Job> findTop50ByStatusOrderByViewCountDesc(JobStatus status);
+
     // Tìm jobs hết hạn
     @Query("SELECT j FROM Job j WHERE j.dueDate < CURRENT_DATE AND j.status = 'ACTIVE'")
     List<Job> findExpiredJobs();

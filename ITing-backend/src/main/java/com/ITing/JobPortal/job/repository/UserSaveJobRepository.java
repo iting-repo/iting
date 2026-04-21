@@ -19,4 +19,7 @@ public interface UserSaveJobRepository extends JpaRepository<UserSaveJob, UserSa
 
     @Query("SELECT s FROM UserSaveJob s WHERE s.userId = :userId")
     Page<UserSaveJob> findAllByUserId(@Param("userId") Long userId, Pageable pageable);
+
+    @Query("SELECT s.jobId FROM UserSaveJob s WHERE s.userId = :userId")
+    java.util.List<Long> findAllJobIdByUserId(@Param("userId") Long userId);
 }

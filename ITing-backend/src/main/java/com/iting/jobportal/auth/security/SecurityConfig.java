@@ -56,7 +56,7 @@ public class SecurityConfig {
 
                 // ── Public: Auth (register, login, etc) ──────────────────
                 .requestMatchers("/api/auth/login", "/api/auth/register", "/api/auth/google", "/api/auth/refresh").permitAll()
-                .requestMatchers("/api/auth/forgot-password", "/api/auth/reset-password").permitAll()
+                .requestMatchers("/api/auth/forgot-password", "/api/auth/reset-password", "/api/auth/verify-otp", "/api/auth/resend-otp").permitAll()
 
                 // ── Public: Swagger / API Docs ────────────────────────────
                 .requestMatchers(

@@ -1,0 +1,18 @@
+@startuml
+actor Candidate
+participant FE
+participant "Storage/CDN" as CDN
+participant ProfileSvc
+participant AISvc
+database DB
+
+
+Candidate -> FE : Chọn file CV -> Xác nhận
+FE -> CDN : upload(file) ' sync upload
+CDN --> FE : fileUrl ' reply
+FE -> ProfileSvc : attachCV(userId,fileUrl) ' sync
+ProfileSvc -> DB : UPDATE profile.cv_url ' sync
+DB --> ProfileSvc : ok
+ProfileSvc ->> AISvc : analyzeCV(userId,fileUrl) ' ASYNC job gửi sang AI
+ProfileSvc --> FE : "Tải lên thành công. Đang phân tích CV" ' reply
+@enduml

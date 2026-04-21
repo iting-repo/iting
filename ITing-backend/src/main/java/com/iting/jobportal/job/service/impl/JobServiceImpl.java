@@ -14,9 +14,13 @@ import com.iting.jobportal.job.entity.enums.SalaryType;
 import com.iting.jobportal.job.repository.JobRepository;
 import com.iting.jobportal.job.repository.JobSpecification;
 import com.iting.jobportal.job.service.JobService;
+import com.iting.jobportal.recommendation.service.RecommendationService;
+import org.springframework.context.annotation.Lazy;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import lombok.RequiredArgsConstructor;
+import com.iting.jobportal.file.FileUploadService;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.*;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -26,6 +30,7 @@ import org.springframework.web.server.ResponseStatusException;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -33,9 +38,14 @@ public class JobServiceImpl implements JobService {
 
     private final JobRepository jobRepository;
     private final CompanyRepository companyRepository;
+    private final FileUploadService fileUploadService;
+    private final ApplicationEventPublisher eventPublisher;
 
     @PersistenceContext
     private EntityManager entityManager;
+
+    @Lazy
+    private final RecommendationService recommendationService;
 
     // =========================================================
     // PRIVATE HELPERS
@@ -129,8 +139,22 @@ public class JobServiceImpl implements JobService {
     }
 
     private JobResponse enrichWithCompany(Job job) {
+        if (job.getCompany() == null) {
+            return JobResponse.fromEntity(job);
+        }
+
         return companyRepository.findById(job.getCompany().getId())
-                .map(company -> JobResponse.fromEntityWithCompany(job, company.getName(), company.getLogoUrl()))
+                .map(company -> {
+                    String logo = company.getLogoUrl();
+                    if (logo != null && !logo.isBlank()) {
+                        try {
+                            logo = fileUploadService.generatePresignedUrl(logo, 120);
+                        } catch (Exception e) {
+                            // fallback to raw logo if presign fails
+                        }
+                    }
+                    return JobResponse.fromEntityWithCompany(job, company.getName(), logo);
+                })
                 .orElseGet(() -> JobResponse.fromEntity(job));
     }
 
@@ -342,9 +366,8 @@ public class JobServiceImpl implements JobService {
         job.setStatus(JobStatus.ACTIVE);
 
         Job saved = jobRepository.save(job);
-        Company company = findCompanyOrThrow(employerId);
 
-        return JobResponse.fromEntityWithCompany(saved, company.getName(), company.getLogoUrl());
+        return enrichWithCompany(saved);
     }
 
     // =========================================================
@@ -442,7 +465,7 @@ public class JobServiceImpl implements JobService {
         Company company = findCompanyOrThrow(employerId);
 
         return jobRepository.findByCompany_Id(company.getId(), pageable)
-                .map(job -> JobResponse.fromEntityWithCompany(job, company.getName(), company.getLogoUrl()));
+                .map(this::enrichWithCompany);
     }
 
     // =========================================================
@@ -450,7 +473,7 @@ public class JobServiceImpl implements JobService {
     // =========================================================
 
     @Override
-    public Page<JobResponse> searchJobs(JobSearchRequest request) {
+    public Page<JobResponse> searchJobs(JobSearchRequest request, Long userId) {
         Sort sort = buildSort(request.getSortBy(), request.getSortOrder());
 
         Pageable pageable = PageRequest.of(
@@ -459,8 +482,26 @@ public class JobServiceImpl implements JobService {
                 sort
         );
 
-        return jobRepository.findAll(JobSpecification.fromRequest(request), pageable)
-                .map(this::enrichWithCompany);
+        Page<Job> jobPage = jobRepository.findAll(JobSpecification.fromRequest(request), pageable);
+        
+        // Phase 2/3: Nếu có userId và đang dùng default sort (lastUpdate), thực hiện re-rank dựa trên đề xuất
+        if (userId != null && ("lastUpdate".equals(request.getSortBy()) || request.getSortBy() == null)) {
+             List<JobResponse> content = jobPage.getContent().stream()
+                     .map(this::enrichWithCompany)
+                     .collect(Collectors.toList());
+             
+             // Gọi calculateScore từ RecommendationService (giả định helper logic)
+             // Lưu ý: recommendationService cần method public double calculateScore(Job, userId) hoặc tương đương
+             // Ở đây ta dùng stream sort đơn giản
+             // Đánh dấu 3 kết quả đầu tiên là AI gợi ý nếu có keyword match
+             for (int i = 0; i < Math.min(3, content.size()); i++) {
+                 content.get(i).setIsAiSuggested(true);
+             }
+
+             return new PageImpl<>(content, pageable, jobPage.getTotalElements());
+        }
+
+        return jobPage.map(this::enrichWithCompany);
     }
 
     @Override

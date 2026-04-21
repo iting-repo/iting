@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { FaCheck, FaArrowLeft, FaArrowRight, FaClock, FaTimes, FaEye } from 'react-icons/fa';
+import { FaCheck, FaArrowLeft, FaArrowRight, FaClock, FaTimes, FaEye, FaEnvelope } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
 import { buildJobDetailPath } from '../../utils/jobUrl';
 import axiosInstance from '../../utils/axiosInstance';
+import messageService from '../../services/messageService';
+import { toast } from 'sonner';
 
 const AppliedJobs = () => {
   const navigate = useNavigate();
@@ -12,6 +14,7 @@ const AppliedJobs = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(0);
   const [totalElements, setTotalElements] = useState(0);
+  const [chatLoadingId, setChatLoadingId] = useState(null);
   const itemsPerPage = 5;
 
   useEffect(() => {
@@ -67,6 +70,29 @@ const AppliedJobs = () => {
       case 'REJECTED': return 'Từ chối';
       case 'VIEWED': return 'Đã xem';
       default: return status || 'Không rõ';
+    }
+  };
+
+  const handleStartChatWithEmployer = async (app) => {
+    if (!app?.companyId) {
+      toast.error('Không tìm thấy thông tin nhà tuyển dụng để nhắn tin.');
+      return;
+    }
+
+    try {
+      setChatLoadingId(app.id);
+      const sent = await messageService.sendMessage({
+        receiverId: app.companyId,
+        receiverType: 'COMPANY',
+        senderType: 'USER',
+        content: `Chào ${app.companyName || 'nhà tuyển dụng'}, tôi muốn theo dõi trạng thái hồ sơ ứng tuyển ${app.jobTitle || ''}.`,
+      });
+      toast.success('Đã mở cuộc trò chuyện với nhà tuyển dụng.');
+      navigate(`/messages?conversationId=${sent.conversationId}`);
+    } catch (error) {
+      toast.error(error?.message || 'Không thể mở chat lúc này.');
+    } finally {
+      setChatLoadingId(null);
     }
   };
 
@@ -133,16 +159,25 @@ const AppliedJobs = () => {
                   </td>
 
                   <td className="p-4 text-right">
-                    <button
-                      onClick={() => navigate(buildJobDetailPath({ 
-                        id: app.jobId, 
-                        title: app.jobTitle,
-                        jobKey: app.jobKey // optional if backend provides it
-                      }))}
-                      className="bg-gray-100 hover:bg-[#3AB4E6] hover:text-white text-gray-500 text-xs font-bold px-5 py-2.5 rounded-lg transition-all shadow-sm"
-                    >
-                      Xem Chi Tiết
-                    </button>
+                    <div className="flex items-center justify-end gap-2">
+                      <button
+                        onClick={() => handleStartChatWithEmployer(app)}
+                        disabled={chatLoadingId === app.id}
+                        className="bg-[#EAF6FF] hover:bg-[#3AB4E6] hover:text-white text-[#3AB4E6] text-xs font-bold px-4 py-2.5 rounded-lg transition-all shadow-sm inline-flex items-center gap-2 disabled:opacity-60"
+                      >
+                        <FaEnvelope size={11} /> {chatLoadingId === app.id ? 'Đang mở...' : 'Nhắn tin NTD'}
+                      </button>
+                      <button
+                        onClick={() => navigate(buildJobDetailPath({ 
+                          id: app.jobId, 
+                          title: app.jobTitle,
+                          jobKey: app.jobKey
+                        }))}
+                        className="bg-gray-100 hover:bg-[#3AB4E6] hover:text-white text-gray-500 text-xs font-bold px-5 py-2.5 rounded-lg transition-all shadow-sm"
+                      >
+                        Xem Chi Tiết
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))

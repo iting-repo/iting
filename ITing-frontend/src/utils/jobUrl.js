@@ -40,23 +40,27 @@ export const buildEmployerJobApplicationsPath = (job = {}) => {
   return `/employer/job/${slug}/${jobKey}/applications`;
 };
 
-export const getCompanyLogoUrl = (logoPath) => {
+export const getCompanyLogoUrl = (logoPath, companyName = "") => {
   const DEFAULT_LOGO = "/assets/default-company.png";
   
+  // Use UI Avatars as a clean, dynamic fallback for missing logos
+  const UI_AVATAR = companyName 
+    ? `https://ui-avatars.com/api/?name=${encodeURIComponent(companyName)}&background=3AB4E6&color=fff&bold=true` 
+    : DEFAULT_LOGO;
+
   if (!logoPath || logoPath === 'null' || logoPath === 'undefined' || logoPath === '') {
-    return DEFAULT_LOGO;
+    return UI_AVATAR;
   }
   
-  if (logoPath.startsWith("http") && !logoPath.includes("logo.clearbit.com") && !logoPath.includes("via.placeholder.com")) {
+  if (logoPath.startsWith("http")) {
+    // Basic validation for common placeholders if they are considered "bad" now
+    if (logoPath.includes("via.placeholder.com") && companyName) {
+        return UI_AVATAR;
+    }
     return logoPath;
   }
   
-  // If it's a relative path, prefix with backend URL
+  // Handle relative paths
   const baseUrl = API_BASE_URL.replace("/api", "");
-  
-  if (logoPath.startsWith("https://logo.clearbit.com") || logoPath.startsWith("https://via.placeholder.com")) {
-      return DEFAULT_LOGO;
-  }
-
   return `${baseUrl}${logoPath.startsWith("/") ? "" : "/"}${logoPath}`;
 };

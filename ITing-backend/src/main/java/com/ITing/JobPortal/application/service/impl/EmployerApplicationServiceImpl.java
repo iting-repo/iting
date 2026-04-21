@@ -105,10 +105,9 @@ public class EmployerApplicationServiceImpl implements EmployerApplicationServic
     @Override
     @Transactional
     public ApplicationResponse viewApplication(Long employerId, Long applicationId) {
-        ApplyFormSentToJob sent = employerApplicationRepository.findByIdApplyFormId(applicationId)
-                .orElseThrow(() -> new RuntimeException("Application job mapping not found: " + applicationId));
-        verifyJobOwnership(employerId, sent.getId().getJobId());
-        return toResponse(sent);
+        // We reuse the markApplicationAsViewed logic here so viewing the details 
+        // automatically triggers the "VIEWED" status and sends notification to candidate.
+        return markApplicationAsViewed(employerId, applicationId);
     }
 
     @Override
@@ -149,8 +148,41 @@ public class EmployerApplicationServiceImpl implements EmployerApplicationServic
                 .orElseThrow(() -> new RuntimeException("Application job mapping not found"));
         verifyJobOwnership(employerId, sent.getId().getJobId());
         
+        ApplicationStatus oldStatus = sent.getStatus();
         sent.setStatus(request.getStatus());
         employerApplicationRepository.save(sent);
+
+        // Notify candidate if status changed to ACCEPTED or REJECTED
+        if (oldStatus != request.getStatus()) {
+            NotificationType type = null;
+            String content = "";
+            
+            ApplyForm form = applyFormRepository.findById(applicationId)
+                    .orElseThrow(() -> new RuntimeException("ApplyForm not found"));
+            Job job = jobRepository.findById(sent.getId().getJobId())
+                    .orElseThrow(() -> new RuntimeException("Job not found"));
+
+            if (request.getStatus() == ApplicationStatus.ACCEPTED) {
+                type = NotificationType.APPLICATION_ACCEPTED;
+                content = "Chúc mừng! Hồ sơ của bạn đã được " + job.getCompany().getName() + " chấp nhận cho vị trí " + job.getTitle();
+            } else if (request.getStatus() == ApplicationStatus.REJECTED) {
+                type = NotificationType.APPLICATION_REJECTED;
+                content = "Rất tiếc, hồ sơ của bạn cho vị trí " + job.getTitle() + " tại " + job.getCompany().getName() + " chưa phù hợp lúc này.";
+            }
+
+            if (type != null) {
+                notificationService.createNotification(CreateNotificationRequest.builder()
+                        .recipientId(form.getUserId())
+                        .recipientType(RecipientType.USER)
+                        .type(type)
+                        .content(content)
+                        .entityType("APPLICATION")
+                        .entityId(applicationId)
+                        .actionUrl("/candidate/applied-jobs")
+                        .build());
+            }
+        }
+        
         return toResponse(sent);
     }
 

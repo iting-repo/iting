@@ -1,18 +1,23 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { formatDistanceToNowStrict, parseISO, differenceInDays } from 'date-fns';
 import { vi } from 'date-fns/locale';
+import { toast } from 'sonner';
 import { fetchJobDetailRequest } from '../../store/job/jobSlice';
 import {
-    FaMapMarkerAlt, FaDollarSign, FaClock, FaBriefcase, FaRegBookmark,
+    FaMapMarkerAlt, FaDollarSign, FaClock, FaBriefcase, FaRegBookmark, FaBookmark,
     FaExclamationTriangle, FaBell, FaLaptop, FaGift, FaUser,
     FaAward, FaGraduationCap, FaWallet, FaEnvelope, FaPhone, FaRegComment,
-    FaExternalLinkAlt, FaUsers, FaLayers
+    FaExternalLinkAlt, FaUsers, FaLayerGroup
 } from 'react-icons/fa';
 import JobCard from '../../components/JobCard';
 import JobApplyModal from '../../components/JobApplyModal';
 import companyService from '../../services/companyService';
+import messageService from '../../services/messageService';
+import applicationService from '../../services/applicationService';
+import axiosInstance from '../../utils/axiosInstance';
+import { storage } from '../../utils/storage';
 import { Breadcrumb, CompanyLogo } from '../../components/common';
 import {
     buildJobDetailPath,
@@ -21,18 +26,23 @@ import {
     slugify,
     getCompanyLogoUrl,
 } from '../../utils/jobUrl';
-import applicationService from '../../services/applicationService';
 
-const normalizeList = (value, separator = ',') => {
-    if (Array.isArray(value)) {
-        return value.map((item) => String(item).trim()).filter(Boolean);
-    }
+const normalizeList = (value, delimiter = /\n|\.|;/) => {
+  if (!value) return [];
+  if (Array.isArray(value)) return value.map((v) => String(v).trim()).filter(Boolean);
 
-    if (typeof value === 'string') {
-        return value.split(separator).map((item) => item.trim()).filter(Boolean);
-    }
+  return String(value)
+    .split(delimiter)
+    .map((v) => v.trim())
+    .filter(Boolean);
+};
 
-    return [];
+const formatSalary = (min, max) => {
+  if (!min && !max) return 'Thỏa thuận';
+  const f = (v) => Number(v).toLocaleString('vi-VN') + ' VND';
+  if (min && max) return `${f(min)} - ${f(max)}`;
+  if (min) return `Từ ${f(min)}`;
+  return `Đến ${f(max)}`;
 };
 
 const JobDetailPage = () => {
@@ -41,23 +51,25 @@ const JobDetailPage = () => {
     const dispatch = useDispatch();
     const { currentJob, isLoading } = useSelector(state => state.job || {});
     const { user, isAuthenticated } = useSelector(state => state.auth || {});
-    const normalizedJobKey = normalizeJobKey(jobKey);
+    
+    // States
+    const [isApplyModalOpen, setIsApplyModalOpen] = useState(false);
     const [hasApplied, setHasApplied] = useState(false);
+    const [isSaved, setIsSaved] = useState(false);
+    const [isSaving, setIsSaving] = useState(false);
+    const [contactMessage, setContactMessage] = useState('');
+    const [sendingContact, setSendingContact] = useState(false);
+    const [companyInfo, setCompanyInfo] = useState(null);
+    const [relatedJobs, setRelatedJobs] = useState([]);
+    const [relatedLoading, setRelatedLoading] = useState(false);
+
+    const normalizedJobId = normalizeJobKey(jobKey);
 
     useEffect(() => {
-        if (normalizedJobKey) {
-            dispatch(fetchJobDetailRequest(normalizedJobKey));
+        if (normalizedJobId) {
+            dispatch(fetchJobDetailRequest(normalizedJobId));
         }
-    }, [normalizedJobKey, dispatch]);
-
-    useEffect(() => {
-        if (!currentJob || !normalizedJobKey) return;
-
-        const expectedSlug = slugify(getJobTitle(currentJob)) || 'chi-tiet-viec-lam';
-        if (slug !== expectedSlug) {
-            navigate(buildJobDetailPath(currentJob), { replace: true });
-        }
-    }, [currentJob, navigate, normalizedJobKey, slug]);
+    }, [dispatch, normalizedJobId]);
 
     useEffect(() => {
         const checkAppStatus = async () => {
@@ -73,7 +85,21 @@ const JobDetailPage = () => {
         checkAppStatus();
     }, [isAuthenticated, user, currentJob]);
 
-    const [companyInfo, setCompanyInfo] = useState(null);
+    useEffect(() => {
+        const checkSaved = async () => {
+            if (!currentJob?.id || !storage.getToken()) {
+                setIsSaved(false);
+                return;
+            }
+            try {
+                const res = await axiosInstance.get(`/candidates/saved-jobs/${currentJob.id}/check`);
+                setIsSaved(Boolean(res?.saved));
+            } catch {
+                setIsSaved(false);
+            }
+        };
+        checkSaved();
+    }, [currentJob?.id]);
 
     useEffect(() => {
         const fetchCompany = async () => {
@@ -89,24 +115,139 @@ const JobDetailPage = () => {
         fetchCompany();
     }, [currentJob?.companyId]);
 
-    const [isApplyModalOpen, setIsApplyModalOpen] = useState(false);
+    useEffect(() => {
+        if (!currentJob) return;
+        const expectedSlug = slugify(getJobTitle(currentJob)) || 'chi-tiet-viec-lam';
+        if (slug !== expectedSlug) {
+            navigate(buildJobDetailPath(currentJob), { replace: true });
+        }
+    }, [currentJob, slug, navigate]);
 
-    if (isLoading) return <div className="text-center py-20 font-bold text-gray-500">Đang tải chi tiết công việc...</div>;
-    if (!currentJob) return <div className="text-center py-20 font-bold text-red-500">Không tìm thấy công việc!</div>;
+    useEffect(() => {
+        const loadRelatedJobs = async () => {
+            if (!currentJob?.id) {
+                setRelatedJobs([]);
+                return;
+            }
 
-    const formatSalary = (min, max) => {
-        if (!min && !max) return "Thỏa thuận";
-        const format = (n) => n?.toLocaleString('vi-VN') + ' VNĐ';
-        if (min && max) return `${format(min)} - ${format(max)}`;
-        if (min) return `Từ ${format(min)}`;
-        return `Up to ${format(max)}`;
+            setRelatedLoading(true);
+            try {
+                const primaryKeyword = currentJob.position || currentJob.title || '';
+                const byKeyword = await axiosInstance.get('/jobs/search', {
+                    params: {
+                        keyword: primaryKeyword,
+                        page: 0,
+                        size: 5,
+                        sortBy: 'lastUpdate',
+                        sortOrder: 'desc',
+                    },
+                });
+
+                let candidates = Array.isArray(byKeyword?.content) ? byKeyword.content : [];
+                candidates = candidates.filter((job) => Number(job.id) !== Number(currentJob.id));
+
+                if (candidates.length < 3 && currentJob.companyId) {
+                    const byCompany = await axiosInstance.get('/jobs/search', {
+                        params: {
+                            companyId: currentJob.companyId,
+                            page: 0,
+                            size: 5,
+                            sortBy: 'lastUpdate',
+                            sortOrder: 'desc',
+                        },
+                    });
+
+                    const companyJobs = (Array.isArray(byCompany?.content) ? byCompany.content : [])
+                        .filter((job) => Number(job.id) !== Number(currentJob.id));
+
+                    const mergeMap = new Map();
+                    [...candidates, ...companyJobs].forEach((job) => {
+                        if (!mergeMap.has(job.id)) mergeMap.set(job.id, job);
+                    });
+                    candidates = [...mergeMap.values()];
+                }
+
+                setRelatedJobs(candidates.slice(0, 3));
+            } catch {
+                setRelatedJobs([]);
+            } finally {
+                setRelatedLoading(false);
+            }
+        };
+
+        loadRelatedJobs();
+    }, [currentJob?.id, currentJob?.companyId, currentJob?.position, currentJob?.title]);
+
+    const handleToggleSave = async () => {
+        if (!storage.getToken()) {
+            toast.error('Vui lòng đăng nhập để lưu công việc.');
+            return;
+        }
+        if (!currentJob?.id || isSaving) return;
+
+        setIsSaving(true);
+        try {
+            if (isSaved) {
+                await axiosInstance.delete(`/candidates/saved-jobs/${currentJob.id}`);
+                setIsSaved(false);
+                toast.success('Đã bỏ lưu công việc.');
+            } else {
+                await axiosInstance.post(`/candidates/saved-jobs/${currentJob.id}`);
+                setIsSaved(true);
+                toast.success('Đã lưu công việc.');
+            }
+        } catch (error) {
+            toast.error(error?.message || 'Không thể cập nhật trạng thái lưu job.');
+        } finally {
+            setIsSaving(false);
+        }
     };
 
-    const descriptionList = normalizeList(currentJob.description, '\n');
-    const responsibilitiesList = normalizeList(currentJob.responsibilities, '\n');
-    const requirementsList = normalizeList(currentJob.requirements, '\n');
-    const benefitsList = normalizeList(currentJob.benefits, '\n');
-    const techList = currentJob.techRequired || [];
+    const handleContactCompany = async () => {
+        const token = storage.getToken();
+        if (!token) {
+            navigate('/login');
+            return;
+        }
+        if (user?.role !== 'CANDIDATE') {
+            toast.error('Chỉ ứng viên mới có thể nhắn tin với nhà tuyển dụng.');
+            return;
+        }
+
+        const content = contactMessage.trim();
+        if (!content) {
+            toast.error('Vui lòng nhập nội dung tin nhắn.');
+            return;
+        }
+
+        if (!currentJob?.companyId) {
+            toast.error('Không xác định được nhà tuyển dụng.');
+            return;
+        }
+
+        setSendingContact(true);
+        try {
+            const sent = await messageService.sendMessage({
+                receiverId: currentJob.companyId,
+                receiverType: 'COMPANY',
+                senderType: 'USER',
+                content,
+            });
+            setContactMessage('');
+            toast.success('Đã gửi tin nhắn.');
+            navigate(`/messages?conversationId=${sent.conversationId}`);
+        } catch (error) {
+            toast.error(error?.message || 'Không thể gửi tin nhắn lúc này.');
+        } finally {
+            setSendingContact(false);
+        }
+    };
+
+    const description = useMemo(() => normalizeList(currentJob?.description), [currentJob?.description]);
+    const responsibilities = useMemo(() => normalizeList(currentJob?.responsibilities), [currentJob?.responsibilities]);
+    const requirements = useMemo(() => normalizeList(currentJob?.requirements || currentJob?.techRequired), [currentJob?.requirements, currentJob?.techRequired]);
+    const benefits = useMemo(() => normalizeList(currentJob?.benefits), [currentJob?.benefits]);
+    const techList = currentJob?.techRequired || [];
 
     const formatJobType = (type) => {
         const map = {
@@ -138,14 +279,14 @@ const JobDetailPage = () => {
     const formatDeadline = (dueDate) => {
         if (!dueDate) return "Không có";
         try {
-            const deadline = parseISO(dueDate);
+            const deadlineDate = parseISO(dueDate);
             const today = new Date();
             today.setHours(0, 0, 0, 0);
 
-            const deadlineDate = new Date(deadline);
-            deadlineDate.setHours(0, 0, 0, 0);
+            const deadline = new Date(deadlineDate);
+            deadline.setHours(0, 0, 0, 0);
 
-            const diffDays = differenceInDays(deadlineDate, today);
+            const diffDays = differenceInDays(deadline, today);
             const formattedDate = deadline.toLocaleDateString("vi-VN");
 
             if (diffDays < 0) return `${formattedDate} (Hết hạn)`;
@@ -157,63 +298,78 @@ const JobDetailPage = () => {
     };
 
     const jobDetail = {
-        title: currentJob.title || currentJob.position,
-        position: currentJob.position,
-        company: currentJob.companyName,
-        logo: getCompanyLogoUrl(companyInfo?.logoUrl || currentJob.companyLogo),
-        deadline: formatDeadline(currentJob.dueDate),
-        salary: formatSalary(currentJob.minSalary, currentJob.maxSalary),
-        location: currentJob.location || "Chưa cập nhật",
-        description: descriptionList.length > 0 ? descriptionList : ["Chưa có mô tả chi tiết"],
-        responsibilities: responsibilitiesList.length > 0 ? responsibilitiesList : ["Chưa có thông tin trách nhiệm"],
-        requirements: requirementsList.length > 0 ? requirementsList : ["Chưa có thông tin yêu cầu"],
-        benefits: benefitsList.length > 0 ? benefitsList : ["Chưa có thông tin quyền lợi"],
+        title: currentJob?.title || currentJob?.position || 'Vị trí tuyển dụng',
+        position: currentJob?.position,
+        company: currentJob?.companyName || 'Công ty',
+        logo: getCompanyLogoUrl(companyInfo?.logoUrl || currentJob?.companyLogo),
+        deadline: formatDeadline(currentJob?.dueDate),
+        salary: formatSalary(currentJob?.minSalary, currentJob?.maxSalary),
+        location: currentJob?.location || currentJob?.province || "Chưa cập nhật",
+        description: description.length > 0 ? description : ["Chưa có mô tả chi tiết"],
+        responsibilities: responsibilities.length > 0 ? responsibilities : ["Chưa có thông tin trách nhiệm"],
+        requirements: requirements.length > 0 ? requirements : ["Chưa có thông tin yêu cầu"],
+        benefits: benefits.length > 0 ? benefits : ["Chưa có thông tin quyền lợi"],
         techs: techList,
-        jobType: formatJobType(currentJob.jobType),
-        experience: formatExperience(currentJob.experienceLevel),
-        domain: currentJob.domain || "Công nghệ thông tin",
-        province: currentJob.province || "Việt Nam",
-        postedTime: currentJob.createdAt ? formatDistanceToNowStrict(parseISO(currentJob.createdAt), { addSuffix: true, locale: vi }) : "Vừa xong"
+        jobType: formatJobType(currentJob?.jobType),
+        experience: formatExperience(currentJob?.experienceLevel),
+        domain: currentJob?.domain || "Công nghệ thông tin",
+        province: currentJob?.province || "Việt Nam",
+        postedTime: currentJob?.createdAt ? formatDistanceToNowStrict(parseISO(currentJob.createdAt), { addSuffix: true, locale: vi }) : "Vừa xong"
     };
 
-    const relatedJobs = [
-        {
-            id: 1,
-            title: "Internal Creative Coordinator",
-            company: "Green Group",
-            logo: "",
-            category: "Commerce",
-            type: "Full time",
-            salary: "$44000-$46000",
-            location: "New-York, USA",
-            timePosted: "24 min ago"
-        },
-        {
-            id: 2,
-            title: "District Intranet Director",
-            company: "VonRueden - Weber Co",
-            logo: "",
-            category: "Commerce",
-            type: "Full time",
-            salary: "$42000-$48000",
-            location: "New-York, USA",
-            timePosted: "24 min ago"
-        },
-        {
-            id: 3,
-            title: "Corporate Tactics Facilitator",
-            company: "Cormier, Turner and Flatley Inc",
-            logo: "",
-            category: "Commerce",
-            type: "Full time",
-            salary: "$38000-$40000",
-            location: "New-York, USA",
-            timePosted: "26 min ago"
-        }
-    ];
+    const mapJobToCard = (job) => ({
+        id: job.id,
+        title: job.title || job.position || 'Vị trí tuyển dụng',
+        company: job.companyName || 'Công ty',
+        logo: getCompanyLogoUrl(job.companyLogo),
+        category: (job.techRequired && job.techRequired[0]) || (job.experienceLevel || 'IT'),
+        type: job.jobType || 'FULL_TIME',
+        salary: formatSalary(job.minSalary, job.maxSalary),
+        location: job.location || job.province || 'Việt Nam',
+        timePosted: job.lastUpdate || job.createdAt ? formatDistanceToNowStrict(parseISO(job.lastUpdate || job.createdAt), { addSuffix: true, locale: vi }) : 'Mới đăng',
+    });
+
+    if (isLoading) {
+        return (
+            <div className="bg-[#f8fafc] min-h-screen py-8">
+                <div className="max-w-7xl mx-auto px-4 grid grid-cols-1 lg:grid-cols-12 gap-10">
+                    <section className="lg:col-span-8 bg-white rounded-2xl border border-gray-100 p-8 space-y-6 animate-pulse">
+                        <div className="h-4 bg-gray-200 rounded w-1/4 mb-4" />
+                        <div className="flex gap-4 mb-8">
+                            <div className="w-20 h-20 bg-gray-100 rounded-xl" />
+                            <div className="flex-1 space-y-3">
+                                <div className="h-8 bg-gray-200 rounded w-3/4" />
+                                <div className="h-5 bg-gray-100 rounded w-1/3" />
+                            </div>
+                        </div>
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                            {[1, 2, 3, 4].map(i => <div key={i} className="h-16 bg-gray-50 rounded-xl" />)}
+                        </div>
+                        <div className="h-64 bg-gray-50 rounded-xl" />
+                    </section>
+                    <aside className="lg:col-span-4 bg-white rounded-2xl border border-gray-100 p-6 animate-pulse h-fit">
+                        <div className="h-40 bg-gray-50 rounded-xl mb-6" />
+                        <div className="space-y-4">
+                            {[1, 2, 3, 4, 5].map(i => <div key={i} className="h-10 bg-gray-50 rounded-lg" />)}
+                        </div>
+                    </aside>
+                </div>
+            </div>
+        );
+    }
+
+    if (!currentJob) {
+        return <div className="text-center py-20 font-bold text-red-500">Không tìm thấy công việc này.</div>;
+    }
+
+    const mapQuery = [currentJob.address, currentJob.ward, currentJob.province, currentJob.location]
+        .map(item => String(item || '').trim())
+        .filter(Boolean)
+        .join(', ') || 'Việt Nam';
+    const googleMapEmbedUrl = `https://www.google.com/maps?q=${encodeURIComponent(mapQuery)}&output=embed`;
 
     return (
-        <div className="bg-white min-h-screen py-10 font-sans">
+        <div className="bg-white min-h-screen py-10">
             <JobApplyModal
                 isOpen={isApplyModalOpen}
                 onClose={() => setIsApplyModalOpen(false)}
@@ -246,10 +402,11 @@ const JobDetailPage = () => {
                             </div>
 
                             <div className="flex gap-4">
-                                <div className="w-20 h-20 rounded-xl border border-gray-100 p-2 flex items-center justify-center shadow-sm">
+                                <div className="w-20 h-20 rounded-xl border border-gray-100 p-2 flex items-center justify-center shadow-sm bg-white overflow-hidden">
                                     <CompanyLogo 
                                         logoUrl={companyInfo?.logoUrl || currentJob.companyLogo}
                                         companyId={currentJob.companyId}
+                                        companyName={companyInfo?.name || currentJob.companyName}
                                         className="w-full h-full object-contain"
                                     />
                                 </div>
@@ -261,19 +418,19 @@ const JobDetailPage = () => {
 
                             <div className="flex flex-wrap gap-y-3 gap-x-6 text-sm text-gray-500 bg-[#F5F7FA] p-4 rounded-xl">
                                 <div className="flex items-center gap-2">
-                                    <span className="bg-white p-2 rounded-full text-[#00B4D8]"><FaBriefcase /></span>
+                                    <span className="bg-white p-2 rounded-full text-[#00B4D8] shadow-sm"><FaBriefcase /></span>
                                     {jobDetail.domain}
                                 </div>
                                 <div className="flex items-center gap-2">
-                                    <span className="bg-white p-2 rounded-full text-[#00B4D8]"><FaClock /></span>
+                                    <span className="bg-white p-2 rounded-full text-[#00B4D8] shadow-sm"><FaClock /></span>
                                     {jobDetail.jobType}
                                 </div>
                                 <div className="flex items-center gap-2">
-                                    <span className="bg-white p-2 rounded-full text-[#00B4D8]"><FaDollarSign /></span>
+                                    <span className="bg-white p-2 rounded-full text-[#00B4D8] shadow-sm"><FaDollarSign /></span>
                                     {jobDetail.salary}
                                 </div>
                                 <div className="flex items-center gap-2">
-                                    <span className="bg-white p-2 rounded-full text-[#00B4D8]"><FaMapMarkerAlt /></span>
+                                    <span className="bg-white p-2 rounded-full text-[#00B4D8] shadow-sm"><FaMapMarkerAlt /></span>
                                     {jobDetail.location}
                                 </div>
                                 <div className="w-full pt-2 mt-2 border-t border-gray-200 text-gray-400 text-xs flex items-center justify-between">
@@ -299,36 +456,52 @@ const JobDetailPage = () => {
                                     }`}>
                                     {hasApplied ? 'Đã Ứng Tuyển' : 'Ứng Tuyển Ngay'}
                                 </button>
-                                <button className="px-4 py-3 border border-gray-200 rounded-lg hover:bg-gray-50 text-gray-400 hover:text-red-500 transition-colors">
-                                    <FaRegBookmark size={20} />
+                                <button 
+                                    onClick={handleToggleSave}
+                                    disabled={isSaving}
+                                    className={`px-4 py-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors ${isSaved ? 'text-blue-500 bg-blue-50' : 'text-gray-400'}`}
+                                >
+                                    {isSaved ? <FaBookmark size={20} /> : <FaRegBookmark size={20} />}
                                 </button>
                             </div>
                         </div>
 
                         <div className="space-y-8 text-gray-700 leading-relaxed">
                             <section>
-                                <h2 className="text-xl font-bold text-gray-800 mb-4">Mô tả công việc</h2>
+                                <h2 className="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">
+                                    <span className="w-1.5 h-6 bg-[#00B4D8] rounded-full"></span>
+                                    Mô tả công việc
+                                </h2>
                                 <ul className="list-disc pl-5 space-y-2 text-sm">
                                     {jobDetail.description.map((item, idx) => <li key={idx}>{item}</li>)}
                                 </ul>
                             </section>
 
                             <section>
-                                <h2 className="text-xl font-bold text-gray-800 mb-4">Trách nhiệm công việc</h2>
+                                <h2 className="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">
+                                    <span className="w-1.5 h-6 bg-[#00B4D8] rounded-full"></span>
+                                    Trách nhiệm công việc
+                                </h2>
                                 <ul className="list-disc pl-5 space-y-2 text-sm">
                                     {jobDetail.responsibilities.map((item, idx) => <li key={idx}>{item}</li>)}
                                 </ul>
                             </section>
 
                             <section>
-                                <h2 className="text-xl font-bold text-gray-800 mb-4">Yêu cầu ứng viên</h2>
+                                <h2 className="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">
+                                    <span className="w-1.5 h-6 bg-[#00B4D8] rounded-full"></span>
+                                    Yêu cầu ứng viên
+                                </h2>
                                 <ul className="list-disc pl-5 space-y-2 text-sm">
                                     {jobDetail.requirements.map((item, idx) => <li key={idx}>{item}</li>)}
                                 </ul>
                             </section>
 
                             <section>
-                                <h2 className="text-xl font-bold text-gray-800 mb-4">Quyền lợi</h2>
+                                <h2 className="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">
+                                    <span className="w-1.5 h-6 bg-[#00B4D8] rounded-full"></span>
+                                    Quyền lợi
+                                </h2>
                                 <ul className="list-disc pl-5 space-y-2 text-sm">
                                     {jobDetail.benefits.map((item, idx) => <li key={idx}>{item}</li>)}
                                 </ul>
@@ -352,7 +525,7 @@ const JobDetailPage = () => {
                                 </div>
                             </section>
 
-                            <div className="bg-gray-50 p-4 rounded-lg flex gap-3 border border-gray-100 items-start">
+                            <div className="bg-gray-50 p-4 rounded-xl flex gap-3 border border-gray-100 items-start">
                                 <FaExclamationTriangle className="text-yellow-500 mt-1 flex-shrink-0" />
                                 <p className="text-xs text-gray-500">
                                     <strong>Báo cáo tin tuyển dụng:</strong> Nếu bạn thấy rằng tin tuyển dụng này không đúng hoặc có dấu hiệu lừa đảo, <a href="#" className="text-[#00B4D8] underline">hãy phản ánh với chúng tôi.</a>
@@ -376,7 +549,7 @@ const JobDetailPage = () => {
 
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <div className="flex gap-4">
-                                    <div className="w-10 h-10 rounded bg-[#E6F6FD] text-[#00B4D8] flex items-center justify-center flex-shrink-0">
+                                    <div className="w-10 h-10 rounded bg-[#E6F6FD] text-[#00B4D8] flex items-center justify-center flex-shrink-0 shadow-sm">
                                         <FaLaptop size={20} />
                                     </div>
                                     <div>
@@ -385,7 +558,7 @@ const JobDetailPage = () => {
                                     </div>
                                 </div>
                                 <div className="flex gap-4">
-                                    <div className="w-10 h-10 rounded bg-[#E6F6FD] text-[#00B4D8] flex items-center justify-center flex-shrink-0">
+                                    <div className="w-10 h-10 rounded bg-[#E6F6FD] text-[#00B4D8] flex items-center justify-center flex-shrink-0 shadow-sm">
                                         <FaGift size={20} />
                                     </div>
                                     <div>
@@ -397,11 +570,21 @@ const JobDetailPage = () => {
                         </div>
 
                         <div className="pt-8">
-                            <h2 className="text-3xl font-bold text-gray-800 mb-6">Việc làm liên quan</h2>
+                            <h2 className="text-3xl font-bold text-gray-800 mb-6 font-black">Việc làm liên quan</h2>
                             <div className="space-y-4">
-                                {relatedJobs.map(job => (
-                                    <JobCard key={job.id} job={job} />
-                                ))}
+                                {relatedLoading ? (
+                                    <div className="space-y-4">
+                                        {[1, 2, 3].map(i => <div key={i} className="h-32 bg-gray-50 rounded-xl animate-pulse" />)}
+                                    </div>
+                                ) : relatedJobs.length > 0 ? (
+                                    relatedJobs.map(job => (
+                                        <JobCard key={job.id} job={mapJobToCard(job)} />
+                                    ))
+                                ) : (
+                                    <div className="bg-gray-50 rounded-xl p-8 text-center text-gray-400 italic">
+                                        Hiện chưa có việc làm liên quan phù hợp.
+                                    </div>
+                                )}
                             </div>
                         </div>
                     </div>
@@ -410,10 +593,11 @@ const JobDetailPage = () => {
                         {/* Company Card */}
                         <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
                             <div className="flex items-center gap-4 mb-6">
-                                <div className="w-16 h-16 rounded-xl border border-gray-100 p-2 flex items-center justify-center shrink-0">
+                                <div className="w-16 h-16 rounded-xl border border-gray-100 p-2 flex items-center justify-center shrink-0 bg-white overflow-hidden">
                                     <CompanyLogo 
                                         logoUrl={companyInfo?.logoUrl || currentJob.companyLogo}
                                         companyId={currentJob.companyId}
+                                        companyName={companyInfo?.name || currentJob.companyName}
                                         className="w-full h-full object-contain"
                                     />
                                 </div>
@@ -424,7 +608,7 @@ const JobDetailPage = () => {
                                 <div className="flex items-center gap-3 text-[13px]">
                                     <FaUsers className="text-gray-400 w-4 flex-shrink-0" />
                                     <span className="text-gray-400 min-w-[70px]">Quy mô:</span>
-                                    <span className="text-gray-600 font-medium">{currentJob?.companySize || "25-99 nhân viên"}</span>
+                                    <span className="text-gray-600 font-medium">{companyInfo?.companySize || "25-99 nhân viên"}</span>
                                 </div>
                                 <div className="flex items-center gap-3 text-[13px]">
                                     <FaBriefcase className="text-gray-400 w-4 flex-shrink-0" />
@@ -434,17 +618,37 @@ const JobDetailPage = () => {
                                 <div className="flex items-start gap-3 text-[13px]">
                                     <FaMapMarkerAlt className="text-gray-400 w-4 flex-shrink-0 mt-0.5" />
                                     <span className="text-gray-400 min-w-[70px]">Địa điểm:</span>
-                                    <span className="text-gray-600 font-medium">{jobDetail.location}</span>
+                                    <span className="text-gray-600 font-medium line-clamp-2">{jobDetail.location}</span>
                                 </div>
                             </div>
 
                             <Link 
-                                to={`/companies/${currentJob?.companyId || currentJob?.companyCode || '#'}`} 
+                                to={`/companies/${currentJob?.companyId || '#'}`} 
                                 className="flex items-center justify-center gap-2 text-[#3AB4E6] font-bold py-2.5 border border-[#3AB4E6] rounded-xl hover:bg-[#3AB4E6] hover:text-white transition-all duration-300 group mt-2"
                             >
                                 <span>Xem trang công ty</span>
                                 <FaExternalLinkAlt className="text-xs transition-transform group-hover:translate-x-1" />
                             </Link>
+
+                            <div className="mt-8 pt-6 border-t border-gray-100">
+                                <h3 className="font-bold text-gray-800 mb-4">Nhắn tin cho nhà tuyển dụng</h3>
+                                <div className="space-y-4">
+                                    <textarea 
+                                        rows="4" 
+                                        value={contactMessage}
+                                        onChange={(e) => setContactMessage(e.target.value)}
+                                        placeholder="Nhập nội dung tin nhắn..." 
+                                        className="w-full px-3 py-2 bg-gray-50 border border-transparent rounded-lg text-sm focus:ring-2 focus:ring-[#00B4D8] outline-none resize-none transition-all"
+                                    ></textarea>
+                                    <button 
+                                        onClick={handleContactCompany}
+                                        disabled={sendingContact}
+                                        className="w-full py-2.5 bg-[#00B4D8] text-white font-bold rounded-lg hover:bg-[#0096B4] transition-colors shadow-sm text-sm disabled:opacity-50"
+                                    >
+                                        {sendingContact ? 'Đang gửi...' : 'Gửi Tin Nhắn'}
+                                    </button>
+                                </div>
+                            </div>
                         </div>
 
                         <div className="bg-[#E6F6FD]/50 p-6 rounded-2xl">
@@ -466,7 +670,7 @@ const JobDetailPage = () => {
                                     </div>
                                 </div>
                                 <div className="flex gap-3">
-                                    <div className="mt-1 text-[#00B4D8]"><FaBriefcase /></div>
+                                    <div className="mt-1 text-[#00B4D8]"><FaLayerGroup /></div>
                                     <div>
                                         <p className="font-bold text-gray-800 text-sm">Lĩnh vực</p>
                                         <p className="text-gray-500 text-sm">{jobDetail.domain}</p>
@@ -489,7 +693,7 @@ const JobDetailPage = () => {
                                 <div className="flex gap-3">
                                     <div className="mt-1 text-[#00B4D8]"><FaWallet /></div>
                                     <div>
-                                        <p className="font-bold text-gray-800 text-sm">Lương</p>
+                                        <p className="font-bold text-gray-800 text-sm">Mức lương</p>
                                         <p className="text-gray-500 text-sm">{jobDetail.salary}</p>
                                     </div>
                                 </div>
@@ -502,38 +706,13 @@ const JobDetailPage = () => {
                                 </div>
                             </div>
 
-                            <div className="mt-6 rounded-xl overflow-hidden h-40 border border-gray-200">
+                            <div className="mt-6 rounded-xl overflow-hidden h-44 border border-gray-200">
                                 <iframe
-                                    src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3723.924048679543!2d105.77258331476346!3d21.035727985994535!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x313454b991d80fd5%3A0x53cefc99d6b0bf86!2zUuG6oXAgQ2hp4bq_dSBQaGltIFF14buRYyBHaWE!5e0!3m2!1svi!2s!4v1642672322442!5m2!1svi!2s"
+                                    src={googleMapEmbedUrl}
                                     width="100%" height="100%" style={{ border: 0 }} allowFullScreen="" loading="lazy"
                                     title="Job Location"
                                 ></iframe>
                             </div>
-                        </div>
-
-                        <div className="bg-[#E6F6FD]/30 p-6 rounded-2xl border border-[#E6F6FD]">
-                            <h3 className="font-bold text-gray-800 mb-6">Gửi tin nhắn đến chúng tôi</h3>
-                            <form className="space-y-4">
-                                <div className="relative">
-                                    <FaUser className="absolute left-3 top-3.5 text-gray-400 text-xs" />
-                                    <input type="text" placeholder="Tên đầy đủ" className="w-full pl-9 py-2.5 bg-white border border-transparent rounded-lg text-sm focus:ring-2 focus:ring-[#00B4D8] outline-none" />
-                                </div>
-                                <div className="relative">
-                                    <FaEnvelope className="absolute left-3 top-3.5 text-gray-400 text-xs" />
-                                    <input type="email" placeholder="Địa chỉ email" className="w-full pl-9 py-2.5 bg-white border border-transparent rounded-lg text-sm focus:ring-2 focus:ring-[#00B4D8] outline-none" />
-                                </div>
-                                <div className="relative">
-                                    <FaPhone className="absolute left-3 top-3.5 text-gray-400 text-xs" />
-                                    <input type="tel" placeholder="Số điện thoại" className="w-full pl-9 py-2.5 bg-white border border-transparent rounded-lg text-sm focus:ring-2 focus:ring-[#00B4D8] outline-none" />
-                                </div>
-                                <div className="relative">
-                                    <FaRegComment className="absolute left-3 top-3.5 text-gray-400 text-xs" />
-                                    <textarea placeholder="Tin nhắn của bạn" rows="4" className="w-full pl-9 py-2.5 bg-white border border-transparent rounded-lg text-sm focus:ring-2 focus:ring-[#00B4D8] outline-none resize-none"></textarea>
-                                </div>
-                                <button type="button" className="w-full py-2.5 bg-[#00B4D8] text-white font-bold rounded-lg hover:bg-[#0096B4] transition-colors shadow-sm text-sm">
-                                    Gửi Tin Nhắn
-                                </button>
-                            </form>
                         </div>
                     </div>
                 </div>

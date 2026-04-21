@@ -1,0 +1,73 @@
+@startuml
+title ACT-PROFILE-UPDATE (Detailed — lanes: User, UI, Profile, CDN)
+
+|User|
+start
+:Open trang "Hồ sơ cá nhân";
+
+|UI|
+:Load dữ liệu hồ sơ hiện tại;
+:Hiển thị form chỉnh sửa;
+
+|User|
+:Chỉnh sửa các trường\n(họ tên, ngày sinh, email, phone, địa chỉ, mô tả...);
+:Chọn ảnh đại diện? (tùy chọn);
+
+if (Có chọn ảnh?) then (Yes)
+  |UI|
+  :Kiểm tra kích thước/định dạng ảnh (client);
+  if (Hợp lệ?) then (Yes)
+    |CDN|
+    :Upload ảnh;
+    |UI|
+    :Nhận URL ảnh đã upload;
+  else (No)
+    :Báo lỗi "Ảnh không hợp lệ";
+    stop
+  endif
+endif
+
+|UI|
+:Nhấn "Lưu/Cập nhật";
+:Validate form (client: bắt buộc, định dạng);
+
+if (Form hợp lệ?) then (Yes)
+else (No)
+  :Hiển thị lỗi theo trường;
+  stop
+endif
+
+|Profile|
+:Validate server (schema/regex);
+:Chuẩn hóa dữ liệu (trim, lower email, format phone);
+:Kiểm tra trùng lặp email/phone (ngoại trừ chính user);
+
+if (Trùng lặp?) then (Yes)
+  |UI|
+  :Hiển thị lỗi "Email/Phone đã tồn tại";
+  stop
+endif
+
+|Profile|
+:Áp dụng quy tắc nghiệp vụ\n(ví dụ: tuổi >= 18, địa chỉ hợp lệ...);
+if (Vi phạm rule?) then (Yes)
+  |UI|
+  :Hiển thị lỗi theo trường;
+  stop
+endif
+
+|Profile|
+:Persist thay đổi vào DB (transaction);
+:Ghi audit log (before/after, userId, ip, time);
+
+if (Lưu thành công?) then (Yes)
+  |UI|
+  :Làm mới view / cập nhật state;
+  :Toast "Cập nhật thành công";
+  stop
+else (No)
+  |UI|
+  :Hiển thị lỗi hệ thống ("Vui lòng thử lại");
+  stop
+endif
+@enduml

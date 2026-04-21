@@ -10,4 +10,5 @@ public interface UserSavedJobService {
     void unsaveJob(Long userId, Long jobId);
     boolean isSaved(Long userId, Long jobId);
     long countSavedJobs(Long userId);
+    java.util.List<Long> getSavedJobIds(Long userId);
 }

@@ -11,8 +11,12 @@ import { CompanyLogo } from '../../components/common';
 import {
     FaSearch, FaMapMarkerAlt, FaBriefcase, FaBuilding, FaUserFriends,
     FaCode, FaCloud, FaShieldAlt, FaDatabase, FaMobileAlt, FaPencilRuler, FaBug,
-    FaArrowRight, FaRegBookmark, FaClock, FaFilter, FaArrowLeft, FaMagic, FaChevronRight
+    FaArrowRight, FaRegBookmark, FaBookmark, FaClock, FaFilter, FaArrowLeft, FaMagic, FaChevronRight
 } from 'react-icons/fa';
+import { toast } from 'sonner';
+import jobService from '../../services/jobService';
+import recommendationService from '../../services/recommendationService';
+import JobCard from '../../components/JobCard';
 
 // Import hình nền
 import heroBg from '../../assets/bg_login.jpg';
@@ -22,10 +26,14 @@ const HomePage = () => {
     const navigate = useNavigate();
     const [searchParams, setSearchParams] = useSearchParams();
     const { jobs = [], totalJobs = 0, isLoading } = useSelector((state) => state.job || {});
+    const { currentUser } = useSelector((state) => state.auth || {});
     const [currentPage, setCurrentPage] = useState(1);
+    const [savedJobIds, setSavedJobIds] = useState([]);
     const [provinces, setProvinces] = useState([]);
     const [selectedLocationFilter, setSelectedLocationFilter] = useState(searchParams.get('location') || '');
     const [stats, setStats] = useState({ totalJobs: 0, totalCandidates: 0, totalCompanies: 0 });
+    const [recommendedJobs, setRecommendedJobs] = useState([]);
+    const [isRecommending, setIsRecommending] = useState(false);
 
     const handleJobClick = (job) => {
         const jobKey = getJobPublicKey(job);
@@ -70,6 +78,61 @@ const HomePage = () => {
         };
         fetchStats();
     }, []);
+
+    useEffect(() => {
+        if (!currentUser || (currentUser.role !== 'CANDIDATE' && currentUser.role !== 'USER')) {
+            setSavedJobIds([]);
+            return;
+        }
+
+        const fetchSavedIds = async () => {
+            try {
+                const ids = await jobService.getSavedJobIds();
+                setSavedJobIds(Array.isArray(ids) ? ids : []);
+            } catch (error) {
+                console.error("Failed to fetch saved job IDs", error);
+            }
+        };
+        fetchSavedIds();
+    }, [currentUser]);
+
+    useEffect(() => {
+        const fetchRecommendations = async () => {
+            setIsRecommending(true);
+            try {
+                const data = await recommendationService.getHomepageRecommendations(8);
+                setRecommendedJobs(Array.isArray(data) ? data : []);
+            } catch (error) {
+                console.error("Failed to fetch recommendations:", error);
+            } finally {
+                setIsRecommending(false);
+            }
+        };
+        fetchRecommendations();
+    }, [currentUser]);
+
+    const handleToggleSave = async (e, jobId) => {
+        e.stopPropagation();
+        if (!currentUser) {
+            toast.error("Vui lòng đăng nhập để lưu công việc!");
+            return;
+        }
+
+        const isCurrentlySaved = savedJobIds.includes(jobId);
+        try {
+            if (isCurrentlySaved) {
+                await jobService.unsaveJob(jobId);
+                setSavedJobIds(prev => prev.filter(id => id !== jobId));
+                toast.success("Đã bỏ lưu công việc.");
+            } else {
+                await jobService.saveJob(jobId);
+                setSavedJobIds(prev => [...prev, jobId]);
+                toast.success("Đã lưu công việc thành công!");
+            }
+        } catch (error) {
+            toast.error("Không thể thao tác lúc này.");
+        }
+    };
 
     // Helper: Format Salary
     const formatSalary = (min, max) => {
@@ -139,26 +202,13 @@ const HomePage = () => {
     };
 
 
-    // submit form
     const handleSearch = () => {
-        setCurrentPage(1);
-        setSearchForm(prev => ({ ...prev, page: 0 }));
+        const params = new URLSearchParams();
+        if (searchForm.keyword) params.append('keyword', searchForm.keyword);
+        if (searchForm.location) params.append('location', searchForm.location);
+        if (searchForm.jobType) params.append('jobTypes', searchForm.jobType);
         
-        const params = {
-            ...searchForm,
-            page: 0,
-            minSalary: searchForm.minSalary || undefined,
-            maxSalary: searchForm.maxSalary || undefined,
-            companyId: searchForm.companyId || undefined,
-            keyword: searchForm.keyword || undefined,
-            location: searchForm.location || undefined,
-            jobType: searchForm.jobType || undefined,
-            experienceLevel: searchForm.experienceLevel || undefined,
-            techRequired: searchForm.techRequired || undefined,
-        };
-
-        updateLocationQuery(searchForm.location);
-        dispatch(fetchJobsRequest(params));
+        navigate(`/jobs?${params.toString()}`);
     };
 
     // Helper: Time Ago (Simple version)
@@ -226,14 +276,14 @@ const HomePage = () => {
             tag: "News",
             date: "30 March 2024",
             title: "Revitalizing Workplace Morale: Innovative Tactics For Boosting Employee Engagement In 2024",
-            image: "https://via.placeholder.com/600x400",
+            image: "https://ui-avatars.com/api/?name=News&background=3AB4E6&color=fff&size=600",
         },
         {
             id: 2,
             tag: "Blog",
             date: "30 March 2024",
             title: "How To Avoid The Top Six Most Common Job Interview Mistakes",
-            image: "https://via.placeholder.com/600x400",
+            image: "https://ui-avatars.com/api/?name=Blog&background=3AB4E6&color=fff&size=600",
         }
     ];
 
@@ -357,8 +407,104 @@ const HomePage = () => {
             </section>
 
             {/* =================================================================
-          PHẦN 3: VIỆC LÀM TỐT NHẤT (MODERN CLEAN UI FIX)
+          PHẦN: DÀNH CHO BẠN (RECOMMENDATIONS)
          ================================================================= */}
+            <section className="py-16 px-4 bg-[#F8FAFC]">
+                <div className="container mx-auto">
+                    <div className="flex items-center gap-3 mb-8">
+                        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-white shadow-lg shadow-blue-500/20">
+                            <FaMagic />
+                        </div>
+                        <div>
+                            <h2 className="text-2xl md:text-3xl font-bold text-gray-900">
+                                {currentUser ? "Dành cho bạn" : "Việc làm nổi bật"}
+                            </h2>
+                            <p className="text-gray-500 text-sm">
+                                {currentUser 
+                                    ? "Dựa trên hồ sơ và những gì bạn đã xem" 
+                                    : "Khám phá các cơ hội việc làm tốt nhất ngay hôm nay"}
+                            </p>
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                        {isRecommending ? (
+                            Array.from({ length: 4 }).map((_, i) => (
+                                <div key={i} className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 animate-pulse">
+                                    <div className="w-12 h-12 bg-gray-100 rounded-xl mb-4"></div>
+                                    <div className="h-4 bg-gray-100 rounded w-3/4 mb-2"></div>
+                                    <div className="h-3 bg-gray-50 rounded w-1/2 mb-4"></div>
+                                    <div className="flex gap-2">
+                                        <div className="h-6 bg-gray-50 rounded w-16"></div>
+                                        <div className="h-6 bg-gray-50 rounded w-16"></div>
+                                    </div>
+                                </div>
+                            ))
+                        ) : recommendedJobs.length > 0 ? (
+                            recommendedJobs.map((job) => {
+                                const isSaved = savedJobIds.includes(job.id);
+                                return (
+                                    <div 
+                                        key={job.id}
+                                        onClick={() => handleJobClick(job)}
+                                        className="group bg-white rounded-2xl p-6 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 border border-gray-100 relative cursor-pointer"
+                                    >
+                                        <div className="flex justify-between items-start mb-4">
+                                            <CompanyLogo 
+                                                logoUrl={job.companyLogo || job.logo || job.logoUrl} 
+                                                companyId={job.companyId}
+                                                companyName={job.companyName}
+                                                className="w-12 h-12 rounded-xl object-contain bg-gray-50 p-1" 
+                                            />
+                                            <button 
+                                                onClick={(e) => handleToggleSave(e, job.id)}
+                                                className={`w-8 h-8 rounded-lg flex items-center justify-center transition-all ${isSaved ? 'bg-blue-500 text-white shadow-md' : 'bg-gray-50 text-gray-400 group-hover:bg-blue-50'}`}
+                                            >
+                                                {isSaved ? <FaBookmark size={12} /> : <FaRegBookmark size={12} />}
+                                            </button>
+                                        </div>
+
+                                        <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-blue-50 text-blue-600 text-[10px] font-bold mb-3 uppercase tracking-wider">
+                                            <FaMagic size={10} /> Gợi ý AI
+                                        </div>
+
+                                        <h3 className="text-base font-bold text-gray-900 group-hover:text-blue-500 transition-colors line-clamp-2 min-h-[3rem]">
+                                            {job.position}
+                                        </h3>
+                                        <p className="text-xs text-gray-500 font-medium mb-4 truncate">{job.companyName}</p>
+
+                                        <div className="flex items-center gap-4 text-[11px] text-gray-400 mb-4 pt-4 border-t border-gray-50">
+                                            <span className="flex items-center gap-1">
+                                                <FaMapMarkerAlt className="text-red-400" /> {job.province || "Việt Nam"}
+                                            </span>
+                                            <span className="flex items-center gap-1">
+                                                <FaClock className="text-sky-400" /> {timeAgo(job.createdAt)}
+                                            </span>
+                                        </div>
+
+                                        <div className="flex items-center justify-between">
+                                            <span className="text-sm font-bold text-blue-500">
+                                                {job.minSalary || job.maxSalary ? formatSalary(job.minSalary, job.maxSalary) : "Thỏa thuận"}
+                                            </span>
+                                            <div className="w-8 h-8 rounded-full bg-gray-50 group-hover:bg-blue-500 group-hover:text-white flex items-center justify-center transition-all">
+                                                <FaChevronRight size={10} />
+                                            </div>
+                                        </div>
+                                    </div>
+                                );
+                            })
+                        ) : (
+                            <div className="col-span-full py-20 text-center bg-white rounded-3xl border border-dashed border-gray-200">
+                                <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-4 text-gray-300">
+                                    <FaBriefcase size={24} />
+                                </div>
+                                <h3 className="text-lg font-bold text-gray-900 mb-1">Hiện chưa có đề xuất nào</h3>
+                                <p className="text-gray-500 text-sm">Hãy cập nhật CV và xem thêm nhiều việc làm để chúng tôi gợi ý tốt hơn nhé!</p>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            </section>
             <section className="py-10 px-8 bg-white">
                 <div className="container mx-auto px-4">
 
@@ -458,7 +604,9 @@ const HomePage = () => {
                     <div className="space-y-5 mb-12">
                         {isLoading ? (
                             <div className="text-center py-10">Đang tải danh sách việc làm...</div>
-                        ) : (jobs ?? []).map((job) => (
+                        ) : (jobs ?? []).map((job) => {
+                                const isSaved = savedJobIds.includes(job.id);
+                                return (
                                 <div 
                                     key={job.id} 
                                     onClick={() => handleJobClick(job)}
@@ -471,8 +619,9 @@ const HomePage = () => {
                                         {/* Logo */}
                                         <div className="shrink-0">
                                             <CompanyLogo 
-                                                logoUrl={job.companyLogo} 
+                                                logoUrl={job.companyLogo || job.logo || job.logoUrl} 
                                                 companyId={job.companyId}
+                                                companyName={job.companyName}
                                                 className="w-14 h-14 rounded-xl object-contain bg-gray-50 p-1 border border-gray-100" 
                                             />
                                         </div>
@@ -487,9 +636,9 @@ const HomePage = () => {
                                                     <p className="text-sm text-gray-500 font-medium mt-1">{job.companyName}</p>
                                                 </div>
                                                 <button 
-                                                    onClick={(e) => { e.stopPropagation(); /* handle bookmark */ }}
-                                                    className="w-9 h-9 rounded-full bg-gray-50 text-gray-400 flex items-center justify-center hover:bg-[#3AB4E6] hover:text-white transition-all">
-                                                    <FaRegBookmark />
+                                                    onClick={(e) => handleToggleSave(e, job.id)}
+                                                    className={`w-9 h-9 rounded-full flex items-center justify-center transition-all ${isSaved ? 'bg-[#3AB4E6] text-white shadow-md shadow-blue-200' : 'bg-gray-50 text-gray-400 hover:bg-[#3AB4E6] hover:text-white'}`}>
+                                                    {isSaved ? <FaBookmark size={14} /> : <FaRegBookmark size={14} />}
                                                 </button>
                                             </div>
 
@@ -526,7 +675,8 @@ const HomePage = () => {
                                         </div>
                                     </div>
                                 </div>
-                            ))}
+                                );
+                            })}
                     </div>
 
                     {/* 5. PAGINATION: Bỏ nút đen, dùng style Clean */}

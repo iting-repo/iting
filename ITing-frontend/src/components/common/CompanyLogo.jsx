@@ -9,37 +9,45 @@ import companyService from '../../services/companyService';
  * @param {string} alt - Alt text
  * @param {string} className - Tailwind CSS classes
  */
-const CompanyLogo = ({ logoUrl, companyId, alt = "Company Logo", className = "" }) => {
+const CompanyLogo = ({ logoUrl, companyId, companyName = "", alt = "Company Logo", className = "" }) => {
     const [currentLogo, setCurrentLogo] = useState(logoUrl);
+    const [hasFailed, setHasFailed] = useState(false);
 
     useEffect(() => {
-        // If logo is missing but companyId is present, try to fetch it
-        if (!logoUrl && companyId) {
+        setHasFailed(false);
+        setCurrentLogo(logoUrl);
+    }, [logoUrl, companyId]);
+
+    useEffect(() => {
+        if (!currentLogo && companyId && !hasFailed) {
             const fetchLogo = async () => {
                 try {
                     const res = await companyService.getCompanyDetail(companyId);
                     if (res?.logoUrl) {
                         setCurrentLogo(res.logoUrl);
+                    } else if (res?.logo) {
+                        setCurrentLogo(res.logo);
                     }
                 } catch (err) {
-                    // Silently fail, getCompanyLogoUrl will use default placeholder
-                    console.warn(`Could not fetch logo for company ${companyId}`);
+                    setHasFailed(true);
                 }
             };
             fetchLogo();
-        } else {
-            setCurrentLogo(logoUrl);
         }
-    }, [logoUrl, companyId]);
+    }, [currentLogo, companyId, hasFailed]);
+
+    const fallbackUrl = companyName 
+        ? `https://ui-avatars.com/api/?name=${encodeURIComponent(companyName)}&background=3AB4E6&color=fff&bold=true` 
+        : "/assets/default-company.png";
 
     return (
         <img 
-            src={getCompanyLogoUrl(currentLogo)} 
+            src={getCompanyLogoUrl(currentLogo, companyName)} 
             alt={alt} 
             className={className}
             onError={(e) => {
-                e.target.onerror = null; // Prevent infinite loop
-                e.target.src = "/assets/default-company.png";
+                e.target.onerror = null; 
+                e.target.src = fallbackUrl;
             }}
         />
     );

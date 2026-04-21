@@ -1,0 +1,51 @@
+@startuml
+title ACT-CHAT-INTERACTION (Real-time Messaging)
+
+skinparam activity {
+  BackgroundColor #ffffff
+  DiamondBackgroundColor #EEF2FF
+  StartColor #10B981
+  EndColor #EF4444
+  ArrowColor #6366F1
+}
+
+|User (Candidate/HR)|
+start
+:Mở Trung tâm tin nhắn;
+
+|Frontend (UI)|
+:Lấy danh sách hội thoại (GET /api/chat/rooms);
+:Kết nối WebSocket (Stomp Over SockJS);
+
+|User|
+:Chọn một hội thoại;
+
+|Frontend (UI)|
+:Tải lịch sử tin nhắn (GET /api/chat/messages/{roomId});
+
+|User|
+:Nhập nội dung tin nhắn;
+:Nhấn Gửi;
+
+|Frontend (UI)|
+:Gửi tin nhắn qua WebSocket Destination\n(/app/chat.sendMessage);
+
+|Backend (ChatController/WS)|
+:Xác thực người gửi;
+:Lưu tin nhắn vào Database;
+:Phát tán tin nhắn tới người nhận\n(/topic/room/{roomId});
+
+|Employer/Candidate (Recipient)|
+|Frontend (UI)|
+:Nhận tin nhắn thời gian thực;
+:Hiển thị tin nhắn lên khung chat;
+if (Người nhận đang không ở trong phòng?) then (Yes)
+  |Backend (NotificationService)|
+  :Tạo thông báo "Bạn có tin nhắn mới";
+  :Gửi Push Notification / Email;
+else (No)
+endif
+
+|User|
+stop
+@enduml
