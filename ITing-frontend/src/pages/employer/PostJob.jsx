@@ -13,7 +13,6 @@ import {
   FaTimes,
   FaPlus,
 } from "react-icons/fa";
-import { CheckCircle2 } from "lucide-react";
 import { toast } from "sonner";
 import companyService from "../../services/companyService";
 
@@ -21,29 +20,25 @@ import companyService from "../../services/companyService";
 
 const EXPERIENCE_LEVEL_OPTIONS = [
   { value: "INTERN", label: "Thực tập sinh" },
-  { value: "FRESHER", label: "Mới ra trường / Fresher" },
-  { value: "JUNIOR", label: "Junior (1-2 năm)" },
-  { value: "MIDDLE", label: "Middle (2-4 năm)" },
-  { value: "MID_LEVEL", label: "Mid-level (2-4 năm)" },
-  { value: "SENIOR", label: "Senior (4-7 năm)" },
-  { value: "LEAD", label: "Lead (7+ năm)" },
-  { value: "EXPERT", label: "Chuyên gia" },
-  { value: "MANAGER", label: "Quản lý" },
+  { value: "FRESHER", label: "Fresher" },
+  { value: "JUNIOR", label: "Junior" },
+  { value: "MIDDLE", label: "Middle" },
+  { value: "SENIOR", label: "Senior" },
+  { value: "LEAD", label: "Lead" },
+  { value: "MANAGER", label: "Manager" },
 ];
 
 const JOB_TYPE_OPTIONS = [
-  { value: "FULL_TIME", label: "Toàn thời gian" },
-  { value: "PART_TIME", label: "Bán thời gian" },
-  { value: "CONTRACT", label: "Hợp đồng" },
-  { value: "INTERNSHIP", label: "Thực tập" },
-  { value: "REMOTE", label: "Làm việc từ xa" },
-  { value: "FREELANCE", label: "Tự do" },
+  { value: "FULL_TIME", label: "Full-time" },
+  { value: "PART_TIME", label: "Part-time" },
+  { value: "REMOTE", label: "Remote" },
+  { value: "FREELANCE", label: "Freelance" },
+  { value: "INTERN", label: "Internship" },
 ];
 
 const SALARY_TYPE_OPTIONS = [
   { value: "NEGOTIABLE", label: "Thỏa thuận" },
   { value: "MONTH", label: "Theo tháng" },
-  { value: "YEAR", label: "Theo năm" },
   { value: "PROJECT", label: "Theo dự án" },
   { value: "HOUR", label: "Theo giờ" },
 ];
@@ -75,27 +70,6 @@ const DEFAULT_TECH_OPTIONS = [
   "CSS",
   "Tailwind CSS",
 ];
-
-const normalizeMultiValueField = (value) => {
-  if (Array.isArray(value)) {
-    return value.map((item) => String(item).trim()).filter(Boolean);
-  }
-
-  if (typeof value === "string") {
-    return value
-      .split(",")
-      .map((item) => item.trim())
-      .filter(Boolean);
-  }
-
-  return [];
-};
-
-const normalizeExperienceLevel = (value) => {
-  if (!value) return "";
-  if (value === "MIDDLE") return "MID_LEVEL";
-  return value;
-};
 
 function EditorToolbar() {
   return (
@@ -132,7 +106,6 @@ function MultiSelectTagInput({
   setSelectedValues,
   options,
   placeholder,
-  error,
 }) {
   const [customValue, setCustomValue] = useState("");
 
@@ -224,8 +197,6 @@ function MultiSelectTagInput({
           </div>
         </div>
       </div>
-
-      {error ? <p className="text-red-500 text-xs mt-1">{error}</p> : null}
     </div>
   );
 }
@@ -236,12 +207,22 @@ const PostJob = ({
   initialData = null,
   isEdit = false,
 }) => {
-  const initialFormState = useMemo(() => ({
+  const [formData, setFormData] = useState({
     jobTitle: initialData?.title || "",
-    jobPosition: normalizeMultiValueField(initialData?.position),
-    techStack: normalizeMultiValueField(initialData?.techRequired),
+    jobPosition: initialData?.position
+      ? initialData.position
+          .split(",")
+          .map((x) => x.trim())
+          .filter(Boolean)
+      : [],
+    techStack: initialData?.techRequired
+      ? initialData.techRequired
+          .split(",")
+          .map((x) => x.trim())
+          .filter(Boolean)
+      : [],
     workType: initialData?.jobType || "",
-    experienceLevel: normalizeExperienceLevel(initialData?.experienceLevel),
+    experienceLevel: initialData?.experienceLevel || "",
     workingDays: initialData?.workingDays || "",
     quantity: initialData?.maxAccept ?? "",
     deadline: initialData?.dueDate || "",
@@ -255,21 +236,12 @@ const PostJob = ({
     responsibilities: initialData?.responsibilities || "",
     requirements: initialData?.requirements || "",
     benefits: initialData?.benefits || "",
-  }), [initialData]);
-
-  const [formData, setFormData] = useState(initialFormState);
-
-  const hasChanges = useMemo(() => {
-    if (!isEdit) return true;
-    return JSON.stringify(formData) !== JSON.stringify(initialFormState);
-  }, [formData, initialFormState, isEdit]);
+  });
 
   const [errors, setErrors] = useState({});
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const [provinces, setProvinces] = useState([]);
   const [wards, setWards] = useState([]);
   const [loadingWards, setLoadingWards] = useState(false);
-  const [showSuccess, setShowSuccess] = useState(false);
 
   useEffect(() => {
     fetch("https://provinces.open-api.vn/api/v2/p/")
@@ -313,9 +285,6 @@ const PostJob = ({
     if (!formData.experienceLevel) newErrors.experienceLevel = "Bắt buộc";
     if (!formData.workingDays.trim()) newErrors.workingDays = "Bắt buộc";
     if (!formData.quantity) newErrors.quantity = "Bắt buộc";
-    if (formData.quantity && Number(formData.quantity) <= 0) {
-      newErrors.quantity = "Số lượng cần tuyển phải lớn hơn 0";
-    }
     if (!formData.deadline) newErrors.deadline = "Bắt buộc";
     if (!formData.province) newErrors.province = "Bắt buộc";
     if (!formData.ward) newErrors.ward = "Bắt buộc";
@@ -345,13 +314,9 @@ const PostJob = ({
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!validate()) {
-      toast.error("Vui long kiem tra lai cac truong bat buoc.");
-      return;
-    }
+    if (!validate()) return;
 
     try {
-      setIsSubmitting(true);
       const selectedProvince = provinces.find(
         (p) => p.name === formData.province,
       );
@@ -359,7 +324,7 @@ const PostJob = ({
       const payload = {
         title: formData.jobTitle.trim(),
         position: formData.jobPosition.join(", "),
-        techRequired: formData.techStack,
+        techRequired: formData.techStack.join(", "),
         jobType: formData.workType || null,
         experienceLevel: formData.experienceLevel || null,
         workingDays: formData.workingDays.trim() || null,
@@ -380,7 +345,7 @@ const PostJob = ({
         province: formData.province || null,
         ward: formData.ward || null,
         address: formData.address.trim() || null,
-        locId: null,
+        locId: selectedProvince ? Number(selectedProvince.code) : null,
 
         description: formData.description.trim() || "",
         responsibilities: formData.responsibilities.trim() || "",
@@ -399,8 +364,6 @@ const PostJob = ({
       } else {
         result = await companyService.createEmployerJob(payload);
         toast.success("Đăng bài thành công");
-        setShowSuccess(true);
-        return; // Dừng lại ở màn hình thông báo thành công
       }
 
       if (onSubmitSuccess) {
@@ -410,15 +373,10 @@ const PostJob = ({
       onClose();
     } catch (error) {
       console.error("Lỗi lưu công việc:", error);
-      // Kiểm tra lỗi từ axios interceptor (đã unwrap error.response.data)
-      const errorMessage = error?.error || 
-                          error?.message || 
-                          error?.response?.data?.error || 
-                          error?.response?.data?.message || 
-                          "Lưu công việc thất bại, vui lòng thử lại";
-      toast.error(errorMessage);
-    } finally {
-      setIsSubmitting(false);
+      toast.error(
+        error?.response?.data?.message ||
+          "Lưu công việc thất bại, vui lòng thử lại",
+      );
     }
   };
 
@@ -471,31 +429,7 @@ const PostJob = ({
         </div>
 
         <div className="p-8">
-          {showSuccess ? (
-            <div className="py-12 flex flex-col items-center text-center animate-fade-in">
-              <div className="w-24 h-24 bg-green-50 rounded-full flex items-center justify-center mb-6">
-                <CheckCircle2 className="w-12 h-12 text-green-500" />
-              </div>
-              <h3 className="text-3xl font-bold text-gray-800 mb-4">Đăng bài thành công!</h3>
-              <p className="text-lg text-gray-600 max-w-md mx-auto leading-relaxed">
-                Tin tuyển dụng của bạn đã được gửi đi. Vui lòng đợi trong vòng 
-                <span className="font-bold text-sky-600"> 1 ngày làm việc </span> 
-                để đội ngũ quản trị viên kiểm duyệt nội dung.
-              </p>
-              <div className="mt-10 flex gap-4">
-                <button
-                  onClick={() => {
-                    if (onSubmitSuccess) onSubmitSuccess();
-                    onClose();
-                  }}
-                  className="px-8 py-4 bg-sky-500 hover:bg-sky-600 text-white rounded-xl font-bold transition-all shadow-lg shadow-sky-100"
-                >
-                  Về trang quản lý
-                </button>
-              </div>
-            </div>
-          ) : (
-            <form onSubmit={handleSubmit}>
+          <form onSubmit={handleSubmit}>
             <div className="mb-8">
               <h3 className="text-lg font-bold text-gray-800 mb-4">
                 Tiêu đề công việc
@@ -527,7 +461,6 @@ const PostJob = ({
                   }
                   options={DEFAULT_POSITION_OPTIONS}
                   placeholder="Nhập vị trí mới"
-                  error={errors.jobPosition}
                 />
 
                 <MultiSelectTagInput
@@ -538,7 +471,6 @@ const PostJob = ({
                   }
                   options={DEFAULT_TECH_OPTIONS}
                   placeholder="Nhập công nghệ mới"
-                  error={errors.techStack}
                 />
               </div>
 
@@ -623,7 +555,6 @@ const PostJob = ({
                   <input
                     type="number"
                     name="quantity"
-                    min="1"
                     value={formData.quantity}
                     placeholder="Nhập số lượng"
                     className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:border-[#3AB4E6] text-sm"
@@ -713,9 +644,6 @@ const PostJob = ({
                     </select>
                     <FaChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 text-xs pointer-events-none" />
                   </div>
-                  {errors.ward && (
-                    <p className="text-red-500 text-xs mt-1">{errors.ward}</p>
-                  )}
                 </div>
 
                 <div>
@@ -832,7 +760,7 @@ const PostJob = ({
                     name="description"
                     value={formData.description}
                     className="w-full p-4 h-40 focus:outline-none resize-none text-sm text-gray-600"
-                    placeholder="Thêm mô tả công việc tại đây..."
+                    placeholder="Add your job description..."
                     onChange={handleChange}
                   />
                 </div>
@@ -853,14 +781,14 @@ const PostJob = ({
                     name="responsibilities"
                     value={formData.responsibilities}
                     className="w-full p-4 h-40 focus:outline-none resize-none text-sm text-gray-600"
-                    placeholder="Thêm trách nhiệm công việc tại đây..."
+                    placeholder="Add your job responsibilities..."
                     onChange={handleChange}
                   />
                 </div>
               </div>
             </div>
 
-            <div className="flex items-center justify-end gap-3 pt-4 border-t border-gray-100">
+            <div className="flex items-center justify-end gap-3 pt-2">
               <button
                 type="button"
                 onClick={onClose}
@@ -871,21 +799,13 @@ const PostJob = ({
 
               <button
                 type="submit"
-                disabled={!hasChanges || isSubmitting}
-                className={`flex items-center gap-2 font-bold py-3 px-8 rounded-lg transition-all ${
-                  hasChanges && !isSubmitting
-                    ? "bg-[#1967D2] hover:bg-blue-700 text-white shadow-lg shadow-blue-200" 
-                    : "bg-gray-300 text-gray-500 cursor-not-allowed grayscale"
-                }`}
+                className="bg-[#1967D2] hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-lg transition-colors flex items-center gap-2"
               >
-                {isSubmitting
-                  ? "Dang xu ly..."
-                  : (isEdit ? "Cập nhật → Chờ duyệt lại" : "Đăng bài → Chờ duyệt")}
+                {isEdit ? "Lưu thay đổi" : "Đăng Bài"}{" "}
                 <FaArrowRight size={14} />
               </button>
             </div>
           </form>
-          )}
         </div>
       </div>
     </div>

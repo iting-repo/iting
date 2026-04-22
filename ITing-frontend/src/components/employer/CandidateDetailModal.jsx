@@ -1,64 +1,12 @@
-import React, { useState, useEffect } from 'react';
-import {
-    FaTimes, FaEnvelope, FaPhone, FaDownload,
-    FaStar, FaRegStar, FaCheckCircle, FaUserTie,
-    FaExclamationTriangle, FaExternalLinkAlt
-} from 'react-icons/fa';
+import React, { useState } from 'react';
+import { FaTimes, FaEnvelope, FaPhone, FaDownload, FaStar, FaRegStar, FaCheckCircle, FaUserTie } from 'react-icons/fa';
 import { toast } from 'sonner';
 import applicationService from '../../services/applicationService';
-import reportService from '../../services/reportService';
-import favoriteCandidateService from '../../services/favoriteCandidateService';
-import messageService from '../../services/messageService';
-import { useNavigate } from 'react-router-dom';
 
-const REPORT_REASONS = [
-    { value: 'SPAM', label: 'Spam / Tin nhắn rác', priority: 'LOW' },
-    { value: 'SCAM', label: 'Lừa đảo / Dấu hiệu lừa đảo', priority: 'CRITICAL' },
-    { value: 'FAKE_INFO', label: 'Thông tin giả mạo', priority: 'HIGH' },
-    { value: 'HARASSMENT', label: 'Quấy rối / Đe dọa', priority: 'HIGH' },
-    { value: 'INAPPROPRIATE', label: 'Nội dung không phù hợp', priority: 'MEDIUM' },
-    { value: 'OTHER', label: 'Lý do khác...', priority: 'LOW' },
-];
-
-const CandidateDetailModal = ({ candidate, onClose, onStatusUpdate }) => {
-    const navigate = useNavigate();
+const CandidateDetailModal = ({ candidate, onClose }) => {
     const [isAccepting, setIsAccepting] = useState(false);
-    const [showReportModal, setShowReportModal] = useState(false);
-    const [reportData, setReportData] = useState({
-        type: 'SPAM',
-        description: ''
-    });
-    const [isReporting, setIsReporting] = useState(false);
-    const [isFavorited, setIsFavorited] = useState(false);
-    const [isStartingChat, setIsStartingChat] = useState(false);
-
-    useEffect(() => {
-        if (candidate && candidate.status === 'PENDING') {
-            applicationService.markViewed(candidate.id)
-                .then(() => {
-                    if (onStatusUpdate) {
-                        onStatusUpdate(candidate.id, 'VIEWED');
-                    }
-                })
-                .catch(err => console.error("Could not mark as viewed", err));
-        }
-        // Check favorite status
-        if (candidate) {
-            setIsFavorited(favoriteCandidateService.isFavorite(candidate.id));
-        }
-    }, [candidate, onStatusUpdate]);
 
     if (!candidate) return null;
-
-    const handleToggleFavorite = () => {
-        const newStatus = favoriteCandidateService.toggleFavorite(candidate);
-        setIsFavorited(newStatus);
-        if (newStatus) {
-            toast.success(`Đã thêm ${candidate.applicantName} vào danh sách yêu thích!`);
-        } else {
-            toast('Đã xóa khỏi danh sách yêu thích.', { icon: '🗑️' });
-        }
-    };
 
     const handleAccept = async () => {
         try {
@@ -71,64 +19,6 @@ const CandidateDetailModal = ({ candidate, onClose, onStatusUpdate }) => {
             toast.error('Có lỗi xảy ra, vui lòng thử lại.');
         } finally {
             setIsAccepting(false);
-        }
-    };
-
-    const handleReport = async () => {
-        if (!reportData.description.trim()) {
-            toast.error('Vui lòng nhập mô tả chi tiết lý do báo cáo.');
-            return;
-        }
-
-        try {
-            setIsReporting(true);
-            const selectedReason = REPORT_REASONS.find(r => r.value === reportData.type);
-
-            await reportService.createReport({
-                targetId: candidate.userId || candidate.applicantId,
-                targetType: 'USER',
-                targetName: candidate.applicantName,
-                type: reportData.type,
-                reason: selectedReason.label,
-                description: reportData.description,
-                priority: selectedReason.priority,
-                status: 'PENDING'
-            });
-
-            toast.success('Cảm ơn bạn đã báo cáo. Chúng tôi sẽ xem xét sớm nhất!');
-            setShowReportModal(false);
-            setReportData({ type: 'SPAM', description: '' });
-        } catch (error) {
-            console.error('Lỗi khi báo cáo:', error);
-            toast.error('Gửi báo cáo thất bại. Vui lòng thử lại.');
-        } finally {
-            setIsReporting(false);
-        }
-    };
-
-    const handleStartConversation = async () => {
-        const candidateUserId = candidate?.userId || candidate?.applicantId;
-        if (!candidateUserId) {
-            toast.error('Khong xac dinh duoc ung vien de nhan tin.');
-            return;
-        }
-
-        setIsStartingChat(true);
-        try {
-            const sent = await messageService.sendMessage({
-                receiverId: candidateUserId,
-                receiverType: 'USER',
-                senderType: 'COMPANY',
-                content: 'Chao ban, chung toi muon ket noi ve co hoi cong viec.',
-            });
-
-            onClose();
-            navigate(`/messages?conversationId=${sent.conversationId}`);
-            toast.success('Da mo cuoc tro chuyen voi ung vien.');
-        } catch (error) {
-            toast.error(error?.message || 'Khong the tao cuoc tro chuyen luc nay.');
-        } finally {
-            setIsStartingChat(false);
         }
     };
 
@@ -216,39 +106,13 @@ const CandidateDetailModal = ({ candidate, onClose, onStatusUpdate }) => {
                         {/* Profile Summary */}
                         <div className="flex items-center gap-5">
                             <img
-                                src={candidate.avatarUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(candidate.applicantName || 'Ung vien')}&background=random`}
+                                src={candidate.avatarUrl || "https://via.placeholder.com/150"}
                                 alt={candidate.applicantName}
-                                className="w-20 h-20 rounded-2xl border-2 border-slate-100 shadow-sm object-cover bg-white"
+                                className="w-32 h-32 rounded-full border-4 border-white shadow-lg object-cover bg-white"
                             />
-                            <div>
-                                <h2 className="text-2xl font-black text-slate-800 tracking-tight leading-7">{candidate.applicantName || "Chưa cập nhật"}</h2>
-                                <p className="text-blue-600 font-bold text-sm mt-1">{candidate.jobTitle || "Vị trí ứng tuyển"}</p>
-                                <div className="flex items-center gap-2 mt-1">
-                                    <p className="text-slate-400 text-xs">ID: #{candidate.id}</p>
-                                    {isFavorited && (
-                                        <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-amber-50 text-amber-600 text-[10px] font-bold rounded-full border border-amber-100">
-                                            <FaStar size={8} /> Đã yêu thích
-                                        </span>
-                                    )}
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* Contact Quick Box */}
-                        <div className="grid grid-cols-2 gap-3">
-                            <div className="p-4 rounded-2xl bg-slate-50 border border-slate-100">
-                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Số điện thoại</p>
-                                <div className="flex items-center gap-2 text-slate-700 font-bold text-sm">
-                                    <FaPhone className="text-blue-500" size={12} />
-                                    {candidate.phoneNumber || "N/A"}
-                                </div>
-                            </div>
-                            <div className="p-4 rounded-2xl bg-slate-50 border border-slate-100 overflow-hidden">
-                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Email</p>
-                                <div className="flex items-center gap-2 text-slate-700 font-bold text-sm truncate" title={candidate.email}>
-                                    <FaEnvelope className="text-blue-500" size={12} />
-                                    {candidate.email || "N/A"}
-                                </div>
+                            <div className="mb-2">
+                                <h2 className="text-3xl font-bold text-gray-800">{candidate.applicantName || "Chưa cập nhật"}</h2>
+                                <p className="text-gray-500 font-medium">{candidate.jobTitle || "Chưa cập nhật"}</p>
                             </div>
                         </div>
 
@@ -272,23 +136,42 @@ const CandidateDetailModal = ({ candidate, onClose, onStatusUpdate }) => {
                             >
                                 <FaEnvelope /> {isStartingChat ? 'Dang mo chat...' : 'Gui tin nhan'}
                             </button>
-                            <button
+                            <button className="flex items-center gap-2 px-4 py-2 bg-white border border-[#3AB4E6] text-[#3AB4E6] rounded-lg hover:bg-blue-50 shadow-sm transition-colors">
+                                <FaEnvelope /> Liên hệ
+                            </button>
+                            <button 
                                 onClick={handleAccept}
                                 disabled={isAccepting}
-                                className={`w-full flex justify-center items-center gap-2 px-6 py-4 bg-[#1967D2] text-white font-bold rounded-2xl hover:bg-blue-700 shadow-xl shadow-blue-100 transition-all active:scale-95 ${isAccepting ? 'opacity-70 cursor-not-allowed' : ''}`}>
-                                <FaCheckCircle /> {isAccepting ? 'Đang xử lý...' : 'Chấp nhận tuyển dụng'}
+                                className={`flex items-center gap-2 px-6 py-2 bg-[#1967D2] text-white rounded-lg hover:bg-blue-700 shadow-lg shadow-blue-500/30 transition-colors ${isAccepting ? 'opacity-70 cursor-not-allowed' : ''}`}>
+                                <FaCheckCircle /> {isAccepting ? 'Đang xử lý...' : 'Tuyển dụng'}
                             </button>
                         </div>
                     </div>
-                </div>
 
-                {/* MODAL BÁO CÁO (NESTED) */}
-                {showReportModal && (
-                    <div className="absolute inset-0 z-[60] bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-6 animate-in fade-in duration-300">
-                        <div className="bg-white w-full max-w-md rounded-3xl shadow-2xl p-8 animate-in zoom-in-95 duration-200">
-                            <h3 className="text-2xl font-black text-slate-800 mb-2 flex items-center gap-3">
-                                <div className="p-3 bg-red-100 text-red-600 rounded-2xl">
-                                    <FaExclamationTriangle size={24} />
+                    {/* Content Grid */}
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+
+                        {/* Cột Trái: Thông tin chính */}
+                        <div className="lg:col-span-2 space-y-8">
+                            <section>
+                                <h3 className="text-lg font-bold text-gray-800 mb-4 border-b pb-2">Thông tin giới thiệu</h3>
+                                <p className="text-gray-600 leading-relaxed text-sm">
+                                    {candidate.introduction || "Ứng viên chưa cập nhật thông tin giới thiệu. Tuy nhiên dựa trên kinh nghiệm làm việc, đây là một ứng viên tiềm năng..."}
+                                </p>
+                            </section>
+
+                            <section>
+                                <h3 className="text-lg font-bold text-gray-800 mb-4 border-b pb-2">Kinh nghiệm làm việc</h3>
+                                <div className="space-y-4">
+                                    {/* Mock Item */}
+                                    <div className="flex gap-4">
+                                        <div className="mt-1"><FaUserTie className="text-gray-400" /></div>
+                                        <div>
+                                            <h4 className="font-bold text-gray-800">Senior UI Designer</h4>
+                                            <p className="text-sm text-gray-500">Google Inc • 2020 - Present</p>
+                                            <p className="text-sm text-gray-600 mt-1">Chịu trách nhiệm thiết kế hệ thống Design System...</p>
+                                        </div>
+                                    </div>
                                 </div>
                                 Báo cáo vi phạm
                             </h3>
@@ -308,33 +191,47 @@ const CandidateDetailModal = ({ candidate, onClose, onStatusUpdate }) => {
                                     </select>
                                 </div>
 
-                                <div>
-                                    <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2.5 ml-1">Mô tả chi tiết</label>
-                                    <textarea
-                                        rows="4"
-                                        placeholder="Vui lòng cung cấp thêm thông tin để bộ phận hỗ trợ xử lý nhanh hơn..."
-                                        value={reportData.description}
-                                        onChange={(e) => setReportData({ ...reportData, description: e.target.value })}
-                                        className="w-full p-4 bg-slate-50 border-2 border-slate-100 rounded-2xl text-slate-700 font-medium focus:border-blue-400 outline-none transition-all resize-none"
-                                    />
-                                </div>
+                        {/* Cột Phải: Thông tin liên hệ & CV */}
+                        <div className="space-y-6">
 
-                                <div className="flex gap-3 pt-4">
-                                    <button
-                                        onClick={() => setShowReportModal(false)}
-                                        className="flex-1 py-4 bg-slate-100 text-slate-600 font-bold rounded-2xl hover:bg-slate-200 transition-all"
-                                    >
-                                        Hủy bỏ
-                                    </button>
-                                    <button
-                                        onClick={handleReport}
-                                        disabled={isReporting}
-                                        className="flex-[1.5] py-4 bg-red-500 text-white font-bold rounded-2xl hover:bg-red-600 shadow-lg shadow-red-100 transition-all disabled:opacity-50"
-                                    >
-                                        {isReporting ? 'Đang gửi...' : 'Gửi báo cáo'}
+                            {/* Box Download CV */}
+                            <div className="bg-gray-50 rounded-xl p-5 border border-gray-100">
+                                <h4 className="font-bold text-gray-800 mb-4">Download CV</h4>
+                                <div className="flex items-center justify-between bg-white p-3 rounded-lg border border-gray-200">
+                                    <div className="flex items-center gap-3">
+                                        <img src="https://upload.wikimedia.org/wikipedia/commons/8/87/PDF_file_icon.svg" className="w-8 h-8" alt="PDF" />
+                                        <div>
+                                            <p className="text-sm font-bold text-gray-700 truncate w-24">{candidate.cvFileName || `CV_${candidate.applicantName || candidate.id}`}</p>
+                                            <p className="text-xs text-gray-400">PDF</p>
+                                        </div>
+                                    </div>
+                                    <button className="p-2 text-blue-500 hover:bg-blue-50 rounded-lg transition-colors">
+                                        <FaDownload />
                                     </button>
                                 </div>
                             </div>
+
+                            {/* Box Contact Info */}
+                            <div className="bg-white rounded-xl p-5 border border-gray-200 shadow-sm">
+                                <h4 className="font-bold text-gray-800 mb-4">Thông tin liên hệ</h4>
+                                <div className="space-y-4">
+                                    <div className="flex items-start gap-3">
+                                        <div className="p-2 bg-blue-50 rounded-full text-blue-600"><FaPhone size={14} /></div>
+                                        <div>
+                                            <p className="text-xs text-gray-400 uppercase font-bold">Số điện thoại</p>
+                                            <p className="text-sm font-medium text-gray-700">{candidate.phoneNumber || "Chưa cập nhật"}</p>
+                                        </div>
+                                    </div>
+                                    <div className="flex items-start gap-3">
+                                        <div className="p-2 bg-blue-50 rounded-full text-blue-600"><FaEnvelope size={14} /></div>
+                                        <div>
+                                            <p className="text-xs text-gray-400 uppercase font-bold">Email</p>
+                                            <p className="text-sm font-medium text-gray-700">{candidate.email || "Chưa cập nhật"}</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
                         </div>
                     </div>
                 )}

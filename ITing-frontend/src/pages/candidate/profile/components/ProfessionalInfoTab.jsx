@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { FaEye, FaPlusCircle } from 'react-icons/fa';
 import BasicInfoSection from '../professional/BasicInfoSection';
 import CertificateSection from '../professional/CertificateSection';
@@ -7,11 +7,8 @@ import EducationSection from '../professional/EducationSection';
 import ExperienceSection from '../professional/ExperienceSection';
 import PortfolioSection from '../professional/PortfolioSection';
 import SkillsSection from '../professional/SkillsSection';
-import RecruiterPreviewModal from './RecruiterPreviewModal';
 
 const ProfessionalInfoTab = () => {
-    const [isPreviewOpen, setIsPreviewOpen] = useState(false);
-
     return (
         <div className="space-y-10">
             {/* Header with Preview Button */}
@@ -20,10 +17,7 @@ const ProfessionalInfoTab = () => {
                     <h3 className="text-xl font-bold text-blue-900">Hoàn thiện hồ sơ chuyên nghiệp</h3>
                     <p className="text-blue-700 text-sm mt-1">Thông tin này sẽ được hiển thị trực tiếp cho nhà tuyển dụng khi họ xem hồ sơ của bạn.</p>
                 </div>
-                <button
-                    onClick={() => setIsPreviewOpen(true)}
-                    className="flex items-center justify-center gap-2 bg-white text-blue-600 border-2 border-blue-600 px-6 py-2.5 rounded-xl font-bold hover:bg-blue-600 hover:text-white transition-all shadow-sm whitespace-nowrap"
-                >
+                <button className="flex items-center justify-center gap-2 bg-white text-blue-600 border-2 border-blue-600 px-6 py-2.5 rounded-xl font-bold hover:bg-blue-600 hover:text-white transition-all shadow-sm whitespace-nowrap">
                     <FaEye /> Xem với vai trò nhà tuyển dụng
                 </button>
             </div>
@@ -55,11 +49,6 @@ const ProfessionalInfoTab = () => {
                     <FaPlusCircle /> Thêm tùy chọn mới
                 </button>
             </div>
-
-            <RecruiterPreviewModal
-                isOpen={isPreviewOpen}
-                onClose={() => setIsPreviewOpen(false)}
-            />
         </div>
     );
 };

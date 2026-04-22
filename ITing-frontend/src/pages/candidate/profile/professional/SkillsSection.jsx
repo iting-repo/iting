@@ -1,15 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { Cpu, Plus, X, Save } from 'lucide-react';
-import { Button, Card, Input, ConfirmDialog } from "../../../../components/common";
+import { Button, Card, Input } from "../../../../components/common";
 import axiosInstance from "../../../../utils/axiosInstance";
-import { toast } from 'sonner';
 
 const SkillsSection = () => {
     const [skills, setSkills] = useState([]);
     const [isAdding, setIsAdding] = useState(false);
     const [newSkillName, setNewSkillName] = useState('');
     const [newSkillLevel, setNewSkillLevel] = useState('Intermediate');
-    const [confirmModal, setConfirmModal] = useState({ isOpen: false, id: null });
 
     useEffect(() => {
         fetchSkills();
@@ -35,26 +33,20 @@ const SkillsSection = () => {
             setNewSkillName('');
             setIsAdding(false);
             fetchSkills();
-            toast.success("Thêm kỹ năng thành công!");
         } catch (error) {
             console.error("Failed to add skill", error);
-            toast.error("Có lỗi xảy ra khi thêm kỹ năng!");
+            alert("Có lỗi xảy ra khi thêm kỹ năng!");
         }
     };
 
     const handleDeleteSkill = async (id) => {
-        setConfirmModal({ isOpen: true, id });
-    };
-
-    const confirmDeleteSkill = async () => {
-        const id = confirmModal.id;
+        if (!window.confirm("Bạn có chắc chắn muốn xóa kỹ năng này?")) return;
         try {
             await axiosInstance.delete(`/user/professional-profile/skills/${id}`);
             fetchSkills();
-            toast.success("Xóa kỹ năng thành công!");
         } catch (error) {
             console.error("Failed to delete skill", error);
-            toast.error("Có lỗi xảy ra khi xóa kỹ năng!");
+            alert("Có lỗi xảy ra khi xóa kỹ năng!");
         }
     };
 
@@ -94,7 +86,7 @@ const SkillsSection = () => {
                                     <div className="w-full md:w-48">
                                         <label className="block text-xs text-gray-500 mb-1">Mức độ</label>
                                         <select 
-                                            className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-slate-400 focus:ring-2 focus:ring-[#3AB4E6]"
+                                            className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-slate-400 focus:ring-2 focus:ring-[#9D5CE9]"
                                             value={newSkillLevel}
                                             onChange={(e) => setNewSkillLevel(e.target.value)}
                                         >
@@ -140,15 +132,6 @@ const SkillsSection = () => {
                     </div>
                 )}
             </div>
-
-            <ConfirmDialog
-                isOpen={confirmModal.isOpen}
-                onClose={() => setConfirmModal({ isOpen: false, id: null })}
-                onConfirm={confirmDeleteSkill}
-                title="Xóa kỹ năng"
-                message="Bạn có chắc chắn muốn xóa kỹ năng này?"
-                type="danger"
-            />
         </Card>
     );
 };

@@ -1,9 +1,6 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import { Link, useNavigate, useParams } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useParams } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
-import { formatDistanceToNowStrict, parseISO, differenceInDays } from 'date-fns';
-import { vi } from 'date-fns/locale';
-import { toast } from 'sonner';
 import { fetchJobDetailRequest } from '../../store/job/jobSlice';
 import {
     FaMapMarkerAlt, FaDollarSign, FaClock, FaBriefcase, FaRegBookmark, FaBookmark,
@@ -46,327 +43,85 @@ const formatSalary = (min, max) => {
 };
 
 const JobDetailPage = () => {
-    const { slug, jobKey } = useParams();
-    const navigate = useNavigate();
+    const { id } = useParams();
     const dispatch = useDispatch();
     const { currentJob, isLoading } = useSelector(state => state.job || {});
-    const { user, isAuthenticated } = useSelector(state => state.auth || {});
     
-    // States
+    useEffect(() => {
+        if (id) {
+            dispatch(fetchJobDetailRequest(id));
+        }
+    }, [id, dispatch]);
+
     const [isApplyModalOpen, setIsApplyModalOpen] = useState(false);
-    const [hasApplied, setHasApplied] = useState(false);
-    const [isSaved, setIsSaved] = useState(false);
-    const [isSaving, setIsSaving] = useState(false);
-    const [contactMessage, setContactMessage] = useState('');
-    const [sendingContact, setSendingContact] = useState(false);
-    const [companyInfo, setCompanyInfo] = useState(null);
-    const [relatedJobs, setRelatedJobs] = useState([]);
-    const [relatedLoading, setRelatedLoading] = useState(false);
 
-    const normalizedJobId = normalizeJobKey(jobKey);
+    if (isLoading) return <div className="text-center py-20 font-bold text-gray-500">Đang tải chi tiết công việc...</div>;
+    if (!currentJob) return <div className="text-center py-20 font-bold text-red-500">Không tìm thấy công việc!</div>;
 
-    useEffect(() => {
-        if (normalizedJobId) {
-            dispatch(fetchJobDetailRequest(normalizedJobId));
-        }
-    }, [dispatch, normalizedJobId]);
-
-    useEffect(() => {
-        const checkAppStatus = async () => {
-            if (isAuthenticated && user?.role === 'CANDIDATE' && currentJob?.id) {
-                try {
-                    const res = await applicationService.checkApplied(currentJob.id);
-                    setHasApplied(res?.hasApplied || false);
-                } catch (err) {
-                    console.error("Check applied error:", err);
-                }
-            }
-        };
-        checkAppStatus();
-    }, [isAuthenticated, user, currentJob]);
-
-    useEffect(() => {
-        const checkSaved = async () => {
-            if (!currentJob?.id || !storage.getToken()) {
-                setIsSaved(false);
-                return;
-            }
-            try {
-                const res = await axiosInstance.get(`/candidates/saved-jobs/${currentJob.id}/check`);
-                setIsSaved(Boolean(res?.saved));
-            } catch {
-                setIsSaved(false);
-            }
-        };
-        checkSaved();
-    }, [currentJob?.id]);
-
-    useEffect(() => {
-        const fetchCompany = async () => {
-            if (currentJob?.companyId) {
-                try {
-                    const res = await companyService.getCompanyDetail(currentJob.companyId);
-                    setCompanyInfo(res);
-                } catch (err) {
-                    console.error("Fetch company detail error:", err);
-                }
-            }
-        };
-        fetchCompany();
-    }, [currentJob?.companyId]);
-
-    useEffect(() => {
-        if (!currentJob) return;
-        const expectedSlug = slugify(getJobTitle(currentJob)) || 'chi-tiet-viec-lam';
-        if (slug !== expectedSlug) {
-            navigate(buildJobDetailPath(currentJob), { replace: true });
-        }
-    }, [currentJob, slug, navigate]);
-
-    useEffect(() => {
-        const loadRelatedJobs = async () => {
-            if (!currentJob?.id) {
-                setRelatedJobs([]);
-                return;
-            }
-
-            setRelatedLoading(true);
-            try {
-                const primaryKeyword = currentJob.position || currentJob.title || '';
-                const byKeyword = await axiosInstance.get('/jobs/search', {
-                    params: {
-                        keyword: primaryKeyword,
-                        page: 0,
-                        size: 5,
-                        sortBy: 'lastUpdate',
-                        sortOrder: 'desc',
-                    },
-                });
-
-                let candidates = Array.isArray(byKeyword?.content) ? byKeyword.content : [];
-                candidates = candidates.filter((job) => Number(job.id) !== Number(currentJob.id));
-
-                if (candidates.length < 3 && currentJob.companyId) {
-                    const byCompany = await axiosInstance.get('/jobs/search', {
-                        params: {
-                            companyId: currentJob.companyId,
-                            page: 0,
-                            size: 5,
-                            sortBy: 'lastUpdate',
-                            sortOrder: 'desc',
-                        },
-                    });
-
-                    const companyJobs = (Array.isArray(byCompany?.content) ? byCompany.content : [])
-                        .filter((job) => Number(job.id) !== Number(currentJob.id));
-
-                    const mergeMap = new Map();
-                    [...candidates, ...companyJobs].forEach((job) => {
-                        if (!mergeMap.has(job.id)) mergeMap.set(job.id, job);
-                    });
-                    candidates = [...mergeMap.values()];
-                }
-
-                setRelatedJobs(candidates.slice(0, 3));
-            } catch {
-                setRelatedJobs([]);
-            } finally {
-                setRelatedLoading(false);
-            }
-        };
-
-        loadRelatedJobs();
-    }, [currentJob?.id, currentJob?.companyId, currentJob?.position, currentJob?.title]);
-
-    const handleToggleSave = async () => {
-        if (!storage.getToken()) {
-            toast.error('Vui lòng đăng nhập để lưu công việc.');
-            return;
-        }
-        if (!currentJob?.id || isSaving) return;
-
-        setIsSaving(true);
-        try {
-            if (isSaved) {
-                await axiosInstance.delete(`/candidates/saved-jobs/${currentJob.id}`);
-                setIsSaved(false);
-                toast.success('Đã bỏ lưu công việc.');
-            } else {
-                await axiosInstance.post(`/candidates/saved-jobs/${currentJob.id}`);
-                setIsSaved(true);
-                toast.success('Đã lưu công việc.');
-            }
-        } catch (error) {
-            toast.error(error?.message || 'Không thể cập nhật trạng thái lưu job.');
-        } finally {
-            setIsSaving(false);
-        }
-    };
-
-    const handleContactCompany = async () => {
-        const token = storage.getToken();
-        if (!token) {
-            navigate('/login');
-            return;
-        }
-        if (user?.role !== 'CANDIDATE') {
-            toast.error('Chỉ ứng viên mới có thể nhắn tin với nhà tuyển dụng.');
-            return;
-        }
-
-        const content = contactMessage.trim();
-        if (!content) {
-            toast.error('Vui lòng nhập nội dung tin nhắn.');
-            return;
-        }
-
-        if (!currentJob?.companyId) {
-            toast.error('Không xác định được nhà tuyển dụng.');
-            return;
-        }
-
-        setSendingContact(true);
-        try {
-            const sent = await messageService.sendMessage({
-                receiverId: currentJob.companyId,
-                receiverType: 'COMPANY',
-                senderType: 'USER',
-                content,
-            });
-            setContactMessage('');
-            toast.success('Đã gửi tin nhắn.');
-            navigate(`/messages?conversationId=${sent.conversationId}`);
-        } catch (error) {
-            toast.error(error?.message || 'Không thể gửi tin nhắn lúc này.');
-        } finally {
-            setSendingContact(false);
-        }
-    };
-
-    const description = useMemo(() => normalizeList(currentJob?.description), [currentJob?.description]);
-    const responsibilities = useMemo(() => normalizeList(currentJob?.responsibilities), [currentJob?.responsibilities]);
-    const requirements = useMemo(() => normalizeList(currentJob?.requirements || currentJob?.techRequired), [currentJob?.requirements, currentJob?.techRequired]);
-    const benefits = useMemo(() => normalizeList(currentJob?.benefits), [currentJob?.benefits]);
-    const techList = currentJob?.techRequired || [];
-
-    const formatJobType = (type) => {
-        const map = {
-            'FULL_TIME': 'Toàn thời gian',
-            'PART_TIME': 'Bán thời gian',
-            'CONTRACT': 'Hợp đồng',
-            'INTERNSHIP': 'Thực tập',
-            'REMOTE': 'Làm việc từ xa',
-            'FREELANCE': 'Tự do'
-        };
-        return map[type] || type || "Toàn thời gian";
-    };
-
-    const formatExperience = (level) => {
-        const map = {
-            'INTERN': 'Thực tập sinh',
-            'FRESHER': 'Mới ra trường / Fresher',
-            'JUNIOR': 'Junior (1-2 năm)',
-            'MIDDLE': 'Middle (2-4 năm)',
-            'MID_LEVEL': 'Mid-level (2-4 năm)',
-            'SENIOR': 'Senior (4-7 năm)',
-            'LEAD': 'Lead (7+ năm)',
-            'EXPERT': 'Chuyên gia',
-            'MANAGER': 'Quản lý'
-        };
-        return map[level] || level || "Chưa cập nhật";
-    };
-
-    const formatDeadline = (dueDate) => {
-        if (!dueDate) return "Không có";
-        try {
-            const deadlineDate = parseISO(dueDate);
-            const today = new Date();
-            today.setHours(0, 0, 0, 0);
-
-            const deadline = new Date(deadlineDate);
-            deadline.setHours(0, 0, 0, 0);
-
-            const diffDays = differenceInDays(deadline, today);
-            const formattedDate = deadline.toLocaleDateString("vi-VN");
-
-            if (diffDays < 0) return `${formattedDate} (Hết hạn)`;
-            if (diffDays === 0) return `${formattedDate} (Hôm nay)`;
-            return `${formattedDate} (Còn ${diffDays} ngày)`;
-        } catch {
-            return dueDate;
-        }
+    const formatSalary = (min, max) => {
+        if (!min && !max) return "Thỏa thuận";
+        const format = (n) => n?.toLocaleString('vi-VN') + ' VNĐ';
+        if (min && max) return `${format(min)} - ${format(max)}`;
+        if (min) return `Từ ${format(min)}`;
+        return `Up to ${format(max)}`;
     };
 
     const jobDetail = {
-        title: currentJob?.title || currentJob?.position || 'Vị trí tuyển dụng',
-        position: currentJob?.position,
-        company: currentJob?.companyName || 'Công ty',
-        logo: getCompanyLogoUrl(companyInfo?.logoUrl || currentJob?.companyLogo),
-        deadline: formatDeadline(currentJob?.dueDate),
-        salary: formatSalary(currentJob?.minSalary, currentJob?.maxSalary),
-        location: currentJob?.location || currentJob?.province || "Chưa cập nhật",
-        description: description.length > 0 ? description : ["Chưa có mô tả chi tiết"],
-        responsibilities: responsibilities.length > 0 ? responsibilities : ["Chưa có thông tin trách nhiệm"],
-        requirements: requirements.length > 0 ? requirements : ["Chưa có thông tin yêu cầu"],
-        benefits: benefits.length > 0 ? benefits : ["Chưa có thông tin quyền lợi"],
-        techs: techList,
-        jobType: formatJobType(currentJob?.jobType),
-        experience: formatExperience(currentJob?.experienceLevel),
-        domain: currentJob?.domain || "Công nghệ thông tin",
-        province: currentJob?.province || "Việt Nam",
-        postedTime: currentJob?.createdAt ? formatDistanceToNowStrict(parseISO(currentJob.createdAt), { addSuffix: true, locale: vi }) : "Vừa xong"
+        title: currentJob.position,
+        company: currentJob.companyName,
+        logo: currentJob.companyLogo || "https://via.placeholder.com/100",
+        deadline: currentJob.dueDate || "Không có",
+        salary: formatSalary(currentJob.minSalary, currentJob.maxSalary),
+        location: currentJob.location || "Chưa cập nhật",
+        description: currentJob.description ? currentJob.description.split('\n') : ["Không có mô tả chi tiết"],
+        requirements: currentJob.techRequired ? currentJob.techRequired.split(',') : ["Không có yêu cầu đặc biệt"],
+        priority: [
+            "Có khả năng làm việc nhóm và chịu áp lực tốt",
+            "Có mong muốn gắn bó lâu dài và phát triển cùng công ty"
+        ],
+        benefits: [
+            "Đóng BHXH, BHYT, BHTN theo quy định",
+            "Môi trường làm việc năng động, chuyên nghiệp"
+        ],
+        jobType: currentJob.jobType || "Toàn thời gian",
+        experience: currentJob.experienceLevel || "Không yêu cầu kinh nghiệm"
     };
 
-    const mapJobToCard = (job) => ({
-        id: job.id,
-        title: job.title || job.position || 'Vị trí tuyển dụng',
-        company: job.companyName || 'Công ty',
-        logo: getCompanyLogoUrl(job.companyLogo),
-        category: (job.techRequired && job.techRequired[0]) || (job.experienceLevel || 'IT'),
-        type: job.jobType || 'FULL_TIME',
-        salary: formatSalary(job.minSalary, job.maxSalary),
-        location: job.location || job.province || 'Việt Nam',
-        timePosted: job.lastUpdate || job.createdAt ? formatDistanceToNowStrict(parseISO(job.lastUpdate || job.createdAt), { addSuffix: true, locale: vi }) : 'Mới đăng',
-    });
-
-    if (isLoading) {
-        return (
-            <div className="bg-[#f8fafc] min-h-screen py-8">
-                <div className="max-w-7xl mx-auto px-4 grid grid-cols-1 lg:grid-cols-12 gap-10">
-                    <section className="lg:col-span-8 bg-white rounded-2xl border border-gray-100 p-8 space-y-6 animate-pulse">
-                        <div className="h-4 bg-gray-200 rounded w-1/4 mb-4" />
-                        <div className="flex gap-4 mb-8">
-                            <div className="w-20 h-20 bg-gray-100 rounded-xl" />
-                            <div className="flex-1 space-y-3">
-                                <div className="h-8 bg-gray-200 rounded w-3/4" />
-                                <div className="h-5 bg-gray-100 rounded w-1/3" />
-                            </div>
-                        </div>
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                            {[1, 2, 3, 4].map(i => <div key={i} className="h-16 bg-gray-50 rounded-xl" />)}
-                        </div>
-                        <div className="h-64 bg-gray-50 rounded-xl" />
-                    </section>
-                    <aside className="lg:col-span-4 bg-white rounded-2xl border border-gray-100 p-6 animate-pulse h-fit">
-                        <div className="h-40 bg-gray-50 rounded-xl mb-6" />
-                        <div className="space-y-4">
-                            {[1, 2, 3, 4, 5].map(i => <div key={i} className="h-10 bg-gray-50 rounded-lg" />)}
-                        </div>
-                    </aside>
-                </div>
-            </div>
-        );
-    }
-
-    if (!currentJob) {
-        return <div className="text-center py-20 font-bold text-red-500">Không tìm thấy công việc này.</div>;
-    }
-
-    const mapQuery = [currentJob.address, currentJob.ward, currentJob.province, currentJob.location]
-        .map(item => String(item || '').trim())
-        .filter(Boolean)
-        .join(', ') || 'Việt Nam';
-    const googleMapEmbedUrl = `https://www.google.com/maps?q=${encodeURIComponent(mapQuery)}&output=embed`;
+    const relatedJobs = [
+        {
+            id: 1,
+            title: "Internal Creative Coordinator",
+            company: "Green Group",
+            logo: "https://logo.clearbit.com/spotify.com",
+            category: "Commerce",
+            type: "Full time",
+            salary: "$44000-$46000",
+            location: "New-York, USA",
+            timePosted: "24 min ago"
+        },
+        {
+            id: 2,
+            title: "District Intranet Director",
+            company: "VonRueden - Weber Co",
+            logo: "https://logo.clearbit.com/slack.com",
+            category: "Commerce",
+            type: "Full time",
+            salary: "$42000-$48000",
+            location: "New-York, USA",
+            timePosted: "24 min ago"
+        },
+        {
+            id: 3,
+            title: "Corporate Tactics Facilitator",
+            company: "Cormier, Turner and Flatley Inc",
+            logo: "https://logo.clearbit.com/google.com",
+            category: "Commerce",
+            type: "Full time",
+            salary: "$38000-$40000",
+            location: "New-York, USA",
+            timePosted: "26 min ago"
+        }
+    ];
 
     return (
         <div className="bg-white min-h-screen py-10">
@@ -402,13 +157,8 @@ const JobDetailPage = () => {
                             </div>
 
                             <div className="flex gap-4">
-                                <div className="w-20 h-20 rounded-xl border border-gray-100 p-2 flex items-center justify-center shadow-sm bg-white overflow-hidden">
-                                    <CompanyLogo 
-                                        logoUrl={companyInfo?.logoUrl || currentJob.companyLogo}
-                                        companyId={currentJob.companyId}
-                                        companyName={companyInfo?.name || currentJob.companyName}
-                                        className="w-full h-full object-contain"
-                                    />
+                                <div className="w-20 h-20 rounded-xl border border-gray-100 p-2 flex items-center justify-center shadow-sm">
+                                    <img src={jobDetail.logo} alt="Company Logo" className="w-full h-full object-contain" onError={(e) => e.target.src="https://via.placeholder.com/100"} />
                                 </div>
                                 <div>
                                     <h1 className="text-3xl font-bold text-gray-800 mb-2">{jobDetail.title}</h1>
@@ -430,7 +180,7 @@ const JobDetailPage = () => {
                                     {jobDetail.salary}
                                 </div>
                                 <div className="flex items-center gap-2">
-                                    <span className="bg-white p-2 rounded-full text-[#00B4D8] shadow-sm"><FaMapMarkerAlt /></span>
+                                    <span className="bg-white p-2 rounded-full text-[#00B4D8]"><FaMapMarkerAlt /></span>
                                     {jobDetail.location}
                                 </div>
                                 <div className="w-full pt-2 mt-2 border-t border-gray-200 text-gray-400 text-xs flex items-center justify-between">
@@ -693,7 +443,7 @@ const JobDetailPage = () => {
                                 <div className="flex gap-3">
                                     <div className="mt-1 text-[#00B4D8]"><FaWallet /></div>
                                     <div>
-                                        <p className="font-bold text-gray-800 text-sm">Mức lương</p>
+                                        <p className="font-bold text-gray-800 text-sm">Lương</p>
                                         <p className="text-gray-500 text-sm">{jobDetail.salary}</p>
                                     </div>
                                 </div>

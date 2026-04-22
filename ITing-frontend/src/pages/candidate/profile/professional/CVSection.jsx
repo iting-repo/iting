@@ -6,11 +6,10 @@ import axiosInstance from "../../../../utils/axiosInstance";
 const CVSection = () => {
     const [cvs, setCvs] = useState([]);
     const [isAdding, setIsAdding] = useState(false);
-    const [isUploading, setIsUploading] = useState(false);
     
     const [formData, setFormData] = useState({
         title: '',
-        file: null,
+        fileUrl: '',
         isDefault: false
     });
 
@@ -37,46 +36,16 @@ const CVSection = () => {
 
     const handleAddSubmit = async (e) => {
         e.preventDefault();
-        if (!formData.file) return;
-
-        if (formData.file.type !== 'application/pdf') {
-            alert('Chỉ chấp nhận file PDF');
-            return;
-        }
-
-        const maxSizeMb = 5;
-        if (formData.file.size > maxSizeMb * 1024 * 1024) {
-            alert('Kích thước CV tối đa là 5MB');
-            return;
-        }
+        if (!formData.title.trim() || !formData.fileUrl.trim()) return;
         
         try {
-            setIsUploading(true);
-            const payload = new FormData();
-            payload.append('file', formData.file);
-            if (formData.title.trim()) {
-                payload.append('title', formData.title.trim());
-            }
-
-            await axiosInstance.post('/candidates/cvs/upload', payload, {
-                headers: {
-                    'Content-Type': 'multipart/form-data',
-                },
-            });
-
-            setFormData({ title: '', file: null, isDefault: false });
+            await axiosInstance.post('/user/professional-profile/cv', formData);
+            setFormData({ title: '', fileUrl: '', isDefault: false });
             setIsAdding(false);
             fetchCVs();
         } catch (error) {
             console.error("Failed to add CV", error);
-            const errorMessage =
-                error?.message ||
-                error?.error ||
-                error?.details ||
-                "Có lỗi xảy ra khi thêm CV!";
-            alert(errorMessage);
-        } finally {
-            setIsUploading(false);
+            alert("Có lỗi xảy ra khi thêm CV!");
         }
     };
 
@@ -110,7 +79,7 @@ const CVSection = () => {
                 </div>
                 {!isAdding && (
                     <Button variant="outline" className="text-blue-600 border-blue-200 hover:bg-blue-50" onClick={() => setIsAdding(true)}>
-                        <Plus className="w-4 h-4 mr-2" /> Tải CV PDF
+                        <Plus className="w-4 h-4 mr-2" /> Thêm CV (URL)
                     </Button>
                 )}
             </div>
@@ -119,7 +88,7 @@ const CVSection = () => {
                 <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
                     <div className="bg-white rounded-2xl shadow-xl w-full max-w-2xl flex flex-col max-h-[90vh]">
                         <div className="p-4 md:p-6 border-b border-gray-100 flex justify-between items-center">
-                            <h4 className="text-lg font-bold text-gray-900">Tải CV lên hệ thống</h4>
+                            <h4 className="text-lg font-bold text-gray-900">Thêm thẻ liên kết CV</h4>
                             <button type="button" onClick={() => setIsAdding(false)} className="text-gray-400 hover:text-gray-600 p-2 rounded-full hover:bg-gray-100">✕</button>
                         </div>
                         <div className="p-4 md:p-6 overflow-y-auto">
@@ -130,28 +99,24 @@ const CVSection = () => {
                                         <Input name="title" value={formData.title} onChange={handleChange} required placeholder="VD: Backend Developer CV" />
                                     </div>
                                     <div>
-                                        <label className="block text-xs font-medium text-gray-700 mb-1">File CV (PDF) *</label>
-                                        <input
-                                            name="file"
-                                            type="file"
-                                            accept="application/pdf"
-                                            required
-                                            onChange={(e) => {
-                                                const file = e.target.files?.[0] || null;
-                                                setFormData((prev) => ({
-                                                    ...prev,
-                                                    file,
-                                                    title: prev.title || file?.name?.replace(/\.pdf$/i, '') || '',
-                                                }));
-                                            }}
-                                            className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-slate-400 focus:ring-2 focus:ring-[#3AB4E6] transition-all"
-                                        />
-                                        <p className="mt-1 text-[11px] text-gray-500">Chấp nhận PDF, tối đa 5MB.</p>
+                                        <label className="block text-xs font-medium text-gray-700 mb-1">URL file CV (Cloud storage, Dropbox...) *</label>
+                                        <Input name="fileUrl" value={formData.fileUrl} onChange={handleChange} required placeholder="https://..." />
                                     </div>
+                                </div>
+                                <div className="flex items-center mt-2">
+                                    <input 
+                                        type="checkbox" 
+                                        id="isDefault" 
+                                        name="isDefault" 
+                                        checked={formData.isDefault} 
+                                        onChange={handleChange} 
+                                        className="mr-2 rounded border-gray-300 text-blue-600 focus:ring-blue-500" 
+                                    />
+                                    <label htmlFor="isDefault" className="text-xs text-gray-600 font-medium">Đặt làm CV mặc định</label>
                                 </div>
                                 <div className="flex gap-3 justify-end mt-6 pt-4 border-t border-gray-100">
                                     <Button type="button" variant="outline" onClick={() => setIsAdding(false)}>Hủy</Button>
-                                    <Button type="submit" variant="primary" disabled={isUploading}>{isUploading ? 'Đang tải...' : 'Lưu CV'}</Button>
+                                    <Button type="submit" variant="primary">Lưu CV</Button>
                                 </div>
                             </form>
                         </div>
@@ -197,7 +162,7 @@ const CVSection = () => {
                             <Upload className="w-5 h-5" />
                         </div>
                         <p className="text-sm font-semibold text-gray-700">Chưa có CV nào</p>
-                        <p className="text-xs text-gray-500 mt-1">Bấm thêm để tải file CV PDF lên S3</p>
+                        <p className="text-xs text-gray-500 mt-1">Bấm thêm để đường dẫn file CV của bạn</p>
                     </div>
                 )}
             </div>

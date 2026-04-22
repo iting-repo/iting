@@ -113,11 +113,14 @@ const AppRoutes = () => {
             <Route element={<CandidateLayout />}>
               <Route index element={<Navigate to="dashboard" replace />} />
               <Route path="dashboard" element={<CandidateDashboard />} />
+
+              {/* Các trang con khác làm sau, hiện tại để tạm div rỗng để ko lỗi */}
               <Route path="profile" element={<CandidateProfile defaultTab="personal" />} />
               <Route path="applied-jobs" element={<AppliedJobs />} />
               <Route path="favorite-jobs" element={<FavoriteJobs />} />
               <Route path="job-alerts" element={<JobAlerts />} />
               <Route path="settings" element={<Settings defaultTab="account" />} />
+
             </Route>
           </Route>
         </Route>

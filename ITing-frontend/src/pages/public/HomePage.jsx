@@ -1,11 +1,8 @@
 import React, { useState } from 'react';
-import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { useEffect } from 'react';
 import { fetchJobsRequest, fetchJobDetailRequest } from '../../store/job/jobSlice';
-import { buildJobDetailPath, getJobPublicKey, getCompanyLogoUrl } from '../../utils/jobUrl';
-import publicService from '../../services/publicService';
-import { CompanyLogo } from '../../components/common';
 
 // FIX: Gom tất cả icon về react-icons/fa để tránh lỗi import undefined
 import {
@@ -24,115 +21,22 @@ import heroBg from '../../assets/bg_login.jpg';
 const HomePage = () => {
     const dispatch = useDispatch();
     const navigate = useNavigate();
-    const [searchParams, setSearchParams] = useSearchParams();
     const { jobs = [], totalJobs = 0, isLoading } = useSelector((state) => state.job || {});
-    const { currentUser } = useSelector((state) => state.auth || {});
     const [currentPage, setCurrentPage] = useState(1);
-    const [savedJobIds, setSavedJobIds] = useState([]);
-    const [provinces, setProvinces] = useState([]);
-    const [selectedLocationFilter, setSelectedLocationFilter] = useState(searchParams.get('location') || '');
-    const [stats, setStats] = useState({ totalJobs: 0, totalCandidates: 0, totalCompanies: 0 });
-    const [recommendedJobs, setRecommendedJobs] = useState([]);
-    const [isRecommending, setIsRecommending] = useState(false);
 
-    const handleJobClick = (job) => {
-        const jobKey = getJobPublicKey(job);
-        dispatch(fetchJobDetailRequest(jobKey));
-        navigate(buildJobDetailPath(job));
+    const handleJobClick = (jobId) => {
+        dispatch(fetchJobDetailRequest(jobId));
+        navigate(`/jobs/${jobId}`);
     };
 
     useEffect(() => {
-        const locationFromUrl = searchParams.get('location') || '';
-        setSelectedLocationFilter(locationFromUrl);
-        setSearchForm((prev) => ({ ...prev, location: locationFromUrl }));
         dispatch(fetchJobsRequest({
-            location: locationFromUrl || undefined,
             page: 0,
             size: 10,
             sortBy: 'lastUpdate',
             sortOrder: 'desc',
         }));
     }, [dispatch]);
-
-    useEffect(() => {
-        fetch('https://provinces.open-api.vn/api/v2/p/')
-            .then((res) => res.json())
-            .then((data) => {
-                if (Array.isArray(data)) {
-                    setProvinces(data);
-                }
-            })
-            .catch(() => {
-                setProvinces([]);
-            });
-    }, []);
-    
-    useEffect(() => {
-        const fetchStats = async () => {
-            try {
-                const data = await publicService.getHomeStats();
-                setStats(data || { totalJobs: 0, totalCandidates: 0, totalCompanies: 0 });
-            } catch (error) {
-                console.error("Failed to fetch home stats:", error);
-            }
-        };
-        fetchStats();
-    }, []);
-
-    useEffect(() => {
-        if (!currentUser || (currentUser.role !== 'CANDIDATE' && currentUser.role !== 'USER')) {
-            setSavedJobIds([]);
-            return;
-        }
-
-        const fetchSavedIds = async () => {
-            try {
-                const ids = await jobService.getSavedJobIds();
-                setSavedJobIds(Array.isArray(ids) ? ids : []);
-            } catch (error) {
-                console.error("Failed to fetch saved job IDs", error);
-            }
-        };
-        fetchSavedIds();
-    }, [currentUser]);
-
-    useEffect(() => {
-        const fetchRecommendations = async () => {
-            setIsRecommending(true);
-            try {
-                const data = await recommendationService.getHomepageRecommendations(8);
-                setRecommendedJobs(Array.isArray(data) ? data : []);
-            } catch (error) {
-                console.error("Failed to fetch recommendations:", error);
-            } finally {
-                setIsRecommending(false);
-            }
-        };
-        fetchRecommendations();
-    }, [currentUser]);
-
-    const handleToggleSave = async (e, jobId) => {
-        e.stopPropagation();
-        if (!currentUser) {
-            toast.error("Vui lòng đăng nhập để lưu công việc!");
-            return;
-        }
-
-        const isCurrentlySaved = savedJobIds.includes(jobId);
-        try {
-            if (isCurrentlySaved) {
-                await jobService.unsaveJob(jobId);
-                setSavedJobIds(prev => prev.filter(id => id !== jobId));
-                toast.success("Đã bỏ lưu công việc.");
-            } else {
-                await jobService.saveJob(jobId);
-                setSavedJobIds(prev => [...prev, jobId]);
-                toast.success("Đã lưu công việc thành công!");
-            }
-        } catch (error) {
-            toast.error("Không thể thao tác lúc này.");
-        }
-    };
 
     // Helper: Format Salary
     const formatSalary = (min, max) => {
@@ -167,18 +71,6 @@ const HomePage = () => {
             [field]: value,
             page: 0,
         }));
-
-        if (field === 'location') {
-            setSelectedLocationFilter(value);
-        }
-    };
-
-    const updateLocationQuery = (locationValue) => {
-        if (locationValue) {
-            setSearchParams({ location: locationValue });
-            return;
-        }
-        setSearchParams({});
     };
 
     const handlePageChange = (newPage) => {
@@ -197,18 +89,29 @@ const HomePage = () => {
             experienceLevel: updatedForm.experienceLevel || undefined,
             techRequired: updatedForm.techRequired || undefined,
         };
-        updateLocationQuery(updatedForm.location);
         dispatch(fetchJobsRequest(params));
     };
 
 
+    // submit form
     const handleSearch = () => {
-        const params = new URLSearchParams();
-        if (searchForm.keyword) params.append('keyword', searchForm.keyword);
-        if (searchForm.location) params.append('location', searchForm.location);
-        if (searchForm.jobType) params.append('jobTypes', searchForm.jobType);
+        setCurrentPage(1);
+        setSearchForm(prev => ({ ...prev, page: 0 }));
         
-        navigate(`/jobs?${params.toString()}`);
+        const params = {
+            ...searchForm,
+            page: 0,
+            minSalary: searchForm.minSalary || undefined,
+            maxSalary: searchForm.maxSalary || undefined,
+            companyId: searchForm.companyId || undefined,
+            keyword: searchForm.keyword || undefined,
+            location: searchForm.location || undefined,
+            jobType: searchForm.jobType || undefined,
+            experienceLevel: searchForm.experienceLevel || undefined,
+            techRequired: searchForm.techRequired || undefined,
+        };
+
+        dispatch(fetchJobsRequest(params));
     };
 
     // Helper: Time Ago (Simple version)
@@ -328,8 +231,8 @@ const HomePage = () => {
                                 className="w-full outline-none text-gray-700 text-sm bg-transparent"
                             >
                                 <option value="">Địa điểm</option>
-                                {provinces.map((province) => (
-                                    <option key={province.code} value={province.name}>{province.name}</option>
+                                {locations.map((loc, i) => (
+                                    <option key={i} value={loc}>{loc}</option>
                                 ))}
                             </select>
                         </div>
@@ -604,12 +507,10 @@ const HomePage = () => {
                     <div className="space-y-5 mb-12">
                         {isLoading ? (
                             <div className="text-center py-10">Đang tải danh sách việc làm...</div>
-                        ) : (jobs ?? []).map((job) => {
-                                const isSaved = savedJobIds.includes(job.id);
-                                return (
+                        ) : (jobs ?? []).map((job) => (
                                 <div 
                                     key={job.id} 
-                                    onClick={() => handleJobClick(job)}
+                                    onClick={() => handleJobClick(job.id)}
                                     className="group relative border border-gray-100 rounded-2xl p-6 hover:shadow-xl hover:shadow-blue-500/5 transition-all duration-300 bg-white overflow-hidden cursor-pointer">
 
                                     {/* Hiệu ứng: Thanh màu xanh trượt ra khi hover */}
@@ -636,9 +537,9 @@ const HomePage = () => {
                                                     <p className="text-sm text-gray-500 font-medium mt-1">{job.companyName}</p>
                                                 </div>
                                                 <button 
-                                                    onClick={(e) => handleToggleSave(e, job.id)}
-                                                    className={`w-9 h-9 rounded-full flex items-center justify-center transition-all ${isSaved ? 'bg-[#3AB4E6] text-white shadow-md shadow-blue-200' : 'bg-gray-50 text-gray-400 hover:bg-[#3AB4E6] hover:text-white'}`}>
-                                                    {isSaved ? <FaBookmark size={14} /> : <FaRegBookmark size={14} />}
+                                                    onClick={(e) => { e.stopPropagation(); /* handle bookmark */ }}
+                                                    className="w-9 h-9 rounded-full bg-gray-50 text-gray-400 flex items-center justify-center hover:bg-[#3AB4E6] hover:text-white transition-all">
+                                                    <FaRegBookmark />
                                                 </button>
                                             </div>
 
