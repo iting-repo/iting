@@ -54,9 +54,9 @@ const MOCK_CANDIDATES = [
 ];
 
 const POSITIONS = ["Frontend Developer", "Backend Developer", "Fullstack Developer", "Mobile Developer", "DevOps Engineer"];
-const WORK_TYPES = ["FULL_TIME", "PART_TIME", "REMOTE", "FREELANCE", "INTERN"];
+const WORK_TYPES = ["FULL_TIME", "PART_TIME", "CONTRACT", "INTERNSHIP", "REMOTE", "FREELANCE"];
 const PROVINCES = ["Hà Nội", "TP. Hồ Chí Minh", "Đà Nẵng", "Cần Thơ", "Hải Phòng"];
-const LEVEL_OPTIONS = ["Intern", "Junior", "Middle", "Senior", "Lead", "Manager"];
+const LEVEL_OPTIONS = ["INTERN", "FRESHER", "JUNIOR", "MIDDLE", "MID_LEVEL", "SENIOR", "LEAD", "EXPERT", "MANAGER"];
 const DEGREE_OPTIONS = ["Trung cấp", "Cao đẳng", "Đại học", "Trên đại học"];
 const PROGRAMMING_SKILLS = ["ReactJS", "NodeJS", "Java", "Python", "TypeScript", "React Native", "VueJS", "Angular", "Docker", "AWS"];
 

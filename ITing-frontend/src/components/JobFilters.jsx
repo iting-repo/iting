@@ -2,23 +2,24 @@ import React from 'react';
 import { FaSearch, FaMapMarkerAlt } from 'react-icons/fa';
 
 const jobTypeOptions = [
-    { label: 'Toan thoi gian', value: 'FULL_TIME' },
-    { label: 'Ban thoi gian', value: 'PART_TIME' },
-    { label: 'Freelance', value: 'FREELANCE' },
-    { label: 'Thuc tap', value: 'INTERNSHIP' },
-    { label: 'Hop dong', value: 'CONTRACT' },
-    { label: 'Remote', value: 'REMOTE' },
+    { label: 'Toàn thời gian', value: 'FULL_TIME' },
+    { label: 'Bán thời gian', value: 'PART_TIME' },
+    { label: 'Hợp đồng', value: 'CONTRACT' },
+    { label: 'Thực tập', value: 'INTERNSHIP' },
+    { label: 'Làm việc từ xa', value: 'REMOTE' },
+    { label: 'Tự do', value: 'FREELANCE' },
 ];
 
 const experienceOptions = [
-    { label: 'Moi ra truong', value: 'FRESHER' },
-    { label: 'Junior', value: 'JUNIOR' },
-    { label: 'Mid-level', value: 'MID_LEVEL' },
-    { label: 'Middle', value: 'MIDDLE' },
-    { label: 'Senior', value: 'SENIOR' },
-    { label: 'Expert', value: 'EXPERT' },
-    { label: 'Lead', value: 'LEAD' },
-    { label: 'Manager', value: 'MANAGER' },
+    { label: 'Thực tập sinh', value: 'INTERN' },
+    { label: 'Mới ra trường / Fresher', value: 'FRESHER' },
+    { label: 'Junior (1-2 năm)', value: 'JUNIOR' },
+    { label: 'Middle (2-4 năm)', value: 'MIDDLE' },
+    { label: 'Mid-level (2-4 năm)', value: 'MID_LEVEL' },
+    { label: 'Senior (4-7 năm)', value: 'SENIOR' },
+    { label: 'Lead (7+ năm)', value: 'LEAD' },
+    { label: 'Chuyên gia', value: 'EXPERT' },
+    { label: 'Quản lý', value: 'MANAGER' },
 ];
 
 const postedTimeOptions = [

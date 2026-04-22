@@ -21,6 +21,21 @@ const applicationService = {
     viewApplication: async (id) => {
         const response = await axiosInstance.get(`/employer/applications/${id}`);
         return response;
+    },
+
+    markViewed: async (id) => {
+        const response = await axiosInstance.post(`/employer/applications/${id}/view`);
+        return response;
+    },
+
+    getApplicationDetail: async (id) => {
+        const response = await axiosInstance.get(`/employer/applications/${id}`);
+        return response;
+    },
+
+    checkApplied: async (jobId) => {
+        const response = await axiosInstance.get(`/candidates/applications/check/${jobId}`);
+        return response;
     }
 };
 

@@ -45,4 +45,5 @@ public interface JobRepository extends JpaRepository<Job, Long>, JpaSpecificatio
     long countByCreatedAtAfter(java.time.LocalDateTime dateTime);
     long countByCreatedAtBefore(java.time.LocalDateTime dateTime);
     long countByStatus(JobStatus status);
+    long countByCompany_IdAndStatus(Long companyId, JobStatus status);
 }

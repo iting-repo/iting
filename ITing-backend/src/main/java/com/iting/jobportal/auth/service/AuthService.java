@@ -17,4 +17,6 @@ public interface AuthService {
     Account getAccountByEmail(String email);
 
     Account register(RegisterRequest request);
+
+    com.iting.jobportal.auth.dto.response.UserMeResponse getMeResponse(Long accountId);
 }

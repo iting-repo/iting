@@ -2,6 +2,7 @@ package com.iting.jobportal.job.service.impl;
 
 import com.iting.jobportal.company.entity.Company;
 import com.iting.jobportal.company.entity.enums.CompanyReviewStatus;
+import com.iting.jobportal.company.entity.enums.VerificationLevel;
 import com.iting.jobportal.company.repository.CompanyRepository;
 import com.iting.jobportal.job.dto.request.CreateJobRequest;
 import com.iting.jobportal.job.dto.request.JobSearchRequest;
@@ -202,6 +203,11 @@ public class JobServiceImpl implements JobService {
 
         JobStatus initialStatus = JobStatus.PENDING;
 
+        // If company has highest verification level (PREMIUM), auto-activate job without pending
+        if (company.getVerificationLevel() == VerificationLevel.PREMIUM) {
+            initialStatus = JobStatus.ACTIVE;
+        }
+
         Job job = Job.builder()
                 .company(company)
                 .title(request.getTitle())
@@ -218,6 +224,7 @@ public class JobServiceImpl implements JobService {
                 .province(request.getProvince())
                 .ward(request.getWard())
                 .address(request.getAddress())
+                .location(request.getLocation()) // Map location from request
                 .locId(request.getLocId())
                 .description(request.getDescription())
                 .responsibilities(request.getResponsibilities())
@@ -226,14 +233,13 @@ public class JobServiceImpl implements JobService {
                 .status(initialStatus)
                 .build();
 
-        validateSalary(job);
-
         validateJobBeforeSubmit(job, company);
 
         Job saved = jobRepository.save(job);
 
+        // Sử dụng native query để lưu vào bảng trung gian
         entityManager.createNativeQuery(
-                        "INSERT INTO Company_upload_job (job_id, company_id, time) VALUES (:jobId, :companyId, CURRENT_TIMESTAMP)"
+                        "INSERT INTO company_upload_job (job_id, company_id, time) VALUES (:jobId, :companyId, CURRENT_TIMESTAMP)"
                 )
                 .setParameter("jobId", saved.getId())
                 .setParameter("companyId", company.getId())

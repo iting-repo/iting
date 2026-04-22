@@ -17,10 +17,9 @@ const jobService = {
     },
 
     getLatestJobs: async (limit = 10) => {
-        const response = await axiosInstance.get('/jobs/latest', {
+        return axiosInstance.get('/jobs/latest', {
             params: { limit }
         });
-        return response.data;
     }
 };
 

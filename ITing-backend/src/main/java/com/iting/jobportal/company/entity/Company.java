@@ -71,6 +71,19 @@ public class Company {
     @Column(name = "Phone", length = 20)
     private String phone;
 
+    @Column(name = "founded_year")
+    private Integer foundedYear;
+
+    @ElementCollection
+    @CollectionTable(name = "company_tech_stack", joinColumns = @JoinColumn(name = "company_id"))
+    @Column(name = "tech")
+    private List<String> techStack;
+
+    @ElementCollection
+    @CollectionTable(name = "company_benefits", joinColumns = @JoinColumn(name = "company_id"))
+    @Column(name = "benefit")
+    private List<String> benefits;
+
     // ===== Thông tin người đại diện =====
     @Column(name = "Representative_name", length = 255)
     private String representativeName;

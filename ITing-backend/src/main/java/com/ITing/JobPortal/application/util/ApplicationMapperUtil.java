@@ -3,6 +3,7 @@ package com.iting.jobportal.application.util;
 import com.iting.jobportal.application.dto.response.ApplicationResponse;
 import com.iting.jobportal.application.entity.ApplyForm;
 import com.iting.jobportal.application.entity.ApplyFormSentToJob;
+import com.iting.jobportal.company.entity.Company;
 import com.iting.jobportal.job.entity.Job;
 import com.iting.jobportal.job.repository.JobRepository;
 import com.iting.jobportal.user.entity.User;
@@ -38,15 +39,23 @@ public class ApplicationMapperUtil {
         Long jobId = sent.getId().getJobId();
         Long userId = applyForm.getUserId();
 
-        String jobTitle = jobRepository.findById(jobId).map(Job::getPosition).orElse(null);
-        Long companyId = jobRepository.findById(jobId)
-                .map(Job::getCompany)
-                .map(com.iting.jobportal.company.entity.Company::getId)
-                .orElse(null);
-        String companyName = jobRepository.findById(jobId)
-                .map(Job::getCompany)
-                .map(com.iting.jobportal.company.entity.Company::getName)
-                .orElse(null);
+        String jobTitle = null;
+        Long companyId = null;
+        String companyName = null;
+        String companyLogo = null;
+
+        Optional<Job> jobOpt = jobRepository.findById(jobId);
+        if (jobOpt.isPresent()) {
+            Job job = jobOpt.get();
+            jobTitle = job.getPosition();
+            Company company = job.getCompany();
+            if (company != null) {
+                companyId = company.getId();
+                companyName = company.getName();
+                companyLogo = company.getLogoUrl();
+            }
+        }
+
         String avatarUrl = userRepository.findById(userId).map(User::getAvatarUrl).orElse(null);
 
         String cvFileName = null;
@@ -137,6 +146,7 @@ public class ApplicationMapperUtil {
                 .applicantName(applyForm.getApplicantName())
                 .avatarUrl(avatarUrl)
                 .jobTitle(jobTitle)
+                .companyLogo(companyLogo)
                 .introduction(applyForm.getIntroduction())
                 .cvFileName(cvFileName)
                 .cvFileType(cvFileType)

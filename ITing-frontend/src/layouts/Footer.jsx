@@ -13,8 +13,7 @@ const Footer = () => {
           {/* CỘT 1: LOGO & GIỚI THIỆU */}
           <div>
             <Link to="/" className="flex items-center gap-2 mb-6">
-               <BsBriefcaseFill className="text-white text-2xl" />
-               <span className="text-2xl font-bold tracking-tight">ITing</span>
+               <img src="/assets/logo.png" alt="ITing Logo" className="h-10 w-auto object-contain brightness-110" />
             </Link>
             <p className="text-gray-400 text-sm leading-relaxed mb-4">
               Nền tảng tuyển dụng dành riêng cho lĩnh vực công nghệ thông tin.

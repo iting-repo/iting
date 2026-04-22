@@ -105,7 +105,7 @@ class CompanyServiceImplTest {
 
         IllegalArgumentException exception = assertThrows(
                 IllegalArgumentException.class,
-                () -> companyService.submitForReviewByAccountId(1L)
+                () -> companyService.submitInfoReviewByAccountId(1L)
         );
 
         assertTrue(exception.getMessage().contains("Phi"));
@@ -117,7 +117,7 @@ class CompanyServiceImplTest {
         when(companyRepository.findById(1L)).thenReturn(Optional.of(company));
         when(companyRepository.save(any(Company.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
-        CompanyResponse response = companyService.submitForReviewByAccountId(1L);
+        CompanyResponse response = companyService.submitInfoReviewByAccountId(1L);
 
         assertNotNull(response);
         assertEquals(CompanyReviewStatus.PENDING_REVIEW, response.getCompanyInfoUpdateStatus());

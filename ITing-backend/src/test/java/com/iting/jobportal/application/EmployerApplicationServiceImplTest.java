@@ -12,6 +12,7 @@ import com.iting.jobportal.application.util.ApplicationMapperUtil;
 import com.iting.jobportal.company.entity.Company;
 import com.iting.jobportal.job.entity.Job;
 import com.iting.jobportal.job.repository.JobRepository;
+import com.iting.jobportal.notification.service.NotificationService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -26,6 +27,7 @@ import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.mockito.Mockito.never;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -37,6 +39,7 @@ class EmployerApplicationServiceImplTest {
     @Mock private ApplyFormRepository applyFormRepository;
     @Mock private JobRepository jobRepository;
     @Mock private ApplicationMapperUtil applicationMapperUtil;
+    @Mock private NotificationService notificationService;
 
     @InjectMocks
     private EmployerApplicationServiceImpl service;
@@ -51,7 +54,7 @@ class EmployerApplicationServiceImplTest {
     }
 
     @Test
-    void viewApplication_shouldMarkPendingApplicationAsViewed() {
+    void markApplicationAsViewed_shouldMarkPendingApplicationAsViewed() {
         Company company = new Company();
         company.setId(1L);
         Job job = new Job();
@@ -69,11 +72,37 @@ class EmployerApplicationServiceImplTest {
         when(applyFormRepository.findById(10L)).thenReturn(Optional.of(form));
         when(applicationMapperUtil.buildFullResponse(form, sent)).thenReturn(response);
 
-        ApplicationResponse result = service.viewApplication(1L, 10L);
+        ApplicationResponse result = service.markApplicationAsViewed(1L, 10L);
 
         assertEquals(ApplicationStatus.VIEWED, sent.getStatus());
         assertSame(response, result);
         verify(employerApplicationRepository).save(sent);
+    }
+
+    @Test
+    void viewApplication_shouldReturnDetailWithoutChangingStatus() {
+        Company company = new Company();
+        company.setId(1L);
+        Job job = new Job();
+        job.setId(5L);
+        job.setCompany(company);
+        ApplyFormSentToJob sent = ApplyFormSentToJob.builder()
+                .id(new ApplyFormSentToJob.ApplyFormSentToJobId(5L, 10L))
+                .status(ApplicationStatus.PENDING)
+                .build();
+        ApplyForm form = ApplyForm.builder().id(10L).build();
+        ApplicationResponse response = ApplicationResponse.builder().id(10L).status(ApplicationStatus.PENDING).build();
+
+        when(employerApplicationRepository.findByIdApplyFormId(10L)).thenReturn(Optional.of(sent));
+        when(jobRepository.findById(5L)).thenReturn(Optional.of(job));
+        when(applyFormRepository.findById(10L)).thenReturn(Optional.of(form));
+        when(applicationMapperUtil.buildFullResponse(form, sent)).thenReturn(response);
+
+        ApplicationResponse result = service.viewApplication(1L, 10L);
+
+        assertEquals(ApplicationStatus.PENDING, sent.getStatus());
+        assertSame(response, result);
+        verify(employerApplicationRepository, never()).save(any());
     }
 
     @Test

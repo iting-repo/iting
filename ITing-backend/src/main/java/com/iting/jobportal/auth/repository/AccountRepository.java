@@ -15,4 +15,5 @@ public interface AccountRepository extends JpaRepository<Account, Long> {
 
     long countByCreatedAtAfter(java.time.LocalDateTime dateTime);
     long countByCreatedAtBefore(java.time.LocalDateTime dateTime);
+    long countByRole(com.iting.jobportal.auth.entity.Enum.Role role);
 }

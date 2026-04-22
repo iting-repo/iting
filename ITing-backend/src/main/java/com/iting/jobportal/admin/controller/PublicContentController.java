@@ -4,13 +4,20 @@ import com.iting.jobportal.admin.entity.Category;
 import com.iting.jobportal.admin.entity.StaticContent;
 import com.iting.jobportal.admin.repository.CategoryRepository;
 import com.iting.jobportal.admin.repository.StaticContentRepository;
+import com.iting.jobportal.auth.entity.Enum.Role;
+import com.iting.jobportal.auth.repository.AccountRepository;
+import com.iting.jobportal.company.repository.CompanyRepository;
+import com.iting.jobportal.job.entity.enums.JobStatus;
+import com.iting.jobportal.job.repository.JobRepository;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/public")
@@ -20,6 +27,9 @@ public class PublicContentController {
 
     private final StaticContentRepository contentRepository;
     private final CategoryRepository categoryRepository;
+    private final JobRepository jobRepository;
+    private final AccountRepository accountRepository;
+    private final CompanyRepository companyRepository;
 
     // ========================================
     // NỘI DUNG TĨNH
@@ -80,6 +90,16 @@ public class PublicContentController {
     @Operation(summary = "Lấy danh mục theo loại")
     public ResponseEntity<List<Category>> getCategoriesByType(@PathVariable String type) {
         return ResponseEntity.ok(categoryRepository.findByTypeAndActiveOrderBySortOrderAsc(type.toUpperCase(), true));
+    }
+
+    @GetMapping("/stats")
+    @Operation(summary = "Lấy số liệu thống kê chung (jobs, candidates, companies)")
+    public ResponseEntity<Map<String, Long>> getStats() {
+        Map<String, Long> stats = new HashMap<>();
+        stats.put("totalJobs", jobRepository.countByStatus(JobStatus.ACTIVE));
+        stats.put("totalCandidates", accountRepository.countByRole(Role.CANDIDATE) + accountRepository.countByRole(Role.USER));
+        stats.put("totalCompanies", companyRepository.count());
+        return ResponseEntity.ok(stats);
     }
 }
 

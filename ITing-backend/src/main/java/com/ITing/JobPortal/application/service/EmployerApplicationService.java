@@ -13,6 +13,7 @@ public interface EmployerApplicationService {
     Page<ApplicationResponse> getAllApplicationsForEmployer(Long employerId, int page, int size);
     Page<ApplicationResponse> searchApplications(Long employerId, ApplicationSearchRequest request);
     ApplicationResponse viewApplication(Long employerId, Long applicationId);
+    ApplicationResponse markApplicationAsViewed(Long employerId, Long applicationId);
     ApplicationResponse updateApplicationStatus(Long employerId, Long applicationId, UpdateApplicationStatusRequest request);
     ApplicationResponse acceptApplication(Long employerId, Long applicationId, String note);
     ApplicationResponse rejectApplication(Long employerId, Long applicationId, String note);

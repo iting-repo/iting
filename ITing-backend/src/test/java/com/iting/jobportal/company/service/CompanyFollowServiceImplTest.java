@@ -3,6 +3,7 @@ package com.iting.jobportal.company.service;
 import com.iting.jobportal.company.dto.response.FollowedCompanyResponse;
 import com.iting.jobportal.company.entity.Company;
 import com.iting.jobportal.company.entity.UserFollowCompany;
+import com.iting.jobportal.company.entity.enums.Industry;
 import com.iting.jobportal.company.repository.CompanyRepository;
 import com.iting.jobportal.company.repository.UserFollowCompanyRepository;
 import com.iting.jobportal.company.service.impl.CompanyFollowServiceImpl;
@@ -53,7 +54,7 @@ class CompanyFollowServiceImplTest {
         company = new Company();
         company.setId(10L);
         company.setName("ITing");
-        company.setIndustry("Software");
+        company.setIndustries(List.of(Industry.IT_SOFTWARE));
         company.setLogoUrl("https://logo.png");
     }
 

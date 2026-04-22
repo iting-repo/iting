@@ -32,7 +32,7 @@ const CandidateDetailModal = ({ candidate, onClose, onStatusUpdate }) => {
 
     useEffect(() => {
         if (candidate && candidate.status === 'PENDING') {
-            applicationService.viewApplication(candidate.id)
+            applicationService.markViewed(candidate.id)
                 .then(() => {
                     if (onStatusUpdate) {
                         onStatusUpdate(candidate.id, 'VIEWED');
@@ -147,7 +147,7 @@ const CandidateDetailModal = ({ candidate, onClose, onStatusUpdate }) => {
                             <iframe
                                 src={`${candidate.cvUrl}#toolbar=0`}
                                 className="w-full h-full border-none"
-                                title="CV Preview"
+                                title="Xem trước CV"
                             />
                         ) : (
                             <div className="w-full h-full flex flex-col items-center justify-center text-slate-400 gap-4 p-12 text-center bg-slate-100">
@@ -195,7 +195,7 @@ const CandidateDetailModal = ({ candidate, onClose, onStatusUpdate }) => {
                         {/* Profile Summary */}
                         <div className="flex items-center gap-5">
                             <img
-                                src={candidate.avatarUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(candidate.applicantName || 'Candidate')}&background=random`}
+                                src={candidate.avatarUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(candidate.applicantName || 'Ung vien')}&background=random`}
                                 alt={candidate.applicantName}
                                 className="w-20 h-20 rounded-2xl border-2 border-slate-100 shadow-sm object-cover bg-white"
                             />

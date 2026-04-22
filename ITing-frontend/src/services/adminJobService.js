@@ -55,6 +55,13 @@ const adminJobService = {
     return response;
   },
 
+  runAiReview: async (jobId) => {
+    const response = await axiosInstance.post(
+      `/admin/jobs/${jobId}/ai-review`
+    );
+    return response;
+  },
+
   // Suspend job
   suspendJob: async (jobId, reason) => {
     const response = await axiosInstance.post(

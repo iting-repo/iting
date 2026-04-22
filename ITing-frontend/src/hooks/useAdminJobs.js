@@ -101,6 +101,20 @@ export const useAdminJobs = () => {
     }
   };
 
+  const runAiReview = async (jobId) => {
+    try {
+      const reviewedJob = await adminJobService.runAiReview(jobId);
+      setJobs((prev) =>
+        prev.map((job) => job.id === jobId ? { ...job, ...reviewedJob } : job)
+      );
+      toast.success("AI đã kiểm duyệt tin tuyển dụng!");
+    } catch (err) {
+      console.error("AI review job error", err);
+      toast.error(err?.response?.data?.error || "Kiểm duyệt AI thất bại");
+      throw err;
+    }
+  };
+
   // =========================
   // CLOSE JOB
   // =========================
@@ -183,6 +197,7 @@ export const useAdminJobs = () => {
     approveJob,
     rejectJob,
     requestRevision,
+    runAiReview,
     closeJob,
     suspendJob,
     unsuspendJob,

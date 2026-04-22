@@ -40,7 +40,7 @@ class AdminReportServiceImplTest {
 
         when(reportRepository.findAll(any(Pageable.class))).thenReturn(page);
 
-        Page<UserReport> result = service.getReports("OPEN", 0, 10);
+        Page<UserReport> result = service.getReports("OPEN", null, null, null, null, 0, 10);
 
         assertSame(page, result);
         verify(reportRepository).findAll(pageableCaptor.capture());
@@ -53,7 +53,7 @@ class AdminReportServiceImplTest {
         Page<UserReport> page = new PageImpl<>(List.of(new UserReport()));
         when(reportRepository.findAll(any(Pageable.class))).thenReturn(page);
 
-        Page<UserReport> result = service.getReports("RESOLVED", 1, 5);
+        Page<UserReport> result = service.getReports("RESOLVED", null, null, null, null, 1, 5);
 
         assertSame(page, result);
         verify(reportRepository).findAll(any(Pageable.class));

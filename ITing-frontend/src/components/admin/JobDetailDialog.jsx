@@ -1,6 +1,6 @@
 import React from "react";
 import { Dialog, Badge } from "../common";
-import { 
+import {
   Briefcase, 
   MapPin, 
   DollarSign, 
@@ -17,6 +17,12 @@ import {
   Layout,
   Layers
 } from "lucide-react";
+import {
+  getAiReview,
+  getAiReviewLabel,
+  getAiReviewSummary,
+  getAiReviewVariant,
+} from "../../utils/jobModeration";
 
 const InfoItem = ({ icon: Icon, label, value, color = "sky" }) => (
   <div className="flex items-center gap-3 rounded-xl border border-slate-100 bg-white p-3.5 transition-all hover:border-sky-100 hover:shadow-sm">
@@ -45,6 +51,20 @@ const ContentSection = ({ icon: Icon, title, content }) => {
   );
 };
 
+const getJobStatusLabel = (status) => {
+  const map = {
+    ACTIVE: "Đang hoạt động",
+    PENDING: "Chờ duyệt",
+    REJECTED: "Bị từ chối",
+    CLOSED: "Đã đóng",
+    EXPIRED: "Hết hạn",
+    NEEDS_REVISION: "Cần chỉnh sửa",
+    SUSPENDED: "Bị đình chỉ",
+  };
+
+  return map[status] || status || "Chưa cập nhật";
+};
+
 export const JobDetailDialog = ({ job, open, onClose, onAction }) => {
   if (!job) return null;
 
@@ -58,6 +78,7 @@ export const JobDetailDialog = ({ job, open, onClose, onAction }) => {
     const max = job.maxSalary ? `${job.maxSalary.toLocaleString()}đ` : "?";
     return `${min} - ${max}`;
   };
+  const aiReview = getAiReview(job);
 
   return (
     <Dialog open={open} onClose={onClose} title="Chi tiết tuyển dụng" maxWidth="3xl">
@@ -68,7 +89,7 @@ export const JobDetailDialog = ({ job, open, onClose, onAction }) => {
             <div className="space-y-1.5">
               <div className="flex flex-wrap items-center gap-2">
                 <Badge variant={job.status === "ACTIVE" ? "success" : job.status === "PENDING" ? "warning" : "danger"} className="px-3 py-1 text-[10px] font-bold tracking-widest uppercase">
-                  {job.status}
+                  {getJobStatusLabel(job.status)}
                 </Badge>
                 {job.featured && (
                   <Badge variant="sky" className="bg-amber-50 text-amber-600 border-amber-100 px-3 py-1 text-[10px] font-bold tracking-widest uppercase">
@@ -91,6 +112,40 @@ export const JobDetailDialog = ({ job, open, onClose, onAction }) => {
               </div>
             </div>
           </div>
+        </div>
+
+        <div className="rounded-2xl border border-slate-100 bg-slate-50/60 p-5">
+          <div className="mb-3 flex flex-wrap items-center gap-2">
+            <Badge variant={getAiReviewVariant(aiReview.status)}>
+              {getAiReviewLabel(aiReview.status)}
+            </Badge>
+            {typeof aiReview.score === "number" && (
+              <span className="text-xs font-bold text-slate-500">
+                Điểm rủi ro: {Math.round(aiReview.score * 100)}%
+              </span>
+            )}
+          </div>
+          <p className="text-sm leading-relaxed text-slate-600">
+            {getAiReviewSummary(job)}
+          </p>
+          {aiReview.sensitiveTerms.length > 0 && (
+            <div className="mt-3 flex flex-wrap gap-2">
+              {aiReview.sensitiveTerms.map((term) => (
+                <Badge key={term} variant="danger" className="rounded-md">
+                  {term}
+                </Badge>
+              ))}
+            </div>
+          )}
+          {(aiReview.cleanedTitle || aiReview.cleanedDescription) && (
+            <div className="mt-4 rounded-xl bg-white p-4 text-sm text-slate-600">
+              <p className="mb-1 font-bold text-slate-800">Bản AI đề xuất sau khi làm sạch</p>
+              {aiReview.cleanedTitle && <p>{aiReview.cleanedTitle}</p>}
+              {aiReview.cleanedDescription && (
+                <p className="mt-2 whitespace-pre-line">{aiReview.cleanedDescription}</p>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Info Grid */}
@@ -180,4 +235,4 @@ export const JobDetailDialog = ({ job, open, onClose, onAction }) => {
       </div>
     </Dialog>
   );
-};
+};

@@ -8,6 +8,8 @@ import com.iting.jobportal.company.dto.response.CompanyResponse;
 import com.iting.jobportal.company.dto.request.ConsentDocumentUploadRequest;
 import com.iting.jobportal.company.dto.request.VerifyLicenseRequest;
 import com.iting.jobportal.company.dto.request.VerifyPhoneRequest;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 public interface CompanyService {
     CompanyResponse getCompanyById(Long id);
@@ -55,4 +57,6 @@ public interface CompanyService {
     CompanyResponse submitConsentDocumentReviewByAccountId(Long accountId);
 
     String uploadLogoByAccountId(Long accountId, org.springframework.web.multipart.MultipartFile file);
+    
+    Page<CompanyResponse> searchCompanies(String keyword, String location, String industry, String size, int page, int sizePage);
 }

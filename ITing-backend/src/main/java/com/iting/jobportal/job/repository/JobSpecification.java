@@ -2,6 +2,9 @@ package com.iting.jobportal.job.repository;
 
 import com.iting.jobportal.job.dto.request.JobSearchRequest;
 import com.iting.jobportal.job.entity.Job;
+import com.iting.jobportal.company.entity.Company;
+import jakarta.persistence.criteria.Join;
+import jakarta.persistence.criteria.JoinType;
 import com.iting.jobportal.job.entity.enums.JobStatus;
 import jakarta.persistence.criteria.Predicate;
 import org.springframework.data.jpa.domain.Specification;
@@ -27,6 +30,11 @@ public class JobSpecification {
             // USER chỉ xem ACTIVE job
             predicates.add(cb.equal(root.get("status"), JobStatus.ACTIVE));
 
+            // Join company to allow filtering by company fields (industry/domain)
+            Join<Job, Company> companyJoin = root.join("company", JoinType.LEFT);
+            // Ensure distinct when joining
+            query.distinct(true);
+
             if (req.getKeyword() != null && !req.getKeyword().isBlank()) {
 
                 String kw = "%" + req.getKeyword().toLowerCase() + "%";
@@ -51,7 +59,7 @@ public class JobSpecification {
             }
 
             if (req.getCompanyId() != null) {
-                predicates.add(cb.equal(root.get("companyId"), req.getCompanyId()));
+                predicates.add(cb.equal(companyJoin.get("id"), req.getCompanyId()));
             }
 
             if (req.getJobType() != null) {
@@ -91,6 +99,45 @@ public class JobSpecification {
             if (req.getPostedWithinHours() != null && req.getPostedWithinHours() > 0) {
                 LocalDateTime fromTime = LocalDateTime.now().minusHours(req.getPostedWithinHours());
                 predicates.add(cb.greaterThanOrEqualTo(root.get("createdAt"), fromTime));
+            }
+
+            // -------------------------
+            // DOMAIN / SUBDOMAIN / TECH filters (deep filter for domain IT)
+            // -------------------------
+
+            // Single domain keyword - match against company's industry
+            if (req.getDomain() != null && !req.getDomain().isBlank()) {
+                String d = "%" + req.getDomain().toLowerCase() + "%";
+                predicates.add(cb.like(cb.lower(companyJoin.get("industry")), d));
+            }
+
+            // Sub-domains: match against company.industry, job.position or techRequired
+            if (req.getSubDomains() != null && !req.getSubDomains().isEmpty()) {
+                List<Predicate> subPreds = new ArrayList<>();
+                for (String sub : req.getSubDomains()) {
+                    if (sub == null) continue;
+                    String s = "%" + sub.trim().toLowerCase() + "%";
+                    subPreds.add(cb.like(cb.lower(companyJoin.get("industry")), s));
+                    subPreds.add(cb.like(cb.lower(root.get("position")), s));
+                    subPreds.add(cb.like(cb.lower(root.get("techRequired")), s));
+                }
+                if (!subPreds.isEmpty()) {
+                    predicates.add(cb.or(subPreds.toArray(new Predicate[0])));
+                }
+            }
+
+            // Techs: allow searching for multiple tech keywords across techRequired and position
+            if (req.getTechs() != null && !req.getTechs().isEmpty()) {
+                List<Predicate> techPreds = new ArrayList<>();
+                for (String tech : req.getTechs()) {
+                    if (tech == null) continue;
+                    String t = "%" + tech.trim().toLowerCase() + "%";
+                    techPreds.add(cb.like(cb.lower(root.get("techRequired")), t));
+                    techPreds.add(cb.like(cb.lower(root.get("position")), t));
+                }
+                if (!techPreds.isEmpty()) {
+                    predicates.add(cb.or(techPreds.toArray(new Predicate[0])));
+                }
             }
 
             return cb.and(predicates.toArray(new Predicate[0]));

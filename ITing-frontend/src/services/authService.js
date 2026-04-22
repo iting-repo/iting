@@ -37,4 +37,13 @@ const authService = {
     }
 };
 
+// Forgot / Reset password
+authService.forgotPassword = async (email) => {
+    return axiosInstance.post('/auth/forgot-password', { email });
+}
+
+authService.resetPassword = async (token, newPassword) => {
+    return axiosInstance.post('/auth/reset-password', { token, newPassword });
+}
+
 export default authService;

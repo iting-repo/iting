@@ -5,14 +5,14 @@ const {
   setEmployerSession,
 } = require('./helpers/mock-api');
 
-test.describe('Employer pages smoke', () => {
+test.describe('Trang nhà tuyển dụng', () => {
   test.beforeEach(async ({ page }) => {
     await setEmployerSession(page);
     await mockCommonApis(page);
     await mockEmployerApis(page);
   });
 
-  test('dashboard links to manage jobs and applications', async ({ page }) => {
+  test('trang tổng quan mở được quản lý tin và hồ sơ ứng tuyển', async ({ page }) => {
     await page.goto('/employer/dashboard');
 
     await page.locator('a[href="/employer/manage-jobs"]').first().click();
@@ -22,6 +22,6 @@ test.describe('Employer pages smoke', () => {
     await page.getByRole('button', { name: /Xem H/ }).first().click();
 
     await expect(page).toHaveURL(/\/employer\/job\/.+\/applications$/);
-    await expect(page.getByText('PENDING')).toBeVisible();
+    await expect(page.getByText(/Hồ sơ mới|Ho so moi/i)).toBeVisible();
   });
 });

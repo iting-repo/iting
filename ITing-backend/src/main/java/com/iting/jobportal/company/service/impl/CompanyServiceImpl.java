@@ -20,6 +20,17 @@ import org.springframework.context.ApplicationEventPublisher;
 import com.iting.jobportal.company.event.CompanyInfoSubmittedEvent;
 import com.iting.jobportal.file.FileUploadService;
 import com.iting.jobportal.company.entity.enums.BusinessDocumentType;
+import com.iting.jobportal.company.entity.enums.Industry;
+import com.iting.jobportal.job.entity.enums.JobStatus;
+import com.iting.jobportal.job.repository.JobRepository;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
+import jakarta.persistence.criteria.Predicate;
+import java.util.ArrayList;
+import java.util.List;
 
 import java.time.LocalDateTime;
 
@@ -31,17 +42,20 @@ public class CompanyServiceImpl implements CompanyService {
     private final CompanyFollowService companyFollowService;
     private final FileUploadService fileUploadService;
     private final AccountRepository accountRepository;
+    private final JobRepository jobRepository;
     private final ApplicationEventPublisher eventPublisher;
 
     public CompanyServiceImpl(CompanyRepository companyRepository,
                               CompanyFollowService companyFollowService,
                               FileUploadService fileUploadService,
                               AccountRepository accountRepository,
+                              JobRepository jobRepository,
                               ApplicationEventPublisher eventPublisher) {
         this.companyRepository = companyRepository;
         this.companyFollowService = companyFollowService;
         this.fileUploadService = fileUploadService;
         this.accountRepository = accountRepository;
+        this.jobRepository = jobRepository;
         this.eventPublisher = eventPublisher;
     }
     @Override
@@ -461,7 +475,51 @@ public class CompanyServiceImpl implements CompanyService {
     // Map Company -> CompanyResponse
     // ==========================================
     private CompanyResponse mapToResponse(Company company) {
-        return CompanyResponse.fromEntity(company);
+        CompanyResponse response = CompanyResponse.fromEntity(company);
+        response.setActiveJobCount((int) jobRepository.countByCompany_IdAndStatus(company.getId(), JobStatus.ACTIVE));
+        response.setFollowerCount(companyFollowService.getFollowerCount(company.getId()));
+        return response;
+    }
+
+    @Override
+    public Page<CompanyResponse> searchCompanies(String keyword, String location, String industry, String size, int page, int sizePage) {
+        Pageable pageable = PageRequest.of(page, sizePage, Sort.by("lastUpdate").descending());
+
+        Specification<Company> spec = (root, query, cb) -> {
+            List<Predicate> predicates = new ArrayList<>();
+
+            if (keyword != null && !keyword.isBlank()) {
+                String kw = "%" + keyword.toLowerCase() + "%";
+                predicates.add(cb.or(
+                        cb.like(cb.lower(root.get("name")), kw),
+                        cb.like(cb.lower(root.get("description")), kw)
+                ));
+            }
+
+            if (location != null && !location.isBlank() && !location.equalsIgnoreCase("all")) {
+                predicates.add(cb.like(root.get("address"), "%" + location + "%"));
+            }
+
+            if (industry != null && !industry.isBlank() && !industry.equalsIgnoreCase("all")) {
+                try {
+                    Industry ind = Industry.valueOf(industry.toUpperCase());
+                    predicates.add(cb.isMember(ind, root.get("industries")));
+                } catch (IllegalArgumentException e) {
+                    // Ignore invalid enum values
+                }
+            }
+            
+            if (size != null && !size.isBlank() && !size.equalsIgnoreCase("all")) {
+                predicates.add(cb.equal(root.get("companySize"), size));
+            }
+            
+            // Only show setup profiles
+            predicates.add(cb.equal(root.get("profileSetup"), true));
+
+            return cb.and(predicates.toArray(new Predicate[0]));
+        };
+
+        return companyRepository.findAll(spec, pageable).map(this::mapToResponse);
     }
 
     @Override

@@ -56,7 +56,7 @@ class JobServiceTest {
                 .id(1L)
                 .company(testCompany)
                 .position("Developer")
-                .status(JobStatus.DRAFT)
+                .status(JobStatus.PENDING)
                 .build();
     }
 

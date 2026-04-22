@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import authService from '../../services/authService';
 import { FaArrowRight, FaEye, FaEyeSlash, FaCheckCircle } from 'react-icons/fa';
 import { BsBriefcaseFill, BsBuilding, BsFileText } from 'react-icons/bs';
 import bgImage from '../../assets/bg_login.jpg';
@@ -23,10 +24,14 @@ const ForgotPasswordPage = () => {
   // Xử lý gửi Email (Bước 1)
   const handleSendEmail = (e) => {
     e.preventDefault();
-    console.log("Gửi mã xác nhận tới:", email);
-    // Gọi API gửi mail ở đây...
-    // Thành công thì chuyển sang bước 2
-    setStep(2);
+    (async () => {
+      try {
+        await authService.forgotPassword(email);
+        setStep(2);
+      } catch (err) {
+        alert(err?.message || 'Gửi email thất bại');
+      }
+    })();
   };
 
   // Xử lý Đổi mật khẩu (Bước 2)
@@ -95,12 +100,12 @@ const ForgotPasswordPage = () => {
                   Đặt lại mật khẩu
                 </h1>
 
-                {/* Thông báo đã gửi mã */}
+                {/* Thông báo đã gửi mail */}
                 <div className="mb-8 p-4 bg-green-50 border border-green-100 rounded-lg flex items-start gap-3">
                     <FaCheckCircle className="text-green-500 mt-0.5 text-lg shrink-0" />
                     <p className="text-sm text-gray-600">
-                      Chúng tôi đã gửi đến email <span className="font-bold text-gray-800">{email}</span> một mã xác nhận. 
-                      Vui lòng kiểm tra và nhập mật khẩu mới bên dưới.
+                      Một email đặt lại mật khẩu đã được gửi tới <span className="font-bold text-gray-800">{email}</span>.<br/>
+                      Vui lòng kiểm tra hòm thư và nhấn vào liên kết để đặt lại mật khẩu (liên kết hết hạn sau 1 giờ).
                     </p>
                 </div>
 
@@ -113,7 +118,7 @@ const ForgotPasswordPage = () => {
                    <div>
                      <input 
                        type="text" 
-                       placeholder="Nhập mã xác nhận (OTP)" 
+                       placeholder="(Nếu bạn có mã) Nhập mã xác nhận (OTP)" 
                        className="w-full px-5 py-3.5 bg-[#F0F5FA] rounded-lg focus:outline-none focus:border-blue-500 border border-transparent"
                      />
                    </div> 
@@ -170,7 +175,7 @@ const ForgotPasswordPage = () => {
 
         {/* Copyright */}
         <div className="absolute bottom-6 text-xs text-gray-400">
-           © 2024 ITing. All rights reserved.
+           © 2024 ITing. Bảo lưu mọi quyền.
         </div>
       </div>
 
@@ -198,7 +203,7 @@ const ForgotPasswordPage = () => {
                      <BsBriefcaseFill size={20} />
                   </div>
                   <div className="text-xl font-bold">1,75,324</div>
-                  <div className="text-[11px] text-gray-300 uppercase tracking-wide mt-1">Việc làm active</div>
+                  <div className="text-[11px] text-gray-300 uppercase tracking-wide mt-1">Việc làm đang tuyển</div>
                </div>
                <div className="bg-white/10 backdrop-blur-md border border-white/10 p-4 rounded-xl flex-1 min-w-[140px]">
                   <div className="w-10 h-10 bg-white/20 rounded-lg flex items-center justify-center mb-3 text-sky-300">

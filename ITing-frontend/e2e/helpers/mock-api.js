@@ -118,6 +118,19 @@ async function mockAdminApis(page) {
     await fulfillJson(route, { success: true });
   });
 
+  await page.route('**/api/admin/jobs/201/ai-review', async (route) => {
+    await fulfillJson(route, {
+      ...adminJobsPage.content[0],
+      aiReview: {
+        status: 'APPROVED',
+        score: 0.02,
+        reason: 'AI không phát hiện nội dung nhạy cảm.',
+        action: 'AUTO_APPROVE_AFTER_ADMIN_DOUBLE_CHECK',
+        sensitiveTerms: [],
+      },
+    });
+  });
+
   await page.route('**/api/admin/jobs/201/close', async (route) => {
     await fulfillJson(route, { success: true });
   });

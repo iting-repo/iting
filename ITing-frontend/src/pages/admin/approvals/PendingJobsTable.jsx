@@ -7,7 +7,7 @@ const PendingJobsTable = () => {
     const jobs = [
         {
             id: "#P-1001",
-            title: "Senior Software Engineer",
+            title: "Kỹ sư phần mềm cấp cao",
             company: "TechCorp Inc.",
             postedBy: "Sarah Johnson",
             avatar: "https://i.pravatar.cc/150?img=1",
@@ -15,7 +15,7 @@ const PendingJobsTable = () => {
         },
         {
             id: "#P-1002",
-            title: "Marketing Manager",
+            title: "Trưởng phòng tiếp thị",
             company: "Digital Solutions",
             postedBy: "Mike Davis",
             avatar: "https://i.pravatar.cc/150?img=2",
@@ -23,7 +23,7 @@ const PendingJobsTable = () => {
         },
         {
             id: "#P-1003",
-            title: "UX Designer",
+            title: "Nhà thiết kế trải nghiệm người dùng",
             company: "Creative Studio",
             postedBy: "Emma Wilson",
             avatar: "https://i.pravatar.cc/150?img=3",
@@ -36,15 +36,15 @@ const PendingJobsTable = () => {
             {/* HEADER */}
             <CardHeader
                 className="px-6 pt-6 mb-4"
-                title={<span className="text-gray-800">Recruitment Posts Review</span>}
+                title={<span className="text-gray-800">Duyệt bài đăng tuyển dụng</span>}
                 icon={<FaBriefcase className="text-orange-500" />}
                 action={
                     <div className="flex gap-2">
                         <Button variant="outline" className="flex items-center gap-2">
-                            <FaFilter size={12} /> Filter
+                            <FaFilter size={12} /> Lọc
                         </Button>
                         <Button className="flex items-center gap-2 bg-green-500 hover:bg-green-600 text-white border-0">
-                            <FaCheck size={12} /> Approve All
+                            <FaCheck size={12} /> Duyệt tất cả
                         </Button>
                     </div>
                 }
@@ -53,11 +53,11 @@ const PendingJobsTable = () => {
             {/* TABLE */}
             <Table
                 headers={[
-                    { label: "Post ID" },
-                    { label: "Job Title" },
-                    { label: "Company" },
-                    { label: "Posted By" },
-                    { label: "Actions", className: "text-right" }
+                    { label: "Mã bài đăng" },
+                    { label: "Tiêu đề công việc" },
+                    { label: "Công ty" },
+                    { label: "Người đăng" },
+                    { label: "Thao tác", className: "text-right" }
                 ]}
             >
                         {jobs.map((job) => (
@@ -73,13 +73,13 @@ const PendingJobsTable = () => {
                                 </Td>
                                 <Td className="text-right">
                                     <div className="flex items-center justify-end gap-2">
-                                        <button className="w-8 h-8 rounded-lg flex items-center justify-center bg-sky-100 text-sky-600 hover:bg-sky-200 transition-colors" title="View Details">
+                                        <button className="w-8 h-8 rounded-lg flex items-center justify-center bg-sky-100 text-sky-600 hover:bg-sky-200 transition-colors" title="Xem chi tiết">
                                             <FaEye size={12} />
                                         </button>
-                                        <button className="w-8 h-8 rounded-lg flex items-center justify-center bg-green-100 text-green-600 hover:bg-green-200 transition-colors" title="Approve">
+                                        <button className="w-8 h-8 rounded-lg flex items-center justify-center bg-green-100 text-green-600 hover:bg-green-200 transition-colors" title="Duyệt">
                                             <FaCheck size={12} />
                                         </button>
-                                        <button className="w-8 h-8 rounded-lg flex items-center justify-center bg-red-100 text-red-600 hover:bg-red-200 transition-colors" title="Reject">
+                                        <button className="w-8 h-8 rounded-lg flex items-center justify-center bg-red-100 text-red-600 hover:bg-red-200 transition-colors" title="Từ chối">
                                             <FaTimes size={12} />
                                         </button>
                                     </div>

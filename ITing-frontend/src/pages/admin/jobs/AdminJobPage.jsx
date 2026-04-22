@@ -37,6 +37,7 @@ const AdminJobPage = () => {
     rejectJob,
     closeJob,
     requestRevision,
+    runAiReview,
     suspendJob,
     unsuspendJob,
     deleteJob,
@@ -149,6 +150,8 @@ const AdminJobPage = () => {
       } else if (action === "revision") {
         if (!actionNote.trim()) { toast.error("Vui lòng nhập lý do yêu cầu chỉnh sửa!"); return; }
         await requestRevision(job.id, actionNote);
+      } else if (action === "ai-review") {
+        await runAiReview(job.id);
       } else if (action === "suspend") {
         if (!actionNote.trim()) { toast.error("Vui lòng nhập lý do đình chỉ!"); return; }
         await suspendJob(job.id, actionNote);

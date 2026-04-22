@@ -4,10 +4,10 @@ public enum ExperienceLevel {
     INTERN,     // Thực tập
     FRESHER,    // Mới ra trường
     JUNIOR,     // 1-2 năm
-    MID_LEVEL,  // 2-4 năm (dùng trong data.sql)
     MIDDLE,     // 2-4 năm
+    MID_LEVEL,  // 2-4 năm (Mid-level)
     SENIOR,     // 4-7 năm
-    EXPERT,     // Chuyên gia (dùng trong data.sql)
     LEAD,       // 7+ năm
+    EXPERT,     // Chuyên gia
     MANAGER     // Quản lý
 }

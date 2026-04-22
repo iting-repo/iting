@@ -104,9 +104,30 @@
     "job_types": {
       "FULL_TIME": "Toàn thời gian",
       "PART_TIME": "Bán thời gian",
-      "REMOTE": "Làm từ xa",
+      "CONTRACT": "Hợp đồng",
+      "INTERNSHIP": "Thực tập",
+      "REMOTE": "Làm việc từ xa",
       "FREELANCE": "Tự do",
-      "INTERN": "Thực tập",
+      "not_updated": "Chưa cập nhật"
+    },
+    "experience_levels": {
+      "INTERN": "Thực tập sinh",
+      "FRESHER": "Mới ra trường / Fresher",
+      "JUNIOR": "Junior (1-2 năm)",
+      "MIDDLE": "Middle (2-4 năm)",
+      "MID_LEVEL": "Mid-level (2-4 năm)",
+      "SENIOR": "Senior (4-7 năm)",
+      "LEAD": "Lead (7+ năm)",
+      "EXPERT": "Chuyên gia",
+      "MANAGER": "Quản lý",
+      "not_updated": "Chưa cập nhật"
+    },
+    "salary_types": {
+      "NEGOTIABLE": "Thỏa thuận",
+      "MONTH": "Theo tháng",
+      "YEAR": "Theo năm",
+      "PROJECT": "Theo dự án",
+      "HOUR": "Theo giờ",
       "not_updated": "Chưa cập nhật"
     },
     "deadline": {

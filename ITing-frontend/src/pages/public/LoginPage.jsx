@@ -45,7 +45,7 @@ const LoginPage = () => {
       }));
     },
     onError: (error) => {
-      console.error("Google Login Error:", error);
+      console.error("Lỗi đăng nhập Google:", error);
     },
   });
 
@@ -77,8 +77,7 @@ const LoginPage = () => {
     <div className="min-h-screen flex bg-white font-sans animate-in fade-in duration-500">
       <div className="w-full lg:w-[50%] flex flex-col px-8 md:px-20 xl:px-32 relative z-10 h-full overflow-y-auto no-scrollbar py-12">
         <Link to="/" className="flex items-center gap-2 mb-8 w-fit hover:opacity-80 transition-opacity">
-          <BsBriefcaseFill className="text-[#3AB4E6] text-2xl" />
-          <span className="text-2xl font-semibold text-gray-800 tracking-tight">ITing</span>
+          <img src="/assets/logo.png" alt="ITing Logo" className="h-10 w-auto object-contain" />
         </Link>
         <div>
           <h1 className="text-[30px] font-semibold text-[#1F2937] mb-6">
@@ -97,7 +96,7 @@ const LoginPage = () => {
               onClick={() => switchTab('admin')}
               className={`flex-1 py-2.5 rounded-md text-sm font-semibold transition-all duration-200 flex items-center justify-center gap-2 ${loginType === 'admin' ? 'bg-[#3AB4E6] text-white shadow-sm' : 'text-gray-500 hover:text-gray-600'}`}
             >
-              <FaUserShield /> Admin
+              <FaUserShield /> Quản trị viên
             </button>
           </div>
           <p className="text-[#6B7280] text-md mb-8 min-h-[50px]">
@@ -183,7 +182,7 @@ const LoginPage = () => {
             )}
           </div>
         </div>
-        <div className="absolute bottom-6 text-xs text-gray-400">© 2024 ITing. All rights reserved.</div>
+        <div className="absolute bottom-6 text-xs text-gray-400">© 2024 ITing. Bảo lưu mọi quyền.</div>
       </div>
       <div
         className="hidden lg:block w-[50%] relative bg-cover bg-center"
@@ -200,7 +199,7 @@ const LoginPage = () => {
             {loginType === 'user' ? (
               <>Hơn <span className="text-blue-400">1,75,324</span> ứng viên đang tham gia để có công việc chất lượng.</>
             ) : (
-              <>Hệ thống <span className="text-blue-400">Quản trị tập trung</span> dành cho Admin & Staff.</>
+              <>Hệ thống <span className="text-blue-400">quản trị tập trung</span> dành cho quản trị viên và nhân sự nội bộ.</>
             )}
           </h2>
           <div className="flex gap-4">

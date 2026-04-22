@@ -15,6 +15,12 @@ import com.iting.jobportal.auth.dto.response.LoginResponse;
 import com.iting.jobportal.auth.dto.request.ChangePasswordRequest;
 import com.iting.jobportal.auth.dto.request.RegisterRequest;
 import com.iting.jobportal.auth.dto.request.GoogleLoginRequest;
+import com.iting.jobportal.auth.dto.request.ForgotPasswordRequest;
+import com.iting.jobportal.auth.dto.request.ResetPasswordRequest;
+import com.iting.jobportal.auth.service.PasswordResetService;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+import java.util.Map;
 
 @Tag(name ="01. Auth")
 @RestController
@@ -23,6 +29,7 @@ import com.iting.jobportal.auth.dto.request.GoogleLoginRequest;
 public class AuthController {
 
     private final AuthService authService;
+    private final PasswordResetService passwordResetService;
 
     @PostMapping("/register")
     public Account register(@Valid @RequestBody RegisterRequest request) {
@@ -46,5 +53,21 @@ public class AuthController {
         authService.changePassword(accountId, request);
     }
     
+    @PostMapping("/forgot-password")
+    public ResponseEntity<?> forgotPassword(@Valid @RequestBody ForgotPasswordRequest request) {
+        passwordResetService.createPasswordResetToken(request.getEmail());
+        return ResponseEntity.ok(Map.of("message", "Nếu có tài khoản, một email đặt lại mật khẩu đã được gửi"));
+    }
+
+    @PostMapping("/reset-password")
+    public ResponseEntity<?> resetPassword(@Valid @RequestBody ResetPasswordRequest request) {
+        passwordResetService.resetPassword(request.getToken(), request.getNewPassword());
+        return ResponseEntity.ok(Map.of("message", "Mật khẩu đã được đặt lại"));
+    }
+    
+    @GetMapping("/me")
+    public ResponseEntity<?> getMe(@CurrentUser Long accountId) {
+        return ResponseEntity.ok(authService.getMeResponse(accountId));
+    }
 }
     

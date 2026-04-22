@@ -6,6 +6,7 @@ import { toast } from 'sonner';
 import { fetchJobDetailRequest } from '../../store/job/jobSlice';
 import { buildJobDetailPath, getJobTitle, normalizeJobKey, slugify } from '../../utils/jobUrl';
 import messageService from '../../services/messageService';
+import applicationService from '../../services/applicationService';
 import axiosInstance from '../../utils/axiosInstance';
 import { storage } from '../../utils/storage';
 import { JobApplyModal, JobCard } from '../../components';
@@ -13,11 +14,7 @@ import { JobApplyModal, JobCard } from '../../components';
 const toLines = (value) => {
   if (!value) return [];
   if (Array.isArray(value)) return value.map((v) => String(v).trim()).filter(Boolean);
-
-  return String(value)
-    .split(/\n|\.|;/)
-    .map((v) => v.trim())
-    .filter(Boolean);
+  return String(value).split(/\n|\.|;/).map((v) => v.trim()).filter(Boolean);
 };
 
 const formatSalary = (min, max) => {
@@ -32,11 +29,11 @@ const JobDetailPage = () => {
   const { slug, jobKey } = useParams();
   const navigate = useNavigate();
   const dispatch = useDispatch();
-
   const { currentJob, isLoading } = useSelector((state) => state.job || {});
   const { currentUser } = useSelector((state) => state.auth || {});
 
   const [isApplyModalOpen, setIsApplyModalOpen] = useState(false);
+  const [hasApplied, setHasApplied] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [contactMessage, setContactMessage] = useState('');
@@ -47,17 +44,13 @@ const JobDetailPage = () => {
   const normalizedJobId = normalizeJobKey(jobKey);
 
   useEffect(() => {
-    if (normalizedJobId) {
-      dispatch(fetchJobDetailRequest(normalizedJobId));
-    }
+    if (normalizedJobId) dispatch(fetchJobDetailRequest(normalizedJobId));
   }, [dispatch, normalizedJobId]);
 
   useEffect(() => {
     if (!currentJob) return;
     const expectedSlug = slugify(getJobTitle(currentJob)) || 'chi-tiet-viec-lam';
-    if (slug !== expectedSlug) {
-      navigate(buildJobDetailPath(currentJob), { replace: true });
-    }
+    if (slug !== expectedSlug) navigate(buildJobDetailPath(currentJob), { replace: true });
   }, [currentJob, slug, navigate]);
 
   useEffect(() => {
@@ -73,9 +66,22 @@ const JobDetailPage = () => {
         setIsSaved(false);
       }
     };
-
     checkSaved();
   }, [currentJob?.id]);
+
+  useEffect(() => {
+    const checkAppStatus = async () => {
+      if (currentUser?.role === 'CANDIDATE' && currentJob?.id) {
+        try {
+          const res = await applicationService.checkApplied(currentJob.id);
+          setHasApplied(Boolean(res?.hasApplied));
+        } catch {
+          setHasApplied(false);
+        }
+      }
+    };
+    checkAppStatus();
+  }, [currentUser?.role, currentJob?.id]);
 
   useEffect(() => {
     const loadRelatedJobs = async () => {
@@ -88,13 +94,7 @@ const JobDetailPage = () => {
       try {
         const primaryKeyword = currentJob.position || currentJob.title || '';
         const byKeyword = await axiosInstance.get('/jobs/search', {
-          params: {
-            keyword: primaryKeyword,
-            page: 0,
-            size: 5,
-            sortBy: 'lastUpdate',
-            sortOrder: 'desc',
-          },
+          params: { keyword: primaryKeyword, page: 0, size: 5, sortBy: 'lastUpdate', sortOrder: 'desc' },
         });
 
         let candidates = Array.isArray(byKeyword?.content) ? byKeyword.content : [];
@@ -102,22 +102,11 @@ const JobDetailPage = () => {
 
         if (candidates.length < 3 && currentJob.companyId) {
           const byCompany = await axiosInstance.get('/jobs/search', {
-            params: {
-              companyId: currentJob.companyId,
-              page: 0,
-              size: 5,
-              sortBy: 'lastUpdate',
-              sortOrder: 'desc',
-            },
+            params: { companyId: currentJob.companyId, page: 0, size: 5, sortBy: 'lastUpdate', sortOrder: 'desc' },
           });
-
-          const companyJobs = (Array.isArray(byCompany?.content) ? byCompany.content : [])
-            .filter((job) => Number(job.id) !== Number(currentJob.id));
-
+          const companyJobs = (Array.isArray(byCompany?.content) ? byCompany.content : []).filter((job) => Number(job.id) !== Number(currentJob.id));
           const mergeMap = new Map();
-          [...candidates, ...companyJobs].forEach((job) => {
-            if (!mergeMap.has(job.id)) mergeMap.set(job.id, job);
-          });
+          [...candidates, ...companyJobs].forEach((job) => { if (!mergeMap.has(job.id)) mergeMap.set(job.id, job); });
           candidates = [...mergeMap.values()];
         }
 
@@ -167,13 +156,11 @@ const JobDetailPage = () => {
       toast.error('Chi ung vien moi co the nhan tin voi nha tuyen dung.');
       return;
     }
-
     const content = contactMessage.trim();
     if (!content) {
       toast.error('Vui long nhap noi dung tin nhan.');
       return;
     }
-
     if (!currentJob?.companyId) {
       toast.error('Khong xac dinh duoc nha tuyen dung.');
       return;
@@ -197,19 +184,15 @@ const JobDetailPage = () => {
     }
   };
 
-  const requirements = useMemo(
-    () => toLines(currentJob?.requirements || currentJob?.techRequired),
-    [currentJob?.requirements, currentJob?.techRequired]
-  );
+  const requirements = useMemo(() => toLines(currentJob?.requirements || currentJob?.techRequired), [currentJob?.requirements, currentJob?.techRequired]);
   const responsibilities = useMemo(() => toLines(currentJob?.responsibilities), [currentJob?.responsibilities]);
   const benefits = useMemo(() => toLines(currentJob?.benefits), [currentJob?.benefits]);
   const description = useMemo(() => toLines(currentJob?.description), [currentJob?.description]);
   const mapQuery = useMemo(() => {
-    const pieces = [currentJob?.address, currentJob?.ward, currentJob?.province, currentJob?.location]
-      .map((item) => String(item || '').trim())
-      .filter(Boolean);
+    const pieces = [currentJob?.address, currentJob?.ward, currentJob?.province, currentJob?.location].map((item) => String(item || '').trim()).filter(Boolean);
     return pieces.length > 0 ? pieces.join(', ') : 'Viet Nam';
   }, [currentJob?.address, currentJob?.ward, currentJob?.province, currentJob?.location]);
+
   const encodedMapQuery = encodeURIComponent(mapQuery);
   const googleMapUrl = `https://www.google.com/maps/search/?api=1&query=${encodedMapQuery}`;
   const googleMapEmbedUrl = `https://www.google.com/maps?q=${encodedMapQuery}&output=embed`;
@@ -261,6 +244,10 @@ const JobDetailPage = () => {
       <JobApplyModal
         isOpen={isApplyModalOpen}
         onClose={() => setIsApplyModalOpen(false)}
+        onSuccess={() => {
+          setIsApplyModalOpen(false);
+          setHasApplied(true);
+        }}
         jobTitle={currentJob.position || currentJob.title}
         jobId={currentJob.id}
       />
@@ -285,7 +272,13 @@ const JobDetailPage = () => {
           </div>
 
           <div className="flex gap-3">
-            <button onClick={() => setIsApplyModalOpen(true)} className="h-11 px-6 rounded-xl bg-[#00B4D8] text-white font-bold hover:bg-[#0096b4]">Ung tuyen ngay</button>
+            <button
+              onClick={() => !hasApplied && setIsApplyModalOpen(true)}
+              disabled={hasApplied}
+              className={`h-11 px-6 rounded-xl font-bold ${hasApplied ? 'bg-gray-100 text-gray-400 cursor-not-allowed border border-gray-200' : 'bg-[#00B4D8] text-white hover:bg-[#0096b4]'}`}
+            >
+              {hasApplied ? 'Da Ung Tuyen' : 'Ung tuyen ngay'}
+            </button>
             <button onClick={handleToggleSave} disabled={isSaving} className="h-11 px-5 rounded-xl border border-gray-200 text-gray-700 hover:bg-gray-50 inline-flex items-center gap-2 disabled:opacity-60">
               <FaRegBookmark /> {isSaved ? 'Da luu' : 'Luu tin'}
             </button>
@@ -315,38 +308,17 @@ const JobDetailPage = () => {
         <aside className="bg-white rounded-2xl border border-gray-100 p-5 h-fit space-y-4">
           <div className="rounded-xl border border-gray-100 overflow-hidden">
             <div className="h-40 w-full bg-gray-100">
-              <iframe
-                title="Job location map"
-                src={googleMapEmbedUrl}
-                className="w-full h-full border-0"
-                loading="lazy"
-                referrerPolicy="no-referrer-when-downgrade"
-              />
+              <iframe title="Job location map" src={googleMapEmbedUrl} className="w-full h-full border-0" loading="lazy" referrerPolicy="no-referrer-when-downgrade" />
             </div>
-            <a
-              href={googleMapUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="h-10 px-3 text-sm font-semibold text-[#1967D2] hover:bg-blue-50 border-t border-gray-100 inline-flex items-center gap-2 w-full"
-            >
+            <a href={googleMapUrl} target="_blank" rel="noopener noreferrer" className="h-10 px-3 text-sm font-semibold text-[#1967D2] hover:bg-blue-50 border-t border-gray-100 inline-flex items-center gap-2 w-full">
               <FaMapMarkerAlt /> Xem tren Google Maps
             </a>
           </div>
 
           <h3 className="font-bold text-gray-900">Nhan tin voi nha tuyen dung</h3>
           <p className="text-sm text-gray-500">Gui cau hoi ve cong viec nay, sau do tiep tuc trao doi tai trang nhan tin.</p>
-          <textarea
-            rows={5}
-            value={contactMessage}
-            onChange={(e) => setContactMessage(e.target.value)}
-            placeholder="Nhap noi dung tin nhan..."
-            className="w-full rounded-xl border border-gray-200 p-3 text-sm focus:ring-2 focus:ring-[#3AB4E6] outline-none"
-          />
-          <button
-            onClick={handleContactCompany}
-            disabled={sendingContact}
-            className="w-full h-11 rounded-xl bg-[#1967D2] text-white font-semibold hover:bg-blue-700 disabled:opacity-60 inline-flex items-center justify-center gap-2"
-          >
+          <textarea rows={5} value={contactMessage} onChange={(e) => setContactMessage(e.target.value)} placeholder="Nhap noi dung tin nhan..." className="w-full rounded-xl border border-gray-200 p-3 text-sm focus:ring-2 focus:ring-[#3AB4E6] outline-none" />
+          <button onClick={handleContactCompany} disabled={sendingContact} className="w-full h-11 rounded-xl bg-[#1967D2] text-white font-semibold hover:bg-blue-700 disabled:opacity-60 inline-flex items-center justify-center gap-2">
             <FaEnvelope /> {sendingContact ? 'Dang gui...' : 'Gui tin nhan'}
           </button>
         </aside>
@@ -355,21 +327,11 @@ const JobDetailPage = () => {
       <div className="max-w-6xl mx-auto px-4 mt-8">
         <h2 className="text-xl font-black text-gray-900 mb-4">Viec lam lien quan</h2>
         {relatedLoading ? (
-          <div className="grid grid-cols-1 gap-4">
-            {[1, 2, 3].map((i) => (
-              <div key={i} className="h-28 bg-white border border-gray-100 rounded-xl animate-pulse" />
-            ))}
-          </div>
+          <div className="grid grid-cols-1 gap-4">{[1, 2, 3].map((i) => <div key={i} className="h-28 bg-white border border-gray-100 rounded-xl animate-pulse" />)}</div>
         ) : relatedJobs.length > 0 ? (
-          <div className="space-y-4">
-            {relatedJobs.map((job) => (
-              <JobCard key={job.id} job={mapJobToCard(job)} />
-            ))}
-          </div>
+          <div className="space-y-4">{relatedJobs.map((job) => <JobCard key={job.id} job={mapJobToCard(job)} />)}</div>
         ) : (
-          <div className="bg-white border border-gray-100 rounded-xl p-5 text-sm text-gray-500">
-            Hien chua co viec lam lien quan phu hop.
-          </div>
+          <div className="bg-white border border-gray-100 rounded-xl p-5 text-sm text-gray-500">Hien chua co viec lam lien quan phu hop.</div>
         )}
       </div>
     </div>

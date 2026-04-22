@@ -32,6 +32,10 @@ public class CompanyResponse {
     private String representativePhone;
     private String accountEmail;
 
+    private Integer foundedYear;
+    private List<String> techStack;
+    private List<String> benefits;
+
     private String taxCode;
     private String businessLicenseFileUrl;
     private BusinessDocumentType businessLicenseDocumentType;
@@ -44,6 +48,8 @@ public class CompanyResponse {
     private LocalDateTime lastUpdateRequestDate;
 
     private LocalDateTime lastUpdate;
+    private Long followerCount;
+    private Integer activeJobCount;
     private String statusReason;
     private Boolean active;
     private Boolean profileSetup;
@@ -64,6 +70,9 @@ public class CompanyResponse {
                 company.getRepresentativeGender(),
                 company.getRepresentativePhone(),
                 company.getAccountEmail(),
+                company.getFoundedYear(),
+                company.getTechStack(),
+                company.getBenefits(),
                 company.getTaxCode(),
                 company.getBusinessLicenseFileUrl(),
                 company.getBusinessLicenseDocumentType(),
@@ -74,6 +83,8 @@ public class CompanyResponse {
                 company.getDocumentReviewStatus(),
                 company.getLastUpdateRequestDate(),
                 company.getLastUpdate(),
+                company.getFollowerCount(),
+                0, // activeJobCount - set later
                 company.getStatusReason(),
                 company.getActive(),
                 company.getProfileSetup()

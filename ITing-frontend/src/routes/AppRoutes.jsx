@@ -9,6 +9,7 @@ const Login = lazy(() => import('../pages/public/LoginPage'));
 const Register = lazy(() => import('../pages/public/RegisterPage'));
 const JobPage = lazy(() => import('../pages/public/JobPage'));
 const ForgotPasswordPage = lazy(() => import('../pages/public/ForgotPasswordPage'));
+const ResetPasswordPage = lazy(() => import('../pages/public/ResetPasswordPage'));
 const EmployerLayout = lazy(() => import('../layouts/EmployerLayout'));
 const EmployerDashboard = lazy(() => import('../pages/employer/EmployerDashboard'));
 const CompanyProfile = lazy(() => import('../pages/employer/company-profile/CompanyProfile'));
@@ -35,10 +36,13 @@ const LegacyJobRedirect = lazy(() => import('../pages/public/LegacyJobRedirect')
 const AboutPage = lazy(() => import('../pages/public/AboutPage'));
 const ContactPage = lazy(() => import('../pages/public/ContactPage'));
 const AdminJobPage = lazy(() => import('../pages/admin/jobs/AdminJobPage'));
+const ApprovalManagement = lazy(() => import('../pages/admin/approvals/ApprovalManagement'));
 const AuditLogPage = lazy(() => import('../pages/admin/audit/AuditLogPage'));
 const SystemConfig = lazy(() => import('../pages/admin/config/SystemConfig'));
 const NotificationManagement = lazy(() => import('../pages/admin/notifications/NotificationManagement'));
 const MessagesPage = lazy(() => import('../pages/messages/MessagesPage'));
+const CompaniesPage = lazy(() => import('../pages/public/CompaniesPage'));
+const CompanyDetailPage = lazy(() => import('../pages/public/CompanyDetailPage'));
 
 import { LoadingSpinner } from '../components';
 import { Settings } from 'lucide-react';
@@ -50,10 +54,13 @@ const AppRoutes = () => {
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+        <Route path="/reset-password" element={<ResetPasswordPage />} />
 
         <Route element={<MainLayout />}>
           <Route path="/" element={<HomePage />} />
           <Route path="/jobs" element={<JobPage />} />
+          <Route path="/companies" element={<CompaniesPage />} />
+          <Route path="/companies/:id" element={<CompanyDetailPage />} />
           <Route path="/jobs/:id" element={<LegacyJobRedirect />} />
           <Route path="/viec-lam/:slug/:jobKey" element={<JobDetailPage />} />
           <Route path="/about" element={<AboutPage />} />
@@ -67,7 +74,7 @@ const AppRoutes = () => {
             <Route path="users" element={<UserManagement />} />
             <Route path="companies" element={<CompanyManagement />} />
             <Route path="reports" element={<ReportManagement />} />
-            <Route path="approvals" element={<AdminJobPage />} />
+            <Route path="jobs" element={<AdminJobPage />} />
             <Route path="audit" element={<AuditLogPage />} />
             <Route path="config" element={<SystemConfig />} />
             <Route path="notifications" element={<NotificationManagement />} />
