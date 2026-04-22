@@ -26,7 +26,6 @@ public class ApplicationResponse {
     private String applicantName;
     private String avatarUrl;
     private String jobTitle;
-    private String companyName;
     private String companyLogo;
     private String introduction;
     

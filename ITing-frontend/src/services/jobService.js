@@ -20,7 +20,11 @@ const jobService = {
         return axiosInstance.get('/jobs/latest', {
             params: { limit }
         });
-    }
+    },
+
+    saveJob: (jobId) => axiosInstance.post(`/candidates/saved-jobs/${jobId}`),
+    unsaveJob: (jobId) => axiosInstance.delete(`/candidates/saved-jobs/${jobId}`),
+    getSavedJobIds: () => axiosInstance.get('/candidates/saved-jobs/ids'),
 };
 
 export default jobService;

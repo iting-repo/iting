@@ -1,7 +1,7 @@
 package com.iting.jobportal.job.entity.enums;
 
 public enum ExperienceLevel {
-    INTERN,     // Thực tập
+    INTERN,     // Thực tập sinh
     FRESHER,    // Mới ra trường
     JUNIOR,     // 1-2 năm
     MIDDLE,     // 2-4 năm

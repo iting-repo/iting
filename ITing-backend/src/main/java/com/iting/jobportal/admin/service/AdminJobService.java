@@ -52,4 +52,6 @@ public interface AdminJobService {
     void importJobsFromExcel(org.springframework.web.multipart.MultipartFile file);
 
     java.io.ByteArrayInputStream getImportTemplate();
+
+    Object aiReviewJob(Long jobId);
 }

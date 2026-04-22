@@ -124,14 +124,14 @@ const ChatDockBox = ({ conversation, currentUser, onClose, onMinimize, onSent })
     <div className="fixed bottom-4 right-4 z-[130] w-[360px] max-w-[calc(100vw-16px)] bg-white border border-gray-200 rounded-2xl shadow-2xl overflow-hidden">
       <div className="px-4 py-3 bg-slate-900 text-white flex items-center justify-between">
         <div className="min-w-0">
-          <p className="font-semibold truncate">{receiverInfo?.name || 'Cuoc tro chuyen'}</p>
-          <p className="text-xs text-slate-300">Nhan tin nhanh</p>
+          <p className="font-semibold truncate">{receiverInfo?.name || 'Cuộc trò chuyện'}</p>
+          <p className="text-xs text-slate-300">Nhắn tin nhanh</p>
         </div>
         <div className="flex items-center gap-1">
-          <button onClick={onMinimize} className="p-2 rounded-lg hover:bg-slate-700" title="Thu gon">
+          <button onClick={onMinimize} className="p-2 rounded-lg hover:bg-slate-700" title="Thu gọn">
             <FaWindowMinimize size={11} />
           </button>
-          <button onClick={onClose} className="p-2 rounded-lg hover:bg-slate-700" title="Dong">
+          <button onClick={onClose} className="p-2 rounded-lg hover:bg-slate-700" title="Đóng">
             <FaTimes size={12} />
           </button>
         </div>
@@ -139,9 +139,9 @@ const ChatDockBox = ({ conversation, currentUser, onClose, onMinimize, onSent })
 
       <div ref={listRef} className="h-80 overflow-y-auto bg-slate-50 p-3 space-y-2">
         {loading ? (
-          <p className="text-center text-sm text-gray-500 py-6">Dang tai tin nhan...</p>
+          <p className="text-center text-sm text-gray-500 py-6">Đang tải tin nhắn...</p>
         ) : messages.length === 0 ? (
-          <p className="text-center text-sm text-gray-500 py-6">Bat dau cuoc tro chuyen.</p>
+          <p className="text-center text-sm text-gray-500 py-6">Bắt đầu cuộc trò chuyện.</p>
         ) : (
           messages.map((msg) => (
             <div key={msg.id} className={`flex ${isMine(msg) ? 'justify-end' : 'justify-start'}`}>
@@ -153,7 +153,7 @@ const ChatDockBox = ({ conversation, currentUser, onClose, onMinimize, onSent })
           ))
         )}
         {isOtherTyping ? (
-          <p className="text-xs text-gray-500 pl-1">Dang nhap...</p>
+          <p className="text-xs text-gray-500 pl-1">Đang nhập...</p>
         ) : null}
       </div>
 
@@ -161,7 +161,7 @@ const ChatDockBox = ({ conversation, currentUser, onClose, onMinimize, onSent })
         <input
           value={draft}
           onChange={(e) => handleDraftChange(e.target.value)}
-          placeholder="Nhap tin nhan..."
+          placeholder="Nhập tin nhắn..."
           className="flex-1 h-10 px-3 rounded-xl border border-gray-200 text-sm outline-none focus:ring-2 focus:ring-[#3AB4E6]"
         />
         <button

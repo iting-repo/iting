@@ -299,4 +299,10 @@ public class JobAdminController {
                 .contentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
                 .body(file);
     }
+
+    @PostMapping("/{id}/ai-review")
+    @Operation(summary = "Review job bằng AI")
+    public ResponseEntity<?> aiReviewJob(@PathVariable Long id) {
+        return ResponseEntity.ok(adminJobService.aiReviewJob(id));
+    }
 }

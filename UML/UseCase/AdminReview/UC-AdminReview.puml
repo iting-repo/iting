@@ -1,0 +1,18 @@
+@startuml
+left to right direction
+actor "Admin" as adm
+
+rectangle "Admin Job Review" {
+  usecase "Duyệt danh sách tin chờ" as UC1
+  usecase "Sử dụng AI duyệt tin" as UC2
+  usecase "Phê duyệt công việc" as UC3
+  usecase "Từ chối công việc" as UC4
+  usecase "Yêu cầu chỉnh sửa" as UC5
+}
+
+adm --> UC1
+adm --> UC2
+UC1 ..> UC3 : <<extend>>
+UC1 ..> UC4 : <<extend>>
+UC1 ..> UC5 : <<extend>>
+@enduml

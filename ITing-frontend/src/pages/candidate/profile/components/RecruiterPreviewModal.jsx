@@ -97,8 +97,8 @@ const RecruiterPreviewModal = ({ isOpen, onClose }) => {
             >
                 <div className="px-4 md:px-6 py-4 border-b border-gray-100 flex items-center justify-between shrink-0">
                     <div>
-                        <h3 className="text-base md:text-xl font-bold text-gray-900">Preview ho so voi vai tro nha tuyen dung</h3>
-                        <p className="text-sm text-gray-500">Nhung gi ben tuyen dung se thay khi mo profile cua ban</p>
+                        <h3 className="text-base md:text-xl font-bold text-gray-900">Xem trước hồ sơ với vai trò nhà tuyển dụng</h3>
+                        <p className="text-sm text-gray-500">Những gì bên tuyển dụng sẽ thấy khi mở profile của bạn</p>
                     </div>
                     <button onClick={onClose} className="p-2 rounded-lg text-gray-500 hover:bg-gray-100 hover:text-gray-700">
                         <FaTimes />
@@ -106,7 +106,7 @@ const RecruiterPreviewModal = ({ isOpen, onClose }) => {
                 </div>
 
                 <div className="flex-1 min-h-0 overflow-y-auto p-4 md:p-6 space-y-6">
-                    {loading && <div className="text-center py-10 text-gray-500">Dang tai du lieu preview...</div>}
+                    {loading && <div className="text-center py-10 text-gray-500">Đang tải dữ liệu preview...</div>}
 
                     {!loading && error && <div className="text-sm text-red-600 bg-red-50 border border-red-100 rounded-xl px-4 py-3">{error}</div>}
 
@@ -120,25 +120,25 @@ const RecruiterPreviewModal = ({ isOpen, onClose }) => {
                                         className="w-20 h-20 rounded-2xl object-cover border border-gray-200 bg-white"
                                     />
                                     <div className="flex-1">
-                                        <h4 className="text-xl font-bold text-gray-900">{personalProfile?.fullName || 'Chua cap nhat'}</h4>
-                                        <p className="text-blue-700 font-medium mt-1">{professionalProfile?.headline || 'Chua cap nhat chuc danh'}</p>
+                                        <h4 className="text-xl font-bold text-gray-900">{personalProfile?.fullName || 'Chưa cập nhật'}</h4>
+                                        <p className="text-blue-700 font-medium mt-1">{professionalProfile?.headline || 'Chưa cập nhật chức danh'}</p>
                                         <div className="mt-2 flex flex-wrap gap-4 text-sm text-gray-600">
-                                            <span className="inline-flex items-center gap-2"><FaPhone className="text-gray-400" />{personalProfile?.phoneNum || 'Chua cap nhat'}</span>
-                                            <span className="inline-flex items-center gap-2"><FaMapMarkerAlt className="text-gray-400" />{professionalProfile?.location || 'Chua cap nhat'}</span>
-                                            <span className="inline-flex items-center gap-2"><FaBriefcase className="text-gray-400" />{professionalProfile?.totalExperienceYears ?? 0} nam kinh nghiem</span>
+                                            <span className="inline-flex items-center gap-2"><FaPhone className="text-gray-400" />{personalProfile?.phoneNum || 'Chưa cập nhật'}</span>
+                                            <span className="inline-flex items-center gap-2"><FaMapMarkerAlt className="text-gray-400" />{professionalProfile?.location || 'Chưa cập nhật'}</span>
+                                            <span className="inline-flex items-center gap-2"><FaBriefcase className="text-gray-400" />{professionalProfile?.totalExperienceYears ?? 0} năm kinh nghiệm</span>
                                         </div>
                                     </div>
                                 </div>
-                                <p className="mt-4 text-sm text-gray-700 whitespace-pre-wrap">{professionalProfile?.shortBio || 'Ung vien chua them phan gioi thieu ngan.'}</p>
+                                <p className="mt-4 text-sm text-gray-700 whitespace-pre-wrap">{professionalProfile?.shortBio || 'Ứng viên chưa thêm phần giới thiệu ngắn.'}</p>
                             </section>
 
                             <section className="rounded-2xl border border-gray-100 p-4 md:p-5">
-                                <h5 className="font-semibold text-gray-900 mb-3">CV ung vien</h5>
+                                <h5 className="font-semibold text-gray-900 mb-3">CV ứng viên</h5>
                                 {defaultCv ? (
                                     <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-3 rounded-xl bg-blue-50 border border-blue-100">
                                         <div className="min-w-0 flex-1">
-                                            <p className="font-semibold text-blue-900 truncate">{defaultCv.title || defaultCv.fileName || 'CV mac dinh'}</p>
-                                            <p className="text-xs text-blue-700">{defaultCv.isDefault ? 'CV mac dinh' : 'CV da tai len'}</p>
+                                            <p className="font-semibold text-blue-900 truncate">{defaultCv.title || defaultCv.fileName || 'CV mặc định'}</p>
+                                            <p className="text-xs text-blue-700">{defaultCv.isDefault ? 'CV mặc định' : 'CV đã tải lên'}</p>
                                         </div>
                                         <a
                                             href={defaultCv.fileUrl}
@@ -151,13 +151,13 @@ const RecruiterPreviewModal = ({ isOpen, onClose }) => {
                                         </a>
                                     </div>
                                 ) : (
-                                    <p className="text-sm text-gray-500">Chua co CV de hien thi.</p>
+                                    <p className="text-sm text-gray-500">Chưa có CV để hiển thị.</p>
                                 )}
                             </section>
 
                             <section className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                                 <div className="rounded-2xl border border-gray-100 p-4 md:p-5">
-                                    <h5 className="font-semibold text-gray-900 mb-3">Ky nang</h5>
+                                    <h5 className="font-semibold text-gray-900 mb-3">Kỹ năng</h5>
                                     {skills.length > 0 ? (
                                         <div className="flex flex-wrap gap-2">
                                             {skills.map((s) => (
@@ -167,12 +167,12 @@ const RecruiterPreviewModal = ({ isOpen, onClose }) => {
                                             ))}
                                         </div>
                                     ) : (
-                                        <p className="text-sm text-gray-500">Chua cap nhat.</p>
+                                        <p className="text-sm text-gray-500">Chưa cập nhật.</p>
                                     )}
                                 </div>
 
                                 <div className="rounded-2xl border border-gray-100 p-4 md:p-5">
-                                    <h5 className="font-semibold text-gray-900 mb-3">Lien ket mang xa hoi</h5>
+                                    <h5 className="font-semibold text-gray-900 mb-3">Liên kết mạng xã hội</h5>
                                     {socialLinks.length > 0 ? (
                                         <ul className="space-y-2 text-sm">
                                             {socialLinks.map((item) => (
@@ -184,49 +184,49 @@ const RecruiterPreviewModal = ({ isOpen, onClose }) => {
                                             ))}
                                         </ul>
                                     ) : (
-                                        <p className="text-sm text-gray-500">Chua cap nhat.</p>
+                                        <p className="text-sm text-gray-500">Chưa cập nhật.</p>
                                     )}
                                 </div>
                             </section>
 
                             <section className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                                 <div className="rounded-2xl border border-gray-100 p-4 md:p-5">
-                                    <h5 className="font-semibold text-gray-900 mb-3">Kinh nghiem</h5>
+                                    <h5 className="font-semibold text-gray-900 mb-3">Kinh nghiệm</h5>
                                     {experiences.length > 0 ? (
                                         <div className="space-y-3">
                                             {experiences.map((exp) => (
                                                 <div key={exp.id} className="text-sm">
                                                     <p className="font-semibold text-gray-800">{exp.position} - {exp.companyName}</p>
-                                                    <p className="text-gray-500">{exp.startDate} - {exp.isCurrent ? 'Hien tai' : (exp.endDate || 'N/A')}</p>
+                                                    <p className="text-gray-500">{exp.startDate} - {exp.isCurrent ? 'Hiện tại' : (exp.endDate || 'N/A')}</p>
                                                 </div>
                                             ))}
                                         </div>
                                     ) : (
-                                        <p className="text-sm text-gray-500">Chua cap nhat.</p>
+                                        <p className="text-sm text-gray-500">Chưa cập nhật.</p>
                                     )}
                                 </div>
 
                                 <div className="rounded-2xl border border-gray-100 p-4 md:p-5">
-                                    <h5 className="font-semibold text-gray-900 mb-3">Hoc van</h5>
+                                    <h5 className="font-semibold text-gray-900 mb-3">Học vấn</h5>
                                     {educations.length > 0 ? (
                                         <div className="space-y-3">
                                             {educations.map((edu) => (
                                                 <div key={edu.id} className="text-sm">
                                                     <p className="font-semibold text-gray-800">{edu.schoolName}</p>
                                                     <p className="text-gray-600">{edu.major}{edu.degree ? ` - ${edu.degree}` : ''}</p>
-                                                    <p className="text-gray-500">{edu.startDate} - {edu.endDate || 'Hien tai'}</p>
+                                                    <p className="text-gray-500">{edu.startDate} - {edu.endDate || 'Hiện tại'}</p>
                                                 </div>
                                             ))}
                                         </div>
                                     ) : (
-                                        <p className="text-sm text-gray-500">Chua cap nhat.</p>
+                                        <p className="text-sm text-gray-500">Chưa cập nhật.</p>
                                     )}
                                 </div>
                             </section>
 
                             <section className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                                 <div className="rounded-2xl border border-gray-100 p-4 md:p-5">
-                                    <h5 className="font-semibold text-gray-900 mb-3">Chung chi</h5>
+                                    <h5 className="font-semibold text-gray-900 mb-3">Chứng chỉ</h5>
                                     {certificates.length > 0 ? (
                                         <div className="space-y-2 text-sm">
                                             {certificates.map((c) => (
@@ -234,7 +234,7 @@ const RecruiterPreviewModal = ({ isOpen, onClose }) => {
                                             ))}
                                         </div>
                                     ) : (
-                                        <p className="text-sm text-gray-500">Chua cap nhat.</p>
+                                        <p className="text-sm text-gray-500">Chưa cập nhật.</p>
                                     )}
                                 </div>
 
@@ -250,13 +250,13 @@ const RecruiterPreviewModal = ({ isOpen, onClose }) => {
                                                             {p.url}
                                                         </a>
                                                     ) : (
-                                                        <p className="text-gray-500">Khong co link</p>
+                                                        <p className="text-gray-500">Không có link</p>
                                                     )}
                                                 </div>
                                             ))}
                                         </div>
                                     ) : (
-                                        <p className="text-sm text-gray-500">Chua cap nhat.</p>
+                                        <p className="text-sm text-gray-500">Chưa cập nhật.</p>
                                     )}
                                 </div>
                             </section>

@@ -20,6 +20,8 @@ public class JobResponse {
     private Long companyId;
     private String companyName;
     private String companyLogo;
+    private String logo;    // Alias for companyLogo
+    private String logoUrl; // Alias for companyLogo
 
     // Basic
     private String title;
@@ -60,11 +62,15 @@ public class JobResponse {
     private Integer applicationCount;
     private Boolean featured;
     private JobStatus status;
+    private Boolean isAiSuggested;
 
     // Review
     private String reviewReason;
     private Long reviewedBy;
     private LocalDateTime reviewedAt;
+
+    private String aiReviewStatus;
+    private String aiReviewReason;
 
     // Audit
     private LocalDateTime createdAt;
@@ -74,11 +80,20 @@ public class JobResponse {
 
 
     public static JobResponse fromEntity(Job job) {
-        return fromEntityWithCompany(
-                job,
-                job.getCompany() != null ? job.getCompany().getName() : null,
-                job.getCompany() != null ? job.getCompany().getLogoUrl() : null
-        );
+        String companyName = null;
+        String companyLogo = null;
+        
+        try {
+            if (job.getCompany() != null) {
+                companyName = job.getCompany().getName();
+                companyLogo = job.getCompany().getLogoUrl();
+            }
+        } catch (Exception e) {
+            // Handle cases where company proxy exists but the underlying record is missing (e.g., stale data)
+            // We use the ID if we can't get the name
+        }
+
+        return fromEntityWithCompany(job, companyName, companyLogo);
     }
 
     public static JobResponse fromEntityWithCompany(Job job, String companyName, String companyLogo) {
@@ -88,6 +103,8 @@ public class JobResponse {
                 .companyId(job.getCompany() != null ? job.getCompany().getId() : null)
                 .companyName(companyName)
                 .companyLogo(companyLogo)
+                .logo(companyLogo)
+                .logoUrl(companyLogo)
 
                 .title(job.getTitle())
                 .position(job.getPosition())
@@ -128,6 +145,9 @@ public class JobResponse {
                 )
                 .reviewedBy(job.getReviewedBy())
                 .reviewedAt(job.getReviewedAt())
+
+                .aiReviewStatus(job.getAiReviewStatus())
+                .aiReviewReason(job.getAiReviewReason())
 
                 .createdAt(job.getCreatedAt())
                 .lastUpdate(job.getLastUpdate())

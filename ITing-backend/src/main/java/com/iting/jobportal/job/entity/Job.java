@@ -104,6 +104,14 @@ public class Job {
     private Long reviewedBy;
     private LocalDateTime reviewedAt;
 
+    private String aiReviewStatus;
+    
+    @Column(columnDefinition = "TEXT")
+    private String aiReviewReason;
+
+    @Column(columnDefinition = "TEXT")
+    private String jobEmbedding;
+
     // ===== AUDIT =====
     private LocalDateTime createdAt;
     private LocalDateTime lastUpdate;

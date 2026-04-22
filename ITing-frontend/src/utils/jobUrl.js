@@ -1,3 +1,5 @@
+import { API_BASE_URL } from "../config";
+
 export const slugify = (value = "") =>
   String(value)
     .replace(/\u0111/g, "d")
@@ -36,4 +38,29 @@ export const buildEmployerJobApplicationsPath = (job = {}) => {
   const jobKey = getJobPublicKey(job);
 
   return `/employer/job/${slug}/${jobKey}/applications`;
+};
+
+export const getCompanyLogoUrl = (logoPath, companyName = "") => {
+  const DEFAULT_LOGO = "/assets/default-company.png";
+  
+  // Use UI Avatars as a clean, dynamic fallback for missing logos
+  const UI_AVATAR = companyName 
+    ? `https://ui-avatars.com/api/?name=${encodeURIComponent(companyName)}&background=3AB4E6&color=fff&bold=true` 
+    : DEFAULT_LOGO;
+
+  if (!logoPath || logoPath === 'null' || logoPath === 'undefined' || logoPath === '') {
+    return UI_AVATAR;
+  }
+  
+  if (logoPath.startsWith("http")) {
+    // Basic validation for common placeholders if they are considered "bad" now
+    if (logoPath.includes("via.placeholder.com") && companyName) {
+        return UI_AVATAR;
+    }
+    return logoPath;
+  }
+  
+  // Handle relative paths
+  const baseUrl = API_BASE_URL.replace("/api", "");
+  return `${baseUrl}${logoPath.startsWith("/") ? "" : "/"}${logoPath}`;
 };

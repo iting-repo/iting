@@ -22,13 +22,18 @@ import java.util.Map;
 public class CandidateApplicationController {
 
     private final CandidateApplicationService candidateApplicationService;
+    private final com.iting.jobportal.recommendation.service.InteractionService interactionService;
 
     @PostMapping("/apply")
     @Operation(summary = "Nộp đơn ứng tuyển")
     public ResponseEntity<ApplicationSubmitResponse> applyJob(
             @Parameter(hidden = true) @CurrentUser Long userId,
             @Valid @RequestBody ApplyJobRequest request) {
-        return ResponseEntity.ok(candidateApplicationService.applyJob(userId, request));
+        ApplicationSubmitResponse response = candidateApplicationService.applyJob(userId, request);
+        if (userId != null && request.getJobId() != null) {
+            interactionService.trackInteraction(userId, request.getJobId(), com.iting.jobportal.recommendation.entity.enums.InteractionType.APPLY);
+        }
+        return ResponseEntity.ok(response);
     }
 
     @PostMapping("/{id}/withdraw")

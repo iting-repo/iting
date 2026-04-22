@@ -1,0 +1,12 @@
+@startuml
+participant AISvc
+participant ProfileSvc
+database DB
+
+
+AISvc -> AISvc : parse(fileUrl) ' SELF
+AISvc -> ProfileSvc : upsertExtracted(userId,data) ' sync (callback)
+ProfileSvc -> DB : UPSERT skills/exp/edu ' sync
+DB --> ProfileSvc : ok
+ProfileSvc --> AISvc : ok ' reply
+@enduml

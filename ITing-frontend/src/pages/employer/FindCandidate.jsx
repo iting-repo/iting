@@ -1,57 +1,9 @@
-import React, { useState, useMemo } from "react";
-import { Search, Filter, MapPin, GraduationCap, Briefcase, Clock, ChevronDown, ChevronUp, X, User, Mail, Eye } from "lucide-react";
+import React, { useEffect, useRef, useState } from "react";
+import { Search, Filter, MapPin, GraduationCap, Briefcase, ChevronDown, ChevronUp, X, User } from "lucide-react";
 import { Button, Badge } from "../../components/common";
 // Note: Using standard HTML inputs for complex Shadcn-like components not in common
 import { toast } from "sonner";
-
-// --- Mock Data ---
-const MOCK_CANDIDATES = [
-  {
-    id: 1,
-    name: "Nguyên Văn A",
-    title: "Frontend Developer",
-    level: "Senior",
-    location: "Hà Nội",
-    experience: 5,
-    degree: "Đại học",
-    education: "ĐH Bách Khoa Hà Nội",
-    workType: "FULL_TIME",
-    salaryExpectation: "25-35 triệu",
-    skills: ["ReactJS", "TypeScript", "Next.js", "Tailwind CSS"],
-    summary: "Hơn 5 năm kinh nghiệm phát triển giao diện người dùng chuyên nghiệp...",
-    isAvailable: true
-  },
-  {
-    id: 2,
-    name: "Trần Thị B",
-    title: "Backend Developer",
-    level: "Junior",
-    location: "TP. Hồ Chí Minh",
-    experience: 2,
-    degree: "Đại học",
-    education: "ĐH Khoa học Tự nhiên",
-    workType: "REMOTE",
-    salaryExpectation: "15-20 triệu",
-    skills: ["NodeJS", "Express.js", "MongoDB", "Docker"],
-    summary: "Đam mê xây dựng các hệ thống backend hiệu năng cao...",
-    isAvailable: true
-  },
-  {
-    id: 3,
-    name: "Lê Văn C",
-    title: "Fullstack Developer",
-    level: "Middle",
-    location: "Đà Nẵng",
-    experience: 3,
-    degree: "Đại học",
-    education: "ĐH Đà Nẵng",
-    workType: "FULL_TIME",
-    salaryExpectation: "20-30 triệu",
-    skills: ["Java", "Spring Boot", "ReactJS", "PostgreSQL"],
-    summary: "Có khả năng làm việc độc lập và quản lý dự án nhỏ...",
-    isAvailable: false
-  }
-];
+import { employerCandidateService } from "../../services/employerCandidateService";
 
 const POSITIONS = ["Frontend Developer", "Backend Developer", "Fullstack Developer", "Mobile Developer", "DevOps Engineer"];
 const WORK_TYPES = ["FULL_TIME", "PART_TIME", "CONTRACT", "INTERNSHIP", "REMOTE", "FREELANCE"];
@@ -80,6 +32,7 @@ const SALARY_RANGES = [
 const ITEMS_PER_PAGE = 6;
 
 const FindCandidate = () => {
+  const reqIdRef = useRef(0);
   const [keyword, setKeyword] = useState("");
   const [selectedPosition, setSelectedPosition] = useState("all");
   const [selectedLevel, setSelectedLevel] = useState("all");
@@ -93,52 +46,12 @@ const FindCandidate = () => {
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [skillSearch, setSkillSearch] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
-  const [viewCandidate, setViewCandidate] = useState(null);
+  const [, setViewCandidate] = useState(null);
 
-  const matchesExperience = (exp, range) => {
-    if (range === "all") return true;
-    if (range === "0") return exp === 0;
-    if (range === "10+") return exp >= 10;
-    const [min, max] = range.split("-").map(Number);
-    return exp >= min && exp <= max;
-  };
-
-  const matchesSalary = (salary, range) => {
-    if (range === "all") return true;
-    const nums = salary.match(/\d+/g)?.map(Number) || [];
-    if (nums.length === 0) return true;
-    const avg = nums.reduce((a, b) => a + b, 0) / nums.length;
-    if (range === "50+") return avg >= 50;
-    const [min, max] = range.split("-").map(Number);
-    return avg >= min && avg <= max;
-  };
-
-  const filtered = useMemo(() => {
-    return MOCK_CANDIDATES.filter((c) => {
-      if (keyword) {
-        const kw = keyword.toLowerCase();
-        const match =
-          c.name.toLowerCase().includes(kw) ||
-          c.title.toLowerCase().includes(kw) ||
-          c.skills.some((s) => s.toLowerCase().includes(kw)) ||
-          c.summary.toLowerCase().includes(kw);
-        if (!match) return false;
-      }
-      if (selectedPosition !== "all" && c.title !== selectedPosition) return false;
-      if (selectedLevel !== "all" && c.level !== selectedLevel) return false;
-      if (selectedLocation !== "all" && c.location !== selectedLocation) return false;
-      if (selectedWorkType !== "all" && c.workType !== selectedWorkType) return false;
-      if (!matchesExperience(c.experience, selectedExperience)) return false;
-      if (selectedDegree !== "all" && c.degree !== selectedDegree) return false;
-      if (!matchesSalary(c.salaryExpectation, selectedSalary)) return false;
-      if (selectedSkills.length > 0 && !selectedSkills.some((s) => c.skills.includes(s))) return false;
-      if (onlyAvailable && !c.isAvailable) return false;
-      return true;
-    });
-  }, [keyword, selectedPosition, selectedLevel, selectedLocation, selectedWorkType, selectedExperience, selectedDegree, selectedSalary, selectedSkills, onlyAvailable]);
-
-  const totalPages = Math.ceil(filtered.length / ITEMS_PER_PAGE);
-  const paginated = filtered.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
+  const [candidates, setCandidates] = useState([]);
+  const [totalElements, setTotalElements] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
+  const [loading, setLoading] = useState(false);
 
   const resetFilters = () => {
     setKeyword("");
@@ -153,6 +66,59 @@ const FindCandidate = () => {
     setOnlyAvailable(false);
     setCurrentPage(1);
   };
+
+  useEffect(() => {
+    const reqId = ++reqIdRef.current;
+    const hasKeyword = keyword.trim().length > 0;
+    const debounceMs = hasKeyword ? 400 : 0;
+
+    const timer = setTimeout(async () => {
+      setLoading(true);
+      try {
+        const res = await employerCandidateService.search({
+          keyword,
+          position: selectedPosition,
+          level: selectedLevel,
+          location: selectedLocation,
+          workType: selectedWorkType,
+          experience: selectedExperience,
+          degree: selectedDegree,
+          salary: selectedSalary,
+          skills: selectedSkills,
+          onlyAvailable,
+          page: currentPage - 1,
+          size: ITEMS_PER_PAGE,
+        });
+
+        if (reqId !== reqIdRef.current) return;
+        setCandidates(res?.content || []);
+        setTotalElements(res?.totalElements ?? 0);
+        setTotalPages(res?.totalPages ?? 1);
+      } catch (err) {
+        if (reqId !== reqIdRef.current) return;
+        setCandidates([]);
+        setTotalElements(0);
+        setTotalPages(1);
+        toast.error(err?.message || "Không thể tải danh sách ứng viên");
+      } finally {
+        if (reqId === reqIdRef.current) setLoading(false);
+      }
+    }, debounceMs);
+
+    return () => clearTimeout(timer);
+  }, [
+    keyword,
+    selectedPosition,
+    selectedLevel,
+    selectedLocation,
+    selectedWorkType,
+    selectedExperience,
+    selectedDegree,
+    selectedSalary,
+    selectedSkills,
+    onlyAvailable,
+    currentPage,
+  ]);
 
   const activeFilterCount = [
     selectedPosition !== "all",
@@ -335,12 +301,18 @@ const FindCandidate = () => {
       {/* Results Section */}
       <div className="flex justify-between items-center py-2">
         <p className="text-sm text-gray-500">
-          Tìm thấy <span className="font-bold text-gray-900">{filtered.length}</span> ứng viên
+          {loading ? (
+            <span>Đang tải...</span>
+          ) : (
+            <>
+              Tìm thấy <span className="font-bold text-gray-900">{totalElements}</span> ứng viên
+            </>
+          )}
         </p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {paginated.map((candidate) => (
+        {candidates.map((candidate) => (
           <div
             key={candidate.id}
             className="group bg-white rounded-2xl border border-gray-100 p-6 hover:shadow-xl hover:border-blue-100 transition-all cursor-pointer relative overflow-hidden"
@@ -389,7 +361,7 @@ const FindCandidate = () => {
       </div>
 
       {/* Empty State */}
-      {paginated.length === 0 && (
+      {!loading && candidates.length === 0 && (
           <div className="text-center py-20 bg-white rounded-3xl border border-dashed border-gray-200">
             <div className="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-4">
               <Search className="w-10 h-10 text-gray-300" />

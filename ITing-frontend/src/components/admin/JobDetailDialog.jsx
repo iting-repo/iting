@@ -1,5 +1,6 @@
 import React from "react";
-import { Dialog, Badge } from "../common";
+import Dialog from "../common/Dialog";
+import Badge from "../common/Badge";
 import {
   Briefcase, 
   MapPin, 
@@ -115,34 +116,52 @@ export const JobDetailDialog = ({ job, open, onClose, onAction }) => {
         </div>
 
         <div className="rounded-2xl border border-slate-100 bg-slate-50/60 p-5">
-          <div className="mb-3 flex flex-wrap items-center gap-2">
-            <Badge variant={getAiReviewVariant(aiReview.status)}>
-              {getAiReviewLabel(aiReview.status)}
-            </Badge>
-            {typeof aiReview.score === "number" && (
-              <span className="text-xs font-bold text-slate-500">
-                Điểm rủi ro: {Math.round(aiReview.score * 100)}%
-              </span>
+          <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+            <div className="flex items-center gap-2">
+              <Badge variant={getAiReviewVariant(aiReview.status)}>
+                {getAiReviewLabel(aiReview.status)}
+              </Badge>
+              {typeof aiReview.score === "number" && (
+                <span className="text-xs font-bold text-slate-500">
+                  Điểm rủi ro: {Math.round(aiReview.score * 100)}%
+                </span>
+              )}
+            </div>
+            <div className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-widest text-slate-400">
+              <ShieldCheck className="h-4 w-4 text-sky-500" />
+              Kết quả AI
+            </div>
+          </div>
+
+          <div className="relative overflow-hidden rounded-xl bg-white p-4 shadow-sm border border-slate-100">
+            <div className="absolute top-0 right-0 p-2 opacity-5">
+              <ShieldCheck className="h-12 w-12" />
+            </div>
+            
+            <p className="text-sm leading-relaxed text-slate-700 whitespace-pre-line font-medium italic">
+              {getAiReviewSummary(job)}
+            </p>
+
+            {aiReview.sensitiveTerms.length > 0 && (
+              <div className="mt-3 flex flex-wrap gap-2">
+                {aiReview.sensitiveTerms.map((term) => (
+                  <Badge key={term} variant="danger" className="rounded-md">
+                    {term}
+                  </Badge>
+                ))}
+              </div>
             )}
           </div>
-          <p className="text-sm leading-relaxed text-slate-600">
-            {getAiReviewSummary(job)}
-          </p>
-          {aiReview.sensitiveTerms.length > 0 && (
-            <div className="mt-3 flex flex-wrap gap-2">
-              {aiReview.sensitiveTerms.map((term) => (
-                <Badge key={term} variant="danger" className="rounded-md">
-                  {term}
-                </Badge>
-              ))}
-            </div>
-          )}
+
           {(aiReview.cleanedTitle || aiReview.cleanedDescription) && (
-            <div className="mt-4 rounded-xl bg-white p-4 text-sm text-slate-600">
-              <p className="mb-1 font-bold text-slate-800">Bản AI đề xuất sau khi làm sạch</p>
-              {aiReview.cleanedTitle && <p>{aiReview.cleanedTitle}</p>}
+            <div className="mt-4 rounded-xl bg-emerald-50/30 p-4 text-sm text-slate-600 border border-emerald-100">
+              <p className="mb-1 font-bold text-emerald-800 flex items-center gap-2">
+                <CheckCircle2 className="h-4 w-4" />
+                Bản AI đề xuất sau khi làm sạch
+              </p>
+              {aiReview.cleanedTitle && <p className="font-semibold">{aiReview.cleanedTitle}</p>}
               {aiReview.cleanedDescription && (
-                <p className="mt-2 whitespace-pre-line">{aiReview.cleanedDescription}</p>
+                <p className="mt-2 whitespace-pre-line text-slate-600 italic">"{aiReview.cleanedDescription}"</p>
               )}
             </div>
           )}

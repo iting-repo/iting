@@ -26,9 +26,19 @@ export const RowActionMenu = ({ company, onViewDetail, onAction, openMenuId, set
     const updatePosition = () => {
       if (buttonRef.current) {
         const rect = buttonRef.current.getBoundingClientRect();
+        const menuWidth = 224;
+        const menuHeight = 320;
+        const gap = 8;
+        const left = Math.min(
+          Math.max(gap, rect.right - menuWidth),
+          window.innerWidth - menuWidth - gap
+        );
+        const opensBelow = rect.bottom + gap + menuHeight <= window.innerHeight;
+        const top = opensBelow ? rect.bottom + gap : rect.top - menuHeight - gap;
+
         setPosition({
-          top: rect.bottom + 8,
-          left: rect.right - 224, // 224 = w-56
+          top: Math.max(gap, top),
+          left,
         });
       }
     };

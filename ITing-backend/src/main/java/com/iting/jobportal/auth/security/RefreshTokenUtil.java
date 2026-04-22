@@ -13,10 +13,10 @@ import java.util.UUID;
 @Component
 public class RefreshTokenUtil {
 
-    @Value("${jwt.refresh.secret}")
+    @Value("${jwt.refresh.secret:iting-portal-refresh-secret-key-must-be-at-least-32-characters-long}")
     private String REFRESH_SECRET;
 
-    @Value("${jwt.refresh.expiration}")
+    @Value("${jwt.refresh.expiration:604800000}") // 7 days
     private long REFRESH_EXPIRATION;
 
     private SecretKey getRefreshSigningKey() {

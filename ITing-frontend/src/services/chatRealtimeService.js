@@ -14,7 +14,7 @@ class ChatRealtimeService {
     }
 
     this.client = new Client({
-      webSocketFactory: () => new SockJS('http://localhost:8081/ws'),
+      webSocketFactory: () => new SockJS('http://localhost:8080/ws'),
       connectHeaders: token ? { Authorization: `Bearer ${token}` } : {},
       reconnectDelay: 4000,
       heartbeatIncoming: 10000,

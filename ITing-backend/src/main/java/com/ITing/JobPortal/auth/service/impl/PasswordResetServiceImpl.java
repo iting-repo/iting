@@ -1,11 +1,14 @@
 package com.iting.jobportal.auth.service.impl;
 
+import com.iting.jobportal.auth.entity.OtpCode;
 import com.iting.jobportal.auth.entity.PasswordResetToken;
+import com.iting.jobportal.auth.repository.OtpCodeRepository;
 import com.iting.jobportal.auth.repository.PasswordResetTokenRepository;
 import com.iting.jobportal.auth.repository.AccountRepository;
 import com.iting.jobportal.auth.entity.Account;
 import com.iting.jobportal.auth.service.PasswordResetService;
 import com.iting.jobportal.common.service.EmailService;
+import com.iting.jobportal.common.service.EmailTemplateService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -22,60 +25,67 @@ import java.util.UUID;
 public class PasswordResetServiceImpl implements PasswordResetService {
 
     private final AccountRepository accountRepository;
-    private final PasswordResetTokenRepository tokenRepository;
+    private final OtpCodeRepository otpCodeRepository;
     private final PasswordEncoder passwordEncoder;
     private final EmailService emailService;
-
-    @Value("${app.frontend.url:http://localhost:3000}")
-    private String frontendUrl;
+    private final EmailTemplateService emailTemplateService;
 
     @Override
+    @Transactional
     public void createPasswordResetToken(String email) {
-        accountRepository.findByEmail(email).ifPresent(account -> {
+        String normalizedEmail = email.trim().toLowerCase();
+        accountRepository.findByEmail(normalizedEmail).ifPresent(account -> {
             try {
-                String token = UUID.randomUUID().toString();
+                String otp = String.format("%06d", (int) (Math.random() * 1000000));
+                
+                // Clear old OTPs for reset
+                otpCodeRepository.deleteByEmail(normalizedEmail);
 
-                PasswordResetToken prt = PasswordResetToken.builder()
-                        .token(token)
-                        .account(account)
-                        .expiresAt(LocalDateTime.now().plusHours(1))
-                        .used(false)
+                OtpCode otpCode = OtpCode.builder()
+                        .email(normalizedEmail)
+                        .code(otp)
+                        .expiryTime(LocalDateTime.now().plusMinutes(10))
+                        .isVerification(false) // false indicates RESET_PASSWORD
                         .build();
 
-                tokenRepository.save(prt);
+                otpCodeRepository.save(otpCode);
 
-                String resetUrl = frontendUrl + "/reset-password?token=" + token;
-                String subject = "[ITing] Đặt lại mật khẩu";
-                String body = "Chào bạn,\n\n" +
-                        "Vui lòng nhấn liên kết sau để đặt lại mật khẩu (hết hạn trong 1 giờ):\n\n" +
-                        resetUrl + "\n\n" +
-                        "Nếu bạn không yêu cầu đặt lại mật khẩu, vui lòng bỏ qua email này.";
+                String subject = "[ITing] Mã xác thực đặt lại mật khẩu";
+                String htmlContent = emailTemplateService.getOtpTemplate(normalizedEmail, otp, "RESET_PASSWORD");
 
-                emailService.sendEmail(account.getEmail(), subject, body);
-                log.info("Password reset token created and email sent to {}", account.getEmail());
+                emailService.sendHtmlEmail(normalizedEmail, subject, htmlContent);
+                log.info("Password reset OTP created and email sent to {}", normalizedEmail);
             } catch (Exception e) {
-                log.error("Failed to create password reset token for {}: {}", email, e.getMessage());
+                log.error("Failed to create password reset OTP for {}: {}", normalizedEmail, e.getMessage());
             }
         });
-        // If account not found, do nothing to avoid exposing account existence
     }
 
     @Override
     @Transactional
-    public void resetPassword(String token, String newPassword) {
-        PasswordResetToken prt = tokenRepository.findByToken(token)
-                .orElseThrow(() -> new RuntimeException("Invalid or expired token"));
+    public void resetPassword(String email, String otpCode, String newPassword) {
+        String normalizedEmail = email.trim().toLowerCase();
+        OtpCode storedOtp = otpCodeRepository.findTopByEmailAndIsVerificationOrderByExpiryTimeDesc(normalizedEmail, false)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy mã xác thực cho email: " + normalizedEmail));
 
-        if (prt.isUsed() || prt.getExpiresAt().isBefore(LocalDateTime.now())) {
-            throw new RuntimeException("Invalid or expired token");
+        if (!storedOtp.getCode().equals(otpCode.trim())) {
+            throw new RuntimeException("Mã xác thực không chính xác");
         }
 
-        Account account = prt.getAccount();
+        if (storedOtp.getExpiryTime().isBefore(LocalDateTime.now())) {
+            throw new RuntimeException("Mã xác thực đã hết hạn");
+        }
+
+        Account account = accountRepository.findByEmail(normalizedEmail)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy tài khoản"));
+
+        // Update password
         account.setPasswordHash(passwordEncoder.encode(newPassword));
         accountRepository.save(account);
 
-        prt.setUsed(true);
-        tokenRepository.save(prt);
-        log.info("Password reset successful for account {}", account.getEmail());
+        // Clear OTP after success
+        otpCodeRepository.deleteByEmail(normalizedEmail);
+        
+        log.info("Password reset successful via OTP for account {}", normalizedEmail);
     }
 }

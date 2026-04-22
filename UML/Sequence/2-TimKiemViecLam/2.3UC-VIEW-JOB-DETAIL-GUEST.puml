@@ -1,0 +1,19 @@
+@startuml
+actor Guest
+participant FE
+participant JobSvc
+participant CompanySvc
+database DB
+
+
+Guest -> FE : Click Job title
+FE -> JobSvc : getJob(jobId)
+JobSvc -> DB : SELECT job by id (+ requirements)
+DB --> JobSvc : job
+JobSvc --> FE : job detail
+FE -> CompanySvc : getCompanySummary(companyId)
+CompanySvc -> DB : SELECT company basic
+DB --> CompanySvc : info
+CompanySvc --> FE : info
+FE --> Guest : Trang chi tiết job + công ty
+@enduml

@@ -1,0 +1,18 @@
+@startuml
+actor Candidate
+participant FE
+participant CDN
+participant ProfileSvc
+database DB
+
+
+Candidate -> FE : Thêm Portfolio (file/link)
+opt file
+FE -> CDN : upload(file)
+CDN --> FE : fileUrl
+end
+FE -> ProfileSvc : addPortfolio(userId, url/desc)
+ProfileSvc -> DB : INSERT portfolio
+DB --> ProfileSvc : ok
+ProfileSvc --> FE : success
+@enduml

@@ -16,6 +16,7 @@ import {
   FaArrowUp,
   FaChevronRight,
   FaRegCircle,
+  FaHeart,
 } from "react-icons/fa";
 import { useDispatch, useSelector } from "react-redux";
 import { logout } from "../../store/auth/authSlice";
@@ -96,6 +97,11 @@ const EmployerSidebar = () => {
       path: "/employer/find-cv",
       name: "Tìm kiếm ứng viên",
       icon: <FaSearch />,
+    },
+    {
+      path: "/employer/favorite-candidates",
+      name: "Ứng viên yêu thích",
+      icon: <FaHeart />,
     },
   ];
 

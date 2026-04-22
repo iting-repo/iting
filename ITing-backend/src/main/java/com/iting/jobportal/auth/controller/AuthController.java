@@ -22,10 +22,13 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import java.util.Map;
 
+import lombok.extern.slf4j.Slf4j;
+
 @Tag(name ="01. Auth")
 @RestController
 @RequestMapping("/api/auth")
 @RequiredArgsConstructor
+@Slf4j
 public class AuthController {
 
     private final AuthService authService;
@@ -34,6 +37,26 @@ public class AuthController {
     @PostMapping("/register")
     public Account register(@Valid @RequestBody RegisterRequest request) {
         return authService.register(request);
+    }
+
+    @PostMapping("/verify-otp")
+    public ResponseEntity<?> verifyOtp(@RequestBody Map<String, String> request) {
+        try {
+            String email = request.get("email");
+            String code = request.get("code");
+            log.info("Verifying OTP for email: {}", email);
+            authService.verifyOtp(email, code);
+            return ResponseEntity.ok(Map.of("message", "Xác thực tài khoản thành công! Vui lòng đăng nhập."));
+        } catch (Exception e) {
+            log.error("OTP Verification failed: {}", e.getMessage(), e);
+            throw e;
+        }
+    }
+
+    @PostMapping("/resend-otp")
+    public ResponseEntity<?> resendOtp(@RequestBody Map<String, String> request) {
+        authService.resendOtp(request.get("email"));
+        return ResponseEntity.ok(Map.of("message", "Mã OTP mới đã được gửi"));
     }
 
     @PostMapping("/login")
@@ -61,8 +84,8 @@ public class AuthController {
 
     @PostMapping("/reset-password")
     public ResponseEntity<?> resetPassword(@Valid @RequestBody ResetPasswordRequest request) {
-        passwordResetService.resetPassword(request.getToken(), request.getNewPassword());
-        return ResponseEntity.ok(Map.of("message", "Mật khẩu đã được đặt lại"));
+        passwordResetService.resetPassword(request.getEmail(), request.getOtpCode(), request.getNewPassword());
+        return ResponseEntity.ok(Map.of("message", "Mật khẩu đã được đặt lại thành công"));
     }
     
     @GetMapping("/me")

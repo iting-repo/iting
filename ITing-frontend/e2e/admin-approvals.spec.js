@@ -1,66 +1,36 @@
 const { test, expect } = require('@playwright/test');
+const { mockAdminApis, setAdminSession } = require('./helpers/mock-api');
 
-test.describe('Admin Approval Management Page', () => {
-    
-    test.beforeEach(async ({ page }) => {
-        // 1. Đi tới trang đăng nhập
-        await page.goto('/login');
-        
-        // 2. QUAN TRỌNG: Chọn Tab "Quản trị viên"
-        await page.getByRole('button', { name: /Quản trị viên/i }).click();
-        await page.waitForTimeout(500); // Đợi UI chuyển đổi
+test.describe('Trang admin duyệt dữ liệu', () => {
+  test.beforeEach(async ({ page }) => {
+    await setAdminSession(page);
+    await mockAdminApis(page);
+  });
 
-        // 3. Điền thông tin đăng nhập
-        await page.locator('input[type="email"]').fill('admin@iting.com'); 
-        await page.locator('input[type="password"]').fill('123456');
-        
-        // 4. Bấm đăng nhập và đợi quá trình điều hướng vào vùng Admin
-        await Promise.all([
-            page.waitForURL(/.*admin/), 
-            page.locator('button[type="submit"]').click(),
-        ]);
+  test('hiển thị thống kê và danh sách tin chờ duyệt', async ({ page }) => {
+    await page.goto('/admin/jobs');
 
-        // 5. Truy cập trang Approvals
-        await page.goto('/admin/approvals');
-        await page.waitForLoadState('networkidle');
-    });
+    await expect(page.getByText('Backend Engineer')).toBeVisible();
+    await expect(page.getByText(/Chờ duyệt|Ch.*duy/i).first()).toBeVisible();
+    await expect(page.getByText(/AI đạt|AI dat/i).first()).toBeVisible();
+  });
 
-    test('should display approval statistics cards', async ({ page }) => {
-        // Kiểm tra tiêu đề trang (hoặc các card thống kê)
-        await expect(page.getByText('Bài đăng chờ duyệt')).toBeVisible();
-        await expect(page.getByText('Hồ sơ chờ duyệt')).toBeVisible();
-        await expect(page.getByText('Đã duyệt hôm nay')).toBeVisible();
-    });
+  test('hiển thị thống kê và danh sách công ty chờ duyệt', async ({ page }) => {
+    await page.goto('/admin/companies');
 
-    test('should display pending jobs table with actions', async ({ page }) => {
-        // Kiểm tra bảng Duyệt bài đăng tuyển dụng
-        const jobTable = page.locator('div:has-text("Duyệt bài đăng tuyển dụng")').first();
-        await expect(jobTable).toBeVisible();
+    await expect(page.getByText('ITing Software')).toBeVisible();
+    await expect(page.getByText(/CHỜ DUYỆT|CHO DUYET/i).first()).toBeVisible();
+    await expect(page.locator('table tbody tr')).toHaveCount(2);
+  });
 
-        // Kiểm tra sự tồn tại của các dòng dữ liệu (Dựa trên mock data trong code)
-        await expect(page.getByText('Kỹ sư phần mềm cấp cao')).toBeVisible();
-        await expect(page.getByText('TechCorp Inc.')).toBeVisible();
+  test('cho phép mở hành động duyệt tin tuyển dụng', async ({ page }) => {
+    await page.goto('/admin/jobs');
 
-        // Kiểm tra các nút thao tác trên một dòng
-        const firstRowActions = page.locator('tr').filter({ hasText: 'Kỹ sư phần mềm cấp cao' }).locator('td').last();
-        await expect(firstRowActions.locator('button[title="Xem chi tiết"]')).toBeVisible();
-        await expect(firstRowActions.locator('button[title="Duyệt"]')).toBeVisible();
-        await expect(firstRowActions.locator('button[title="Từ chối"]')).toBeVisible();
-    });
+    await page.locator('table tbody tr').first().locator('button').last().click();
+    await page.locator('.fixed.z-\\[300\\] button').filter({ hasText: /Ph.*duy/i }).click();
 
-    test('should display pending companies table with actions', async ({ page }) => {
-        // Kiểm tra bảng Duyệt hồ sơ công ty
-        const companyTable = page.locator('div:has-text("Duyệt hồ sơ công ty")').first();
-        await expect(companyTable).toBeVisible();
-    });
-
-    test('should allow approving a job from the table', async ({ page }) => {
-        // Click nút Duyệt của tin tuyển dụng đầu tiên
-        const approveButton = page.locator('button[title="Duyệt"]').first();
-        await approveButton.click();
-
-        // Ghi chú: Nếu có xử lý API thật, ta sẽ kiểm tra Toast hoặc sự thay đổi của dòng.
-        // Hiện tại code đang dùng Mock nên ta kiểm tra hành động click thành công.
-        console.log('Clicked Approve button successfully');
-    });
+    const dialog = page.locator('.fixed.inset-0').last();
+    await expect(dialog).toBeVisible();
+    await expect(dialog).toContainText(/Duyệt|Duyet/i);
+  });
 });

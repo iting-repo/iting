@@ -56,6 +56,12 @@ public class UserSavedJobServiceImpl implements UserSavedJobService {
         return userSaveJobRepository.countByUserId(userId);
     }
 
+    @Override
+    @Transactional(readOnly = true)
+    public java.util.List<Long> getSavedJobIds(Long userId) {
+        return userSaveJobRepository.findAllJobIdByUserId(userId);
+    }
+
     private SavedJobResponse toResponse(UserSaveJob saved) {
         Job job = jobRepository.findById(saved.getJobId())
                 .orElse(null);

@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, useParams } from 'react-router-dom';
 import { JobFilters, JobCard, JobPromo } from '../../components';
 import { FaChevronRight, FaChevronLeft } from 'react-icons/fa';
 import { fetchJobsRequest } from '../../store/job/jobSlice';
@@ -32,41 +32,41 @@ const normalizeSort = (value) => {
 };
 
 const formatSalary = (min, max) => {
-    if (!min && !max) return 'Thoa thuan';
+    if (!min && !max) return 'Thỏa thuận';
     const toText = (value) => Number(value).toLocaleString('vi-VN') + ' VND';
     if (min && max) return `${toText(min)} - ${toText(max)}`;
-    if (min) return `Tu ${toText(min)}`;
-    return `Den ${toText(max)}`;
+    if (min) return `Từ ${toText(min)}`;
+    return `Đến ${toText(max)}`;
 };
 
 const timeAgo = (dateString) => {
-    if (!dateString) return 'Moi dang';
+    if (!dateString) return 'Mới đăng';
     const date = new Date(dateString);
     const seconds = Math.floor((Date.now() - date.getTime()) / 1000);
     const intervals = [
-        { sec: 31536000, label: 'nam truoc' },
-        { sec: 2592000, label: 'thang truoc' },
-        { sec: 86400, label: 'ngay truoc' },
-        { sec: 3600, label: 'gio truoc' },
-        { sec: 60, label: 'phut truoc' },
+        { sec: 31536000, label: 'năm trước' },
+        { sec: 2592000, label: 'tháng trước' },
+        { sec: 86400, label: 'ngày trước' },
+        { sec: 3600, label: 'giờ trước' },
+        { sec: 60, label: 'phút trước' },
     ];
 
     for (const item of intervals) {
         const amount = Math.floor(seconds / item.sec);
         if (amount > 0) return `${amount} ${item.label}`;
     }
-    return 'Vua xong';
+    return 'Vừa xong';
 };
 
 const mapJobToCard = (job) => ({
     id: job.id,
-    title: job.title || job.position || 'Vi tri tuyen dung',
-    company: job.companyName || 'Cong ty',
+    title: job.title || job.position || 'Vị trí tuyển dụng',
+    company: job.companyName || 'Công ty',
     logo: job.companyLogo || 'https://via.placeholder.com/80',
     category: (job.techRequired && job.techRequired[0]) || (job.experienceLevel || 'IT'),
     type: job.jobType || 'FULL_TIME',
     salary: formatSalary(job.minSalary, job.maxSalary),
-    location: job.location || job.province || 'Viet Nam',
+    location: job.location || job.province || 'Việt Nam',
     timePosted: timeAgo(job.lastUpdate || job.createdAt),
 });
 
@@ -132,11 +132,16 @@ const JobPage = () => {
             .catch(() => setProvinces([]));
     }, []);
 
+    const { keyword: pathKeyword } = useParams();
+
     useEffect(() => {
-        const parsed = filtersFromQuery(searchParams);
+        let parsed = filtersFromQuery(searchParams);
+        if (pathKeyword) {
+            parsed.keyword = pathKeyword;
+        }
         setFilters(parsed);
         dispatch(fetchJobsRequest(compactParams(parsed)));
-    }, [dispatch]);
+    }, [dispatch, pathKeyword, searchParams]);
 
     const currentPage = filters.page + 1;
     const totalPages = Math.max(1, Math.ceil(totalJobs / PAGE_SIZE));
@@ -215,7 +220,7 @@ const JobPage = () => {
                     <div className="lg:col-span-9 space-y-6">
                         <div className="flex flex-col md:flex-row justify-between items-center bg-white p-4 rounded-lg border border-gray-100">
                             <span className="text-gray-500 text-sm mb-2 md:mb-0">
-                                Hien thi <span className="font-bold text-gray-800">{start}-{end}</span> trong tong so <span className="font-bold text-gray-800">{totalJobs}</span> ket qua
+                                Hiển thị <span className="font-bold text-gray-800">{start}-{end}</span> trong tổng số <span className="font-bold text-gray-800">{totalJobs}</span> kết quả
                             </span>
                             <div className="flex items-center gap-2">
                                 <select
@@ -223,22 +228,22 @@ const JobPage = () => {
                                     onChange={handleSortChange}
                                     className="bg-white border border-gray-200 text-gray-700 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2"
                                 >
-                                    <option value="lastUpdate">Moi cap nhat</option>
-                                    <option value="createdAt">Dang gan day</option>
-                                    <option value="salary">Luong cao nhat</option>
+                                    <option value="lastUpdate">Mới cập nhật</option>
+                                    <option value="createdAt">Đăng gần đây</option>
+                                    <option value="salary">Lương cao nhất</option>
                                 </select>
                             </div>
                         </div>
 
                         {isLoading ? (
-                            <div className="bg-white rounded-xl border border-gray-100 p-8 text-center text-gray-500">Dang tai danh sach viec lam...</div>
+                            <div className="bg-white rounded-xl border border-gray-100 p-8 text-center text-gray-500">Đang tải danh sách việc làm...</div>
                         ) : (
                             <div className="space-y-4">
                                 {cardJobs.length > 0 ? (
                                     cardJobs.map((job) => <JobCard key={job.id} job={job} />)
                                 ) : (
                                     <div className="bg-white rounded-xl border border-gray-100 p-8 text-center text-gray-500">
-                                        Khong tim thay cong viec phu hop bo loc.
+                                        Không tìm thấy công việc phù hợp bộ lọc.
                                     </div>
                                 )}
                             </div>
@@ -260,7 +265,7 @@ const JobPage = () => {
                                 disabled={currentPage >= totalPages}
                                 className="h-10 px-4 flex items-center gap-1 rounded-lg bg-white border border-gray-200 text-gray-600 hover:bg-gray-50 transition-colors font-medium disabled:opacity-50"
                             >
-                                Tiep <FaChevronRight size={12} />
+                                Tiếp <FaChevronRight size={12} />
                             </button>
                         </div>
                     </div>

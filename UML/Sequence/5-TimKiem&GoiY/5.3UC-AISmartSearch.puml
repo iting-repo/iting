@@ -1,0 +1,17 @@
+@startuml
+actor Candidate
+participant FE
+participant AISvc
+participant JobSvc
+database DB
+
+
+Candidate -> FE : Tìm việc thông minh
+FE -> AISvc : matchByCV(userId) ' sync
+AISvc -> DB : read extracted profile ' sync
+AISvc -> JobSvc : fetchOpenJobs() ' sync
+JobSvc -> DB : SELECT active jobs ' sync
+DB --> JobSvc : jobs
+AISvc -> AISvc : score(userProfile,jobs) ' SELF
+AISvc --> FE : rankedJobs ' reply
+@enduml

@@ -10,6 +10,11 @@ const applicationService = {
         const response = await axiosInstance.get(`/employer/applications/job/${jobKey}`, { params });
         return response;
     },
+    
+    searchEmployerApplications: async (params) => {
+        const response = await axiosInstance.get('/employer/applications/search', { params });
+        return response;
+    },
 
     acceptApplication: async (id, note = "") => {
         const response = await axiosInstance.post(`/employer/applications/${id}/accept`, null, {
@@ -36,7 +41,17 @@ const applicationService = {
     checkApplied: async (jobId) => {
         const response = await axiosInstance.get(`/candidates/applications/check/${jobId}`);
         return response;
-    }
+    },
+
+    getEmployerStats: async () => {
+        const response = await axiosInstance.get('/employer/applications/stats');
+        return response;
+    },
+
+    getMyApplications: async (params) => {
+        const response = await axiosInstance.get('/candidates/applications/my-applications', { params });
+        return response;
+    },
 };
 
 export default applicationService;

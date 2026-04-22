@@ -1,7 +1,7 @@
 import React from 'react';
 import { FaArrowUp, FaArrowDown } from 'react-icons/fa';
 
-const StatsCard = ({ title, value, icon, percentage, isIncrease }) => {
+const StatsCard = ({ title, value, icon, percentage = "0", isIncrease = true, footerLabel }) => {
   return (
     <div className="bg-white p-6 rounded-2xl shadow-sm hover:shadow-md transition-shadow">
       <div className="flex items-start justify-between mb-4">
@@ -19,7 +19,7 @@ const StatsCard = ({ title, value, icon, percentage, isIncrease }) => {
             {isIncrease ? <FaArrowUp size={10} /> : <FaArrowDown size={10} />}
             {percentage}%
          </span>
-         <span className="text-gray-400">Up from yesterday</span>
+         <span className="text-gray-400">{footerLabel || "Up from yesterday"}</span>
       </div>
     </div>
   );

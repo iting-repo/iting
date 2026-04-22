@@ -21,6 +21,7 @@ import java.util.Map;
 public class UserSavedJobController {
 
     private final UserSavedJobService userSavedJobService;
+    private final com.iting.jobportal.recommendation.service.InteractionService interactionService;
 
     @GetMapping
     @Operation(summary = "Get saved jobs list (paginated)")
@@ -38,6 +39,9 @@ public class UserSavedJobController {
             @CurrentUser Long userId,
             @PathVariable Long jobId) {
         userSavedJobService.saveJob(userId, jobId);
+        if (userId != null) {
+            interactionService.trackInteraction(userId, jobId, com.iting.jobportal.recommendation.entity.enums.InteractionType.SAVE);
+        }
         return ResponseEntity.ok(Map.of("message", "Job saved successfully"));
     }
 
@@ -63,5 +67,12 @@ public class UserSavedJobController {
     public ResponseEntity<Map<String, Long>> countSavedJobs(
             @CurrentUser Long userId) {
         return ResponseEntity.ok(Map.of("count", userSavedJobService.countSavedJobs(userId)));
+    }
+
+    @GetMapping("/ids")
+    @Operation(summary = "Get all saved job IDs")
+    public ResponseEntity<java.util.List<Long>> getSavedJobIds(
+            @CurrentUser Long userId) {
+        return ResponseEntity.ok(userSavedJobService.getSavedJobIds(userId));
     }
 }

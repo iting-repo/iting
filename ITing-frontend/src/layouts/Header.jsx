@@ -7,6 +7,7 @@ import chatRealtimeService from '../services/chatRealtimeService';
 import { formatChatTime, sortConversationsForInbox } from '../utils/chatFormat';
 import ChatDockBox from '../components/chat/ChatDockBox';
 import notificationService from '../services/notificationService';
+import { CompanyLogo } from '../components/common';
 import { formatDistanceToNowStrict, parseISO } from 'date-fns';
 import { BsBell, BsEnvelope } from 'react-icons/bs';
 import { FaChevronDown, FaSignOutAlt, FaBuilding, FaLayerGroup, FaFileAlt, FaHistory, FaHeart, FaCog } from 'react-icons/fa';
@@ -17,10 +18,9 @@ const Header = () => {
   const location = useLocation();
   const { currentUser } = useSelector((state) => state.auth);
   const role = currentUser ? currentUser.role : 'guest';
-  const user = currentUser || null;
-
-  const displayName = user?.name || user?.fullName || user?.companyName || user?.email || 'Nguoi dung';
-  const displayAvatar = user?.avatar || user?.avatarUrl || user?.logoUrl || '';
+  const user = currentUser ? currentUser : null;
+  const displayName = user?.name || user?.fullName || user?.companyName || user?.email || 'Người dùng';
+  const displayAvatar = user?.avatar || user?.avatarUrl || user?.logoUrl || user?.companyLogo || '';
   const initial = displayName?.charAt(0)?.toUpperCase() || 'U';
 
   const [isNotifOpen, setIsNotifOpen] = useState(false);
@@ -74,9 +74,22 @@ const Header = () => {
 
   useEffect(() => {
     const handleClickOutside = (event) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) setIsDropdownOpen(false);
-      if (messageDropdownRef.current && !messageDropdownRef.current.contains(event.target)) setIsMessagesOpen(false);
-      if (notifRef.current && !notifRef.current.contains(event.target)) setIsNotifOpen(false);
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setIsDropdownOpen(false);
+      }
+      if (messageDropdownRef.current && !messageDropdownRef.current.contains(event.target)) {
+        setIsMessagesOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (notifRef.current && !notifRef.current.contains(event.target)) {
+        setIsNotifOpen(false);
+      }
     };
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
@@ -207,6 +220,58 @@ const Header = () => {
     }
   };
 
+  useEffect(() => {
+    if (role === 'guest') {
+      chatRealtimeService.disconnect();
+      setRecentConversations([]);
+      setUnreadMessageCount(0);
+      return;
+    }
+
+    let cancelled = false;
+
+    const loadMessages = async () => {
+      try {
+        const [conversationData, unreadData] = await Promise.all([
+          messageService.getConversations({ page: 0, size: 12 }),
+          messageService.getUnreadCount(),
+        ]);
+
+        if (cancelled) return;
+        const sorted = sortConversationsForInbox(conversationData?.conversations || []);
+        setRecentConversations(sorted);
+        setUnreadMessageCount(unreadData?.unreadCount || 0);
+      } catch {
+        if (!cancelled) {
+          setRecentConversations([]);
+          setUnreadMessageCount(0);
+        }
+      }
+    };
+
+    loadMessages();
+    const intervalId = setInterval(loadMessages, 15000);
+
+    return () => {
+      cancelled = true;
+      clearInterval(intervalId);
+    };
+  }, [role, user]);
+
+  useEffect(() => {
+    if (role === 'guest') return;
+    const token = localStorage.getItem('access_token');
+    chatRealtimeService.connect(token);
+
+    chatRealtimeService.subscribe('/topic/messages', 'header-topic-messages', (msg) => {
+      updateRecentOnIncomingMessage(msg);
+    });
+
+    return () => {
+      chatRealtimeService.unsubscribe('header-topic-messages');
+    };
+  }, [role, currentUser?.userId, currentUser?.companyId]);
+
   const topConversations = sortConversationsForInbox(recentConversations).slice(0, 4);
 
   const handleOpenQuickChat = async (conversation) => {
@@ -227,10 +292,6 @@ const Header = () => {
       ? { ...item, lastMessageContent: message.content, lastMessageTime: message.createdAt }
       : item)));
   };
-
-  const linkClass = 'text-gray-300 hover:text-white font-medium transition-colors duration-200 text-sm md:text-base';
-  const activeClass = 'text-white font-bold text-sm md:text-base';
-  const isActive = (path) => (location.pathname === path ? activeClass : linkClass);
 
   const renderNavLinks = () => {
     if (role === 'CANDIDATE') {
@@ -291,69 +352,107 @@ const Header = () => {
 
   return (
     <>
-      <header className="bg-black text-white h-20 sticky top-0 z-40 shadow-md">
-        <div className="container mx-auto px-12 h-full flex items-center justify-between">
-          <Link to={role === 'EMPLOYER' ? '/employer/dashboard' : '/'} className="flex items-center gap-2 select-none group">
-            <img src="/assets/logo.png" alt="ITing Logo" className="h-10 w-auto object-contain transition-transform group-hover:scale-105" />
-          </Link>
+    <header className="bg-black text-white h-20 sticky top-0 z-40 shadow-md">
+      <div className="container mx-auto px-12 h-full flex items-center justify-between">
+        <Link to={role === 'EMPLOYER' ? '/employer/dashboard' : '/'} className="flex items-center gap-2 select-none group">
+          <img 
+            src="/assets/logo.png" 
+            alt="ITing Logo" 
+            className="h-14 w-auto object-contain transition-all duration-500 group-hover:scale-110 group-hover:drop-shadow-[0_0_15px_rgba(58,180,230,0.6)]" 
+          />
+        </Link>
 
           <nav className="hidden md:flex items-center gap-8">{renderNavLinks()}</nav>
 
-          <div className="flex items-center gap-4">
-            {role === 'guest' ? (
-              <>
-                <Link to="/login" className="hidden md:block text-white font-medium hover:text-gray-300 transition-colors">Dang nhap</Link>
-                <Link to="/register" className="bg-[#3AB4E6] hover:bg-blue-600 text-white px-5 py-2.5 rounded-lg font-bold transition-all shadow-lg shadow-blue-500/20 text-sm">Dang Ky</Link>
-              </>
-            ) : (
-              <>
-                <div className="relative flex items-center gap-3 mr-2" ref={messageDropdownRef}>
-                  <button onClick={() => setIsMessagesOpen((prev) => !prev)} className="w-10 h-10 rounded-full bg-gray-800 hover:bg-gray-700 flex items-center justify-center transition-colors relative">
+        <div className="flex items-center gap-4">
+          {role === 'guest' ? (
+            <>
+              <Link to="/login" className="hidden md:block text-white font-medium hover:text-gray-300 transition-colors">
+                Đăng nhập
+              </Link>
+              <Link to="/register" className="bg-[#3AB4E6] hover:bg-blue-600 text-white px-5 py-2.5 rounded-lg font-bold transition-all shadow-lg shadow-blue-500/20 text-sm">
+                Đăng Ký
+              </Link>
+            </>
+          ) : (
+            <>
+              <div className="flex items-center gap-3 mr-2">
+                {/* Messages Dropdown */}
+                <div className="relative flex items-center" ref={messageDropdownRef}>
+                  <button
+                    onClick={() => setIsMessagesOpen((prev) => !prev)}
+                    className="w-10 h-10 rounded-full bg-gray-800 hover:bg-gray-700 flex items-center justify-center transition-colors relative"
+                  >
                     <BsEnvelope className="text-lg" />
-                    {unreadMessageCount > 0 && (
-                      <span className="absolute -top-1 -right-1 min-w-5 h-5 px-1 rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center">{unreadMessageCount > 99 ? '99+' : unreadMessageCount}</span>
-                    )}
+                    {unreadMessageCount > 0 ? (
+                      <span className="absolute -top-1 -right-1 min-w-5 h-5 px-1 rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center">
+                        {unreadMessageCount > 99 ? '99+' : unreadMessageCount}
+                      </span>
+                    ) : null}
                   </button>
-
                   {isMessagesOpen && (
-                    <div className="absolute top-14 right-14 w-[360px] max-w-[calc(100vw-16px)] bg-white text-gray-800 rounded-2xl border border-gray-100 shadow-2xl overflow-hidden z-[120]">
+                    <div className="absolute top-14 right-0 w-[360px] max-w-[calc(100vw-16px)] bg-white text-gray-800 rounded-2xl border border-gray-100 shadow-2xl overflow-hidden z-[120]">
                       <div className="px-4 py-3 border-b border-gray-100">
-                        <p className="font-bold text-gray-900">Tin nhan gan day</p>
-                        <p className="text-xs text-gray-500 mt-0.5">Uu tien cuoc tro chuyen chua doc</p>
+                        <p className="font-bold text-gray-900">Tin nhắn gần đây</p>
+                        <p className="text-xs text-gray-500 mt-0.5">Ưu tiên cuộc trò chuyện chưa đọc</p>
                       </div>
-                      <div className="max-h-80 overflow-y-auto">
+                      <div className="max-h-80 overflow-y-auto custom-scrollbar">
                         {topConversations.length === 0 ? (
-                          <p className="text-sm text-gray-500 p-4">Chua co cuoc tro chuyen.</p>
+                          <p className="text-sm text-gray-500 p-4">Chưa có cuộc trò chuyện.</p>
                         ) : (
                           topConversations.map((conv) => (
-                            <button key={conv.id} onClick={() => handleOpenQuickChat(conv)} className="w-full text-left px-4 py-3 border-b border-gray-100 hover:bg-gray-50">
+                            <button
+                              key={conv.id}
+                              onClick={() => handleOpenQuickChat(conv)}
+                              className="w-full text-left px-4 py-3 border-b border-gray-100 hover:bg-gray-50"
+                            >
                               <div className="flex items-center gap-3">
-                                <div className="w-10 h-10 rounded-full bg-slate-200 overflow-hidden flex-shrink-0">
-                                  {conv.otherParticipantAvatar ? <img src={conv.otherParticipantAvatar} alt={conv.otherParticipantName} className="w-full h-full object-cover" /> : null}
+                                <div className="w-10 h-10 rounded-full bg-slate-200 overflow-hidden flex-shrink-0 border border-gray-100 p-0.5">
+                                  <CompanyLogo 
+                                    logoUrl={conv.otherParticipantAvatar} 
+                                    companyId={conv.otherParticipantId}
+                                    companyName={conv.otherParticipantName}
+                                    className="w-full h-full object-contain"
+                                  />
                                 </div>
                                 <div className="min-w-0 flex-1">
                                   <div className="flex justify-between items-start gap-2">
-                                    <p className={`text-sm truncate ${conv.unreadCount > 0 ? 'font-bold text-gray-900' : 'font-medium text-gray-700'}`}>{conv.otherParticipantName || 'Unknown'}</p>
+                                    <p className={`text-sm truncate ${conv.unreadCount > 0 ? 'font-bold text-gray-900' : 'font-medium text-gray-700'}`}>
+                                      {conv.otherParticipantName || 'Unknown'}
+                                    </p>
                                     <span className="text-[11px] text-gray-400">{formatChatTime(conv.lastMessageTime)}</span>
                                   </div>
-                                  <p className={`text-xs truncate ${conv.unreadCount > 0 ? 'font-semibold text-gray-700' : 'text-gray-500'}`}>{conv.lastMessageContent || 'Chua co tin nhan'}</p>
+                                  <p className={`text-xs truncate ${conv.unreadCount > 0 ? 'font-semibold text-gray-700' : 'text-gray-500'}`}>
+                                    {conv.lastMessageContent || 'Chưa có tin nhắn'}
+                                  </p>
                                 </div>
-                                {conv.unreadCount > 0 ? <span className="min-w-5 h-5 px-1 rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center">{conv.unreadCount}</span> : null}
+                                {conv.unreadCount > 0 ? (
+                                  <span className="min-w-5 h-5 px-1 rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center">
+                                    {conv.unreadCount}
+                                  </span>
+                                ) : null}
                               </div>
                             </button>
                           ))
                         )}
                       </div>
                       <div className="px-4 py-3 border-t border-gray-100 bg-gray-50">
-                        <button onClick={() => { setIsMessagesOpen(false); navigate('/messages'); }} className="w-full h-10 rounded-xl bg-slate-900 text-white text-sm font-semibold hover:bg-black transition-colors">
-                          Hien thi toan bo cuoc tro chuyen
+                        <button
+                          onClick={() => {
+                            setIsMessagesOpen(false);
+                            navigate('/messages');
+                          }}
+                          className="w-full h-10 rounded-xl bg-slate-900 text-white text-sm font-semibold hover:bg-black transition-colors"
+                        >
+                          Hiển thị toàn bộ cuộc trò chuyện
                         </button>
                       </div>
                     </div>
                   )}
                 </div>
 
-                <div className="relative mr-2" ref={notifRef}>
+                {/* Notifications Bell */}
+                <div className="relative" ref={notifRef}>
                   <button onClick={handleToggleNotifs} className="w-10 h-10 rounded-full bg-gray-800 hover:bg-gray-700 flex items-center justify-center transition-colors relative">
                     <BsBell className="text-lg" />
                     {unreadCount > 0 ? <span className="absolute -top-1 -right-1 min-w-[18px] h-5 px-1 rounded-full bg-red-500 text-xs text-white flex items-center justify-center font-semibold">{unreadCount}</span> : null}
@@ -384,16 +483,23 @@ const Header = () => {
                     </div>
                   )}
                 </div>
+              </div>
 
-                <div className="relative" ref={dropdownRef}>
-                  <button onClick={() => setIsDropdownOpen((prev) => !prev)} className="flex items-center gap-2 hover:bg-gray-900 py-1 px-2 rounded-lg transition-colors border border-transparent focus:border-gray-700">
-                    {displayAvatar ? (
-                      <img src={displayAvatar} alt="Avatar" className="w-9 h-9 rounded-full object-cover border border-gray-600" />
-                    ) : (
-                      <div className="w-9 h-9 rounded-full bg-gradient-to-tr from-blue-500 to-sky-500 flex items-center justify-center text-sm font-bold text-white shadow-inner">{initial}</div>
-                    )}
-                    <FaChevronDown className={`text-xs text-gray-400 transition-transform duration-200 ${isDropdownOpen ? 'rotate-180' : ''}`} />
-                  </button>
+              <div className="relative" ref={dropdownRef}>
+                <button
+                  onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                  className="flex items-center gap-2 hover:bg-gray-900 py-1 px-2 rounded-lg transition-colors border border-transparent focus:border-gray-700"
+                >
+                  <div className="w-9 h-9 rounded-full overflow-hidden border border-gray-600 p-0.5 bg-gray-800">
+                    <CompanyLogo 
+                      logoUrl={displayAvatar} 
+                      companyId={role === 'EMPLOYER' ? (currentUser?.companyId || currentUser?.userId) : currentUser?.userId}
+                      companyName={displayName}
+                      className="w-full h-full object-contain"
+                    />
+                  </div>
+                  <FaChevronDown className={`text-xs text-gray-400 transition-transform duration-200 ${isDropdownOpen ? 'rotate-180' : ''}`} />
+                </button>
 
                   {isDropdownOpen && (
                     <div className="absolute right-0 mt-3 w-64 bg-white text-gray-800 rounded-xl shadow-2xl py-2 border border-gray-100 animate-fade-in origin-top-right overflow-hidden">
@@ -426,11 +532,14 @@ const Header = () => {
         />
       ) : null}
 
-      {activeQuickConversation && isQuickChatMinimized ? (
-        <button onClick={() => setIsQuickChatMinimized(false)} className="fixed bottom-4 right-4 z-[130] h-12 px-4 rounded-xl bg-slate-900 text-white shadow-xl">
-          Mo chat: {activeQuickConversation.otherParticipantName || 'Tin nhan'}
-        </button>
-      ) : null}
+    {activeQuickConversation && isQuickChatMinimized ? (
+      <button
+        onClick={() => setIsQuickChatMinimized(false)}
+        className="fixed bottom-4 right-4 z-[130] h-12 px-4 rounded-xl bg-slate-900 text-white shadow-xl"
+      >
+        Mở chat: {activeQuickConversation.otherParticipantName || 'Tin nhắn'}
+      </button>
+    ) : null}
     </>
   );
 };

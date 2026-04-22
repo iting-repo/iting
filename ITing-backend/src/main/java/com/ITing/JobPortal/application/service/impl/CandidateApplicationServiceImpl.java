@@ -80,6 +80,9 @@ public class CandidateApplicationServiceImpl implements CandidateApplicationServ
 
         ApplyFormSentToJob savedSent = candidateApplicationRepository.save(sent);
 
+        // ✅ Increment application count on the job
+        jobRepository.incrementApplicationCount(request.getJobId());
+
         return ApplicationSubmitResponse.builder()
                 .id(savedForm.getId())
                 .jobId(request.getJobId())
@@ -97,8 +100,16 @@ public class CandidateApplicationServiceImpl implements CandidateApplicationServ
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Bạn không có quyền rút đơn này");
         }
 
+        // Find the jobId before deleting
+        ApplyFormSentToJob sent = candidateApplicationRepository.findByIdApplyFormId(applicationId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Không tìm thấy liên kết ứng tuyển"));
+        Long jobId = sent.getId().getJobId();
+
         candidateApplicationRepository.deleteByIdApplyFormId(applicationId);
         applyFormRepository.deleteById(applicationId);
+
+        // ✅ Decrement application count on the job
+        jobRepository.decrementApplicationCount(jobId);
     }
 
     @Override

@@ -8,15 +8,28 @@ import { useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { toast } from "sonner";
 import companyService from "../../services/companyService";
+import { Breadcrumb, CompanyLogo } from "../../components/common";
 
 const PROVINCES = [
   "Hồ Chí Minh", "Hà Nội", "Đà Nẵng", "Bình Dương", "Đồng Nai", "Cần Thơ", "Hải Phòng"
 ];
 
-const INDUSTRIES = [
-  "SOFTWARE_DEVELOPMENT", "WEB_DEVELOPMENT", "MOBILE_DEVELOPMENT", 
-  "CLOUD_COMPUTING", "DEVOPS", "DATA_SCIENCE", "AI", "CYBERSECURITY"
-];
+const INDUSTRY_MAP = {
+  "SOFTWARE_DEVELOPMENT": "Phát triển phần mềm",
+  "WEB_DEVELOPMENT": "Phát triển Web",
+  "MOBILE_DEVELOPMENT": "Phát triển di động",
+  "CLOUD_COMPUTING": "Điện toán đám mây",
+  "DEVOPS": "Quản trị vận hành (DevOps)",
+  "DATA_SCIENCE": "Khoa học dữ liệu",
+  "AI": "Trí tuệ nhân tạo (AI)",
+  "CYBERSECURITY": "An ninh mạng",
+  "BLOCKCHAIN": "Blockchain",
+  "GAME_DEVELOPMENT": "Phát triển Game",
+  "QA_TESTING": "Kiểm thử phần mềm (QA/QC)",
+  "IT_SOFTWARE": "Phần mềm CNTT"
+};
+
+const INDUSTRIES = Object.keys(INDUSTRY_MAP);
 
 const COMPANY_SIZES = [
   "1-10 nhân viên", "11-50 nhân viên", "51-200 nhân viên", 
@@ -115,9 +128,14 @@ const CompaniesPage = () => {
   return (
     <div className="min-h-screen bg-[#F8FAFC]">
       {/* Hero Section */}
-      <div className="bg-white border-b border-gray-200 pt-16 pb-12">
+      <div className="bg-white border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-10">
+          <Breadcrumb 
+            items={[
+              { label: 'Danh sách công ty' }
+            ]} 
+          />
+          <div className="text-center pt-8 pb-12">
             <h1 className="text-4xl font-extrabold text-gray-900 tracking-tight mb-4">
               Khám phá các <span className="text-[#3AB4E6]">Công ty IT</span> hàng đầu
             </h1>
@@ -156,7 +174,7 @@ const CompaniesPage = () => {
                   onChange={(e) => setSelectedIndustry(e.target.value)}
                 >
                   <option value="all">Tất cả lĩnh vực</option>
-                  {INDUSTRIES.map(i => <option key={i} value={i}>{i.replace('_', ' ')}</option>)}
+                  {INDUSTRIES.map(i => <option key={i} value={i}>{INDUSTRY_MAP[i]}</option>)}
                 </select>
 
                 <button 
@@ -209,11 +227,10 @@ const CompaniesPage = () => {
                 {/* Header Info */}
                 <div className="flex justify-between items-start mb-6">
                   <div className="w-20 h-20 rounded-2xl border border-gray-50 p-3 bg-white shadow-sm flex items-center justify-center group-hover:scale-105 transition-transform duration-300">
-                    <img 
-                      src={company.logoUrl || "https://via.placeholder.com/100?text=ITing"} 
-                      alt={company.name} 
+                    <CompanyLogo 
+                      logoUrl={company.logoUrl} 
+                      companyName={company.name} 
                       className="w-full h-full object-contain"
-                      onError={(e) => e.target.src = "https://via.placeholder.com/100?text=Company"}
                     />
                   </div>
                   <button 

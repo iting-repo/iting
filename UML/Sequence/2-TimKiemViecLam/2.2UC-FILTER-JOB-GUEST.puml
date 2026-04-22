@@ -1,0 +1,14 @@
+@startuml
+actor Guest
+participant FE
+participant JobSvc
+database DB
+
+
+Guest -> FE : Chọn bộ lọc (địa điểm, lương, loại hình...)
+FE -> JobSvc : search(keyword, filters, page)
+JobSvc -> DB : SELECT ... WHERE filters
+DB --> JobSvc : rows
+JobSvc --> FE : filtered results
+FE --> Guest : Kết quả đã lọc
+@enduml

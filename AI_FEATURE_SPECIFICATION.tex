@@ -1,0 +1,73 @@
+\documentclass[12pt, a4paper]{article}
+\usepackage[utf8]{vietnam}
+\usepackage{amsmath}
+\usepackage{graphicx}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage{hyperref}
+
+\title{\textbf{Đặc tả Chi tiết Tính năng AI: CV-Job Matching}}
+\author{Đội ngũ phát triển ITing}
+\date{\today}
+
+\begin{document}
+
+\maketitle
+
+\section{Giới thiệu}
+Tính năng AI Matching là cốt lõi của hệ thống ITing, giúp kết nối Ứng viên (CV) và Tin tuyển dụng (JD) dựa trên sự tương đồng về ngữ nghĩa chuyên môn. Thay vì chỉ tìm kiếm từ khóa (Keyword Matching), hệ thống sử dụng các mô hình ngôn ngữ tiên tiến để hiểu sâu sắc kỹ năng, kinh nghiệm và yêu cầu công việc.
+
+\section{Đặc tả Đầu vào (Input Data)}
+Hệ thống xử lý hai nguồn dữ liệu văn bản chính:
+\begin{itemize}
+    \item \textbf{Dữ liệu JD (Requirement)}: Mô tả công việc, yêu cầu kỹ thuật, số năm kinh nghiệm, vị trí công việc (ví dụ: \textit{"Tuyển Backend Developer Java Spring Boot, có hơn 1 năm kinh nghiệm..."}).
+    \item \textbf{Dữ liệu CV (Candidate Profile)}: Tóm tắt kỹ năng, kinh nghiệm thực tế, danh sách công nghệ đã sử dụng (ví dụ: \textit{"Backend Developer chuyên Java Spring Boot, hơn 1 năm kinh nghiệm làm Microservices..."}).
+\end{itemize}
+
+\section{Logic Xử lý (Processing Logic)}
+
+\subsection{Mô hình Ngôn ngữ (Model Selection)}
+Hệ thống sử dụng phương pháp \textbf{Semantic Search} dựa trên kiến trúc \textbf{Sentence Transformers}.
+\begin{itemize}
+    \item \textbf{Base Model}: \texttt{google/embedding-gemma-300m} - Một mô hình Embedding mạnh mẽ của Google.
+    \item \textbf{Fine-tuned Model}: \texttt{gemma-it-matching-best} - Phiên bản đã được tinh chỉnh (Fine-tuned) trên tập dữ liệu chuyên biệt về tuyển dụng IT tại Việt Nam để tăng khả năng phân hóa.
+\end{itemize}
+
+\subsection{Thuật toán nhúng (Embedding Logic)}
+Quy trình tính toán điểm tương đồng:
+\begin{enumerate}
+    \item Chuyển đổi văn bản JD thành một Vector đặc trưng $V_{JD} \in \mathbb{R}^d$.
+    \item Chuyển đổi danh sách $n$ CV thành các Vector tương ứng $V_{CV_i} \in \mathbb{R}^d$.
+    \item Sử dụng \textbf{Cosine Similarity} để tính độ tương đồng giữa $V_{JD}$ và $V_{CV_i}$:
+    \begin{equation}
+        \text{Score}_i = \frac{V_{JD} \cdot V_{CV_i}}{\|V_{JD}\| \|V_{CV_i}\|}
+    \end{equation}
+    \item Sắp xếp danh sách CV theo điểm số giảm dần để đưa ra top kết quả phù hợp nhất.
+\end{enumerate}
+
+\section{Kết quả Mong đợi (Expected Results)}
+Mô hình đã tinh chỉnh (Fine-tuned) mang lại khả năng phân biệt sắc nét hơn so với mô hình gốc, đặc biệt là các chi tiết về số năm kinh nghiệm hoặc các công nghệ phụ trợ (Docker, Microservices).
+
+\subsection{Ví dụ Đối chiếu}
+Dưới đây là kết quả thực tế khi so sánh JD: \textit{"Tuyển Backend Java Spring Boot, >1 năm kinh nghiệm, biết Docker/Microservices"}
+
+\begin{table}[h!]
+\centering
+\begin{tabular}{|l|c|c|l|}
+\hline
+\textbf{Nội dung CV} & \textbf{Điểm Gốc} & \textbf{Điểm Train} & \textbf{Đánh giá} \\ \hline
+Backend Java, >1 năm, Docker/Micro & 0.9085 & 0.8981 & \textbf{Top Match} \\ \hline
+Backend Java, <1 năm, Docker/Micro & 0.9173 & 0.8667 & \textbf{Sát nút} \\ \hline
+Backend C\# .NET, Microservices & 0.7870 & 0.7243 & \textbf{Khác ngôn ngữ} \\ \hline
+Java mới tốt nghiệp, không Docker & 0.7536 & 0.4250 & \textbf{Đẩy ra xa} \\ \hline
+Frontend ReactJS, 2 năm & 0.6379 & 0.5607 & \textbf{Không liên quan} \\ \hline
+\end{tabular}
+\caption{Bảng so sánh khả năng phân hóa của mô hình.}
+\end{table}
+
+\textbf{Nhận xét}: Mô hình Fine-tuned đã nhận diện tốt sự thiếu sót về kinh nghiệm và công cụ (Docker) của mẫu "Lập trình viên Java mới tốt nghiệp", giảm điểm mạnh từ 0.75 xuống 0.42 để bảo vệ chất lượng kết quả gợi ý.
+
+\section{Kết luận}
+Tính năng AI Matching không chỉ dừng lại ở việc tìm thấy những ứng viên \textit{có vẻ giống}, mà còn có khả năng loại bỏ/hạ thấp thứ hạng những ứng viên \textit{gần giống nhưng thiếu chi tiết quan trọng}, từ đó tối ưu hóa thời gian sàng lọc hồ sơ cho nhà tuyển dụng.
+
+\end{document}

@@ -74,6 +74,7 @@ const companyProfile = {
   lastUpdateRequestDate: '2026-04-02T14:05:50.596Z',
   lastUpdate: '2026-04-02T14:05:50.596Z',
   active: true,
+  profileSetup: true,
 };
 
 const candidateApplicationsPage = {

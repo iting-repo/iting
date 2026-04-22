@@ -44,7 +44,7 @@ public interface JobService {
     Page<JobResponse> getJobsByEmployer(Long employerId, int page, int size);
     
     // Tìm kiếm và lọc jobs (cho ứng viên)
-    Page<JobResponse> searchJobs(JobSearchRequest request);
+    Page<JobResponse> searchJobs(JobSearchRequest request, Long userId);
     
     // Lấy jobs mới nhất
     List<JobResponse> getLatestJobs(int limit);

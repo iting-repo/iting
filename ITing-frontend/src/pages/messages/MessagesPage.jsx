@@ -1,7 +1,9 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { FaPaperPlane, FaSearch } from 'react-icons/fa';
+import { CompanyLogo } from '../../components/common';
 import { useSearchParams } from 'react-router-dom';
 import messageService from '../../services/messageService';
+import applicationService from '../../services/applicationService';
 import chatRealtimeService from '../../services/chatRealtimeService';
 import { formatChatTime, sortConversationsForInbox } from '../../utils/chatFormat';
 
@@ -13,6 +15,7 @@ const MessagesPage = () => {
   const [onlineUsers, setOnlineUsers] = useState({});
   const [typingUsers, setTypingUsers] = useState({});
   const [query, setQuery] = useState('');
+  const [appliedCompanies, setAppliedCompanies] = useState([]);
   const [draft, setDraft] = useState('');
   const [loading, setLoading] = useState(false);
   const [sending, setSending] = useState(false);
@@ -28,6 +31,34 @@ const MessagesPage = () => {
       setMe(null);
     }
   }, []);
+
+  useEffect(() => {
+    if (!me || (me.role !== 'CANDIDATE' && me.role !== 'USER')) return;
+
+    const loadApplied = async () => {
+      try {
+        const res = await applicationService.getMyApplications({ page: 0, size: 50 });
+        const apps = res?.content || res?.data?.content || [];
+        const unique = [];
+        const seen = new Set();
+        apps.forEach(app => {
+          if (app.companyId && !seen.has(app.companyId)) {
+            seen.add(app.companyId);
+            unique.push({
+              id: app.companyId,
+              name: app.companyName,
+              avatar: app.companyLogo,
+              jobTitle: app.jobTitle
+            });
+          }
+        });
+        setAppliedCompanies(unique);
+      } catch (err) {
+        console.error("Failed to load applied companies", err);
+      }
+    };
+    loadApplied();
+  }, [me]);
 
   useEffect(() => {
     const forcedConversationId = Number(searchParams.get('conversationId') || 0);
@@ -135,6 +166,12 @@ const MessagesPage = () => {
     [conversations, activeConversationId]
   );
 
+  const pendingAppliedCompanies = useMemo(() => {
+    return appliedCompanies.filter(comp => 
+      !conversations.some(conv => conv.otherParticipantId === comp.id)
+    );
+  }, [appliedCompanies, conversations]);
+
   const myActorId = me?.role === 'EMPLOYER' ? (me?.companyId || me?.userId) : me?.userId;
   const senderType = me?.role === 'EMPLOYER' ? 'COMPANY' : 'USER';
   const receiverType = me?.role === 'EMPLOYER' ? 'USER' : 'COMPANY';
@@ -189,13 +226,13 @@ const MessagesPage = () => {
         <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden grid grid-cols-1 md:grid-cols-[340px_1fr] min-h-[75vh]">
           <section className="border-r border-gray-200">
             <div className="p-4 border-b border-gray-100">
-              <h1 className="text-2xl font-black text-gray-900">Nhan tin</h1>
+              <h1 className="text-2xl font-black text-gray-900">Nhắn tin</h1>
               <div className="mt-3 relative">
                 <FaSearch className="absolute left-3 top-3 text-gray-400" />
                 <input
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
-                  placeholder="Tim kiem tin nhan"
+                  placeholder="Tìm kiếm tin nhắn"
                   className="w-full h-11 pl-10 pr-3 rounded-xl border border-gray-200 bg-gray-50 focus:bg-white focus:ring-2 focus:ring-[#3AB4E6] outline-none"
                 />
               </div>
@@ -203,9 +240,9 @@ const MessagesPage = () => {
 
             <div className="max-h-[calc(75vh-100px)] overflow-y-auto">
               {loading ? (
-                <p className="text-sm text-gray-500 p-4">Dang tai...</p>
+                <p className="text-sm text-gray-500 p-4">Đang tải...</p>
               ) : filteredConversations.length === 0 ? (
-                <p className="text-sm text-gray-500 p-4">Chua co cuoc tro chuyen.</p>
+                <p className="text-sm text-gray-500 p-4">Chưa có cuộc trò chuyện.</p>
               ) : (
                 filteredConversations.map((conv) => {
                   const active = conv.id === activeConversationId;
@@ -216,10 +253,15 @@ const MessagesPage = () => {
                       className={`w-full text-left px-4 py-3 border-b border-gray-100 transition-colors ${active ? 'bg-blue-50' : 'hover:bg-gray-50'}`}
                     >
                       <div className="flex items-center gap-3">
-                        <div className="relative w-11 h-11 rounded-full bg-slate-200 overflow-hidden flex-shrink-0">
-                          {conv.otherParticipantAvatar ? (
-                            <img src={conv.otherParticipantAvatar} alt={conv.otherParticipantName} className="w-full h-full object-cover" />
-                          ) : null}
+                        <div className="relative flex-shrink-0">
+                          <div className="w-11 h-11 rounded-full bg-slate-200 overflow-hidden border border-gray-100 p-0.5">
+                            <CompanyLogo 
+                              logoUrl={conv.otherParticipantAvatar} 
+                              companyId={conv.otherParticipantId}
+                              companyName={conv.otherParticipantName}
+                              className="w-full h-full object-contain"
+                            />
+                          </div>
                           {onlineUsers[conv.otherParticipantId] ? (
                             <span className="absolute right-0 bottom-0 w-3 h-3 rounded-full bg-emerald-500 border-2 border-white" />
                           ) : null}
@@ -232,7 +274,7 @@ const MessagesPage = () => {
                             <span className="text-xs text-gray-400">{formatChatTime(conv.lastMessageTime)}</span>
                           </div>
                           <p className={`text-sm truncate ${conv.unreadCount > 0 ? 'font-semibold text-gray-800' : 'text-gray-500'}`}>
-                            {conv.lastMessageContent || 'Chua co noi dung'}
+                            {conv.lastMessageContent || 'Chưa có nội dung'}
                           </p>
                         </div>
                         {conv.unreadCount > 0 ? (
@@ -245,6 +287,53 @@ const MessagesPage = () => {
                   );
                 })
               )}
+
+              {pendingAppliedCompanies.length > 0 && (
+                <div className="mt-6">
+                  <div className="px-4 py-2 bg-gray-50 border-y border-gray-100">
+                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Các công ty đã ứng tuyển</p>
+                  </div>
+                  {pendingAppliedCompanies.map((comp) => (
+                    <button
+                      key={`applied-${comp.id}`}
+                      onClick={async () => {
+                        // Create a virtual conversation state or just try to send a message
+                        // For now, let's just use the receiverId and receiverType to start
+                        // We can't set activeConversationId because there's no ID yet.
+                        // So we might need a "temporary" state for starting a new chat.
+                        // Optimization: redirect to chat by sending the first hello message
+                        try {
+                          const sent = await messageService.sendMessage({
+                            receiverId: comp.id,
+                            receiverType: 'COMPANY',
+                            senderType: 'USER',
+                            content: `Chào ${comp.name}, tôi muốn trao đổi về vị trí ${comp.jobTitle || 'đang ứng tuyển'}.`,
+                          });
+                          setActiveConversationId(sent.conversationId);
+                        } catch (err) {
+                          console.error("Initiation failed", err);
+                        }
+                      }}
+                      className="w-full text-left px-4 py-3 border-b border-gray-100 hover:bg-gray-50 transition-colors"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="w-11 h-11 rounded-full bg-slate-100 overflow-hidden border border-gray-100 p-1 flex-shrink-0">
+                          <CompanyLogo 
+                            logoUrl={comp.avatar} 
+                            companyId={comp.id}
+                            companyName={comp.name}
+                            className="w-full h-full object-contain"
+                          />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <p className="font-semibold text-gray-700 truncate">{comp.name}</p>
+                          <p className="text-xs text-blue-500 italic truncate">Chưa có tin nhắn • Nhấp để liên hệ</p>
+                        </div>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
           </section>
 
@@ -252,17 +341,20 @@ const MessagesPage = () => {
             {activeConversation ? (
               <>
                 <div className="px-5 py-4 border-b border-gray-100 flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-slate-200 overflow-hidden">
-                    {activeConversation.otherParticipantAvatar ? (
-                      <img src={activeConversation.otherParticipantAvatar} alt={activeConversation.otherParticipantName} className="w-full h-full object-cover" />
-                    ) : null}
+                  <div className="w-10 h-10 rounded-full bg-slate-200 overflow-hidden border border-gray-100 p-0.5">
+                    <CompanyLogo 
+                      logoUrl={activeConversation.otherParticipantAvatar} 
+                      companyId={activeConversation.otherParticipantId}
+                      companyName={activeConversation.otherParticipantName}
+                      className="w-full h-full object-contain"
+                    />
                   </div>
                   <div>
                     <p className="font-bold text-gray-900">{activeConversation.otherParticipantName || 'Unknown'}</p>
                     <p className="text-xs text-gray-500">
                       {typingUsers[activeConversation.otherParticipantId]
-                        ? 'Dang nhap...'
-                        : (onlineUsers[activeConversation.otherParticipantId] ? 'Dang hoat dong' : 'Cuoc tro chuyen')}
+                        ? 'Đang nhập...'
+                        : (onlineUsers[activeConversation.otherParticipantId] ? 'Đang hoạt động' : 'Cuộc trò chuyện')}
                     </p>
                   </div>
                 </div>
@@ -287,7 +379,7 @@ const MessagesPage = () => {
                   <input
                     value={draft}
                     onChange={(e) => handleDraftChange(e.target.value)}
-                    placeholder="Nhap tin nhan..."
+                    placeholder="Nhập tin nhắn..."
                     className="flex-1 h-11 px-4 rounded-xl border border-gray-200 outline-none focus:ring-2 focus:ring-[#3AB4E6]"
                   />
                   <button
@@ -300,7 +392,7 @@ const MessagesPage = () => {
                 </form>
               </>
             ) : (
-              <div className="flex-1 flex items-center justify-center text-gray-500">Chon mot cuoc tro chuyen de bat dau.</div>
+              <div className="flex-1 flex items-center justify-center text-gray-500">Chọn một cuộc trò chuyện để bắt đầu.</div>
             )}
           </section>
         </div>

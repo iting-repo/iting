@@ -69,7 +69,7 @@ const AppliedJobs = () => {
 
   const handleStartChatWithEmployer = async (app) => {
     if (!app?.companyId) {
-      toast.error('Khong tim thay thong tin nha tuyen dung de nhan tin.');
+      toast.error('Không tìm thấy thông tin nhà tuyển dụng để nhắn tin.');
       return;
     }
 
@@ -79,12 +79,12 @@ const AppliedJobs = () => {
         receiverId: app.companyId,
         receiverType: 'COMPANY',
         senderType: 'USER',
-        content: `Chao ${app.companyName || 'nha tuyen dung'}, toi muon theo doi trang thai ho so ung tuyen ${app.jobTitle || ''}.`,
+        content: `Chào ${app.companyName || 'nhà tuyển dụng'}, tôi muốn theo dõi trạng thái hồ sơ ứng tuyển ${app.jobTitle || ''}.`,
       });
-      toast.success('Da mo cuoc tro chuyen voi nha tuyen dung.');
+      toast.success('Đã mở cuộc trò chuyện với nhà tuyển dụng.');
       navigate(`/messages?conversationId=${sent.conversationId}`);
     } catch (error) {
-      toast.error(error?.message || 'Khong the mo chat luc nay.');
+      toast.error(error?.message || 'Không thể mở chat lúc này.');
     } finally {
       setChatLoadingId(null);
     }
@@ -138,10 +138,14 @@ const AppliedJobs = () => {
                         disabled={chatLoadingId === app.id}
                         className="bg-[#EAF6FF] hover:bg-[#3AB4E6] hover:text-white text-[#3AB4E6] text-xs font-bold px-4 py-2.5 rounded-lg transition-all shadow-sm inline-flex items-center gap-2 disabled:opacity-60"
                       >
-                        <FaEnvelope size={11} /> {chatLoadingId === app.id ? 'Dang mo...' : 'Nhan tin NTD'}
+                        <FaEnvelope size={11} /> {chatLoadingId === app.id ? 'Đang mở...' : 'Nhắn tin NTD'}
                       </button>
                       <button
-                        onClick={() => navigate(buildJobDetailPath({ id: app.jobId, title: app.jobTitle, jobKey: app.jobKey }))}
+                        onClick={() => navigate(buildJobDetailPath({ 
+                          id: app.jobId, 
+                          title: app.jobTitle,
+                          jobKey: app.jobKey
+                        }))}
                         className="bg-gray-100 hover:bg-[#3AB4E6] hover:text-white text-gray-500 text-xs font-bold px-5 py-2.5 rounded-lg transition-all shadow-sm"
                       >
                         Xem Chi Tiet

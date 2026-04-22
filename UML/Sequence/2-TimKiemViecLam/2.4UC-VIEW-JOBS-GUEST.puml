@@ -1,0 +1,14 @@
+@startuml
+actor Guest
+participant FE
+participant JobSvc
+database DB
+
+
+Guest -> FE : Vào trang "Tất cả việc làm"
+FE -> JobSvc : listActiveJobs(page,size)
+JobSvc -> DB : SELECT active jobs ORDER BY created_at DESC
+DB --> JobSvc : rows
+JobSvc --> FE : page data
+FE --> Guest : Hiển thị danh sách
+@enduml

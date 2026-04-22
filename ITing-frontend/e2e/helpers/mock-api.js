@@ -59,12 +59,93 @@ async function mockEmployerApis(page) {
 }
 
 async function mockCandidateApis(page) {
+  await page.route('**/api/candidates/dashboard/stats', async (route) => {
+    await fulfillJson(route, {
+      fullName: 'Nguyen Van A',
+      avatarUrl: '',
+      profileCompleted: false,
+      profileCompletionPercent: 65,
+      savedJobsCount: 1,
+      unreadNotificationCount: 1,
+      recentApplications: [
+        {
+          id: 801,
+          companyName: 'ITing Software',
+          companyLogo: 'https://via.placeholder.com/50',
+          jobPosition: primaryJob.title,
+          appliedAt: '2026-04-02T09:00:00.000Z',
+          status: 'PENDING',
+        },
+      ],
+    });
+  });
+
   await page.route('**/api/applications/my-applications**', async (route) => {
     await fulfillJson(route, candidateApplicationsPage);
   });
 
   await page.route('**/api/api/applications/my-applications**', async (route) => {
     await fulfillJson(route, candidateApplicationsPage);
+  });
+
+  await page.route('**/api/candidates/applications/my-applications**', async (route) => {
+    await fulfillJson(route, {
+      content: [
+        {
+          id: 801,
+          jobId: primaryJob.public_id,
+          jobKey: primaryJob.public_id,
+          jobTitle: primaryJob.title,
+          companyName: 'ITing Software',
+          companyLogo: 'https://via.placeholder.com/50',
+          timeSent: '2026-04-02T09:00:00.000Z',
+          status: 'PENDING',
+        },
+      ],
+      totalElements: 1,
+      totalPages: 1,
+    });
+  });
+
+  await page.route('**/api/candidates/saved-jobs**', async (route) => {
+    await fulfillJson(route, {
+      content: [
+        {
+          jobId: primaryJob.public_id,
+          jobTitle: primaryJob.title,
+          companyName: 'ITing Software',
+          companyLogo: 'https://via.placeholder.com/50',
+          location: primaryJob.location,
+          jobType: primaryJob.jobType,
+          minSalary: primaryJob.minSalary,
+          maxSalary: primaryJob.maxSalary,
+        },
+      ],
+      totalElements: 1,
+      totalPages: 1,
+    });
+  });
+
+  await page.route('**/api/candidates/job-alerts**', async (route) => {
+    await fulfillJson(route, {
+      content: [
+        {
+          jobId: primaryJob.public_id,
+          title: primaryJob.title,
+          companyName: 'ITing Software',
+          companyLogo: 'https://via.placeholder.com/50',
+          location: primaryJob.location,
+          jobType: primaryJob.jobType,
+          minSalary: primaryJob.minSalary,
+          maxSalary: primaryJob.maxSalary,
+          dueDate: primaryJob.dueDate,
+          createdAt: primaryJob.createdAt,
+          isSaved: false,
+        },
+      ],
+      totalElements: 1,
+      totalPages: 1,
+    });
   });
 }
 
@@ -115,6 +196,10 @@ async function mockAdminApis(page) {
   });
 
   await page.route('**/api/admin/jobs/201/request-revision', async (route) => {
+    await fulfillJson(route, { success: true });
+  });
+
+  await page.route('**/api/admin/jobs/201/suspend', async (route) => {
     await fulfillJson(route, { success: true });
   });
 

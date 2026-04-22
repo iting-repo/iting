@@ -12,10 +12,10 @@ import java.util.Date;
 @Component
 public class JwtTokenUtil {
 
-    @Value("${jwt.secret}")
+    @Value("${jwt.secret:iting-portal-secret-key-must-be-at-least-32-characters-long}")
     private String SECRET;
 
-    @Value("${jwt.expiration}")
+    @Value("${jwt.expiration:86400000}")
     private long EXPIRATION;
 
     private SecretKey getSigningKey() {

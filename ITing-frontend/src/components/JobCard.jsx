@@ -2,7 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FaMapMarkerAlt, FaDollarSign, FaClock, FaBriefcase, FaRegBookmark, FaBookmark } from 'react-icons/fa';
 import { toast } from 'sonner';
-import { buildJobDetailPath } from '../utils/jobUrl';
+import { buildJobDetailPath, getCompanyLogoUrl } from '../utils/jobUrl';
+import { CompanyLogo } from './common';
 import axiosInstance from '../utils/axiosInstance';
 import { storage } from '../utils/storage';
 
@@ -50,7 +51,7 @@ const JobCard = ({ job }) => {
         event.stopPropagation();
 
         if (!canSave) {
-            toast.error('Vui long dang nhap de luu cong viec.');
+            toast.error('Vui lòng đăng nhập để lưu công việc.');
             return;
         }
 
@@ -63,14 +64,14 @@ const JobCard = ({ job }) => {
             if (isSaved) {
                 await axiosInstance.delete(`/candidates/saved-jobs/${job.id}`);
                 setIsSaved(false);
-                toast.success('Da bo luu cong viec.');
+                toast.success('Đã bỏ lưu công việc.');
             } else {
                 await axiosInstance.post(`/candidates/saved-jobs/${job.id}`);
                 setIsSaved(true);
-                toast.success('Da luu tin tuyen dung thanh cong!');
+                toast.success('Đã lưu tin tuyển dụng thành công!');
             }
         } catch (error) {
-            const message = error?.message || 'Khong the luu cong viec luc nay.';
+            const message = error?.message || 'Không thể lưu công việc lúc này.';
             toast.error(message);
         } finally {
             setIsSaving(false);
@@ -80,9 +81,16 @@ const JobCard = ({ job }) => {
     return (
         <div className="bg-white p-4 rounded-xl border border-gray-100 hover:shadow-lg transition-shadow duration-300 relative group">
             <div className="flex justify-between items-start mb-3">
-                <span className="bg-blue-50 text-[#00B4D8] text-[10px] font-bold px-2 py-1 rounded">
-                    {job.timePosted}
-                </span>
+                <div className="flex gap-2 items-center">
+                    <span className="bg-blue-50 text-[#00B4D8] text-[10px] font-bold px-2 py-1 rounded">
+                        {job.timePosted}
+                    </span>
+                    {job.isAiSuggested && (
+                        <span className="bg-gradient-to-r from-orange-400 to-red-400 text-white text-[10px] font-bold px-2 py-1 rounded shadow-sm flex items-center gap-1">
+                             AI Suggestion
+                        </span>
+                    )}
+                </div>
                 <button 
                   onClick={handleToggleSave}
                   disabled={isSaving}
@@ -97,7 +105,12 @@ const JobCard = ({ job }) => {
                     onClick={handleNavigate}
                     className="w-12 h-12 rounded-lg flex-shrink-0 border border-gray-100 p-1.5 bg-white flex items-center justify-center cursor-pointer"
                 >
-                    <img src={job.logo} alt={job.company} className="w-full h-full object-contain" />
+                    <CompanyLogo 
+                        logoUrl={job.logo || job.companyLogo || job.logoUrl}
+                        companyId={job.companyId}
+                        companyName={job.company}
+                        className="w-full h-full object-contain"
+                    />
                 </div>
 
                 <div className="flex-1">

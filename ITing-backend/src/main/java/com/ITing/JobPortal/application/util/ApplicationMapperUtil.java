@@ -55,7 +55,6 @@ public class ApplicationMapperUtil {
                 companyLogo = company.getLogoUrl();
             }
         }
-
         String avatarUrl = userRepository.findById(userId).map(User::getAvatarUrl).orElse(null);
 
         String cvFileName = null;

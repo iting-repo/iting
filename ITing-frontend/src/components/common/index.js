@@ -13,4 +13,6 @@ export { default as Switch } from './Switch';
 export { default as Separator } from './Separator';
 export { default as LoadingSpinner } from './LoadingSpinner';
 export { default as ConfirmDialog } from './ConfirmDialog';
+export { default as Breadcrumb } from './Breadcrumb';
+export { default as CompanyLogo } from './CompanyLogo';
 export * from './AppIcons';

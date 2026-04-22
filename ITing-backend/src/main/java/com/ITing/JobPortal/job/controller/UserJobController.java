@@ -5,6 +5,7 @@ import com.iting.jobportal.job.dto.response.JobResponse;
 import com.iting.jobportal.job.entity.enums.ExperienceLevel;
 import com.iting.jobportal.job.entity.enums.JobType;
 import com.iting.jobportal.job.service.JobService;
+import com.iting.jobportal.recommendation.service.InteractionService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
@@ -25,10 +26,12 @@ import java.util.stream.Collectors;
 public class UserJobController {
 
     private final JobService jobService;
+    private final InteractionService interactionService;
 
     @GetMapping("/search")
     @Operation(summary = "Tìm kiếm và lọc việc làm")
     public ResponseEntity<Page<JobResponse>> searchJobs(
+            @CurrentUser Long userId,
             @RequestParam(required = false) String keyword,
             @RequestParam(required = false) String location,
             @RequestParam(required = false) String jobType,
@@ -78,7 +81,11 @@ public class UserJobController {
         request.setPage(page);
         request.setSize(size);
 
-        return ResponseEntity.ok(jobService.searchJobs(request));
+        if (userId != null && (keyword != null || location != null)) {
+            interactionService.trackSearch(userId, keyword, location);
+        }
+
+        return ResponseEntity.ok(jobService.searchJobs(request, userId));
     }
 
     private List<JobType> parseJobTypes(String rawValues) {
@@ -107,7 +114,10 @@ public class UserJobController {
 
     @GetMapping("/{id}")
     @Operation(summary = "Xem chi tiết việc làm")
-    public ResponseEntity<JobResponse> getJob(@PathVariable Long id) {
+    public ResponseEntity<JobResponse> getJob(@CurrentUser Long userId, @PathVariable Long id) {
+        if (userId != null) {
+            interactionService.trackInteraction(userId, id, com.iting.jobportal.recommendation.entity.enums.InteractionType.VIEW);
+        }
         return ResponseEntity.ok(jobService.getJobByIdWithView(id));
     }
 

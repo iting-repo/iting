@@ -13,6 +13,7 @@ import {
   FaTimes,
   FaPlus,
 } from "react-icons/fa";
+import { CheckCircle2 } from "lucide-react";
 import { toast } from "sonner";
 import companyService from "../../services/companyService";
 
@@ -268,6 +269,7 @@ const PostJob = ({
   const [provinces, setProvinces] = useState([]);
   const [wards, setWards] = useState([]);
   const [loadingWards, setLoadingWards] = useState(false);
+  const [showSuccess, setShowSuccess] = useState(false);
 
   useEffect(() => {
     fetch("https://provinces.open-api.vn/api/v2/p/")
@@ -397,6 +399,8 @@ const PostJob = ({
       } else {
         result = await companyService.createEmployerJob(payload);
         toast.success("Đăng bài thành công");
+        setShowSuccess(true);
+        return; // Dừng lại ở màn hình thông báo thành công
       }
 
       if (onSubmitSuccess) {
@@ -406,6 +410,7 @@ const PostJob = ({
       onClose();
     } catch (error) {
       console.error("Lỗi lưu công việc:", error);
+      // Kiểm tra lỗi từ axios interceptor (đã unwrap error.response.data)
       const errorMessage = error?.error || 
                           error?.message || 
                           error?.response?.data?.error || 
@@ -466,7 +471,31 @@ const PostJob = ({
         </div>
 
         <div className="p-8">
-          <form onSubmit={handleSubmit}>
+          {showSuccess ? (
+            <div className="py-12 flex flex-col items-center text-center animate-fade-in">
+              <div className="w-24 h-24 bg-green-50 rounded-full flex items-center justify-center mb-6">
+                <CheckCircle2 className="w-12 h-12 text-green-500" />
+              </div>
+              <h3 className="text-3xl font-bold text-gray-800 mb-4">Đăng bài thành công!</h3>
+              <p className="text-lg text-gray-600 max-w-md mx-auto leading-relaxed">
+                Tin tuyển dụng của bạn đã được gửi đi. Vui lòng đợi trong vòng 
+                <span className="font-bold text-sky-600"> 1 ngày làm việc </span> 
+                để đội ngũ quản trị viên kiểm duyệt nội dung.
+              </p>
+              <div className="mt-10 flex gap-4">
+                <button
+                  onClick={() => {
+                    if (onSubmitSuccess) onSubmitSuccess();
+                    onClose();
+                  }}
+                  className="px-8 py-4 bg-sky-500 hover:bg-sky-600 text-white rounded-xl font-bold transition-all shadow-lg shadow-sky-100"
+                >
+                  Về trang quản lý
+                </button>
+              </div>
+            </div>
+          ) : (
+            <form onSubmit={handleSubmit}>
             <div className="mb-8">
               <h3 className="text-lg font-bold text-gray-800 mb-4">
                 Tiêu đề công việc
@@ -856,6 +885,7 @@ const PostJob = ({
               </button>
             </div>
           </form>
+          )}
         </div>
       </div>
     </div>
