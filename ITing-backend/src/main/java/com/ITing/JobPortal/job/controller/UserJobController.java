@@ -49,12 +49,15 @@ public class UserJobController {
             @RequestParam(required = false) String techRequired,
             @RequestParam(required = false, defaultValue = "lastUpdate") String sortBy,
             @RequestParam(required = false, defaultValue = "desc") String sortOrder,
+            @RequestParam(required = false, defaultValue = "false") Boolean isAiSearch,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size
     ) {
         JobSearchRequest request = new JobSearchRequest();
         request.setKeyword(keyword);
         request.setLocation(location);
+        request.setIsAiSearch(isAiSearch);
+        request.setSortOrder(sortOrder);
 
         if (jobType != null) {
             request.setJobType(JobType.valueOf(jobType));
@@ -144,5 +147,10 @@ public class UserJobController {
             @RequestParam(required = false) String experience
     ) {
         return ResponseEntity.ok(jobService.getSalaryReport(keyword, location, experience));
+    }
+
+    @PostMapping("/analyze-cv")
+    public com.iting.jobportal.job.dto.request.JobSearchRequest analyzeCv(@RequestBody String cvText) {
+        return jobService.analyzeCvForSearch(cvText);
     }
 }

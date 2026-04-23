@@ -25,6 +25,9 @@ const jobService = {
     saveJob: (jobId) => axiosInstance.post(`/candidates/saved-jobs/${jobId}`),
     unsaveJob: (jobId) => axiosInstance.delete(`/candidates/saved-jobs/${jobId}`),
     getSavedJobIds: () => axiosInstance.get('/candidates/saved-jobs/ids'),
+    analyzeCv: (cvText) => axiosInstance.post('/jobs/analyze-cv', cvText, {
+        headers: { 'Content-Type': 'text/plain' }
+    }),
 };
 
 export default jobService;

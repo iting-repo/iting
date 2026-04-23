@@ -396,11 +396,19 @@ const SalaryLookupPage = () => {
         <div className="bg-white rounded-3xl p-8 shadow-sm border border-gray-100">
            <p className="text-sm font-bold text-gray-800 mb-4">Xem thêm Báo cáo lương của các vị trí liên quan:</p>
            <div className="flex flex-wrap gap-2">
-              {['Tư vấn tài chính', 'Market Research', 'Nhân viên tư vấn'].map(item => (
-                <span key={item} onClick={() => { setKeyword(item); fetchReport(); }} className="px-4 py-2 bg-gray-100 rounded-full text-xs text-gray-500 font-bold hover:bg-[#E6F6FD] hover:text-[#3AB4E6] cursor-pointer transition-colors">
-                  {item}
-                </span>
-              ))}
+              {report?.relatedPositions && report.relatedPositions.length > 0 ? (
+                report.relatedPositions.map(item => (
+                  <span key={item} onClick={() => { setKeyword(item); fetchReport(); }} className="px-4 py-2 bg-gray-100 rounded-full text-xs text-gray-500 font-bold hover:bg-[#E6F6FD] hover:text-[#3AB4E6] cursor-pointer transition-colors">
+                    {item}
+                  </span>
+                ))
+              ) : (
+                ['Tư vấn tài chính', 'Market Research', 'Nhân viên tư vấn'].map(item => (
+                  <span key={item} onClick={() => { setKeyword(item); fetchReport(); }} className="px-4 py-2 bg-gray-100 rounded-full text-xs text-gray-500 font-bold hover:bg-[#E6F6FD] hover:text-[#3AB4E6] cursor-pointer transition-colors">
+                    {item}
+                  </span>
+                ))
+              )}
            </div>
         </div>
       </div>

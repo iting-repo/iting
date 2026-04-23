@@ -29,6 +29,8 @@ public class JobSearchRequest {
     private String sortBy;          // createdAt, salary, relevance
     private String sortOrder;       // asc, desc
     
+    private Boolean isAiSearch = false;
+    
     // Phân trang
     private Integer page = 0;
     private Integer size = 10;

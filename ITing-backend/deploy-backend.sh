@@ -30,3 +30,18 @@ docker ps | grep $CONTAINER_NAME
 
 echo "--- 5. Log khoi dong ---"
 docker logs $CONTAINER_NAME --tail 20
+
+# Cleanup function to remove dangling images and local build artifacts
+cleanup() {
+  echo ""
+  echo "--- 6. Dang don dep log va file thua ---"
+  docker image prune -f >/dev/null 2>&1
+  # Xoa folder target de tiet kiem dung luong (vi da build vao docker image)
+  rm -rf target/ 2>/dev/null
+  echo "Done! He thong da sach se."
+}
+
+# Trap exit signal to run cleanup
+trap cleanup EXIT
+
+echo "--- DEPLOY HOAN TAT! ---"

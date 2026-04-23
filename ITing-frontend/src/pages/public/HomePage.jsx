@@ -5,7 +5,7 @@ import { useEffect } from 'react';
 import { fetchJobsRequest, fetchJobDetailRequest } from '../../store/job/jobSlice';
 import { buildJobDetailPath, getJobPublicKey, getCompanyLogoUrl } from '../../utils/jobUrl';
 import publicService from '../../services/publicService';
-import { CompanyLogo } from '../../components/common';
+import { CompanyLogo, LocationPicker, CategoryPicker } from '../../components/common';
 
 // FIX: Gom tất cả icon về react-icons/fa để tránh lỗi import undefined
 import {
@@ -34,6 +34,9 @@ const HomePage = () => {
     const [stats, setStats] = useState({ totalJobs: 0, totalCandidates: 0, totalCompanies: 0 });
     const [recommendedJobs, setRecommendedJobs] = useState([]);
     const [isRecommending, setIsRecommending] = useState(false);
+    const [isAiModalOpen, setIsAiModalOpen] = useState(false);
+    const [cvText, setCvText] = useState("");
+    const [isAnalyzing, setIsAnalyzing] = useState(false);
 
     const handleJobClick = (job) => {
         const jobKey = getJobPublicKey(job);
@@ -147,6 +150,7 @@ const HomePage = () => {
     const [searchForm, setSearchForm] = useState({
         keyword: '',
         location: '',
+        category: '',
         jobType: '',
         experienceLevel: '',
         minSalary: '',
@@ -209,6 +213,39 @@ const HomePage = () => {
         if (searchForm.jobType) params.append('jobTypes', searchForm.jobType);
         
         navigate(`/jobs?${params.toString()}`);
+    };
+
+    const handleAiSearch = () => {
+        setIsAiModalOpen(true);
+    };
+
+    const handleConfirmAiSearch = async () => {
+        if (!cvText.trim()) {
+            toast.error("Vui lòng dán nội dung CV để AI phân tích!");
+            return;
+        }
+        
+        setIsAnalyzing(true);
+        try {
+            const response = await jobService.analyzeCv(cvText);
+            const criteria = response.data || response; // handle axios wrap
+            
+            const params = new URLSearchParams();
+            if (criteria.keyword) params.append('keyword', criteria.keyword);
+            if (criteria.location) params.append('location', searchForm.location);
+            if (criteria.techs && criteria.techs.length > 0) params.append('techs', criteria.techs.join(','));
+            if (criteria.experienceLevel) params.append('experienceLevels', criteria.experienceLevel);
+            params.append('isAiSearch', 'true');
+            
+            toast.success("Đã phân tích CV thành công! Đang tìm việc phù hợp...");
+            navigate(`/jobs?${params.toString()}`);
+        } catch (error) {
+            console.error("AI Analysis failed:", error);
+            toast.error("Phân tích CV thất bại. Vui lòng thử lại!");
+        } finally {
+            setIsAnalyzing(false);
+            setIsAiModalOpen(false);
+        }
     };
 
     // Helper: Time Ago (Simple version)
@@ -306,7 +343,15 @@ const HomePage = () => {
                     </p>
 
                     {/* Search Box */}
-                    <div className="bg-white rounded-lg md:rounded-full p-1.5 flex flex-col md:flex-row items-center max-w-4xl mx-auto shadow-2xl">
+                    <div className="bg-white rounded-lg md:rounded-full p-1.5 flex flex-col md:flex-row items-center max-w-5xl mx-auto shadow-2xl overflow-visible">
+                        {/* 1. Category Picker (Far Left) */}
+                        <div className="w-full md:w-[25%] h-12 flex items-center px-4 relative">
+                            <CategoryPicker 
+                                value={searchForm.category}
+                                onChange={(val) => handleChangeSearchField('category', val)}
+                            />
+                        </div>
+
                         <div className="flex-1 w-full md:w-auto px-4 py-3 flex items-center border-b md:border-b-0 md:border-r border-gray-200">
                             <FaSearch className="text-gray-400 mr-2" />
                             <input
@@ -320,35 +365,18 @@ const HomePage = () => {
                                 className="w-full outline-none text-gray-700 text-sm placeholder-gray-400"
                             />                        
                             </div>
-                        <div className="w-full md:w-[20%] px-4 py-3 flex items-center border-b md:border-b-0 md:border-r border-gray-200">
-                            <FaMapMarkerAlt className="text-gray-400 mr-2" />
-                            <select
+                        <div className="w-full md:w-[25%] px-4 py-3 flex items-center border-b md:border-b-0 md:border-r border-gray-200 relative">
+                            <FaMapMarkerAlt className="text-gray-400 mr-2 flex-shrink-0" />
+                            <LocationPicker 
                                 value={searchForm.location}
-                                onChange={(e) => handleChangeSearchField('location', e.target.value)}
-                                className="w-full outline-none text-gray-700 text-sm bg-transparent"
-                            >
-                                <option value="">Địa điểm</option>
-                                {provinces.map((province) => (
-                                    <option key={province.code} value={province.name}>{province.name}</option>
-                                ))}
-                            </select>
+                                onChange={(val) => handleChangeSearchField('location', val)}
+                                provinces={provinces}
+                            />
                         </div>
-                        <div className="w-full md:w-[25%] px-4 py-3 flex items-center border-b md:border-b-0 md:border-r border-gray-200">
-                            <FaBriefcase className="text-gray-400 mr-2" />
-                            <select
-                                value={searchForm.jobType}
-                                onChange={(e) => handleChangeSearchField('jobType', e.target.value)}
-                                className="w-full outline-none text-gray-700 text-sm bg-transparent"
-                            >
-                                <option value="">Loại công việc</option>
-                                <option value="FULL_TIME">Full-time</option>
-                                <option value="PART_TIME">Part-time</option>
-                                <option value="INTERNSHIP">Internship</option>
-                                <option value="REMOTE">Remote</option>
-                            </select>
-                        </div>
-                        <button className="w-full md:w-auto bg-[#3AB4E6] hover:bg-blue-500 text-white px-5 py-3 font-bold text-sm flex items-center justify-center gap-1 transition-colors border-r border-blue-400/30">
-                            {/* FIX: Thay HiSparkles bằng FaMagic */}
+                        <button 
+                            onClick={handleAiSearch}
+                            className="w-full md:w-auto bg-[#3AB4E6] hover:bg-blue-500 text-white px-5 py-3 font-bold text-sm flex items-center justify-center gap-1 transition-colors border-r border-blue-400/30"
+                        >
                             <FaMagic className="text-yellow-300" /> AI
                         </button>
                         <button
@@ -793,6 +821,66 @@ const HomePage = () => {
                 </div>
             </section>
 
+            {/* AI CV Modal */}
+            {isAiModalOpen && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+                    <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden transform transition-all animate-in fade-in zoom-in duration-300">
+                        <div className="bg-[#3AB4E6] p-6 text-white relative">
+                            <button 
+                                onClick={() => setIsAiModalOpen(false)}
+                                className="absolute top-4 right-4 text-white/80 hover:text-white transition-colors"
+                            >
+                                <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                </svg>
+                            </button>
+                            <h3 className="text-2xl font-bold flex items-center gap-2">
+                                <FaMagic className="text-yellow-300" /> Tìm việc bằng AI
+                            </h3>
+                            <p className="text-blue-50/80 mt-1">Dán nội dung CV của bạn vào đây, AI sẽ tự động phân tích và tìm kiếm công việc phù hợp nhất.</p>
+                        </div>
+                        
+                        <div className="p-6 space-y-4">
+                            <div className="relative">
+                                <textarea
+                                    value={cvText}
+                                    onChange={(e) => setCvText(e.target.value)}
+                                    placeholder="Ví dụ: Tôi là lập trình viên Java có 3 năm kinh nghiệm, thành thạo Spring Boot, React và AWS..."
+                                    className="w-full h-64 p-4 bg-gray-50 border-2 border-gray-100 rounded-xl focus:border-[#3AB4E6] focus:ring-0 outline-none transition-all resize-none text-gray-700 placeholder-gray-400"
+                                />
+                                <div className="absolute bottom-3 right-3 text-gray-400 text-xs font-medium">
+                                    {cvText.length} ký tự
+                                </div>
+                            </div>
+                            
+                            <div className="flex gap-3 pt-2">
+                                <button
+                                    onClick={() => setIsAiModalOpen(false)}
+                                    className="flex-1 px-6 py-3.5 border-2 border-gray-100 text-gray-500 font-bold rounded-xl hover:bg-gray-50 transition-all"
+                                >
+                                    Hủy bỏ
+                                </button>
+                                <button
+                                    onClick={handleConfirmAiSearch}
+                                    disabled={isAnalyzing}
+                                    className="flex-[2] px-6 py-3.5 bg-[#3AB4E6] hover:bg-blue-500 text-white font-bold rounded-xl shadow-lg shadow-blue-200 transition-all flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
+                                >
+                                    {isAnalyzing ? (
+                                        <>
+                                            <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                                            Đang phân tích...
+                                        </>
+                                    ) : (
+                                        <>
+                                            <FaSearch size={16} /> Phân tích & Tìm kiếm
+                                        </>
+                                    )}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

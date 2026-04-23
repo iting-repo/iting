@@ -18,6 +18,7 @@ public class SalaryReportResponse {
     private List<ChartData> experienceStats;
     private List<ChartData> locationStats;
     private List<JobResponse> highSalaryJobs;
+    private List<String> relatedPositions;
 
     @Data
     @AllArgsConstructor

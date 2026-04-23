@@ -16,6 +16,7 @@ import com.iting.jobportal.job.repository.JobRepository;
 import com.iting.jobportal.job.repository.JobSpecification;
 import com.iting.jobportal.job.service.JobService;
 import com.iting.jobportal.recommendation.service.RecommendationService;
+import com.iting.jobportal.common.service.GeminiService;
 import org.springframework.context.annotation.Lazy;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
@@ -44,6 +45,7 @@ public class JobServiceImpl implements JobService {
     private final CompanyRepository companyRepository;
     private final FileUploadService fileUploadService;
     private final ApplicationEventPublisher eventPublisher;
+    private final GeminiService geminiService;
 
     @PersistenceContext
     private EntityManager entityManager;
@@ -191,6 +193,10 @@ public class JobServiceImpl implements JobService {
         };
     }
 
+    @Override
+    public JobSearchRequest analyzeCvForSearch(String cvText) {
+        return geminiService.extractSearchCriteriaFromCv(cvText);
+    }
 
     @Override
     @Transactional
@@ -478,6 +484,13 @@ public class JobServiceImpl implements JobService {
 
     @Override
     public Page<JobResponse> searchJobs(JobSearchRequest request, Long userId) {
+        String originalKeyword = request.getKeyword();
+        List<String> expandedKeywords = new ArrayList<>();
+
+        if (request.getIsAiSearch() != null && request.getIsAiSearch() && originalKeyword != null && !originalKeyword.isBlank()) {
+            expandedKeywords = geminiService.expandSearchTerms(originalKeyword);
+        }
+
         Sort sort = buildSort(request.getSortBy(), request.getSortOrder());
 
         Pageable pageable = PageRequest.of(
@@ -486,7 +499,45 @@ public class JobServiceImpl implements JobService {
                 sort
         );
 
-        Page<Job> jobPage = jobRepository.findAll(JobSpecification.fromRequest(request), pageable);
+        // Build base specification without keyword first
+        request.setKeyword(null);
+        Specification<Job> spec = JobSpecification.fromRequest(request);
+        request.setKeyword(originalKeyword); // Restore original keyword
+        
+        // Build keyword specification (Original OR AI Expanded)
+        List<String> allKeywords = new ArrayList<>();
+        if (originalKeyword != null && !originalKeyword.isBlank()) {
+            allKeywords.add(originalKeyword);
+        }
+        allKeywords.addAll(expandedKeywords);
+
+        if (!allKeywords.isEmpty()) {
+            Specification<Job> keywordSpec = (root, query, cb) -> {
+                List<Predicate> outerPredicates = new ArrayList<>();
+                for (String kw : allKeywords) {
+                    // Đối với mỗi keyword/synonym, ta có thể tokenize hoặc search nguyên cụm
+                    // Ở đây ta đơn giản search nguyên cụm hoặc từng từ (giống JobSpecification)
+                    String[] tokens = kw.trim().toLowerCase().split("\\s+");
+                    List<Predicate> tokenPredicates = new ArrayList<>();
+                    for (String token : tokens) {
+                        if (token.length() < 2) continue;
+                        String pattern = "%" + token + "%";
+                        tokenPredicates.add(cb.or(
+                                cb.like(cb.lower(root.get("position")), pattern),
+                                cb.like(cb.lower(root.get("description")), pattern),
+                                cb.like(cb.lower(root.get("techRequired")), pattern)
+                        ));
+                    }
+                    if (!tokenPredicates.isEmpty()) {
+                        outerPredicates.add(cb.and(tokenPredicates.toArray(new Predicate[0])));
+                    }
+                }
+                return cb.or(outerPredicates.toArray(new Predicate[0]));
+            };
+            spec = spec.and(keywordSpec);
+        }
+
+        Page<Job> jobPage = jobRepository.findAll(spec, pageable);
         
         // Phase 2/3: Nếu có userId và đang dùng default sort (lastUpdate), thực hiện re-rank dựa trên đề xuất
         if (userId != null && ("lastUpdate".equals(request.getSortBy()) || request.getSortBy() == null)) {
@@ -808,6 +859,14 @@ public class JobServiceImpl implements JobService {
                 .map(this::enrichWithCompany)
                 .collect(Collectors.toList());
 
+        // 5. Vị trí liên quan (Top 6)
+        List<String> relatedPositions = jobs.stream()
+                .map(j -> j.getPosition() != null ? j.getPosition() : j.getTitle())
+                .filter(p -> p != null && (keyword == null || !p.toLowerCase().contains(keyword.toLowerCase())))
+                .distinct()
+                .limit(6)
+                .collect(Collectors.toList());
+
         return SalaryReportResponse.builder()
                 .averageSalary(Math.round(totalAvg * 10.0) / 10.0)
                 .minSalary(Math.round(min * 10.0) / 10.0)
@@ -815,6 +874,7 @@ public class JobServiceImpl implements JobService {
                 .experienceStats(experienceStats)
                 .locationStats(locationStats)
                 .highSalaryJobs(highSalaryJobs)
+                .relatedPositions(relatedPositions)
                 .build();
     }
 

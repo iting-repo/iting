@@ -63,5 +63,7 @@ public interface JobService {
     
     void bulkCloseJobs(Long employerId, java.util.List<Long> jobIds);
     
+    JobSearchRequest analyzeCvForSearch(String cvText);
+    
     SalaryReportResponse getSalaryReport(String keyword, String location, String experience);
 }

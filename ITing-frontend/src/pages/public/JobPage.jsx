@@ -19,6 +19,7 @@ const defaultFilters = {
     size: PAGE_SIZE,
     sortBy: 'lastUpdate',
     sortOrder: 'desc',
+    isAiSearch: false,
 };
 
 const normalizeSort = (value) => {
@@ -82,6 +83,7 @@ const compactParams = (filters) => ({
     size: filters.size,
     sortBy: filters.sortBy,
     sortOrder: filters.sortOrder,
+    isAiSearch: filters.isAiSearch || undefined,
 });
 
 const filtersFromQuery = (searchParams) => ({
@@ -96,6 +98,7 @@ const filtersFromQuery = (searchParams) => ({
     page: Math.max(Number(searchParams.get('page') || '1') - 1, 0),
     sortBy: searchParams.get('sortBy') || 'lastUpdate',
     sortOrder: searchParams.get('sortOrder') || 'desc',
+    isAiSearch: searchParams.get('isAiSearch') === 'true',
 });
 
 const queryFromFilters = (filters) => {
@@ -110,6 +113,7 @@ const queryFromFilters = (filters) => {
         page: String(filters.page + 1),
         sortBy: filters.sortBy,
         sortOrder: filters.sortOrder,
+        isAiSearch: filters.isAiSearch ? 'true' : undefined,
     }).filter(([, value]) => value !== undefined);
 
     return Object.fromEntries(entries);
