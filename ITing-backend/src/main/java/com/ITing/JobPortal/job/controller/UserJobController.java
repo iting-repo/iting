@@ -2,6 +2,7 @@ package com.iting.jobportal.job.controller;
 
 import com.iting.jobportal.job.dto.request.JobSearchRequest;
 import com.iting.jobportal.job.dto.response.JobResponse;
+import com.iting.jobportal.job.dto.response.SalaryReportResponse;
 import com.iting.jobportal.job.entity.enums.ExperienceLevel;
 import com.iting.jobportal.job.entity.enums.JobType;
 import com.iting.jobportal.job.service.JobService;
@@ -133,5 +134,15 @@ public class UserJobController {
     public ResponseEntity<List<JobResponse>> getHotJobs(
             @RequestParam(defaultValue = "10") int limit) {
         return ResponseEntity.ok(jobService.getHotJobs(limit));
+    }
+
+    @GetMapping("/salary-report")
+    @Operation(summary = "Lấy báo cáo lương")
+    public ResponseEntity<SalaryReportResponse> getSalaryReport(
+            @RequestParam(required = false) String keyword,
+            @RequestParam(required = false) String location,
+            @RequestParam(required = false) String experience
+    ) {
+        return ResponseEntity.ok(jobService.getSalaryReport(keyword, location, experience));
     }
 }

@@ -116,12 +116,12 @@ const JobDetailPage = () => {
     }, [currentJob?.companyId]);
 
     useEffect(() => {
-        if (!currentJob) return;
+        if (!currentJob || String(currentJob.id) !== String(normalizedJobId)) return;
         const expectedSlug = slugify(getJobTitle(currentJob)) || 'chi-tiet-viec-lam';
         if (slug !== expectedSlug) {
             navigate(buildJobDetailPath(currentJob), { replace: true });
         }
-    }, [currentJob, slug, navigate]);
+    }, [currentJob, slug, navigate, normalizedJobId]);
 
     useEffect(() => {
         const loadRelatedJobs = async () => {
@@ -436,7 +436,7 @@ const JobDetailPage = () => {
                                 <div className="w-full pt-2 mt-2 border-t border-gray-200 text-gray-400 text-xs flex items-center justify-between">
                                     <span className="bg-gray-200 text-gray-600 px-2 py-1 rounded">Hạn nộp hồ sơ: {jobDetail.deadline}</span>
                                     <Link 
-                                        to="/salary-lookup" 
+                                        to={`/salary-lookup?keyword=${encodeURIComponent(jobDetail.title)}`} 
                                         className="text-[#3AB4E6] font-bold flex items-center gap-1 hover:underline hover:scale-105 transition-transform"
                                     >
                                         <FaDollarSign size={12} />

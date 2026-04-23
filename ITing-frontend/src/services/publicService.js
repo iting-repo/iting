@@ -4,8 +4,10 @@ const publicService = {
   getHomeStats: async () => {
     return axiosInstance.get("/public/stats");
   },
-  
-  // You can add more public endpoints here later (e.g. categories, blogs)
+
+  getSalaryReport: async (params) => {
+    return axiosInstance.get("/jobs/salary-report", { params });
+  },
 };
 
 export default publicService;

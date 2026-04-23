@@ -7,7 +7,7 @@ import org.springframework.stereotype.Repository;
 import java.util.Optional;
 
 @Repository
-public interface AccountRepository extends JpaRepository<Account, Long> {
+public interface AccountRepository extends JpaRepository<Account, Long>, org.springframework.data.jpa.repository.JpaSpecificationExecutor<Account> {
 
     // Basic CRUD operations
     Optional<Account> findByEmail(String email);

@@ -362,7 +362,18 @@ const HomePage = () => {
                     <div className="mt-6 flex flex-wrap justify-center gap-2 items-center">
                         <span className="text-gray-400 text-sm font-medium">Gợi ý:</span>
                         {['Intern', 'Thực tập sinh IT', 'Thực tập sinh tiếng Trung', 'Thực tập sinh tư vấn', 'Chuyên viên vận hành'].map((tag, i) => (
-                            <span key={i} className="bg-white/10 hover:bg-white/20 text-white px-3 py-1 rounded-full text-xs cursor-pointer transition-all border border-white/5">
+                            <span 
+                                key={i} 
+                                onClick={() => {
+                                    handleChangeSearchField('keyword', tag);
+                                    const params = new URLSearchParams();
+                                    params.append('keyword', tag);
+                                    if (searchForm.location) params.append('location', searchForm.location);
+                                    if (searchForm.jobType) params.append('jobTypes', searchForm.jobType);
+                                    navigate(`/jobs?${params.toString()}`);
+                                }}
+                                className="bg-white/10 hover:bg-white/20 text-white px-3 py-1 rounded-full text-xs cursor-pointer transition-all border border-white/5"
+                            >
                                 {tag}
                             </span>
                         ))}
@@ -469,7 +480,7 @@ const HomePage = () => {
                                         </div>
 
                                         <h3 className="text-base font-bold text-gray-900 group-hover:text-blue-500 transition-colors line-clamp-2 min-h-[3rem]">
-                                            {job.position}
+                                            {job.title || job.position}
                                         </h3>
                                         <p className="text-xs text-gray-500 font-medium mb-4 truncate">{job.companyName}</p>
 
@@ -631,7 +642,7 @@ const HomePage = () => {
                                             <div className="flex justify-between items-start mb-2">
                                                 <div>
                                                     <h3 className="text-lg font-bold text-gray-900 group-hover:text-[#3AB4E6] transition-colors cursor-pointer">
-                                                        {job.position}
+                                                        {job.title || job.position}
                                                     </h3>
                                                     <p className="text-sm text-gray-500 font-medium mt-1">{job.companyName}</p>
                                                 </div>
