@@ -12,8 +12,13 @@ import com.iting.jobportal.user.entity.User;
 import com.iting.jobportal.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.*;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import jakarta.persistence.criteria.Predicate;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 
 @Service
@@ -26,8 +31,36 @@ public class AdminUserServiceImpl implements AdminUserService {
     @Override
     public Page<UserListResponse> getAllUsers(String keyword, Role role, AccountStatus status, int page, int size) {
         Pageable pageable = PageRequest.of(page, size, Sort.by("id").descending());
-        // For simplicity, we just return all since sorting/filtering might need Specifications
-        return accountRepository.findAll(pageable)
+        
+        Specification<Account> spec = (root, query, cb) -> {
+            List<Predicate> predicates = new ArrayList<>();
+            
+            if (keyword != null && !keyword.trim().isEmpty()) {
+                String pattern = "%" + keyword.trim().toLowerCase() + "%";
+                
+                // Join với User và Company để tìm theo tên
+                var userJoin = root.join("user", jakarta.persistence.criteria.JoinType.LEFT);
+                var companyJoin = root.join("company", jakarta.persistence.criteria.JoinType.LEFT);
+                
+                predicates.add(cb.or(
+                    cb.like(cb.lower(root.get("email")), pattern),
+                    cb.like(cb.lower(userJoin.get("fullName")), pattern),
+                    cb.like(cb.lower(companyJoin.get("name")), pattern)
+                ));
+            }
+            
+            if (role != null) {
+                predicates.add(cb.equal(root.get("role"), role));
+            }
+            
+            if (status != null) {
+                predicates.add(cb.equal(root.get("status"), status));
+            }
+            
+            return cb.and(predicates.toArray(new Predicate[0]));
+        };
+
+        return accountRepository.findAll(spec, pageable)
                 .map(this::mapToResponse);
     }
 
@@ -100,8 +133,8 @@ public class AdminUserServiceImpl implements AdminUserService {
 
     @Override
     public java.io.ByteArrayInputStream exportUsersToExcel() {
-        java.util.List<Account> accounts = accountRepository.findAll();
-        String[] headers = {"ID", "Email", "Role", "Status", "Full Name", "Created At"};
+        List<Account> accounts = accountRepository.findAll();
+        String[] headers = {"ID", "Email", "Role", "Status", "Full Name", "Company Name", "Created At"};
         
         return com.iting.jobportal.common.excel.ExcelHelper.dataToExcel(
                 accounts, 
@@ -113,9 +146,19 @@ public class AdminUserServiceImpl implements AdminUserService {
                     row.createCell(2).setCellValue(account.getRole().toString());
                     row.createCell(3).setCellValue(account.getStatus().toString());
                     
-                    Optional<User> userOpt = userRepository.findById(account.getId());
-                    row.createCell(4).setCellValue(userOpt.map(User::getFullName).orElse(""));
-                    row.createCell(5).setCellValue(account.getCreatedAt().toString());
+                    String fullName = "";
+                    if (account.getUser() != null) {
+                        fullName = account.getUser().getFullName();
+                    }
+                    row.createCell(4).setCellValue(fullName);
+
+                    String companyName = "";
+                    if (account.getCompany() != null) {
+                        companyName = account.getCompany().getName();
+                    }
+                    row.createCell(5).setCellValue(companyName);
+                    
+                    row.createCell(6).setCellValue(account.getCreatedAt() != null ? account.getCreatedAt().toString() : "");
                 }
         );
     }
@@ -156,10 +199,16 @@ public class AdminUserServiceImpl implements AdminUserService {
                 .lastLoginAt(account.getLastLoginAt())
                 .build();
                 
-        Optional<User> userOpt = userRepository.findById(account.getId());
-        if (userOpt.isPresent()) {
-            response.setFullName(userOpt.get().getFullName());
-            response.setAvatarUrl(userOpt.get().getAvatarUrl());
+        if (account.getUser() != null) {
+            response.setFullName(account.getUser().getFullName());
+            response.setAvatarUrl(account.getUser().getAvatarUrl());
+        }
+        
+        if (account.getCompany() != null) {
+            response.setCompanyName(account.getCompany().getName());
+            if (response.getAvatarUrl() == null) {
+                response.setAvatarUrl(account.getCompany().getLogoUrl());
+            }
         }
         
         return response;

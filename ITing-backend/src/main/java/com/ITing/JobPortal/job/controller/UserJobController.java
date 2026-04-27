@@ -2,6 +2,7 @@ package com.iting.jobportal.job.controller;
 
 import com.iting.jobportal.job.dto.request.JobSearchRequest;
 import com.iting.jobportal.job.dto.response.JobResponse;
+import com.iting.jobportal.job.dto.response.SalaryReportResponse;
 import com.iting.jobportal.job.entity.enums.ExperienceLevel;
 import com.iting.jobportal.job.entity.enums.JobType;
 import com.iting.jobportal.job.service.JobService;
@@ -48,12 +49,15 @@ public class UserJobController {
             @RequestParam(required = false) String techRequired,
             @RequestParam(required = false, defaultValue = "lastUpdate") String sortBy,
             @RequestParam(required = false, defaultValue = "desc") String sortOrder,
+            @RequestParam(required = false, defaultValue = "false") Boolean isAiSearch,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size
     ) {
         JobSearchRequest request = new JobSearchRequest();
         request.setKeyword(keyword);
         request.setLocation(location);
+        request.setIsAiSearch(isAiSearch);
+        request.setSortOrder(sortOrder);
 
         if (jobType != null) {
             request.setJobType(JobType.valueOf(jobType));
@@ -133,5 +137,20 @@ public class UserJobController {
     public ResponseEntity<List<JobResponse>> getHotJobs(
             @RequestParam(defaultValue = "10") int limit) {
         return ResponseEntity.ok(jobService.getHotJobs(limit));
+    }
+
+    @GetMapping("/salary-report")
+    @Operation(summary = "Lấy báo cáo lương")
+    public ResponseEntity<SalaryReportResponse> getSalaryReport(
+            @RequestParam(required = false) String keyword,
+            @RequestParam(required = false) String location,
+            @RequestParam(required = false) String experience
+    ) {
+        return ResponseEntity.ok(jobService.getSalaryReport(keyword, location, experience));
+    }
+
+    @PostMapping("/analyze-cv")
+    public com.iting.jobportal.job.dto.request.JobSearchRequest analyzeCv(@RequestBody String cvText) {
+        return jobService.analyzeCvForSearch(cvText);
     }
 }

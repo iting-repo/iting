@@ -4,6 +4,7 @@ import com.iting.jobportal.job.dto.request.CreateJobRequest;
 import com.iting.jobportal.job.dto.request.JobSearchRequest;
 import com.iting.jobportal.job.dto.request.UpdateJobRequest;
 import com.iting.jobportal.job.dto.response.JobResponse;
+import com.iting.jobportal.job.dto.response.SalaryReportResponse;
 import org.springframework.data.domain.Page;
 
 import java.util.List;
@@ -61,4 +62,8 @@ public interface JobService {
     void bulkDeleteJobs(Long employerId, java.util.List<Long> jobIds);
     
     void bulkCloseJobs(Long employerId, java.util.List<Long> jobIds);
+    
+    JobSearchRequest analyzeCvForSearch(String cvText);
+    
+    SalaryReportResponse getSalaryReport(String keyword, String location, String experience);
 }

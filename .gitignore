@@ -3,8 +3,13 @@
 *.iml
 
 # Gradle build
-ITing/.gradle/
-ITing/build/
+/.gradle/
+**/.gradle/
+
+# Gradle and Java build outputs
+**/build/
+**/out/
+**/target/
 
 # Logs
 *.log
@@ -12,3 +17,41 @@ ITing/build/
 node_modules
 dist
 .env
+
+# Node / frontend
+**/node_modules/
+ITing-frontend/node_modules/
+ITing-frontend/dist/
+
+# IDEs, editors
+.vscode/
+.classpath
+.project
+.settings/
+.DS_Store
+
+# Java artifacts
+*.class
+*.jar
+*.war
+
+# Test / coverage
+coverage/
+.coverage
+test-results/
+playwright-report/
+.pytest_cache/
+
+# Maven
+.mvn/
+
+# Temporary files
+*.tmp
+*.swp
+*~
+
+.opencode/
+
+iting-key-pair.pem
+
+skills-lock.json

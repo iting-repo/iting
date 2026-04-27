@@ -1,6 +1,7 @@
 package com.iting.jobportal.common.service.impl;
 
 import com.iting.jobportal.common.service.GeminiService;
+import com.iting.jobportal.job.dto.request.JobSearchRequest;
 import com.iting.jobportal.job.entity.Job;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -15,6 +16,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -105,5 +107,80 @@ public class GeminiServiceImpl implements GeminiService {
         );
 
         return generateContent(prompt);
+    }
+
+    @Override
+    public List<String> expandSearchTerms(String keyword) {
+        if (keyword == null || keyword.isBlank()) return Collections.emptyList();
+
+        String prompt = String.format(
+                "Bạn là một chuyên gia trong lĩnh vực tuyển dụng IT. " +
+                "Hãy phân tích từ khóa tìm kiếm việc làm sau: \"%s\". " +
+                "Hãy liệt kê tối đa 10 từ khóa liên quan nhất, bao gồm:\n" +
+                "1. Từ đồng nghĩa (ví dụ: 'lập trình viên' -> 'developer').\n" +
+                "2. Các từ paraphrase hoặc cách gọi khác.\n" +
+                "3. Các công nghệ liên quan chặt chẽ.\n" +
+                "4. Viết tắt phổ biến.\n" +
+                "\n" +
+                "CHỈ TRẢ VỀ DANH SÁCH CÁC TỪ KHÓA, CÁCH NHAU BỞI DẤU PHẨY. KHÔNG GIẢI THÍCH GÌ THÊM.",
+                keyword
+        );
+
+        String result = generateContent(prompt);
+        if (result == null || result.isBlank() || result.startsWith("Lỗi")) {
+            return Collections.singletonList(keyword);
+        }
+
+        return java.util.Arrays.stream(result.split(","))
+                .map(String::trim)
+                .filter(s -> !s.isBlank())
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public JobSearchRequest extractSearchCriteriaFromCv(String cvText) {
+        if (cvText == null || cvText.isBlank()) return new JobSearchRequest();
+
+        String prompt = String.format(
+                "Bạn là một chuyên gia phân tích CV IT. Hãy đọc nội dung CV sau và trích xuất thông tin tìm kiếm việc làm phù hợp.\n" +
+                "Nội dung CV: \"%s\"\n\n" +
+                "Hãy trả về kết quả dưới dạng JSON duy nhất với các trường sau:\n" +
+                "- keyword: Vị trí công việc mong muốn (ví dụ: 'Java Developer').\n" +
+                "- techs: Danh sách các công nghệ/ngôn ngữ lập trình chính (ví dụ: ['Java', 'Spring Boot']).\n" +
+                "- experienceLevel: Một trong các giá trị [INTERN, FRESHER, JUNIOR, MIDDLE, SENIOR, LEAD, EXPERT, MANAGER].\n" +
+                "- domain: Lĩnh vực chuyên môn (ví dụ: 'Web Development').\n" +
+                "\n" +
+                "CHỈ TRẢ VỀ JSON, KHÔNG GIẢI THÍCH.",
+                cvText
+        );
+
+        String result = generateContent(prompt);
+        log.info("CV Analysis result: {}", result);
+
+        try {
+            // Clean markdown json if present
+            String json = result.replaceAll("```json", "").replaceAll("```", "").trim();
+            com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
+            Map<String, Object> map = mapper.readValue(json, Map.class);
+
+            JobSearchRequest request = new JobSearchRequest();
+            request.setKeyword((String) map.get("keyword"));
+            request.setTechs((List<String>) map.get("techs"));
+            request.setDomain((String) map.get("domain"));
+            
+            String levelStr = (String) map.get("experienceLevel");
+            if (levelStr != null) {
+                try {
+                    request.setExperienceLevel(com.iting.jobportal.job.entity.enums.ExperienceLevel.valueOf(levelStr.toUpperCase()));
+                } catch (Exception ignored) {}
+            }
+            
+            return request;
+        } catch (Exception e) {
+            log.error("Error parsing CV analysis JSON: {}", e.getMessage());
+            JobSearchRequest fallback = new JobSearchRequest();
+            fallback.setKeyword("Developer"); // Fallback
+            return fallback;
+        }
     }
 }

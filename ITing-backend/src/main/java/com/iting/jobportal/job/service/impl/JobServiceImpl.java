@@ -8,6 +8,7 @@ import com.iting.jobportal.job.dto.request.CreateJobRequest;
 import com.iting.jobportal.job.dto.request.JobSearchRequest;
 import com.iting.jobportal.job.dto.request.UpdateJobRequest;
 import com.iting.jobportal.job.dto.response.JobResponse;
+import com.iting.jobportal.job.dto.response.SalaryReportResponse;
 import com.iting.jobportal.job.entity.Job;
 import com.iting.jobportal.job.entity.enums.JobStatus;
 import com.iting.jobportal.job.entity.enums.SalaryType;
@@ -15,6 +16,7 @@ import com.iting.jobportal.job.repository.JobRepository;
 import com.iting.jobportal.job.repository.JobSpecification;
 import com.iting.jobportal.job.service.JobService;
 import com.iting.jobportal.recommendation.service.RecommendationService;
+import com.iting.jobportal.common.service.GeminiService;
 import org.springframework.context.annotation.Lazy;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
@@ -22,6 +24,9 @@ import lombok.RequiredArgsConstructor;
 import com.iting.jobportal.file.FileUploadService;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.*;
+import org.springframework.data.jpa.domain.Specification;
+import jakarta.persistence.criteria.Predicate;
+import java.util.ArrayList;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -40,6 +45,7 @@ public class JobServiceImpl implements JobService {
     private final CompanyRepository companyRepository;
     private final FileUploadService fileUploadService;
     private final ApplicationEventPublisher eventPublisher;
+    private final GeminiService geminiService;
 
     @PersistenceContext
     private EntityManager entityManager;
@@ -187,6 +193,10 @@ public class JobServiceImpl implements JobService {
         };
     }
 
+    @Override
+    public JobSearchRequest analyzeCvForSearch(String cvText) {
+        return geminiService.extractSearchCriteriaFromCv(cvText);
+    }
 
     @Override
     @Transactional
@@ -474,6 +484,13 @@ public class JobServiceImpl implements JobService {
 
     @Override
     public Page<JobResponse> searchJobs(JobSearchRequest request, Long userId) {
+        String originalKeyword = request.getKeyword();
+        List<String> expandedKeywords = new ArrayList<>();
+
+        if (request.getIsAiSearch() != null && request.getIsAiSearch() && originalKeyword != null && !originalKeyword.isBlank()) {
+            expandedKeywords = geminiService.expandSearchTerms(originalKeyword);
+        }
+
         Sort sort = buildSort(request.getSortBy(), request.getSortOrder());
 
         Pageable pageable = PageRequest.of(
@@ -482,7 +499,45 @@ public class JobServiceImpl implements JobService {
                 sort
         );
 
-        Page<Job> jobPage = jobRepository.findAll(JobSpecification.fromRequest(request), pageable);
+        // Build base specification without keyword first
+        request.setKeyword(null);
+        Specification<Job> spec = JobSpecification.fromRequest(request);
+        request.setKeyword(originalKeyword); // Restore original keyword
+        
+        // Build keyword specification (Original OR AI Expanded)
+        List<String> allKeywords = new ArrayList<>();
+        if (originalKeyword != null && !originalKeyword.isBlank()) {
+            allKeywords.add(originalKeyword);
+        }
+        allKeywords.addAll(expandedKeywords);
+
+        if (!allKeywords.isEmpty()) {
+            Specification<Job> keywordSpec = (root, query, cb) -> {
+                List<Predicate> outerPredicates = new ArrayList<>();
+                for (String kw : allKeywords) {
+                    // Đối với mỗi keyword/synonym, ta có thể tokenize hoặc search nguyên cụm
+                    // Ở đây ta đơn giản search nguyên cụm hoặc từng từ (giống JobSpecification)
+                    String[] tokens = kw.trim().toLowerCase().split("\\s+");
+                    List<Predicate> tokenPredicates = new ArrayList<>();
+                    for (String token : tokens) {
+                        if (token.length() < 2) continue;
+                        String pattern = "%" + token + "%";
+                        tokenPredicates.add(cb.or(
+                                cb.like(cb.lower(root.get("position")), pattern),
+                                cb.like(cb.lower(root.get("description")), pattern),
+                                cb.like(cb.lower(root.get("techRequired")), pattern)
+                        ));
+                    }
+                    if (!tokenPredicates.isEmpty()) {
+                        outerPredicates.add(cb.and(tokenPredicates.toArray(new Predicate[0])));
+                    }
+                }
+                return cb.or(outerPredicates.toArray(new Predicate[0]));
+            };
+            spec = spec.and(keywordSpec);
+        }
+
+        Page<Job> jobPage = jobRepository.findAll(spec, pageable);
         
         // Phase 2/3: Nếu có userId và đang dùng default sort (lastUpdate), thực hiện re-rank dựa trên đề xuất
         if (userId != null && ("lastUpdate".equals(request.getSortBy()) || request.getSortBy() == null)) {
@@ -691,5 +746,147 @@ public class JobServiceImpl implements JobService {
         if (job.getMaxAccept() == null || job.getMaxAccept() <= 0) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Số lượng tuyển phải lớn hơn 0");
         }
+    }
+
+    @Override
+    public SalaryReportResponse getSalaryReport(String keyword, String location, String experience) {
+        // Thuật toán tìm kiếm thông minh:
+        // 1. Tokenize keyword thành các từ đơn
+        // 2. Tìm kiếm các job chứa ít nhất 1 trong các từ đó (ưu tiên match nhiều từ hơn)
+        // 3. Fallback: Nếu không có kết quả, mở rộng tìm kiếm theo related keywords (nếu có hệ thống mapping)
+        
+        List<Job> jobs;
+        if (keyword != null && !keyword.isBlank()) {
+            String[] tokens = keyword.trim().toLowerCase().split("\\s+");
+            
+            Specification<Job> spec = (root, query, cb) -> {
+                List<Predicate> predicates = new ArrayList<>();
+                predicates.add(cb.equal(root.get("status"), JobStatus.ACTIVE));
+                
+                if (location != null && !location.isBlank() && !location.contains("Tất cả")) {
+                    predicates.add(cb.like(cb.lower(root.get("location")), "%" + location.toLowerCase() + "%"));
+                }
+
+                // Match ít nhất 1 token trong position hoặc title
+                List<Predicate> tokenPredicates = new ArrayList<>();
+                for (String token : tokens) {
+                    if (token.length() < 2) continue; // Bỏ qua từ quá ngắn
+                    tokenPredicates.add(cb.like(cb.lower(root.get("position")), "%" + token + "%"));
+                    tokenPredicates.add(cb.like(cb.lower(root.get("title")), "%" + token + "%"));
+                }
+                
+                if (!tokenPredicates.isEmpty()) {
+                    predicates.add(cb.or(tokenPredicates.toArray(new Predicate[0])));
+                }
+                
+                return cb.and(predicates.toArray(new Predicate[0]));
+            };
+            
+            jobs = jobRepository.findAll(spec);
+            
+            // Xếp hạng thông minh: Job nào chứa nhiều tokens hơn thì ưu tiên lên đầu
+            jobs.sort((a, b) -> {
+                long countA = java.util.Arrays.stream(tokens).filter(t -> (a.getPosition() != null && a.getPosition().toLowerCase().contains(t)) || (a.getTitle() != null && a.getTitle().toLowerCase().contains(t))).count();
+                long countB = java.util.Arrays.stream(tokens).filter(t -> (b.getPosition() != null && b.getPosition().toLowerCase().contains(t)) || (b.getTitle() != null && b.getTitle().toLowerCase().contains(t))).count();
+                return Long.compare(countB, countA);
+            });
+        } else {
+            JobSearchRequest request = new JobSearchRequest();
+            if (location != null && !location.isBlank() && !location.contains("Tất cả")) {
+                request.setLocation(location);
+            }
+            jobs = jobRepository.findAll(com.iting.jobportal.job.repository.JobSpecification.fromRequest(request));
+        }
+        
+        // Chỉ tính toán trên các job có lương (không phải thỏa thuận)
+        List<Job> salaryJobs = jobs.stream()
+                .filter(j -> j.getMinSalary() != null && j.getMaxSalary() != null)
+                .collect(Collectors.toList());
+
+        if (salaryJobs.isEmpty()) {
+            return SalaryReportResponse.builder()
+                    .averageSalary(0.0)
+                    .minSalary(0.0)
+                    .maxSalary(0.0)
+                    .experienceStats(java.util.Collections.emptyList())
+                    .locationStats(java.util.Collections.emptyList())
+                    .highSalaryJobs(java.util.Collections.emptyList())
+                    .build();
+        }
+
+        // 1. Tính toán chung (triệu VNĐ)
+        double totalAvg = salaryJobs.stream()
+                .mapToDouble(j -> (j.getMinSalary().doubleValue() + j.getMaxSalary().doubleValue()) / 2.0 / 1_000_000.0)
+                .average().orElse(0.0);
+        
+        double min = salaryJobs.stream()
+                .mapToDouble(j -> j.getMinSalary().doubleValue() / 1_000_000.0)
+                .min().orElse(0.0);
+                
+        double max = salaryJobs.stream()
+                .mapToDouble(j -> j.getMaxSalary().doubleValue() / 1_000_000.0)
+                .max().orElse(0.0);
+
+        // 2. Thống kê theo kinh nghiệm
+        java.util.Map<com.iting.jobportal.job.entity.enums.ExperienceLevel, Double> expMap = salaryJobs.stream()
+                .collect(Collectors.groupingBy(
+                        Job::getExperienceLevel,
+                        Collectors.averagingDouble(j -> (j.getMinSalary().doubleValue() + j.getMaxSalary().doubleValue()) / 2.0 / 1_000_000.0)
+                ));
+        
+        List<SalaryReportResponse.ChartData> experienceStats = expMap.entrySet().stream()
+                .map(e -> new SalaryReportResponse.ChartData(formatExperienceLabel(e.getKey()), Math.round(e.getValue() * 10.0) / 10.0))
+                .collect(Collectors.toList());
+
+        // 3. Thống kê theo khu vực (Top 5)
+        java.util.Map<String, Double> locMap = salaryJobs.stream()
+                .filter(j -> j.getProvince() != null)
+                .collect(Collectors.groupingBy(
+                        Job::getProvince,
+                        Collectors.averagingDouble(j -> (j.getMinSalary().doubleValue() + j.getMaxSalary().doubleValue()) / 2.0 / 1_000_000.0)
+                ));
+
+        List<SalaryReportResponse.ChartData> locationStats = locMap.entrySet().stream()
+                .map(e -> new SalaryReportResponse.ChartData(e.getKey(), Math.round(e.getValue() * 10.0) / 10.0))
+                .sorted((a, b) -> b.getValue().compareTo(a.getValue()))
+                .limit(5)
+                .collect(Collectors.toList());
+
+        // 4. Top jobs lương cao (Top 4)
+        List<JobResponse> highSalaryJobs = salaryJobs.stream()
+                .sorted((a, b) -> b.getMaxSalary().compareTo(a.getMaxSalary()))
+                .limit(4)
+                .map(this::enrichWithCompany)
+                .collect(Collectors.toList());
+
+        // 5. Vị trí liên quan (Top 6)
+        List<String> relatedPositions = jobs.stream()
+                .map(j -> j.getPosition() != null ? j.getPosition() : j.getTitle())
+                .filter(p -> p != null && (keyword == null || !p.toLowerCase().contains(keyword.toLowerCase())))
+                .distinct()
+                .limit(6)
+                .collect(Collectors.toList());
+
+        return SalaryReportResponse.builder()
+                .averageSalary(Math.round(totalAvg * 10.0) / 10.0)
+                .minSalary(Math.round(min * 10.0) / 10.0)
+                .maxSalary(Math.round(max * 10.0) / 10.0)
+                .experienceStats(experienceStats)
+                .locationStats(locationStats)
+                .highSalaryJobs(highSalaryJobs)
+                .relatedPositions(relatedPositions)
+                .build();
+    }
+
+    private String formatExperienceLabel(com.iting.jobportal.job.entity.enums.ExperienceLevel level) {
+        if (level == null) return "Không yêu cầu";
+        return switch (level) {
+            case INTERN -> "Thực tập";
+            case FRESHER -> "Mới ra trường";
+            case JUNIOR -> "1-3 năm";
+            case MIDDLE, MID_LEVEL -> "3-5 năm";
+            case SENIOR -> "Trên 5 năm";
+            default -> level.name();
+        };
     }
 }

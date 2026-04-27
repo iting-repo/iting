@@ -120,21 +120,30 @@ const CompanyDetailPage = () => {
   if (!company) return null;
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC]">
-      {/* Header / Cover Area */}
-      <div className="bg-white border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <button 
-            onClick={() => navigate(-1)}
-            className="flex items-center gap-2 text-gray-500 hover:text-[#3AB4E6] transition-colors mb-6 group"
-          >
-            <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
-            <span className="text-sm font-semibold">Quay lại</span>
-          </button>
+    <div className="min-h-screen bg-[#F1F5F9]">
+      {/* Hero Banner Area */}
+      <div className="relative h-48 md:h-64 bg-gradient-to-r from-[#3AB4E6] via-[#2A9DCB] to-[#1E3A8A] overflow-hidden">
+        <div className="absolute inset-0 opacity-20">
+          <div className="absolute top-0 left-0 w-64 h-64 bg-white rounded-full blur-3xl -translate-x-1/2 -translate-y-1/2"></div>
+          <div className="absolute bottom-0 right-0 w-96 h-96 bg-[#3AB4E6] rounded-full blur-3xl translate-x-1/3 translate-y-1/3"></div>
+        </div>
+        <div className="max-w-7xl mx-auto px-4 h-full flex items-end pb-12 relative z-10">
+           <button 
+              onClick={() => navigate(-1)}
+              className="absolute top-8 left-4 flex items-center gap-2 text-white/80 hover:text-white transition-colors group px-4 py-2 bg-black/10 backdrop-blur-md rounded-full text-sm font-bold"
+            >
+              <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
+              Quay lại
+            </button>
+        </div>
+      </div>
 
-          <div className="flex flex-col md:flex-row gap-8 items-start">
-            {/* Logo */}
-            <div className="w-32 h-32 rounded-3xl border border-gray-100 p-4 bg-white shadow-xl shadow-gray-100 flex items-center justify-center shrink-0">
+      {/* Profile Header Area */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-20 relative z-20">
+        <div className="bg-white rounded-[2rem] shadow-2xl shadow-gray-200/50 p-6 md:p-10 border border-gray-100">
+          <div className="flex flex-col md:flex-row gap-8 items-start md:items-center">
+            {/* Logo with sophisticated styling */}
+            <div className="w-32 h-32 md:w-40 md:h-40 rounded-[2rem] bg-white p-6 shadow-2xl shadow-blue-500/10 border border-gray-50 flex items-center justify-center shrink-0 -mt-16 md:-mt-24 ring-8 ring-white">
               <CompanyLogo 
                 logoUrl={company.logoUrl} 
                 companyName={company.name} 
@@ -143,267 +152,294 @@ const CompanyDetailPage = () => {
             </div>
 
             {/* Basic Info */}
-            <div className="flex-1 space-y-4">
+            <div className="flex-1 space-y-3 pt-2 md:pt-0">
               <div className="flex flex-wrap items-center gap-3">
-                <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight">
+                <h1 className="text-3xl md:text-4xl font-black text-gray-900 tracking-tight">
                   {company.name}
                 </h1>
-                <BadgeCheck className="w-8 h-8 text-[#3AB4E6]" />
-                <div className="hidden sm:flex items-center gap-1.5 px-3 py-1 bg-green-50 text-green-700 rounded-full text-xs font-bold border border-green-100">
+                <div className="p-1 bg-blue-50 rounded-full">
+                  <BadgeCheck className="w-7 h-7 text-[#3AB4E6] fill-blue-50" />
+                </div>
+                <div className="flex items-center gap-1.5 px-3 py-1 bg-green-50 text-green-700 rounded-full text-[10px] font-black border border-green-100 tracking-wider">
                    <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></div>
                    ĐANG TUYỂN DỤNG
                 </div>
               </div>
 
-              <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
-                <div className="flex items-center gap-2 text-gray-600">
-                  <Globe className="w-4 h-4 text-gray-400" />
-                  <a href={company.website} target="_blank" rel="noreferrer" className="text-sm font-medium hover:text-[#3AB4E6] transition-colors flex items-center gap-1">
+              <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-gray-500">
+                <div className="flex items-center gap-2 hover:text-[#3AB4E6] transition-colors cursor-pointer group">
+                  <Globe className="w-4 h-4 text-[#3AB4E6]" />
+                  <a href={company.website} target="_blank" rel="noreferrer" className="text-sm font-bold truncate max-w-[200px]">
                     {company.website?.replace(/^https?:\/\//, '') || "N/A"}
-                    <ExternalLink className="w-3 h-3" />
                   </a>
+                  <ExternalLink className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity" />
                 </div>
-                <div className="flex items-center gap-2 text-gray-600">
-                  <MapPin className="w-4 h-4 text-gray-400" />
-                  <span className="text-sm font-medium">{company.address || "Việt Nam"}</span>
+                <div className="flex items-center gap-2">
+                  <MapPin className="w-4 h-4 text-[#3AB4E6]" />
+                  <span className="text-sm font-bold">{company.address || "Việt Nam"}</span>
                 </div>
-                <div className="flex items-center gap-2 text-gray-600">
-                  <Users className="w-4 h-4 text-gray-400" />
-                  <span className="text-sm font-medium">{company.companySize || "N/A"}</span>
+                <div className="flex items-center gap-2">
+                  <Users className="w-4 h-4 text-[#3AB4E6]" />
+                  <span className="text-sm font-bold">{company.companySize || "N/A"}</span>
                 </div>
               </div>
 
-              <div className="flex items-center gap-4 pt-2">
-                 <div className="flex items-center gap-1">
-                    {[...Array(5)].map((_, i) => (
-                      <Star key={i} className={`w-4 h-4 ${i < 5 ? 'text-yellow-400 fill-current' : 'text-gray-200'}`} />
-                    ))}
-                    <span className="text-sm font-bold text-gray-900 ml-1">5.0</span>
+              <div className="flex items-center gap-5 pt-3">
+                 <div className="flex items-center gap-1.5 bg-yellow-50 px-3 py-1 rounded-full border border-yellow-100">
+                    <Star className="w-4 h-4 text-yellow-500 fill-current" />
+                    <span className="text-sm font-black text-yellow-700">5.0</span>
+                    <span className="text-[10px] text-yellow-600 font-bold ml-1">(99+ đánh giá)</span>
                  </div>
                  <div className="h-4 w-px bg-gray-200"></div>
-                 <div className="text-sm font-bold text-gray-900">
-                    {company.followerCount || 0} <span className="font-medium text-gray-500">người theo dõi</span>
+                 <div className="text-sm font-bold text-gray-900 bg-blue-50/50 px-3 py-1 rounded-full border border-blue-100/50">
+                    {company.followerCount || 0} <span className="font-medium text-[#3AB4E6]">người theo dõi</span>
                  </div>
               </div>
             </div>
 
-            {/* Actions */}
-            <div className="flex flex-col sm:flex-row gap-3 min-w-[200px]">
-              <Button 
+            {/* Premium Action Buttons */}
+            <div className="flex flex-row md:flex-col lg:flex-row gap-3 w-full md:w-auto shrink-0 self-stretch md:self-center">
+              <button 
                 onClick={handleFollowToggle}
                 disabled={isProcessingFollow}
-                className={`font-bold h-12 px-8 rounded-xl shadow-lg transition-all ${
+                className={`flex-1 md:flex-none flex items-center justify-center gap-2 h-14 px-8 rounded-2xl font-black text-sm transition-all duration-300 ${
                   isFollowing 
-                  ? "bg-gray-100 text-gray-700 hover:bg-gray-200 shadow-none border border-gray-200" 
-                  : "bg-[#3AB4E6] hover:bg-[#2fa0cf] text-white shadow-[#3AB4E6]/20"
+                  ? "bg-[#2fa0cf] text-white shadow-xl shadow-blue-100" 
+                  : "bg-[#3AB4E6] text-white hover:bg-[#2A9DCB] shadow-xl shadow-blue-200 hover:-translate-y-1 active:scale-95"
                 }`}
               >
-                {isFollowing ? "Đang theo dõi" : "Theo dõi"}
-              </Button>
-              <Button 
-                variant="outline" 
+                {isFollowing ? (
+                  <>
+                    <CheckCircle2 className="w-5 h-5" />
+                    Đang theo dõi
+                  </>
+                ) : (
+                  <>
+                    <Users className="w-5 h-5" />
+                    Theo dõi công ty
+                  </>
+                )}
+              </button>
+              <button 
                 onClick={handleFollowToggle}
                 disabled={isProcessingFollow}
-                className={`border-gray-200 font-bold h-12 px-6 rounded-xl hover:bg-gray-50 ${isFollowing ? "text-red-500 bg-red-50/50 border-red-100 shadow-inner" : "text-gray-700"}`}
+                className={`w-14 h-14 flex items-center justify-center rounded-2xl transition-all duration-300 border-2 ${
+                  isFollowing 
+                  ? "border-red-100 bg-red-50 text-red-500 shadow-inner" 
+                  : "border-gray-100 bg-white text-gray-400 hover:border-[#3AB4E6] hover:text-[#3AB4E6] hover:-translate-y-1"
+                }`}
               >
-                <Heart className={`w-5 h-5 mr-0 ${isFollowing ? "fill-current" : ""}`} />
-              </Button>
+                <Heart className={`w-6 h-6 ${isFollowing ? "fill-current" : ""}`} />
+              </button>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Main Content Grid */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 scale-in-center">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      {/* Main Content Layout */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 animate-fade-in">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
           
-          {/* Left Column - Detail Info */}
-          <div className="lg:col-span-2 space-y-8">
+          {/* Main Info Column */}
+          <div className="lg:col-span-8 space-y-10">
             
-            {/* Description Section */}
-            <article className="bg-white rounded-3xl border border-gray-100 p-8 shadow-sm">
-              <h2 className="text-xl font-bold text-gray-900 mb-6 flex items-center gap-3">
-                <Building2 className="w-6 h-6 text-[#3AB4E6]" />
+            {/* About Section */}
+            <article className="bg-white rounded-[2.5rem] p-8 md:p-12 shadow-sm border border-gray-100/50 relative overflow-hidden group">
+              <div className="absolute top-0 left-0 w-2 h-20 bg-[#3AB4E6] rounded-full translate-y-12"></div>
+              <h2 className="text-2xl font-black text-gray-900 mb-8 flex items-center gap-4">
+                <Building2 className="w-7 h-7 text-[#3AB4E6]" />
                 Giới thiệu công ty
               </h2>
-              <div className="prose prose-blue max-w-none text-gray-600 leading-relaxed">
-                {company.description || "Công ty chưa cập nhật thông tin giới thiệu."}
+              <div className="text-gray-600 leading-loose text-lg whitespace-pre-line font-medium italic border-l-4 border-gray-50 pl-8 ml-3">
+                {company.description || "Công ty chưa cập nhật thông tin giới thiệu chi tiết."}
               </div>
             </article>
 
-            {/* Tech Stack & Benefits Grid */}
+            {/* Stats/Highlight Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              {/* Tech Stack */}
-              <div className="bg-white rounded-3xl border border-gray-100 p-8 shadow-sm">
-                <h3 className="text-lg font-bold text-gray-900 mb-6 flex items-center gap-3">
-                  <CheckCircle2 className="w-5 h-5 text-[#3AB4E6]" />
+              {/* Tech Stack Card */}
+              <div className="bg-white rounded-[2rem] p-8 shadow-sm border border-gray-100/50 hover:shadow-xl hover:shadow-[#3AB4E6]/5 transition-all duration-500">
+                <h3 className="text-xl font-black text-gray-900 mb-6 flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-2xl bg-blue-50 flex items-center justify-center">
+                    <CheckCircle2 className="w-6 h-6 text-[#3AB4E6]" />
+                  </div>
                   Công nghệ sử dụng
                 </h3>
                 <div className="flex flex-wrap gap-2">
                   {company.techStack && company.techStack.length > 0 ? (
                     company.techStack.map((tech, idx) => (
-                      <Badge key={idx} variant="outline" className="px-3 py-1.5 text-sm rounded-lg border-gray-200 text-gray-600 bg-gray-50 font-medium hover:border-[#3AB4E6] hover:text-[#3AB4E6] cursor-default transition-colors">
+                      <span key={idx} className="px-4 py-2 text-xs font-bold rounded-xl bg-gray-50 text-gray-600 border border-gray-100 hover:border-[#3AB4E6] hover:text-[#3AB4E6] hover:bg-blue-50/30 cursor-default transition-all">
                         {tech}
-                      </Badge>
+                      </span>
                     ))
                   ) : (
-                    <p className="text-gray-400 text-sm italic">Chưa có thông tin công nghệ.</p>
+                    <p className="text-gray-400 text-sm font-medium">Chưa có thông tin công nghệ chính.</p>
                   )}
                 </div>
               </div>
 
-              {/* Benefits */}
-              <div className="bg-white rounded-3xl border border-gray-100 p-8 shadow-sm">
-                <h3 className="text-lg font-bold text-gray-900 mb-6 flex items-center gap-3">
-                  <Heart className="w-5 h-5 text-red-500" />
+              {/* Benefits Card */}
+              <div className="bg-white rounded-[2rem] p-8 shadow-sm border border-gray-100/50 hover:shadow-xl hover:shadow-red-500/5 transition-all duration-500">
+                <h3 className="text-xl font-black text-gray-900 mb-6 flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-2xl bg-red-50 flex items-center justify-center">
+                    <Heart className="w-6 h-6 text-red-500" />
+                  </div>
                   Phúc lợi dành cho bạn
                 </h3>
-                <div className="space-y-3">
+                <div className="space-y-4">
                   {company.benefits && company.benefits.length > 0 ? (
                     company.benefits.map((benefit, idx) => (
-                      <div key={idx} className="flex items-start gap-3">
-                        <div className="mt-1 w-1.5 h-1.5 rounded-full bg-[#3AB4E6] shrink-0"></div>
-                        <span className="text-sm text-gray-600 font-medium leading-relaxed">{benefit}</span>
+                      <div key={idx} className="flex items-start gap-4 group">
+                        <div className="mt-1.5 w-2 h-2 rounded-full bg-[#3AB4E6] group-hover:scale-150 transition-transform"></div>
+                        <span className="text-sm text-gray-700 font-bold leading-relaxed">{benefit}</span>
                       </div>
                     ))
                   ) : (
-                    <p className="text-gray-400 text-sm italic">Chưa có thông tin phúc lợi.</p>
+                    <p className="text-gray-400 text-sm font-medium">Chưa có thông tin phúc lợi công khai.</p>
                   )}
                 </div>
               </div>
             </div>
 
-            <div className="bg-white rounded-3xl border border-gray-100 p-8 shadow-sm transition-all duration-300">
-              <div className="flex items-center justify-between mb-8">
-                 <h2 className="text-xl font-bold text-gray-900 flex items-center gap-3">
-                    <Briefcase className="w-6 h-6 text-[#3AB4E6]" />
-                    Việc làm đang tuyển ({company.activeJobCount || jobs.length})
+            {/* Jobs Listing Section */}
+            <div className="bg-white rounded-[2.5rem] p-8 md:p-12 shadow-sm border border-gray-100/50">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6 mb-10">
+                 <h2 className="text-2xl font-black text-gray-900 flex items-center gap-4">
+                    <div className="w-12 h-12 rounded-2xl bg-blue-50 flex items-center justify-center">
+                      <Briefcase className="w-7 h-7 text-[#3AB4E6]" />
+                    </div>
+                    Tuyển dụng ({company.activeJobCount || jobs.length})
                  </h2>
                  {(company.activeJobCount > jobs.length || jobs.length > 5) && (
                    <button 
                      onClick={() => navigate(`/jobs?companyId=${id}`)}
-                     className="text-[#3AB4E6] font-bold text-sm hover:underline flex items-center gap-1 group"
+                     className="px-6 py-2.5 bg-gray-50 text-[#3AB4E6] rounded-full font-black text-xs hover:bg-[#3AB4E6] hover:text-white transition-all flex items-center gap-2 group"
                    >
                       Xem tất cả <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                    </button>
                  )}
               </div>
               
-              <div className="space-y-4">
+              <div className="grid grid-cols-1 gap-4">
                 {isLoadingJobs ? (
-                  <div className="flex justify-center py-10">
-                    <div className="w-8 h-8 border-3 border-[#3AB4E6] border-t-transparent rounded-full animate-spin"></div>
+                  <div className="flex justify-center py-20">
+                    <div className="w-10 h-10 border-4 border-[#3AB4E6] border-t-transparent rounded-full animate-spin"></div>
                   </div>
                 ) : jobs.length > 0 ? (
                   jobs.map((job) => (
                     <div 
                       key={job.id} 
                       onClick={() => navigate(`/jobs/${job.id}`)}
-                      className="group p-5 rounded-2xl border border-gray-50 hover:border-[#3AB4E6]/30 hover:bg-gray-50/50 transition-all cursor-pointer flex items-center gap-4"
+                      className="group p-6 rounded-3xl border border-gray-50 hover:border-[#3AB4E6]/20 hover:bg-blue-50/10 hover:shadow-xl hover:shadow-[#3AB4E6]/5 transition-all cursor-pointer flex flex-col sm:flex-row items-start sm:items-center gap-6"
                     >
                       <div className="flex-1 min-w-0">
-                        <h4 className="font-bold text-gray-900 group-hover:text-[#3AB4E6] transition-colors truncate">
+                        <h4 className="text-lg font-black text-gray-900 group-hover:text-[#3AB4E6] transition-colors line-clamp-1">
                           {job.title}
                         </h4>
-                        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-2">
-                          <span className="flex items-center gap-1.5 text-xs text-gray-500 font-medium">
-                            <MapPin className="w-3.5 h-3.5" /> {job.location}
+                        <div className="flex flex-wrap items-center gap-x-6 gap-y-2 mt-3">
+                          <span className="flex items-center gap-2 text-xs text-gray-500 font-bold">
+                            <MapPin className="w-3.5 h-3.5 text-[#3AB4E6]" /> {job.location}
                           </span>
-                          <span className="flex items-center gap-1.5 text-xs text-[#3AB4E6] font-bold">
-                            <Star className="w-3.5 h-3.5" /> {(job.minSalary && job.maxSalary) ? `${(job.minSalary/1000000).toFixed(0)}-${(job.maxSalary/1000000).toFixed(0)}Tr` : "Thỏa thuận"}
+                          <span className="flex items-center gap-2 text-xs text-[#3AB4E6] font-black bg-blue-50 px-2 py-0.5 rounded-lg border border-blue-100">
+                             {(job.minSalary && job.maxSalary) ? `${(job.minSalary/1000000).toFixed(0)}-${(job.maxSalary/1000000).toFixed(0)}Tr` : "Thỏa thuận"}
                           </span>
-                          <span className="flex items-center gap-1.5 text-xs text-gray-400 font-medium">
+                          <span className="flex items-center gap-2 text-xs text-gray-400 font-bold">
                             <Calendar className="w-3.5 h-3.5" /> {formatDistanceToNowStrict(parseISO(job.createdAt), { addSuffix: true, locale: vi })}
                           </span>
                         </div>
                       </div>
-                      <div className="shrink-0 flex items-center gap-3">
-                        <Badge variant="outline" className="hidden sm:inline-flex bg-white capitalize">
+                      <div className="shrink-0 flex items-center gap-4 w-full sm:w-auto">
+                        <div className="px-4 py-2 rounded-xl bg-gray-50 text-[10px] font-black text-gray-500 uppercase tracking-widest group-hover:bg-blue-100 group-hover:text-[#3AB4E6] transition-all">
                           {job.jobType?.toLowerCase()?.replace('_', ' ')}
-                        </Badge>
-                        <ChevronRight className="w-5 h-5 text-gray-300 group-hover:text-[#3AB4E6] group-hover:translate-x-1 transition-all" />
+                        </div>
+                        <div className="w-10 h-10 rounded-full border border-gray-100 flex items-center justify-center group-hover:border-[#3AB4E6] group-hover:bg-[#3AB4E6] transition-all duration-300">
+                          <ChevronRight className="w-5 h-5 text-gray-300 group-hover:text-white group-hover:translate-x-0.5 transition-all" />
+                        </div>
                       </div>
                     </div>
                   ))
                 ) : (
-                   <div className="text-center py-12 border-2 border-dashed border-gray-100 rounded-3xl bg-gray-50/30">
-                      <Briefcase className="w-12 h-12 text-gray-200 mx-auto mb-4" />
-                      <p className="text-gray-400 font-medium">Hiện tại chưa có công việc nào đang tuyển dụng.</p>
-                      <Button 
-                        variant="link" 
-                        className="text-[#3AB4E6] mt-2 font-bold"
+                   <div className="text-center py-20 bg-gray-50/50 rounded-[2rem] border-2 border-dashed border-gray-100">
+                      <div className="w-20 h-20 bg-white rounded-3xl shadow-sm flex items-center justify-center mx-auto mb-6">
+                        <Briefcase className="w-10 h-10 text-gray-200" />
+                      </div>
+                      <p className="text-gray-400 font-bold text-lg mb-2">Chưa có vị trí trống</p>
+                      <p className="text-gray-400 text-sm max-w-xs mx-auto mb-6">Theo dõi công ty để nhận thông báo ngay khi có tin tuyển dụng mới.</p>
+                      <button 
                         onClick={() => navigate(`/jobs`)}
+                        className="text-[#3AB4E6] font-black text-sm hover:underline"
                       >
-                        Khám phá các công việc khác
-                      </Button>
+                        Khám phá công việc khác
+                      </button>
                    </div>
                 )}
               </div>
             </div>
           </div>
 
-          {/* Right Column - Sidebar Info */}
-          <div className="space-y-8">
-            <div className="bg-white rounded-3xl border border-gray-100 p-8 shadow-sm">
-              <h3 className="text-lg font-bold text-gray-900 mb-6">Thông tin chung</h3>
-              <div className="space-y-6">
-                <div className="flex gap-4">
-                  <div className="w-10 h-10 rounded-xl bg-gray-50 flex items-center justify-center shrink-0">
-                    <Calendar className="w-5 h-5 text-gray-400" />
+          {/* Right Column - Sidebar */}
+          <div className="lg:col-span-4 space-y-8">
+            {/* General Info Box */}
+            <div className="bg-white rounded-[2rem] p-10 shadow-sm border border-gray-100/50 sticky top-24">
+              <h3 className="text-xl font-black text-gray-900 mb-8 border-b border-gray-50 pb-4">Thông tin doanh nghiệp</h3>
+              
+              <div className="space-y-8">
+                <div className="flex items-start gap-5">
+                  <div className="w-12 h-12 rounded-2xl bg-blue-50 flex items-center justify-center shrink-0 border border-blue-100">
+                    <Calendar className="w-6 h-6 text-[#3AB4E6]" />
                   </div>
                   <div>
-                    <p className="text-xs text-gray-400 font-bold uppercase tracking-wider mb-0.5">Năm thành lập</p>
-                    <p className="text-sm font-bold text-gray-800">{company.foundedYear || "—"}</p>
+                    <p className="text-[10px] text-gray-400 font-black uppercase tracking-[0.15em] mb-1">Năm thành lập</p>
+                    <p className="text-base font-black text-gray-800">{company.foundedYear || "—"}</p>
                   </div>
                 </div>
 
-                <div className="flex gap-4">
-                  <div className="w-10 h-10 rounded-xl bg-gray-50 flex items-center justify-center shrink-0">
-                    <Users className="w-5 h-5 text-gray-400" />
+                <div className="flex items-start gap-5">
+                  <div className="w-12 h-12 rounded-2xl bg-indigo-50 flex items-center justify-center shrink-0 border border-indigo-100">
+                    <Users className="w-6 h-6 text-indigo-500" />
                   </div>
                   <div>
-                    <p className="text-xs text-gray-400 font-bold uppercase tracking-wider mb-0.5">Quy mô nhân sự</p>
-                    <p className="text-sm font-bold text-gray-800">{company.companySize || "—"}</p>
+                    <p className="text-[10px] text-gray-400 font-black uppercase tracking-[0.15em] mb-1">Quy mô nhân sự</p>
+                    <p className="text-base font-black text-gray-800">{company.companySize || "—"}</p>
                   </div>
                 </div>
 
-                <div className="flex gap-4">
-                  <div className="w-10 h-10 rounded-xl bg-gray-50 flex items-center justify-center shrink-0">
-                    <Building2 className="w-5 h-5 text-gray-400" />
+                <div className="flex items-start gap-5">
+                  <div className="w-12 h-12 rounded-2xl bg-amber-50 flex items-center justify-center shrink-0 border border-amber-100">
+                    <Building2 className="w-6 h-6 text-amber-500" />
                   </div>
                   <div>
-                    <p className="text-xs text-gray-400 font-bold uppercase tracking-wider mb-0.5">Lĩnh vực</p>
-                    <div className="flex flex-wrap gap-1 mt-1">
+                    <p className="text-[10px] text-gray-400 font-black uppercase tracking-[0.15em] mb-1">Lĩnh vực chính</p>
+                    <div className="flex flex-wrap gap-2 mt-2">
                       {company.industries?.map((ind, i) => (
-                        <Badge key={i} className="bg-sky-50 text-[#3AB4E6] border-sky-100 text-[10px] font-bold">
+                        <span key={i} className="px-3 py-1 bg-amber-50/50 text-amber-700 border border-amber-100 text-[10px] font-black rounded-lg uppercase tracking-wider">
                           {ind.toString().replace('_', ' ')}
-                        </Badge>
+                        </span>
                       )) || "—"}
                     </div>
                   </div>
                 </div>
               </div>
 
-              {/* Tax Code removed as requested */}
-            </div>
-
-            {/* QR or Contact Section */}
-            <div className="bg-gradient-to-br from-[#3AB4E6] to-[#2fa0cf] rounded-3xl p-8 text-white text-center shadow-xl shadow-[#3AB4E6]/20">
-               <h4 className="font-bold text-lg mb-2">Quan tâm đến {company.name}?</h4>
-               <p className="text-white/80 text-sm mb-6">
-                 Đừng bỏ lỡ bất kỳ cơ hội nghề nghiệp nào từ công ty này.
-               </p>
-               <Button 
-                 onClick={handleFollowToggle}
-                 disabled={isProcessingFollow}
-                 className={`w-full font-bold h-12 rounded-xl transition-all ${
-                   isFollowing
-                   ? "bg-white/20 text-white hover:bg-white/30 backdrop-blur-sm shadow-none"
-                   : "bg-white text-[#3AB4E6] hover:bg-gray-50 shadow-lg"
-                 }`}
-               >
-                 {isFollowing ? "Bỏ theo dõi" : "Theo dõi công ty"}
-               </Button>
+              {/* Call to Action Sidebar Card */}
+              <div className="mt-12 p-8 bg-gradient-to-br from-[#3AB4E6] to-[#1E3A8A] rounded-[2rem] text-white text-center shadow-2xl shadow-blue-500/20 relative overflow-hidden group">
+                 <div className="absolute top-0 right-0 w-24 h-24 bg-white/10 rounded-full -translate-x-1/2 -translate-y-1/2 group-hover:scale-150 transition-transform duration-700"></div>
+                 <h4 className="font-black text-xl mb-3 relative z-10">Bật thông báo?</h4>
+                 <p className="text-white/80 text-sm mb-8 relative z-10 leading-relaxed">
+                   Chúng tôi sẽ báo cho bạn ngay khi {company.name} có tin mới.
+                 </p>
+                 <button 
+                   onClick={handleFollowToggle}
+                   disabled={isProcessingFollow}
+                   className={`w-full h-14 rounded-2xl font-black transition-all relative z-10 shadow-lg ${
+                     isFollowing
+                     ? "bg-white/20 text-white hover:bg-white/30 border border-white/30"
+                     : "bg-white text-[#3AB4E6] hover:bg-gray-50 hover:-translate-y-1 active:scale-95"
+                   }`}
+                 >
+                   {isFollowing ? "Đang nhận tin" : "Theo dõi ngay"}
+                 </button>
+              </div>
             </div>
           </div>
 

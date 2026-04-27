@@ -1,5 +1,6 @@
 import React from 'react';
-import { FaSearch, FaMapMarkerAlt } from 'react-icons/fa';
+import { FaSearch, FaMapMarkerAlt, FaMagic } from 'react-icons/fa';
+import { LocationPicker } from './common';
 
 const jobTypeOptions = [
     { label: 'Toàn thời gian', value: 'FULL_TIME' },
@@ -83,20 +84,18 @@ const JobFilters = ({
 
                 <div>
                     <h3 className="font-bold text-gray-800 mb-3 text-sm">Địa điểm làm việc</h3>
-                    <div className="relative">
-                        <FaMapMarkerAlt className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs" />
-                        <select
-                            value={filters.location}
-                            onChange={(e) => onFieldChange('location', e.target.value)}
-                            className="w-full pl-9 pr-3 py-2.5 bg-white border border-transparent focus:border-[#00B4D8] rounded-lg outline-none text-sm appearance-none cursor-pointer text-gray-600 shadow-sm"
-                        >
-                            <option value="">Chọn thành phố</option>
-                            {provinces.map((province) => (
-                                <option key={province.code} value={province.name}>{province.name}</option>
-                            ))}
-                        </select>
+                    <div className="relative bg-white border border-transparent focus-within:border-[#00B4D8] rounded-lg shadow-sm">
+                        <FaMapMarkerAlt className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs z-10" />
+                        <div className="pl-9 pr-3 py-2.5">
+                            <LocationPicker 
+                                value={filters.location}
+                                onChange={(val) => onFieldChange('location', val)}
+                                provinces={provinces}
+                            />
+                        </div>
                     </div>
                 </div>
+
 
                 <button
                     onClick={onApply}

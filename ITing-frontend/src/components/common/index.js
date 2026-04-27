@@ -15,4 +15,6 @@ export { default as LoadingSpinner } from './LoadingSpinner';
 export { default as ConfirmDialog } from './ConfirmDialog';
 export { default as Breadcrumb } from './Breadcrumb';
 export { default as CompanyLogo } from './CompanyLogo';
+export { default as LocationPicker } from './LocationPicker';
+export { default as CategoryPicker } from './CategoryPicker';
 export * from './AppIcons';

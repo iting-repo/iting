@@ -51,19 +51,232 @@ const JobDetailPage = () => {
         if (id) {
             dispatch(fetchJobDetailRequest(id));
         }
-    }, [id, dispatch]);
+    }, [dispatch, normalizedJobId]);
 
-    const [isApplyModalOpen, setIsApplyModalOpen] = useState(false);
+    useEffect(() => {
+        const checkAppStatus = async () => {
+            if (isAuthenticated && user?.role === 'CANDIDATE' && currentJob?.id) {
+                try {
+                    const res = await applicationService.checkApplied(currentJob.id);
+                    setHasApplied(res?.hasApplied || false);
+                } catch (err) {
+                    console.error("Check applied error:", err);
+                }
+            }
+        };
+        checkAppStatus();
+    }, [isAuthenticated, user, currentJob]);
 
-    if (isLoading) return <div className="text-center py-20 font-bold text-gray-500">Đang tải chi tiết công việc...</div>;
-    if (!currentJob) return <div className="text-center py-20 font-bold text-red-500">Không tìm thấy công việc!</div>;
+    useEffect(() => {
+        const checkSaved = async () => {
+            if (!currentJob?.id || !storage.getToken()) {
+                setIsSaved(false);
+                return;
+            }
+            try {
+                const res = await axiosInstance.get(`/candidates/saved-jobs/${currentJob.id}/check`);
+                setIsSaved(Boolean(res?.saved));
+            } catch {
+                setIsSaved(false);
+            }
+        };
+        checkSaved();
+    }, [currentJob?.id]);
 
-    const formatSalary = (min, max) => {
-        if (!min && !max) return "Thỏa thuận";
-        const format = (n) => n?.toLocaleString('vi-VN') + ' VNĐ';
-        if (min && max) return `${format(min)} - ${format(max)}`;
-        if (min) return `Từ ${format(min)}`;
-        return `Up to ${format(max)}`;
+    useEffect(() => {
+        const fetchCompany = async () => {
+            if (currentJob?.companyId) {
+                try {
+                    const res = await companyService.getCompanyDetail(currentJob.companyId);
+                    setCompanyInfo(res);
+                } catch (err) {
+                    console.error("Fetch company detail error:", err);
+                }
+            }
+        };
+        fetchCompany();
+    }, [currentJob?.companyId]);
+
+    useEffect(() => {
+        if (!currentJob || String(currentJob.id) !== String(normalizedJobId)) return;
+        const expectedSlug = slugify(getJobTitle(currentJob)) || 'chi-tiet-viec-lam';
+        if (slug !== expectedSlug) {
+            navigate(buildJobDetailPath(currentJob), { replace: true });
+        }
+    }, [currentJob, slug, navigate, normalizedJobId]);
+
+    useEffect(() => {
+        const loadRelatedJobs = async () => {
+            if (!currentJob?.id) {
+                setRelatedJobs([]);
+                return;
+            }
+
+            setRelatedLoading(true);
+            try {
+                const primaryKeyword = currentJob.position || currentJob.title || '';
+                const byKeyword = await axiosInstance.get('/jobs/search', {
+                    params: {
+                        keyword: primaryKeyword,
+                        page: 0,
+                        size: 5,
+                        sortBy: 'lastUpdate',
+                        sortOrder: 'desc',
+                    },
+                });
+
+                let candidates = Array.isArray(byKeyword?.content) ? byKeyword.content : [];
+                candidates = candidates.filter((job) => Number(job.id) !== Number(currentJob.id));
+
+                if (candidates.length < 3 && currentJob.companyId) {
+                    const byCompany = await axiosInstance.get('/jobs/search', {
+                        params: {
+                            companyId: currentJob.companyId,
+                            page: 0,
+                            size: 5,
+                            sortBy: 'lastUpdate',
+                            sortOrder: 'desc',
+                        },
+                    });
+
+                    const companyJobs = (Array.isArray(byCompany?.content) ? byCompany.content : [])
+                        .filter((job) => Number(job.id) !== Number(currentJob.id));
+
+                    const mergeMap = new Map();
+                    [...candidates, ...companyJobs].forEach((job) => {
+                        if (!mergeMap.has(job.id)) mergeMap.set(job.id, job);
+                    });
+                    candidates = [...mergeMap.values()];
+                }
+
+                setRelatedJobs(candidates.slice(0, 3));
+            } catch {
+                setRelatedJobs([]);
+            } finally {
+                setRelatedLoading(false);
+            }
+        };
+
+        loadRelatedJobs();
+    }, [currentJob?.id, currentJob?.companyId, currentJob?.position, currentJob?.title]);
+
+    const handleToggleSave = async () => {
+        if (!storage.getToken()) {
+            toast.error('Vui lòng đăng nhập để lưu công việc.');
+            return;
+        }
+        if (!currentJob?.id || isSaving) return;
+
+        setIsSaving(true);
+        try {
+            if (isSaved) {
+                await axiosInstance.delete(`/candidates/saved-jobs/${currentJob.id}`);
+                setIsSaved(false);
+                toast.success('Đã bỏ lưu công việc.');
+            } else {
+                await axiosInstance.post(`/candidates/saved-jobs/${currentJob.id}`);
+                setIsSaved(true);
+                toast.success('Đã lưu công việc.');
+            }
+        } catch (error) {
+            toast.error(error?.message || 'Không thể cập nhật trạng thái lưu job.');
+        } finally {
+            setIsSaving(false);
+        }
+    };
+
+    const handleContactCompany = async () => {
+        const token = storage.getToken();
+        if (!token) {
+            navigate('/login');
+            return;
+        }
+        if (user?.role !== 'CANDIDATE') {
+            toast.error('Chỉ ứng viên mới có thể nhắn tin với nhà tuyển dụng.');
+            return;
+        }
+
+        const content = contactMessage.trim();
+        if (!content) {
+            toast.error('Vui lòng nhập nội dung tin nhắn.');
+            return;
+        }
+
+        if (!currentJob?.companyId) {
+            toast.error('Không xác định được nhà tuyển dụng.');
+            return;
+        }
+
+        setSendingContact(true);
+        try {
+            const sent = await messageService.sendMessage({
+                receiverId: currentJob.companyId,
+                receiverType: 'COMPANY',
+                senderType: 'USER',
+                content,
+            });
+            setContactMessage('');
+            toast.success('Đã gửi tin nhắn.');
+            navigate(`/messages?conversationId=${sent.conversationId}`);
+        } catch (error) {
+            toast.error(error?.message || 'Không thể gửi tin nhắn lúc này.');
+        } finally {
+            setSendingContact(false);
+        }
+    };
+
+    const description = useMemo(() => normalizeList(currentJob?.description), [currentJob?.description]);
+    const responsibilities = useMemo(() => normalizeList(currentJob?.responsibilities), [currentJob?.responsibilities]);
+    const requirements = useMemo(() => normalizeList(currentJob?.requirements || currentJob?.techRequired), [currentJob?.requirements, currentJob?.techRequired]);
+    const benefits = useMemo(() => normalizeList(currentJob?.benefits), [currentJob?.benefits]);
+    const techList = currentJob?.techRequired || [];
+
+    const formatJobType = (type) => {
+        const map = {
+            'FULL_TIME': 'Toàn thời gian',
+            'PART_TIME': 'Bán thời gian',
+            'CONTRACT': 'Hợp đồng',
+            'INTERNSHIP': 'Thực tập',
+            'REMOTE': 'Làm việc từ xa',
+            'FREELANCE': 'Tự do'
+        };
+        return map[type] || type || "Toàn thời gian";
+    };
+
+    const formatExperience = (level) => {
+        const map = {
+            'INTERN': 'Thực tập sinh',
+            'FRESHER': 'Mới ra trường / Fresher',
+            'JUNIOR': 'Junior (1-2 năm)',
+            'MIDDLE': 'Middle (2-4 năm)',
+            'MID_LEVEL': 'Mid-level (2-4 năm)',
+            'SENIOR': 'Senior (4-7 năm)',
+            'LEAD': 'Lead (7+ năm)',
+            'EXPERT': 'Chuyên gia',
+            'MANAGER': 'Quản lý'
+        };
+        return map[level] || level || "Chưa cập nhật";
+    };
+
+    const formatDeadline = (dueDate) => {
+        if (!dueDate) return "Không có";
+        try {
+            const deadlineDate = parseISO(dueDate);
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+
+            const deadline = new Date(deadlineDate);
+            deadline.setHours(0, 0, 0, 0);
+
+            const diffDays = differenceInDays(deadline, today);
+            const formattedDate = deadline.toLocaleDateString("vi-VN");
+
+            if (diffDays < 0) return `${formattedDate} (Hết hạn)`;
+            if (diffDays === 0) return `${formattedDate} (Hôm nay)`;
+            return `${formattedDate} (Còn ${diffDays} ngày)`;
+        } catch {
+            return dueDate;
+        }
     };
 
     const jobDetail = {
@@ -186,7 +399,7 @@ const JobDetailPage = () => {
                                 <div className="w-full pt-2 mt-2 border-t border-gray-200 text-gray-400 text-xs flex items-center justify-between">
                                     <span className="bg-gray-200 text-gray-600 px-2 py-1 rounded">Hạn nộp hồ sơ: {jobDetail.deadline}</span>
                                     <Link 
-                                        to="/salary-lookup" 
+                                        to={`/salary-lookup?keyword=${encodeURIComponent(jobDetail.title)}`} 
                                         className="text-[#3AB4E6] font-bold flex items-center gap-1 hover:underline hover:scale-105 transition-transform"
                                     >
                                         <FaDollarSign size={12} />

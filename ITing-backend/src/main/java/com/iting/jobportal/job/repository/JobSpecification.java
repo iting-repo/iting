@@ -42,16 +42,22 @@ public class JobSpecification {
             query.distinct(true);
 
             if (req.getKeyword() != null && !req.getKeyword().isBlank()) {
-
-                String kw = "%" + req.getKeyword().toLowerCase() + "%";
-
-                predicates.add(
-                        cb.or(
-                                cb.like(cb.lower(root.get("position")), kw),
-                                cb.like(cb.lower(root.get("description")), kw),
-                                cb.like(cb.lower(root.get("techRequired")), kw)
-                        )
-                );
+                String[] tokens = req.getKeyword().trim().toLowerCase().split("\\s+");
+                List<Predicate> keywordPredicates = new ArrayList<>();
+                
+                for (String token : tokens) {
+                    if (token.length() < 2) continue;
+                    String kw = "%" + token + "%";
+                    keywordPredicates.add(cb.or(
+                            cb.like(cb.lower(root.get("position")), kw),
+                            cb.like(cb.lower(root.get("description")), kw),
+                            cb.like(cb.lower(root.get("techRequired")), kw)
+                    ));
+                }
+                
+                if (!keywordPredicates.isEmpty()) {
+                    predicates.add(cb.and(keywordPredicates.toArray(new Predicate[0])));
+                }
             }
 
             if (req.getLocation() != null && !req.getLocation().isBlank()) {
