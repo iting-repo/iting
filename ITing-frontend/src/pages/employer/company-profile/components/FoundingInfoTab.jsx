@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { FaCheckCircle, FaRegCircle, FaArrowRight, FaCamera, FaSpinner } from 'react-icons/fa';
 import companyService from '../../../../services/companyService';
+import { toast } from 'sonner';
 
 const FoundingInfoTab = () => {
   const [form, setForm] = useState({
@@ -20,6 +21,8 @@ const FoundingInfoTab = () => {
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+  const fileInputRef = useRef(null);
   const [errors, setErrors] = useState({});
   const [verificationLevel, setVerificationLevel] = useState('UNVERIFIED');
 
@@ -83,6 +86,33 @@ const FoundingInfoTab = () => {
     }));
   };
 
+  const handleLogoClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleFileChange = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('Kích thước logo không được vượt quá 5MB');
+      return;
+    }
+
+    setIsUploading(true);
+    try {
+      const data = await companyService.uploadLogo(file);
+      const newLogoUrl = data.logoUrl || data.data?.logoUrl || data;
+      handleChange('logoUrl', newLogoUrl);
+      toast.success('Tải logo lên thành công!');
+    } catch (error) {
+      console.error('Lỗi khi tải logo:', error);
+      toast.error('Không thể tải logo lên. Vui lòng thử lại!');
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
   const handleSave = async () => {
     const newErrors = validate();
     setErrors(newErrors);
@@ -103,10 +133,10 @@ const FoundingInfoTab = () => {
           description: form.description,
         };
         await companyService.updateCompanyBasicInfo(form.id, companyData);
-        alert('Cập nhật thông tin công ty thành công!');
+        toast.success('Cập nhật thông tin công ty thành công!');
       } catch (error) {
         console.error('Lỗi khi lưu thông tin:', error);
-        alert(error?.message || 'Lỗi: Không thể cập nhật thông tin công ty.');
+        toast.error(error?.message || 'Lỗi: Không thể cập nhật thông tin công ty.');
       } finally {
         setSaving(false);
       }
@@ -186,7 +216,12 @@ const FoundingInfoTab = () => {
             <div className=" rounded-xl p-6 h-full flex flex-col items-center justify-center text-center">
               <p className="text-sm text-gray-500 mb-4">Logo công ty</p>
 
-              <div className="w-28 h-28 rounded-full bg-gray-100 flex items-center justify-center text-gray-500 font-semibold text-3xl mb-4 overflow-hidden">
+              <div className="w-28 h-28 rounded-full bg-gray-100 flex items-center justify-center text-gray-500 font-semibold text-3xl mb-4 overflow-hidden relative">
+                {isUploading && (
+                  <div className="absolute inset-0 bg-black/20 flex items-center justify-center z-10 rounded-full">
+                    <FaSpinner className="animate-spin text-white text-xl" />
+                  </div>
+                )}
                 {form.logoUrl ? (
                   <img src={form.logoUrl} alt="Company Logo" className="w-full h-full object-cover" />
                 ) : (
@@ -194,9 +229,22 @@ const FoundingInfoTab = () => {
                 )}
               </div>
 
-              <button className="flex items-center justify-center gap-2 text-base font-medium text-[#3AB4E6] hover:underline">
+              <input
+                type="file"
+                ref={fileInputRef}
+                className="hidden"
+                accept="image/*"
+                onChange={handleFileChange}
+              />
+
+              <button 
+                type="button"
+                onClick={handleLogoClick}
+                disabled={isUploading}
+                className="flex items-center justify-center gap-2 text-base font-medium text-[#3AB4E6] hover:underline disabled:text-gray-400 disabled:no-underline"
+              >
                 <FaCamera className="text-lg" />
-                Đổi logo
+                {isUploading ? 'Đang tải...' : 'Đổi logo'}
               </button>
             
           </div>

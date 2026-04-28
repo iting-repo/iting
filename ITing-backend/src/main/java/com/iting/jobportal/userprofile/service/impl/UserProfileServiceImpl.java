@@ -52,7 +52,7 @@ public class UserProfileServiceImpl implements UserProfileService {
 
     @Override
     public UserProfile getProfile(Long userId) {
-        return getProfileOrThrow(userId);
+        return getOrCreateProfile(userId);
     }
 
     @Override

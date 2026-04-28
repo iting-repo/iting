@@ -1,12 +1,32 @@
 import React, { useState } from 'react';
-import { FaTimes, FaEnvelope, FaPhone, FaDownload, FaStar, FaRegStar, FaCheckCircle, FaUserTie } from 'react-icons/fa';
+import { FaTimes, FaEnvelope, FaPhone, FaDownload, FaStar, FaRegStar, FaCheckCircle, FaUserTie, FaExclamationTriangle, FaExternalLinkAlt } from 'react-icons/fa';
 import { toast } from 'sonner';
 import applicationService from '../../services/applicationService';
 
 const CandidateDetailModal = ({ candidate, onClose }) => {
     const [isAccepting, setIsAccepting] = useState(false);
+    const [isFavorited, setIsFavorited] = useState(false);
+    const [isStartingChat, setIsStartingChat] = useState(false);
+    const [showReportModal, setShowReportModal] = useState(false);
 
     if (!candidate) return null;
+
+    const handleToggleFavorite = () => {
+        setIsFavorited(!isFavorited);
+    };
+
+    const handleStartConversation = async () => {
+        try {
+            setIsStartingChat(true);
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            toast.success('Đã mở cuộc trò chuyện với ứng viên!');
+        } catch (error) {
+            console.error('Lỗi khi mở chat:', error);
+            toast.error('Có lỗi xảy ra.');
+        } finally {
+            setIsStartingChat(false);
+        }
+    };
 
     const handleAccept = async () => {
         try {
@@ -102,139 +122,119 @@ const CandidateDetailModal = ({ candidate, onClose }) => {
                     </div>
 
                     {/* Scrollable Content */}
-                    <div className="flex-1 overflow-y-auto custom-scrollbar p-6 space-y-8">
-                        {/* Profile Summary */}
-                        <div className="flex items-center gap-5">
-                            <img
-                                src={candidate.avatarUrl || "https://via.placeholder.com/150"}
-                                alt={candidate.applicantName}
-                                className="w-32 h-32 rounded-full border-4 border-white shadow-lg object-cover bg-white"
-                            />
-                            <div className="mb-2">
-                                <h2 className="text-3xl font-bold text-gray-800">{candidate.applicantName || "Chưa cập nhật"}</h2>
-                                <p className="text-gray-500 font-medium">{candidate.jobTitle || "Chưa cập nhật"}</p>
+                    <div className="flex-1 overflow-y-auto custom-scrollbar p-6">
+                        <div className="space-y-8">
+                            {/* Profile Summary */}
+                            <div className="flex items-center gap-5">
+                                <img
+                                    src={candidate.avatarUrl || "https://via.placeholder.com/150"}
+                                    alt={candidate.applicantName}
+                                    className="w-32 h-32 rounded-full border-4 border-white shadow-lg object-cover bg-white"
+                                />
+                                <div className="mb-2">
+                                    <h2 className="text-3xl font-bold text-gray-800">{candidate.applicantName || "Chưa cập nhật"}</h2>
+                                    <p className="text-gray-500 font-medium">{candidate.jobTitle || "Chưa cập nhật"}</p>
+                                </div>
                             </div>
-                        </div>
 
-                        {/* Introduction */}
-                        <section>
-                            <h4 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em] mb-4 flex items-center gap-2">
-                                <span className="w-1.5 h-1.5 bg-blue-500 rounded-full"></span>
-                                Giới thiệu bản thân
-                            </h4>
-                            <p className="text-slate-600 text-sm leading-relaxed whitespace-pre-line">
-                                {candidate.introduction || "Ứng viên chưa cập nhật thông tin giới thiệu chi tiết."}
-                            </p>
-                        </section>
-
-                        {/* Footer Section - Action Buttons */}
-                        <div className="pt-4 flex flex-col gap-3">
-                            <button
-                                onClick={handleStartConversation}
-                                disabled={isStartingChat}
-                                className="w-full flex justify-center items-center gap-2 px-6 py-4 bg-white border-2 border-slate-200 text-slate-700 font-bold rounded-2xl hover:bg-slate-50 hover:border-slate-300 transition-all active:scale-95 disabled:opacity-60"
-                            >
-                                <FaEnvelope /> {isStartingChat ? 'Dang mo chat...' : 'Gui tin nhan'}
-                            </button>
-                            <button className="flex items-center gap-2 px-4 py-2 bg-white border border-[#3AB4E6] text-[#3AB4E6] rounded-lg hover:bg-blue-50 shadow-sm transition-colors">
-                                <FaEnvelope /> Liên hệ
-                            </button>
-                            <button 
-                                onClick={handleAccept}
-                                disabled={isAccepting}
-                                className={`flex items-center gap-2 px-6 py-2 bg-[#1967D2] text-white rounded-lg hover:bg-blue-700 shadow-lg shadow-blue-500/30 transition-colors ${isAccepting ? 'opacity-70 cursor-not-allowed' : ''}`}>
-                                <FaCheckCircle /> {isAccepting ? 'Đang xử lý...' : 'Tuyển dụng'}
-                            </button>
-                        </div>
-                    </div>
-
-                    {/* Content Grid */}
-                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-
-                        {/* Cột Trái: Thông tin chính */}
-                        <div className="lg:col-span-2 space-y-8">
+                            {/* Introduction */}
                             <section>
-                                <h3 className="text-lg font-bold text-gray-800 mb-4 border-b pb-2">Thông tin giới thiệu</h3>
-                                <p className="text-gray-600 leading-relaxed text-sm">
-                                    {candidate.introduction || "Ứng viên chưa cập nhật thông tin giới thiệu. Tuy nhiên dựa trên kinh nghiệm làm việc, đây là một ứng viên tiềm năng..."}
+                                <h4 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em] mb-4 flex items-center gap-2">
+                                    <span className="w-1.5 h-1.5 bg-blue-500 rounded-full"></span>
+                                    Giới thiệu bản thân
+                                </h4>
+                                <p className="text-slate-600 text-sm leading-relaxed whitespace-pre-line">
+                                    {candidate.introduction || "Ứng viên chưa cập nhật thông tin giới thiệu chi tiết."}
                                 </p>
                             </section>
 
-                            <section>
-                                <h3 className="text-lg font-bold text-gray-800 mb-4 border-b pb-2">Kinh nghiệm làm việc</h3>
-                                <div className="space-y-4">
-                                    {/* Mock Item */}
-                                    <div className="flex gap-4">
-                                        <div className="mt-1"><FaUserTie className="text-gray-400" /></div>
-                                        <div>
-                                            <h4 className="font-bold text-gray-800">Senior UI Designer</h4>
-                                            <p className="text-sm text-gray-500">Google Inc • 2020 - Present</p>
-                                            <p className="text-sm text-gray-600 mt-1">Chịu trách nhiệm thiết kế hệ thống Design System...</p>
-                                        </div>
-                                    </div>
-                                </div>
-                                Báo cáo vi phạm
-                            </h3>
-                            <p className="text-slate-500 text-sm mb-8 font-medium">Bạn đang báo cáo ứng viên <span className="text-slate-800 font-bold">{candidate.applicantName}</span>. Vui lòng chọn lý do chính xác.</p>
+                            {/* Content Grid */}
+                            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
 
-                            <div className="space-y-5">
-                                <div>
-                                    <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2.5 ml-1">Lý do chính</label>
-                                    <select
-                                        value={reportData.type}
-                                        onChange={(e) => setReportData({ ...reportData, type: e.target.value })}
-                                        className="w-full h-14 px-4 bg-slate-50 border-2 border-slate-100 rounded-2xl text-slate-700 font-bold focus:border-blue-400 outline-none transition-all cursor-pointer appearance-none"
-                                    >
-                                        {REPORT_REASONS.map(r => (
-                                            <option key={r.value} value={r.value}>{r.label}</option>
-                                        ))}
-                                    </select>
+                                {/* Cột Trái: Thông tin chính */}
+                                <div className="lg:col-span-2 space-y-8">
+                                    <section>
+                                        <h3 className="text-lg font-bold text-gray-800 mb-4 border-b pb-2">Kinh nghiệm làm việc</h3>
+                                        <div className="space-y-4">
+                                            {/* Mock Item */}
+                                            <div className="flex gap-4">
+                                                <div className="mt-1"><FaUserTie className="text-gray-400" /></div>
+                                                <div>
+                                                    <h4 className="font-bold text-gray-800">Senior UI Designer</h4>
+                                                    <p className="text-sm text-gray-500">Google Inc • 2020 - Present</p>
+                                                    <p className="text-sm text-gray-600 mt-1">Chịu trách nhiệm thiết kế hệ thống Design System...</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </section>
                                 </div>
 
-                        {/* Cột Phải: Thông tin liên hệ & CV */}
-                        <div className="space-y-6">
+                                {/* Cột Phải: Thông tin liên hệ & CV */}
+                                <div className="space-y-6">
 
-                            {/* Box Download CV */}
-                            <div className="bg-gray-50 rounded-xl p-5 border border-gray-100">
-                                <h4 className="font-bold text-gray-800 mb-4">Download CV</h4>
-                                <div className="flex items-center justify-between bg-white p-3 rounded-lg border border-gray-200">
-                                    <div className="flex items-center gap-3">
-                                        <img src="https://upload.wikimedia.org/wikipedia/commons/8/87/PDF_file_icon.svg" className="w-8 h-8" alt="PDF" />
-                                        <div>
-                                            <p className="text-sm font-bold text-gray-700 truncate w-24">{candidate.cvFileName || `CV_${candidate.applicantName || candidate.id}`}</p>
-                                            <p className="text-xs text-gray-400">PDF</p>
+                                    {/* Box Download CV */}
+                                    <div className="bg-gray-50 rounded-xl p-5 border border-gray-100">
+                                        <h4 className="font-bold text-gray-800 mb-4">Download CV</h4>
+                                        <div className="flex items-center justify-between bg-white p-3 rounded-lg border border-gray-200">
+                                            <div className="flex items-center gap-3">
+                                                <img src="https://upload.wikimedia.org/wikipedia/commons/8/87/PDF_file_icon.svg" className="w-8 h-8" alt="PDF" />
+                                                <div>
+                                                    <p className="text-sm font-bold text-gray-700 truncate w-24">{candidate.cvFileName || `CV_${candidate.applicantName || candidate.id}`}</p>
+                                                    <p className="text-xs text-gray-400">PDF</p>
+                                                </div>
+                                            </div>
+                                            <button className="p-2 text-blue-500 hover:bg-blue-50 rounded-lg transition-colors">
+                                                <FaDownload />
+                                            </button>
                                         </div>
                                     </div>
-                                    <button className="p-2 text-blue-500 hover:bg-blue-50 rounded-lg transition-colors">
-                                        <FaDownload />
-                                    </button>
-                                </div>
-                            </div>
 
-                            {/* Box Contact Info */}
-                            <div className="bg-white rounded-xl p-5 border border-gray-200 shadow-sm">
-                                <h4 className="font-bold text-gray-800 mb-4">Thông tin liên hệ</h4>
-                                <div className="space-y-4">
-                                    <div className="flex items-start gap-3">
-                                        <div className="p-2 bg-blue-50 rounded-full text-blue-600"><FaPhone size={14} /></div>
-                                        <div>
-                                            <p className="text-xs text-gray-400 uppercase font-bold">Số điện thoại</p>
-                                            <p className="text-sm font-medium text-gray-700">{candidate.phoneNumber || "Chưa cập nhật"}</p>
+                                    {/* Box Contact Info */}
+                                    <div className="bg-white rounded-xl p-5 border border-gray-200 shadow-sm">
+                                        <h4 className="font-bold text-gray-800 mb-4">Thông tin liên hệ</h4>
+                                        <div className="space-y-4">
+                                            <div className="flex items-start gap-3">
+                                                <div className="p-2 bg-blue-50 rounded-full text-blue-600"><FaPhone size={14} /></div>
+                                                <div>
+                                                    <p className="text-xs text-gray-400 uppercase font-bold">Số điện thoại</p>
+                                                    <p className="text-sm font-medium text-gray-700">{candidate.phoneNumber || "Chưa cập nhật"}</p>
+                                                </div>
+                                            </div>
+                                            <div className="flex items-start gap-3">
+                                                <div className="p-2 bg-blue-50 rounded-full text-blue-600"><FaEnvelope size={14} /></div>
+                                                <div>
+                                                    <p className="text-xs text-gray-400 uppercase font-bold">Email</p>
+                                                    <p className="text-sm font-medium text-gray-700">{candidate.email || "Chưa cập nhật"}</p>
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
-                                    <div className="flex items-start gap-3">
-                                        <div className="p-2 bg-blue-50 rounded-full text-blue-600"><FaEnvelope size={14} /></div>
-                                        <div>
-                                            <p className="text-xs text-gray-400 uppercase font-bold">Email</p>
-                                            <p className="text-sm font-medium text-gray-700">{candidate.email || "Chưa cập nhật"}</p>
-                                        </div>
-                                    </div>
+
                                 </div>
                             </div>
 
+                            {/* Footer Section - Action Buttons */}
+                            <div className="pt-4 flex flex-col gap-3">
+                                <button
+                                    onClick={handleStartConversation}
+                                    disabled={isStartingChat}
+                                    className="w-full flex justify-center items-center gap-2 px-6 py-4 bg-white border-2 border-slate-200 text-slate-700 font-bold rounded-2xl hover:bg-slate-50 hover:border-slate-300 transition-all active:scale-95 disabled:opacity-60"
+                                >
+                                    <FaEnvelope /> {isStartingChat ? 'Dang mo chat...' : 'Gui tin nhan'}
+                                </button>
+                                <button className="flex items-center gap-2 px-4 py-2 bg-white border border-[#3AB4E6] text-[#3AB4E6] rounded-lg hover:bg-blue-50 shadow-sm transition-colors">
+                                    <FaEnvelope /> Liên hệ
+                                </button>
+                                <button 
+                                    onClick={handleAccept}
+                                    disabled={isAccepting}
+                                    className={`flex items-center gap-2 px-6 py-2 bg-[#1967D2] text-white rounded-lg hover:bg-blue-700 shadow-lg shadow-blue-500/30 transition-colors ${isAccepting ? 'opacity-70 cursor-not-allowed' : ''}`}>
+                                    <FaCheckCircle /> {isAccepting ? 'Đang xử lý...' : 'Tuyển dụng'}
+                                </button>
+                            </div>
                         </div>
                     </div>
-                )}
+                </div>
             </div>
         </div>
     );

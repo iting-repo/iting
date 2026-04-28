@@ -15,7 +15,7 @@ class ChatRealtimeService {
 
     this.client = new Client({
       webSocketFactory: () => {
-        const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:8080';
+        const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:8081';
         return new SockJS(`${API_BASE}/ws`);
       },
       connectHeaders: token ? { Authorization: `Bearer ${token}` } : {},

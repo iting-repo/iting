@@ -23,8 +23,6 @@ services:
     depends_on:
       zookeeper:
         condition: service_healthy
-    env_file:
-      - .env
     ports:
       - "9092:9092"
     environment:
@@ -41,18 +39,15 @@ services:
       retries: 5
 
   postgres:
-    image: postgres:16
-    image: postgres:16
+    image: postgres:13
     container_name: postgres
-    restart: unless-stopped
     restart: unless-stopped
     environment:
       POSTGRES_DB: iting_job_portal
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: 250904
     ports:
-      - "5433:5432"
-      - "5432:5432"
+      - "5433:5432" # Exposed on 5433 to host to avoid conflicts
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres -d iting_job_portal"]
       interval: 10s
@@ -60,13 +55,7 @@ services:
       retries: 5
     volumes:
       - postgres_data:/var/lib/postgresql/data
-
-  backend:
-    build: .
-    container_name: iting-backend
-    restart: unless-stopped
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
+      # MOVED FROM BACKEND: Initialize DB scripts go here
       - ./00_reset-db.sql:/docker-entrypoint-initdb.d/00_reset-db.sql:ro
       - ./init-db.sql:/docker-entrypoint-initdb.d/init-db.sql:ro
 
@@ -81,38 +70,8 @@ services:
         condition: service_healthy
       kafka:
         condition: service_healthy
-        condition: service_started
-    env_file:
-      - .env
-    environment:
-      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/iting_job_portal?currentSchema=testdb
-      SPRING_DATASOURCE_USERNAME: postgres
-      SPRING_DATASOURCE_PASSWORD: 250904
-
-      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:29092
-
-      SPRING_JPA_HIBERNATE_DDL_AUTO: none
-      SPRING_JPA_PROPERTIES_HIBERNATE_DIALECT: org.hibernate.dialect.PostgreSQLDialect
-      SPRING_JPA_PROPERTIES_HIBERNATE_FORMAT_SQL: true
-      SPRING_JPA_PROPERTIES_HIBERNATE_DEFAULT_SCHEMA: testdb
-
-      SPRING_FLYWAY_ENABLED: true
-      SPRING_FLYWAY_DEFAULT_SCHEMA: testdb
-      SPRING_SQL_INIT_MODE: never
-
-      LOGGING_LEVEL_ROOT: INFO
-      LOGGING_LEVEL_COM_ITING: DEBUG
-      LOGGING_LEVEL_ORG_SPRINGFRAMEWORK_SECURITY: DEBUG
-
-      SERVER_PORT: 8080
-      SERVER_SHUTDOWN: graceful
-
-      MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE: health,info,metrics
-      MANAGEMENT_ENDPOINT_HEALTH_SHOW_DETAILS: when_authorized
-      MANAGEMENT_HEALTH_MAIL_ENABLED: false
-
-      SPRING_APPLICATION_NAME: iting-job-portal
-        condition: service_healthy
+    ports:
+      - "8081:8080"
     env_file:
       - .env
     environment:
@@ -129,7 +88,9 @@ services:
       
       # Kafka configuration
       SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:29092
-      SPRING_FLYWAY_ENABLED: false
+      SPRING_FLYWAY_ENABLED: true
+      SPRING_FLYWAY_DEFAULT_SCHEMA: testdb
+      SPRING_FLYWAY_SCHEMAS: testdb
       SPRING_SQL_INIT_MODE: never
       
       # Logging
@@ -168,8 +129,6 @@ services:
       AWS_REGION: ${AWS_REGION:-ap-southeast-1}
       AWS_S3_BUCKET: ${AWS_S3_BUCKET:-datn-jobweb}
       AWS_ENABLED: ${AWS_ENABLED:-true}
-    ports:
-      - "8080:8080"
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health"]
       interval: 30s

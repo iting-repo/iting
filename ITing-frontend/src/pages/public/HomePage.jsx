@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { useEffect } from 'react';
 import { fetchJobsRequest, fetchJobDetailRequest } from '../../store/job/jobSlice';
@@ -25,6 +25,8 @@ const HomePage = () => {
     const dispatch = useDispatch();
     const navigate = useNavigate();
     const { jobs = [], totalJobs = 0, isLoading } = useSelector((state) => state.job || {});
+    const { currentUser } = useSelector((state) => state.auth || {});
+    const [searchParams, setSearchParams] = useSearchParams();
     const [currentPage, setCurrentPage] = useState(1);
     const [savedJobIds, setSavedJobIds] = useState([]);
     const [provinces, setProvinces] = useState([]);
@@ -49,6 +51,83 @@ const HomePage = () => {
             sortOrder: 'desc',
         }));
     }, [dispatch]);
+
+    // Initial Data Fetch
+    useEffect(() => {
+        const fetchInitialData = async () => {
+            try {
+                // Fetch stats
+                const statsRes = await publicService.getHomeStats();
+                setStats(statsRes.data || statsRes);
+
+                // Fetch provinces
+                const provinceRes = await fetch('https://provinces.open-api.vn/api/?depth=1');
+                const provinceData = await provinceRes.json();
+                setProvinces(provinceData);
+
+                // Fetch saved jobs if logged in
+                if (currentUser) {
+                    const savedRes = await jobService.getSavedJobIds();
+                    setSavedJobIds(savedRes.data || savedRes);
+                }
+            } catch (error) {
+                console.error("Error fetching initial data:", error);
+            }
+        };
+
+        fetchInitialData();
+    }, [currentUser]);
+
+    // Fetch recommendations
+    useEffect(() => {
+        const fetchRecommendations = async () => {
+            if (currentUser) {
+                setIsRecommending(true);
+                try {
+                    const res = await recommendationService.getHomepageRecommendations(4);
+                    setRecommendedJobs(res.data?.content || res.data || []);
+                } catch (error) {
+                    console.error("Failed to fetch recommendations:", error);
+                } finally {
+                    setIsRecommending(false);
+                }
+            }
+        };
+        fetchRecommendations();
+    }, [currentUser]);
+
+    const handleToggleSave = async (e, jobId) => {
+        e.stopPropagation();
+        if (!currentUser) {
+            toast.error("Vui lòng đăng nhập để lưu công việc!");
+            return;
+        }
+
+        try {
+            const isSaved = savedJobIds.includes(jobId);
+            if (isSaved) {
+                await jobService.unsaveJob(jobId);
+                setSavedJobIds(prev => prev.filter(id => id !== jobId));
+                toast.success("Đã bỏ lưu công việc");
+            } else {
+                await jobService.saveJob(jobId);
+                setSavedJobIds(prev => [...prev, jobId]);
+                toast.success("Lưu công việc thành công");
+            }
+        } catch (error) {
+            toast.error("Thao tác thất bại. Vui lòng thử lại!");
+        }
+    };
+
+    const updateLocationQuery = (location) => {
+        const newParams = new URLSearchParams(searchParams);
+        if (location) {
+            newParams.set('location', location);
+        } else {
+            newParams.delete('location');
+        }
+        setSearchParams(newParams);
+    };
 
     // Helper: Format Salary
     const formatSalary = (min, max) => {
@@ -159,6 +238,7 @@ const HomePage = () => {
             setIsAiModalOpen(false);
         }
     };
+
 
     // Helper: Time Ago (Simple version)
     const timeAgo = (dateString) => {
@@ -397,7 +477,7 @@ const HomePage = () => {
                                 return (
                                     <div 
                                         key={job.id}
-                                        onClick={() => handleJobClick(job)}
+                                        onClick={() => handleJobClick(job.id)}
                                         className="group bg-white rounded-2xl p-6 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 border border-gray-100 relative cursor-pointer"
                                     >
                                         <div className="flex justify-between items-start mb-4">
@@ -624,8 +704,7 @@ const HomePage = () => {
                                         </div>
                                     </div>
                                 </div>
-                                );
-                            })}
+                            ))}
                     </div>
 
                     {/* 5. PAGINATION: Bỏ nút đen, dùng style Clean */}
