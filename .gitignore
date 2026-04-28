@@ -54,3 +54,6 @@ Thumbs.db
 .codex/
 # Markdown docs
 *.md
+
+# LaTeX source files
+*.tex
