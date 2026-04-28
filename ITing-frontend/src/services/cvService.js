@@ -20,6 +20,14 @@ const cvService = {
   getCVCount: async () => {
     return axiosInstance.get("/candidates/cvs/count");
   },
+
+  parseCV: async (formData) => {
+    return axiosInstance.post("/candidates/cvs/parse", formData, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    });
+  },
 };
 
 export default cvService;

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useModalEscape } from '../../hooks/useModalEscape';
 import {
     FaTimes, FaEnvelope, FaPhone, FaDownload,
     FaStar, FaRegStar, FaCheckCircle, FaUserTie,
@@ -9,6 +10,7 @@ import applicationService from '../../services/applicationService';
 import reportService from '../../services/reportService';
 import favoriteCandidateService from '../../services/favoriteCandidateService';
 import messageService from '../../services/messageService';
+import { employerCandidateService } from '../../services/employerCandidateService';
 import { useNavigate } from 'react-router-dom';
 
 const REPORT_REASONS = [
@@ -31,6 +33,10 @@ const CandidateDetailModal = ({ candidate, onClose, onStatusUpdate }) => {
     const [isReporting, setIsReporting] = useState(false);
     const [isFavorited, setIsFavorited] = useState(false);
     const [isStartingChat, setIsStartingChat] = useState(false);
+    const [fullProfile, setFullProfile] = useState(null);
+    const [isLoadingProfile, setIsLoadingProfile] = useState(false);
+
+    useModalEscape(onClose);
 
     useEffect(() => {
         if (candidate && candidate.status === 'PENDING') {
@@ -45,8 +51,24 @@ const CandidateDetailModal = ({ candidate, onClose, onStatusUpdate }) => {
         // Check favorite status
         if (candidate) {
             setIsFavorited(favoriteCandidateService.isFavorite(candidate.id));
+            fetchFullProfile();
         }
     }, [candidate, onStatusUpdate]);
+
+    const fetchFullProfile = async () => {
+        try {
+            setIsLoadingProfile(true);
+            const candidateUserId = candidate?.userId || candidate?.applicantId;
+            if (candidateUserId) {
+                const response = await employerCandidateService.getFullProfile(candidateUserId);
+                setFullProfile(response.data || response);
+            }
+        } catch (error) {
+            console.error('Failed to fetch full profile:', error);
+        } finally {
+            setIsLoadingProfile(false);
+        }
+    };
 
     if (!candidate) return null;
 
@@ -64,7 +86,7 @@ const CandidateDetailModal = ({ candidate, onClose, onStatusUpdate }) => {
         try {
             setIsAccepting(true);
             await applicationService.acceptApplication(candidate.id, 'Nhà tuyển dụng đã phản hồi thông qua UI');
-            toast.success('Đã đánh dấu tuyển dụng ứng viên thành công!');
+            toast.success('Đã chấp nhận tuyển dụng và gửi email thông báo cho ứng viên!');
             onClose();
         } catch (error) {
             console.error('Lỗi khi tuyển dụng:', error);
@@ -109,7 +131,7 @@ const CandidateDetailModal = ({ candidate, onClose, onStatusUpdate }) => {
     const handleStartConversation = async () => {
         const candidateUserId = candidate?.userId || candidate?.applicantId;
         if (!candidateUserId) {
-            toast.error('Khong xac dinh duoc ung vien de nhan tin.');
+            toast.error('Không xác định được ứng viên để nhắn tin.');
             return;
         }
 
@@ -119,14 +141,14 @@ const CandidateDetailModal = ({ candidate, onClose, onStatusUpdate }) => {
                 receiverId: candidateUserId,
                 receiverType: 'USER',
                 senderType: 'COMPANY',
-                content: 'Chao ban, chung toi muon ket noi ve co hoi cong viec.',
+                content: 'Chào bạn, chúng tôi muốn kết nối về cơ hội công việc.',
             });
 
             onClose();
             navigate(`/messages?conversationId=${sent.conversationId}`);
-            toast.success('Da mo cuoc tro chuyen voi ung vien.');
+            toast.success('Đã mở cuộc trò chuyện với ứng viên.');
         } catch (error) {
-            toast.error(error?.message || 'Khong the tao cuoc tro chuyen luc nay.');
+            toast.error(error?.message || 'Không thể tạo cuộc trò chuyện lúc này.');
         } finally {
             setIsStartingChat(false);
         }
@@ -259,9 +281,142 @@ const CandidateDetailModal = ({ candidate, onClose, onStatusUpdate }) => {
                                 Giới thiệu bản thân
                             </h4>
                             <p className="text-slate-600 text-sm leading-relaxed whitespace-pre-line">
-                                {candidate.introduction || "Ứng viên chưa cập nhật thông tin giới thiệu chi tiết."}
+                                {fullProfile?.profile?.shortBio || candidate.introduction || "Ứng viên chưa cập nhật thông tin giới thiệu chi tiết."}
                             </p>
                         </section>
+
+                        {/* Skills Section */}
+                        {fullProfile?.skills && fullProfile.skills.length > 0 && (
+                            <section>
+                                <h4 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em] mb-4 flex items-center gap-2">
+                                    <span className="w-1.5 h-1.5 bg-green-500 rounded-full"></span>
+                                    Kỹ năng
+                                </h4>
+                                <div className="flex flex-wrap gap-2">
+                                    {fullProfile.skills.map((skill, idx) => (
+                                        <span key={idx} className="px-3 py-1.5 bg-green-50 text-green-700 font-bold text-xs rounded-lg border border-green-100 flex items-center gap-1.5">
+                                            {skill.name}
+                                            
+                                        </span>
+                                    ))}
+                                </div>
+                            </section>
+                        )}
+
+                        {/* Social Links Section */}
+                        {fullProfile?.socialLinks && fullProfile.socialLinks.length > 0 && (
+                            <section>
+                                <h4 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em] mb-4 flex items-center gap-2">
+                                    <span className="w-1.5 h-1.5 bg-purple-500 rounded-full"></span>
+                                    Liên kết mạng xã hội
+                                </h4>
+                                <div className="flex flex-col gap-2">
+                                    {fullProfile.socialLinks.map((link, idx) => (
+                                        <a key={idx} href={link.url} target="_blank" rel="noopener noreferrer" className="text-sm font-bold text-blue-600 hover:underline flex items-center gap-2 w-max">
+                                            <FaExternalLinkAlt size={12} /> {link.platform || link.url}
+                                        </a>
+                                    ))}
+                                </div>
+                            </section>
+                        )}
+
+                        {/* Experience Section */}
+                        {fullProfile?.experiences && fullProfile.experiences.length > 0 && (
+                            <section>
+                                <h4 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em] mb-4 flex items-center gap-2">
+                                    <span className="w-1.5 h-1.5 bg-orange-500 rounded-full"></span>
+                                    Kinh nghiệm làm việc
+                                </h4>
+                                <div className="space-y-4">
+                                    {fullProfile.experiences.map((exp, idx) => (
+                                        <div key={idx} className="p-4 bg-slate-50 rounded-xl border border-slate-100">
+                                            <h5 className="font-bold text-slate-800">{exp.position} - {exp.companyName}</h5>
+                                            <p className="text-xs text-slate-500 mt-1 font-medium">
+                                                {exp.startDate ? new Date(exp.startDate).toLocaleDateString('vi-VN') : ''} - {exp.endDate ? new Date(exp.endDate).toLocaleDateString('vi-VN') : 'Hiện tại'}
+                                            </p>
+                                            {exp.description && (
+                                                <p className="text-sm text-slate-600 mt-2 whitespace-pre-line">{exp.description}</p>
+                                            )}
+                                        </div>
+                                    ))}
+                                </div>
+                            </section>
+                        )}
+
+                        {/* Education Section */}
+                        {fullProfile?.educations && fullProfile.educations.length > 0 && (
+                            <section>
+                                <h4 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em] mb-4 flex items-center gap-2">
+                                    <span className="w-1.5 h-1.5 bg-blue-500 rounded-full"></span>
+                                    Học vấn
+                                </h4>
+                                <div className="space-y-4">
+                                    {fullProfile.educations.map((edu, idx) => (
+                                        <div key={idx} className="p-4 bg-slate-50 rounded-xl border border-slate-100">
+                                            <h5 className="font-bold text-slate-800">{edu.schoolName}</h5>
+                                            <p className="text-sm text-slate-600 font-medium">{edu.fieldOfStudy} {edu.degree && `- ${edu.degree}`}</p>
+                                            <p className="text-xs text-slate-500 mt-1 font-medium">
+                                                {edu.startDate ? new Date(edu.startDate).toLocaleDateString('vi-VN') : ''} - {edu.endDate ? new Date(edu.endDate).toLocaleDateString('vi-VN') : 'Hiện tại'}
+                                            </p>
+                                            {edu.description && (
+                                                <p className="text-sm text-slate-600 mt-2 whitespace-pre-line">{edu.description}</p>
+                                            )}
+                                        </div>
+                                    ))}
+                                </div>
+                            </section>
+                        )}
+
+                        {/* Certificates Section */}
+                        {fullProfile?.certificates && fullProfile.certificates.length > 0 && (
+                            <section>
+                                <h4 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em] mb-4 flex items-center gap-2">
+                                    <span className="w-1.5 h-1.5 bg-yellow-500 rounded-full"></span>
+                                    Chứng chỉ
+                                </h4>
+                                <div className="space-y-3">
+                                    {fullProfile.certificates.map((cert, idx) => (
+                                        <div key={idx} className="p-3 bg-yellow-50/50 rounded-xl border border-yellow-100">
+                                            <h5 className="font-bold text-slate-800">{cert.name}</h5>
+                                            <p className="text-sm text-slate-600">{cert.organization}</p>
+                                            <p className="text-xs text-slate-500 mt-1 font-medium">
+                                                Cấp: {cert.issueDate ? new Date(cert.issueDate).toLocaleDateString('vi-VN') : 'N/A'} 
+                                                {cert.credentialUrl && (
+                                                    <a href={cert.credentialUrl} target="_blank" rel="noopener noreferrer" className="ml-2 text-blue-600 hover:underline">
+                                                        Xem chứng chỉ
+                                                    </a>
+                                                )}
+                                            </p>
+                                        </div>
+                                    ))}
+                                </div>
+                            </section>
+                        )}
+
+                        {/* Portfolios Section */}
+                        {fullProfile?.portfolios && fullProfile.portfolios.length > 0 && (
+                            <section>
+                                <h4 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em] mb-4 flex items-center gap-2">
+                                    <span className="w-1.5 h-1.5 bg-indigo-500 rounded-full"></span>
+                                    Portfolio / Dự án
+                                </h4>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    {fullProfile.portfolios.map((port, idx) => (
+                                        <div key={idx} className="p-4 bg-indigo-50/30 rounded-xl border border-indigo-100">
+                                            <h5 className="font-bold text-slate-800">{port.title}</h5>
+                                            {port.url && (
+                                                <a href={port.url} target="_blank" rel="noopener noreferrer" className="text-xs font-bold text-blue-600 hover:underline flex items-center gap-1 mt-1">
+                                                    <FaExternalLinkAlt size={10} /> Link dự án
+                                                </a>
+                                            )}
+                                            {port.description && (
+                                                <p className="text-sm text-slate-600 mt-2 line-clamp-3" title={port.description}>{port.description}</p>
+                                            )}
+                                        </div>
+                                    ))}
+                                </div>
+                            </section>
+                        )}
 
                         {/* Footer Section - Action Buttons */}
                         <div className="pt-4 flex flex-col gap-3">
@@ -270,7 +425,7 @@ const CandidateDetailModal = ({ candidate, onClose, onStatusUpdate }) => {
                                 disabled={isStartingChat}
                                 className="w-full flex justify-center items-center gap-2 px-6 py-4 bg-white border-2 border-slate-200 text-slate-700 font-bold rounded-2xl hover:bg-slate-50 hover:border-slate-300 transition-all active:scale-95 disabled:opacity-60"
                             >
-                                <FaEnvelope /> {isStartingChat ? 'Dang mo chat...' : 'Gui tin nhan'}
+                                <FaEnvelope /> {isStartingChat ? 'Đang mở chat...' : 'Gửi tin nhắn'}
                             </button>
                             <button
                                 onClick={handleAccept}

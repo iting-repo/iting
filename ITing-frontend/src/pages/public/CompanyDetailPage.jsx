@@ -15,6 +15,7 @@ import Button from "../../components/common/Button";
 import { CompanyLogo } from "../../components/common";
 import { formatDistanceToNowStrict, parseISO } from "date-fns";
 import { vi } from "date-fns/locale";
+import { useModalEscape } from "../../hooks/useModalEscape";
 
 const CompanyDetailPage = () => {
   const { id } = useParams();
@@ -26,50 +27,61 @@ const CompanyDetailPage = () => {
   const [company, setCompany] = useState(null);
   const [jobs, setJobs] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [isLoadingJobs, setIsLoadingJobs] = useState(false);
+  const [isLoadingJobs, setIsLoadingJobs] = useState(true);
+  const [reviews, setReviews] = useState([]);
+  const [ratingStats, setRatingStats] = useState({ averageRating: 0, reviewCount: 0 });
   const [isFollowing, setIsFollowing] = useState(false);
   const [isProcessingFollow, setIsProcessingFollow] = useState(false);
 
-  useEffect(() => {
-    fetchCompanyDetail();
-    fetchCompanyJobs();
-    if (isAuthenticated && user?.role === 'CANDIDATE') {
-      checkFollowStatus();
-    }
-  }, [id, isAuthenticated, user]);
+  // Review states
+  const [showReviewModal, setShowReviewModal] = useState(false);
+  const [reviewRating, setReviewRating] = useState(5);
+  const [reviewContent, setReviewContent] = useState("");
+  const [isSubmittingReview, setIsSubmittingReview] = useState(false);
 
-  const fetchCompanyDetail = async () => {
-    try {
-      setIsLoading(true);
-      const response = await companyService.getCompanyDetail(id);
-      setCompany(response);
-    } catch (error) {
-      console.error("Failed to fetch company detail:", error);
-      toast.error("Không thể tải thông tin công ty");
-      navigate("/companies");
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  useModalEscape(showReviewModal ? () => setShowReviewModal(false) : null);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setIsLoading(true);
+        const [compRes, statsRes, reviewsRes] = await Promise.all([
+          companyService.getCompanyDetail(id),
+          companyService.getCompanyRatingStats(id),
+          companyService.getCompanyReviews(id)
+        ]);
+        
+        setCompany(compRes.data || compRes); // Handle possible data wrapper variations
+        setRatingStats(statsRes.data || statsRes);
+        setReviews(reviewsRes.data || reviewsRes);
+
+        if (isAuthenticated && user?.role === 'CANDIDATE') {
+          const followRes = await companyService.checkFollowing(id);
+          setIsFollowing(followRes.data?.isFollowing ?? followRes.data ?? followRes);
+        }
+
+        // Fetch jobs separately to not block main content
+        fetchCompanyJobs();
+      } catch (error) {
+        console.error("Error fetching company data:", error);
+        toast.error("Không thể tải thông tin công ty");
+        navigate("/companies");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchData();
+  }, [id, isAuthenticated]);
 
   const fetchCompanyJobs = async () => {
     try {
       setIsLoadingJobs(true);
       const response = await jobService.getJobs({ companyId: id, size: 5 });
-      setJobs(response.content || []);
+      setJobs(response.content || response.data?.content || []);
     } catch (error) {
       console.error("Failed to fetch company jobs:", error);
     } finally {
       setIsLoadingJobs(false);
-    }
-  };
-
-  const checkFollowStatus = async () => {
-    try {
-      const response = await companyService.checkFollowing(id);
-      setIsFollowing(response.isFollowing);
-    } catch (error) {
-      console.error("Error checking follow status:", error);
     }
   };
 
@@ -103,6 +115,40 @@ const CompanyDetailPage = () => {
       toast.error("Thao tác thất bại. Vui lòng thử lại.");
     } finally {
       setIsProcessingFollow(false);
+    }
+  };
+
+  const handleReviewSubmit = async (e) => {
+    e.preventDefault();
+    if (!reviewContent.trim()) {
+      toast.error("Vui lòng nhập nội dung đánh giá");
+      return;
+    }
+
+    try {
+      setIsSubmittingReview(true);
+      const response = await companyService.postCompanyReview(id, {
+        rating: reviewRating,
+        content: reviewContent
+      });
+
+      toast.success("Cảm ơn bạn đã đánh giá công ty!");
+      setShowReviewModal(false);
+      setReviewContent("");
+      setReviewRating(5);
+
+      // Refresh reviews and stats
+      const [statsRes, reviewsRes] = await Promise.all([
+        companyService.getCompanyRatingStats(id),
+        companyService.getCompanyReviews(id)
+      ]);
+      setRatingStats(statsRes.data || statsRes);
+      setReviews(reviewsRes.data || reviewsRes);
+    } catch (error) {
+      console.error("Review submission failed:", error);
+      toast.error(error.response?.data?.message || "Không thể gửi đánh giá. Vui lòng thử lại sau.");
+    } finally {
+      setIsSubmittingReview(false);
     }
   };
 
@@ -187,8 +233,12 @@ const CompanyDetailPage = () => {
               <div className="flex items-center gap-5 pt-3">
                  <div className="flex items-center gap-1.5 bg-yellow-50 px-3 py-1 rounded-full border border-yellow-100">
                     <Star className="w-4 h-4 text-yellow-500 fill-current" />
-                    <span className="text-sm font-black text-yellow-700">5.0</span>
-                    <span className="text-[10px] text-yellow-600 font-bold ml-1">(99+ đánh giá)</span>
+                    <span className="text-sm font-black text-yellow-700">
+                      {ratingStats.averageRating?.toFixed(1) || "0.0"}
+                    </span>
+                    <span className="text-[10px] text-yellow-600 font-bold ml-1">
+                      ({ratingStats.reviewCount || 0} đánh giá)
+                    </span>
                  </div>
                  <div className="h-4 w-px bg-gray-200"></div>
                  <div className="text-sm font-bold text-gray-900 bg-blue-50/50 px-3 py-1 rounded-full border border-blue-100/50">
@@ -375,6 +425,100 @@ const CompanyDetailPage = () => {
                 )}
               </div>
             </div>
+
+            {/* Reviews Section */}
+            <div className="bg-white rounded-[2.5rem] p-8 md:p-12 shadow-sm border border-gray-100/50 mt-10">
+              <div className="flex items-center justify-between mb-10">
+                <h2 className="text-2xl font-black text-gray-900 flex items-center gap-4">
+                  <div className="w-12 h-12 rounded-2xl bg-yellow-50 flex items-center justify-center">
+                    <Star className="w-7 h-7 text-yellow-500 fill-current" />
+                  </div>
+                  Đánh giá từ cộng đồng
+                </h2>
+                {isAuthenticated && user?.role === 'CANDIDATE' && (
+                  <button 
+                    onClick={() => setShowReviewModal(true)}
+                    className="px-6 py-2.5 bg-[#3AB4E6] text-white rounded-full font-black text-xs hover:bg-[#2A9DCB] transition-all shadow-lg shadow-blue-200"
+                  >
+                    Viết đánh giá
+                  </button>
+                )}
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
+                <div className="bg-gray-50 rounded-3xl p-8 text-center flex flex-col justify-center border border-gray-100">
+                   <div className="text-5xl font-black text-gray-900 mb-2">
+                     {ratingStats.averageRating?.toFixed(1) || "0.0"}
+                   </div>
+                   <div className="flex justify-center gap-1 mb-3">
+                     {[1, 2, 3, 4, 5].map((s) => (
+                       <Star 
+                         key={s} 
+                         className={`w-5 h-5 ${s <= Math.round(ratingStats.averageRating || 0) ? 'text-yellow-400 fill-current' : 'text-gray-200'}`} 
+                       />
+                     ))}
+                   </div>
+                   <div className="text-sm font-bold text-gray-400">
+                     Dựa trên {ratingStats.reviewCount || 0} đánh giá
+                   </div>
+                </div>
+                <div className="md:col-span-2 space-y-3">
+                   {[5, 4, 3, 2, 1].map((star) => {
+                     const count = reviews.filter(r => r.rating === star).length;
+                     const percentage = ratingStats.reviewCount > 0 ? (count / ratingStats.reviewCount) * 100 : 0;
+                     return (
+                       <div key={star} className="flex items-center gap-4">
+                          <span className="text-sm font-black text-gray-600 w-4">{star}</span>
+                          <div className="flex-1 h-2 bg-gray-100 rounded-full overflow-hidden">
+                             <div className="h-full bg-yellow-400 rounded-full" style={{ width: `${percentage}%` }}></div>
+                          </div>
+                          <span className="text-xs font-bold text-gray-400 w-8">{percentage.toFixed(0)}%</span>
+                       </div>
+                     );
+                   })}
+                </div>
+              </div>
+
+              <div className="space-y-8">
+                {reviews.length > 0 ? (
+                  reviews.map((review) => (
+                    <div key={review.id} className="border-b border-gray-50 pb-8 last:border-0 last:pb-0 group">
+                      <div className="flex items-center justify-between mb-4">
+                        <div className="flex items-center gap-4">
+                          <div className="w-12 h-12 rounded-2xl bg-gray-100 overflow-hidden border-2 border-white shadow-sm group-hover:border-[#3AB4E6]/30 transition-all">
+                            {review.authorAvatar ? (
+                              <img src={review.authorAvatar} alt={review.authorName} className="w-full h-full object-cover" />
+                            ) : (
+                              <div className="w-full h-full flex items-center justify-center text-[#3AB4E6] font-black text-xl bg-blue-50">
+                                {review.authorName?.charAt(0)}
+                              </div>
+                            )}
+                          </div>
+                          <div>
+                            <div className="font-black text-gray-900 group-hover:text-[#3AB4E6] transition-colors">{review.authorName}</div>
+                            <div className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">
+                              {formatDistanceToNowStrict(parseISO(review.createdAt), { addSuffix: true, locale: vi })}
+                            </div>
+                          </div>
+                        </div>
+                        <div className="flex gap-1">
+                          {[1, 2, 3, 4, 5].map((s) => (
+                            <Star key={s} className={`w-3.5 h-3.5 ${s <= review.rating ? 'text-yellow-400 fill-current' : 'text-gray-100'}`} />
+                          ))}
+                        </div>
+                      </div>
+                      <p className="text-gray-600 text-sm leading-relaxed font-medium pl-16">
+                        {review.content}
+                      </p>
+                    </div>
+                  ))
+                ) : (
+                  <div className="text-center py-12 bg-gray-50/30 rounded-[2rem] border-2 border-dashed border-gray-100">
+                    <p className="text-gray-400 font-bold italic">Chưa có đánh giá nào cho công ty này.</p>
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
 
           {/* Right Column - Sidebar */}
@@ -431,10 +575,10 @@ const CompanyDetailPage = () => {
                  <button 
                    onClick={handleFollowToggle}
                    disabled={isProcessingFollow}
-                   className={`w-full h-14 rounded-2xl font-black transition-all relative z-10 shadow-lg ${
+                   className={`w-full h-14 rounded-2xl font-black transition-all relative z-10 shadow-xl ${
                      isFollowing
-                     ? "bg-white/20 text-white hover:bg-white/30 border border-white/30"
-                     : "bg-white text-[#3AB4E6] hover:bg-gray-50 hover:-translate-y-1 active:scale-95"
+                     ? "bg-white/20 text-white hover:bg-white/30 border border-white/30 backdrop-blur-md"
+                     : "bg-white !text-[#3AB4E6] !opacity-100 hover:bg-gray-50 hover:shadow-2xl hover:-translate-y-1 active:scale-95"
                    }`}
                  >
                    {isFollowing ? "Đang nhận tin" : "Theo dõi ngay"}
@@ -445,6 +589,69 @@ const CompanyDetailPage = () => {
 
         </div>
       </div>
+
+      {/* Review Modal */}
+      {showReviewModal && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+          <div 
+            className="absolute inset-0 bg-black/40 backdrop-blur-sm" 
+            onClick={() => setShowReviewModal(false)}
+          ></div>
+          <div className="bg-white rounded-[2.5rem] w-full max-w-lg relative z-10 shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-300">
+            <div className="p-8 md:p-10">
+              <h3 className="text-2xl font-black text-gray-900 mb-2">Đánh giá công ty</h3>
+              <p className="text-gray-500 text-sm font-medium mb-8">Chia sẻ trải nghiệm của bạn về {company.name}</p>
+
+              <form onSubmit={handleReviewSubmit} className="space-y-6">
+                <div>
+                  <label className="block text-xs font-black text-gray-400 uppercase tracking-widest mb-3">Mức độ hài lòng</label>
+                  <div className="flex gap-2">
+                    {[1, 2, 3, 4, 5].map((star) => (
+                      <button
+                        key={star}
+                        type="button"
+                        onClick={() => setReviewRating(star)}
+                        className="transition-transform active:scale-90 hover:scale-110"
+                      >
+                        <Star 
+                          className={`w-10 h-10 ${star <= reviewRating ? "text-yellow-400 fill-current" : "text-gray-100"}`} 
+                        />
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-black text-gray-400 uppercase tracking-widest mb-3">Nội dung đánh giá</label>
+                  <textarea
+                    value={reviewContent}
+                    onChange={(e) => setReviewContent(e.target.value)}
+                    placeholder="Hãy chia sẻ những điều bạn ấn tượng hoặc cần cải thiện tại đây..."
+                    className="w-full h-32 p-5 bg-gray-50 border-2 border-gray-100 rounded-2xl focus:border-[#3AB4E6] focus:bg-white outline-none transition-all text-sm font-medium resize-none"
+                  ></textarea>
+                </div>
+
+                <div className="flex gap-3 pt-4">
+                  <button
+                    type="button"
+                    onClick={() => setShowReviewModal(false)}
+                    className="flex-1 h-14 rounded-2xl bg-gray-100 text-gray-500 font-black text-sm hover:bg-gray-200 transition-all"
+                  >
+                    Hủy bỏ
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={isSubmittingReview}
+                    className="flex-1 h-14 rounded-2xl bg-[#3AB4E6] text-white font-black text-sm shadow-xl shadow-blue-200 hover:bg-[#2A9DCB] disabled:opacity-50 transition-all"
+                  >
+                    {isSubmittingReview ? "Đang gửi..." : "Gửi đánh giá"}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

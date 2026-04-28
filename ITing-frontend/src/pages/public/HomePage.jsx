@@ -6,12 +6,14 @@ import { fetchJobsRequest, fetchJobDetailRequest } from '../../store/job/jobSlic
 import { buildJobDetailPath, getJobPublicKey, getCompanyLogoUrl } from '../../utils/jobUrl';
 import publicService from '../../services/publicService';
 import { CompanyLogo, LocationPicker, CategoryPicker } from '../../components/common';
+import { useModalEscape } from '../../hooks/useModalEscape';
 
 // FIX: Gom tất cả icon về react-icons/fa để tránh lỗi import undefined
 import {
     FaSearch, FaMapMarkerAlt, FaBriefcase, FaBuilding, FaUserFriends,
     FaCode, FaCloud, FaShieldAlt, FaDatabase, FaMobileAlt, FaPencilRuler, FaBug,
-    FaArrowRight, FaRegBookmark, FaBookmark, FaClock, FaFilter, FaArrowLeft, FaMagic, FaChevronRight
+    FaArrowRight, FaRegBookmark, FaBookmark, FaClock, FaFilter, FaArrowLeft, FaMagic, FaChevronRight,
+    FaCubes, FaGamepad, FaLaptopCode
 } from 'react-icons/fa';
 import { toast } from 'sonner';
 import jobService from '../../services/jobService';
@@ -156,7 +158,7 @@ const HomePage = () => {
         minSalary: '',
         maxSalary: '',
         companyId: '',
-        techRequired: '',
+        skills: '',
         sortBy: 'lastUpdate',
         sortOrder: 'desc',
         page: 0,
@@ -199,7 +201,7 @@ const HomePage = () => {
             location: updatedForm.location || undefined,
             jobType: updatedForm.jobType || undefined,
             experienceLevel: updatedForm.experienceLevel || undefined,
-            techRequired: updatedForm.techRequired || undefined,
+            techRequired: updatedForm.skills || undefined,
         };
         updateLocationQuery(updatedForm.location);
         dispatch(fetchJobsRequest(params));
@@ -208,7 +210,9 @@ const HomePage = () => {
 
     const handleSearch = () => {
         const params = new URLSearchParams();
-        if (searchForm.keyword) params.append('keyword', searchForm.keyword);
+        const finalKeyword = [searchForm.category, searchForm.keyword].filter(Boolean).join(' ');
+        
+        if (finalKeyword) params.append('keyword', finalKeyword);
         if (searchForm.location) params.append('location', searchForm.location);
         if (searchForm.jobType) params.append('jobTypes', searchForm.jobType);
         
@@ -248,6 +252,8 @@ const HomePage = () => {
         }
     };
 
+    useModalEscape(isAiModalOpen ? () => setIsAiModalOpen(false) : null);
+
     // Helper: Time Ago (Simple version)
     const timeAgo = (dateString) => {
         if (!dateString) return "Mới đăng";
@@ -268,16 +274,20 @@ const HomePage = () => {
         return Math.floor(seconds) + " giây trước";
     };
 
-    // --- MOCK DATA ---
+    // --- DANH MỤC NGÀNH NGHỀ (sync với Industry.java enum) ---
     const categories = [
-        { id: 1, name: "Software Development", count: 1254, icon: <FaCode /> },
-        { id: 2, name: "DevOps & Cloud", count: 816, icon: <FaCloud /> },
-        { id: 3, name: "Cybersecurity", count: 2082, icon: <FaShieldAlt /> },
-        { id: 4, name: "Data & AI", count: 1520, icon: <FaDatabase /> },
-        { id: 5, name: "Web Development", count: 1022, icon: <FaBriefcase /> },
-        { id: 6, name: "Mobile Development", count: 1496, icon: <FaMobileAlt /> },
-        { id: 7, name: "UI/UX & Design", count: 1529, icon: <FaPencilRuler /> },
-        { id: 8, name: "QA & Testing", count: 1244, icon: <FaBug /> },
+        { id: 'SOFTWARE_DEVELOPMENT', name: "Phát triển phần mềm", icon: <FaCode /> },
+        { id: 'WEB_DEVELOPMENT', name: "Phát triển Web", icon: <FaLaptopCode /> },
+        { id: 'MOBILE_DEVELOPMENT', name: "Phát triển Mobile", icon: <FaMobileAlt /> },
+        { id: 'CLOUD_COMPUTING', name: "Điện toán đám mây", icon: <FaCloud /> },
+        { id: 'DEVOPS', name: "DevOps", icon: <FaCubes /> },
+        { id: 'DATA_SCIENCE', name: "Khoa học dữ liệu", icon: <FaDatabase /> },
+        { id: 'AI', name: "Trí tuệ nhân tạo (AI)", icon: <FaMagic /> },
+        { id: 'CYBERSECURITY', name: "An ninh mạng", icon: <FaShieldAlt /> },
+        { id: 'BLOCKCHAIN', name: "Blockchain", icon: <FaCubes /> },
+        { id: 'GAME_DEVELOPMENT', name: "Phát triển Game", icon: <FaGamepad /> },
+        { id: 'QA_TESTING', name: "Kiểm thử (QA)", icon: <FaBug /> },
+        { id: 'IT_SOFTWARE', name: "Phần mềm & CNTT", icon: <FaBriefcase /> },
     ];
 
     const bestJobs = [
@@ -544,7 +554,7 @@ const HomePage = () => {
                     </div>
                 </div>
             </section>
-            <section className="py-10 px-8 bg-white">
+            <section id="best-jobs-section" className="py-10 px-8 bg-white">
                 <div className="container mx-auto px-4">
 
                     {/* 1. HEADER: Loại bỏ nút đen, dùng nút viền mảnh tinh tế */}
@@ -603,10 +613,9 @@ const HomePage = () => {
                                                 keyword: searchForm.keyword || undefined,
                                                 jobType: searchForm.jobType || undefined,
                                                 experienceLevel: searchForm.experienceLevel || undefined,
-                                                techRequired: searchForm.techRequired || undefined,
+                                                techRequired: searchForm.skills || undefined,
                                             };
 
-                                            updateLocationQuery(newLocation);
                                             dispatch(fetchJobsRequest(params));
                                         }}
                                         className={`flex-shrink-0 px-5 py-2 rounded-full text-xs font-bold transition-all border
@@ -640,9 +649,17 @@ const HomePage = () => {
                     </div>
 
                     {/* 4. JOB LIST: Thêm hiệu ứng hover xịn & bo góc mềm */}
-                    <div className="space-y-5 mb-12">
-                        {isLoading ? (
-                            <div className="text-center py-10">Đang tải danh sách việc làm...</div>
+                    <div className="space-y-5 mb-12 min-h-[800px] relative">
+                        {isLoading && (
+                            <div className="absolute inset-0 bg-white/60 backdrop-blur-[1px] z-10 flex justify-center pt-20 rounded-2xl">
+                                <div className="flex items-center gap-3 px-6 py-3 bg-white rounded-full shadow-xl border border-blue-100 text-[#3AB4E6] font-bold h-fit">
+                                    <div className="w-5 h-5 border-2 border-[#3AB4E6] border-t-transparent rounded-full animate-spin"></div>
+                                    Đang tải dữ liệu...
+                                </div>
+                            </div>
+                        )}
+                        {(jobs ?? []).length === 0 && !isLoading ? (
+                            <div className="text-center py-20 text-gray-500">Không tìm thấy công việc nào.</div>
                         ) : (jobs ?? []).map((job) => {
                                 const isSaved = savedJobIds.includes(job.id);
                                 return (
@@ -690,9 +707,9 @@ const HomePage = () => {
                                                     <FaClock className="text-sky-400" /> {formatSalary(job.minSalary, job.maxSalary)}
                                                 </span>
                                                 {/* Tech Stack */}
-                                                {job.techRequired && (
+                                                {job.skills && (
                                                     <span className="flex items-center gap-1.5 bg-green-50 text-green-700 px-3 py-1.5 rounded-lg border border-green-100 font-bold truncate max-w-[200px]">
-                                                        {job.techRequired}
+                                                        {Array.isArray(job.skills) ? job.skills.join(', ') : job.skills}
                                                     </span>
                                                 )}
 
@@ -767,16 +784,13 @@ const HomePage = () => {
                         <p className="text-gray-500 text-sm">Khám phá các cơ hội nghề nghiệp trong lĩnh vực công nghệ – từ phát triển phần mềm, AI, đến an ninh mạng.</p>
                     </div>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-6">
                         {categories.map((cat) => (
                             <div key={cat.id} className="bg-white p-8 rounded-xl shadow-sm hover:shadow-lg transition-all duration-300 cursor-pointer group flex flex-col items-center text-center border border-transparent hover:border-blue-200">
                                 <div className="w-16 h-16 mb-4 text-[#3AB4E6] text-4xl group-hover:scale-110 transition-transform flex items-center justify-center">
                                     {cat.icon}
                                 </div>
-                                <h3 className="text-lg font-bold text-gray-800 mb-2 group-hover:text-[#3AB4E6] transition-colors">{cat.name}</h3>
-                                <span className="bg-blue-50 text-blue-600 px-3 py-1 rounded text-xs font-medium">
-                                    {cat.count} jobs
-                                </span>
+                                <h3 className="text-base font-bold text-gray-800 group-hover:text-[#3AB4E6] transition-colors">{cat.name}</h3>
                             </div>
                         ))}
                     </div>
@@ -823,8 +837,14 @@ const HomePage = () => {
 
             {/* AI CV Modal */}
             {isAiModalOpen && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-                    <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden transform transition-all animate-in fade-in zoom-in duration-300">
+                <div 
+                    className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+                    onClick={() => setIsAiModalOpen(false)}
+                >
+                    <div 
+                        className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden transform transition-all animate-in fade-in zoom-in duration-300"
+                        onClick={(e) => e.stopPropagation()}
+                    >
                         <div className="bg-[#3AB4E6] p-6 text-white relative">
                             <button 
                                 onClick={() => setIsAiModalOpen(false)}

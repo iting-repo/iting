@@ -1,4 +1,5 @@
 import React from "react";
+import { useModalEscape } from "../../hooks/useModalEscape";
 import { FaExclamationTriangle } from "react-icons/fa";
 
 const ConfirmDialog = ({
@@ -11,6 +12,8 @@ const ConfirmDialog = ({
   cancelLabel = "Hủy bỏ",
   type = "danger",
 }) => {
+  useModalEscape(onClose);
+
   if (!isOpen) return null;
 
   const typeConfig = {
@@ -34,8 +37,14 @@ const ConfirmDialog = ({
   const config = typeConfig[type] || typeConfig.danger;
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-fade-in">
-      <div className="w-full max-w-md bg-white rounded-2xl shadow-2xl overflow-hidden animate-scale-up">
+    <div 
+      className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-fade-in"
+      onClick={onClose}
+    >
+      <div 
+        className="w-full max-w-md bg-white rounded-2xl shadow-2xl overflow-hidden animate-scale-up"
+        onClick={(e) => e.stopPropagation()}
+      >
         <div className="p-6 max-h-[80vh] overflow-y-auto">
           <div className="flex items-start gap-4">
             <div className={`p-3 rounded-full ${config.bgColor} ${config.iconColor} flex-shrink-0`}>

@@ -6,13 +6,13 @@ import { FaChevronRight } from 'react-icons/fa';
  * Breadcrumb component for page navigation
  * @param {Array} items - List of objects { label: string, link: string }
  */
-const Breadcrumb = ({ items = [] }) => {
+const Breadcrumb = ({ items = [], rootLabel = "Trang chủ", rootLink = "/" }) => {
     return (
         <nav className="flex py-4 mb-2 text-sm overflow-x-auto whitespace-nowrap no-scrollbar font-medium">
             <ol className="inline-flex items-center space-x-1 md:space-x-2">
                 <li className="inline-flex items-center">
-                    <Link to="/" className="text-gray-500 hover:text-[#3AB4E6] transition-colors flex items-center">
-                        Trang chủ
+                    <Link to={rootLink} className="text-gray-500 hover:text-[#3AB4E6] transition-colors flex items-center">
+                        {rootLabel}
                     </Link>
                 </li>
                 {items.map((item, index) => (

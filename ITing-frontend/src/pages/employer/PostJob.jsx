@@ -1,4 +1,6 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { useModalEscape } from "../../hooks/useModalEscape";
 import axios from "axios";
 import {
   FaBold,
@@ -16,6 +18,7 @@ import {
 import { CheckCircle2 } from "lucide-react";
 import { toast } from "sonner";
 import companyService from "../../services/companyService";
+import axiosInstance from "../../utils/axiosInstance";
 
 // const PROVINCE_API_BASE = "https://provinces.open-api.vn/api/v2";
 
@@ -47,6 +50,98 @@ const SALARY_TYPE_OPTIONS = [
   { value: "PROJECT", label: "Theo dự án" },
   { value: "HOUR", label: "Theo giờ" },
 ];
+
+const WORKING_DAYS_OPTIONS = [
+  { value: "MON_TO_FRI", label: "Thứ 2 - Thứ 6" },
+  { value: "MON_TO_SAT", label: "Thứ 2 - Thứ 7" },
+  { value: "FLEXIBLE", label: "Linh động" },
+];
+
+const MAX_TITLE_LENGTH = 150;
+
+const formatSalaryDisplay = (value) => {
+  if (!value && value !== 0) return "";
+  const num = String(value).replace(/\D/g, "");
+  if (!num) return "";
+  return Number(num).toLocaleString("vi-VN");
+};
+
+const parseSalaryValue = (formatted) => {
+  if (!formatted) return "";
+  return String(formatted).replace(/\./g, "").replace(/,/g, "");
+};
+
+function SearchableSelect({ name, value, onChange, options, disabled, placeholder, loading }) {
+  const [search, setSearch] = useState("");
+  const [isOpen, setIsOpen] = useState(false);
+  const containerRef = useRef(null);
+
+  useEffect(() => {
+    const handler = (e) => {
+      if (containerRef.current && !containerRef.current.contains(e.target)) setIsOpen(false);
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
+
+  const filtered = useMemo(() => {
+    if (!search.trim()) return options;
+    const kw = search.toLowerCase();
+    return options.filter((o) => o.name.toLowerCase().includes(kw));
+  }, [options, search]);
+
+  const selectedLabel = options.find((o) => o.name === value)?.name || "";
+
+  return (
+    <div ref={containerRef} className="relative">
+      <div
+        onClick={() => { if (!disabled) setIsOpen(!isOpen); }}
+        className={`w-full px-4 py-3 border border-gray-200 rounded-lg bg-white text-sm cursor-pointer flex items-center justify-between ${
+          disabled ? "bg-gray-100 cursor-not-allowed text-gray-400" : "text-gray-600 hover:border-gray-300"
+        }`}
+      >
+        <span className={selectedLabel ? "text-gray-800" : "text-gray-400"}>
+          {loading ? "Đang tải..." : selectedLabel || placeholder || "Chọn..."}
+        </span>
+        <FaChevronDown className="text-gray-400 text-xs" />
+      </div>
+      {isOpen && !disabled && (
+        <div className="absolute z-50 mt-1 w-full bg-white border border-gray-200 rounded-lg shadow-xl max-h-60 overflow-hidden">
+          <div className="p-2 border-b border-gray-100">
+            <input
+              type="text"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Tìm kiếm..."
+              className="w-full px-3 py-2 border border-gray-200 rounded-md text-sm focus:outline-none focus:border-[#3AB4E6]"
+              autoFocus
+              onClick={(e) => e.stopPropagation()}
+            />
+          </div>
+          <div className="overflow-y-auto max-h-48">
+            {filtered.length === 0 ? (
+              <div className="px-4 py-3 text-sm text-gray-400">Không tìm thấy</div>
+            ) : filtered.map((o) => (
+              <div
+                key={o.code}
+                onClick={() => {
+                  onChange({ target: { name, value: o.name } });
+                  setIsOpen(false);
+                  setSearch("");
+                }}
+                className={`px-4 py-2.5 text-sm cursor-pointer hover:bg-blue-50 transition-colors ${
+                  value === o.name ? "bg-blue-50 text-[#1967D2] font-medium" : "text-gray-700"
+                }`}
+              >
+                {o.name}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
 
 const DEFAULT_POSITION_OPTIONS = [
   "Frontend Developer",
@@ -236,10 +331,22 @@ const PostJob = ({
   initialData = null,
   isEdit = false,
 }) => {
+  const navigate = useNavigate();
+
+  const handleClose = () => {
+    if (onClose) {
+      onClose();
+    } else {
+      navigate(-1);
+    }
+  };
+
+  useModalEscape(handleClose);
+
   const initialFormState = useMemo(() => ({
     jobTitle: initialData?.title || "",
     jobPosition: normalizeMultiValueField(initialData?.position),
-    techStack: normalizeMultiValueField(initialData?.techRequired),
+    techStack: normalizeMultiValueField(initialData?.skills),
     workType: initialData?.jobType || "",
     experienceLevel: normalizeExperienceLevel(initialData?.experienceLevel),
     workingDays: initialData?.workingDays || "",
@@ -270,12 +377,49 @@ const PostJob = ({
   const [wards, setWards] = useState([]);
   const [loadingWards, setLoadingWards] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
+  const [availableTechOptions, setAvailableTechOptions] = useState(DEFAULT_TECH_OPTIONS);
+  const [availablePositionOptions, setAvailablePositionOptions] = useState(DEFAULT_POSITION_OPTIONS);
 
   useEffect(() => {
     fetch("https://provinces.open-api.vn/api/v2/p/")
       .then((res) => res.json())
       .then((data) => setProvinces(data))
       .catch(() => toast.error("Không tải được danh sách tỉnh/thành"));
+
+    const fetchSkills = async () => {
+      try {
+        const data = await axiosInstance.get('/public/categories/skills');
+        if (data && Array.isArray(data)) {
+          const apiSkills = data.map(s => s.name);
+          const merged = [...DEFAULT_TECH_OPTIONS];
+          apiSkills.forEach(s => {
+            if (!merged.includes(s)) merged.push(s);
+          });
+          setAvailableTechOptions(merged);
+        }
+      } catch (err) {
+        console.error("Failed to fetch skills", err);
+      }
+    };
+    
+    const fetchPositions = async () => {
+      try {
+        const data = await axiosInstance.get('/public/categories/position');
+        if (data && Array.isArray(data)) {
+          const apiPositions = data.map(p => p.name);
+          const merged = [...DEFAULT_POSITION_OPTIONS];
+          apiPositions.forEach(p => {
+            if (!merged.includes(p)) merged.push(p);
+          });
+          setAvailablePositionOptions(merged);
+        }
+      } catch (err) {
+        console.error("Failed to fetch positions", err);
+      }
+    };
+
+    fetchSkills();
+    fetchPositions();
   }, []);
 
   useEffect(() => {
@@ -307,16 +451,23 @@ const PostJob = ({
     const newErrors = {};
 
     if (!formData.jobTitle.trim()) newErrors.jobTitle = "Bắt buộc";
+    else if (formData.jobTitle.trim().length > MAX_TITLE_LENGTH) newErrors.jobTitle = `Tiêu đề không được vượt quá ${MAX_TITLE_LENGTH} ký tự`;
     if (formData.jobPosition.length === 0) newErrors.jobPosition = "Bắt buộc";
     if (formData.techStack.length === 0) newErrors.techStack = "Bắt buộc";
     if (!formData.workType) newErrors.workType = "Bắt buộc";
     if (!formData.experienceLevel) newErrors.experienceLevel = "Bắt buộc";
-    if (!formData.workingDays.trim()) newErrors.workingDays = "Bắt buộc";
+    if (!formData.workingDays) newErrors.workingDays = "Bắt buộc";
     if (!formData.quantity) newErrors.quantity = "Bắt buộc";
     if (formData.quantity && Number(formData.quantity) <= 0) {
       newErrors.quantity = "Số lượng cần tuyển phải lớn hơn 0";
     }
     if (!formData.deadline) newErrors.deadline = "Bắt buộc";
+    else {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const deadlineDate = new Date(formData.deadline + "T00:00:00");
+      if (deadlineDate < today) newErrors.deadline = "Hạn ứng tuyển không được ở quá khứ";
+    }
     if (!formData.province) newErrors.province = "Bắt buộc";
     if (!formData.ward) newErrors.ward = "Bắt buộc";
     if (!formData.address.trim()) newErrors.address = "Bắt buộc";
@@ -359,10 +510,10 @@ const PostJob = ({
       const payload = {
         title: formData.jobTitle.trim(),
         position: formData.jobPosition.join(", "),
-        techRequired: formData.techStack,
+        skills: formData.techStack,
         jobType: formData.workType || null,
         experienceLevel: formData.experienceLevel || null,
-        workingDays: formData.workingDays.trim() || null,
+        workingDays: formData.workingDays || null,
 
         minSalary:
           formData.salaryType === "NEGOTIABLE" || formData.minSalary === ""
@@ -407,7 +558,7 @@ const PostJob = ({
         onSubmitSuccess(result);
       }
 
-      onClose();
+      handleClose();
     } catch (error) {
       console.error("Lỗi lưu công việc:", error);
       // Kiểm tra lỗi từ axios interceptor (đã unwrap error.response.data)
@@ -427,19 +578,25 @@ const PostJob = ({
 
     setFormData((prev) => {
       if (name === "province") {
-        return {
-          ...prev,
-          province: value,
-          ward: "",
-        };
+        return { ...prev, province: value, ward: "" };
       }
 
-      return {
-        ...prev,
-        [name]: value,
-      };
+      if (name === "jobTitle") {
+        if (value.length > MAX_TITLE_LENGTH) return prev;
+        return { ...prev, jobTitle: value };
+      }
+
+      if (name === "minSalary" || name === "maxSalary") {
+        const raw = parseSalaryValue(value);
+        if (raw && !/^\d+$/.test(raw)) return prev;
+        return { ...prev, [name]: raw };
+      }
+
+      return { ...prev, [name]: value };
     });
   };
+
+  const todayStr = new Date().toISOString().split("T")[0];
 
   return (
     <div
@@ -448,8 +605,12 @@ const PostJob = ({
       transition-opacity duration-300 ease-in-out
       animate-fade-in
       px-4 py-6"
+      onClick={handleClose}
     >
-      <div className="w-full max-w-6xl max-h-[92vh] overflow-y-auto bg-white rounded-2xl shadow-2xl border border-gray-100 animate-fade-in">
+      <div 
+        className="w-full max-w-6xl max-h-[92vh] overflow-y-auto bg-white rounded-2xl shadow-2xl border border-gray-100 animate-fade-in"
+        onClick={(e) => e.stopPropagation()}
+      >
         <div className="sticky top-0 z-10 bg-white border-b border-gray-100 px-6 py-4 flex items-center justify-between rounded-t-2xl">
           <div>
             <h2 className="text-2xl font-bold text-gray-800">
@@ -463,7 +624,8 @@ const PostJob = ({
           </div>
 
           <button
-            onClick={onClose}
+            onClick={handleClose}
+            type="button"
             className="w-10 h-10 rounded-full hover:bg-gray-100 text-gray-500 flex items-center justify-center transition"
           >
             <FaTimes />
@@ -478,15 +640,15 @@ const PostJob = ({
               </div>
               <h3 className="text-3xl font-bold text-gray-800 mb-4">Đăng bài thành công!</h3>
               <p className="text-lg text-gray-600 max-w-md mx-auto leading-relaxed">
-                Tin tuyển dụng của bạn đã được gửi đi. Vui lòng đợi trong vòng 
-                <span className="font-bold text-sky-600"> 1 ngày làm việc </span> 
-                để đội ngũ quản trị viên kiểm duyệt nội dung.
+                Tin tuyển dụng của bạn đã được gửi và đang được 
+                <span className="font-bold text-sky-600"> AI tự động kiểm duyệt</span>. 
+                Hãy kiểm tra trạng thái tại trang Quản lý công việc.
               </p>
               <div className="mt-10 flex gap-4">
                 <button
                   onClick={() => {
                     if (onSubmitSuccess) onSubmitSuccess();
-                    onClose();
+                    handleClose();
                   }}
                   className="px-8 py-4 bg-sky-500 hover:bg-sky-600 text-white rounded-xl font-bold transition-all shadow-lg shadow-sky-100"
                 >
@@ -504,13 +666,23 @@ const PostJob = ({
                 type="text"
                 name="jobTitle"
                 value={formData.jobTitle}
+                maxLength={MAX_TITLE_LENGTH}
                 placeholder="Thêm tiêu đề vào đây"
-                className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:border-[#3AB4E6] text-sm"
+                className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:border-[#3AB4E6] text-sm ${
+                  formData.jobTitle.length >= MAX_TITLE_LENGTH ? 'border-red-300' : 'border-gray-200'
+                }`}
                 onChange={handleChange}
               />
-              {errors.jobTitle && (
-                <p className="text-red-500 text-xs mt-1">{errors.jobTitle}</p>
-              )}
+              <div className="flex justify-between items-center mt-1">
+                {errors.jobTitle ? (
+                  <p className="text-red-500 text-xs">{errors.jobTitle}</p>
+                ) : <span />}
+                <span className={`text-xs ${
+                  formData.jobTitle.length >= MAX_TITLE_LENGTH ? 'text-red-500 font-medium' : 'text-gray-400'
+                }`}>
+                  {formData.jobTitle.length}/{MAX_TITLE_LENGTH}
+                </span>
+              </div>
             </div>
 
             <div className="mb-8">
@@ -525,7 +697,7 @@ const PostJob = ({
                   setSelectedValues={(value) =>
                     setFormData((prev) => ({ ...prev, jobPosition: value }))
                   }
-                  options={DEFAULT_POSITION_OPTIONS}
+                  options={availablePositionOptions}
                   placeholder="Nhập vị trí mới"
                   error={errors.jobPosition}
                 />
@@ -536,7 +708,7 @@ const PostJob = ({
                   setSelectedValues={(value) =>
                     setFormData((prev) => ({ ...prev, techStack: value }))
                   }
-                  options={DEFAULT_TECH_OPTIONS}
+                  options={availableTechOptions}
                   placeholder="Nhập công nghệ mới"
                   error={errors.techStack}
                 />
@@ -601,14 +773,22 @@ const PostJob = ({
                   <label className="block text-gray-700 text-sm font-medium mb-2">
                     Ngày làm việc
                   </label>
-                  <input
-                    type="text"
-                    name="workingDays"
-                    value={formData.workingDays}
-                    placeholder="Ví dụ: Thứ 2 - Thứ 6"
-                    className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:border-[#3AB4E6] text-sm"
-                    onChange={handleChange}
-                  />
+                  <div className="relative">
+                    <select
+                      name="workingDays"
+                      value={formData.workingDays}
+                      onChange={handleChange}
+                      className="w-full px-4 py-3 border border-gray-200 rounded-lg appearance-none bg-white focus:outline-none focus:border-[#3AB4E6] text-gray-600 text-sm"
+                    >
+                      <option value="">Chọn...</option>
+                      {WORKING_DAYS_OPTIONS.map((item) => (
+                        <option key={item.value} value={item.value}>
+                          {item.label}
+                        </option>
+                      ))}
+                    </select>
+                    <FaChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 text-xs pointer-events-none" />
+                  </div>
                   {errors.workingDays && (
                     <p className="text-red-500 text-xs mt-1">
                       {errors.workingDays}
@@ -646,7 +826,10 @@ const PostJob = ({
                     type="date"
                     name="deadline"
                     value={formData.deadline}
-                    className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:border-[#3AB4E6] text-sm text-gray-500"
+                    min={todayStr}
+                    className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:border-[#3AB4E6] text-sm text-gray-500 ${
+                      errors.deadline ? 'border-red-300' : 'border-gray-200'
+                    }`}
                     onChange={handleChange}
                   />
                   {errors.deadline && (
@@ -667,22 +850,13 @@ const PostJob = ({
                   <label className="block text-gray-700 text-sm font-medium mb-2">
                     Tỉnh/Thành phố
                   </label>
-                  <div className="relative">
-                    <select
-                      name="province"
-                      value={formData.province}
-                      onChange={handleChange}
-                      className="w-full px-4 py-3 border border-gray-200 rounded-lg appearance-none bg-white focus:outline-none focus:border-[#3AB4E6] text-gray-600 text-sm"
-                    >
-                      <option value="">Chọn...</option>
-                      {provinces.map((province) => (
-                        <option key={province.code} value={province.name}>
-                          {province.name}
-                        </option>
-                      ))}
-                    </select>
-                    <FaChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 text-xs pointer-events-none" />
-                  </div>
+                  <SearchableSelect
+                    name="province"
+                    value={formData.province}
+                    onChange={handleChange}
+                    options={provinces}
+                    placeholder="Chọn tỉnh/thành phố..."
+                  />
                   {errors.province && (
                     <p className="text-red-500 text-xs mt-1">
                       {errors.province}
@@ -694,25 +868,15 @@ const PostJob = ({
                   <label className="block text-gray-700 text-sm font-medium mb-2">
                     Phường/Xã
                   </label>
-                  <div className="relative">
-                    <select
-                      name="ward"
-                      value={formData.ward}
-                      onChange={handleChange}
-                      disabled={!formData.province || loadingWards}
-                      className="w-full px-4 py-3 border border-gray-200 rounded-lg appearance-none bg-white focus:outline-none focus:border-[#3AB4E6] text-gray-600 text-sm disabled:bg-gray-100"
-                    >
-                      <option value="">
-                        {loadingWards ? "Đang tải..." : "Chọn..."}
-                      </option>
-                      {wards.map((ward) => (
-                        <option key={ward.code} value={ward.name}>
-                          {ward.name}
-                        </option>
-                      ))}
-                    </select>
-                    <FaChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 text-xs pointer-events-none" />
-                  </div>
+                  <SearchableSelect
+                    name="ward"
+                    value={formData.ward}
+                    onChange={handleChange}
+                    options={wards}
+                    disabled={!formData.province || loadingWards}
+                    placeholder="Chọn phường/xã..."
+                    loading={loadingWards}
+                  />
                   {errors.ward && (
                     <p className="text-red-500 text-xs mt-1">{errors.ward}</p>
                   )}
@@ -750,12 +914,12 @@ const PostJob = ({
                   </label>
                   <div className="relative">
                     <input
-                      type="number"
+                      type="text"
                       name="minSalary"
-                      value={formData.minSalary}
+                      value={formatSalaryDisplay(formData.minSalary)}
                       placeholder="Giá trị tối thiểu..."
                       disabled={formData.salaryType === "NEGOTIABLE"}
-                      className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:border-[#3AB4E6] text-sm disabled:bg-gray-100"
+                      className="w-full px-4 py-3 pr-14 border border-gray-200 rounded-lg focus:outline-none focus:border-[#3AB4E6] text-sm disabled:bg-gray-100"
                       onChange={handleChange}
                     />
                     <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 text-xs font-bold">
@@ -775,12 +939,12 @@ const PostJob = ({
                   </label>
                   <div className="relative">
                     <input
-                      type="number"
+                      type="text"
                       name="maxSalary"
-                      value={formData.maxSalary}
+                      value={formatSalaryDisplay(formData.maxSalary)}
                       placeholder="Giá trị tối đa..."
                       disabled={formData.salaryType === "NEGOTIABLE"}
-                      className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:border-[#3AB4E6] text-sm disabled:bg-gray-100"
+                      className="w-full px-4 py-3 pr-14 border border-gray-200 rounded-lg focus:outline-none focus:border-[#3AB4E6] text-sm disabled:bg-gray-100"
                       onChange={handleChange}
                     />
                     <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 text-xs font-bold">
@@ -843,7 +1007,7 @@ const PostJob = ({
                 )}
               </div>
 
-              <div>
+              <div className="mb-6">
                 <label className="block text-gray-700 text-sm font-medium mb-2">
                   Trách nhiệm
                 </label>
@@ -854,6 +1018,44 @@ const PostJob = ({
                     value={formData.responsibilities}
                     className="w-full p-4 h-40 focus:outline-none resize-none text-sm text-gray-600"
                     placeholder="Thêm trách nhiệm công việc tại đây..."
+                    onChange={handleChange}
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="mb-10">
+              <h3 className="text-lg font-bold text-gray-800 mb-4">
+                Yêu cầu & Quyền lợi
+              </h3>
+
+              <div className="mb-6">
+                <label className="block text-gray-700 text-sm font-medium mb-2">
+                  Yêu cầu ứng viên
+                </label>
+                <div className="border border-gray-200 rounded-lg overflow-hidden focus-within:border-[#3AB4E6] transition-colors">
+                  <EditorToolbar />
+                  <textarea
+                    name="requirements"
+                    value={formData.requirements}
+                    className="w-full p-4 h-40 focus:outline-none resize-none text-sm text-gray-600"
+                    placeholder="Ví dụ: Tốt nghiệp đại học ngành CNTT, có kinh nghiệm 1 năm với ReactJS..."
+                    onChange={handleChange}
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-gray-700 text-sm font-medium mb-2">
+                  Quyền lợi
+                </label>
+                <div className="border border-gray-200 rounded-lg overflow-hidden focus-within:border-[#3AB4E6] transition-colors">
+                  <EditorToolbar />
+                  <textarea
+                    name="benefits"
+                    value={formData.benefits}
+                    className="w-full p-4 h-40 focus:outline-none resize-none text-sm text-gray-600"
+                    placeholder="Ví dụ: Lương tháng 13, bảo hiểm sức khỏe, team building hàng quý..."
                     onChange={handleChange}
                   />
                 </div>
@@ -879,8 +1081,8 @@ const PostJob = ({
                 }`}
               >
                 {isSubmitting
-                  ? "Dang xu ly..."
-                  : (isEdit ? "Cập nhật → Chờ duyệt lại" : "Đăng bài → Chờ duyệt")}
+                  ? "Đang xử lý..."
+                  : (isEdit ? "Cập nhật · Chờ duyệt lại" : "Đăng bài")}
                 <FaArrowRight size={14} />
               </button>
             </div>

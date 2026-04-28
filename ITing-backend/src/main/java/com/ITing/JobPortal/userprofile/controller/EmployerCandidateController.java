@@ -1,6 +1,7 @@
 package com.iting.jobportal.userprofile.controller;
 
 import com.iting.jobportal.userprofile.dto.request.EmployerCandidateSearchRequest;
+import com.iting.jobportal.userprofile.dto.response.CandidateFullProfileResponse;
 import com.iting.jobportal.userprofile.dto.response.EmployerCandidateSearchResponse;
 import com.iting.jobportal.userprofile.service.EmployerCandidateSearchService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -24,6 +25,13 @@ public class EmployerCandidateController {
     @Operation(summary = "Tìm kiếm ứng viên (AI embedding similarity + filters)")
     public ResponseEntity<Page<EmployerCandidateSearchResponse>> search(@RequestBody EmployerCandidateSearchRequest request) {
         return ResponseEntity.ok(employerCandidateSearchService.search(request));
+    }
+
+    @GetMapping("/{candidateId}/profile")
+    @PreAuthorize("hasRole('EMPLOYER')")
+    @Operation(summary = "Lấy toàn bộ hồ sơ chi tiết của ứng viên")
+    public ResponseEntity<CandidateFullProfileResponse> getCandidateFullProfile(@PathVariable Long candidateId) {
+        return ResponseEntity.ok(employerCandidateSearchService.getCandidateFullProfile(candidateId));
     }
 }
 

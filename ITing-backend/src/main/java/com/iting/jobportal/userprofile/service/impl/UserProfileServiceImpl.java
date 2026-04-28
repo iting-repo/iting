@@ -121,7 +121,6 @@ public class UserProfileServiceImpl implements UserProfileService {
         Skill skill = new Skill();
         skill.setProfile(profile);
         skill.setName(req.getName());
-        skill.setLevel(req.getLevel());
         return skillRepo.save(skill);
     }
 
@@ -130,7 +129,6 @@ public class UserProfileServiceImpl implements UserProfileService {
         Skill skill = skillRepo.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Skill not found"));
         skill.setName(req.getName());
-        skill.setLevel(req.getLevel());
         skillRepo.save(skill);
     }
 

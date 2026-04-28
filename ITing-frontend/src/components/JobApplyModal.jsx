@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
+import { useModalEscape } from "../hooks/useModalEscape";
 import {
   FaTimes,
   FaCloudUploadAlt,
@@ -24,6 +25,8 @@ const JobApplyModal = ({ isOpen, onClose, onSuccess, jobTitle, jobId }) => {
   const [uploadedFile, setUploadedFile] = useState(null);
   const [uploadTitle, setUploadTitle] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+
+  useModalEscape(isOpen ? onClose : null);
 
   useEffect(() => {
     if (isOpen) {
@@ -153,8 +156,14 @@ const JobApplyModal = ({ isOpen, onClose, onSuccess, jobTitle, jobId }) => {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-fade-in">
-      <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto relative">
+    <div 
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-fade-in"
+      onClick={onClose}
+    >
+      <div 
+        className="bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto relative"
+        onClick={(e) => e.stopPropagation()}
+      >
         {/* Header */}
         <div className="sticky top-0 bg-white z-10 px-6 py-4 border-b border-gray-100 flex justify-between items-start">
           <div>

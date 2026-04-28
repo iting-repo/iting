@@ -43,6 +43,8 @@ const ApprovalManagement = lazy(() => import('../pages/admin/approvals/ApprovalM
 const AuditLogPage = lazy(() => import('../pages/admin/audit/AuditLogPage'));
 const SystemConfig = lazy(() => import('../pages/admin/config/SystemConfig'));
 const NotificationManagement = lazy(() => import('../pages/admin/notifications/NotificationManagement'));
+const CategoryManagement = lazy(() => import('../pages/admin/categories/CategoryManagement'));
+const BannerManagement = lazy(() => import('../pages/admin/banner/BannerManagement'));
 const CompaniesPage = lazy(() => import('../pages/public/CompaniesPage'));
 const CompanyDetailPage = lazy(() => import('../pages/public/CompanyDetailPage'));
 const SalaryLookupPage = lazy(() => import('../pages/public/SalaryLookupPage'));
@@ -85,6 +87,8 @@ const AppRoutes = () => {
             <Route path="audit" element={<AuditLogPage />} />
             <Route path="config" element={<SystemConfig />} />
             <Route path="notifications" element={<NotificationManagement />} />
+            <Route path="categories" element={<CategoryManagement />} />
+            <Route path="banner" element={<BannerManagement />} />
           </Route>
         </Route>
 
@@ -123,9 +127,7 @@ const AppRoutes = () => {
         </Route>
 
         <Route path="/messages" element={<PrivateRoute allowedRoles={['CANDIDATE', 'EMPLOYER']} />}>
-          <Route element={<MainLayout />}>
-            <Route index element={<MessagesPage />} />
-          </Route>
+          <Route index element={<MessagesPage />} />
         </Route>
 
         <Route path="*" element={<div>Không tìm thấy trang</div>} />

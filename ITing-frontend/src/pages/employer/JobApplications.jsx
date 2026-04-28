@@ -219,13 +219,27 @@ const JobApplications = () => {
                      </span>
                   </Td>
                   <Td className="text-right">
-                     <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <button
-                           className="p-2 bg-gray-100 text-gray-600 rounded-lg hover:bg-blue-100 hover:text-blue-600 tooltip"
-                           title="Tải CV về máy"
-                        >
-                           <FaFileDownload />
-                        </button>
+                     <div className="flex items-center justify-end gap-2">
+                        {candidate.cvUrl ? (
+                          <a
+                            href={candidate.cvUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            download
+                            className="p-2 bg-gray-100 text-gray-600 rounded-lg hover:bg-blue-100 hover:text-blue-600 transition-colors"
+                            title="Tải CV về máy"
+                          >
+                            <FaFileDownload />
+                          </a>
+                        ) : (
+                          <button
+                            disabled
+                            className="p-2 bg-gray-50 text-gray-300 rounded-lg cursor-not-allowed"
+                            title="Ứng viên chưa đính kèm CV"
+                          >
+                            <FaFileDownload />
+                          </button>
+                        )}
                         <button
                            onClick={() => setSelectedCandidate(candidate)}
                            className="p-2 bg-[#EAF6FF] text-[#3AB4E6] rounded-lg hover:bg-[#3AB4E6] hover:text-white transition-colors"

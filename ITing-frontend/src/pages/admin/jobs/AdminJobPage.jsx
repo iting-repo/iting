@@ -22,7 +22,7 @@ import { JobTable } from "./components/JobTable";
 import { JobPreviewDialog } from "./components/JobPreviewDialog";
 import { JobDetailDialog } from "../../../components/admin/JobDetailDialog";
 import { ActionDialog } from "../../../components/admin/ActionDialog";
-import AiLoadingOverlay from "../../../components/admin/AiLoadingOverlay";
+
 import { useAdminJobs } from "../../../hooks/useAdminJobs";
 
 const AdminJobPage = () => {
@@ -38,11 +38,9 @@ const AdminJobPage = () => {
     rejectJob,
     closeJob,
     requestRevision,
-    runAiReview,
     suspendJob,
     unsuspendJob,
     deleteJob,
-    loadingAi,
   } = useAdminJobs();
 
   const [previewJob, setPreviewJob] = useState(null);
@@ -152,8 +150,7 @@ const AdminJobPage = () => {
       } else if (action === "revision") {
         if (!actionNote.trim()) { toast.error("Vui lòng nhập lý do yêu cầu chỉnh sửa!"); return; }
         await requestRevision(job.id, actionNote);
-      } else if (action === "ai-review") {
-        await runAiReview(job.id);
+
       } else if (action === "suspend") {
         if (!actionNote.trim()) { toast.error("Vui lòng nhập lý do đình chỉ!"); return; }
         await suspendJob(job.id, actionNote);
@@ -177,7 +174,7 @@ const AdminJobPage = () => {
 
   return (
     <>
-      <AiLoadingOverlay isVisible={loadingAi} />
+
       <div className="space-y-6 pb-60">
       <PageHeader
         title="Quản lý Job"

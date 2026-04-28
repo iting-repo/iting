@@ -152,6 +152,19 @@ const companyService = {
     return await axiosInstance.get("/companies/follow/my-followed", {
       params: { page, size }
     });
+  },
+
+  // REVIEWS
+  getCompanyReviews: async (companyId) => {
+    return await axiosInstance.get(`/public/companies/${companyId}/reviews`);
+  },
+
+  getCompanyRatingStats: async (companyId) => {
+    return await axiosInstance.get(`/public/companies/${companyId}/rating-stats`);
+  },
+
+  postCompanyReview: async (companyId, reviewData) => {
+    return await axiosInstance.post(`/candidate/companies/${companyId}/reviews`, reviewData);
   }
 };
 

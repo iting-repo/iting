@@ -3,6 +3,7 @@ package com.iting.jobportal.userprofile.controller;
 import com.iting.jobportal.job.controller.CurrentUser;
 import com.iting.jobportal.userprofile.dto.response.CVResponse;
 import com.iting.jobportal.userprofile.service.CVService;
+import com.iting.jobportal.userprofile.service.GeminiCVParserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -23,6 +24,7 @@ import java.util.Map;
 public class CVController {
 
     private final CVService cvService;
+    private final GeminiCVParserService geminiCVParserService;
 
     @GetMapping("/recent")
     @Operation(summary = "Lấy 3 CV mới nhất của người dùng", 
@@ -58,5 +60,19 @@ public class CVController {
                 "maxAllowed", 3,
                 "hasReachedLimit", cvs.size() >= 3
         ));
+    }
+
+    @PostMapping(value = "/parse", consumes = MediaType.MULTIPART_FORM_DATA_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+    @Operation(summary = "Phân tích CV bằng AI (Gemini)", 
+               description = "Đọc file PDF/Image CV và trích xuất thông tin kỹ năng, học vấn, kinh nghiệm thành JSON")
+    public ResponseEntity<?> parseCV(
+            @Parameter(hidden = true) @CurrentUser Long userId,
+            @RequestParam("file") MultipartFile file) {
+        try {
+            String jsonResult = geminiCVParserService.parseCV(file);
+            return ResponseEntity.ok(jsonResult); // Already a JSON string
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
     }
 }

@@ -15,6 +15,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -28,13 +29,19 @@ public class MessageController {
 
     private final MessageService messageService;
     private final ConversationService conversationService;
+    private final SimpMessagingTemplate messagingTemplate;
 
     @PostMapping
     @Operation(summary = "Send a message")
     public ResponseEntity<MessageResponse> sendMessage(
             @Parameter(hidden = true) @CurrentUser Long userId,
             @Valid @RequestBody SendMessageRequest request) {
-        return ResponseEntity.ok(messageService.sendMessage(request, userId));
+        MessageResponse response = messageService.sendMessage(request, userId);
+        messagingTemplate.convertAndSend(
+                "/topic/conversation/" + response.getConversationId(),
+                response
+        );
+        return ResponseEntity.ok(response);
     }
 
     @GetMapping("/conversations")

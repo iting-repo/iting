@@ -19,6 +19,12 @@ public class EmployerCandidateSearchRequest {
     private List<String> skills;
     private Boolean onlyAvailable;
 
+    // Location context: passed from employer's company profile for proximity scoring
+    private String employerLocation;
+
+    // Industry context: passed from employer's company profile for smart ML embedding recommendations
+    private String industryContext;
+
     private Integer page;
     private Integer size;
 }

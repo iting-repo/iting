@@ -17,6 +17,7 @@ import { AVAILABLE_INDUSTRIES } from "../../../../constants/industries";
 import companyService from "../../../../services/companyService";
 import { toast } from "sonner";
 import AppModal from "../../../../components/common/AppModal";
+import axiosInstance from "../../../../utils/axiosInstance";
 
 const STATUS_CONFIG = {
   PENDING_REVIEW: {
@@ -128,6 +129,7 @@ const FoundingInfoTab = ({ onTabChange }) => {
   const [requestForm, setRequestForm] = useState(emptyRequestForm);
   const [requestErrors, setRequestErrors] = useState({});
 
+  const [availableIndustries, setAvailableIndustries] = useState(AVAILABLE_INDUSTRIES);
   const [showReasonModal, setShowReasonModal] = useState(false);
   const navigate = useNavigate();
   const [logoPreview, setLogoPreview] = useState(null);
@@ -137,7 +139,24 @@ const FoundingInfoTab = ({ onTabChange }) => {
     try {
       setLoading(true);
 
-      const companyData = await companyService.getMyCompany();
+      const [companyData, industriesRes] = await Promise.all([
+        companyService.getMyCompany(),
+        axiosInstance.get('/public/categories/industries').catch(() => ({ data: [] }))
+      ]);
+
+      const customIndustries = (industriesRes.data || industriesRes || []).map(cat => ({
+        value: cat.name,
+        label: cat.name
+      }));
+
+      // Merge avoiding duplicates (by value)
+      const merged = [...AVAILABLE_INDUSTRIES];
+      customIndustries.forEach(c => {
+         if (!merged.find(m => m.value === c.value)) {
+            merged.push(c);
+         }
+      });
+      setAvailableIndustries(merged);
 
       if (companyData) {
         setCompany(companyData);
@@ -413,7 +432,7 @@ const FoundingInfoTab = ({ onTabChange }) => {
             key={`${industry}-${index}`}
             className="inline-flex items-center rounded-md border border-sky-200 bg-sky-50 px-2.5 py-1 text-xs font-semibold text-sky-700"
           >
-            {AVAILABLE_INDUSTRIES.find((i) => i.value === industry)?.label ||
+            {availableIndustries.find((i) => i.value === industry)?.label ||
               industry}
           </span>
         ))}
@@ -717,7 +736,7 @@ const FoundingInfoTab = ({ onTabChange }) => {
                       className="flex items-center gap-2 rounded-md border border-sky-200 bg-sky-50 px-2.5 py-1.5 text-xs font-semibold text-sky-700"
                     >
                       <span>
-                        {AVAILABLE_INDUSTRIES.find(
+                        {availableIndustries.find(
                           (i) => i.value === industry,
                         )?.label || industry}
                       </span>
@@ -759,7 +778,7 @@ const FoundingInfoTab = ({ onTabChange }) => {
                       <option value="" disabled>
                         Thêm lĩnh vực...
                       </option>
-                      {AVAILABLE_INDUSTRIES.filter(
+                      {availableIndustries.filter(
                         (item) =>
                           !requestForm.industries.includes(item.value),
                       ).map((item) => (

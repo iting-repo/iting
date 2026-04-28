@@ -7,7 +7,6 @@ import {
   XCircle,
   Ban,
   ShieldCheck,
-  Sparkles,
   Trash2
 } from "lucide-react";
 
@@ -107,20 +106,7 @@ export const RowActionMenu = ({ company, onViewDetail, onAction, openMenuId, set
               Xem chi tiết
             </button>
 
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                setOpenMenuId(null);
-                requestAnimationFrame(() => {
-                  onAction(company, "ai-review");
-                });
-              }}
-              className="flex w-full items-center gap-2 px-4 py-3 text-left text-sm text-blue-600 hover:bg-slate-50 transition-colors font-medium"
-            >
-              <Sparkles className="h-4 w-4" />
-              Chạy AI kiểm duyệt
-            </button>
+
 
             <button
               type="button"

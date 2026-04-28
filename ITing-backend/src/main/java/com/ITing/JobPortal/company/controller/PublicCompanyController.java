@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/api/public/companies")
 @RequiredArgsConstructor
-@Tag(name = "10. Public Companies", description = "Public APIs for company lookup")
+@Tag(name = "11. Public Companies", description = "Public APIs for company lookup")
 public class PublicCompanyController {
 
     private final CompanyService companyService;

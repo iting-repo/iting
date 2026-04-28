@@ -29,6 +29,8 @@
 
 \geometry{a4paper, top=2.5cm, bottom=2.5cm, left=3cm, right=2.5cm}
 \setstretch{1.3}
+\setlength{\headheight}{14pt}
+\newcolumntype{L}[1]{>{\raggedright\arraybackslash}p{#1}}
 
 % ========================
 % COLORS
@@ -73,7 +75,7 @@
 \pagestyle{fancy}
 \fancyhf{}
 \fancyhead[L]{\small\textit{ITing -- Software Requirements Specification}}
-\fancyhead[R]{\small\textit{Phiên bản 2.0}}
+\fancyhead[R]{\small\textit{Phiên bản 2.1}}
 \fancyfoot[C]{\thepage}
 \renewcommand{\headrulewidth}{0.4pt}
 
@@ -130,9 +132,9 @@
 \vspace{2cm}
 
 \begin{tabular}{ll}
-\textbf{Phiên bản:} & 2.0 \\[0.3cm]
-\textbf{Ngày:} & 21/04/2026 \\[0.3cm]
-\textbf{Trạng thái:} & Hoàn thiện \\[0.3cm]
+\textbf{Phiên bản:} & 2.1 \\[0.3cm]
+\textbf{Ngày:} & 26/04/2026 \\[0.3cm]
+\textbf{Trạng thái:} & Enterprise review -- cần khắc phục rủi ro trước go-live \\[0.3cm]
 \textbf{Công nghệ Backend:} & Spring Boot 3.x, PostgreSQL, JWT \\[0.3cm]
 \textbf{Công nghệ Frontend:} & ReactJS 18, Vite \\[0.3cm]
 \textbf{Công nghệ AI:} & Gemma Embedding 300M, Sentence-Transformers \\
@@ -148,6 +150,28 @@ bao gồm tất cả chức năng nghiệp vụ, yêu cầu kỹ thuật và ki�
 % TABLE OF CONTENTS
 % ========================
 \tableofcontents
+\newpage
+
+\chapter*{Lịch Sử Chỉnh Sửa (Revision History)}
+\addcontentsline{toc}{chapter}{Lịch Sử Chỉnh Sửa (Revision History)}
+
+\small
+\begin{longtable}{|L{2.4cm}|L{1.8cm}|L{9.6cm}|}
+\hline
+\textbf{Ngày} & \textbf{Phiên bản} & \textbf{Tóm tắt thay đổi logic và xác nhận tiêu chuẩn Enterprise} \\
+\hline
+\endfirsthead
+\hline
+\textbf{Ngày} & \textbf{Phiên bản} & \textbf{Tóm tắt thay đổi logic và xác nhận tiêu chuẩn Enterprise} \\
+\hline
+\endhead
+21/04/2026 & 2.0 & Hoàn thiện baseline SRS cho hệ thống tuyển dụng ITing. \\
+\hline
+26/04/2026 & 2.1 & Cập nhật SRS theo diff logic mới: Auto AI Review, AI-assisted search, HR Candidate Search, AI Operations API, schema job embedding/working days. Đánh giá Enterprise: chưa đạt go-live Enterprise tuyệt đối; cần hardening bảo mật API AI, kiểm soát dữ liệu hồ sơ ứng viên, DTO hóa response, tối ưu truy vấn vector search và chuẩn hóa logging trước khi triển khai khách hàng chiến lược. \\
+\hline
+\end{longtable}
+\normalsize
+
 \newpage
 
 % ========================
@@ -312,7 +336,7 @@ Hệ thống được xây dựng theo mô hình \textbf{Client-Server} với ki
 \subsection{Quy Trình Cốt Lõi của Nhà Tuyển Dụng}
 \begin{enumerate}
     \item Đăng ký, xác thực công ty (KYB) để nâng cao mức độ tin cậy.
-    \item Đăng tin tuyển dụng và chờ Admin kiểm duyệt.
+    \item Đăng tin tuyển dụng và nhận kết quả Auto AI Review; Admin có thể hậu kiểm khi cần.
     \item Xem và quản lý danh sách hồ sơ ứng viên.
     \item Chấp nhận/Từ chối hồ sơ và gửi thông báo cho ứng viên.
     \item Tìm kiếm chủ động ứng viên phù hợp bằng công cụ AI.
@@ -487,7 +511,7 @@ Người dùng nhập mã OTP 6 chữ số nhận qua email. Hệ thống kiểm
 
 \section{Tổng Quan Module Job Discovery}
 
-Module này cho phép tất cả người dùng (bao gồm Guest chưa đăng nhập) tìm kiếm, lọc và xem chi tiết tin tuyển dụng. Hệ thống hỗ trợ hai cơ chế tìm kiếm: từ khóa truyền thống và Semantic Search bằng AI.
+Module này cho phép tất cả người dùng (bao gồm Guest chưa đăng nhập) tìm kiếm, lọc và xem chi tiết tin tuyển dụng. Hệ thống hỗ trợ tìm kiếm từ khóa truyền thống và chế độ AI-assisted search. Ở chế độ AI-assisted, hệ thống mở rộng từ khóa bằng Knowledge Graph/Gemini, dùng vector search và cross-encoder để boost/xếp hạng lại các kết quả phù hợp trong tập kết quả đã lọc.
 
 \section{UC-SEARCH-01: Tìm Kiếm Việc Làm Cơ Bản}
 
@@ -531,6 +555,8 @@ size & Integer & Không & Số kết quả mỗi trang (default: 10) \\
 sortBy & String & Không & Trường sắp xếp (lastUpdate, viewCount) \\
 \hline
 sortOrder & String & Không & asc hoặc desc \\
+\hline
+isAiSearch & Boolean & Không & Bật chế độ AI-assisted search để mở rộng từ khóa, boost kết quả semantic và đánh dấu gợi ý AI \\
 \hline
 \end{longtable}
 
@@ -804,13 +830,13 @@ Nhà tuyển dụng (HR) có hai nhóm chức năng chính: (1) Quản lý tin t
 \textbf{Trường} & \textbf{Kiểu dữ liệu} & \textbf{Bắt buộc} & \textbf{Mô tả} \\
 \hline
 \endhead
-title & String & Có & Tiêu đề vị trí (tối đa 200 ký tự) \\
+title & String & Có & Tiêu đề vị trí (tối đa 150 ký tự) \\
 \hline
 position & String & Có & Tên vị trí chính thức \\
 \hline
 description & Text & Có & Mô tả công việc chi tiết \\
 \hline
-requirements & Text & Có & Yêu cầu ứng viên \\
+requirements & Text & Không & Yêu cầu ứng viên, khuyến nghị nhập để tăng chất lượng matching \\
 \hline
 responsibilities & Text & Không & Trách nhiệm công việc \\
 \hline
@@ -845,11 +871,11 @@ dueDate & LocalDate & Có & Hạn nộp hồ sơ \\
 \hline
 \textbf{Trạng thái} & \textbf{Màu sắc} & \textbf{Ý nghĩa} \\
 \hline
-PENDING & Vàng & Chờ Admin kiểm duyệt \\
+PENDING & Vàng & Chờ hệ thống AI/Admin kiểm duyệt \\
 \hline
 ACTIVE & Xanh lá & Đang hiển thị công khai \\
 \hline
-REJECTED & Đỏ & Bị Admin từ chối \\
+REJECTED & Đỏ & Bị AI hoặc Admin từ chối \\
 \hline
 CLOSED & Xám & HR đóng tin (không nhận thêm ứng viên) \\
 \hline
@@ -863,12 +889,22 @@ SUSPENDED & Tím & Bị Admin đình chỉ vi phạm \\
 \subsection{Quy Tắc Chuyển Trạng Thái}
 
 \begin{itemize}
-    \item \textbf{PENDING $\rightarrow$ ACTIVE}: Admin phê duyệt.
-    \item \textbf{PENDING $\rightarrow$ REJECTED}: Admin từ chối (kèm lý do).
+    \item \textbf{PENDING $\rightarrow$ ACTIVE}: AI tự động phê duyệt hoặc Admin phê duyệt.
+    \item \textbf{PENDING $\rightarrow$ REJECTED}: AI tự động từ chối hoặc Admin từ chối (kèm lý do).
     \item \textbf{ACTIVE $\rightarrow$ CLOSED}: HR chủ động đóng.
     \item \textbf{ACTIVE $\rightarrow$ SUSPENDED}: Admin đình chỉ vi phạm.
     \item \textbf{ACTIVE $\rightarrow$ EXPIRED}: Hệ thống tự động khi quá dueDate.
     \item \textbf{CLOSED $\rightarrow$ ACTIVE}: HR mở lại (nếu chưa quá hạn).
+    \item \textbf{REJECTED $\rightarrow$ PENDING}: HR chỉnh sửa và gửi duyệt lại; hệ thống chạy AI review tự động.
+\end{itemize}
+
+\subsection{Cơ Chế Auto AI Review}
+
+Sau khi HR tạo tin mới, cập nhật các trường quan trọng hoặc gửi duyệt lại tin bị từ chối, Backend tự động gọi AI review. AI trả về kết quả phân tích và quyết định cuối cùng:
+\begin{itemize}
+    \item Nếu AI kết luận \texttt{APPROVE}, tin chuyển sang \texttt{ACTIVE}.
+    \item Nếu AI kết luận \texttt{REJECT}, tin chuyển sang \texttt{REJECTED} và lưu lý do vào \texttt{reviewReason}.
+    \item Nếu AI lỗi hoặc phản hồi không rõ ràng, hệ thống mặc định cho phép tin chuyển sang \texttt{ACTIVE} để không chặn luồng đăng tin của HR; trạng thái AI được lưu để Admin có thể hậu kiểm.
 \end{itemize}
 
 \section{UC-HR-JOB-02: Chỉnh Sửa Tin Tuyển Dụng}
@@ -876,11 +912,11 @@ SUSPENDED & Tím & Bị Admin đình chỉ vi phạm \\
 \begin{requirementbox}{UC-HR-JOB-02: Cập nhật tin tuyển dụng}
 \textbf{Actor}: Employer (HR) \\
 \textbf{Endpoint}: PUT /api/employer/jobs/\{id\} \\
-\textbf{Điều kiện tiên quyết}: HR là chủ tin, tin đang ACTIVE hoặc PENDING \\
+\textbf{Điều kiện tiên quyết}: HR là chủ tin tuyển dụng \\
 \textbf{Phân loại}: Bắt buộc
 \end{requirementbox}
 
-Khi HR chỉnh sửa tin đang ACTIVE, tin sẽ quay về PENDING để Admin kiểm duyệt lại. Điều này đảm bảo mọi nội dung được kiểm soát chất lượng.
+Khi HR chỉnh sửa các trường quan trọng như tiêu đề, vị trí, mô tả, yêu cầu, phúc lợi, lương, địa điểm hoặc hạn nộp, tin được đưa về \texttt{PENDING} và kích hoạt Auto AI Review. Kết quả AI có thể tự động chuyển tin sang \texttt{ACTIVE} hoặc \texttt{REJECTED}. Admin vẫn có quyền hậu kiểm, đình chỉ hoặc chỉnh trạng thái khi phát hiện vi phạm.
 
 \section{UC-HR-APP-01: Xem Danh Sách Hồ Sơ Ứng Viên}
 
@@ -969,12 +1005,12 @@ Quản trị viên có quyền cao nhất trong hệ thống, chịu trách nhi�
 \begin{enumerate}
     \item Admin vào mục ``Quản lý tin chờ duyệt'' (GET /api/admin/jobs/filter?status=PENDING).
     \item Admin đọc nội dung tin và đánh giá.
-    \item \textbf{Tùy chọn AI Review}: Admin có thể kích hoạt tính năng AI để tự động phân tích nội dung (POST /api/admin/jobs/\{id\}/ai-review):
+    \item \textbf{AI Review}: Hệ thống có thể đã tự động chạy AI review khi HR tạo/cập nhật/gửi duyệt lại tin; Admin cũng có thể kích hoạt lại AI review thủ công (POST /api/admin/jobs/\{id\}/ai-review):
     \begin{itemize}
         \item AI phân tích ngôn từ, độ tin cậy, nội dung không phù hợp.
-        \item AI trả về điểm số và danh sách cảnh báo.
+        \item AI trả về trạng thái, lý do và cảnh báo kiểm duyệt.
     \end{itemize}
-    \item Admin quyết định:
+    \item Admin hậu kiểm hoặc ghi đè quyết định khi cần:
     \begin{itemize}
         \item \textbf{Phê duyệt}: Tin chuyển ACTIVE, HR nhận thông báo.
         \item \textbf{Từ chối}: Admin nhập lý do, tin chuyển REJECTED, HR nhận thông báo kèm lý do.
@@ -1184,17 +1220,21 @@ Hệ thống sử dụng phương pháp \textbf{Hybrid Recommendation} kết h�
 
 \begin{requirementbox}{UC-AI-03: Tìm ứng viên bằng CV/Keyword}
 \textbf{Actor}: Employer (HR) \\
-\textbf{Endpoints}: POST /api/employer/applications/search-by-cv, /search-by-keyword \\
-\textbf{Phân loại}: Mở rộng (Planned)
+\textbf{Endpoints}: POST /api/employers/candidates/search, GET /api/employers/candidates/\{candidateId\}/profile \\
+\textbf{Phân loại}: Bắt buộc
 \end{requirementbox}
 
-HR có thể upload file CV mẫu hoặc nhập từ khóa kỹ năng, hệ thống tìm kiếm các ứng viên đã nộp đơn có CV tương đồng nhất (Semantic Similarity).
+HR có thể nhập từ khóa kỹ năng, vị trí, cấp bậc, kinh nghiệm, địa điểm, học vấn hoặc bối cảnh ngành nghề để tìm kiếm trong tập hồ sơ ứng viên trên hệ thống. Hệ thống kết hợp bộ lọc hồ sơ, embedding similarity, Knowledge Graph expansion và location proximity để sắp xếp ứng viên phù hợp nhất.
+
+\subsection{Luồng Xem Chi Tiết Hồ Sơ Ứng Viên}
+
+Khi HR chọn một ứng viên từ kết quả tìm kiếm hoặc danh sách ứng viên yêu thích, hệ thống cung cấp endpoint xem hồ sơ đầy đủ gồm thông tin cơ bản, kỹ năng, kinh nghiệm, học vấn, chứng chỉ, liên kết xã hội và portfolio. Dữ liệu trả về phải được đóng gói theo response model phục vụ màn hình nhà tuyển dụng và chỉ hiển thị các trường hồ sơ được phép công khai trong ngữ cảnh tuyển dụng.
 
 \section{UC-AI-04: Kiểm Duyệt Tin Bằng AI}
 
 \begin{requirementbox}{UC-AI-04: AI Review tin tuyển dụng}
-\textbf{Actor}: Admin \\
-\textbf{Endpoint}: POST /api/admin/jobs/\{id\}/ai-review \\
+\textbf{Actor}: Admin, Employer-triggered workflow, AI System \\
+\textbf{Endpoints}: POST /api/admin/jobs/\{id\}/ai-review; Auto trigger sau khi HR tạo/cập nhật/gửi duyệt lại tin \\
 \textbf{Phân loại}: Bắt buộc
 \end{requirementbox}
 
@@ -1205,6 +1245,18 @@ AI phân tích nội dung tin tuyển dụng để phát hiện:
     \item Từ ngữ phân biệt đối xử.
     \item Thiếu thông tin bắt buộc.
 \end{itemize}
+
+Kết quả AI review được lưu vào các trường \texttt{aiReviewStatus} và \texttt{aiReviewReason}. Với luồng tự động, AI có thể chuyển trạng thái tin sang \texttt{ACTIVE} hoặc \texttt{REJECTED}. Với luồng Admin gọi thủ công, kết quả AI được dùng để hỗ trợ kiểm duyệt và có thể tự động cập nhật trạng thái nếu AI đưa ra \texttt{FINAL\_DECISION} rõ ràng.
+
+\section{UC-AI-05: Vận Hành Embedding và ML Service}
+
+\begin{requirementbox}{UC-AI-05: Quản trị embedding và kiểm tra ML service}
+\textbf{Actor}: Admin, AI System \\
+\textbf{Endpoints}: POST /api/ai/embedding/trigger, GET /api/ai/ml/health, POST /api/ai/ner/extract, GET /api/ai/kg/expand, GET /api/ai/kg/explain \\
+\textbf{Phân loại}: Vận hành nội bộ
+\end{requirementbox}
+
+Các endpoint AI vận hành phục vụ tạo embedding cho job, kiểm tra trạng thái Python ML service, trích xuất kỹ năng và giải thích matching bằng Knowledge Graph. Các endpoint có side effect như trigger embedding chỉ được sử dụng cho mục đích quản trị/vận hành hoặc scheduler nội bộ.
 
 % ========================
 % CHAPTER 10: CHAT & NOTIFICATION
@@ -1231,7 +1283,7 @@ AI phân tích nội dung tin tuyển dụng để phát hiện:
 \subsection{Cấu Trúc Database Chat}
 
 \begin{lstlisting}[style=sqlstyle]
--- Bảng conversations (phòng chat giữa 2 người dùng)
+-- conversations table
 CREATE TABLE conversations (
     id BIGSERIAL PRIMARY KEY,
     participant1_id BIGINT NOT NULL,
@@ -1240,7 +1292,7 @@ CREATE TABLE conversations (
     UNIQUE(participant1_id, participant2_id)
 );
 
--- Bảng messages
+-- messages table
 CREATE TABLE messages (
     id BIGSERIAL PRIMARY KEY,
     conversation_id BIGINT NOT NULL REFERENCES conversations(id),
@@ -1289,6 +1341,49 @@ COMPANY\_VERIFIED & HR & Công ty đã được xác thực \\
 NEW\_MESSAGE & Candidate/HR & Tin nhắn mới từ đối tác \\
 \hline
 \end{longtable}
+
+% ========================
+% CHAPTER 11: ENTERPRISE READINESS
+% ========================
+\chapter{Đánh Giá Enterprise Readiness}
+
+\section{Kết Luận PM/Enterprise Client}
+
+Dựa trên thay đổi logic mới nhất trong \texttt{thay\_doi.diff}, hệ thống đã có nhiều nền tảng phù hợp Enterprise như JWT, RBAC theo role, Bean Validation cho nhiều request DTO, Flyway migration, logging cho các luồng AI/search và phân lớp Controller--Service--Repository. Tuy nhiên, trạng thái hiện tại được đánh giá là \textbf{Chưa đạt go-live Enterprise tuyệt đối}. Hệ thống có thể tiếp tục dùng cho demo/UAT có kiểm soát, nhưng cần hardening trước khi triển khai cho khách hàng chiến lược.
+
+\section{Đánh Giá Theo Tiêu Chuẩn Enterprise}
+
+\begin{longtable}{|p{3.2cm}|p{3cm}|p{8cm}|}
+\hline
+\textbf{Tiêu chí} & \textbf{Trạng thái} & \textbf{Nhận xét PM/Enterprise Client} \\
+\hline
+\endfirsthead
+\hline
+\textbf{Tiêu chí} & \textbf{Trạng thái} & \textbf{Nhận xét PM/Enterprise Client} \\
+\hline
+\endhead
+Bảo mật & Cần cải thiện & Hệ thống có JWT/RBAC và một số endpoint dùng \texttt{@PreAuthorize}. Tuy nhiên nhóm endpoint \texttt{/api/ai/**} có endpoint side-effect như trigger embedding nên phải giới hạn Admin/Internal. Endpoint xem full profile ứng viên cần kiểm soát phạm vi dữ liệu/consent rõ ràng. \\
+\hline
+Validation và dữ liệu nhạy cảm & Cần cải thiện & DTO tạo job đã có validation cho nhiều trường chính, nhưng một số dữ liệu đầu vào dạng map/payload cần DTO hóa và validate bằng Bean Validation. API không được trả trực tiếp Hibernate Entity cho client ở các response hồ sơ đầy đủ. \\
+\hline
+Hiệu năng và quy mô & Cần cải thiện & Search ứng viên có \texttt{join fetch} cho user/account/skills giúp giảm một phần N+1. Tuy nhiên vector search hiện tải toàn bộ active job có embedding vào memory, phù hợp dữ liệu nhỏ nhưng chưa đạt quy mô Enterprise; cần pgvector/FAISS/index chuyên dụng và pagination/rerank trước khi mở rộng. \\
+\hline
+Tính bảo trì & Đạt có điều kiện & Code nhìn chung theo layer Spring Boot, nhưng một số logic AI review, parsing response AI, scoring và fallback đang nằm trực tiếp trong service lớn. Cần tách policy/strategy/service nhỏ hơn để dễ test và kiểm soát thay đổi. \\
+\hline
+Logging và monitoring & Cần cải thiện & Có log cho AI review, KG expansion, vector search và cross-encoder. Không được log raw AI response nếu response có thể chứa nội dung nhạy cảm của job/CV; cần correlation id, audit log nghiệp vụ và metric cho AI latency/failure rate. \\
+\hline
+\end{longtable}
+
+\section{Rủi Ro Cần Khắc Phục Trước Enterprise Go-Live}
+
+\begin{itemize}
+    \item Khóa các endpoint AI vận hành có side effect theo role Admin hoặc internal network.
+    \item Chuyển response full profile sang DTO thuần, không trả trực tiếp entity/lazy relation.
+    \item Bổ sung authorization/consent rule cho HR khi xem hồ sơ ứng viên ngoài danh sách đã ứng tuyển.
+    \item Thay vector search in-memory bằng cơ chế vector index hoặc ML service có pagination và threshold cấu hình.
+    \item Chuẩn hóa logging: không log raw payload, CV, token, email nhạy cảm hoặc nội dung AI đầy đủ; chỉ log id, trạng thái, mã lỗi và metadata an toàn.
+    \item Viết test cho auto AI review, authorization candidate profile, AI endpoint security, salary/job validation và negative cases.
+\end{itemize}
 
 % ========================
 % CHAPTER 11: NFR
@@ -1459,17 +1554,17 @@ AI/ML & Python + Sentence Transformers & Gemma 300M \\
 
 \begin{lstlisting}[style=javastyle]
 com.iting.jobportal/
-├── auth/                  -- Authentication (Register, Login, OTP)
-├── job/                   -- Job CRUD, Search, Status
-├── application/           -- Apply, Review, Status Update
-├── userprofile/           -- Candidate Profile, CV, Skills
-├── company/               -- Company Info, Logo, Follow
-├── recommendation/        -- AI Recommendation Engine
-├── admin/                 -- Admin Dashboard, Reports
-├── notification/          -- Notification System
-├── chat/                  -- WebSocket Chat
-├── config/                -- Security, CORS, Swagger
-└── common/               -- DTOs, Utilities, Exceptions
++-- auth/                  -- Authentication (Register, Login, OTP)
++-- job/                   -- Job CRUD, Search, Status
++-- application/           -- Apply, Review, Status Update
++-- userprofile/           -- Candidate Profile, CV, Skills
++-- company/               -- Company Info, Logo, Follow
++-- recommendation/        -- AI Recommendation Engine
++-- admin/                 -- Admin Dashboard, Reports
++-- notification/          -- Notification System
++-- chat/                  -- WebSocket Chat
++-- config/                -- Security, CORS, Swagger
+`-- common/                -- DTOs, Utilities, Exceptions
 \end{lstlisting}
 
 % ========================
@@ -1505,15 +1600,16 @@ CREATE INDEX idx_account_status ON Account(Status);
 CREATE TABLE Job (
     id                  BIGSERIAL PRIMARY KEY,
     company_id          BIGINT NOT NULL REFERENCES Company(id),
-    title               VARCHAR(200) NOT NULL,
+    title               VARCHAR(150) NOT NULL,
     position            VARCHAR(200),
     description         TEXT,
-    requirements        TEXT,
+    requirements        TEXT,                -- optional
     responsibilities    TEXT,
     benefits            TEXT,
     tech_required       TEXT,                -- JSON array as string
     job_type            VARCHAR(50),          -- FULL_TIME, PART_TIME, ...
     experience_level    VARCHAR(50),          -- JUNIOR, MID, SENIOR, ...
+    working_days        VARCHAR(50),
     min_salary          DECIMAL(15,2),
     max_salary          DECIMAL(15,2),
     salary_type         VARCHAR(50),          -- MONTHLY, HOURLY, NEGOTIABLE
@@ -1534,6 +1630,7 @@ CREATE TABLE Job (
     ai_review_status    VARCHAR(50),
     ai_review_reason    TEXT,
     job_embedding       TEXT,                -- Vector as JSON
+    embedding_updated_at TIMESTAMP,
     created_at          TIMESTAMP DEFAULT NOW(),
     last_update         TIMESTAMP DEFAULT NOW()
 );
@@ -1554,7 +1651,7 @@ CREATE TABLE Apply_form_user_to_job (
     status        VARCHAR(50) DEFAULT 'PENDING',
     applied_at    TIMESTAMP DEFAULT NOW(),
     updated_at    TIMESTAMP DEFAULT NOW(),
-    UNIQUE(applicant_id, job_id)   -- Chống nộp trùng
+    UNIQUE(applicant_id, job_id)   -- Prevent duplicate applications
 );
 \end{lstlisting}
 
@@ -1568,7 +1665,7 @@ CREATE TABLE Notification (
     title       VARCHAR(500),
     message     TEXT,
     is_read     BOOLEAN DEFAULT FALSE,
-    ref_id      BIGINT,                  -- ID tham chiếu (jobId, appId,...)
+    ref_id      BIGINT,                  -- Reference id (jobId, appId,...)
     created_at  TIMESTAMP DEFAULT NOW()
 );
 \end{lstlisting}
@@ -1581,7 +1678,7 @@ CREATE TABLE otp_code (
     email       VARCHAR(255) NOT NULL,
     otp         VARCHAR(10) NOT NULL,
     created_at  TIMESTAMP DEFAULT NOW(),
-    expires_at  TIMESTAMP NOT NULL       -- TTL = 10 phút
+    expires_at  TIMESTAMP NOT NULL       -- TTL = 10 minutes
 );
 CREATE INDEX idx_otp_code_email ON otp_code(email);
 \end{lstlisting}
@@ -1621,7 +1718,7 @@ Hệ thống tuân theo nguyên tắc RESTful API với các quy tắc:
   "success": true | false,
   "message": "Operation successful",
   "data": {
-    // Payload tùy theo API
+    // API-specific payload
   },
   "error": null | "Error details",
   "timestamp": "2026-04-21T00:00:00Z"
@@ -1715,6 +1812,33 @@ POST & /api/employer/applications/\{id\}/reject & HR & Từ chối \\
 \hline
 GET & /api/employer/applications/stats & HR & Thống kê nhanh \\
 \hline
+POST & /api/employers/candidates/search & HR & Tìm kiếm ứng viên bằng AI/filter \\
+\hline
+GET & /api/employers/candidates/\{candidateId\}/profile & HR & Xem hồ sơ ứng viên đầy đủ \\
+\hline
+\end{longtable}
+
+\subsection{AI Operations APIs}
+
+\begin{longtable}{|c|p{5cm}|p{2cm}|p{4cm}|}
+\hline
+\textbf{Method} & \textbf{Endpoint} & \textbf{Auth} & \textbf{Mô tả} \\
+\hline
+\endfirsthead
+\hline
+\textbf{Method} & \textbf{Endpoint} & \textbf{Auth} & \textbf{Mô tả} \\
+\hline
+\endhead
+GET & /api/ai/kg/expand & Public/Internal & Mở rộng từ khóa bằng Knowledge Graph \\
+\hline
+GET & /api/ai/kg/explain & Public/Internal & Giải thích matching kỹ năng \\
+\hline
+POST & /api/ai/embedding/trigger & Admin/Internal & Trigger batch embedding cho job \\
+\hline
+GET & /api/ai/ml/health & Admin/Internal & Kiểm tra ML service \\
+\hline
+POST & /api/ai/ner/extract & Admin/Internal & Trích xuất kỹ năng từ văn bản \\
+\hline
 \end{longtable}
 
 % ========================
@@ -1744,6 +1868,29 @@ Tài liệu SRS này đã mô tả toàn diện hệ thống ITing -- nền tả
     \item \textbf{Multi-language}: Hỗ trợ thêm Tiếng Anh và Tiếng Nhật cho thị trường offshore.
     \item \textbf{Premium Subscriptions}: Gói đăng ký trả phí với tính năng nâng cao cho HR.
 \end{itemize}
+
+\section{Lịch Sử Thay Đổi SRS}
+
+Mỗi lần chỉnh sửa tài liệu \texttt{SRS\_FULL.tex}, người thực hiện phải ghi lại ngày chỉnh sửa, người thực hiện, phạm vi thay đổi và prompt/yêu cầu gốc tạo ra thay đổi.
+
+\small
+\begin{longtable}{|L{2.2cm}|L{2.1cm}|L{3.4cm}|L{5.4cm}|}
+\hline
+\textbf{Ngày} & \textbf{Người thực hiện} & \textbf{Phạm vi thay đổi} & \textbf{Prompt/Yêu cầu gốc} \\
+\hline
+\endfirsthead
+\hline
+\textbf{Ngày} & \textbf{Người thực hiện} & \textbf{Phạm vi thay đổi} & \textbf{Prompt/Yêu cầu gốc} \\
+\hline
+\endhead
+26/04/2026 & Codex & Bổ sung quy định ghi log cho mọi lần sửa SRS & Mỗi lần sửa đổi file SRS phải ghi lại log trong SRS\_FULL.tex và lưu prompt/yêu cầu gốc. \\
+\hline
+26/04/2026 & Codex & Cập nhật Revision History đầu file và bổ sung đánh giá Enterprise Readiness từ góc nhìn PM/Enterprise Client & Đóng vai PM cấp cao và Enterprise Client; kiểm tra tiêu chuẩn Enterprise, đối chiếu nghiệp vụ với diff, cập nhật SRS và ghi log lịch sử chỉnh sửa. \\
+\hline
+26/04/2026 & Codex & Sửa cảnh báo LaTeX khi biên dịch SRS & Sửa lỗi Underfull/Overfull hbox ở bảng log, cảnh báo fancyhdr headheight và ghi lại prompt sửa lỗi biên dịch. \\
+\hline
+\end{longtable}
+\normalsize
 
 \section{Phụ Lục -- Danh Sách UML Diagrams}
 
@@ -1781,7 +1928,7 @@ Tài liệu SRS này đã mô tả toàn diện hệ thống ITing -- nền tả
 \rule{0.5\linewidth}{0.4pt}\\[0.3cm]
 \textit{Tài liệu SRS được duy trì bởi nhóm phát triển ITing.}\\
 \textit{Mọi thay đổi cần được ghi nhận vào lịch sử phiên bản.}\\[0.2cm]
-\textbf{Phiên bản 2.0 -- Cập nhật: 21/04/2026}
+\textbf{Phiên bản 2.1 -- Cập nhật: 26/04/2026}
 \end{center}
 
 \end{document}

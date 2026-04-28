@@ -25,5 +25,8 @@ public class EmployerCandidateSearchResponse {
     private Boolean isAvailable;
 
     private Double score;
+
+    // Phase 5: Explainability - KG-based match explanations
+    private List<String> matchReasons;
 }
 

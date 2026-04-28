@@ -245,9 +245,9 @@ const JobDetailPage = () => {
 
     const description = useMemo(() => normalizeList(currentJob?.description), [currentJob?.description]);
     const responsibilities = useMemo(() => normalizeList(currentJob?.responsibilities), [currentJob?.responsibilities]);
-    const requirements = useMemo(() => normalizeList(currentJob?.requirements || currentJob?.techRequired), [currentJob?.requirements, currentJob?.techRequired]);
+    const requirements = useMemo(() => normalizeList(currentJob?.requirements || currentJob?.skills), [currentJob?.requirements, currentJob?.skills]);
     const benefits = useMemo(() => normalizeList(currentJob?.benefits), [currentJob?.benefits]);
-    const techList = currentJob?.techRequired || [];
+    const techList = currentJob?.skills || [];
 
     const formatJobType = (type) => {
         const map = {
@@ -322,7 +322,7 @@ const JobDetailPage = () => {
         title: job.title || job.position || 'Vị trí tuyển dụng',
         company: job.companyName || 'Công ty',
         logo: getCompanyLogoUrl(job.companyLogo),
-        category: (job.techRequired && job.techRequired[0]) || (job.experienceLevel || 'IT'),
+        category: (job.skills && job.skills[0]) || (job.experienceLevel || 'IT'),
         type: job.jobType || 'FULL_TIME',
         salary: formatSalary(job.minSalary, job.maxSalary),
         location: job.location || job.province || 'Việt Nam',
@@ -516,7 +516,9 @@ const JobDetailPage = () => {
                                 </div>
                                 <div>
                                     <h3 className="font-bold text-gray-800 mb-1">Thời gian làm việc</h3>
-                                    <p className="text-sm text-gray-500">• Thứ 2 - Thứ 6 (từ 08:15 đến 17:30)</p>
+                                    <p className="text-sm text-gray-500">• {
+                                        ({'MON_TO_FRI': 'Thứ 2 - Thứ 6', 'MON_TO_SAT': 'Thứ 2 - Thứ 7', 'FLEXIBLE': 'Linh động'})[currentJob?.workingDays] || currentJob?.workingDays || 'Chưa cập nhật'
+                                    }</p>
                                 </div>
                                 <div>
                                     <h3 className="font-bold text-gray-800 mb-1">Cách thức ứng tuyển</h3>

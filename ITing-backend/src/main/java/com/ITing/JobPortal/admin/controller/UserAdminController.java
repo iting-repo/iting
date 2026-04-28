@@ -23,7 +23,7 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/admin/users")
 @RequiredArgsConstructor
-@Tag(name = "12. Admin User Management", description = "CRUD operations for users by admin")
+@Tag(name = "14. Admin User Management", description = "CRUD operations for users by admin")
 public class UserAdminController {
 
     private final AdminUserService adminUserService;
@@ -35,8 +35,7 @@ public class UserAdminController {
             @RequestParam(required = false) Role role,
             @RequestParam(required = false) AccountStatus status,
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size
-    ) {
+            @RequestParam(defaultValue = "10") int size) {
         return ResponseEntity.ok(adminUserService.getAllUsers(keyword, role, status, page, size));
     }
 
@@ -50,8 +49,7 @@ public class UserAdminController {
     @Operation(summary = "Cập nhật thông tin/trạng thái người dùng")
     public ResponseEntity<UserListResponse> updateUser(
             @PathVariable Long id,
-            @RequestBody UpdateUserRequest request
-    ) {
+            @RequestBody UpdateUserRequest request) {
         Long adminId = 1L; // Mock adminId for now as in other controllers
         return ResponseEntity.ok(adminUserService.updateUser(adminId, id, request));
     }
@@ -60,8 +58,7 @@ public class UserAdminController {
     @Operation(summary = "Cấm người dùng (chuyển sang trạng thái BANNED)")
     public ResponseEntity<?> banUser(
             @PathVariable Long id,
-            @RequestBody BanUserRequest request
-    ) {
+            @RequestBody BanUserRequest request) {
         Long adminId = 1L;
         adminUserService.banUser(adminId, id, request);
         return ResponseEntity.ok(Map.of("message", "User banned successfully"));
@@ -113,7 +110,8 @@ public class UserAdminController {
 
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=" + filename)
-                .contentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
+                .contentType(
+                        MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
                 .body(file);
     }
 
@@ -132,7 +130,8 @@ public class UserAdminController {
 
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=" + filename)
-                .contentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
+                .contentType(
+                        MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
                 .body(file);
     }
 }

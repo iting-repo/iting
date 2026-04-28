@@ -15,6 +15,7 @@ import {
 import notificationService from '../services/notificationService';
 import { CompanyLogo } from '../components/common';
 import { formatDistanceToNowStrict, parseISO } from 'date-fns';
+import { toast } from 'sonner';
 
 const Header = () => {
   const navigate = useNavigate();
@@ -242,8 +243,32 @@ const Header = () => {
       updateRecentOnIncomingMessage(msg);
     });
 
+    const recipientType = recipientTypeForRole(role).toLowerCase();
+    const recipientId = role === 'EMPLOYER' ? (currentUser?.companyId || currentUser?.userId) : currentUser?.userId;
+
+    if (recipientId) {
+      const notifTopic = `/topic/${recipientType}/${recipientId}/notifications`;
+      const notifCountTopic = `/topic/${recipientType}/${recipientId}/notifications/unread-count`;
+
+      chatRealtimeService.subscribe(notifTopic, 'header-topic-notifs', (notif) => {
+        setNotifications((prev) => [notif, ...prev]);
+        toast.info(notif.content, {
+          action: {
+            label: 'Xem',
+            onClick: () => handleOpenNotification(notif)
+          }
+        });
+      });
+
+      chatRealtimeService.subscribe(notifCountTopic, 'header-topic-notif-count', (data) => {
+        setUnreadCount(data.unreadCount || 0);
+      });
+    }
+
     return () => {
       chatRealtimeService.unsubscribe('header-topic-messages');
+      chatRealtimeService.unsubscribe('header-topic-notifs');
+      chatRealtimeService.unsubscribe('header-topic-notif-count');
     };
   }, [role, currentUser?.userId, currentUser?.companyId]);
 

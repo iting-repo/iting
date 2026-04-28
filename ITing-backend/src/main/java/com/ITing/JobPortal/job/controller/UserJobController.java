@@ -46,7 +46,7 @@ public class UserJobController {
             @RequestParam(required = false) String domain,
             @RequestParam(required = false) String subDomains,
             @RequestParam(required = false) String techs,
-            @RequestParam(required = false) String techRequired,
+            @RequestParam(required = false) String skills,
             @RequestParam(required = false, defaultValue = "lastUpdate") String sortBy,
             @RequestParam(required = false, defaultValue = "desc") String sortOrder,
             @RequestParam(required = false, defaultValue = "false") Boolean isAiSearch,
@@ -79,7 +79,7 @@ public class UserJobController {
         request.setDomain(domain);
         request.setSubDomains(parseCsv(subDomains));
         request.setTechs(parseCsv(techs));
-        request.setTechRequired(techRequired);
+        request.setSkills(skills);
         request.setSortBy(sortBy);
         request.setSortOrder(sortOrder);
         request.setPage(page);

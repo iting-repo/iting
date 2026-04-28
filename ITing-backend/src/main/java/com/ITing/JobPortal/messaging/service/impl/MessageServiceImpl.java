@@ -25,6 +25,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.concurrent.CompletableFuture;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -77,41 +78,59 @@ public class MessageServiceImpl implements MessageService {
                 .isRead(false)
                 .build();
 
-        message = messageRepository.save(message);
+        final Message savedMessage = messageRepository.save(message);
 
-        // Update conversation's last message (done by trigger, but we can also update manually if needed)
+        // Update conversation's last message
         conversation.setLastMessageContent(request.getContent());
-        conversation.setLastMessageTime(message.getCreatedAt());
-        conversation.setLastMessageId(message.getId());
+        conversation.setLastMessageTime(savedMessage.getCreatedAt());
+        conversation.setLastMessageId(savedMessage.getId());
         conversationRepository.save(conversation);
 
-        MessageResponse response = convertToMessageResponse(message);
+        // Build response directly — skip extra DB lookups for speed
+        MessageResponse response = MessageResponse.builder()
+                .id(savedMessage.getId())
+                .conversationId(savedMessage.getConversationId())
+                .senderId(savedMessage.getSenderId())
+                .senderType(savedMessage.getSenderType())
+                .receiverId(savedMessage.getReceiverId())
+                .receiverType(savedMessage.getReceiverType())
+                .content(savedMessage.getContent())
+                .isRead(savedMessage.getIsRead())
+                .readAt(savedMessage.getReadAt())
+                .createdAt(savedMessage.getCreatedAt())
+                .build();
 
-        String senderDisplayName = response.getSenderName() != null ? response.getSenderName() : "Someone";
-        String contentPreview = request.getContent();
-        if (contentPreview != null && contentPreview.length() > 120) {
-            contentPreview = contentPreview.substring(0, 120) + "...";
-        }
+        // Fire notification asynchronously — don't block the response
+        final Long convId = conversation.getId();
+        CompletableFuture.runAsync(() -> {
+            try {
+                String senderDisplayName = resolveSenderName(savedMessage);
+                String contentPreview = request.getContent();
+                if (contentPreview != null && contentPreview.length() > 120) {
+                    contentPreview = contentPreview.substring(0, 120) + "...";
+                }
 
-        if (request.getReceiverType() == ReceiverType.USER) {
-            domainNotificationPublisher.notifyUser(
-                    request.getReceiverId(),
-                    NotificationType.MESSAGE_NEW,
-                    "New message from " + senderDisplayName + ": " + contentPreview,
-                    "CONVERSATION",
-                    conversation.getId(),
-                    "/messages?conversationId=" + conversation.getId()
-            );
-        } else {
-            domainNotificationPublisher.notifyCompany(
-                    request.getReceiverId(),
-                    NotificationType.MESSAGE_NEW,
-                    "New message from " + senderDisplayName + ": " + contentPreview,
-                    "CONVERSATION",
-                    conversation.getId(),
-                    "/messages?conversationId=" + conversation.getId()
-            );
-        }
+                if (request.getReceiverType() == ReceiverType.USER) {
+                    domainNotificationPublisher.notifyUser(
+                            request.getReceiverId(),
+                            NotificationType.MESSAGE_NEW,
+                            "New message from " + senderDisplayName + ": " + contentPreview,
+                            "CONVERSATION", convId,
+                            "/messages?conversationId=" + convId
+                    );
+                } else {
+                    domainNotificationPublisher.notifyCompany(
+                            request.getReceiverId(),
+                            NotificationType.MESSAGE_NEW,
+                            "New message from " + senderDisplayName + ": " + contentPreview,
+                            "CONVERSATION", convId,
+                            "/messages?conversationId=" + convId
+                    );
+                }
+            } catch (Exception e) {
+                // Log but don't fail the send
+            }
+        });
 
         return response;
     }
@@ -256,5 +275,19 @@ public class MessageServiceImpl implements MessageService {
         }
 
         return response;
+    }
+
+    private String resolveSenderName(Message message) {
+        try {
+            switch (message.getSenderType()) {
+                case USER:
+                    return userRepository.findById(message.getSenderId())
+                            .map(User::getFullName).orElse("Someone");
+                case COMPANY:
+                    return companyRepository.findById(message.getSenderId())
+                            .map(Company::getName).orElse("Someone");
+            }
+        } catch (Exception ignored) {}
+        return "Someone";
     }
 }

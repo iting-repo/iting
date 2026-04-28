@@ -80,14 +80,11 @@ public class GeminiServiceImpl implements GeminiService {
     @Override
     public String reviewJob(Job job) {
         String prompt = String.format(
-                "Bạn là một chuyên gia kiểm duyệt tin tuyển dụng uy tín. Hãy đánh giá nghiêm ngặt tin tuyển dụng sau đây dựa trên các tiêu chí:\n" +
-                "1. **TÍNH HỢP PHÁP & AN TOÀN:** Đặc biệt chú ý các dấu hiệu lừa đảo, đa cấp bất chính, hoặc các hành vi phạm pháp (như cướp bóc, đánh bạc, buôn lậu). Nếu tiêu đề hoặc mô tả có nội dung vi phạm pháp luật, hãy yêu cầu TỪ CHỐI ngay lập tức.\n" +
-                "2. **Tính chuyên nghiệp:** Ngôn từ có thô tục, nhạy cảm hay không chuyên nghiệp không.\n" +
-                "4. **KẾT LUẬN:** Đưa ra lời khuyên DUYỆT hoặc TỪ CHỐI (ghi rõ lý do cụ thể).\n\n" +
-                "**LƯU Ý QUAN TRỌNG:** Ở dòng cuối cùng của câu trả lời, hãy luôn thêm chính xác cú pháp sau để hệ thống tự động xử lý:\n" +
-                "FINAL_DECISION: [APPROVE] nếu các tiêu chí đều ổn.\n" +
-                "FINAL_DECISION: [REJECT] nếu có bất kỳ dấu hiệu vi phạm hoặc thiếu hụt nghiêm trọng.\n\n" +
-                "Dữ liệu cần kiểm tra:\n" +
+                "Bạn là chuyên gia kiểm duyệt tin tuyển dụng. Đánh giá tin sau:\n" +
+                "1. TÍNH HỢP PHÁP & AN TOÀN: Dấu hiệu lừa đảo, đa cấp, vi phạm pháp luật?\n" +
+                "2. TÍNH CHUYÊN NGHIỆP: Ngôn từ thô tục, thiếu chuyên nghiệp? Nội dung quá sơ sài?\n" +
+                "3. TÍNH CHÍNH XÁC: Địa chỉ có mâu thuẫn? Lương có hợp lý?\n\n" +
+                "Dữ liệu:\n" +
                 "TIÊU ĐỀ: %s\n" +
                 "VỊ TRÍ: %s\n" +
                 "MÔ TẢ: %s\n" +
@@ -95,7 +92,10 @@ public class GeminiServiceImpl implements GeminiService {
                 "QUYỀN LỢI: %s\n" +
                 "ĐỊA CHỈ: %s\n" +
                 "LƯƠNG: %s - %s\n\n" +
-                "Hãy trả lời bằng tiếng Việt, ngắn gọn, súc tích, định dạng Markdown.",
+                "BẮT BUỘC: Dòng cuối cùng PHẢI là một trong hai (không thêm gì khác sau dòng này):\n" +
+                "FINAL_DECISION: [APPROVE]\n" +
+                "FINAL_DECISION: [REJECT]\n\n" +
+                "Trả lời bằng tiếng Việt, ngắn gọn.",
                 job.getTitle(),
                 job.getPosition(),
                 job.getDescription(),

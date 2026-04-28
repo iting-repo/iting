@@ -51,7 +51,7 @@ public class JobSpecification {
                     keywordPredicates.add(cb.or(
                             cb.like(cb.lower(root.get("position")), kw),
                             cb.like(cb.lower(root.get("description")), kw),
-                            cb.like(cb.lower(root.get("techRequired")), kw)
+                            cb.like(cb.lower(root.get("skills")), kw)
                     ));
                 }
                 
@@ -123,7 +123,7 @@ public class JobSpecification {
                 predicates.add(cb.like(cb.lower(companyJoin.get("industry")), d));
             }
 
-            // Sub-domains: match against company.industry, job.position or techRequired
+            // Sub-domains: match against company.industry, job.position or skills
             if (req.getSubDomains() != null && !req.getSubDomains().isEmpty()) {
                 List<Predicate> subPreds = new ArrayList<>();
                 for (String sub : req.getSubDomains()) {
@@ -131,20 +131,20 @@ public class JobSpecification {
                     String s = "%" + sub.trim().toLowerCase() + "%";
                     subPreds.add(cb.like(cb.lower(companyJoin.get("industry")), s));
                     subPreds.add(cb.like(cb.lower(root.get("position")), s));
-                    subPreds.add(cb.like(cb.lower(root.get("techRequired")), s));
+                    subPreds.add(cb.like(cb.lower(root.get("skills")), s));
                 }
                 if (!subPreds.isEmpty()) {
                     predicates.add(cb.or(subPreds.toArray(new Predicate[0])));
                 }
             }
 
-            // Techs: allow searching for multiple tech keywords across techRequired and position
+            // Techs: allow searching for multiple tech keywords across skills and position
             if (req.getTechs() != null && !req.getTechs().isEmpty()) {
                 List<Predicate> techPreds = new ArrayList<>();
                 for (String tech : req.getTechs()) {
                     if (tech == null) continue;
                     String t = "%" + tech.trim().toLowerCase() + "%";
-                    techPreds.add(cb.like(cb.lower(root.get("techRequired")), t));
+                    techPreds.add(cb.like(cb.lower(root.get("skills")), t));
                     techPreds.add(cb.like(cb.lower(root.get("position")), t));
                 }
                 if (!techPreds.isEmpty()) {
@@ -189,7 +189,7 @@ public class JobSpecification {
                         cb.or(
                                 cb.like(cb.lower(root.get("position")), kw),
                                 cb.like(cb.lower(root.get("description")), kw),
-                                cb.like(cb.lower(root.get("techRequired")), kw)
+                                cb.like(cb.lower(root.get("skills")), kw)
                         )
                 );
             }

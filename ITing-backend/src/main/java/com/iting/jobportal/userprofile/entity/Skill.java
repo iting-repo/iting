@@ -24,7 +24,4 @@ public class Skill {
 
     @Column(name = "Name", length = 100)
     private String name;
-
-    @Column(name = "Level", length = 50)
-    private String level;
-}
+}

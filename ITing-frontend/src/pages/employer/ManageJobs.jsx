@@ -24,6 +24,7 @@ import companyService from "../../services/companyService";
 import { ConfirmDialog, Table, Td, Breadcrumb } from "../../components/common";
 import { buildEmployerJobApplicationsPath } from "../../utils/jobUrl";
 import { differenceInDays, parseISO } from "date-fns";
+import { useModalEscape } from "../../hooks/useModalEscape";
 
 const ITEMS_PER_PAGE = 5;
 
@@ -118,6 +119,8 @@ const ManageJobs = () => {
     type: "danger",
   });
   const [rejectionModal, setRejectionModal] = useState(null); // { title, reason }
+
+  useModalEscape(rejectionModal ? () => setRejectionModal(null) : null);
 
   const fetchJobs = async () => {
     try {
@@ -302,6 +305,8 @@ const ManageJobs = () => {
     <>
       <div className="bg-white rounded-xl p-8 shadow-sm border border-gray-100 min-h-screen">
         <Breadcrumb 
+            rootLabel="Tổng quan"
+            rootLink="/employer/dashboard"
             items={[
                 { label: 'Quản lý công việc' }
             ]} 

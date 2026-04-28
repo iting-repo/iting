@@ -2,12 +2,18 @@ import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { FaBars, FaSearch, FaChevronRight, FaTimes, FaCheck, FaQuestionCircle } from 'react-icons/fa';
 
 const categoriesData = [
-    { id: 1, name: 'Công nghệ Thông tin', sub: ['Phát triển phần mềm', 'Dữ liệu/AI', 'Bảo mật', 'Mạng/Hệ thống'] },
-    { id: 2, name: 'Kinh doanh/Bán hàng', sub: ['Sale Admin', 'Bán lẻ', 'Bất động sản', 'Tài chính/Ngân hàng'] },
-    { id: 3, name: 'Marketing/PR/Quảng cáo', sub: ['Digital Marketing', 'Content Creator', 'Event', 'SEO'] },
-    { id: 4, name: 'Chăm sóc khách hàng', sub: ['Call Center', 'Support', 'Tư vấn'] },
-    { id: 5, name: 'Nhân sự/Hành chính', sub: ['Tuyển dụng', 'C&B', 'Pháp chế'] },
-    { id: 6, name: 'Thiết kế/Sáng tạo', sub: ['UI/UX', 'Graphic Design', 'Video Editor'] },
+    { id: 1, name: 'Phát triển phần mềm', sub: ['Backend Developer', 'Frontend Developer', 'Fullstack Developer', 'Desktop App'] },
+    { id: 2, name: 'Phát triển Web', sub: ['Web Developer', 'WordPress', 'E-commerce', 'Web Designer'] },
+    { id: 3, name: 'Phát triển Mobile', sub: ['Android Developer', 'iOS Developer', 'React Native', 'Flutter'] },
+    { id: 4, name: 'Điện toán đám mây', sub: ['Cloud Engineer', 'AWS', 'Azure', 'Google Cloud'] },
+    { id: 5, name: 'DevOps', sub: ['DevOps Engineer', 'CI/CD', 'Docker/Kubernetes', 'SRE'] },
+    { id: 6, name: 'Khoa học dữ liệu', sub: ['Data Engineer', 'Data Analyst', 'Big Data', 'Business Intelligence'] },
+    { id: 7, name: 'Trí tuệ nhân tạo (AI)', sub: ['Machine Learning', 'Deep Learning', 'NLP', 'Computer Vision'] },
+    { id: 8, name: 'An ninh mạng', sub: ['Security Engineer', 'Pentester', 'SOC Analyst', 'Security Architect'] },
+    { id: 9, name: 'Blockchain', sub: ['Blockchain Developer', 'Smart Contract', 'Web3', 'DeFi'] },
+    { id: 10, name: 'Phát triển Game', sub: ['Game Developer', 'Unity', 'Unreal Engine', 'Game Designer'] },
+    { id: 11, name: 'Kiểm thử (QA)', sub: ['QA Engineer', 'Automation Tester', 'Manual Tester', 'Performance Tester'] },
+    { id: 12, name: 'Phần mềm & CNTT', sub: ['IT Support', 'System Admin', 'Network Engineer', 'Database Admin'] },
 ];
 
 const CategoryPicker = ({ value, onChange }) => {

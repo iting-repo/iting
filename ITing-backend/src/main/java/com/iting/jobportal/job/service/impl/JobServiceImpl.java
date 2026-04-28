@@ -15,8 +15,11 @@ import com.iting.jobportal.job.entity.enums.SalaryType;
 import com.iting.jobportal.job.repository.JobRepository;
 import com.iting.jobportal.job.repository.JobSpecification;
 import com.iting.jobportal.job.service.JobService;
+import com.iting.jobportal.job.service.VectorSearchService;
 import com.iting.jobportal.recommendation.service.RecommendationService;
 import com.iting.jobportal.common.service.GeminiService;
+import com.iting.jobportal.common.service.KnowledgeGraphService;
+import com.iting.jobportal.common.service.MlServiceClient;
 import org.springframework.context.annotation.Lazy;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
@@ -27,6 +30,10 @@ import org.springframework.data.domain.*;
 import org.springframework.data.jpa.domain.Specification;
 import jakarta.persistence.criteria.Predicate;
 import java.util.ArrayList;
+import java.util.Set;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.HashMap;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -36,7 +43,9 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class JobServiceImpl implements JobService {
@@ -46,6 +55,9 @@ public class JobServiceImpl implements JobService {
     private final FileUploadService fileUploadService;
     private final ApplicationEventPublisher eventPublisher;
     private final GeminiService geminiService;
+    private final KnowledgeGraphService knowledgeGraphService;
+    private final VectorSearchService vectorSearchService;
+    private final MlServiceClient mlServiceClient;
 
     @PersistenceContext
     private EntityManager entityManager;
@@ -128,7 +140,7 @@ public class JobServiceImpl implements JobService {
                 || request.getResponsibilities() != null
                 || request.getRequirements() != null
                 || request.getBenefits() != null
-                || request.getTechRequired() != null
+                || request.getSkills() != null
                 || request.getJobType() != null
                 || request.getExperienceLevel() != null
                 || request.getWorkingDays() != null
@@ -193,6 +205,24 @@ public class JobServiceImpl implements JobService {
         };
     }
 
+    /**
+     * Build searchable text from a Job for Cross-Encoder reranking.
+     * Combines title, position, tech stack, and truncated description.
+     */
+    private String buildSearchableText(Job job) {
+        StringBuilder sb = new StringBuilder();
+        if (job.getTitle() != null) sb.append(job.getTitle()).append(". ");
+        if (job.getPosition() != null) sb.append(job.getPosition()).append(". ");
+        if (job.getSkills() != null && !job.getSkills().isEmpty()) {
+            sb.append(String.join(", ", job.getSkills())).append(". ");
+        }
+        if (job.getDescription() != null) {
+            String desc = job.getDescription();
+            sb.append(desc.length() > 300 ? desc.substring(0, 300) : desc);
+        }
+        return sb.toString().trim();
+    }
+
     @Override
     public JobSearchRequest analyzeCvForSearch(String cvText) {
         return geminiService.extractSearchCriteriaFromCv(cvText);
@@ -222,6 +252,10 @@ public class JobServiceImpl implements JobService {
         job.setLastUpdate(LocalDateTime.now());
 
         Job saved = jobRepository.save(job);
+
+        // AUTO AI REVIEW - tự động duyệt bằng AI
+        autoAiReview(saved);
+
         return JobResponse.fromEntityWithCompany(saved, company.getName(), company.getLogoUrl());
     }
 
@@ -246,7 +280,7 @@ public class JobServiceImpl implements JobService {
                 .company(company)
                 .title(request.getTitle())
                 .position(request.getPosition())
-                .techRequired(request.getTechRequired())
+                .skills(request.getSkills())
                 .jobType(request.getJobType())
                 .experienceLevel(request.getExperienceLevel())
                 .workingDays(request.getWorkingDays())
@@ -279,6 +313,11 @@ public class JobServiceImpl implements JobService {
                 .setParameter("companyId", company.getId())
                 .executeUpdate();
 
+        // AUTO AI REVIEW - tự động duyệt bằng AI thay vì chờ admin
+        if (saved.getStatus() == JobStatus.PENDING) {
+            autoAiReview(saved);
+        }
+
         return JobResponse.fromEntityWithCompany(saved, company.getName(), company.getLogoUrl());
     }
 
@@ -298,7 +337,7 @@ public class JobServiceImpl implements JobService {
         if (request.getResponsibilities() != null) job.setResponsibilities(request.getResponsibilities());
         if (request.getRequirements() != null) job.setRequirements(request.getRequirements());
         if (request.getBenefits() != null) job.setBenefits(request.getBenefits());
-        if (request.getTechRequired() != null) job.setTechRequired(request.getTechRequired());
+        if (request.getSkills() != null) job.setSkills(request.getSkills());
         if (request.getJobType() != null) job.setJobType(request.getJobType());
         if (request.getExperienceLevel() != null) job.setExperienceLevel(request.getExperienceLevel());
         if (request.getWorkingDays() != null) job.setWorkingDays(request.getWorkingDays());
@@ -324,6 +363,11 @@ public class JobServiceImpl implements JobService {
         if (isImportantFieldUpdated(request)) {
             job.setStatus(JobStatus.PENDING);
             job.setReviewReason(null);
+        }
+
+        // AUTO AI REVIEW khi cập nhật quan trọng
+        if (job.getStatus() == JobStatus.PENDING) {
+            autoAiReview(job);
         }
 
         Job saved = jobRepository.save(job);
@@ -487,6 +531,14 @@ public class JobServiceImpl implements JobService {
         String originalKeyword = request.getKeyword();
         List<String> expandedKeywords = new ArrayList<>();
 
+        // ===== PHASE 1: Knowledge Graph Expansion (luôn bật, không cần AI flag) =====
+        Set<String> kgExpanded = new HashSet<>();
+        if (originalKeyword != null && !originalKeyword.isBlank()) {
+            kgExpanded = knowledgeGraphService.expandKeyword(originalKeyword);
+            log.info("🧠 KG expanded '{}' → {}", originalKeyword, kgExpanded);
+        }
+
+        // ===== Gemini AI Expansion (chỉ khi bật AI search) =====
         if (request.getIsAiSearch() != null && request.getIsAiSearch() && originalKeyword != null && !originalKeyword.isBlank()) {
             expandedKeywords = geminiService.expandSearchTerms(originalKeyword);
         }
@@ -503,60 +555,123 @@ public class JobServiceImpl implements JobService {
         request.setKeyword(null);
         Specification<Job> spec = JobSpecification.fromRequest(request);
         request.setKeyword(originalKeyword); // Restore original keyword
-        
-        // Build keyword specification (Original OR AI Expanded)
-        List<String> allKeywords = new ArrayList<>();
+
+        // ===== Build keyword specification (Original + KG + AI) =====
+        Set<String> allKeywords = new HashSet<>();
         if (originalKeyword != null && !originalKeyword.isBlank()) {
             allKeywords.add(originalKeyword);
         }
+        allKeywords.addAll(kgExpanded);
         allKeywords.addAll(expandedKeywords);
 
         if (!allKeywords.isEmpty()) {
+            List<String> keywordList = new ArrayList<>(allKeywords);
             Specification<Job> keywordSpec = (root, query, cb) -> {
                 List<Predicate> outerPredicates = new ArrayList<>();
-                for (String kw : allKeywords) {
-                    // Đối với mỗi keyword/synonym, ta có thể tokenize hoặc search nguyên cụm
-                    // Ở đây ta đơn giản search nguyên cụm hoặc từng từ (giống JobSpecification)
-                    String[] tokens = kw.trim().toLowerCase().split("\\s+");
-                    List<Predicate> tokenPredicates = new ArrayList<>();
-                    for (String token : tokens) {
-                        if (token.length() < 2) continue;
-                        String pattern = "%" + token + "%";
-                        tokenPredicates.add(cb.or(
-                                cb.like(cb.lower(root.get("position")), pattern),
-                                cb.like(cb.lower(root.get("description")), pattern),
-                                cb.like(cb.lower(root.get("techRequired")), pattern)
-                        ));
-                    }
-                    if (!tokenPredicates.isEmpty()) {
-                        outerPredicates.add(cb.and(tokenPredicates.toArray(new Predicate[0])));
+                for (String kw : keywordList) {
+                    for (String phrase : kw.split(",")) {
+                        if (phrase.trim().isBlank()) continue;
+                        String[] tokens = phrase.trim().toLowerCase().split("\\s+");
+                        List<Predicate> tokenPredicates = new ArrayList<>();
+                        for (String token : tokens) {
+                            if (token.length() < 2) continue;
+                            String pattern = "%" + token + "%";
+                            tokenPredicates.add(cb.or(
+                                    cb.like(cb.lower(root.get("position")), pattern),
+                                    cb.like(cb.lower(root.get("description")), pattern),
+                                    cb.like(cb.lower(root.get("skills")), pattern),
+                                    cb.like(cb.lower(root.get("title")), pattern)
+                            ));
+                        }
+                        if (!tokenPredicates.isEmpty()) {
+                            outerPredicates.add(cb.and(tokenPredicates.toArray(new Predicate[0])));
+                        }
                     }
                 }
+                if (outerPredicates.isEmpty()) return cb.conjunction();
                 return cb.or(outerPredicates.toArray(new Predicate[0]));
             };
             spec = spec.and(keywordSpec);
         }
 
         Page<Job> jobPage = jobRepository.findAll(spec, pageable);
-        
-        // Phase 2/3: Nếu có userId và đang dùng default sort (lastUpdate), thực hiện re-rank dựa trên đề xuất
-        if (userId != null && ("lastUpdate".equals(request.getSortBy()) || request.getSortBy() == null)) {
-             List<JobResponse> content = jobPage.getContent().stream()
-                     .map(this::enrichWithCompany)
-                     .collect(Collectors.toList());
-             
-             // Gọi calculateScore từ RecommendationService (giả định helper logic)
-             // Lưu ý: recommendationService cần method public double calculateScore(Job, userId) hoặc tương đương
-             // Ở đây ta dùng stream sort đơn giản
-             // Đánh dấu 3 kết quả đầu tiên là AI gợi ý nếu có keyword match
-             for (int i = 0; i < Math.min(3, content.size()); i++) {
-                 content.get(i).setIsAiSuggested(true);
-             }
 
-             return new PageImpl<>(content, pageable, jobPage.getTotalElements());
+        // ===== PHASE 2: Vector Search Boost (khi bật AI search) =====
+        Set<Long> vectorBoostIds = new HashSet<>();
+        if (request.getIsAiSearch() != null && request.getIsAiSearch()
+                && originalKeyword != null && !originalKeyword.isBlank()) {
+            try {
+                List<VectorSearchService.ScoredJobResult> vectorResults =
+                        vectorSearchService.semanticSearch(originalKeyword, 20);
+                vectorBoostIds = vectorResults.stream()
+                        .map(VectorSearchService.ScoredJobResult::jobId)
+                        .collect(Collectors.toSet());
+                log.info("🔍 Vector search found {} semantic matches", vectorBoostIds.size());
+            } catch (Exception e) {
+                log.warn("Vector search failed, continuing without: {}", e.getMessage());
+            }
         }
 
-        return jobPage.map(this::enrichWithCompany);
+        // ===== PHASE 3: Cross-Encoder Reranking (khi bật AI search + ML service available) =====
+        Map<Long, Double> crossEncoderScores = new HashMap<>();
+        if (request.getIsAiSearch() != null && request.getIsAiSearch()
+                && originalKeyword != null && !originalKeyword.isBlank()
+                && jobPage.getContent().size() > 3) {
+            try {
+                List<String> documents = jobPage.getContent().stream()
+                        .map(j -> buildSearchableText(j))
+                        .collect(Collectors.toList());
+                List<Long> docIds = jobPage.getContent().stream()
+                        .map(Job::getId)
+                        .collect(Collectors.toList());
+
+                List<MlServiceClient.RankedResult> reranked =
+                        mlServiceClient.rerank(originalKeyword, documents, docIds);
+
+                if (!reranked.isEmpty()) {
+                    for (MlServiceClient.RankedResult r : reranked) {
+                        crossEncoderScores.put(r.id(), r.score());
+                    }
+                    log.info("🎯 Cross-Encoder reranked {} results", reranked.size());
+                }
+            } catch (Exception e) {
+                log.warn("Cross-Encoder rerank failed, continuing without: {}", e.getMessage());
+            }
+        }
+
+        // ===== Build response with AI suggestions =====
+        final Set<Long> boostIds = vectorBoostIds;
+        final Map<Long, Double> ceScores = crossEncoderScores;
+
+        List<JobResponse> content = jobPage.getContent().stream()
+                .map(this::enrichWithCompany)
+                .collect(Collectors.toList());
+
+        // Nếu có Cross-Encoder scores → sắp xếp lại theo điểm CE
+        if (!ceScores.isEmpty()) {
+            content.sort((a, b) -> {
+                double scoreA = ceScores.getOrDefault(a.getId(), -999.0);
+                double scoreB = ceScores.getOrDefault(b.getId(), -999.0);
+                return Double.compare(scoreB, scoreA);
+            });
+        }
+
+        // Đánh dấu kết quả được AI boost
+        for (JobResponse job : content) {
+            if (boostIds.contains(job.getId()) || ceScores.containsKey(job.getId())) {
+                job.setIsAiSuggested(true);
+            }
+        }
+
+        // Fallback: đánh dấu top 3 nếu chưa có AI suggestion nào
+        boolean hasAiSuggestion = content.stream().anyMatch(j -> Boolean.TRUE.equals(j.getIsAiSuggested()));
+        if (!hasAiSuggestion && userId != null) {
+            for (int i = 0; i < Math.min(3, content.size()); i++) {
+                content.get(i).setIsAiSuggested(true);
+            }
+        }
+
+        return new PageImpl<>(content, pageable, jobPage.getTotalElements());
     }
 
     @Override
@@ -680,6 +795,76 @@ public class JobServiceImpl implements JobService {
         }
     }
 
+    /**
+     * Tự động chạy AI review cho job mới đăng hoặc gửi duyệt lại.
+     * AI sẽ quyết định APPROVE (ACTIVE) hoặc REJECT.
+     * Nếu AI lỗi hoặc không phản hồi → mặc định APPROVE.
+     */
+    private void autoAiReview(Job job) {
+        try {
+            log.info("[AUTO-AI-REVIEW] Bắt đầu duyệt tự động cho job id={}", job.getId());
+            String reviewResult = geminiService.reviewJob(job);
+            log.info("[AUTO-AI-REVIEW] Raw AI response for job id={}: {}", job.getId(), reviewResult);
+
+            job.setAiReviewReason(reviewResult);
+
+            // Normalize: bỏ markdown bold (**), lowercase, bỏ backslash
+            String normalized = reviewResult
+                    .replace("*", "")
+                    .replace("\\", "")
+                    .replace("\n", " ")
+                    .toLowerCase();
+
+            boolean isReject = normalized.contains("final_decision") && normalized.contains("[reject]");
+            boolean isApprove = normalized.contains("final_decision") && normalized.contains("[approve]");
+
+            // Fallback: Nếu AI quên ghi FINAL_DECISION, nhận diện qua keyword tiếng Việt
+            if (!isReject && !isApprove) {
+                // Tìm phần kết luận cuối cùng
+                boolean hasRejectKeyword = normalized.contains("từ chối") || normalized.contains("tu choi")
+                        || normalized.contains("không đạt") || normalized.contains("không duyệt");
+                boolean hasApproveKeyword = normalized.contains("duyệt") || normalized.contains("phê duyệt")
+                        || normalized.contains("chấp nhận");
+
+                if (hasRejectKeyword) {
+                    isReject = true;
+                    log.info("[AUTO-AI-REVIEW] Fallback: phát hiện từ khóa TỪ CHỐI trong response");
+                } else if (hasApproveKeyword) {
+                    isApprove = true;
+                    log.info("[AUTO-AI-REVIEW] Fallback: phát hiện từ khóa DUYỆT trong response");
+                }
+            }
+
+            if (isReject) {
+                job.setAiReviewStatus("REJECTED");
+                job.setStatus(JobStatus.REJECTED);
+                // Lấy toàn bộ nội dung review làm lý do
+                String reason = reviewResult
+                        .replaceAll("(?i)\\*?\\*?FINAL_DECISION:\\s*\\[REJECT\\]\\*?\\*?", "")
+                        .trim();
+                job.setReviewReason("AI Kiểm Duyệt: " + reason);
+                job.setReviewedAt(LocalDateTime.now());
+                log.info("[AUTO-AI-REVIEW] Job id={} bi AI TU CHOI -> REJECTED", job.getId());
+            } else {
+                // Mặc định APPROVE (kể cả khi AI trả lời không rõ ràng)
+                job.setAiReviewStatus("APPROVED");
+                job.setStatus(JobStatus.ACTIVE);
+                job.setReviewReason(isApprove ? "AI Kiểm Duyệt: Tin tuyển dụng hợp lệ." : null);
+                job.setReviewedAt(LocalDateTime.now());
+                log.info("[AUTO-AI-REVIEW] Job id={} duoc AI PHE DUYET -> ACTIVE", job.getId());
+            }
+
+            jobRepository.save(job);
+        } catch (Exception e) {
+            // Nếu AI lỗi → mặc định APPROVE để không block employer
+            log.warn("[AUTO-AI-REVIEW] Lỗi khi duyệt tự động job id={}: {}. Mặc định APPROVE.", job.getId(), e.getMessage());
+            job.setStatus(JobStatus.ACTIVE);
+            job.setAiReviewStatus("ERROR");
+            job.setReviewedAt(LocalDateTime.now());
+            jobRepository.save(job);
+        }
+    }
+
     private void validateJobBeforeSubmit(Job job, Company company) {
         // 1. Kiểm tra từ khóa đen (Blacklist) cho các hành vi phạm pháp chuyên biệt
         String title = job.getTitle() != null ? job.getTitle().toLowerCase() : "";
@@ -715,6 +900,10 @@ public class JobServiceImpl implements JobService {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Tiêu đề công việc không được để trống");
         }
 
+        if (job.getTitle().length() > 150) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Tiêu đề công việc không được vượt quá 150 ký tự");
+        }
+
         if (job.getPosition() == null || job.getPosition().isBlank()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Vị trí tuyển dụng không được để trống");
         }
@@ -739,8 +928,12 @@ public class JobServiceImpl implements JobService {
             validateSalary(job);
         }
 
-        if (job.getDueDate() == null || job.getDueDate().isBefore(LocalDate.now())) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Hạn ứng tuyển không hợp lệ");
+        if (job.getDueDate() == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Hạn ứng tuyển không được để trống");
+        }
+
+        if (job.getDueDate().isBefore(LocalDate.now())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Hạn ứng tuyển không được ở quá khứ");
         }
 
         if (job.getMaxAccept() == null || job.getMaxAccept() <= 0) {

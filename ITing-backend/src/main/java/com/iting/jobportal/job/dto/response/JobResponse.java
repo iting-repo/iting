@@ -26,7 +26,7 @@ public class JobResponse {
     // Basic
     private String title;
     private String position;
-    private List<String> techRequired;
+    private List<String> skills;
 
     private JobType jobType;
     private ExperienceLevel experienceLevel;
@@ -108,10 +108,10 @@ public class JobResponse {
 
                 .title(job.getTitle())
                 .position(job.getPosition())
-                .techRequired(job.getTechRequired())
+                .skills(job.getSkills())
                 .jobType(job.getJobType())
                 .experienceLevel(job.getExperienceLevel())
-                .workingDays(job.getWorkingDays())
+                .workingDays(job.getWorkingDays() != null ? job.getWorkingDays().name() : null)
 
                 .minSalary(job.getMinSalary())
                 .maxSalary(job.getMaxSalary())

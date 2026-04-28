@@ -34,7 +34,8 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(List.of("*"));
+        configuration.setAllowedOrigins(List.of("http://localhost:3000"));
+        configuration.setAllowCredentials(true);
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
         configuration.setAllowedHeaders(List.of("Authorization", "Content-Type", "X-Requested-With"));
 
@@ -89,6 +90,10 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.GET, "/api/jobs/latest").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/jobs/hot").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/jobs/{id}").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/jobs/salary-report").permitAll()
+
+                // ── Public: AI / Knowledge Graph ────────────────────────
+                .requestMatchers(HttpMethod.GET, "/api/ai/**").permitAll()
 
                 // ── Public: Company (xem thông tin công ty) ───────────────
                 .requestMatchers(HttpMethod.GET, "/api/companies/{id}").permitAll()

@@ -9,6 +9,12 @@ const FavoriteCandidates = () => {
     const [favorites, setFavorites] = useState([]);
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedCandidate, setSelectedCandidate] = useState(null);
+    const [currentPage, setCurrentPage] = useState(1);
+    const ITEMS_PER_PAGE = 6;
+
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [searchTerm]);
 
     useEffect(() => {
         loadFavorites();
@@ -46,9 +52,19 @@ const FavoriteCandidates = () => {
         (c.jobTitle || '').toLowerCase().includes(searchTerm.toLowerCase())
     );
 
+    const totalPages = Math.ceil(filtered.length / ITEMS_PER_PAGE);
+    const paginatedCandidates = filtered.slice(
+        (currentPage - 1) * ITEMS_PER_PAGE,
+        currentPage * ITEMS_PER_PAGE
+    );
+
     return (
         <div>
-            <Breadcrumb items={[{ label: 'Ứng viên yêu thích' }]} />
+            <Breadcrumb 
+                rootLabel="Tổng quan"
+                rootLink="/employer/dashboard"
+                items={[{ label: 'Ứng viên yêu thích' }]} 
+            />
 
             {/* Header */}
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
@@ -98,7 +114,7 @@ const FavoriteCandidates = () => {
             ) : (
                 /* Candidate Grid */
                 <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-                    {filtered.map((candidate) => (
+                    {paginatedCandidates.map((candidate) => (
                         <div 
                             key={candidate.id} 
                             className="bg-white rounded-2xl border border-gray-100 shadow-sm hover:shadow-lg hover:border-amber-100 transition-all group overflow-hidden"
@@ -162,6 +178,35 @@ const FavoriteCandidates = () => {
                             </div>
                         </div>
                     ))}
+                </div>
+            )}
+
+            {/* Pagination Controls */}
+            {totalPages > 1 && (
+                <div className="flex justify-center items-center mt-10 gap-2">
+                    <button
+                        onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                        disabled={currentPage === 1}
+                        className={`w-10 h-10 rounded-full flex items-center justify-center border transition-all ${currentPage === 1 ? 'border-gray-100 text-gray-300 bg-gray-50 cursor-not-allowed' : 'border-gray-200 text-gray-400 hover:border-[#3AB4E6] hover:text-[#3AB4E6] bg-white'}`}
+                    >
+                        &lt;
+                    </button>
+                    {Array.from({ length: totalPages }).map((_, idx) => (
+                        <button
+                            key={idx}
+                            onClick={() => setCurrentPage(idx + 1)}
+                            className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm transition-all duration-300 border ${currentPage === idx + 1 ? 'bg-[#3AB4E6] border-[#3AB4E6] text-white shadow-lg shadow-blue-200' : 'bg-white border-transparent text-gray-500 hover:bg-gray-50'}`}
+                        >
+                            {idx + 1}
+                        </button>
+                    ))}
+                    <button
+                        onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                        disabled={currentPage === totalPages}
+                        className={`w-10 h-10 rounded-full flex items-center justify-center border transition-all ${currentPage === totalPages ? 'border-gray-100 text-gray-300 bg-gray-50 cursor-not-allowed' : 'border-gray-200 text-gray-400 hover:border-[#3AB4E6] hover:text-[#3AB4E6] bg-white'}`}
+                    >
+                        &gt;
+                    </button>
                 </div>
             )}
 

@@ -15,7 +15,7 @@ public class ItingJobPortalApplication {
     }
 
     @Bean
-    public CommandLineRunner finalGreeting() {
+    public static CommandLineRunner finalGreeting() {
         return args -> {
             // Chờ 1 giây để các log khởi động của Spring và Hibernate chạy xong hẳn
             Thread.sleep(1000);
@@ -33,7 +33,9 @@ public class ItingJobPortalApplication {
                     " /_/   \\_\\  |____/ \\___/  /_/   \\_\\_| \\_|"
             );
 
-            System.out.println(cyan + "   >>>--- CUÙNG NHAU A ĐỒ ÁN :)! ---<<<" + reset + "\n");
+
+            System.out.println(cyan + "   >>>--- CUÙNG NHAU A ĐỒ ÁN :)" +
+                    "! ---<<<" + reset + "\n");
         };
     }
 }

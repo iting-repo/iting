@@ -23,7 +23,7 @@ import org.springframework.web.multipart.MultipartFile;
 @RestController
 @RequestMapping("/api/admin/jobs")
 @RequiredArgsConstructor
-@Tag(name = "11. Admin Job Management", description = "Admin quản lý việc làm")
+@Tag(name = "13. Admin Job Management", description = "Admin quản lý việc làm")
 public class JobAdminController {
 
     private final AdminJobService adminJobService;
@@ -31,10 +31,10 @@ public class JobAdminController {
     // bổ sung review list
 
     /*
-    ============================
-    LẤY DANH SÁCH JOB
-    ============================
-    */
+     * ============================
+     * LẤY DANH SÁCH JOB
+     * ============================
+     */
 
     @GetMapping
     @Operation(summary = "Lấy danh sách job")
@@ -46,10 +46,10 @@ public class JobAdminController {
     }
 
     /*
-    ============================
-    FILTER JOB
-    ============================
-    */
+     * ============================
+     * FILTER JOB
+     * ============================
+     */
 
     @GetMapping("/filter")
     @Operation(summary = "Filter job")
@@ -62,15 +62,14 @@ public class JobAdminController {
             @RequestParam(defaultValue = "10") int size) {
 
         return ResponseEntity.ok(
-                adminJobService.filterJobs(status, companyId, keyword, location, page, size)
-        );
+                adminJobService.filterJobs(status, companyId, keyword, location, page, size));
     }
 
     /*
-    ============================
-    JOB DETAIL
-    ============================
-    */
+     * ============================
+     * JOB DETAIL
+     * ============================
+     */
 
     @GetMapping("/{id}")
     @Operation(summary = "Chi tiết job")
@@ -87,10 +86,10 @@ public class JobAdminController {
     }
 
     /*
-    ============================
-    APPROVE JOB
-    ============================
-    */
+     * ============================
+     * APPROVE JOB
+     * ============================
+     */
 
     @PostMapping("/{id}/approve")
     @Operation(summary = "Duyệt job")
@@ -101,15 +100,14 @@ public class JobAdminController {
         adminJobService.approveJob(adminId, id);
 
         return ResponseEntity.ok(
-                Map.of("message", "Job approved successfully")
-        );
+                Map.of("message", "Job approved successfully"));
     }
 
     /*
-    ============================
-    REJECT JOB
-    ============================
-    */
+     * ============================
+     * REJECT JOB
+     * ============================
+     */
 
     @PostMapping("/{id}/reject")
     @Operation(summary = "Từ chối job")
@@ -122,36 +120,35 @@ public class JobAdminController {
         adminJobService.rejectJob(adminId, id, request.getReason());
 
         return ResponseEntity.ok(
-                Map.of("message", "Job rejected successfully")
-        );
+                Map.of("message", "Job rejected successfully"));
     }
 
     /*
-    ============================
-    REQUEST REVISION
-    ============================
-    */
+     * ============================
+     * REQUEST REVISION
+     * ============================
+     */
 
-//    @PostMapping("/{id}/request-revision")
-//    @Operation(summary = "Yêu cầu chỉnh sửa job")
-//    public ResponseEntity<?> requestRevision(
-//            @PathVariable Long id,
-//            @RequestBody ReviewRejectRequest request) {
-//
-//        Long adminId = 1L;
-//
-//        adminJobService.requestJobRevision(adminId, id, request.getReason());
-//
-//        return ResponseEntity.ok(
-//                Map.of("message", "Revision requested successfully")
-//        );
-//    }
+    // @PostMapping("/{id}/request-revision")
+    // @Operation(summary = "Yêu cầu chỉnh sửa job")
+    // public ResponseEntity<?> requestRevision(
+    // @PathVariable Long id,
+    // @RequestBody ReviewRejectRequest request) {
+    //
+    // Long adminId = 1L;
+    //
+    // adminJobService.requestJobRevision(adminId, id, request.getReason());
+    //
+    // return ResponseEntity.ok(
+    // Map.of("message", "Revision requested successfully")
+    // );
+    // }
 
     /*
-    ============================
-    SUSPEND JOB
-    ============================
-    */
+     * ============================
+     * SUSPEND JOB
+     * ============================
+     */
 
     @PostMapping("/{id}/suspend")
     @Operation(summary = "Đình chỉ job")
@@ -164,15 +161,14 @@ public class JobAdminController {
         adminJobService.suspendJob(adminId, id, request.getReason());
 
         return ResponseEntity.ok(
-                Map.of("message", "Job suspended successfully")
-        );
+                Map.of("message", "Job suspended successfully"));
     }
 
     /*
-    ============================
-    UNSUSPEND JOB
-    ============================
-    */
+     * ============================
+     * UNSUSPEND JOB
+     * ============================
+     */
 
     @PostMapping("/{id}/unsuspend")
     @Operation(summary = "Bỏ đình chỉ job")
@@ -183,15 +179,14 @@ public class JobAdminController {
         adminJobService.unsuspendJob(adminId, id);
 
         return ResponseEntity.ok(
-                Map.of("message", "Job unsuspended successfully")
-        );
+                Map.of("message", "Job unsuspended successfully"));
     }
 
     /*
-    ============================
-    CLOSE JOB
-    ============================
-    */
+     * ============================
+     * CLOSE JOB
+     * ============================
+     */
 
     @PostMapping("/{id}/close")
     @Operation(summary = "Đóng job")
@@ -202,33 +197,29 @@ public class JobAdminController {
         adminJobService.closeJobByAdmin(adminId, id);
 
         return ResponseEntity.ok(
-                Map.of("message", "Job closed successfully")
-        );
+                Map.of("message", "Job closed successfully"));
     }
 
-
     /*
-    ============================
-    UNFEATURE JOB
-    ============================
-    */
-
+     * ============================
+     * UNFEATURE JOB
+     * ============================
+     */
 
     @PostMapping("/{id}/unfeature")
-    public ResponseEntity<?> unfeatureJob(@PathVariable Long id){
+    public ResponseEntity<?> unfeatureJob(@PathVariable Long id) {
 
         adminJobService.unfeatureJob(id);
 
         return ResponseEntity.ok(
-                Map.of("message","Job unfeatured successfully")
-        );
+                Map.of("message", "Job unfeatured successfully"));
     }
 
     /*
-    ============================
-    BULK ACTIONS
-    ============================
-    */
+     * ============================
+     * BULK ACTIONS
+     * ============================
+     */
 
     @PostMapping("/bulk-approve")
     @Operation(summary = "Duyệt nhiều job")
@@ -277,7 +268,8 @@ public class JobAdminController {
 
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=" + filename)
-                .contentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
+                .contentType(
+                        MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
                 .body(file);
     }
 
@@ -296,7 +288,8 @@ public class JobAdminController {
 
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=" + filename)
-                .contentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
+                .contentType(
+                        MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
                 .body(file);
     }
 

@@ -1,14 +1,37 @@
-import React, { useEffect, useRef, useState } from "react";
-import { Search, Filter, MapPin, GraduationCap, Briefcase, ChevronDown, ChevronUp, X, User } from "lucide-react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
+import { Search, Filter, MapPin, GraduationCap, Briefcase, ChevronDown, ChevronUp, X, User, Mail, Award, Star, Zap, ArrowRight, ExternalLink } from "lucide-react";
+import { 
+    FaTimes, FaEnvelope, FaPhone, FaDownload, 
+    FaStar, FaRegStar, FaCheckCircle, FaUserTie, 
+    FaExclamationTriangle, FaExternalLinkAlt 
+} from 'react-icons/fa';
 import { Button, Badge } from "../../components/common";
-// Note: Using standard HTML inputs for complex Shadcn-like components not in common
 import { toast } from "sonner";
 import { employerCandidateService } from "../../services/employerCandidateService";
+import companyService from "../../services/companyService";
+import ReviewCandidateModal from "../../components/employer/ReviewCandidateModal";
 
 const POSITIONS = ["Frontend Developer", "Backend Developer", "Fullstack Developer", "Mobile Developer", "DevOps Engineer"];
-const WORK_TYPES = ["FULL_TIME", "PART_TIME", "CONTRACT", "INTERNSHIP", "REMOTE", "FREELANCE"];
+const WORK_TYPES = [
+  { value: "FULL_TIME",   label: "Toàn thời gian" },
+  { value: "PART_TIME",   label: "Bán thời gian" },
+  { value: "CONTRACT",    label: "Hợp đồng" },
+  { value: "INTERNSHIP",  label: "Thực tập" },
+  { value: "REMOTE",      label: "Làm từ xa" },
+  { value: "FREELANCE",   label: "Freelance" },
+];
 const PROVINCES = ["Hà Nội", "TP. Hồ Chí Minh", "Đà Nẵng", "Cần Thơ", "Hải Phòng"];
-const LEVEL_OPTIONS = ["INTERN", "FRESHER", "JUNIOR", "MIDDLE", "MID_LEVEL", "SENIOR", "LEAD", "EXPERT", "MANAGER"];
+const LEVEL_OPTIONS = [
+  { value: "INTERN",    label: "Thực tập sinh" },
+  { value: "FRESHER",   label: "Fresher (0 năm)" },
+  { value: "JUNIOR",    label: "Junior (1–2 năm)" },
+  { value: "MIDDLE",    label: "Middle (3–4 năm)" },
+  { value: "MID_LEVEL", label: "Mid-Level (3–4 năm)" },
+  { value: "SENIOR",    label: "Senior (5–7 năm)" },
+  { value: "LEAD",      label: "Lead / Trưởng nhóm" },
+  { value: "EXPERT",    label: "Expert (8+ năm)" },
+  { value: "MANAGER",   label: "Manager" },
+];
 const DEGREE_OPTIONS = ["Trung cấp", "Cao đẳng", "Đại học", "Trên đại học"];
 const PROGRAMMING_SKILLS = ["ReactJS", "NodeJS", "Java", "Python", "TypeScript", "React Native", "VueJS", "Angular", "Docker", "AWS"];
 
@@ -46,12 +69,38 @@ const FindCandidate = () => {
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [skillSearch, setSkillSearch] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
-  const [, setViewCandidate] = useState(null);
+  const [viewCandidate, setViewCandidate] = useState(null);
 
   const [candidates, setCandidates] = useState([]);
   const [totalElements, setTotalElements] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
   const [loading, setLoading] = useState(false);
+  const [employerLocation, setEmployerLocation] = useState("");
+  const [industryContext, setIndustryContext] = useState("");
+
+  // Fetch employer's company profile on mount:
+  //  - employerLocation → used for location proximity scoring in KG
+  //  - industryContext  → used as a silent keyword when no explicit search is typed,
+  //                       so the system suggests candidates relevant to the employer's domain
+  useEffect(() => {
+    companyService.getMyCompany()
+      .then(res => {
+        // Location
+        const addr = res?.address || res?.location || "";
+        setEmployerLocation(addr);
+
+        // Build an industry context string from industries + techStack
+        const industryLabels = (res?.industries || []).map(ind =>
+          ind.replace(/_/g, " ").toLowerCase()
+        );
+        const techStack = res?.techStack || [];
+        const contextParts = [...industryLabels, ...techStack].filter(Boolean);
+        setIndustryContext(contextParts.join(" "));
+      })
+      .catch(() => {
+        // Non-critical: smart recommendation will degrade gracefully
+      });
+  }, []);
 
   const resetFilters = () => {
     setKeyword("");
@@ -86,6 +135,8 @@ const FindCandidate = () => {
           salary: selectedSalary,
           skills: selectedSkills,
           onlyAvailable,
+          employerLocation,
+          industryContext,
           page: currentPage - 1,
           size: ITEMS_PER_PAGE,
         });
@@ -118,6 +169,7 @@ const FindCandidate = () => {
     selectedSkills,
     onlyAvailable,
     currentPage,
+    industryContext,
   ]);
 
   const activeFilterCount = [
@@ -192,7 +244,7 @@ const FindCandidate = () => {
              onChange={(e) => { setSelectedLevel(e.target.value); setCurrentPage(1); }}
            >
               <option value="all">Tất cả cấp bậc</option>
-              {LEVEL_OPTIONS.map(l => <option key={l} value={l}>{l}</option>)}
+              {LEVEL_OPTIONS.map(l => <option key={l.value} value={l.value}>{l.label}</option>)}
            </select>
 
            {/* Location Select */}
@@ -212,7 +264,7 @@ const FindCandidate = () => {
              onChange={(e) => { setSelectedWorkType(e.target.value); setCurrentPage(1); }}
            >
               <option value="all">Tất cả hình thức</option>
-              {WORK_TYPES.map(w => <option key={w} value={w}>{w}</option>)}
+              {WORK_TYPES.map(w => <option key={w.value} value={w.value}>{w.label}</option>)}
            </select>
         </div>
 
@@ -355,6 +407,16 @@ const FindCandidate = () => {
                    <span className="bg-gray-50 text-gray-400 text-[10px] font-bold px-2 py-1 rounded">+{candidate.skills.length - 3}</span>
                  )}
                </div>
+
+               {/* Phase 5: Explainability — KG Match Reasons */}
+               {candidate.matchReasons && candidate.matchReasons.length > 0 && (
+                 <div className="mt-3 bg-emerald-50/70 border border-emerald-100 rounded-xl p-2.5">
+                   <p className="text-[10px] font-bold text-emerald-700 uppercase tracking-wider mb-1">🧠 Lý do phù hợp</p>
+                   {candidate.matchReasons.slice(0, 3).map((reason, idx) => (
+                     <p key={idx} className="text-[11px] text-emerald-600 leading-relaxed">{reason}</p>
+                   ))}
+                 </div>
+               )}
             </div>
           </div>
         ))}
@@ -404,6 +466,12 @@ const FindCandidate = () => {
           </Button>
         </div>
       )}
+
+      {/* ════════════ CANDIDATE PROFILE MODAL ════════════ */}
+      <ReviewCandidateModal 
+        candidate={viewCandidate} 
+        onClose={() => setViewCandidate(null)} 
+      />
     </div>
   );
 };

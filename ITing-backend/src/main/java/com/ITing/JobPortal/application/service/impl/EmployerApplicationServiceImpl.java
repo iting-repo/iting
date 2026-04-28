@@ -17,6 +17,10 @@ import com.iting.jobportal.notification.dto.request.CreateNotificationRequest;
 import com.iting.jobportal.notification.enums.NotificationType;
 import com.iting.jobportal.notification.enums.RecipientType;
 import com.iting.jobportal.notification.service.NotificationService;
+import com.iting.jobportal.messaging.service.MessageService;
+import com.iting.jobportal.messaging.dto.request.SendMessageRequest;
+import com.iting.jobportal.messaging.enums.SenderType;
+import com.iting.jobportal.messaging.enums.ReceiverType;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -39,6 +43,7 @@ public class EmployerApplicationServiceImpl implements EmployerApplicationServic
     private final JobRepository jobRepository;
     private final ApplicationMapperUtil applicationMapperUtil;
     private final NotificationService notificationService;
+    private final MessageService messageService;
 
     private Job verifyJobOwnership(Long employerId, Long jobId) {
         Job job = jobRepository.findById(jobId)
@@ -180,6 +185,20 @@ public class EmployerApplicationServiceImpl implements EmployerApplicationServic
                         .entityId(applicationId)
                         .actionUrl("/candidate/applied-jobs")
                         .build());
+            }
+
+            // Gửi một yêu cầu (tin nhắn) tự động đến ứng viên khi được Chấp nhận
+            if (request.getStatus() == ApplicationStatus.ACCEPTED) {
+                try {
+                    SendMessageRequest msgReq = new SendMessageRequest();
+                    msgReq.setReceiverId(form.getUserId());
+                    msgReq.setReceiverType(ReceiverType.USER);
+                    msgReq.setSenderType(SenderType.COMPANY);
+                    msgReq.setContent(String.format("Chào bạn, hồ sơ ứng tuyển của bạn cho vị trí %s đã được chúng tôi chấp nhận. Vui lòng phản hồi tin nhắn này để trao đổi thêm về lịch phỏng vấn nhé!", job.getTitle()));
+                    messageService.sendMessage(msgReq, employerId);
+                } catch (Exception e) {
+                    // Ignore message creation error if any
+                }
             }
         }
         

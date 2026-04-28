@@ -135,7 +135,7 @@ public class RecommendationServiceImpl implements RecommendationService {
                 if (job.getTitle().toLowerCase().contains(keyword)) score += 20.0;
                 
                 // Fix tech match
-                if (job.getTechRequired() != null && job.getTechRequired().stream()
+                if (job.getSkills() != null && job.getSkills().stream()
                         .anyMatch(tech -> tech.toLowerCase().contains(keyword))) {
                     score += 15.0;
                 }

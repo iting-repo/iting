@@ -1,4 +1,5 @@
 import React from "react";
+import { useModalEscape } from "../../hooks/useModalEscape";
 import {
   FaMapMarkerAlt,
   FaDollarSign,
@@ -31,6 +32,8 @@ const normalizeList = (value, separator = ",") => {
 };
 
 const JobPreview = ({ job, onClose }) => {
+  useModalEscape(onClose);
+
   if (!job) return null;
 
   const formatSalary = (min, max) => {
@@ -42,7 +45,7 @@ const JobPreview = ({ job, onClose }) => {
   };
 
   const descriptionList = normalizeList(job.description, "\n");
-  const requirementsList = normalizeList(job.techRequired);
+  const requirementsList = normalizeList(job.skills);
 
   const jobDetail = {
     title: job.title,
@@ -65,8 +68,14 @@ const JobPreview = ({ job, onClose }) => {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm px-4 py-4">
-      <div className="w-full max-w-7xl max-h-[98vh] overflow-y-auto bg-white rounded-2xl shadow-2xl relative animate-fade-in">
+    <div 
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm px-4 py-4"
+      onClick={onClose}
+    >
+      <div 
+        className="w-full max-w-7xl max-h-[98vh] overflow-y-auto bg-white rounded-2xl shadow-2xl relative animate-fade-in"
+        onClick={(e) => e.stopPropagation()}
+      >
         {/* Header Sticky */}
         <div className="sticky top-0 z-20 bg-white border-b border-gray-100 px-6 py-4 flex items-center justify-between rounded-t-2xl">
           <div className="flex items-center gap-3">

@@ -99,7 +99,7 @@ public class CandidateDashboardService {
         return profile.getHeadline() != null && !profile.getHeadline().isEmpty()
                 && profile.getShortBio() != null && !profile.getShortBio().isEmpty()
                 && profile.getTotalExperienceYears() != null
-                && profile.getEducationSummary() != null && !profile.getEducationSummary().isEmpty();
+                && profile.getEducationSummary() != null;
     }
 
     private int calculateProfileCompletion(UserProfile profile) {
@@ -111,7 +111,7 @@ public class CandidateDashboardService {
         if (profile.getLocation() != null && !profile.getLocation().isEmpty()) score++;
         if (profile.getShortBio() != null && !profile.getShortBio().isEmpty()) score++;
         if (profile.getTotalExperienceYears() != null) score++;
-        if (profile.getEducationSummary() != null && !profile.getEducationSummary().isEmpty()) score++;
+        if (profile.getEducationSummary() != null) score++;
         if (profile.getSkills() != null && !profile.getSkills().isEmpty()) score++;
 
         return (int) ((score * 100.0) / total);
