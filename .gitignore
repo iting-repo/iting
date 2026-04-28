@@ -52,3 +52,5 @@ Thumbs.db
 
 # Local/private config
 .codex/
+# Markdown docs
+*.md
