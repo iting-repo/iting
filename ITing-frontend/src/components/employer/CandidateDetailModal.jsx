@@ -1,30 +1,84 @@
-import React, { useState } from 'react';
-import { FaTimes, FaEnvelope, FaPhone, FaDownload, FaStar, FaRegStar, FaCheckCircle, FaUserTie, FaExclamationTriangle, FaExternalLinkAlt } from 'react-icons/fa';
+import React, { useState, useEffect } from 'react';
+import { useModalEscape } from '../../hooks/useModalEscape';
+import {
+    FaTimes, FaEnvelope, FaPhone, FaDownload,
+    FaStar, FaRegStar, FaCheckCircle, FaUserTie,
+    FaExclamationTriangle, FaExternalLinkAlt
+} from 'react-icons/fa';
 import { toast } from 'sonner';
 import applicationService from '../../services/applicationService';
+import reportService from '../../services/reportService';
+import favoriteCandidateService from '../../services/favoriteCandidateService';
+import messageService from '../../services/messageService';
+import { employerCandidateService } from '../../services/employerCandidateService';
+import { useNavigate } from 'react-router-dom';
 
-const CandidateDetailModal = ({ candidate, onClose }) => {
+const REPORT_REASONS = [
+    { value: 'SPAM', label: 'Spam / Tin nhắn rác', priority: 'LOW' },
+    { value: 'SCAM', label: 'Lừa đảo / Dấu hiệu lừa đảo', priority: 'CRITICAL' },
+    { value: 'FAKE_INFO', label: 'Thông tin giả mạo', priority: 'HIGH' },
+    { value: 'HARASSMENT', label: 'Quấy rối / Đe dọa', priority: 'HIGH' },
+    { value: 'INAPPROPRIATE', label: 'Nội dung không phù hợp', priority: 'MEDIUM' },
+    { value: 'OTHER', label: 'Lý do khác...', priority: 'LOW' },
+];
+
+const CandidateDetailModal = ({ candidate, onClose, onStatusUpdate }) => {
+    const navigate = useNavigate();
     const [isAccepting, setIsAccepting] = useState(false);
+    const [showReportModal, setShowReportModal] = useState(false);
+    const [reportData, setReportData] = useState({
+        type: 'SPAM',
+        description: ''
+    });
+    const [isReporting, setIsReporting] = useState(false);
     const [isFavorited, setIsFavorited] = useState(false);
     const [isStartingChat, setIsStartingChat] = useState(false);
-    const [showReportModal, setShowReportModal] = useState(false);
+    const [fullProfile, setFullProfile] = useState(null);
+    const [isLoadingProfile, setIsLoadingProfile] = useState(false);
+
+    useModalEscape(onClose);
+
+    useEffect(() => {
+        if (candidate && candidate.status === 'PENDING') {
+            applicationService.markViewed(candidate.id)
+                .then(() => {
+                    if (onStatusUpdate) {
+                        onStatusUpdate(candidate.id, 'VIEWED');
+                    }
+                })
+                .catch(err => console.error("Could not mark as viewed", err));
+        }
+        // Check favorite status
+        if (candidate) {
+            setIsFavorited(favoriteCandidateService.isFavorite(candidate.id));
+            fetchFullProfile();
+        }
+    }, [candidate, onStatusUpdate]);
+
+    const fetchFullProfile = async () => {
+        try {
+            setIsLoadingProfile(true);
+            const candidateUserId = candidate?.userId || candidate?.applicantId;
+            if (candidateUserId) {
+                const response = await employerCandidateService.getFullProfile(candidateUserId);
+                setFullProfile(response.data || response);
+            }
+        } catch (error) {
+            console.error('Failed to fetch full profile:', error);
+        } finally {
+            setIsLoadingProfile(false);
+        }
+    };
 
     if (!candidate) return null;
 
     const handleToggleFavorite = () => {
-        setIsFavorited(!isFavorited);
-    };
-
-    const handleStartConversation = async () => {
-        try {
-            setIsStartingChat(true);
-            await new Promise(resolve => setTimeout(resolve, 1000));
-            toast.success('Đã mở cuộc trò chuyện với ứng viên!');
-        } catch (error) {
-            console.error('Lỗi khi mở chat:', error);
-            toast.error('Có lỗi xảy ra.');
-        } finally {
-            setIsStartingChat(false);
+        const newStatus = favoriteCandidateService.toggleFavorite(candidate);
+        setIsFavorited(newStatus);
+        if (newStatus) {
+            toast.success(`Đã thêm ${candidate.applicantName} vào danh sách yêu thích!`);
+        } else {
+            toast('Đã xóa khỏi danh sách yêu thích.', { icon: '🗑️' });
         }
     };
 
@@ -32,13 +86,71 @@ const CandidateDetailModal = ({ candidate, onClose }) => {
         try {
             setIsAccepting(true);
             await applicationService.acceptApplication(candidate.id, 'Nhà tuyển dụng đã phản hồi thông qua UI');
-            toast.success('Đã đánh dấu tuyển dụng ứng viên thành công!');
+            toast.success('Đã chấp nhận tuyển dụng và gửi email thông báo cho ứng viên!');
             onClose();
         } catch (error) {
             console.error('Lỗi khi tuyển dụng:', error);
             toast.error('Có lỗi xảy ra, vui lòng thử lại.');
         } finally {
             setIsAccepting(false);
+        }
+    };
+
+    const handleReport = async () => {
+        if (!reportData.description.trim()) {
+            toast.error('Vui lòng nhập mô tả chi tiết lý do báo cáo.');
+            return;
+        }
+
+        try {
+            setIsReporting(true);
+            const selectedReason = REPORT_REASONS.find(r => r.value === reportData.type);
+
+            await reportService.createReport({
+                targetId: candidate.userId || candidate.applicantId,
+                targetType: 'USER',
+                targetName: candidate.applicantName,
+                type: reportData.type,
+                reason: selectedReason.label,
+                description: reportData.description,
+                priority: selectedReason.priority,
+                status: 'PENDING'
+            });
+
+            toast.success('Cảm ơn bạn đã báo cáo. Chúng tôi sẽ xem xét sớm nhất!');
+            setShowReportModal(false);
+            setReportData({ type: 'SPAM', description: '' });
+        } catch (error) {
+            console.error('Lỗi khi báo cáo:', error);
+            toast.error('Gửi báo cáo thất bại. Vui lòng thử lại.');
+        } finally {
+            setIsReporting(false);
+        }
+    };
+
+    const handleStartConversation = async () => {
+        const candidateUserId = candidate?.userId || candidate?.applicantId;
+        if (!candidateUserId) {
+            toast.error('Không xác định được ứng viên để nhắn tin.');
+            return;
+        }
+
+        setIsStartingChat(true);
+        try {
+            const sent = await messageService.sendMessage({
+                receiverId: candidateUserId,
+                receiverType: 'USER',
+                senderType: 'COMPANY',
+                content: 'Chào bạn, chúng tôi muốn kết nối về cơ hội công việc.',
+            });
+
+            onClose();
+            navigate(`/messages?conversationId=${sent.conversationId}`);
+            toast.success('Đã mở cuộc trò chuyện với ứng viên.');
+        } catch (error) {
+            toast.error(error?.message || 'Không thể tạo cuộc trò chuyện lúc này.');
+        } finally {
+            setIsStartingChat(false);
         }
     };
 
@@ -103,11 +215,10 @@ const CandidateDetailModal = ({ candidate, onClose }) => {
                             </button>
                             <button
                                 onClick={handleToggleFavorite}
-                                className={`p-2.5 rounded-xl transition-all ${
-                                    isFavorited
+                                className={`p-2.5 rounded-xl transition-all ${isFavorited
                                         ? 'text-amber-500 bg-amber-50 hover:bg-amber-100'
                                         : 'text-slate-400 hover:text-amber-500 hover:bg-amber-50'
-                                }`}
+                                    }`}
                                 title={isFavorited ? 'Bỏ yêu thích' : 'Thêm yêu thích'}
                             >
                                 {isFavorited ? <FaStar size={18} /> : <FaRegStar size={18} />}
@@ -122,18 +233,42 @@ const CandidateDetailModal = ({ candidate, onClose }) => {
                     </div>
 
                     {/* Scrollable Content */}
-                    <div className="flex-1 overflow-y-auto custom-scrollbar p-6">
-                        <div className="space-y-8">
-                            {/* Profile Summary */}
-                            <div className="flex items-center gap-5">
-                                <img
-                                    src={candidate.avatarUrl || "https://via.placeholder.com/150"}
-                                    alt={candidate.applicantName}
-                                    className="w-32 h-32 rounded-full border-4 border-white shadow-lg object-cover bg-white"
-                                />
-                                <div className="mb-2">
-                                    <h2 className="text-3xl font-bold text-gray-800">{candidate.applicantName || "Chưa cập nhật"}</h2>
-                                    <p className="text-gray-500 font-medium">{candidate.jobTitle || "Chưa cập nhật"}</p>
+                    <div className="flex-1 overflow-y-auto custom-scrollbar p-6 space-y-8">
+                        {/* Profile Summary */}
+                        <div className="flex items-center gap-5">
+                            <img
+                                src={candidate.avatarUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(candidate.applicantName || 'Ung vien')}&background=random`}
+                                alt={candidate.applicantName}
+                                className="w-20 h-20 rounded-2xl border-2 border-slate-100 shadow-sm object-cover bg-white"
+                            />
+                            <div>
+                                <h2 className="text-2xl font-black text-slate-800 tracking-tight leading-7">{candidate.applicantName || "Chưa cập nhật"}</h2>
+                                <p className="text-blue-600 font-bold text-sm mt-1">{candidate.jobTitle || "Vị trí ứng tuyển"}</p>
+                                <div className="flex items-center gap-2 mt-1">
+                                    <p className="text-slate-400 text-xs">ID: #{candidate.id}</p>
+                                    {isFavorited && (
+                                        <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-amber-50 text-amber-600 text-[10px] font-bold rounded-full border border-amber-100">
+                                            <FaStar size={8} /> Đã yêu thích
+                                        </span>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Contact Quick Box */}
+                        <div className="grid grid-cols-2 gap-3">
+                            <div className="p-4 rounded-2xl bg-slate-50 border border-slate-100">
+                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Số điện thoại</p>
+                                <div className="flex items-center gap-2 text-slate-700 font-bold text-sm">
+                                    <FaPhone className="text-blue-500" size={12} />
+                                    {candidate.phoneNumber || "N/A"}
+                                </div>
+                            </div>
+                            <div className="p-4 rounded-2xl bg-slate-50 border border-slate-100 overflow-hidden">
+                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Email</p>
+                                <div className="flex items-center gap-2 text-slate-700 font-bold text-sm truncate" title={candidate.email}>
+                                    <FaEnvelope className="text-blue-500" size={12} />
+                                    {candidate.email || "N/A"}
                                 </div>
                             </div>
 
@@ -144,12 +279,173 @@ const CandidateDetailModal = ({ candidate, onClose }) => {
                                     Giới thiệu bản thân
                                 </h4>
                                 <p className="text-slate-600 text-sm leading-relaxed whitespace-pre-line">
-                                    {candidate.introduction || "Ứng viên chưa cập nhật thông tin giới thiệu chi tiết."}
+                                    {fullProfile?.profile?.shortBio || candidate.introduction || "Ứng viên chưa cập nhật thông tin giới thiệu chi tiết."}
                                 </p>
                             </section>
 
-                            {/* Content Grid */}
-                            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                            {/* Skills Section */}
+                            {fullProfile?.skills && fullProfile.skills.length > 0 && (
+                                <section>
+                                    <h4 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em] mb-4 flex items-center gap-2">
+                                        <span className="w-1.5 h-1.5 bg-green-500 rounded-full"></span>
+                                        Kỹ năng
+                                    </h4>
+                                    <div className="flex flex-wrap gap-2">
+                                        {fullProfile.skills.map((skill, idx) => (
+                                            <span key={idx} className="px-3 py-1.5 bg-green-50 text-green-700 font-bold text-xs rounded-lg border border-green-100 flex items-center gap-1.5">
+                                                {skill.name}
+
+                                            </span>
+                                        ))}
+                                    </div>
+                                </section>
+                            )}
+
+                            {/* Social Links Section */}
+                            {fullProfile?.socialLinks && fullProfile.socialLinks.length > 0 && (
+                                <section>
+                                    <h4 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em] mb-4 flex items-center gap-2">
+                                        <span className="w-1.5 h-1.5 bg-purple-500 rounded-full"></span>
+                                        Liên kết mạng xã hội
+                                    </h4>
+                                    <div className="flex flex-col gap-2">
+                                        {fullProfile.socialLinks.map((link, idx) => (
+                                            <a key={idx} href={link.url} target="_blank" rel="noopener noreferrer" className="text-sm font-bold text-blue-600 hover:underline flex items-center gap-2 w-max">
+                                                <FaExternalLinkAlt size={12} /> {link.platform || link.url}
+                                            </a>
+                                        ))}
+                                    </div>
+                                </section>
+                            )}
+
+                            {/* Experience Section */}
+                            {fullProfile?.experiences && fullProfile.experiences.length > 0 && (
+                                <section>
+                                    <h4 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em] mb-4 flex items-center gap-2">
+                                        <span className="w-1.5 h-1.5 bg-orange-500 rounded-full"></span>
+                                        Kinh nghiệm làm việc
+                                    </h4>
+                                    <div className="space-y-4">
+                                        {fullProfile.experiences.map((exp, idx) => (
+                                            <div key={idx} className="p-4 bg-slate-50 rounded-xl border border-slate-100">
+                                                <h5 className="font-bold text-slate-800">{exp.position} - {exp.companyName}</h5>
+                                                <p className="text-xs text-slate-500 mt-1 font-medium">
+                                                    {exp.startDate ? new Date(exp.startDate).toLocaleDateString('vi-VN') : ''} - {exp.endDate ? new Date(exp.endDate).toLocaleDateString('vi-VN') : 'Hiện tại'}
+                                                </p>
+                                                {exp.description && (
+                                                    <p className="text-sm text-slate-600 mt-2 whitespace-pre-line">{exp.description}</p>
+                                                )}
+                                            </div>
+                                        ))}
+                                    </div>
+                                </section>
+                            )}
+
+                            {/* Education Section */}
+                            {fullProfile?.educations && fullProfile.educations.length > 0 && (
+                                <section>
+                                    <h4 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em] mb-4 flex items-center gap-2">
+                                        <span className="w-1.5 h-1.5 bg-blue-500 rounded-full"></span>
+                                        Học vấn
+                                    </h4>
+                                    <div className="space-y-4">
+                                        {fullProfile.educations.map((edu, idx) => (
+                                            <div key={idx} className="p-4 bg-slate-50 rounded-xl border border-slate-100">
+                                                <h5 className="font-bold text-slate-800">{edu.schoolName}</h5>
+                                                <p className="text-sm text-slate-600 font-medium">{edu.fieldOfStudy} {edu.degree && `- ${edu.degree}`}</p>
+                                                <p className="text-xs text-slate-500 mt-1 font-medium">
+                                                    {edu.startDate ? new Date(edu.startDate).toLocaleDateString('vi-VN') : ''} - {edu.endDate ? new Date(edu.endDate).toLocaleDateString('vi-VN') : 'Hiện tại'}
+                                                </p>
+                                                {edu.description && (
+                                                    <p className="text-sm text-slate-600 mt-2 whitespace-pre-line">{edu.description}</p>
+                                                )}
+                                            </div>
+                                        ))}
+                                    </div>
+                                </section>
+                            )}
+
+                            {/* Certificates Section */}
+                            {fullProfile?.certificates && fullProfile.certificates.length > 0 && (
+                                <section>
+                                    <h4 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em] mb-4 flex items-center gap-2">
+                                        <span className="w-1.5 h-1.5 bg-yellow-500 rounded-full"></span>
+                                        Chứng chỉ
+                                    </h4>
+                                    <div className="space-y-3">
+                                        {fullProfile.certificates.map((cert, idx) => (
+                                            <div key={idx} className="p-3 bg-yellow-50/50 rounded-xl border border-yellow-100">
+                                                <h5 className="font-bold text-slate-800">{cert.name}</h5>
+                                                <p className="text-sm text-slate-600">{cert.organization}</p>
+                                                <p className="text-xs text-slate-500 mt-1 font-medium">
+                                                    Cấp: {cert.issueDate ? new Date(cert.issueDate).toLocaleDateString('vi-VN') : 'N/A'}
+                                                    {cert.credentialUrl && (
+                                                        <a href={cert.credentialUrl} target="_blank" rel="noopener noreferrer" className="ml-2 text-blue-600 hover:underline">
+                                                            Xem chứng chỉ
+                                                        </a>
+                                                    )}
+                                                </p>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </section>
+                            )}
+
+                            {/* Portfolios Section */}
+                            {fullProfile?.portfolios && fullProfile.portfolios.length > 0 && (
+                                <section>
+                                    <h4 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em] mb-4 flex items-center gap-2">
+                                        <span className="w-1.5 h-1.5 bg-indigo-500 rounded-full"></span>
+                                        Portfolio / Dự án
+                                    </h4>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        {fullProfile.portfolios.map((port, idx) => (
+                                            <div key={idx} className="p-4 bg-indigo-50/30 rounded-xl border border-indigo-100">
+                                                <h5 className="font-bold text-slate-800">{port.title}</h5>
+                                                {port.url && (
+                                                    <a href={port.url} target="_blank" rel="noopener noreferrer" className="text-xs font-bold text-blue-600 hover:underline flex items-center gap-1 mt-1">
+                                                        <FaExternalLinkAlt size={10} /> Link dự án
+                                                    </a>
+                                                )}
+                                                {port.description && (
+                                                    <p className="text-sm text-slate-600 mt-2 line-clamp-3" title={port.description}>{port.description}</p>
+                                                )}
+                                            </div>
+                                        ))}
+                                    </div>
+                                </section>
+                            )}
+
+                            {/* Footer Section - Action Buttons */}
+                            <div className="pt-4 flex flex-col gap-3">
+                                <button
+                                    onClick={handleStartConversation}
+                                    disabled={isStartingChat}
+                                    className="w-full flex justify-center items-center gap-2 px-6 py-4 bg-white border-2 border-slate-200 text-slate-700 font-bold rounded-2xl hover:bg-slate-50 hover:border-slate-300 transition-all active:scale-95 disabled:opacity-60"
+                                >
+                                    <FaEnvelope /> {isStartingChat ? 'Đang mở chat...' : 'Gửi tin nhắn'}
+                                </button>
+                                <button
+                                    onClick={handleAccept}
+                                    disabled={isAccepting}
+                                    className={`w-full flex justify-center items-center gap-2 px-6 py-4 bg-[#1967D2] text-white font-bold rounded-2xl hover:bg-blue-700 shadow-xl shadow-blue-100 transition-all active:scale-95 ${isAccepting ? 'opacity-70 cursor-not-allowed' : ''}`}>
+                                    <FaCheckCircle /> {isAccepting ? 'Đang xử lý...' : 'Chấp nhận tuyển dụng'}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* MODAL BÁO CÁO (NESTED) */}
+                    {showReportModal && (
+                        <div className="absolute inset-0 z-[60] bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-6 animate-in fade-in duration-300">
+                            <div className="bg-white w-full max-w-md rounded-3xl shadow-2xl p-8 animate-in zoom-in-95 duration-200">
+                                <h3 className="text-2xl font-black text-slate-800 mb-2 flex items-center gap-3">
+                                    <div className="p-3 bg-red-100 text-red-600 rounded-2xl">
+                                        <FaExclamationTriangle size={24} />
+                                    </div>
+                                    Báo cáo vi phạm
+                                </h3>
+                                <p className="text-slate-500 text-sm mb-8 font-medium">Bạn đang báo cáo ứng viên <span className="text-slate-800 font-bold">{candidate.applicantName}</span>. Vui lòng chọn lý do chính xác.</p>
 
                                 {/* Cột Trái: Thông tin chính */}
                                 <div className="lg:col-span-2 space-y-8">
@@ -169,74 +465,38 @@ const CandidateDetailModal = ({ candidate, onClose }) => {
                                     </section>
                                 </div>
 
-                                {/* Cột Phải: Thông tin liên hệ & CV */}
-                                <div className="space-y-6">
-
-                                    {/* Box Download CV */}
-                                    <div className="bg-gray-50 rounded-xl p-5 border border-gray-100">
-                                        <h4 className="font-bold text-gray-800 mb-4">Download CV</h4>
-                                        <div className="flex items-center justify-between bg-white p-3 rounded-lg border border-gray-200">
-                                            <div className="flex items-center gap-3">
-                                                <img src="https://upload.wikimedia.org/wikipedia/commons/8/87/PDF_file_icon.svg" className="w-8 h-8" alt="PDF" />
-                                                <div>
-                                                    <p className="text-sm font-bold text-gray-700 truncate w-24">{candidate.cvFileName || `CV_${candidate.applicantName || candidate.id}`}</p>
-                                                    <p className="text-xs text-gray-400">PDF</p>
-                                                </div>
-                                            </div>
-                                            <button className="p-2 text-blue-500 hover:bg-blue-50 rounded-lg transition-colors">
-                                                <FaDownload />
-                                            </button>
-                                        </div>
-                                    </div>
-
-                                    {/* Box Contact Info */}
-                                    <div className="bg-white rounded-xl p-5 border border-gray-200 shadow-sm">
-                                        <h4 className="font-bold text-gray-800 mb-4">Thông tin liên hệ</h4>
-                                        <div className="space-y-4">
-                                            <div className="flex items-start gap-3">
-                                                <div className="p-2 bg-blue-50 rounded-full text-blue-600"><FaPhone size={14} /></div>
-                                                <div>
-                                                    <p className="text-xs text-gray-400 uppercase font-bold">Số điện thoại</p>
-                                                    <p className="text-sm font-medium text-gray-700">{candidate.phoneNumber || "Chưa cập nhật"}</p>
-                                                </div>
-                                            </div>
-                                            <div className="flex items-start gap-3">
-                                                <div className="p-2 bg-blue-50 rounded-full text-blue-600"><FaEnvelope size={14} /></div>
-                                                <div>
-                                                    <p className="text-xs text-gray-400 uppercase font-bold">Email</p>
-                                                    <p className="text-sm font-medium text-gray-700">{candidate.email || "Chưa cập nhật"}</p>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-
+                                <div>
+                                    <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2.5 ml-1">Mô tả chi tiết</label>
+                                    <textarea
+                                        rows="4"
+                                        placeholder="Vui lòng cung cấp thêm thông tin để bộ phận hỗ trợ xử lý nhanh hơn..."
+                                        value={reportData.description}
+                                        onChange={(e) => setReportData({ ...reportData, description: e.target.value })}
+                                        className="w-full p-4 bg-slate-50 border-2 border-slate-100 rounded-2xl text-slate-700 font-medium focus:border-blue-400 outline-none transition-all resize-none"
+                                    />
                                 </div>
-                            </div>
 
-                            {/* Footer Section - Action Buttons */}
-                            <div className="pt-4 flex flex-col gap-3">
-                                <button
-                                    onClick={handleStartConversation}
-                                    disabled={isStartingChat}
-                                    className="w-full flex justify-center items-center gap-2 px-6 py-4 bg-white border-2 border-slate-200 text-slate-700 font-bold rounded-2xl hover:bg-slate-50 hover:border-slate-300 transition-all active:scale-95 disabled:opacity-60"
-                                >
-                                    <FaEnvelope /> {isStartingChat ? 'Dang mo chat...' : 'Gui tin nhan'}
-                                </button>
-                                <button className="flex items-center gap-2 px-4 py-2 bg-white border border-[#3AB4E6] text-[#3AB4E6] rounded-lg hover:bg-blue-50 shadow-sm transition-colors">
-                                    <FaEnvelope /> Liên hệ
-                                </button>
-                                <button 
-                                    onClick={handleAccept}
-                                    disabled={isAccepting}
-                                    className={`flex items-center gap-2 px-6 py-2 bg-[#1967D2] text-white rounded-lg hover:bg-blue-700 shadow-lg shadow-blue-500/30 transition-colors ${isAccepting ? 'opacity-70 cursor-not-allowed' : ''}`}>
-                                    <FaCheckCircle /> {isAccepting ? 'Đang xử lý...' : 'Tuyển dụng'}
-                                </button>
+                                <div className="flex gap-3 pt-4">
+                                    <button
+                                        onClick={() => setShowReportModal(false)}
+                                        className="flex-1 py-4 bg-slate-100 text-slate-600 font-bold rounded-2xl hover:bg-slate-200 transition-all"
+                                    >
+                                        Hủy bỏ
+                                    </button>
+                                    <button
+                                        onClick={handleReport}
+                                        disabled={isReporting}
+                                        className="flex-[1.5] py-4 bg-red-500 text-white font-bold rounded-2xl hover:bg-red-600 shadow-lg shadow-red-100 transition-all disabled:opacity-50"
+                                    >
+                                        {isReporting ? 'Đang gửi...' : 'Gửi báo cáo'}
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     </div>
-                </div>
             </div>
         </div>
+        </div >
     );
 };
 

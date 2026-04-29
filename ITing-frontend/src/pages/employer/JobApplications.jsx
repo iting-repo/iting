@@ -109,22 +109,36 @@ const JobApplications = () => {
                               </div>
                            </div>
                         </td>
-                        <td className="p-5 text-sm text-gray-600 font-medium">{candidate.yearsExperience != null ? `${candidate.yearsExperience} Năm` : 'null'}</td>
-                        <td className="p-5 text-sm text-gray-600">{candidate.education || 'null'}</td>
-                        <td className="p-5 text-sm text-gray-500">{candidate.timeSent ? new Date(candidate.timeSent).toLocaleDateString() : 'null'}</td>
+                        <td className="p-5 text-sm text-gray-600 font-medium">{candidate.yearsExperience != null ? `${candidate.yearsExperience} Năm` : 'N/A'}</td>
+                        <td className="p-5 text-sm text-gray-600">{candidate.education || 'N/A'}</td>
+                        <td className="p-5 text-sm text-gray-500">{candidate.timeSent ? new Date(candidate.timeSent).toLocaleDateString('vi-VN') : 'N/A'}</td>
                         <td className="p-5">
                            <span className={`px-3 py-1 rounded-full text-xs font-bold border ${getStatusColor(candidate.status)}`}>
-                              {candidate.status || 'null'}
+                              {candidate.status || 'Chưa cập nhật'}
                            </span>
                         </td>
                         <td className="p-5 text-right">
                            <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                              <button
-                                 className="p-2 bg-gray-100 text-gray-600 rounded-lg hover:bg-blue-100 hover:text-blue-600 tooltip"
-                                 title="Download CV"
-                              >
-                                 <FaFileDownload />
-                              </button>
+                              {candidate.cvUrl ? (
+                                 <a
+                                    href={candidate.cvUrl}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    download
+                                    className="p-2 bg-gray-100 text-gray-600 rounded-lg hover:bg-blue-100 hover:text-blue-600 transition-colors"
+                                    title="Tải CV về máy"
+                                 >
+                                    <FaFileDownload />
+                                 </a>
+                              ) : (
+                                 <button
+                                    disabled
+                                    className="p-2 bg-gray-50 text-gray-300 rounded-lg cursor-not-allowed"
+                                    title="Ứng viên chưa đính kèm CV"
+                                 >
+                                    <FaFileDownload />
+                                 </button>
+                              )}
                               <button
                                  onClick={() => setSelectedCandidate(candidate)}
                                  className="p-2 bg-[#EAF6FF] text-[#3AB4E6] rounded-lg hover:bg-[#3AB4E6] hover:text-white transition-colors"

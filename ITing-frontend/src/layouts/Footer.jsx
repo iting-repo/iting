@@ -39,11 +39,11 @@ const Footer = () => {
           <div>
             <h3 className="text-lg font-bold mb-6">Danh mục việc làm</h3>
             <ul className="space-y-3 text-sm text-gray-400">
-              <li><Link to="/jobs/software" className="hover:text-white transition-colors">Lập trình & Phát triển phần mềm</Link></li>
-              <li><Link to="/jobs/mobile" className="hover:text-white transition-colors">Hotels & Lập trình & Phát triển phần mềm</Link></li>
-              <li><Link to="/jobs/ui-ux" className="hover:text-white transition-colors">Thiết kế UI/UX</Link></li>
-              <li><Link to="/jobs/pm" className="hover:text-white transition-colors">Quản lý dự án IT</Link></li>
-              <li><Link to="/jobs/security" className="hover:text-white transition-colors">An ninh mạng & Hệ thống</Link></li>
+              <li><Link to="/jobs?category=SOFTWARE_DEVELOPMENT" className="hover:text-white transition-colors">Lập trình & Phát triển phần mềm</Link></li>
+              <li><Link to="/jobs?category=MOBILE_DEVELOPMENT" className="hover:text-white transition-colors">Lập trình Di động</Link></li>
+              <li><Link to="/jobs?category=UI_UX" className="hover:text-white transition-colors">Thiết kế UI/UX</Link></li>
+              <li><Link to="/jobs?category=PROJECT_MANAGEMENT" className="hover:text-white transition-colors">Quản lý dự án IT</Link></li>
+              <li><Link to="/jobs?category=CYBERSECURITY" className="hover:text-white transition-colors">An ninh mạng & Hệ thống</Link></li>
             </ul>
           </div>
 

@@ -68,9 +68,9 @@ const getJobStatusLabel = (status) => {
 export const JobPreviewDialog = ({ job, open, onClose, onAction }) => {
   if (!job) return null;
 
-  const techList = Array.isArray(job.techRequired) 
-    ? job.techRequired 
-    : (typeof job.techRequired === 'string' ? job.techRequired.split(',').map(t => t.trim()) : []);
+  const techList = Array.isArray(job.skills) 
+    ? job.skills 
+    : (typeof job.skills === 'string' ? job.skills.split(',').map(t => t.trim()) : []);
 
   const formatSalary = () => {
     if (job.salaryType === "NEGOTIABLE" || (!job.minSalary && !job.maxSalary)) return "Thỏa thuận";

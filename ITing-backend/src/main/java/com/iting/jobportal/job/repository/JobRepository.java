@@ -54,4 +54,14 @@ public interface JobRepository extends JpaRepository<Job, Long>, JpaSpecificatio
     long countByCreatedAtBefore(java.time.LocalDateTime dateTime);
     long countByStatus(JobStatus status);
     long countByCompany_IdAndStatus(Long companyId, JobStatus status);
+
+    // ===== EMBEDDING / VECTOR SEARCH =====
+
+    /** Tìm các job ACTIVE chưa có embedding (để batch embed) */
+    @Query("SELECT j FROM Job j WHERE j.status = :status AND j.jobEmbedding IS NULL ORDER BY j.lastUpdate DESC")
+    List<Job> findJobsWithoutEmbedding(@Param("status") JobStatus status, Pageable pageable);
+
+    /** Tìm tất cả job ACTIVE có embedding (để vector search in-memory) */
+    @Query("SELECT j FROM Job j WHERE j.status = 'ACTIVE' AND j.jobEmbedding IS NOT NULL")
+    List<Job> findAllActiveWithEmbedding();
 }

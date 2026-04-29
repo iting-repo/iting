@@ -11,6 +11,7 @@ import {
   BsTelephone,
 } from "react-icons/bs";
 import bgImage from "../../assets/bg_login.jpg";
+import { useModalEscape } from "../../hooks/useModalEscape";
 
 const GoogleIcon = () => (
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="24px" height="24px">
@@ -43,9 +44,17 @@ const SuccessModal = ({ onClose }) => {
     navigate("/");
   };
 
+  useModalEscape(handleClose);
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-fade-in">
-      <div className="bg-white rounded-xl shadow-2xl w-full max-w-md overflow-hidden relative animate-scale-up">
+    <div 
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-fade-in"
+      onClick={handleClose}
+    >
+      <div 
+        className="bg-white rounded-xl shadow-2xl w-full max-w-md overflow-hidden relative animate-scale-up"
+        onClick={(e) => e.stopPropagation()}
+      >
         <div className="p-8 flex flex-col items-center text-center">
           <div className="mb-6 text-[#3AB4E6]">
             <svg className="w-24 h-24" viewBox="0 0 52 52" fill="none" xmlns="http://www.w3.org/2000/svg">

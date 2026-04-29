@@ -20,6 +20,7 @@ export const getJobPublicKey = (job = {}) =>
   job?.publicId ||
   job?.jobKey ||
   job?.publicKey ||
+  job?.jobId ||
   job?.id ||
   "";
 

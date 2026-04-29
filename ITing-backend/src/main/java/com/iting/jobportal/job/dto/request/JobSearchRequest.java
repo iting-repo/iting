@@ -19,7 +19,7 @@ public class JobSearchRequest {
     private BigDecimal maxSalary;         // Lọc theo mức lương tối đa
     private Integer postedWithinHours;    // Lọc theo thời gian đăng (số giờ gần nhất)
     private Long companyId;         // Lọc theo công ty
-    private String techRequired;    // Lọc theo công nghệ
+    private String skills;            // Lọc theo kỹ năng
     // Deep filter: industry/domain and sub-categories (e.g. IT -> Software, DevOps)
     private String domain;          // Industry / domain keyword (e.g. "IT")
     private java.util.List<String> subDomains; // Subcategories or domain keywords

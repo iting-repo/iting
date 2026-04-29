@@ -2,6 +2,7 @@ package com.iting.jobportal.userprofile.entity;
 
 import com.iting.jobportal.user.entity.User;
 import com.iting.jobportal.userprofile.entity.enums.EmploymentStatus;
+import com.iting.jobportal.userprofile.entity.enums.EducationLevel;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -35,8 +36,9 @@ public class UserProfile {
     @Column(name = "total_experience_years")
     private Integer totalExperienceYears; // tổng số năm kinh nghiệm
 
-    @Column(name = "education_summary", length = 255)
-    private String educationSummary; // VD: ĐH Bách Khoa Hà Nội
+    @Enumerated(EnumType.STRING)
+    @Column(name = "education_summary", length = 50)
+    private EducationLevel educationSummary; // Trình độ học vấn
 
     @Column(name = "short_bio", columnDefinition = "TEXT")
     private String shortBio; // giới thiệu ngắn

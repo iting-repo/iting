@@ -1,18 +1,19 @@
-# IntelliJ
+# IntelliJ / IDE
 .idea/
 *.iml
+.vscode/
 
 # Gradle build
-/.gradle/
-**/.gradle/
+.gradle/
+build/
+ITing/.gradle/
+ITing/build/
 
-# Gradle and Java build outputs
-**/build/
-**/out/
-**/target/
-
-# Logs
-*.log
+# Frontend deps/build
+node_modules/
+dist/
+.next/
+coverage/
 
 node_modules
 dist
@@ -55,3 +56,45 @@ playwright-report/
 iting-key-pair.pem
 
 skills-lock.json
+# Environment files
+.env
+.env.*
+
+# Python virtual environments
+.venv/
+venv/
+env/
+
+# Python cache
+__pycache__/
+*.py[cod]
+.pytest_cache/
+
+# Playwright / test artifacts
+playwright-report/
+test-results/
+*.webm
+
+# LaTeX build files
+*.aux
+*.fdb_latexmk
+*.fls
+*.out
+*.toc
+*.synctex.gz
+
+# Logs / temp
+*.log
+*.tmp
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Local/private config
+.codex/
+# Markdown docs
+*.md
+
+# LaTeX source files
+*.tex

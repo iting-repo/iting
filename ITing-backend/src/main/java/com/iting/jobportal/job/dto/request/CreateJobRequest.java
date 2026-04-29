@@ -3,10 +3,8 @@ package com.iting.jobportal.job.dto.request;
 import com.iting.jobportal.job.entity.enums.ExperienceLevel;
 import com.iting.jobportal.job.entity.enums.JobType;
 import com.iting.jobportal.job.entity.enums.SalaryType;
-import jakarta.validation.constraints.DecimalMin;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Positive;
+import com.iting.jobportal.job.entity.enums.WorkingDays;
+import jakarta.validation.constraints.*;
 import lombok.Data;
 
 import java.math.BigDecimal;
@@ -17,19 +15,20 @@ import java.util.List;
 public class CreateJobRequest {
 
     @NotBlank(message = "Tiêu đề công việc không được để trống")
+    @Size(max = 150, message = "Tiêu đề công việc không được vượt quá 150 ký tự")
     private String title;
 
     @NotBlank(message = "Vị trí tuyển dụng không được để trống")
     private String position;
 
-    private List<String> techRequired;
+    private List<String> skills;
 
     @NotNull(message = "Loại công việc không được để trống")
     private JobType jobType;
 
     private ExperienceLevel experienceLevel;
 
-    private String workingDays;
+    private WorkingDays workingDays;
 
     // Nullable khi salaryType = NEGOTIABLE
     private BigDecimal minSalary;
@@ -45,6 +44,7 @@ public class CreateJobRequest {
     private Integer maxAccept;
 
     @NotNull(message = "Hạn nộp hồ sơ không được để trống")
+    @FutureOrPresent(message = "Hạn nộp hồ sơ không được ở quá khứ")
     private LocalDate dueDate;
 
     @NotBlank(message = "Thành phố không được để trống")

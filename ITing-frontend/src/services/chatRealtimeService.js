@@ -22,7 +22,7 @@ class ChatRealtimeService {
       reconnectDelay: 4000,
       heartbeatIncoming: 10000,
       heartbeatOutgoing: 10000,
-      debug: () => {},
+      debug: () => { },
     });
 
     this.client.onConnect = () => {

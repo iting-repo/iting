@@ -16,8 +16,7 @@ public interface UserProfileRepository extends JpaRepository<UserProfile, Long> 
             join fetch p.user u
             join fetch u.account a
             left join fetch p.skills s
-            left join fetch p.educations e
-        where a.role = com.iting.jobportal.auth.entity.Enum.Role.CANDIDATE
+        where a.role in (com.iting.jobportal.auth.entity.Enum.Role.CANDIDATE, com.iting.jobportal.auth.entity.Enum.Role.USER)
             and (:onlyAvailable = false or p.openToWork = true)
             and (:location is null or :location = '' or lower(p.location) like lower(concat('%', :location, '%')))
             and (:position is null or :position = '' or lower(p.headline) like lower(concat('%', :position, '%')))

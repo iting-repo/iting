@@ -392,10 +392,10 @@ public class AdminJobServiceImpl implements AdminJobService {
                 .companyLogo(c != null ? c.getLogoUrl() : null)
                 .title(job.getTitle())
                 .position(job.getPosition())
-                .techRequired(job.getTechRequired())
+                .skills(job.getSkills())
                 .jobType(job.getJobType())
                 .experienceLevel(job.getExperienceLevel())
-                .workingDays(job.getWorkingDays())
+                .workingDays(job.getWorkingDays() != null ? job.getWorkingDays().name() : null)
                 .minSalary(job.getMinSalary())
                 .maxSalary(job.getMaxSalary())
                 .salaryType(job.getSalaryType())
@@ -513,7 +513,7 @@ public class AdminJobServiceImpl implements AdminJobService {
             job.setStatus(JobStatus.REJECTED);
             // Lấy nội dung review làm lý do từ chối (bỏ phần tag kỹ thuật)
             String reason = reviewResult.replace("FINAL_DECISION: [REJECT]", "").trim();
-            job.setReviewReason("AI Kiểm Duyệt: " + (reason.length() > 250 ? reason.substring(0, 247) + "..." : reason));
+            job.setReviewReason("AI Kiểm Duyệt: " + reason);
             job.setReviewedAt(LocalDateTime.now());
             autoRejected = true;
         } else if (reviewResult.contains("FINAL_DECISION: [APPROVE]")) {

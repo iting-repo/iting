@@ -16,18 +16,22 @@ import {
 } from "react-icons/fa";
 import { BsThreeDotsVertical } from "react-icons/bs";
 import { toast } from "sonner";
+
 import PostJob from "./PostJob";
 import companyService from "../../services/companyService";
+import { Breadcrumb } from "../../components/common";
 
 const ITEMS_PER_PAGE = 5;
 
 const formatJobType = (jobType) => {
   const map = {
-    FULL_TIME: "Full Time",
-    PART_TIME: "Part Time",
-    REMOTE: "Remote",
+    FULL_TIME: "Toàn thời gian",
+    PART_TIME: "Bán thời gian",
+    REMOTE: "Từ xa",
     FREELANCE: "Freelance",
-    INTERN: "Internship",
+    INTERN: "Thực tập",
+    INTERNSHIP: "Thực tập",
+    CONTRACT: "Hợp đồng",
   };
 
   return map[jobType] || jobType || "Chưa cập nhật";
@@ -44,7 +48,7 @@ const formatDeadline = (dueDate) => {
 
 const mapJobToTableRow = (job) => ({
   id: job.id,
-  title: job.title,
+  title: job.title || job.position || "Chưa cập nhật",
   type: formatJobType(job.jobType),
   deadline: formatDeadline(job.dueDate),
   status: job.status,
@@ -129,9 +133,7 @@ const ManageJobs = () => {
       await fetchJobs();
     } catch (err) {
       console.error("Lỗi xóa job", err);
-      toast.error(
-        err?.response?.data?.message || "Xóa tin tuyển dụng thất bại",
-      );
+      toast.error(err?.response?.data?.message || "Xóa tin tuyển dụng thất bại");
     }
   };
 
@@ -140,9 +142,7 @@ const ManageJobs = () => {
   };
 
   const handleCloseJob = async (jobId) => {
-    const confirmed = window.confirm(
-      "Bạn có chắc muốn đóng tin tuyển dụng này?",
-    );
+    const confirmed = window.confirm("Bạn có chắc muốn đóng tin tuyển dụng này?");
     if (!confirmed) return;
 
     try {
@@ -172,42 +172,42 @@ const ManageJobs = () => {
 
   const STATUS_CONFIG = {
     ACTIVE: {
-      label: "Active",
+      label: "Đang hoạt động",
       color: "text-green-600",
       icon: <FaCheckCircle />,
     },
     PENDING: {
-      label: "Pending",
+      label: "Chờ duyệt",
       color: "text-orange-500",
       icon: <FaClock />,
     },
     DRAFT: {
-      label: "Draft",
+      label: "Nháp",
       color: "text-gray-500",
       icon: <FaPauseCircle />,
     },
     EXPIRED: {
-      label: "Expired",
+      label: "Hết hạn",
       color: "text-red-500",
       icon: <FaTimesCircle />,
     },
     CLOSED: {
-      label: "Closed",
+      label: "Đã đóng",
       color: "text-gray-700",
       icon: <FaBan />,
     },
     REJECTED: {
-      label: "Rejected",
+      label: "Bị từ chối",
       color: "text-red-600",
       icon: <FaTimesCircle />,
     },
     NEEDS_REVISION: {
-      label: "Needs Revision",
+      label: "Cần chỉnh sửa",
       color: "text-yellow-600",
       icon: <FaExclamationTriangle />,
     },
     SUSPENDED: {
-      label: "Suspended",
+      label: "Bị tạm dừng",
       color: "text-purple-600",
       icon: <FaBan />,
     },
@@ -216,6 +216,12 @@ const ManageJobs = () => {
   return (
     <>
       <div className="bg-white rounded-xl p-8 shadow-sm border border-gray-100 min-h-screen">
+        <Breadcrumb
+          rootLabel="Tổng quan"
+          rootLink="/employer/dashboard"
+          items={[{ label: "Quản lý công việc" }]}
+        />
+
         <div className="flex flex-col md:flex-row justify-between items-end md:items-center mb-8 gap-4">
           <div>
             <h2 className="text-2xl font-bold text-gray-800">
@@ -299,7 +305,7 @@ const ManageJobs = () => {
                         </span>
                         <span className="text-gray-300">•</span>
                         <span className="text-gray-400 text-xs">
-                          {job.deadline}
+                          Hạn nộp: {job.deadline}
                         </span>
                       </div>
                     </td>
@@ -307,7 +313,7 @@ const ManageJobs = () => {
                     <td className="p-5">
                       {(() => {
                         const config = STATUS_CONFIG[job.status] || {
-                          label: job.status,
+                          label: job.status || "Chưa cập nhật",
                           color: "text-gray-500",
                           icon: <FaTimesCircle />,
                         };
@@ -325,9 +331,7 @@ const ManageJobs = () => {
                     <td className="p-5">
                       <div className="flex items-center gap-2 text-gray-600">
                         <FaUserFriends className="text-gray-400" />
-                        <span className="font-semibold">
-                          {job.apps} Applications
-                        </span>
+                        <span className="font-semibold">{job.apps} hồ sơ</span>
                       </div>
                     </td>
 
@@ -339,16 +343,15 @@ const ManageJobs = () => {
                           }
                           className="bg-[#EAF6FF] text-[#3AB4E6] hover:bg-[#3AB4E6] hover:text-white text-xs font-bold px-4 py-2.5 rounded-lg transition-all shadow-sm"
                         >
-                          View Applications ({job.apps})
+                          Xem hồ sơ ({job.apps})
                         </button>
 
                         <button
                           onClick={() => toggleMenu(job.id)}
-                          className={`w-9 h-9 rounded-full flex items-center justify-center transition-colors ${
-                            activeMenu === job.id
+                          className={`w-9 h-9 rounded-full flex items-center justify-center transition-colors ${activeMenu === job.id
                               ? "bg-gray-200 text-gray-700"
                               : "hover:bg-gray-100 text-gray-400"
-                          }`}
+                            }`}
                         >
                           <BsThreeDotsVertical />
                         </button>
@@ -411,11 +414,10 @@ const ManageJobs = () => {
             <button
               onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
               disabled={currentPage === 1}
-              className={`w-10 h-10 rounded-full flex items-center justify-center transition-colors ${
-                currentPage === 1
+              className={`w-10 h-10 rounded-full flex items-center justify-center transition-colors ${currentPage === 1
                   ? "text-gray-300 cursor-not-allowed"
                   : "text-[#3AB4E6] hover:bg-blue-50 bg-white shadow-sm border border-gray-100"
-              }`}
+                }`}
             >
               <FaChevronLeft size={12} />
             </button>
@@ -424,11 +426,10 @@ const ManageJobs = () => {
               <button
                 key={page}
                 onClick={() => setCurrentPage(page)}
-                className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm transition-all ${
-                  currentPage === page
+                className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm transition-all ${currentPage === page
                     ? "bg-[#1967D2] text-white shadow-md"
                     : "text-gray-500 hover:bg-gray-50"
-                }`}
+                  }`}
               >
                 {page < 10 ? `0${page}` : page}
               </button>
@@ -439,11 +440,10 @@ const ManageJobs = () => {
                 setCurrentPage((prev) => Math.min(prev + 1, totalPages))
               }
               disabled={currentPage === totalPages}
-              className={`w-10 h-10 rounded-full flex items-center justify-center transition-colors ${
-                currentPage === totalPages
+              className={`w-10 h-10 rounded-full flex items-center justify-center transition-colors ${currentPage === totalPages
                   ? "text-gray-300 cursor-not-allowed"
                   : "text-[#3AB4E6] hover:bg-blue-50 bg-white shadow-sm border border-gray-100"
-              }`}
+                }`}
             >
               <FaChevronRight size={12} />
             </button>

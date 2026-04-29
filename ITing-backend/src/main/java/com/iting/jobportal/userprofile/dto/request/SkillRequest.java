@@ -7,6 +7,4 @@ import lombok.Data;
 public class SkillRequest {
     @NotBlank(message = "Skill name is required")
     private String name;
-
-    private String level;
-}
+}

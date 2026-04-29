@@ -2,12 +2,18 @@ import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { FaBars, FaSearch, FaChevronRight, FaTimes, FaCheck, FaQuestionCircle } from 'react-icons/fa';
 
 const categoriesData = [
-    { id: 1, name: 'Công nghệ Thông tin', sub: ['Phát triển phần mềm', 'Dữ liệu/AI', 'Bảo mật', 'Mạng/Hệ thống'] },
-    { id: 2, name: 'Kinh doanh/Bán hàng', sub: ['Sale Admin', 'Bán lẻ', 'Bất động sản', 'Tài chính/Ngân hàng'] },
-    { id: 3, name: 'Marketing/PR/Quảng cáo', sub: ['Digital Marketing', 'Content Creator', 'Event', 'SEO'] },
-    { id: 4, name: 'Chăm sóc khách hàng', sub: ['Call Center', 'Support', 'Tư vấn'] },
-    { id: 5, name: 'Nhân sự/Hành chính', sub: ['Tuyển dụng', 'C&B', 'Pháp chế'] },
-    { id: 6, name: 'Thiết kế/Sáng tạo', sub: ['UI/UX', 'Graphic Design', 'Video Editor'] },
+    { id: 1, name: 'Phát triển phần mềm', sub: ['Backend Developer', 'Frontend Developer', 'Fullstack Developer', 'Desktop App'] },
+    { id: 2, name: 'Phát triển Web', sub: ['Web Developer', 'WordPress', 'E-commerce', 'Web Designer'] },
+    { id: 3, name: 'Phát triển Mobile', sub: ['Android Developer', 'iOS Developer', 'React Native', 'Flutter'] },
+    { id: 4, name: 'Điện toán đám mây', sub: ['Cloud Engineer', 'AWS', 'Azure', 'Google Cloud'] },
+    { id: 5, name: 'DevOps', sub: ['DevOps Engineer', 'CI/CD', 'Docker/Kubernetes', 'SRE'] },
+    { id: 6, name: 'Khoa học dữ liệu', sub: ['Data Engineer', 'Data Analyst', 'Big Data', 'Business Intelligence'] },
+    { id: 7, name: 'Trí tuệ nhân tạo (AI)', sub: ['Machine Learning', 'Deep Learning', 'NLP', 'Computer Vision'] },
+    { id: 8, name: 'An ninh mạng', sub: ['Security Engineer', 'Pentester', 'SOC Analyst', 'Security Architect'] },
+    { id: 9, name: 'Blockchain', sub: ['Blockchain Developer', 'Smart Contract', 'Web3', 'DeFi'] },
+    { id: 10, name: 'Phát triển Game', sub: ['Game Developer', 'Unity', 'Unreal Engine', 'Game Designer'] },
+    { id: 11, name: 'Kiểm thử (QA)', sub: ['QA Engineer', 'Automation Tester', 'Manual Tester', 'Performance Tester'] },
+    { id: 12, name: 'Phần mềm & CNTT', sub: ['IT Support', 'System Admin', 'Network Engineer', 'Database Admin'] },
 ];
 
 const CategoryPicker = ({ value, onChange }) => {
@@ -16,12 +22,12 @@ const CategoryPicker = ({ value, onChange }) => {
     const [selectedGroup, setSelectedGroup] = useState(null);
     const [selectedSubs, setSelectedSubs] = useState([]);
     const [coords, setCoords] = useState({ top: 0, left: 0, width: 0 });
-    
+
     const triggerRef = useRef(null);
     const modalRef = useRef(null);
 
     const filteredGroups = useMemo(() => {
-        return categoriesData.filter(g => 
+        return categoriesData.filter(g =>
             g.name.toLowerCase().includes(searchTerm.toLowerCase())
         );
     }, [searchTerm]);
@@ -51,7 +57,7 @@ const CategoryPicker = ({ value, onChange }) => {
 
     useEffect(() => {
         const handleClickOutside = (event) => {
-            if (modalRef.current && !modalRef.current.contains(event.target) && 
+            if (modalRef.current && !modalRef.current.contains(event.target) &&
                 triggerRef.current && !triggerRef.current.contains(event.target)) {
                 setIsOpen(false);
             }
@@ -95,7 +101,7 @@ const CategoryPicker = ({ value, onChange }) => {
     return (
         <div className="w-full h-full flex items-center">
             {/* Trigger Button */}
-            <div 
+            <div
                 ref={triggerRef}
                 onClick={() => setIsOpen(!isOpen)}
                 className="flex items-center gap-3 cursor-pointer w-full group py-1 h-full border-r border-gray-100 pr-4"
@@ -108,14 +114,14 @@ const CategoryPicker = ({ value, onChange }) => {
 
             {/* Dropdown Modal */}
             {isOpen && (
-                <div 
+                <div
                     ref={modalRef}
-                    style={{ 
-                        position: 'fixed', 
-                        top: coords.top - window.scrollY + 12, 
+                    style={{
+                        position: 'fixed',
+                        top: coords.top - window.scrollY + 12,
                         left: coords.left,
                         width: coords.width,
-                        zIndex: 10000 
+                        zIndex: 10000
                     }}
                     className="bg-white rounded-2xl shadow-[0_30px_70px_rgba(0,0,0,0.25)] border border-gray-100 overflow-hidden flex flex-col animate-in fade-in slide-in-from-top-4 duration-300"
                 >
@@ -127,7 +133,7 @@ const CategoryPicker = ({ value, onChange }) => {
                         </div>
                         <div className="relative mx-2">
                             <FaSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
-                            <input 
+                            <input
                                 type="text"
                                 placeholder="Nhập từ khóa tìm kiếm"
                                 value={searchTerm}
@@ -145,7 +151,7 @@ const CategoryPicker = ({ value, onChange }) => {
                             </div>
                             <div className="flex-1 overflow-y-auto custom-scrollbar p-1">
                                 {filteredGroups.map(g => (
-                                    <div 
+                                    <div
                                         key={g.id}
                                         onClick={() => handleGroupSelect(g)}
                                         className={`flex items-center justify-between px-4 py-3.5 rounded-xl cursor-pointer mb-1 transition-all ${selectedGroup?.id === g.id ? 'bg-[#EBF8FF] text-[#3AB4E6]' : 'hover:bg-gray-50 text-gray-600'}`}
@@ -177,7 +183,7 @@ const CategoryPicker = ({ value, onChange }) => {
                                 ) : (
                                     <div className="grid grid-cols-2 gap-x-8 gap-y-4">
                                         {selectedGroup.sub.map(sub => (
-                                            <div 
+                                            <div
                                                 key={sub}
                                                 onClick={() => toggleSub(sub)}
                                                 className="flex items-start gap-3 cursor-pointer group"

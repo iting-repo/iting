@@ -115,11 +115,12 @@ export default function BasicInfoSection() {
                             className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-slate-400 focus:ring-2 focus:ring-[#9D5CE9] transition-all"
                         >
                             <option value="">Chọn...</option>
-                            <option value="Trung học phổ thông">Trung học phổ thông</option>
-                            <option value="Cao đẳng">Cao đẳng</option>
-                            <option value="Đại học">Đại học</option>
-                            <option value="Thạc sĩ">Thạc sĩ</option>
-                            <option value="Tiến sĩ">Tiến sĩ</option>
+                            <option value="HIGH_SCHOOL">Trung học phổ thông</option>
+                            <option value="ASSOCIATE">Cao đẳng</option>
+                            <option value="BACHELOR">Đại học</option>
+                            <option value="MASTER">Thạc sĩ</option>
+                            <option value="DOCTORATE">Tiến sĩ</option>
+                            <option value="OTHER">Khác</option>
                         </select>
                         {errors.education && (
                             <p className="text-red-600 text-sm mt-1">{errors.education.message}</p>

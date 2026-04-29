@@ -43,8 +43,8 @@ public class Job {
     private String position;
 
     @Convert(converter = StringListConverter.class)
-    @Column(columnDefinition = "TEXT")
-    private List<String> techRequired;
+    @Column(name = "skills", columnDefinition = "TEXT")
+    private List<String> skills;
 
 
     @Enumerated(EnumType.STRING)
@@ -53,7 +53,8 @@ public class Job {
     @Enumerated(EnumType.STRING)
     private ExperienceLevel experienceLevel;
 
-    private String workingDays;
+    @Enumerated(EnumType.STRING)
+    private WorkingDays workingDays;
 
     // ===== SALARY =====
     private BigDecimal minSalary;
@@ -111,6 +112,8 @@ public class Job {
 
     @Column(columnDefinition = "TEXT")
     private String jobEmbedding;
+
+    private LocalDateTime embeddingUpdatedAt;
 
     // ===== AUDIT =====
     private LocalDateTime createdAt;

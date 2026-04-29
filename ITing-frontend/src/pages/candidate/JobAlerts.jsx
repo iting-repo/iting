@@ -5,6 +5,8 @@ import {
 } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
 import axiosInstance from '../../utils/axiosInstance';
+import { buildJobDetailPath } from '../../utils/jobUrl';
+
 
 const JobAlerts = () => {
   const navigate = useNavigate();
@@ -131,7 +133,7 @@ const JobAlerts = () => {
                 <div className="flex-1 w-full">
                   <div className="flex flex-wrap items-center gap-3 mb-2">
                     <h3
-                      onClick={() => navigate(`/jobs/${job.jobId}`)}
+                      onClick={() => navigate(buildJobDetailPath({ ...job, id: job.jobId }))}
                       className="font-bold text-gray-800 text-lg group-hover:text-[#3AB4E6] transition-colors cursor-pointer"
                     >
                       {job.title}
@@ -162,7 +164,7 @@ const JobAlerts = () => {
                   </button>
 
                   <button
-                    onClick={() => navigate(`/jobs/${job.jobId}`)}
+                    onClick={() => navigate(buildJobDetailPath({ ...job, id: job.jobId }))}
                     className="bg-[#EAF6FF] text-[#3AB4E6] hover:bg-[#3AB4E6] hover:text-white font-bold py-2.5 px-6 rounded-lg transition-all flex items-center gap-2 text-sm"
                   >
                     Ứng Tuyển <FaArrowRight size={12} />

@@ -64,7 +64,7 @@ const mapJobToCard = (job) => ({
     title: job.title || job.position || 'Vị trí tuyển dụng',
     company: job.companyName || 'Công ty',
     logo: job.companyLogo || 'https://via.placeholder.com/80',
-    category: (job.techRequired && job.techRequired[0]) || (job.experienceLevel || 'IT'),
+    category: (job.skills && job.skills[0]) || (job.experienceLevel || 'IT'),
     type: job.jobType || 'FULL_TIME',
     salary: formatSalary(job.minSalary, job.maxSalary),
     location: job.location || job.province || 'Việt Nam',
