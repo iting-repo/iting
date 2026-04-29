@@ -2,37 +2,11 @@ import axiosInstance from "../utils/axiosInstance";
 
 const companyService = {
   getMyCompany: async () => {
-    return await axiosInstance.get("/companies/me");
+    return await axiosInstance.get("/companies");
   },
 
-  updateCompanyBasicInfo: async (companyData) => {
-    return await axiosInstance.put("/companies/me/basic-info", companyData);
-  },
-
-  createCompanyUpdateRequest: async (payload) => {
-    return await axiosInstance.put("/companies/me/basic-info", payload);
-  },
-
-  getMyLatestCompanyUpdateRequest: async () => {
-    return await axiosInstance.get("/companies/me/latest-update-request");
-  },
-
-  createEmployerJob: async (jobData) => {
-    return await axiosInstance.post("/employer/jobs", jobData);
-  },
-
-  updateEmployerJob: async (id, jobData) => {
-    return await axiosInstance.put(`/employer/jobs/${id}`, jobData);
-  },
-
-  closeEmployerJob: async (id) => {
-    const response = await axiosInstance.post(`/employer/jobs/${id}/close`);
-    return response;
-  },
-
-  reopenEmployerJob: async (id) => {
-    const response = await axiosInstance.post(`/employer/jobs/${id}/reopen`);
-    return response;
+  updateCompanyBasicInfo: async (id, companyData) => {
+    return await axiosInstance.put(`/companies/${id}/basic-info`, companyData);
   },
 
   createEmployerJob: async (jobData) => {
@@ -63,6 +37,7 @@ const companyService = {
       `/employer/jobs/my-jobs?page=${page}&size=${size}`,
     );
   },
+<<<<<<< HEAD
 
   // Lấy presigned URL để preview giấy phép kinh doanh của chính mình
   getBusinessLicensePresignedUrl: async (minutes = 30) => {
@@ -166,6 +141,8 @@ const companyService = {
   postCompanyReview: async (companyId, reviewData) => {
     return await axiosInstance.post(`/candidate/companies/${companyId}/reviews`, reviewData);
   }
+=======
+>>>>>>> origin/feat-test-plan
 };
 
 export default companyService;

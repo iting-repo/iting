@@ -108,7 +108,7 @@ export default function BasicInfoSection() {
                         <select
                             id="education"
                             {...register("education", { required: "Vui lòng chọn học vấn" })}
-                            className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-slate-400 focus:ring-2 focus:ring-[#3AB4E6] transition-all"
+                            className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-slate-400 focus:ring-2 focus:ring-[#9D5CE9] transition-all"
                         >
                             <option value="">Chọn...</option>
                             <option value="HIGH_SCHOOL">Trung học phổ thông</option>
@@ -162,7 +162,7 @@ export default function BasicInfoSection() {
                         <User className="absolute left-3 top-3 w-4 h-4 text-gray-400" />
                         <textarea
                             id="shortBio"
-                            className="w-full rounded-lg border border-slate-300 bg-white py-2 pr-3 pl-10 text-sm outline-none focus:border-slate-400 focus:ring-2 focus:ring-[#3AB4E6] transition-all"
+                            className="w-full rounded-lg border border-slate-300 bg-white py-2 pr-3 pl-10 text-sm outline-none focus:border-slate-400 focus:ring-2 focus:ring-[#9D5CE9] transition-all"
                             rows="4"
                             {...register("shortBio")}
                             placeholder="Giới thiệu bản thân, mục tiêu nghề nghiệp..."

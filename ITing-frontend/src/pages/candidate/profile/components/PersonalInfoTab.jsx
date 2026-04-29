@@ -1,15 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { FaUserCircle, FaCamera, FaSave, FaEnvelope } from 'react-icons/fa';
-import { useDispatch, useSelector } from 'react-redux';
 import axiosInstance from '../../../../utils/axiosInstance';
-import { toast } from 'sonner';
-import { loginSuccess } from '../../../../store/auth/authSlice';
 
 const PersonalInfoTab = () => {
-    const dispatch = useDispatch();
-    const currentUser = useSelector((state) => state.auth?.currentUser);
-
-    const avatarInputId = 'candidate-avatar-upload';
 
     const [formData, setFormData] = useState({
         fullName: '',
@@ -19,7 +12,6 @@ const PersonalInfoTab = () => {
     });
     const [isLoading, setIsLoading] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
-    const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
 
     useEffect(() => {
         const fetchProfile = async () => {
@@ -59,68 +51,12 @@ const PersonalInfoTab = () => {
                 phoneNum: formData.phoneNum,
                 avatarUrl: formData.avatarUrl
             });
-            toast.success("Cập nhật thông tin thành công!");
+            alert("Cập nhật thông tin thành công!");
         } catch (error) {
             console.error("Failed to update personal info", error);
-            toast.error("Có lỗi xảy ra khi cập nhật!");
+            alert("Có lỗi xảy ra khi cập nhật!");
         } finally {
             setIsSaving(false);
-        }
-    };
-
-    const handleUploadAvatar = async (event) => {
-        const file = event.target.files?.[0];
-        if (!file) {
-            return;
-        }
-
-        const allowedTypes = ['image/jpeg', 'image/png', 'image/jpg', 'image/webp'];
-        if (!allowedTypes.includes(file.type)) {
-            toast.error('Chỉ chấp nhận ảnh JPG, PNG hoặc WEBP');
-            event.target.value = '';
-            return;
-        }
-
-        const maxSizeMb = 5;
-        if (file.size > maxSizeMb * 1024 * 1024) {
-            toast.error('Kích thước ảnh tối đa là 5MB');
-            event.target.value = '';
-            return;
-        }
-
-        setIsUploadingAvatar(true);
-
-        try {
-            const payload = new FormData();
-            payload.append('file', file);
-
-            const response = await axiosInstance.post('/user/profile/avatar/upload', payload, {
-                headers: {
-                    'Content-Type': 'multipart/form-data',
-                },
-            });
-
-            const newAvatarUrl = response?.avatarUrl || '';
-            setFormData((prev) => ({
-                ...prev,
-                avatarUrl: newAvatarUrl,
-            }));
-
-            if (currentUser) {
-                dispatch(loginSuccess({
-                    ...currentUser,
-                    avatar: newAvatarUrl,
-                    avatarUrl: newAvatarUrl,
-                }));
-            }
-
-            toast.success('Tải ảnh đại diện thành công');
-        } catch (error) {
-            console.error('Failed to upload avatar', error);
-            toast.error('Không thể tải ảnh đại diện lên');
-        } finally {
-            setIsUploadingAvatar(false);
-            event.target.value = '';
         }
     };
 
@@ -142,24 +78,10 @@ const PersonalInfoTab = () => {
                                     <FaUserCircle className="w-full h-full text-gray-300" />
                                 )}
                             </div>
-                            <input
-                                id={avatarInputId}
-                                type="file"
-                                accept="image/png,image/jpeg,image/jpg,image/webp"
-                                className="hidden"
-                                onChange={handleUploadAvatar}
-                            />
-                            <label
-                                htmlFor={avatarInputId}
-                                className={`absolute bottom-1 right-1 w-8 h-8 rounded-full flex items-center justify-center text-white border-2 border-white transition-colors shadow-sm ${isUploadingAvatar ? 'bg-blue-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700 cursor-pointer'}`}
-                                title="Tải ảnh đại diện"
-                            >
+                            <button className="absolute bottom-1 right-1 w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center text-white border-2 border-white hover:bg-blue-700 transition-colors shadow-sm">
                                 <FaCamera size={14} />
-                            </label>
+                            </button>
                         </div>
-                        {isUploadingAvatar && (
-                            <p className="text-xs text-blue-600 mb-2">Đang tải ảnh lên...</p>
-                        )}
                         <h3 className="font-bold text-gray-800 text-lg">{formData.fullName || "Đang tải..."}</h3>
                         <p className="text-gray-500 text-sm">Cài đặt hồ sơ cá nhân</p>
                     </div>

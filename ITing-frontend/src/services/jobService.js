@@ -6,19 +6,15 @@ const jobService = {
         return response;
     },
 
-    getJobDetail: async (jobKey) => {
-        const response = await axiosInstance.get(`/jobs/${jobKey}`);
-        return response;
-    },
-
-    getJobDetailByLegacyId: async (id) => {
+    // 2. Lấy chi tiết công việc theo ID
+    getJobDetail: async (id) => {
         const response = await axiosInstance.get(`/jobs/${id}`);
         return response;
     },
 
-    getLatestJobs: async (limit = 10) => {
-        return axiosInstance.get('/jobs/latest', {
-            params: { limit }
+    getLatestJobs: async(limit = 10) => {
+        const response = await axiosInstance.get(`/jobs/latest`,{
+            params: {limit}
         });
     },
 

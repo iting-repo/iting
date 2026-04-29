@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Briefcase, Plus, Calendar, MapPin, Building2, Trash2 } from 'lucide-react';
-import { Button, Card, Input, ConfirmDialog } from "../../../../components/common";
+import { Button, Card, Input } from "../../../../components/common";
 import axiosInstance from "../../../../utils/axiosInstance";
-import { toast } from 'sonner';
 
 const ExperienceSection = () => {
     const [experiences, setExperiences] = useState([]);
@@ -16,8 +15,6 @@ const ExperienceSection = () => {
         isCurrent: false,
         description: ''
     });
-
-    const [confirmModal, setConfirmModal] = useState({ isOpen: false, id: null });
 
     useEffect(() => {
         fetchExperiences();
@@ -61,26 +58,20 @@ const ExperienceSection = () => {
             });
             setIsAdding(false);
             fetchExperiences();
-            toast.success("Thêm kinh nghiệm thành công!");
         } catch (error) {
             console.error("Failed to add experience", error);
-            toast.error("Có lỗi xảy ra khi thêm kinh nghiệm!");
+            alert("Có lỗi xảy ra khi thêm kinh nghiệm!");
         }
     };
 
-    const handleDelete = (id) => {
-        setConfirmModal({ isOpen: true, id });
-    };
-
-    const confirmDelete = async () => {
-        const id = confirmModal.id;
+    const handleDelete = async (id) => {
+        if (!window.confirm("Bạn có chắc chắn muốn xóa kinh nghiệm này?")) return;
         try {
             await axiosInstance.delete(`/user/professional-profile/experience/${id}`);
             fetchExperiences();
-            toast.success("Xóa kinh nghiệm thành công!");
         } catch (error) {
             console.error("Failed to delete experience", error);
-            toast.error("Có lỗi xảy ra khi xóa kinh nghiệm!");
+            alert("Có lỗi xảy ra khi xóa kinh nghiệm!");
         }
     };
 
@@ -149,7 +140,7 @@ const ExperienceSection = () => {
                                         value={formData.description}
                                         onChange={handleChange}
                                         rows="3"
-                                        className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-slate-400 focus:ring-2 focus:ring-[#3AB4E6] transition-all"
+                                        className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-slate-400 focus:ring-2 focus:ring-[#9D5CE9] transition-all"
                                         placeholder="Mô tả công việc, nhiệm vụ chính và thành tích đạt được..."
                                     />
                                 </div>
@@ -208,15 +199,6 @@ const ExperienceSection = () => {
                     </div>
                 )}
             </div>
-
-            <ConfirmDialog
-                isOpen={confirmModal.isOpen}
-                onClose={() => setConfirmModal({ isOpen: false, id: null })}
-                onConfirm={confirmDelete}
-                title="Xóa kinh nghiệm"
-                message="Bạn có chắc chắn muốn xóa kinh nghiệm này?"
-                type="danger"
-            />
         </Card>
     );
 };

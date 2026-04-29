@@ -145,7 +145,6 @@ public class ApplicationMapperUtil {
                 .applicantName(applyForm.getApplicantName())
                 .avatarUrl(avatarUrl)
                 .jobTitle(jobTitle)
-                .companyName(companyName)
                 .companyLogo(companyLogo)
                 .introduction(applyForm.getIntroduction())
                 .cvFileName(cvFileName)

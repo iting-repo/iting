@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Layout, Plus, ExternalLink, Trash2 } from 'lucide-react';
-import { Button, Card, Input, ConfirmDialog } from "../../../../components/common";
+import { Button, Card, Input } from "../../../../components/common";
 import axiosInstance from "../../../../utils/axiosInstance";
-import { toast } from 'sonner';
 
 const PortfolioSection = () => {
     const [portfolios, setPortfolios] = useState([]);
@@ -12,8 +11,6 @@ const PortfolioSection = () => {
         url: '',
         description: ''
     });
-
-    const [confirmModal, setConfirmModal] = useState({ isOpen: false, id: null });
 
     useEffect(() => {
         fetchPortfolios();
@@ -48,26 +45,20 @@ const PortfolioSection = () => {
             setFormData({ title: '', url: '', description: '' });
             setIsAdding(false);
             fetchPortfolios();
-            toast.success("Thêm dự án thành công!");
         } catch (error) {
             console.error("Failed to add portfolio", error);
-            toast.error("Có lỗi xảy ra khi thêm dự án!");
+            alert("Có lỗi xảy ra khi thêm dự án!");
         }
     };
 
-    const handleDelete = (id) => {
-        setConfirmModal({ isOpen: true, id });
-    };
-
-    const confirmDelete = async () => {
-        const id = confirmModal.id;
+    const handleDelete = async (id) => {
+        if (!window.confirm("Bạn có chắc chắn muốn xóa dự án này?")) return;
         try {
             await axiosInstance.delete(`/user/professional-profile/portfolio/${id}`);
             fetchPortfolios();
-            toast.success("Xóa dự án thành công!");
         } catch (error) {
             console.error("Failed to delete portfolio", error);
-            toast.error("Có lỗi xảy ra khi xóa dự án!");
+            alert("Có lỗi xảy ra khi xóa dự án!");
         }
     };
 
@@ -109,7 +100,7 @@ const PortfolioSection = () => {
                                         value={formData.description}
                                         onChange={handleChange}
                                         rows="3"
-                                        className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-slate-400 focus:ring-2 focus:ring-[#3AB4E6] transition-all"
+                                        className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-slate-400 focus:ring-2 focus:ring-[#9D5CE9] transition-all"
                                         placeholder="Mô tả ngắn gọn về dự án, vai trò của bạn..."
                                     />
                                 </div>
@@ -155,14 +146,6 @@ const PortfolioSection = () => {
                     Bạn chưa thêm dự án nào vào Portfolio
                 </div>
             )}
-            <ConfirmDialog
-                isOpen={confirmModal.isOpen}
-                onClose={() => setConfirmModal({ isOpen: false, id: null })}
-                onConfirm={confirmDelete}
-                title="Xóa dự án"
-                message="Bạn có chắc chắn muốn xóa dự án này?"
-                type="danger"
-            />
         </Card>
     );
 };

@@ -1,19 +1,19 @@
--- Migration to add extra fields to Company table and support tables for tech stack and benefits
--- March 16, 2026
+ALTER TABLE Company ADD COLUMN IF NOT EXISTS founded_year INTEGER;
+ALTER TABLE Company ADD COLUMN IF NOT EXISTS Document_review_status VARCHAR(50) DEFAULT 'MISSING';
+ALTER TABLE Company ADD COLUMN IF NOT EXISTS Profile_setup BOOLEAN DEFAULT FALSE;
 
--- 1. Add founded_year column
-ALTER TABLE Company ADD COLUMN founded_year INTEGER;
-
--- 2. Create company_tech_stack table
-CREATE TABLE company_tech_stack (
+CREATE TABLE IF NOT EXISTS company_tech_stack (
     company_id BIGINT NOT NULL,
     tech VARCHAR(255),
-    CONSTRAINT fk_tech_stack_company FOREIGN KEY (company_id) REFERENCES Account(Id) ON DELETE CASCADE
+    CONSTRAINT fk_tech_stack_company FOREIGN KEY (company_id) REFERENCES Company(company_id) ON DELETE CASCADE
 );
 
--- 3. Create company_benefits table
-CREATE TABLE company_benefits (
+CREATE TABLE IF NOT EXISTS company_benefits (
     company_id BIGINT NOT NULL,
     benefit VARCHAR(255),
-    CONSTRAINT fk_benefits_company FOREIGN KEY (company_id) REFERENCES Account(Id) ON DELETE CASCADE
+    CONSTRAINT fk_benefits_company FOREIGN KEY (company_id) REFERENCES Company(company_id) ON DELETE CASCADE
 );
+
+UPDATE Company
+SET Document_review_status = COALESCE(Document_review_status, 'MISSING'),
+    Profile_setup = COALESCE(Profile_setup, FALSE);

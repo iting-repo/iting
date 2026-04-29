@@ -1,57 +1,25 @@
 import axiosInstance from "../utils/axiosInstance";
 
 const applicationService = {
+    // 1. Candidate nộp đơn ứng tuyển
     applyJob: async (data) => {
         const response = await axiosInstance.post('/candidates/applications/apply', data);
         return response;
     },
 
-    getEmployerApplications: async (jobKey, params) => {
-        const response = await axiosInstance.get(`/employer/applications/job/${jobKey}`, { params });
-        return response;
-    },
-    
-    searchEmployerApplications: async (params) => {
-        const response = await axiosInstance.get('/employer/applications/search', { params });
+    // 2. Employer xem danh sách đơn ứng tuyển theo jobId
+    getEmployerApplications: async (jobId, params) => {
+        const response = await axiosInstance.get(`/employer/applications/job/${jobId}`, { params });
         return response;
     },
 
+    // 3. Employer chấp nhận ứng viên
     acceptApplication: async (id, note = "") => {
         const response = await axiosInstance.post(`/employer/applications/${id}/accept`, null, {
             params: { note }
         });
         return response;
-    },
-
-    viewApplication: async (id) => {
-        const response = await axiosInstance.get(`/employer/applications/${id}`);
-        return response;
-    },
-
-    markViewed: async (id) => {
-        const response = await axiosInstance.post(`/employer/applications/${id}/view`);
-        return response;
-    },
-
-    getApplicationDetail: async (id) => {
-        const response = await axiosInstance.get(`/employer/applications/${id}`);
-        return response;
-    },
-
-    checkApplied: async (jobId) => {
-        const response = await axiosInstance.get(`/candidates/applications/check/${jobId}`);
-        return response;
-    },
-
-    getEmployerStats: async () => {
-        const response = await axiosInstance.get('/employer/applications/stats');
-        return response;
-    },
-
-    getMyApplications: async (params) => {
-        const response = await axiosInstance.get('/candidates/applications/my-applications', { params });
-        return response;
-    },
+    }
 };
 
 export default applicationService;

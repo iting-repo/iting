@@ -15,7 +15,6 @@ import {
   FaTimes,
   FaPlus,
 } from "react-icons/fa";
-import { CheckCircle2 } from "lucide-react";
 import { toast } from "sonner";
 import companyService from "../../services/companyService";
 import axiosInstance from "../../utils/axiosInstance";
@@ -24,29 +23,25 @@ import axiosInstance from "../../utils/axiosInstance";
 
 const EXPERIENCE_LEVEL_OPTIONS = [
   { value: "INTERN", label: "Thực tập sinh" },
-  { value: "FRESHER", label: "Mới ra trường / Fresher" },
-  { value: "JUNIOR", label: "Junior (1-2 năm)" },
-  { value: "MIDDLE", label: "Middle (2-4 năm)" },
-  { value: "MID_LEVEL", label: "Mid-level (2-4 năm)" },
-  { value: "SENIOR", label: "Senior (4-7 năm)" },
-  { value: "LEAD", label: "Lead (7+ năm)" },
-  { value: "EXPERT", label: "Chuyên gia" },
-  { value: "MANAGER", label: "Quản lý" },
+  { value: "FRESHER", label: "Fresher" },
+  { value: "JUNIOR", label: "Junior" },
+  { value: "MIDDLE", label: "Middle" },
+  { value: "SENIOR", label: "Senior" },
+  { value: "LEAD", label: "Lead" },
+  { value: "MANAGER", label: "Manager" },
 ];
 
 const JOB_TYPE_OPTIONS = [
-  { value: "FULL_TIME", label: "Toàn thời gian" },
-  { value: "PART_TIME", label: "Bán thời gian" },
-  { value: "CONTRACT", label: "Hợp đồng" },
-  { value: "INTERNSHIP", label: "Thực tập" },
-  { value: "REMOTE", label: "Làm việc từ xa" },
-  { value: "FREELANCE", label: "Tự do" },
+  { value: "FULL_TIME", label: "Full-time" },
+  { value: "PART_TIME", label: "Part-time" },
+  { value: "REMOTE", label: "Remote" },
+  { value: "FREELANCE", label: "Freelance" },
+  { value: "INTERN", label: "Internship" },
 ];
 
 const SALARY_TYPE_OPTIONS = [
   { value: "NEGOTIABLE", label: "Thỏa thuận" },
   { value: "MONTH", label: "Theo tháng" },
-  { value: "YEAR", label: "Theo năm" },
   { value: "PROJECT", label: "Theo dự án" },
   { value: "HOUR", label: "Theo giờ" },
 ];
@@ -96,9 +91,8 @@ function SearchableSelect({ name, value, onChange, options, disabled, placeholde
     <div ref={containerRef} className="relative">
       <div
         onClick={() => { if (!disabled) setIsOpen(!isOpen); }}
-        className={`w-full px-4 py-3 border border-gray-200 rounded-lg bg-white text-sm cursor-pointer flex items-center justify-between ${
-          disabled ? "bg-gray-100 cursor-not-allowed text-gray-400" : "text-gray-600 hover:border-gray-300"
-        }`}
+        className={`w-full px-4 py-3 border border-gray-200 rounded-lg bg-white text-sm cursor-pointer flex items-center justify-between ${disabled ? "bg-gray-100 cursor-not-allowed text-gray-400" : "text-gray-600 hover:border-gray-300"
+          }`}
       >
         <span className={selectedLabel ? "text-gray-800" : "text-gray-400"}>
           {loading ? "Đang tải..." : selectedLabel || placeholder || "Chọn..."}
@@ -129,9 +123,8 @@ function SearchableSelect({ name, value, onChange, options, disabled, placeholde
                   setIsOpen(false);
                   setSearch("");
                 }}
-                className={`px-4 py-2.5 text-sm cursor-pointer hover:bg-blue-50 transition-colors ${
-                  value === o.name ? "bg-blue-50 text-[#1967D2] font-medium" : "text-gray-700"
-                }`}
+                className={`px-4 py-2.5 text-sm cursor-pointer hover:bg-blue-50 transition-colors ${value === o.name ? "bg-blue-50 text-[#1967D2] font-medium" : "text-gray-700"
+                  }`}
               >
                 {o.name}
               </div>
@@ -171,27 +164,6 @@ const DEFAULT_TECH_OPTIONS = [
   "Tailwind CSS",
 ];
 
-const normalizeMultiValueField = (value) => {
-  if (Array.isArray(value)) {
-    return value.map((item) => String(item).trim()).filter(Boolean);
-  }
-
-  if (typeof value === "string") {
-    return value
-      .split(",")
-      .map((item) => item.trim())
-      .filter(Boolean);
-  }
-
-  return [];
-};
-
-const normalizeExperienceLevel = (value) => {
-  if (!value) return "";
-  if (value === "MIDDLE") return "MID_LEVEL";
-  return value;
-};
-
 function EditorToolbar() {
   return (
     <div className="bg-gray-50 border-b border-gray-200 px-3 py-2 flex gap-4 text-gray-500 mb-2">
@@ -227,7 +199,6 @@ function MultiSelectTagInput({
   setSelectedValues,
   options,
   placeholder,
-  error,
 }) {
   const [customValue, setCustomValue] = useState("");
 
@@ -319,11 +290,20 @@ function MultiSelectTagInput({
           </div>
         </div>
       </div>
-
-      {error ? <p className="text-red-500 text-xs mt-1">{error}</p> : null}
     </div>
   );
 }
+
+const normalizeMultiValueField = (value) => {
+  if (!value) return [];
+  if (Array.isArray(value)) {
+    return value.map((item) => String(item).trim()).filter(Boolean);
+  }
+  return String(value)
+    .split(",")
+    .map((item) => item.trim())
+    .filter(Boolean);
+};
 
 const PostJob = ({
   onClose,
@@ -346,9 +326,11 @@ const PostJob = ({
   const initialFormState = useMemo(() => ({
     jobTitle: initialData?.title || "",
     jobPosition: normalizeMultiValueField(initialData?.position),
-    techStack: normalizeMultiValueField(initialData?.skills),
+    techStack: normalizeMultiValueField(
+      initialData?.skills || initialData?.techRequired,
+    ),
     workType: initialData?.jobType || "",
-    experienceLevel: normalizeExperienceLevel(initialData?.experienceLevel),
+    experienceLevel: initialData?.experienceLevel || "",
     workingDays: initialData?.workingDays || "",
     quantity: initialData?.maxAccept ?? "",
     deadline: initialData?.dueDate || "",
@@ -362,23 +344,22 @@ const PostJob = ({
     responsibilities: initialData?.responsibilities || "",
     requirements: initialData?.requirements || "",
     benefits: initialData?.benefits || "",
-  }), [initialData]);
+  }),
+    [initialData],
+  );
 
   const [formData, setFormData] = useState(initialFormState);
-
-  const hasChanges = useMemo(() => {
-    if (!isEdit) return true;
-    return JSON.stringify(formData) !== JSON.stringify(initialFormState);
-  }, [formData, initialFormState, isEdit]);
-
   const [errors, setErrors] = useState({});
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const [provinces, setProvinces] = useState([]);
   const [wards, setWards] = useState([]);
   const [loadingWards, setLoadingWards] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
   const [availableTechOptions, setAvailableTechOptions] = useState(DEFAULT_TECH_OPTIONS);
   const [availablePositionOptions, setAvailablePositionOptions] = useState(DEFAULT_POSITION_OPTIONS);
+
+  useEffect(() => {
+    setFormData(initialFormState);
+  }, [initialFormState]);
 
   useEffect(() => {
     fetch("https://provinces.open-api.vn/api/v2/p/")
@@ -401,7 +382,7 @@ const PostJob = ({
         console.error("Failed to fetch skills", err);
       }
     };
-    
+
     const fetchPositions = async () => {
       try {
         const data = await axiosInstance.get('/public/categories/position');
@@ -458,9 +439,6 @@ const PostJob = ({
     if (!formData.experienceLevel) newErrors.experienceLevel = "Bắt buộc";
     if (!formData.workingDays) newErrors.workingDays = "Bắt buộc";
     if (!formData.quantity) newErrors.quantity = "Bắt buộc";
-    if (formData.quantity && Number(formData.quantity) <= 0) {
-      newErrors.quantity = "Số lượng cần tuyển phải lớn hơn 0";
-    }
     if (!formData.deadline) newErrors.deadline = "Bắt buộc";
     else {
       const today = new Date();
@@ -496,13 +474,9 @@ const PostJob = ({
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!validate()) {
-      toast.error("Vui long kiem tra lai cac truong bat buoc.");
-      return;
-    }
+    if (!validate()) return;
 
     try {
-      setIsSubmitting(true);
       const selectedProvince = provinces.find(
         (p) => p.name === formData.province,
       );
@@ -531,7 +505,7 @@ const PostJob = ({
         province: formData.province || null,
         ward: formData.ward || null,
         address: formData.address.trim() || null,
-        locId: null,
+        locId: selectedProvince ? Number(selectedProvince.code) : null,
 
         description: formData.description.trim() || "",
         responsibilities: formData.responsibilities.trim() || "",
@@ -550,8 +524,6 @@ const PostJob = ({
       } else {
         result = await companyService.createEmployerJob(payload);
         toast.success("Đăng bài thành công");
-        setShowSuccess(true);
-        return; // Dừng lại ở màn hình thông báo thành công
       }
 
       if (onSubmitSuccess) {
@@ -561,15 +533,10 @@ const PostJob = ({
       handleClose();
     } catch (error) {
       console.error("Lỗi lưu công việc:", error);
-      // Kiểm tra lỗi từ axios interceptor (đã unwrap error.response.data)
-      const errorMessage = error?.error || 
-                          error?.message || 
-                          error?.response?.data?.error || 
-                          error?.response?.data?.message || 
-                          "Lưu công việc thất bại, vui lòng thử lại";
-      toast.error(errorMessage);
-    } finally {
-      setIsSubmitting(false);
+      toast.error(
+        error?.response?.data?.message ||
+        "Lưu công việc thất bại, vui lòng thử lại",
+      );
     }
   };
 
@@ -607,7 +574,7 @@ const PostJob = ({
       px-4 py-6"
       onClick={handleClose}
     >
-      <div 
+      <div
         className="w-full max-w-6xl max-h-[92vh] overflow-y-auto bg-white rounded-2xl shadow-2xl border border-gray-100 animate-fade-in"
         onClick={(e) => e.stopPropagation()}
       >
@@ -633,461 +600,451 @@ const PostJob = ({
         </div>
 
         <div className="p-8">
-          {showSuccess ? (
-            <div className="py-12 flex flex-col items-center text-center animate-fade-in">
-              <div className="w-24 h-24 bg-green-50 rounded-full flex items-center justify-center mb-6">
-                <CheckCircle2 className="w-12 h-12 text-green-500" />
-              </div>
-              <h3 className="text-3xl font-bold text-gray-800 mb-4">Đăng bài thành công!</h3>
-              <p className="text-lg text-gray-600 max-w-md mx-auto leading-relaxed">
-                Tin tuyển dụng của bạn đã được gửi và đang được 
-                <span className="font-bold text-sky-600"> AI tự động kiểm duyệt</span>. 
-                Hãy kiểm tra trạng thái tại trang Quản lý công việc.
-              </p>
-              <div className="mt-10 flex gap-4">
-                <button
-                  onClick={() => {
-                    if (onSubmitSuccess) onSubmitSuccess();
-                    handleClose();
-                  }}
-                  className="px-8 py-4 bg-sky-500 hover:bg-sky-600 text-white rounded-xl font-bold transition-all shadow-lg shadow-sky-100"
-                >
-                  Về trang quản lý
-                </button>
-              </div>
-            </div>
-          ) : (
-            <form onSubmit={handleSubmit}>
-            <div className="mb-8">
-              <h3 className="text-lg font-bold text-gray-800 mb-4">
-                Tiêu đề công việc
-              </h3>
-              <input
-                type="text"
-                name="jobTitle"
-                value={formData.jobTitle}
-                maxLength={MAX_TITLE_LENGTH}
-                placeholder="Thêm tiêu đề vào đây"
-                className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:border-[#3AB4E6] text-sm ${
-                  formData.jobTitle.length >= MAX_TITLE_LENGTH ? 'border-red-300' : 'border-gray-200'
-                }`}
-                onChange={handleChange}
-              />
-              <div className="flex justify-between items-center mt-1">
-                {errors.jobTitle ? (
-                  <p className="text-red-500 text-xs">{errors.jobTitle}</p>
-                ) : <span />}
-                <span className={`text-xs ${
-                  formData.jobTitle.length >= MAX_TITLE_LENGTH ? 'text-red-500 font-medium' : 'text-gray-400'
-                }`}>
-                  {formData.jobTitle.length}/{MAX_TITLE_LENGTH}
-                </span>
-              </div>
-            </div>
-
-            <div className="mb-8">
-              <h3 className="text-lg font-bold text-gray-800 mb-4">
-                Thông tin chi tiết
-              </h3>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                <MultiSelectTagInput
-                  label="Vị trí tuyển dụng"
-                  selectedValues={formData.jobPosition}
-                  setSelectedValues={(value) =>
-                    setFormData((prev) => ({ ...prev, jobPosition: value }))
-                  }
-                  options={availablePositionOptions}
-                  placeholder="Nhập vị trí mới"
-                  error={errors.jobPosition}
-                />
-
-                <MultiSelectTagInput
-                  label="Công nghệ yêu cầu"
-                  selectedValues={formData.techStack}
-                  setSelectedValues={(value) =>
-                    setFormData((prev) => ({ ...prev, techStack: value }))
-                  }
-                  options={availableTechOptions}
-                  placeholder="Nhập công nghệ mới"
-                  error={errors.techStack}
-                />
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
-                <div>
-                  <label className="block text-gray-700 text-sm font-medium mb-2">
-                    Hình thức làm việc
-                  </label>
-                  <div className="relative">
-                    <select
-                      name="workType"
-                      value={formData.workType}
-                      onChange={handleChange}
-                      className="w-full px-4 py-3 border border-gray-200 rounded-lg appearance-none bg-white focus:outline-none focus:border-[#3AB4E6] text-gray-600 text-sm"
-                    >
-                      <option value="">Chọn...</option>
-                      {JOB_TYPE_OPTIONS.map((item) => (
-                        <option key={item.value} value={item.value}>
-                          {item.label}
-                        </option>
-                      ))}
-                    </select>
-                    <FaChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 text-xs pointer-events-none" />
-                  </div>
-                  {errors.workType && (
-                    <p className="text-red-500 text-xs mt-1">
-                      {errors.workType}
-                    </p>
-                  )}
+          {
+            showSuccess ? (
+              <div className="py-12 flex flex-col items-center text-center animate-fade-in">
+                <div className="w-24 h-24 bg-green-50 rounded-full flex items-center justify-center mb-6">
+                  <CheckCircle2 className="w-12 h-12 text-green-500" />
                 </div>
-
-                <div>
-                  <label className="block text-gray-700 text-sm font-medium mb-2">
-                    Kinh nghiệm
-                  </label>
-                  <div className="relative">
-                    <select
-                      name="experienceLevel"
-                      value={formData.experienceLevel}
-                      onChange={handleChange}
-                      className="w-full px-4 py-3 border border-gray-200 rounded-lg appearance-none bg-white focus:outline-none focus:border-[#3AB4E6] text-gray-600 text-sm"
-                    >
-                      <option value="">Chọn...</option>
-                      {EXPERIENCE_LEVEL_OPTIONS.map((item) => (
-                        <option key={item.value} value={item.value}>
-                          {item.label}
-                        </option>
-                      ))}
-                    </select>
-                    <FaChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 text-xs pointer-events-none" />
-                  </div>
-                  {errors.experienceLevel && (
-                    <p className="text-red-500 text-xs mt-1">
-                      {errors.experienceLevel}
-                    </p>
-                  )}
-                </div>
-
-                <div>
-                  <label className="block text-gray-700 text-sm font-medium mb-2">
-                    Ngày làm việc
-                  </label>
-                  <div className="relative">
-                    <select
-                      name="workingDays"
-                      value={formData.workingDays}
-                      onChange={handleChange}
-                      className="w-full px-4 py-3 border border-gray-200 rounded-lg appearance-none bg-white focus:outline-none focus:border-[#3AB4E6] text-gray-600 text-sm"
-                    >
-                      <option value="">Chọn...</option>
-                      {WORKING_DAYS_OPTIONS.map((item) => (
-                        <option key={item.value} value={item.value}>
-                          {item.label}
-                        </option>
-                      ))}
-                    </select>
-                    <FaChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 text-xs pointer-events-none" />
-                  </div>
-                  {errors.workingDays && (
-                    <p className="text-red-500 text-xs mt-1">
-                      {errors.workingDays}
-                    </p>
-                  )}
-                </div>
-
-                <div>
-                  <label className="block text-gray-700 text-sm font-medium mb-2">
-                    Số lượng cần tuyển
-                  </label>
-                  <input
-                    type="number"
-                    name="quantity"
-                    min="1"
-                    value={formData.quantity}
-                    placeholder="Nhập số lượng"
-                    className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:border-[#3AB4E6] text-sm"
-                    onChange={handleChange}
-                  />
-                  {errors.quantity && (
-                    <p className="text-red-500 text-xs mt-1">
-                      {errors.quantity}
-                    </p>
-                  )}
+                <h3 className="text-3xl font-bold text-gray-800 mb-4">Đăng bài thành công!</h3>
+                <p className="text-lg text-gray-600 max-w-md mx-auto leading-relaxed">
+                  Tin tuyển dụng của bạn đã được gửi và đang được
+                  <span className="font-bold text-sky-600"> AI tự động kiểm duyệt</span>.
+                  Hãy kiểm tra trạng thái tại trang Quản lý công việc.
+                </p>
+                <div className="mt-10 flex gap-4">
+                  <button
+                    onClick={() => {
+                      if (onSubmitSuccess) onSubmitSuccess();
+                      handleClose();
+                    }}
+                    className="px-8 py-4 bg-sky-500 hover:bg-sky-600 text-white rounded-xl font-bold transition-all shadow-lg shadow-sky-100"
+                  >
+                    Về trang quản lý
+                  </button>
                 </div>
               </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-1 gap-6">
-                <div>
-                  <label className="block text-gray-700 text-sm font-medium mb-2">
-                    Ngày hết hạn
-                  </label>
-                  <input
-                    type="date"
-                    name="deadline"
-                    value={formData.deadline}
-                    min={todayStr}
-                    className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:border-[#3AB4E6] text-sm text-gray-500 ${
-                      errors.deadline ? 'border-red-300' : 'border-gray-200'
-                    }`}
-                    onChange={handleChange}
-                  />
-                  {errors.deadline && (
-                    <p className="text-red-500 text-xs mt-1">
-                      {errors.deadline}
-                    </p>
-                  )}
-                </div>
-              </div>
-            </div>
-
-            <div className="mb-8">
-              <h3 className="text-lg font-bold text-gray-800 mb-4">
-                Địa chỉ làm việc
-              </h3>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div>
-                  <label className="block text-gray-700 text-sm font-medium mb-2">
-                    Tỉnh/Thành phố
-                  </label>
-                  <SearchableSelect
-                    name="province"
-                    value={formData.province}
-                    onChange={handleChange}
-                    options={provinces}
-                    placeholder="Chọn tỉnh/thành phố..."
-                  />
-                  {errors.province && (
-                    <p className="text-red-500 text-xs mt-1">
-                      {errors.province}
-                    </p>
-                  )}
-                </div>
-
-                <div>
-                  <label className="block text-gray-700 text-sm font-medium mb-2">
-                    Phường/Xã
-                  </label>
-                  <SearchableSelect
-                    name="ward"
-                    value={formData.ward}
-                    onChange={handleChange}
-                    options={wards}
-                    disabled={!formData.province || loadingWards}
-                    placeholder="Chọn phường/xã..."
-                    loading={loadingWards}
-                  />
-                  {errors.ward && (
-                    <p className="text-red-500 text-xs mt-1">{errors.ward}</p>
-                  )}
-                </div>
-
-                <div>
-                  <label className="block text-gray-700 text-sm font-medium mb-2">
-                    Địa chỉ cụ thể
-                  </label>
+            ) : (
+              <form onSubmit={handleSubmit}>
+                <div className="mb-8">
+                  <h3 className="text-lg font-bold text-gray-800 mb-4">
+                    Tiêu đề công việc
+                  </h3>
                   <input
                     type="text"
-                    name="address"
-                    value={formData.address}
-                    placeholder="Nhập vị trí cụ thể"
-                    className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:border-[#3AB4E6] text-sm"
+                    name="jobTitle"
+                    value={formData.jobTitle}
+                    maxLength={MAX_TITLE_LENGTH}
+                    placeholder="Thêm tiêu đề vào đây"
+                    className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:border-[#3AB4E6] text-sm ${formData.jobTitle.length >= MAX_TITLE_LENGTH ? 'border-red-300' : 'border-gray-200'
+                      }`}
                     onChange={handleChange}
                   />
-                  {errors.address && (
-                    <p className="text-red-500 text-xs mt-1">
-                      {errors.address}
-                    </p>
-                  )}
-                </div>
-              </div>
-            </div>
-
-            <div className="mb-8">
-              <h3 className="text-lg font-bold text-gray-800 mb-4">
-                Mức lương
-              </h3>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div>
-                  <label className="block text-gray-700 text-sm font-medium mb-2">
-                    Tối thiểu
-                  </label>
-                  <div className="relative">
-                    <input
-                      type="text"
-                      name="minSalary"
-                      value={formatSalaryDisplay(formData.minSalary)}
-                      placeholder="Giá trị tối thiểu..."
-                      disabled={formData.salaryType === "NEGOTIABLE"}
-                      className="w-full px-4 py-3 pr-14 border border-gray-200 rounded-lg focus:outline-none focus:border-[#3AB4E6] text-sm disabled:bg-gray-100"
-                      onChange={handleChange}
-                    />
-                    <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 text-xs font-bold">
-                      VND
+                  <div className="flex justify-between items-center mt-1">
+                    {errors.jobTitle ? (
+                      <p className="text-red-500 text-xs">{errors.jobTitle}</p>
+                    ) : <span />}
+                    <span className={`text-xs ${formData.jobTitle.length >= MAX_TITLE_LENGTH ? 'text-red-500 font-medium' : 'text-gray-400'
+                      }`}>
+                      {formData.jobTitle.length}/{MAX_TITLE_LENGTH}
                     </span>
                   </div>
-                  {errors.minSalary && (
-                    <p className="text-red-500 text-xs mt-1">
-                      {errors.minSalary}
-                    </p>
-                  )}
                 </div>
 
-                <div>
-                  <label className="block text-gray-700 text-sm font-medium mb-2">
-                    Tối đa
-                  </label>
-                  <div className="relative">
-                    <input
-                      type="text"
-                      name="maxSalary"
-                      value={formatSalaryDisplay(formData.maxSalary)}
-                      placeholder="Giá trị tối đa..."
-                      disabled={formData.salaryType === "NEGOTIABLE"}
-                      className="w-full px-4 py-3 pr-14 border border-gray-200 rounded-lg focus:outline-none focus:border-[#3AB4E6] text-sm disabled:bg-gray-100"
-                      onChange={handleChange}
+                <div className="mb-8">
+                  <h3 className="text-lg font-bold text-gray-800 mb-4">
+                    Thông tin chi tiết
+                  </h3>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                    <MultiSelectTagInput
+                      label="Vị trí tuyển dụng"
+                      selectedValues={formData.jobPosition}
+                      setSelectedValues={(value) =>
+                        setFormData((prev) => ({ ...prev, jobPosition: value }))
+                      }
+                      options={availablePositionOptions}
+                      placeholder="Nhập vị trí mới"
                     />
-                    <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 text-xs font-bold">
-                      VND
-                    </span>
+
+                    <MultiSelectTagInput
+                      label="Công nghệ yêu cầu"
+                      selectedValues={formData.techStack}
+                      setSelectedValues={(value) =>
+                        setFormData((prev) => ({ ...prev, techStack: value }))
+                      }
+                      options={availableTechOptions}
+                      placeholder="Nhập công nghệ mới"
+                    />
                   </div>
-                  {errors.maxSalary && (
-                    <p className="text-red-500 text-xs mt-1">
-                      {errors.maxSalary}
-                    </p>
-                  )}
-                </div>
 
-                <div>
-                  <label className="block text-gray-700 text-sm font-medium mb-2">
-                    Hình thức trả lương
-                  </label>
-                  <div className="relative">
-                    <select
-                      name="salaryType"
-                      value={formData.salaryType}
-                      onChange={handleChange}
-                      className="w-full px-4 py-3 border border-gray-200 rounded-lg appearance-none bg-white focus:outline-none focus:border-[#3AB4E6] text-gray-600 text-sm"
-                    >
-                      {SALARY_TYPE_OPTIONS.map((item) => (
-                        <option key={item.value} value={item.value}>
-                          {item.label}
-                        </option>
-                      ))}
-                    </select>
-                    <FaChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 text-xs pointer-events-none" />
+                  <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
+                    <div>
+                      <label className="block text-gray-700 text-sm font-medium mb-2">
+                        Hình thức làm việc
+                      </label>
+                      <div className="relative">
+                        <select
+                          name="workType"
+                          value={formData.workType}
+                          onChange={handleChange}
+                          className="w-full px-4 py-3 border border-gray-200 rounded-lg appearance-none bg-white focus:outline-none focus:border-[#3AB4E6] text-gray-600 text-sm"
+                        >
+                          <option value="">Chọn...</option>
+                          {JOB_TYPE_OPTIONS.map((item) => (
+                            <option key={item.value} value={item.value}>
+                              {item.label}
+                            </option>
+                          ))}
+                        </select>
+                        <FaChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 text-xs pointer-events-none" />
+                      </div>
+                      {errors.workType && (
+                        <p className="text-red-500 text-xs mt-1">
+                          {errors.workType}
+                        </p>
+                      )}
+                    </div>
+
+                    <div>
+                      <label className="block text-gray-700 text-sm font-medium mb-2">
+                        Kinh nghiệm
+                      </label>
+                      <div className="relative">
+                        <select
+                          name="experienceLevel"
+                          value={formData.experienceLevel}
+                          onChange={handleChange}
+                          className="w-full px-4 py-3 border border-gray-200 rounded-lg appearance-none bg-white focus:outline-none focus:border-[#3AB4E6] text-gray-600 text-sm"
+                        >
+                          <option value="">Chọn...</option>
+                          {EXPERIENCE_LEVEL_OPTIONS.map((item) => (
+                            <option key={item.value} value={item.value}>
+                              {item.label}
+                            </option>
+                          ))}
+                        </select>
+                        <FaChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 text-xs pointer-events-none" />
+                      </div>
+                      {errors.experienceLevel && (
+                        <p className="text-red-500 text-xs mt-1">
+                          {errors.experienceLevel}
+                        </p>
+                      )}
+                    </div>
+
+                    <div>
+                      <label className="block text-gray-700 text-sm font-medium mb-2">
+                        Ngày làm việc
+                      </label>
+                      <div className="relative">
+                        <select
+                          name="workingDays"
+                          value={formData.workingDays}
+                          onChange={handleChange}
+                          className="w-full px-4 py-3 border border-gray-200 rounded-lg appearance-none bg-white focus:outline-none focus:border-[#3AB4E6] text-gray-600 text-sm"
+                        >
+                          <option value="">Chọn...</option>
+                          {WORKING_DAYS_OPTIONS.map((item) => (
+                            <option key={item.value} value={item.value}>
+                              {item.label}
+                            </option>
+                          ))}
+                        </select>
+                        <FaChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 text-xs pointer-events-none" />
+                      </div>
+                      {errors.workingDays && (
+                        <p className="text-red-500 text-xs mt-1">
+                          {errors.workingDays}
+                        </p>
+                      )}
+                    </div>
+
+                    <div>
+                      <label className="block text-gray-700 text-sm font-medium mb-2">
+                        Số lượng cần tuyển
+                      </label>
+                      <input
+                        type="number"
+                        name="quantity"
+                        value={formData.quantity}
+                        placeholder="Nhập số lượng"
+                        className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:border-[#3AB4E6] text-sm"
+                        onChange={handleChange}
+                      />
+                      {errors.quantity && (
+                        <p className="text-red-500 text-xs mt-1">
+                          {errors.quantity}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-1 gap-6">
+                    <div>
+                      <label className="block text-gray-700 text-sm font-medium mb-2">
+                        Ngày hết hạn
+                      </label>
+                      <input
+                        type="date"
+                        name="deadline"
+                        value={formData.deadline}
+                        min={todayStr}
+                        className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:border-[#3AB4E6] text-sm text-gray-500 ${errors.deadline ? 'border-red-300' : 'border-gray-200'
+                          }`}
+                        onChange={handleChange}
+                      />
+                      {errors.deadline && (
+                        <p className="text-red-500 text-xs mt-1">
+                          {errors.deadline}
+                        </p>
+                      )}
+                    </div>
                   </div>
                 </div>
-              </div>
-            </div>
 
-            <div className="mb-10">
-              <h3 className="text-lg font-bold text-gray-800 mb-4">
-                Mô tả công việc & Trách nhiệm
-              </h3>
+                <div className="mb-8">
+                  <h3 className="text-lg font-bold text-gray-800 mb-4">
+                    Địa chỉ làm việc
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div>
+                      <label className="block text-gray-700 text-sm font-medium mb-2">
+                        Tỉnh/Thành phố
+                      </label>
+                      <SearchableSelect
+                        name="province"
+                        value={formData.province}
+                        onChange={handleChange}
+                        options={provinces}
+                        placeholder="Chọn tỉnh/thành phố..."
+                      />
+                      {errors.province && (
+                        <p className="text-red-500 text-xs mt-1">
+                          {errors.province}
+                        </p>
+                      )}
+                    </div>
 
-              <div className="mb-6">
-                <label className="block text-gray-700 text-sm font-medium mb-2">
-                  Mô tả
-                </label>
-                <div className="border border-gray-200 rounded-lg overflow-hidden focus-within:border-[#3AB4E6] transition-colors">
-                  <EditorToolbar />
-                  <textarea
-                    name="description"
-                    value={formData.description}
-                    className="w-full p-4 h-40 focus:outline-none resize-none text-sm text-gray-600"
-                    placeholder="Thêm mô tả công việc tại đây..."
-                    onChange={handleChange}
-                  />
+                    <div>
+                      <label className="block text-gray-700 text-sm font-medium mb-2">
+                        Phường/Xã
+                      </label>
+                      <SearchableSelect
+                        name="ward"
+                        value={formData.ward}
+                        onChange={handleChange}
+                        options={wards}
+                        disabled={!formData.province || loadingWards}
+                        placeholder="Chọn phường/xã..."
+                        loading={loadingWards}
+                      />
+                      {
+                        errors.ward && (
+                          <p className="text-red-500 text-xs mt-1">{errors.ward}</p>
+                        )
+                      }
+                    </div >
+
+                    <div>
+                      <label className="block text-gray-700 text-sm font-medium mb-2">
+                        Địa chỉ cụ thể
+                      </label>
+                      <input
+                        type="text"
+                        name="address"
+                        value={formData.address}
+                        placeholder="Nhập vị trí cụ thể"
+                        className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:border-[#3AB4E6] text-sm"
+                        onChange={handleChange}
+                      />
+                      {errors.address && (
+                        <p className="text-red-500 text-xs mt-1">
+                          {errors.address}
+                        </p>
+                      )}
+                    </div>
+                  </div >
+                </div >
+
+                <div className="mb-8">
+                  <h3 className="text-lg font-bold text-gray-800 mb-4">
+                    Mức lương
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div>
+                      <label className="block text-gray-700 text-sm font-medium mb-2">
+                        Tối thiểu
+                      </label>
+                      <div className="relative">
+                        <input
+                          type="text"
+                          name="minSalary"
+                          value={formatSalaryDisplay(formData.minSalary)}
+                          placeholder="Giá trị tối thiểu..."
+                          disabled={formData.salaryType === "NEGOTIABLE"}
+                          className="w-full px-4 py-3 pr-14 border border-gray-200 rounded-lg focus:outline-none focus:border-[#3AB4E6] text-sm disabled:bg-gray-100"
+                          onChange={handleChange}
+                        />
+                        <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 text-xs font-bold">
+                          VND
+                        </span>
+                      </div>
+                      {errors.minSalary && (
+                        <p className="text-red-500 text-xs mt-1">
+                          {errors.minSalary}
+                        </p>
+                      )}
+                    </div>
+
+                    <div>
+                      <label className="block text-gray-700 text-sm font-medium mb-2">
+                        Tối đa
+                      </label>
+                      <div className="relative">
+                        <input
+                          type="text"
+                          name="maxSalary"
+                          value={formatSalaryDisplay(formData.maxSalary)}
+                          placeholder="Giá trị tối đa..."
+                          disabled={formData.salaryType === "NEGOTIABLE"}
+                          className="w-full px-4 py-3 pr-14 border border-gray-200 rounded-lg focus:outline-none focus:border-[#3AB4E6] text-sm disabled:bg-gray-100"
+                          onChange={handleChange}
+                        />
+                        <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 text-xs font-bold">
+                          VND
+                        </span>
+                      </div>
+                      {errors.maxSalary && (
+                        <p className="text-red-500 text-xs mt-1">
+                          {errors.maxSalary}
+                        </p>
+                      )}
+                    </div>
+
+                    <div>
+                      <label className="block text-gray-700 text-sm font-medium mb-2">
+                        Hình thức trả lương
+                      </label>
+                      <div className="relative">
+                        <select
+                          name="salaryType"
+                          value={formData.salaryType}
+                          onChange={handleChange}
+                          className="w-full px-4 py-3 border border-gray-200 rounded-lg appearance-none bg-white focus:outline-none focus:border-[#3AB4E6] text-gray-600 text-sm"
+                        >
+                          {SALARY_TYPE_OPTIONS.map((item) => (
+                            <option key={item.value} value={item.value}>
+                              {item.label}
+                            </option>
+                          ))}
+                        </select>
+                        <FaChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 text-xs pointer-events-none" />
+                      </div>
+                    </div>
+                  </div>
                 </div>
-                {errors.description && (
-                  <p className="text-red-500 text-xs mt-1">
-                    {errors.description}
-                  </p>
-                )}
-              </div>
 
-              <div className="mb-6">
-                <label className="block text-gray-700 text-sm font-medium mb-2">
-                  Trách nhiệm
-                </label>
-                <div className="border border-gray-200 rounded-lg overflow-hidden focus-within:border-[#3AB4E6] transition-colors">
-                  <EditorToolbar />
-                  <textarea
-                    name="responsibilities"
-                    value={formData.responsibilities}
-                    className="w-full p-4 h-40 focus:outline-none resize-none text-sm text-gray-600"
-                    placeholder="Thêm trách nhiệm công việc tại đây..."
-                    onChange={handleChange}
-                  />
+                <div className="mb-10">
+                  <h3 className="text-lg font-bold text-gray-800 mb-4">
+                    Mô tả công việc & Trách nhiệm
+                  </h3>
+
+                  <div className="mb-6">
+                    <label className="block text-gray-700 text-sm font-medium mb-2">
+                      Mô tả
+                    </label>
+                    <div className="border border-gray-200 rounded-lg overflow-hidden focus-within:border-[#3AB4E6] transition-colors">
+                      <EditorToolbar />
+                      <textarea
+                        name="description"
+                        value={formData.description}
+                        className="w-full p-4 h-40 focus:outline-none resize-none text-sm text-gray-600"
+                        placeholder="Add your job description..."
+                        onChange={handleChange}
+                      />
+                    </div>
+                    {errors.description && (
+                      <p className="text-red-500 text-xs mt-1">
+                        {errors.description}
+                      </p>
+                    )}
+                  </div>
+
+                  <div className="mb-6">
+                    <label className="block text-gray-700 text-sm font-medium mb-2">
+                      Trách nhiệm
+                    </label>
+                    <div className="border border-gray-200 rounded-lg overflow-hidden focus-within:border-[#3AB4E6] transition-colors">
+                      <EditorToolbar />
+                      <textarea
+                        name="responsibilities"
+                        value={formData.responsibilities}
+                        className="w-full p-4 h-40 focus:outline-none resize-none text-sm text-gray-600"
+                        placeholder="Add your job responsibilities..."
+                        onChange={handleChange}
+                      />
+                    </div>
+                  </div>
                 </div>
-              </div>
-            </div>
 
-            <div className="mb-10">
-              <h3 className="text-lg font-bold text-gray-800 mb-4">
-                Yêu cầu & Quyền lợi
-              </h3>
+                <div className="mb-10">
+                  <h3 className="text-lg font-bold text-gray-800 mb-4">
+                    Yêu cầu & Quyền lợi
+                  </h3>
 
-              <div className="mb-6">
-                <label className="block text-gray-700 text-sm font-medium mb-2">
-                  Yêu cầu ứng viên
-                </label>
-                <div className="border border-gray-200 rounded-lg overflow-hidden focus-within:border-[#3AB4E6] transition-colors">
-                  <EditorToolbar />
-                  <textarea
-                    name="requirements"
-                    value={formData.requirements}
-                    className="w-full p-4 h-40 focus:outline-none resize-none text-sm text-gray-600"
-                    placeholder="Ví dụ: Tốt nghiệp đại học ngành CNTT, có kinh nghiệm 1 năm với ReactJS..."
-                    onChange={handleChange}
-                  />
+                  <div className="mb-6">
+                    <label className="block text-gray-700 text-sm font-medium mb-2">
+                      Yêu cầu ứng viên
+                    </label>
+                    <div className="border border-gray-200 rounded-lg overflow-hidden focus-within:border-[#3AB4E6] transition-colors">
+                      <EditorToolbar />
+                      <textarea
+                        name="requirements"
+                        value={formData.requirements}
+                        className="w-full p-4 h-40 focus:outline-none resize-none text-sm text-gray-600"
+                        placeholder="Ví dụ: Tốt nghiệp đại học ngành CNTT, có kinh nghiệm 1 năm với ReactJS..."
+                        onChange={handleChange}
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-gray-700 text-sm font-medium mb-2">
+                      Quyền lợi
+                    </label>
+                    <div className="border border-gray-200 rounded-lg overflow-hidden focus-within:border-[#3AB4E6] transition-colors">
+                      <EditorToolbar />
+                      <textarea
+                        name="benefits"
+                        value={formData.benefits}
+                        className="w-full p-4 h-40 focus:outline-none resize-none text-sm text-gray-600"
+                        placeholder="Ví dụ: Lương tháng 13, bảo hiểm sức khỏe, team building hàng quý..."
+                        onChange={handleChange}
+                      />
+                    </div>
+                  </div>
                 </div>
-              </div>
 
-              <div>
-                <label className="block text-gray-700 text-sm font-medium mb-2">
-                  Quyền lợi
-                </label>
-                <div className="border border-gray-200 rounded-lg overflow-hidden focus-within:border-[#3AB4E6] transition-colors">
-                  <EditorToolbar />
-                  <textarea
-                    name="benefits"
-                    value={formData.benefits}
-                    className="w-full p-4 h-40 focus:outline-none resize-none text-sm text-gray-600"
-                    placeholder="Ví dụ: Lương tháng 13, bảo hiểm sức khỏe, team building hàng quý..."
-                    onChange={handleChange}
-                  />
+                <div className="flex items-center justify-end gap-3 pt-4 border-t border-gray-100">
+                  <button
+                    type="button"
+                    onClick={handleClose}
+                    className="border border-gray-200 text-gray-700 font-semibold py-3 px-6 rounded-lg transition-colors hover:bg-gray-50"
+                  >
+                    Hủy
+                  </button>
+
+                  <button
+                    type="submit"
+                    className="bg-[#1967D2] hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-lg transition-colors flex items-center gap-2"
+                  >
+                    {isEdit ? "Cập nhật · Chờ duyệt lại" : "Đăng bài"}
+                    <FaArrowRight size={14} />
+                  </button>
                 </div>
-              </div>
-            </div>
-
-            <div className="flex items-center justify-end gap-3 pt-4 border-t border-gray-100">
-              <button
-                type="button"
-                onClick={onClose}
-                className="border border-gray-200 text-gray-700 font-semibold py-3 px-6 rounded-lg transition-colors hover:bg-gray-50"
-              >
-                Hủy
-              </button>
-
-              <button
-                type="submit"
-                disabled={!hasChanges || isSubmitting}
-                className={`flex items-center gap-2 font-bold py-3 px-8 rounded-lg transition-all ${
-                  hasChanges && !isSubmitting
-                    ? "bg-[#1967D2] hover:bg-blue-700 text-white shadow-lg shadow-blue-200" 
-                    : "bg-gray-300 text-gray-500 cursor-not-allowed grayscale"
-                }`}
-              >
-                {isSubmitting
-                  ? "Đang xử lý..."
-                  : (isEdit ? "Cập nhật · Chờ duyệt lại" : "Đăng bài")}
-                <FaArrowRight size={14} />
-              </button>
-            </div>
-          </form>
-          )}
+              </form>
+            )}
         </div>
       </div>
     </div>
