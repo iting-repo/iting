@@ -16,6 +16,8 @@ import { CompanyLogo } from "../../components/common";
 import { formatDistanceToNowStrict, parseISO } from "date-fns";
 import { vi } from "date-fns/locale";
 import { useModalEscape } from "../../hooks/useModalEscape";
+import { buildJobDetailPath } from "../../utils/jobUrl";
+
 
 const CompanyDetailPage = () => {
   const { id } = useParams();
@@ -379,7 +381,7 @@ const CompanyDetailPage = () => {
                   jobs.map((job) => (
                     <div 
                       key={job.id} 
-                      onClick={() => navigate(`/jobs/${job.id}`)}
+                      onClick={() => navigate(buildJobDetailPath(job))}
                       className="group p-6 rounded-3xl border border-gray-50 hover:border-[#3AB4E6]/20 hover:bg-blue-50/10 hover:shadow-xl hover:shadow-[#3AB4E6]/5 transition-all cursor-pointer flex flex-col sm:flex-row items-start sm:items-center gap-6"
                     >
                       <div className="flex-1 min-w-0">

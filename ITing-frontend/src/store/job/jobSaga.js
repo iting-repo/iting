@@ -37,10 +37,11 @@ function* handleFetchJobDetail(action) {
 
 function* handleFetchLatestJobs(action) {
     try {
-        const data = yield call(jobService.getJobDetail, action.payload);
-        yield put(fetchJobDetailSuccess(data));
+        const limit = action.payload || 10;
+        const data = yield call(jobService.getLatestJobs, limit);
+        yield put(fetchLatestJobsSuccess(data));
     } catch (error) {
-        yield put(fetchJobDetailFailure(error.response?.data?.message || error.message));
+        yield put(fetchLatestJobsFailure(error.response?.data?.message || error.message));
     }
 }
 

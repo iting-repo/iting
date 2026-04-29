@@ -12,10 +12,16 @@ const jobService = {
         return response;
     },
 
+    getJobDetailByLegacyId: async (id) => {
+        const response = await axiosInstance.get(`/jobs/${id}`);
+        return response;
+    },
+
     getLatestJobs: async(limit = 10) => {
         const response = await axiosInstance.get(`/jobs/latest`,{
             params: {limit}
         });
+        return response;
     },
 
     saveJob: (jobId) => axiosInstance.post(`/candidates/saved-jobs/${jobId}`),

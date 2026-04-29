@@ -36,6 +36,7 @@ import { Breadcrumb, CompanyLogo } from '../../components/common';
 import {
     getCompanyLogoUrl,
     getJobTitle,
+    normalizeJobKey,
 } from '../../utils/jobUrl';
 
 const normalizeList = (value, delimiter = /\n|\.|;/) => {
@@ -113,7 +114,7 @@ const formatDeadline = (dueDate) => {
 };
 
 const JobDetailPage = () => {
-    const { id } = useParams();
+    const { slug, jobKey: id } = useParams();
     const navigate = useNavigate();
     const dispatch = useDispatch();
 
@@ -132,7 +133,7 @@ const JobDetailPage = () => {
 
     useEffect(() => {
         if (id) {
-            dispatch(fetchJobDetailRequest(id));
+            dispatch(fetchJobDetailRequest(normalizeJobKey(id)));
         }
     }, [id, dispatch]);
 

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { FaCheck, FaArrowLeft, FaArrowRight, FaClock, FaTimes, FaEye, FaEnvelope } from 'react-icons/fa';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { buildJobDetailPath } from '../../utils/jobUrl';
 import axiosInstance from '../../utils/axiosInstance';
 import messageService from '../../services/messageService';
@@ -59,11 +59,11 @@ const AppliedJobs = () => {
 
   const getStatusLabel = (status) => {
     switch (status) {
-      case 'PENDING': return 'Cho xu ly';
-      case 'ACCEPTED': return 'Da duyet';
-      case 'REJECTED': return 'Tu choi';
-      case 'VIEWED': return 'Da xem';
-      default: return status || 'Khong ro';
+      case 'PENDING': return 'Chờ xử lý';
+      case 'ACCEPTED': return 'Đã duyệt';
+      case 'REJECTED': return 'Từ chối';
+      case 'VIEWED': return 'Đã xem';
+      default: return status || 'Không rõ';
     }
   };
 
@@ -93,24 +93,24 @@ const AppliedJobs = () => {
   return (
     <div className="bg-white rounded-xl p-8 min-h-screen shadow-sm border border-gray-100">
       <h2 className="text-2xl font-bold text-gray-800 mb-6">
-        Cong viec da ung tuyen <span className="text-gray-400 font-normal text-lg">({totalElements})</span>
+        Công việc đã ứng tuyển <span className="text-gray-400 font-normal text-lg">({totalElements})</span>
       </h2>
 
       <div className="overflow-x-auto rounded-lg border border-gray-100 mb-8">
         <table className="w-full text-left border-collapse">
           <thead className="bg-gray-50 text-gray-500 text-xs uppercase font-semibold">
             <tr>
-              <th className="p-4 rounded-tl-lg">Cong viec</th>
-              <th className="p-4">Ngay ung tuyen</th>
-              <th className="p-4">Trang thai</th>
-              <th className="p-4 rounded-tr-lg text-right">Hanh dong</th>
+              <th className="p-4 rounded-tl-lg">Công việc</th>
+              <th className="p-4">Ngày ứng tuyển</th>
+              <th className="p-4">Trạng thái</th>
+              <th className="p-4 rounded-tr-lg text-right">Hành động</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-100 text-sm">
             {loading ? (
-              <tr><td colSpan="4" className="p-8 text-center text-gray-500">Dang tai...</td></tr>
+              <tr><td colSpan="4" className="p-8 text-center text-gray-500">Đang tải...</td></tr>
             ) : applications.length === 0 ? (
-              <tr><td colSpan="4" className="p-8 text-center text-gray-500">Ban chua ung tuyen cong viec nao.</td></tr>
+              <tr><td colSpan="4" className="p-8 text-center text-gray-500">Bạn chưa ứng tuyển công việc nào.</td></tr>
             ) : (
               applications.map((app) => (
                 <tr key={app.id} className="hover:bg-blue-50/30 transition-colors group">
@@ -120,8 +120,8 @@ const AppliedJobs = () => {
                         <img src={app.companyLogo || 'https://via.placeholder.com/50?text=Job'} alt="Company Logo" className="w-full h-full object-cover" onError={(e) => { e.target.src = 'https://via.placeholder.com/50?text=Job'; }} />
                       </div>
                       <div>
-                        <div className="font-bold text-gray-900 text-base mb-0.5">{app.jobTitle || 'Khong ro vi tri'}</div>
-                        <div className="text-[#3AB4E6] font-medium text-xs">{app.companyName || 'Cong ty chua xac dinh'}</div>
+                        <div className="font-bold text-gray-900 text-base mb-0.5">{app.jobTitle || 'Không rõ vị trí'}</div>
+                        <div className="text-[#3AB4E6] font-medium text-xs">{app.companyName || 'Công ty chưa xác định'}</div>
                       </div>
                     </div>
                   </td>
@@ -140,16 +140,15 @@ const AppliedJobs = () => {
                       >
                         <FaEnvelope size={11} /> {chatLoadingId === app.id ? 'Đang mở...' : 'Nhắn tin NTD'}
                       </button>
-                      <button
-                        onClick={() => navigate(buildJobDetailPath({ 
+                        <Link to={buildJobDetailPath({ 
                           id: app.jobId, 
                           title: app.jobTitle,
                           jobKey: app.jobKey
-                        }))}
-                        className="bg-gray-100 hover:bg-[#3AB4E6] hover:text-white text-gray-500 text-xs font-bold px-5 py-2.5 rounded-lg transition-all shadow-sm"
+                        })}
+                        className="bg-gray-100 hover:bg-[#3AB4E6] hover:text-white text-gray-500 text-xs font-bold px-5 py-2.5 rounded-lg transition-all shadow-sm inline-block"
                       >
-                        Xem Chi Tiet
-                      </button>
+                        Xem Chi Tiết
+                      </Link>
                     </div>
                   </td>
                 </tr>

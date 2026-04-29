@@ -37,7 +37,6 @@ const companyService = {
       `/employer/jobs/my-jobs?page=${page}&size=${size}`,
     );
   },
-<<<<<<< HEAD
 
   // Lấy presigned URL để preview giấy phép kinh doanh của chính mình
   getBusinessLicensePresignedUrl: async (minutes = 30) => {
@@ -141,8 +140,7 @@ const companyService = {
   postCompanyReview: async (companyId, reviewData) => {
     return await axiosInstance.post(`/candidate/companies/${companyId}/reviews`, reviewData);
   }
-=======
->>>>>>> origin/feat-test-plan
 };
 
 export default companyService;
+

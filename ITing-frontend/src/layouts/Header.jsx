@@ -9,12 +9,9 @@ import ChatDockBox from '../components/chat/ChatDockBox';
 import notificationService from '../services/notificationService';
 import { CompanyLogo } from '../components/common';
 import { formatDistanceToNowStrict, parseISO } from 'date-fns';
-<<<<<<< HEAD
 import { toast } from 'sonner';
-=======
 import { BsBell, BsEnvelope } from 'react-icons/bs';
 import { FaChevronDown, FaSignOutAlt, FaBuilding, FaLayerGroup, FaFileAlt, FaHistory, FaHeart, FaCog } from 'react-icons/fa';
->>>>>>> origin/feat-test-plan
 
 const Header = () => {
   const navigate = useNavigate();
@@ -26,6 +23,11 @@ const Header = () => {
   const displayName = user?.name || user?.fullName || user?.companyName || user?.email || 'Người dùng';
   const displayAvatar = user?.avatar || user?.avatarUrl || user?.logoUrl || user?.companyLogo || '';
   const initial = displayName?.charAt(0)?.toUpperCase() || 'U';
+
+  const isActive = (path) => {
+    if (path === '/') return location.pathname === '/' ? 'text-[#3AB4E6] font-bold' : 'text-white hover:text-gray-300 transition-colors';
+    return location.pathname.startsWith(path) ? 'text-[#3AB4E6] font-bold' : 'text-white hover:text-gray-300 transition-colors';
+  };
 
   const [isNotifOpen, setIsNotifOpen] = useState(false);
   const notifRef = useRef(null);
@@ -325,31 +327,31 @@ const Header = () => {
     if (role === 'CANDIDATE') {
       return (
         <>
-          <Link to="/" className={isActive('/')}>Trang chu</Link>
-          <Link to="/jobs" className={isActive('/jobs')}>Cong viec</Link>
-          <Link to="/companies" className={isActive('/companies')}>Cong ty</Link>
-          <Link to="/about" className={isActive('/about')}>Ve chung toi</Link>
-          <Link to="/contact" className={isActive('/contact')}>Lien he</Link>
+          <Link to="/" className={isActive('/')}>Trang chủ</Link>
+          <Link to="/jobs" className={isActive('/jobs')}>Công việc</Link>
+          <Link to="/companies" className={isActive('/companies')}>Công ty</Link>
+          <Link to="/about" className={isActive('/about')}>Về chúng tôi</Link>
+          <Link to="/contact" className={isActive('/contact')}>Liên hệ</Link>
         </>
       );
     }
     if (role === 'EMPLOYER') {
       return (
         <>
-          <Link to="/employer/dashboard" className={isActive('/employer/dashboard')}>Tong quan</Link>
-          <Link to="/employer/manage-jobs" className={isActive('/employer/manage-jobs')}>Tin da dang</Link>
-          <Link to="/employer/find-cv" className={isActive('/employer/find-cv')}>Tim ho so</Link>
-          <Link to="/employer/post-job" className="text-[#3AB4E6] hover:text-blue-300 font-bold transition-colors">+ Dang tin moi</Link>
+          <Link to="/employer/dashboard" className={isActive('/employer/dashboard')}>Tổng quan</Link>
+          <Link to="/employer/manage-jobs" className={isActive('/employer/manage-jobs')}>Tin đã đăng</Link>
+          <Link to="/employer/find-cv" className={isActive('/employer/find-cv')}>Tìm hồ sơ</Link>
+          <Link to="/employer/post-job" className="text-[#3AB4E6] hover:text-blue-300 font-bold transition-colors">+ Đăng tin mới</Link>
         </>
       );
     }
     return (
       <>
-        <Link to="/" className={isActive('/')}>Trang chu</Link>
-        <Link to="/jobs" className={isActive('/jobs')}>Cong viec</Link>
-        <Link to="/companies" className={isActive('/companies')}>Cong ty</Link>
-        <Link to="/about" className={isActive('/about')}>Ve chung toi</Link>
-        <Link to="/contact" className={isActive('/contact')}>Lien he</Link>
+        <Link to="/" className={isActive('/')}>Trang chủ</Link>
+        <Link to="/jobs" className={isActive('/jobs')}>Công việc</Link>
+        <Link to="/companies" className={isActive('/companies')}>Công ty</Link>
+        <Link to="/about" className={isActive('/about')}>Về chúng tôi</Link>
+        <Link to="/contact" className={isActive('/contact')}>Liên hệ</Link>
       </>
     );
   };
@@ -358,20 +360,20 @@ const Header = () => {
     if (role === 'CANDIDATE') {
       return (
         <div className="py-2">
-          <Link to="/candidate/dashboard" className="flex items-center gap-3 px-4 py-2 hover:bg-gray-50 text-sm text-gray-700"><FaLayerGroup className="text-gray-400" /> Tong quan</Link>
-          <Link to="/candidate/profile" className="flex items-center gap-3 px-4 py-2 hover:bg-gray-50 text-sm text-gray-700"><FaFileAlt className="text-gray-400" /> Ho so cua toi</Link>
-          <Link to="/candidate/applied-jobs" className="flex items-center gap-3 px-4 py-2 hover:bg-gray-50 text-sm text-gray-700"><FaHistory className="text-gray-400" /> Viec da ung tuyen</Link>
-          <Link to="/candidate/favorite-jobs" className="flex items-center gap-3 px-4 py-2 hover:bg-gray-50 text-sm text-gray-700"><FaHeart className="text-gray-400" /> Viec da luu</Link>
-          <Link to="/candidate/settings" className="flex items-center gap-3 px-4 py-2 hover:bg-gray-50 text-sm text-gray-700"><FaCog className="text-gray-400" /> Cai dat tai khoan</Link>
+          <Link to="/candidate/dashboard" className="flex items-center gap-3 px-4 py-2 hover:bg-gray-50 text-sm text-gray-700"><FaLayerGroup className="text-gray-400" /> Tổng quan</Link>
+          <Link to="/candidate/profile" className="flex items-center gap-3 px-4 py-2 hover:bg-gray-50 text-sm text-gray-700"><FaFileAlt className="text-gray-400" /> Hồ sơ của tôi</Link>
+          <Link to="/candidate/applied-jobs" className="flex items-center gap-3 px-4 py-2 hover:bg-gray-50 text-sm text-gray-700"><FaHistory className="text-gray-400" /> Việc đã ứng tuyển</Link>
+          <Link to="/candidate/favorite-jobs" className="flex items-center gap-3 px-4 py-2 hover:bg-gray-50 text-sm text-gray-700"><FaHeart className="text-gray-400" /> Việc đã lưu</Link>
+          <Link to="/candidate/settings" className="flex items-center gap-3 px-4 py-2 hover:bg-gray-50 text-sm text-gray-700"><FaCog className="text-gray-400" /> Cài đặt tài khoản</Link>
         </div>
       );
     }
     if (role === 'EMPLOYER') {
       return (
         <div className="py-2">
-          <Link to="/employer/dashboard" className="flex items-center gap-3 px-4 py-2 hover:bg-gray-50 text-sm text-gray-700"><FaLayerGroup className="text-gray-400" /> Vao trang quan li</Link>
-          <Link to="/employer/company-profile" className="flex items-center gap-3 px-4 py-2 hover:bg-gray-50 text-sm text-gray-700"><FaBuilding className="text-gray-400" /> Ho so cong ty</Link>
-          <Link to="/employer/account-settings" className="flex items-center gap-3 px-4 py-2 hover:bg-gray-50 text-sm text-gray-700"><FaCog className="text-gray-400" /> Cai dat tai khoan</Link>
+          <Link to="/employer/dashboard" className="flex items-center gap-3 px-4 py-2 hover:bg-gray-50 text-sm text-gray-700"><FaLayerGroup className="text-gray-400" /> Vào trang quản lý</Link>
+          <Link to="/employer/company-profile" className="flex items-center gap-3 px-4 py-2 hover:bg-gray-50 text-sm text-gray-700"><FaBuilding className="text-gray-400" /> Hồ sơ công ty</Link>
+          <Link to="/employer/account-settings" className="flex items-center gap-3 px-4 py-2 hover:bg-gray-50 text-sm text-gray-700"><FaCog className="text-gray-400" /> Cài đặt tài khoản</Link>
         </div>
       );
     }
@@ -399,7 +401,7 @@ const Header = () => {
                 Đăng nhập
               </Link>
               <Link to="/register" className="bg-[#3AB4E6] hover:bg-blue-600 text-white px-5 py-2.5 rounded-lg font-bold transition-all shadow-lg shadow-blue-500/20 text-sm">
-                Đăng Ký
+                Đăng ký
               </Link>
             </>
           ) : (
@@ -446,7 +448,7 @@ const Header = () => {
                                 <div className="min-w-0 flex-1">
                                   <div className="flex justify-between items-start gap-2">
                                     <p className={`text-sm truncate ${conv.unreadCount > 0 ? 'font-bold text-gray-900' : 'font-medium text-gray-700'}`}>
-                                      {conv.otherParticipantName || 'Unknown'}
+                                      {conv.otherParticipantName || 'Không xác định'}
                                     </p>
                                     <span className="text-[11px] text-gray-400">{formatChatTime(conv.lastMessageTime)}</span>
                                   </div>
@@ -489,12 +491,12 @@ const Header = () => {
                   {isNotifOpen && (
                     <div className="absolute right-0 mt-3 w-96 bg-white text-gray-800 rounded-xl shadow-2xl py-2 border border-gray-100 animate-fade-in origin-top-right overflow-hidden z-50">
                       <div className="px-4 py-3 flex items-center justify-between border-b border-gray-100">
-                        <div className="text-sm font-semibold">Thong bao</div>
-                        <button onClick={handleMarkAllRead} className="text-xs text-gray-500 hover:underline">Danh dau tat ca</button>
+                        <div className="text-sm font-semibold">Thông báo</div>
+                        <button onClick={handleMarkAllRead} className="text-xs text-gray-500 hover:underline">Đánh dấu tất cả</button>
                       </div>
                       <div className="max-h-80 overflow-y-auto no-scrollbar">
-                        {loadingNotifs && <div className="p-4 text-sm text-gray-500">Dang tai...</div>}
-                        {!loadingNotifs && notifications.length === 0 && <div className="p-4 text-sm text-gray-500">Khong co thong bao moi</div>}
+                        {loadingNotifs && <div className="p-4 text-sm text-gray-500">Đang tải...</div>}
+                        {!loadingNotifs && notifications.length === 0 && <div className="p-4 text-sm text-gray-500">Không có thông báo mới</div>}
                         {!loadingNotifs && notifications.map((n) => (
                           <button key={n.id} onClick={() => handleOpenNotification(n)} className={`w-full text-left px-4 py-3 hover:bg-gray-50 flex gap-3 ${n.isRead ? '' : 'bg-gray-50'}`}>
                             <div className="flex-1">
@@ -506,7 +508,7 @@ const Header = () => {
                         ))}
                       </div>
                       <div className="border-t px-3 py-2 text-center">
-                        <Link to="/notifications" className="text-sm text-[#3AB4E6] hover:underline">Xem tat ca</Link>
+                        <Link to="/notifications" className="text-sm text-[#3AB4E6] hover:underline">Xem tất cả</Link>
                       </div>
                     </div>
                   )}
@@ -533,12 +535,12 @@ const Header = () => {
                     <div className="absolute right-0 mt-3 w-64 bg-white text-gray-800 rounded-xl shadow-2xl py-2 border border-gray-100 animate-fade-in origin-top-right overflow-hidden">
                       <div className="px-4 py-3 border-b border-gray-100 bg-gray-50/50">
                         <p className="text-sm font-bold text-gray-900 truncate">{displayName}</p>
-                        <p className="text-xs text-gray-500 truncate mt-0.5">{role === 'CANDIDATE' ? 'Ung vien' : 'Nha tuyen dung'}</p>
+                        <p className="text-xs text-gray-500 truncate mt-0.5">{role === 'CANDIDATE' ? 'Ứng viên' : 'Nhà tuyển dụng'}</p>
                       </div>
                       {renderDropdownMenu()}
                       <div className="border-t border-gray-100 mt-1 pt-1">
                         <button onClick={handleLogout} className="w-full text-left flex items-center gap-3 px-4 py-2 text-red-600 hover:bg-red-50 text-sm font-medium transition-colors">
-                          <FaSignOutAlt /> Dang xuat
+                          <FaSignOutAlt /> Đăng xuất
                         </button>
                       </div>
                     </div>

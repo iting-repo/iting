@@ -114,7 +114,7 @@ const FavoriteJobs = () => {
                     <div>
                       <div className="flex items-center gap-2 mb-1">
                         <h3
-                          onClick={() => navigate(`/jobs/${job.jobId}`)}
+                          onClick={() => navigate(buildJobDetailPath({ ...job, title: job.jobTitle, id: job.jobId }))}
                           className="font-bold text-gray-800 text-sm group-hover:text-[#3AB4E6] transition-colors cursor-pointer"
                         >
                           {job.jobTitle}
@@ -154,7 +154,7 @@ const FavoriteJobs = () => {
                     </button>
 
                     <button
-                      onClick={() => navigate(`/jobs/${job.jobId}`)}
+                      onClick={() => navigate(buildJobDetailPath({ ...job, title: job.jobTitle, id: job.jobId }))}
                       className="bg-[#EAF6FF] text-[#3AB4E6] hover:bg-[#3AB4E6] hover:text-white font-bold py-2 px-4 rounded-lg transition-all flex items-center gap-2 text-xs whitespace-nowrap shadow-sm border border-transparent"
                     >
                       Chi Tiết <FaArrowRight size={10} />

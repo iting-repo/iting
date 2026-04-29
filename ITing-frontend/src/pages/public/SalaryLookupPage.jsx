@@ -19,6 +19,8 @@ import {
 import publicService from '../../services/publicService';
 import { CompanyLogo } from '../../components/common';
 import { useNavigate, useSearchParams } from 'react-router-dom';
+import { buildJobDetailPath } from '../../utils/jobUrl';
+
 
 // Register Chart.js components
 ChartJS.register(
@@ -343,7 +345,7 @@ const SalaryLookupPage = () => {
 
            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {report?.highSalaryJobs?.map((job, i) => (
-                <div key={i} className="border border-gray-100 rounded-2xl p-6 hover:shadow-lg transition-all group cursor-pointer" onClick={() => navigate(`/jobs/${job.id}`)}>
+                <div key={i} className="border border-gray-100 rounded-2xl p-6 hover:shadow-lg transition-all group cursor-pointer" onClick={() => navigate(buildJobDetailPath(job))}>
                    <div className="flex gap-4">
                       <div className="shrink-0">
                          <CompanyLogo 

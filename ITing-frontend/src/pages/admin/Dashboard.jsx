@@ -10,12 +10,14 @@ import {
     LinearScale,
     PointElement,
     LineElement,
+    ArcElement,
     Title,
     Tooltip,
     Filler,
     Legend,
 } from 'chart.js';
-import { Line } from 'react-chartjs-2';
+import { Line, Doughnut } from 'react-chartjs-2';
+import { Card, CardHeader, CardTitle, CardContent } from '../../components/common';
 
 // 2. ĐĂNG KÝ CÁC THÀNH PHẦN BIỂU ĐỒ
 ChartJS.register(
@@ -23,6 +25,7 @@ ChartJS.register(
     LinearScale,
     PointElement,
     LineElement,
+    ArcElement,
     Title,
     Tooltip,
     Filler,
@@ -158,6 +161,45 @@ const AdminDashboard = () => {
         ],
     };
 
+    const statusLabels = ['Đang hoạt động', 'Chờ duyệt', 'Đã đóng', 'Khác'];
+    const statusValues = stats.jobStatusDistribution ? [
+        stats.jobStatusDistribution.ACTIVE || 0,
+        stats.jobStatusDistribution.PENDING || 0,
+        stats.jobStatusDistribution.CLOSED || 0,
+        (stats.jobStatusDistribution.REJECTED || 0) + (stats.jobStatusDistribution.EXPIRED || 0),
+    ] : [stats.totalJobs || 0, 0, 0, 0];
+    const statusColors = ['#34D399', '#FBBF24', '#F87171', '#9CA3AF'];
+
+    const doughnutData = {
+        labels: statusLabels,
+        datasets: [
+            {
+                data: statusValues,
+                backgroundColor: statusColors,
+                borderWidth: 0,
+                hoverOffset: 10,
+            },
+        ],
+    };
+
+    const doughnutOptions = {
+        responsive: true,
+        maintainAspectRatio: false,
+        cutout: '70%',
+        plugins: {
+            legend: { display: false },
+            tooltip: {
+                backgroundColor: 'white',
+                titleColor: '#6B7280',
+                bodyColor: '#1F2937',
+                borderColor: '#E5E7EB',
+                borderWidth: 1,
+                padding: 10,
+                usePointStyle: true,
+            }
+        }
+    };
+
     return (
         <div className="space-y-8 animate-in fade-in duration-500">
             {/* TITLE */}
@@ -195,14 +237,45 @@ const AdminDashboard = () => {
                 />
             </div>
 
-            {/* ROW 2: JOB ANALYTICS CHART */}
-            <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
-                <h3 className="font-bold text-gray-800 mb-6 flex items-center gap-2">
-                    <span className="w-1 h-6 bg-[#3AB4E6] rounded-full"></span> Phân tích tuyển dụng
-                </h3>
-                <div className="h-[350px] w-full">
-                    <Line options={chartOptions} data={chartData} />
+            {/* ROW 2: CHARTS */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                {/* LINE CHART */}
+                <div className="lg:col-span-2 bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+                    <h3 className="text-lg font-bold text-gray-800 mb-6 flex items-center gap-2">
+                        <span className="w-1 h-6 bg-[#3AB4E6] rounded-full"></span> Phân tích tuyển dụng
+                    </h3>
+                    <div className="h-[350px] w-full">
+                        <Line options={chartOptions} data={chartData} />
+                    </div>
                 </div>
+
+                {/* PIE CHART (Doughnut) */}
+                <Card className="flex flex-col">
+                    <div className="p-6 pb-2">
+                        <h3 className="text-lg font-bold text-gray-800 flex items-center gap-2">
+                            <span className="w-1 h-6 bg-[#3AB4E6] rounded-full"></span> Phân bố trạng thái Job
+                        </h3>
+                    </div>
+                    <CardContent className="flex-1 flex flex-col justify-center">
+                        <div className="h-[250px] w-full relative">
+                            <Doughnut data={doughnutData} options={doughnutOptions} />
+                            {/* Optional center text */}
+                            <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                                <span className="text-2xl font-bold text-gray-800">{stats.totalJobs}</span>
+                                <span className="text-xs text-gray-500 font-medium">Tổng việc</span>
+                            </div>
+                        </div>
+                        <div className="flex flex-wrap gap-4 justify-center mt-6">
+                            {statusLabels.map((label, i) => (
+                                <div key={label} className="flex items-center gap-2 text-xs">
+                                    <div className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: statusColors[i] }} />
+                                    <span className="text-gray-500">{label}</span>
+                                    <span className="font-bold text-gray-800">{statusValues[i]}</span>
+                                </div>
+                            ))}
+                        </div>
+                    </CardContent>
+                </Card>
             </div>
 
             {/* ROW 3: TABLE */}

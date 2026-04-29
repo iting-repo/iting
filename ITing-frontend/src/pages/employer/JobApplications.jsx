@@ -111,7 +111,7 @@ const JobApplications = () => {
                         </td>
                         <td className="p-5 text-sm text-gray-600 font-medium">{candidate.yearsExperience != null ? `${candidate.yearsExperience} Năm` : 'N/A'}</td>
                         <td className="p-5 text-sm text-gray-600">{candidate.education || 'N/A'}</td>
-                        <td className="p-5 text-sm text-gray-500">{candidate.timeSent ? new Date(candidate.timeSent).toLocaleDateString() : 'vi-VN': 'N/A'}</td>
+                        <td className="p-5 text-sm text-gray-500">{candidate.timeSent ? new Date(candidate.timeSent).toLocaleDateString('vi-VN') : 'N/A'}</td>
                         <td className="p-5">
                            <span className={`px-3 py-1 rounded-full text-xs font-bold border ${getStatusColor(candidate.status)}`}>
                               {candidate.status || 'Chưa cập nhật'}
