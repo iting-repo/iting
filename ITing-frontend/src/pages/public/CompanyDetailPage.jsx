@@ -59,7 +59,8 @@ const CompanyDetailPage = () => {
 
         if (isAuthenticated && user?.role === 'CANDIDATE') {
           const followRes = await companyService.checkFollowing(id);
-          setIsFollowing(followRes.data?.isFollowing ?? followRes.data ?? followRes);
+          // axiosInstance already unwraps response.data, so followRes = { isFollowing: true/false }
+          setIsFollowing(followRes?.isFollowing === true);
         }
 
         // Fetch jobs separately to not block main content
@@ -384,7 +385,7 @@ const CompanyDetailPage = () => {
                     <div className="w-12 h-12 rounded-2xl bg-blue-50 flex items-center justify-center">
                       <Briefcase className="w-7 h-7 text-[#3AB4E6]" />
                     </div>
-                    Tuyển dụng ({company.activeJobCount || jobs.length})
+                    Tuyển dụng ({isLoadingJobs ? (company.activeJobCount || '...') : jobs.length})
                  </h2>
                  {(company.activeJobCount > jobs.length || jobs.length > 5) && (
                    <button 

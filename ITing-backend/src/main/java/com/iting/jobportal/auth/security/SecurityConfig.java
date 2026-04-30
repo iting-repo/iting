@@ -92,8 +92,9 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.GET, "/api/jobs/{id}").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/jobs/salary-report").permitAll()
 
-                // ── Public: AI / Knowledge Graph ────────────────────────
+                // ── Public: AI / Knowledge Graph / Recommendations ──────────
                 .requestMatchers(HttpMethod.GET, "/api/ai/**").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/recommendations/**").permitAll()
 
                 // ── Public: Company (xem thông tin công ty) ───────────────
                 .requestMatchers(HttpMethod.GET, "/api/companies/{id}").permitAll()

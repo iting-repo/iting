@@ -4,6 +4,7 @@ import com.iting.jobportal.admin.dto.request.BanUserRequest;
 import com.iting.jobportal.admin.dto.request.UpdateUserRequest;
 import com.iting.jobportal.admin.dto.response.UserListResponse;
 import com.iting.jobportal.admin.service.AdminUserService;
+import com.iting.jobportal.messaging.websocket.WebSocketEventListener;
 import com.iting.jobportal.auth.entity.Enum.AccountStatus;
 import com.iting.jobportal.auth.entity.Enum.Role;
 import io.swagger.v3.oas.annotations.Operation;
@@ -19,6 +20,7 @@ import org.springframework.http.MediaType;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.Map;
+import java.util.Set;
 
 @RestController
 @RequestMapping("/api/admin/users")
@@ -27,6 +29,7 @@ import java.util.Map;
 public class UserAdminController {
 
     private final AdminUserService adminUserService;
+    private final WebSocketEventListener webSocketEventListener;
 
     @GetMapping
     @Operation(summary = "Lấy danh sách người dùng")
@@ -133,5 +136,11 @@ public class UserAdminController {
                 .contentType(
                         MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
                 .body(file);
+    }
+
+    @GetMapping("/online-ids")
+    @Operation(summary = "Lấy danh sách ID người dùng đang online")
+    public ResponseEntity<Set<Long>> getOnlineUserIds() {
+        return ResponseEntity.ok(webSocketEventListener.getOnlineUserIds());
     }
 }

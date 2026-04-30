@@ -4,8 +4,10 @@ import com.iting.jobportal.admin.dto.response.ReportStatsResponse;
 import com.iting.jobportal.admin.entity.UserReport;
 import com.iting.jobportal.admin.repository.UserReportRepository;
 import com.iting.jobportal.admin.service.AdminReportService;
+import com.iting.jobportal.admin.service.AdminNotificationService;
 import com.iting.jobportal.user.dto.request.ReportRequest;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -14,12 +16,14 @@ import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 @Transactional
 public class AdminReportServiceImpl implements AdminReportService {
 
     private final UserReportRepository reportRepository;
+    private final AdminNotificationService adminNotificationService;
 
     @Override
     public Page<UserReport> getReports(String status, String type, String targetType, String priority, String search, int page, int size) {
@@ -41,7 +45,15 @@ public class AdminReportServiceImpl implements AdminReportService {
                 .priority(request.getPriority())
                 .status("PENDING")
                 .build();
-        return reportRepository.save(report);
+        UserReport saved = reportRepository.save(report);
+        
+        try {
+            adminNotificationService.notifyUserReport(saved);
+        } catch (Exception e) {
+            log.error("Failed to notify admin about new user report", e);
+        }
+        
+        return saved;
     }
 
     @Override

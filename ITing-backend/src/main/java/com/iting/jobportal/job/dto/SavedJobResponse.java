@@ -19,6 +19,7 @@ public class SavedJobResponse {
     private String jobTitle;
     private String companyName;
     private String companyLogo;
+    private Boolean companyActive;
     private String jobType;
     private String location;
     private BigDecimal minSalary;

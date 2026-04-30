@@ -7,6 +7,7 @@ import com.iting.jobportal.admin.service.AdminCompanyService;
 import com.iting.jobportal.company.dto.mapper.CompanyMapper;
 import com.iting.jobportal.company.dto.response.CompanyResponse;
 import com.iting.jobportal.company.entity.Company;
+import com.iting.jobportal.company.entity.CompanyAuditLog;
 import com.iting.jobportal.company.entity.enums.CompanyAuditAction;
 import com.iting.jobportal.company.entity.enums.CompanyReviewStatus;
 import com.iting.jobportal.company.entity.enums.DocumentReviewStatus;
@@ -15,6 +16,10 @@ import com.iting.jobportal.company.repository.CompanyAuditLogRepository;
 import com.iting.jobportal.company.repository.CompanyRepository;
 import com.iting.jobportal.company.service.CompanyAuditService;
 import com.iting.jobportal.file.FileUploadService;
+import com.iting.jobportal.notification.dto.request.CreateNotificationRequest;
+import com.iting.jobportal.notification.enums.NotificationType;
+import com.iting.jobportal.notification.enums.RecipientType;
+import com.iting.jobportal.notification.service.NotificationService;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import com.iting.jobportal.company.repository.CompanyKybNoteRepository;
@@ -25,7 +30,7 @@ import java.util.List;
 
 @Service
 @RequiredArgsConstructor
-public class    AdminCompanyServiceImpl implements AdminCompanyService {
+public class AdminCompanyServiceImpl implements AdminCompanyService {
 
     private final CompanyRepository companyRepository;
     private final CompanyMapper companyMapper;
@@ -33,6 +38,7 @@ public class    AdminCompanyServiceImpl implements AdminCompanyService {
     private final CompanyAuditService companyAuditService;
     private final CompanyAuditLogRepository companyAuditLogRepository;
     private final CompanyKybNoteRepository companyKybNoteRepository;
+    private final NotificationService notificationService;
 
     @Override
     public Page<CompanyResponse> getAllCompanies(int page, int size) {
@@ -50,7 +56,7 @@ public class    AdminCompanyServiceImpl implements AdminCompanyService {
 
     @Override
     public Page<CompanyResponse> filterCompanies(CompanyReviewStatus status, VerificationLevel verificationLevel,
-                                                 Boolean active, String keyword, int page, int size) {
+            Boolean active, String keyword, int page, int size) {
         Pageable pageable = PageRequest.of(page, size);
         return companyRepository.findAll(pageable)
                 .map(companyMapper::toResponse);
@@ -59,7 +65,9 @@ public class    AdminCompanyServiceImpl implements AdminCompanyService {
     @Override
     public Page<CompanyResponse> getPendingReviewCompanies(int page, int size) {
         Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.ASC, "lastUpdateRequestDate"));
-        return companyRepository.findByCompanyInfoUpdateStatusOrDocumentReviewStatus(CompanyReviewStatus.PENDING_REVIEW, DocumentReviewStatus.PENDING_REVIEW, pageable)
+        return companyRepository
+                .findByCompanyInfoUpdateStatusOrDocumentReviewStatus(CompanyReviewStatus.PENDING_REVIEW,
+                        DocumentReviewStatus.PENDING_REVIEW, pageable)
                 .map(companyMapper::toResponse);
     }
 
@@ -78,7 +86,8 @@ public class    AdminCompanyServiceImpl implements AdminCompanyService {
     }
 
     @Override
-    public com.iting.jobportal.admin.dto.response.KybNoteResponse addCompanyKybNote(Long adminId, Long companyId, com.iting.jobportal.admin.dto.request.CreateKybNoteRequest request) {
+    public com.iting.jobportal.admin.dto.response.KybNoteResponse addCompanyKybNote(Long adminId, Long companyId,
+            com.iting.jobportal.admin.dto.request.CreateKybNoteRequest request) {
         Company company = companyRepository.findById(companyId)
                 .orElseThrow(() -> new RuntimeException("Company not found"));
         com.iting.jobportal.company.entity.CompanyKybNote note = new com.iting.jobportal.company.entity.CompanyKybNote();
@@ -124,8 +133,7 @@ public class    AdminCompanyServiceImpl implements AdminCompanyService {
                 request != null ? request.getNote() : null,
                 "Công ty được duyệt",
                 "admin#" + adminId,
-                adminId
-        );
+                adminId);
     }
 
     @Override
@@ -139,7 +147,7 @@ public class    AdminCompanyServiceImpl implements AdminCompanyService {
                 : null;
 
         company.setCompanyInfoUpdateStatus(CompanyReviewStatus.APPROVED);
-        
+
         // Cập nhật mức xác thực lên BASIC nếu đang là UNVERIFIED
         if (company.getVerificationLevel() == VerificationLevel.UNVERIFIED) {
             company.setVerificationLevel(VerificationLevel.BASIC);
@@ -155,8 +163,7 @@ public class    AdminCompanyServiceImpl implements AdminCompanyService {
                 request != null ? request.getNote() : null,
                 "Thông tin cơ bản công ty được duyệt",
                 "admin#" + adminId,
-                adminId
-        );
+                adminId);
     }
 
     @Override
@@ -170,7 +177,7 @@ public class    AdminCompanyServiceImpl implements AdminCompanyService {
                 : null;
 
         company.setDocumentReviewStatus(DocumentReviewStatus.APPROVED);
-        
+
         // Nếu thông tin cơ bản đã duyệt thì lên ADVANCED
         if (company.getCompanyInfoUpdateStatus() == CompanyReviewStatus.APPROVED) {
             company.setVerificationLevel(VerificationLevel.ADVANCED);
@@ -186,8 +193,7 @@ public class    AdminCompanyServiceImpl implements AdminCompanyService {
                 request != null ? request.getNote() : null,
                 "Giấy tờ pháp lý công ty được duyệt",
                 "admin#" + adminId,
-                adminId
-        );
+                adminId);
     }
 
     @Override
@@ -212,8 +218,7 @@ public class    AdminCompanyServiceImpl implements AdminCompanyService {
                 request != null ? request.getReason() : null,
                 "Từ chối công ty",
                 "admin#" + adminId,
-                adminId
-        );
+                adminId);
     }
 
     @Override
@@ -238,8 +243,7 @@ public class    AdminCompanyServiceImpl implements AdminCompanyService {
                 request != null ? request.getReason() : null,
                 "Từ chối thông tin cơ bản công ty",
                 "admin#" + adminId,
-                adminId
-        );
+                adminId);
     }
 
     @Override
@@ -264,8 +268,7 @@ public class    AdminCompanyServiceImpl implements AdminCompanyService {
                 request != null ? request.getReason() : null,
                 "Từ chối giấy tờ pháp lý công ty",
                 "admin#" + adminId,
-                adminId
-        );
+                adminId);
     }
 
     @Override
@@ -290,8 +293,7 @@ public class    AdminCompanyServiceImpl implements AdminCompanyService {
                 request != null ? request.getReason() : null,
                 "Yêu cầu công ty bổ sung hồ sơ",
                 "admin#" + adminId,
-                adminId
-        );
+                adminId);
     }
 
     @Override
@@ -309,6 +311,16 @@ public class    AdminCompanyServiceImpl implements AdminCompanyService {
         company.setStatusReason(request != null ? request.getReason() : null);
         companyRepository.save(company);
 
+        // Đình chỉ tất cả job ACTIVE của công ty
+        if (company.getJobs() != null) {
+            for (var job : company.getJobs()) {
+                if (job.getStatus() == com.iting.jobportal.job.entity.enums.JobStatus.ACTIVE) {
+                    job.setStatus(com.iting.jobportal.job.entity.enums.JobStatus.SUSPENDED);
+                    job.setReviewReason("Công ty bị đình chỉ bởi quản trị viên");
+                }
+            }
+        }
+
         companyAuditService.log(
                 company,
                 CompanyAuditAction.SUSPEND,
@@ -317,8 +329,25 @@ public class    AdminCompanyServiceImpl implements AdminCompanyService {
                 request != null ? request.getReason() : null,
                 "Đình chỉ công ty",
                 "admin#" + adminId,
-                adminId
-        );
+                adminId);
+
+        // Gửi thông báo đình chỉ cho công ty
+        String reason = request != null && request.getReason() != null ? request.getReason() : "Không có lý do cụ thể";
+        try {
+            notificationService.createNotification(CreateNotificationRequest.builder()
+                    .recipientId(companyId)
+                    .recipientType(RecipientType.COMPANY)
+                    .type(NotificationType.COMPANY_SUSPENDED)
+                    .content("Công ty của bạn đã bị đình chỉ hoạt động. Lý do: " + reason
+                            + ". Tất cả tin tuyển dụng đã bị tạm ẩn.")
+                    .entityType("COMPANY")
+                    .entityId(companyId)
+                    .actionUrl("/employer/dashboard")
+                    .build());
+        } catch (Exception e) {
+            // Log but don't fail the suspend action if notification fails
+            System.err.println("Failed to send suspend notification: " + e.getMessage());
+        }
     }
 
     @Override
@@ -331,21 +360,61 @@ public class    AdminCompanyServiceImpl implements AdminCompanyService {
                 ? company.getCompanyInfoUpdateStatus().name()
                 : null;
 
-        company.setCompanyInfoUpdateStatus(CompanyReviewStatus.APPROVED);
+        // Khôi phục trạng thái cũ trước khi bị đình chỉ từ audit log
+        CompanyReviewStatus restoredStatus = CompanyReviewStatus.APPROVED; // default fallback
+        List<CompanyAuditLog> suspendLogs = companyAuditLogRepository
+                .findTopByCompanyIdAndActionOrderByCreatedAtDesc(companyId, CompanyAuditAction.SUSPEND);
+        if (!suspendLogs.isEmpty()) {
+            String previousStatus = suspendLogs.get(0).getFromStatus();
+            if (previousStatus != null) {
+                try {
+                    restoredStatus = CompanyReviewStatus.valueOf(previousStatus);
+                } catch (IllegalArgumentException ignored) {
+                    // Fallback to APPROVED if the saved status is invalid
+                }
+            }
+        }
+
+        company.setCompanyInfoUpdateStatus(restoredStatus);
         company.setActive(true);
         company.setStatusReason(null); // Clear reason when unsuspending
         companyRepository.save(company);
+
+        // Khôi phục tất cả job SUSPENDED của công ty về ACTIVE
+        if (company.getJobs() != null) {
+            for (var job : company.getJobs()) {
+                if (job.getStatus() == com.iting.jobportal.job.entity.enums.JobStatus.SUSPENDED) {
+                    job.setStatus(com.iting.jobportal.job.entity.enums.JobStatus.ACTIVE);
+                    job.setReviewReason(null);
+                }
+            }
+        }
 
         companyAuditService.log(
                 company,
                 CompanyAuditAction.UNSUSPEND,
                 oldStatus,
-                CompanyReviewStatus.APPROVED.name(),
+                restoredStatus.name(),
                 null,
                 "Kích hoạt lại công ty",
                 "admin#" + adminId,
-                adminId
-        );
+                adminId);
+
+        // Gửi thông báo gỡ đình chỉ cho công ty
+        try {
+            notificationService.createNotification(CreateNotificationRequest.builder()
+                    .recipientId(companyId)
+                    .recipientType(RecipientType.COMPANY)
+                    .type(NotificationType.COMPANY_UNSUSPENDED)
+                    .content("Công ty của bạn đã được gỡ đình chỉ và hoạt động trở lại bình thường. "
+                            + "Các tin tuyển dụng đã được khôi phục.")
+                    .entityType("COMPANY")
+                    .entityId(companyId)
+                    .actionUrl("/employer/dashboard")
+                    .build());
+        } catch (Exception e) {
+            System.err.println("Failed to send unsuspend notification: " + e.getMessage());
+        }
     }
 
     @Override
@@ -388,8 +457,7 @@ public class    AdminCompanyServiceImpl implements AdminCompanyService {
                 null,
                 "Xóa công ty",
                 "admin#" + adminId,
-                adminId
-        );
+                adminId);
 
         companyRepository.delete(company);
     }
@@ -403,7 +471,6 @@ public class    AdminCompanyServiceImpl implements AdminCompanyService {
             }
         }
     }
-
 
     @Override
     @org.springframework.transaction.annotation.Transactional
@@ -475,24 +542,20 @@ public class    AdminCompanyServiceImpl implements AdminCompanyService {
             CompanyAuditAction action,
             Long companyId,
             java.time.LocalDate fromDate,
-            java.time.LocalDate toDate
-    ) {
-        java.time.LocalDateTime fromDateTime =
-                fromDate != null
-                        ? fromDate.atStartOfDay()
-                        : java.time.LocalDateTime.of(1970, 1, 1, 0, 0);
+            java.time.LocalDate toDate) {
+        java.time.LocalDateTime fromDateTime = fromDate != null
+                ? fromDate.atStartOfDay()
+                : java.time.LocalDateTime.of(1970, 1, 1, 0, 0);
 
-        java.time.LocalDateTime toDateTime =
-                toDate != null
-                        ? toDate.atTime(23, 59, 59)
-                        : java.time.LocalDateTime.of(2999, 12, 31, 23, 59, 59);
+        java.time.LocalDateTime toDateTime = toDate != null
+                ? toDate.atTime(23, 59, 59)
+                : java.time.LocalDateTime.of(2999, 12, 31, 23, 59, 59);
 
         return companyAuditLogRepository.findAllWithCompanyFiltered(
-                        action,
-                        companyId,
-                        fromDateTime,
-                        toDateTime
-                ).stream()
+                action,
+                companyId,
+                fromDateTime,
+                toDateTime).stream()
                 .map(this::mapToResponse)
                 .toList();
     }
@@ -500,22 +563,25 @@ public class    AdminCompanyServiceImpl implements AdminCompanyService {
     @Override
     public java.io.ByteArrayInputStream exportCompaniesToExcel() {
         List<Company> companies = companyRepository.findAll();
-        String[] headers = {"ID", "Name", "Tax Code", "Status", "Verification Level", "Email", "Phone"};
-        
+        String[] headers = { "ID", "Name", "Tax Code", "Status", "Verification Level", "Email", "Phone" };
+
         return com.iting.jobportal.common.excel.ExcelHelper.dataToExcel(
-                companies, 
-                headers, 
+                companies,
+                headers,
                 "Companies",
                 (company, row) -> {
                     row.createCell(0).setCellValue(company.getId());
                     row.createCell(1).setCellValue(company.getName());
                     row.createCell(2).setCellValue(company.getTaxCode());
-                    row.createCell(3).setCellValue(company.getCompanyInfoUpdateStatus() != null ? company.getCompanyInfoUpdateStatus().name() : "");
-                    row.createCell(4).setCellValue(company.getVerificationLevel() != null ? company.getVerificationLevel().name() : "");
+                    row.createCell(3)
+                            .setCellValue(company.getCompanyInfoUpdateStatus() != null
+                                    ? company.getCompanyInfoUpdateStatus().name()
+                                    : "");
+                    row.createCell(4).setCellValue(
+                            company.getVerificationLevel() != null ? company.getVerificationLevel().name() : "");
                     row.createCell(5).setCellValue(company.getCompanyEmail());
                     row.createCell(6).setCellValue(company.getPhone());
-                }
-        );
+                });
     }
 
     @Override
@@ -531,8 +597,7 @@ public class    AdminCompanyServiceImpl implements AdminCompanyService {
                         company.setCompanyInfoUpdateStatus(CompanyReviewStatus.PENDING_REVIEW);
                         company.setVerificationLevel(VerificationLevel.UNVERIFIED);
                         return company;
-                    }
-            );
+                    });
             companyRepository.saveAll(companies);
         } catch (java.io.IOException e) {
             throw new RuntimeException("fail to store excel data: " + e.getMessage());
@@ -541,7 +606,7 @@ public class    AdminCompanyServiceImpl implements AdminCompanyService {
 
     @Override
     public java.io.ByteArrayInputStream getImportTemplate() {
-        String[] headers = {"Company Name", "Tax Code"};
+        String[] headers = { "Company Name", "Tax Code" };
         return com.iting.jobportal.common.excel.ExcelHelper.createTemplate(headers, "Company Import Template");
     }
 }

@@ -41,6 +41,9 @@ public class JobSpecification {
             // Ensure distinct when joining
             query.distinct(true);
 
+            // CHỈ HIỂN THỊ JOB CỦA CÔNG TY ĐANG HOẠT ĐỘNG
+            predicates.add(cb.equal(companyJoin.get("active"), true));
+
             if (req.getKeyword() != null && !req.getKeyword().isBlank()) {
                 String[] tokens = req.getKeyword().trim().toLowerCase().split("\\s+");
                 List<Predicate> keywordPredicates = new ArrayList<>();

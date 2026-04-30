@@ -80,7 +80,19 @@ public enum NotificationType {
     ACCOUNT_UPDATE,
     
     /**
-     * General system notification
+     * Company has been suspended by admin
      */
-    SYSTEM
+    COMPANY_SUSPENDED,
+
+    /**
+     * Company suspension has been lifted by admin
+     */
+    COMPANY_UNSUSPENDED,
+
+    SYSTEM,
+
+    // Admin notifications
+    ADMIN_COMPANY_REGISTERED,
+    ADMIN_JOB_CREATED,
+    ADMIN_REPORT_RECEIVED
 }

@@ -20,6 +20,8 @@ import com.iting.jobportal.recommendation.service.RecommendationService;
 import com.iting.jobportal.common.service.GeminiService;
 import com.iting.jobportal.common.service.KnowledgeGraphService;
 import com.iting.jobportal.common.service.MlServiceClient;
+import com.iting.jobportal.admin.service.AdminNotificationService;
+import com.iting.jobportal.notification.service.NotificationService;
 import org.springframework.context.annotation.Lazy;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
@@ -58,6 +60,8 @@ public class JobServiceImpl implements JobService {
     private final KnowledgeGraphService knowledgeGraphService;
     private final VectorSearchService vectorSearchService;
     private final MlServiceClient mlServiceClient;
+    private final NotificationService notificationService;
+    private final AdminNotificationService adminNotificationService;
 
     @PersistenceContext
     private EntityManager entityManager;
@@ -316,6 +320,15 @@ public class JobServiceImpl implements JobService {
         // AUTO AI REVIEW - tự động duyệt bằng AI thay vì chờ admin
         if (saved.getStatus() == JobStatus.PENDING) {
             autoAiReview(saved);
+        }
+        
+        // Gửi thông báo cho Admin nếu job đang chờ duyệt
+        if (saved.getStatus() == JobStatus.PENDING) {
+            try {
+                adminNotificationService.notifyNewJob(saved);
+            } catch (Exception e) {
+                log.error("Lỗi khi gửi thông báo cho admin về job mới", e);
+            }
         }
 
         return JobResponse.fromEntityWithCompany(saved, company.getName(), company.getLogoUrl());

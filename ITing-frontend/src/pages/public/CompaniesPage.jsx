@@ -32,8 +32,14 @@ const INDUSTRY_MAP = {
 const INDUSTRIES = Object.keys(INDUSTRY_MAP);
 
 const COMPANY_SIZES = [
-  "1-10 nhân viên", "11-50 nhân viên", "51-200 nhân viên", 
-  "201-500 nhân viên", "501-1000 nhân viên", "1000+ nhân viên"
+  { value: "1-10", label: "1-10 nhân viên" },
+  { value: "11-50", label: "11-50 nhân viên" },
+  { value: "51-100", label: "51-100 nhân viên" },
+  { value: "100-500", label: "100-500 nhân viên" },
+  { value: "500-1000", label: "500-1000 nhân viên" },
+  { value: "100+", label: "100+ nhân viên" },
+  { value: "1000+", label: "1000+ nhân viên" },
+  { value: "5,000+", label: "5,000+ nhân viên" },
 ];
 
 const CompaniesPage = () => {
@@ -60,6 +66,25 @@ const CompaniesPage = () => {
     fetchCompanies();
   }, [currentPage, selectedIndustry, selectedLocation, selectedSize]);
 
+  // Load followed companies on mount (only for logged-in candidates)
+  useEffect(() => {
+    const fetchFollowedCompanies = async () => {
+      if (isAuthenticated && user?.role === 'CANDIDATE') {
+        try {
+          const followedRes = await companyService.getMyFollowedCompanies(0, 200);
+          const data = followedRes?.content || followedRes || [];
+          if (Array.isArray(data)) {
+            const ids = new Set(data.map(item => item.companyId || item.id));
+            setFollowingIds(ids);
+          }
+        } catch (error) {
+          console.error("Failed to load followed companies:", error);
+        }
+      }
+    };
+    fetchFollowedCompanies();
+  }, [isAuthenticated, user]);
+
   const fetchCompanies = async () => {
     try {
       setIsLoading(true);
@@ -74,13 +99,6 @@ const CompaniesPage = () => {
       const response = await companyService.searchCompanies(params);
       setCompanies(response.content || []);
       setTotalElements(response.totalElements || 0);
-      
-      // If logged in, check which companies are followed
-      if (isAuthenticated && user?.role === 'CANDIDATE') {
-        const followedRes = await companyService.getMyFollowedCompanies(); // I might need to add this to service
-        // For simplicity, we could also fetch following status individually or assume backend returns it.
-        // But let's check current user's followed list.
-      }
     } catch (error) {
       console.error("Failed to fetch companies:", error);
       toast.error("Không thể tải danh sách công ty");
@@ -204,7 +222,7 @@ const CompaniesPage = () => {
                onChange={(e) => setSelectedSize(e.target.value)}
             >
                <option value="all">Mọi quy mô</option>
-               {COMPANY_SIZES.map(s => <option key={s} value={s}>{s}</option>)}
+               {COMPANY_SIZES.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
             </select>
           </div>
         </div>
@@ -278,8 +296,15 @@ const CompaniesPage = () => {
                       </span>
                     </div>
                     <div className="flex items-center gap-1.5">
-                      <Star className="w-4 h-4 text-yellow-500 fill-current" />
-                      <span className="text-sm font-bold text-gray-800">5.0</span>
+                      <div className="flex items-center gap-1.5">
+                        <Star className={`w-4 h-4 ${company.averageRating ? 'text-yellow-500 fill-current' : 'text-gray-300'}`} />
+                        <span className="text-sm font-bold text-gray-800">
+                          {company.averageRating ? company.averageRating.toFixed(1) : '—'}
+                        </span>
+                        {company.reviewCount > 0 && (
+                          <span className="text-xs text-gray-400">({company.reviewCount})</span>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </div>

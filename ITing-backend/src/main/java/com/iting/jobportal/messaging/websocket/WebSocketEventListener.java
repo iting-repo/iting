@@ -22,6 +22,13 @@ public class WebSocketEventListener {
     private final SimpMessagingTemplate messagingTemplate;
     private final Map<Long, Integer> onlineCounters = new ConcurrentHashMap<>();
 
+    /**
+     * Returns a snapshot of all user IDs currently connected via WebSocket.
+     */
+    public java.util.Set<Long> getOnlineUserIds() {
+        return java.util.Collections.unmodifiableSet(onlineCounters.keySet());
+    }
+
     private Long extractUserId(Principal principal) {
         if (principal == null) {
             return null;

@@ -14,11 +14,12 @@ import java.util.List;
 
 public interface JobRepository extends JpaRepository<Job, Long>, JpaSpecificationExecutor<Job> {
 
-    // Tìm jobs theo status
-    Page<Job> findAllByStatus(JobStatus status, Pageable pageable);
+    // Tìm jobs theo status VÀ công ty đang hoạt động
+    @Query("SELECT j FROM Job j JOIN j.company c WHERE j.status = :status AND c.active = true")
+    Page<Job> findAllByStatus(@Param("status") JobStatus status, Pageable pageable);
 
-    // Lấy jobs hot (sắp xếp theo lượt ứng tuyển + view)
-    @Query("SELECT j FROM Job j WHERE j.status = :status ORDER BY j.applicationCount DESC, j.viewCount DESC")
+    // Lấy jobs hot (sắp xếp theo lượt ứng tuyển + view) VÀ công ty đang hoạt động
+    @Query("SELECT j FROM Job j JOIN j.company c WHERE j.status = :status AND c.active = true ORDER BY j.applicationCount DESC, j.viewCount DESC")
     Page<Job> findHotJobs(@Param("status") JobStatus status, Pageable pageable);
 
     List<Job> findTop50ByStatusOrderByCreatedAtDesc(JobStatus status);
@@ -54,6 +55,10 @@ public interface JobRepository extends JpaRepository<Job, Long>, JpaSpecificatio
     long countByCreatedAtBefore(java.time.LocalDateTime dateTime);
     long countByStatus(JobStatus status);
     long countByCompany_IdAndStatus(Long companyId, JobStatus status);
+
+    // Count truly active jobs: status ACTIVE and not past dueDate
+    @Query("SELECT COUNT(j) FROM Job j WHERE j.company.id = :companyId AND j.status = 'ACTIVE' AND (j.dueDate IS NULL OR j.dueDate >= CURRENT_DATE)")
+    long countActiveAndNotExpiredByCompanyId(@Param("companyId") Long companyId);
 
     // ===== EMBEDDING / VECTOR SEARCH =====
 

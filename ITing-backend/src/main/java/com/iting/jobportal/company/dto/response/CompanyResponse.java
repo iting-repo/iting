@@ -50,6 +50,8 @@ public class CompanyResponse {
     private LocalDateTime lastUpdate;
     private Long followerCount;
     private Integer activeJobCount;
+    private Double averageRating;
+    private Long reviewCount;
     private String statusReason;
     private Boolean active;
     private Boolean profileSetup;
@@ -85,6 +87,8 @@ public class CompanyResponse {
                 company.getLastUpdate(),
                 company.getFollowerCount(),
                 0, // activeJobCount - set later
+                null, // averageRating - set later
+                0L, // reviewCount - set later
                 company.getStatusReason(),
                 company.getActive(),
                 company.getProfileSetup()

@@ -27,6 +27,7 @@ public class ApplicationResponse {
     private String avatarUrl;
     private String jobTitle;
     private String companyLogo;
+    private Boolean companyActive;
     private String introduction;
     
     // CV Info

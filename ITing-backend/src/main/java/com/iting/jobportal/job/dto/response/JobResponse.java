@@ -22,6 +22,7 @@ public class JobResponse {
     private String companyLogo;
     private String logo;    // Alias for companyLogo
     private String logoUrl; // Alias for companyLogo
+    private Boolean companyActive; // Trạng thái hoạt động của công ty
 
     // Basic
     private String title;
@@ -82,21 +83,27 @@ public class JobResponse {
     public static JobResponse fromEntity(Job job) {
         String companyName = null;
         String companyLogo = null;
+        Boolean companyActive = null;
         
         try {
             if (job.getCompany() != null) {
                 companyName = job.getCompany().getName();
                 companyLogo = job.getCompany().getLogoUrl();
+                companyActive = job.getCompany().getActive();
             }
         } catch (Exception e) {
             // Handle cases where company proxy exists but the underlying record is missing (e.g., stale data)
             // We use the ID if we can't get the name
         }
 
-        return fromEntityWithCompany(job, companyName, companyLogo);
+        return fromEntityWithCompany(job, companyName, companyLogo, companyActive);
     }
 
     public static JobResponse fromEntityWithCompany(Job job, String companyName, String companyLogo) {
+        return fromEntityWithCompany(job, companyName, companyLogo, null);
+    }
+
+    public static JobResponse fromEntityWithCompany(Job job, String companyName, String companyLogo, Boolean companyActive) {
         return JobResponse.builder()
                 .id(job.getId())
 
@@ -105,6 +112,7 @@ public class JobResponse {
                 .companyLogo(companyLogo)
                 .logo(companyLogo)
                 .logoUrl(companyLogo)
+                .companyActive(companyActive != null ? companyActive : true)
 
                 .title(job.getTitle())
                 .position(job.getPosition())

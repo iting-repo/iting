@@ -135,8 +135,8 @@ public class ConversationServiceImpl implements ConversationService {
                 .updatedAt(conversation.getUpdatedAt())
                 .build();
 
-        fillParticipantProfile(response, conversation.getParticipant1Id(), true);
-        fillParticipantProfile(response, conversation.getParticipant2Id(), false);
+        fillParticipantProfile(response, conversation.getParticipant1Id(), true, currentUserId);
+        fillParticipantProfile(response, conversation.getParticipant2Id(), false, currentUserId);
 
         Long otherParticipantId = conversation.getParticipant1Id().equals(currentUserId)
                 ? conversation.getParticipant2Id()
@@ -154,7 +154,7 @@ public class ConversationServiceImpl implements ConversationService {
         return response;
     }
 
-    private void fillParticipantProfile(ConversationResponse response, Long participantId, boolean firstParticipant) {
+    private void fillParticipantProfile(ConversationResponse response, Long participantId, boolean firstParticipant, Long currentUserId) {
         User user = userRepository.findById(participantId).orElse(null);
         if (user != null) {
             if (firstParticipant) {
@@ -163,6 +163,9 @@ public class ConversationServiceImpl implements ConversationService {
             } else {
                 response.setParticipant2Name(user.getFullName());
                 response.setParticipant2Avatar(user.getAvatarUrl());
+            }
+            if (!participantId.equals(currentUserId)) {
+                response.setOtherParticipantActive(true); // User accounts are currently assumed active
             }
             return;
         }
@@ -175,6 +178,9 @@ public class ConversationServiceImpl implements ConversationService {
             } else {
                 response.setParticipant2Name(company.getName());
                 response.setParticipant2Avatar(company.getLogoUrl());
+            }
+            if (!participantId.equals(currentUserId)) {
+                response.setOtherParticipantActive(company.getActive() != null ? company.getActive() : true);
             }
         }
     }

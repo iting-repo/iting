@@ -34,4 +34,5 @@ public class ConversationResponse {
     private Long otherParticipantId;
     private String otherParticipantName;
     private String otherParticipantAvatar;
+    private Boolean otherParticipantActive;
 }
