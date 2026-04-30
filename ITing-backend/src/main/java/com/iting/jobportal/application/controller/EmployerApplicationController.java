@@ -55,16 +55,17 @@ public class EmployerApplicationController {
             @RequestParam(defaultValue = "desc") String sortOrder,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
-        
+
         ApplicationSearchRequest request = new ApplicationSearchRequest();
         request.setJobId(jobId);
-        if (status != null) request.setStatus(ApplicationStatus.valueOf(status));
+        if (status != null)
+            request.setStatus(ApplicationStatus.valueOf(status));
         request.setKeyword(keyword);
         request.setSortBy(sortBy);
         request.setSortOrder(sortOrder);
         request.setPage(page);
         request.setSize(size);
-        
+
         return ResponseEntity.ok(employerApplicationService.searchApplications(employerId, request));
     }
 
@@ -124,7 +125,7 @@ public class EmployerApplicationController {
             @RequestParam("file") MultipartFile file) {
         return ResponseEntity.ok(employerApplicationService.searchCandidatesByCvFile(employerId, file));
     }
-    
+
     @GetMapping("/search/cv-keyword")
     @Operation(summary = "Full-Text Search: Tìm ứng viên theo keyword trong nội dung CV")
     public ResponseEntity<List<ApplicationResponse>> searchByKeyword(

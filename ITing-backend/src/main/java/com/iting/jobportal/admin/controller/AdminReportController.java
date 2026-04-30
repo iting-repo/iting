@@ -27,7 +27,7 @@ public class AdminReportController {
             @RequestParam(required = false, defaultValue = "") String search,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
-        
+
         Page<UserReport> reports = reportService.getReports(status, type, targetType, priority, search, page, size);
         return ResponseEntity.ok(ApiResponse.success(reports));
     }
@@ -48,7 +48,7 @@ public class AdminReportController {
             @RequestParam String status,
             @RequestParam String note,
             @RequestAttribute("userId") Long adminId) {
-        
+
         UserReport report = reportService.handleReport(adminId, id, status, note);
         return ResponseEntity.ok(ApiResponse.success(report));
     }

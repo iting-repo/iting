@@ -42,7 +42,8 @@ public class SocialLinkServiceImpl implements SocialLinkService {
         SocialLinkResponse res = new SocialLinkResponse();
 
         for (SocialLink link : links) {
-            if (link.getPlatform() == null) continue;
+            if (link.getPlatform() == null)
+                continue;
 
             switch (link.getPlatform()) {
                 case LINKEDIN -> res.setLinkedin(link.getUrl());
@@ -100,7 +101,8 @@ public class SocialLinkServiceImpl implements SocialLinkService {
     }
 
     private String normalize(String value) {
-        if (value == null) return null;
+        if (value == null)
+            return null;
         String trimmed = value.trim();
         return trimmed.isEmpty() ? null : trimmed;
     }

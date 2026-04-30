@@ -14,8 +14,8 @@ import java.util.Optional;
 
 public interface CompanyRepository extends JpaRepository<Company, Long>, JpaSpecificationExecutor<Company> {
     Page<Company> findByCompanyInfoUpdateStatus(CompanyReviewStatus status, Pageable pageable);
-    Optional<Company> findByAccount_Id(Long accountId);
 
+    Optional<Company> findByAccount_Id(Long accountId);
 
     @Query("SELECT c FROM Company c WHERE c.companyInfoUpdateStatus = :infoStatus OR c.documentReviewStatus = :docStatus")
     Page<Company> findByCompanyInfoUpdateStatusOrDocumentReviewStatus(

@@ -22,7 +22,7 @@ public class CompanyNotificationKafkaConsumer {
     public void consumeKybNotification(String messagePayload) {
         try {
             log.info("Worker received Kafka message: {}", messagePayload);
-            
+
             // Tách dữ liệu "id|||Name"
             String[] parts = messagePayload.split("\\|\\|\\|");
             Long companyId = Long.parseLong(parts[0]);

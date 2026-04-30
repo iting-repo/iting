@@ -40,15 +40,15 @@ public class PublicContentController {
     public ResponseEntity<StaticContent> getPage(@PathVariable String slug) {
         StaticContent content = contentRepository.findBySlug(slug)
                 .orElseThrow(() -> new RuntimeException("Page not found"));
-        
+
         if (!content.getPublished()) {
             throw new RuntimeException("Page not published");
         }
-        
+
         // Tăng view count
         content.setViewCount(content.getViewCount() + 1);
         contentRepository.save(content);
-        
+
         return ResponseEntity.ok(content);
     }
 
@@ -63,8 +63,6 @@ public class PublicContentController {
     public ResponseEntity<List<StaticContent>> getBlogs() {
         return ResponseEntity.ok(contentRepository.findByTypeAndPublishedOrderBySortOrderAsc("BLOG", true));
     }
-
-
 
     // ========================================
     // DANH MỤC
@@ -99,9 +97,9 @@ public class PublicContentController {
     public ResponseEntity<Map<String, Long>> getStats() {
         Map<String, Long> stats = new HashMap<>();
         stats.put("totalJobs", jobRepository.countByStatus(JobStatus.ACTIVE));
-        stats.put("totalCandidates", accountRepository.countByRole(Role.CANDIDATE) + accountRepository.countByRole(Role.USER));
+        stats.put("totalCandidates",
+                accountRepository.countByRole(Role.CANDIDATE) + accountRepository.countByRole(Role.USER));
         stats.put("totalCompanies", companyRepository.count());
         return ResponseEntity.ok(stats);
     }
 }
-

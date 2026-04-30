@@ -48,12 +48,12 @@ public class CompanyServiceImpl implements CompanyService {
     private final CompanyMapper companyMapper;
 
     public CompanyServiceImpl(CompanyRepository companyRepository,
-                              CompanyFollowService companyFollowService,
-                              FileUploadService fileUploadService,
-                              AccountRepository accountRepository,
-                              JobRepository jobRepository,
-                              ApplicationEventPublisher eventPublisher,
-                              CompanyMapper companyMapper) {
+            CompanyFollowService companyFollowService,
+            FileUploadService fileUploadService,
+            AccountRepository accountRepository,
+            JobRepository jobRepository,
+            ApplicationEventPublisher eventPublisher,
+            CompanyMapper companyMapper) {
         this.companyRepository = companyRepository;
         this.companyFollowService = companyFollowService;
         this.fileUploadService = fileUploadService;
@@ -62,6 +62,7 @@ public class CompanyServiceImpl implements CompanyService {
         this.eventPublisher = eventPublisher;
         this.companyMapper = companyMapper;
     }
+
     @Override
     @Transactional
     public CompanyResponse getMyCompany(Long accountId) {
@@ -127,7 +128,8 @@ public class CompanyServiceImpl implements CompanyService {
         company.setTaxCode(request.getTaxCode());
         company.setLastUpdate(LocalDateTime.now());
 
-        // Chuyển trạng thái sang DRAFT khi cập nhật thông tin. Cần bấm "Gửi duyệt" để sang PENDING_REVIEW.
+        // Chuyển trạng thái sang DRAFT khi cập nhật thông tin. Cần bấm "Gửi duyệt" để
+        // sang PENDING_REVIEW.
         if (company.getCompanyInfoUpdateStatus() != CompanyReviewStatus.PENDING_REVIEW) {
             company.setCompanyInfoUpdateStatus(CompanyReviewStatus.DRAFT);
         }
@@ -184,9 +186,9 @@ public class CompanyServiceImpl implements CompanyService {
         }
 
         boolean isValidType = contentType.equalsIgnoreCase("application/pdf") ||
-                             contentType.equalsIgnoreCase("image/jpeg") ||
-                             contentType.equalsIgnoreCase("image/jpg") ||
-                             contentType.equalsIgnoreCase("image/png");
+                contentType.equalsIgnoreCase("image/jpeg") ||
+                contentType.equalsIgnoreCase("image/jpg") ||
+                contentType.equalsIgnoreCase("image/png");
 
         if (!isValidType) {
             throw new IllegalArgumentException("Chỉ chấp nhận file PDF hoặc hình ảnh (JPEG, PNG)");
@@ -194,15 +196,15 @@ public class CompanyServiceImpl implements CompanyService {
 
         String originalFilename = file.getOriginalFilename();
         if (originalFilename == null) {
-             throw new IllegalArgumentException("Tên file không hợp lệ");
+            throw new IllegalArgumentException("Tên file không hợp lệ");
         }
-        
+
         String lowerName = originalFilename.toLowerCase();
-        boolean isValidExt = lowerName.endsWith(".pdf") || 
-                            lowerName.endsWith(".jpg") || 
-                            lowerName.endsWith(".jpeg") || 
-                            lowerName.endsWith(".png");
-                            
+        boolean isValidExt = lowerName.endsWith(".pdf") ||
+                lowerName.endsWith(".jpg") ||
+                lowerName.endsWith(".jpeg") ||
+                lowerName.endsWith(".png");
+
         if (!isValidExt) {
             throw new IllegalArgumentException("Phần mở rộng file không hợp lệ. Chỉ chấp nhận .pdf, .jpg, .jpeg, .png");
         }
@@ -254,8 +256,7 @@ public class CompanyServiceImpl implements CompanyService {
                 company.getBusinessLicenseDocumentType(),
                 company.getBusinessLicenseFileUrl(),
                 company.getBusinessLicensePreviewUrl(),
-                company.getCompanyInfoUpdateStatus()
-        );
+                company.getCompanyInfoUpdateStatus());
     }
 
     // ====================================================
@@ -303,8 +304,7 @@ public class CompanyServiceImpl implements CompanyService {
         company.setConsentDocumentVersion(
                 request.getVersion() == null || request.getVersion().isBlank()
                         ? "v1.0"
-                        : request.getVersion()
-        );
+                        : request.getVersion());
 
         company.setLastUpdateRequestDate(LocalDateTime.now());
         company.setLastUpdate(LocalDateTime.now());
@@ -395,9 +395,9 @@ public class CompanyServiceImpl implements CompanyService {
         company.setLastUpdate(LocalDateTime.now());
 
         Company saved = companyRepository.save(company);
-        
+
         eventPublisher.publishEvent(new CompanyInfoSubmittedEvent(this, saved.getId(), saved.getName()));
-        
+
         return mapToResponse(saved);
     }
 
@@ -486,7 +486,8 @@ public class CompanyServiceImpl implements CompanyService {
     }
 
     @Override
-    public Page<CompanyResponse> searchCompanies(String keyword, String location, String industry, String size, int page, int sizePage) {
+    public Page<CompanyResponse> searchCompanies(String keyword, String location, String industry, String size,
+            int page, int sizePage) {
         Pageable pageable = PageRequest.of(page, sizePage, Sort.by("lastUpdate").descending());
 
         Specification<Company> spec = (root, query, cb) -> {
@@ -496,8 +497,7 @@ public class CompanyServiceImpl implements CompanyService {
                 String kw = "%" + keyword.toLowerCase() + "%";
                 predicates.add(cb.or(
                         cb.like(cb.lower(root.get("name")), kw),
-                        cb.like(cb.lower(root.get("description")), kw)
-                ));
+                        cb.like(cb.lower(root.get("description")), kw)));
             }
 
             if (location != null && !location.isBlank() && !location.equalsIgnoreCase("all")) {
@@ -512,11 +512,11 @@ public class CompanyServiceImpl implements CompanyService {
                     // Ignore invalid enum values
                 }
             }
-            
+
             if (size != null && !size.isBlank() && !size.equalsIgnoreCase("all")) {
                 predicates.add(cb.equal(root.get("companySize"), size));
             }
-            
+
             // Only show setup profiles
             predicates.add(cb.equal(root.get("profileSetup"), true));
 

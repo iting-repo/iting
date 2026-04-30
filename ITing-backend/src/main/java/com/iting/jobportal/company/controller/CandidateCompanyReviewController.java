@@ -21,15 +21,12 @@ public class CandidateCompanyReviewController {
     public ResponseEntity<CompanyReviewResponse> postReview(
             @PathVariable Long id,
             @CurrentUser Long accountId,
-            @RequestBody Map<String, Object> payload
-    ) {
+            @RequestBody Map<String, Object> payload) {
         int rating = (int) payload.get("rating");
         String content = (String) payload.get("content");
-        
+
         return ResponseEntity.ok(
-            CompanyReviewResponse.fromEntity(
-                reviewService.createReview(id, accountId, rating, content)
-            )
-        );
+                CompanyReviewResponse.fromEntity(
+                        reviewService.createReview(id, accountId, rating, content)));
     }
 }

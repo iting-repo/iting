@@ -25,8 +25,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
     protected void doFilterInternal(
             HttpServletRequest request,
             HttpServletResponse response,
-            FilterChain filterChain
-    ) throws ServletException, IOException {
+            FilterChain filterChain) throws ServletException, IOException {
 
         String path = request.getServletPath();
         // Bỏ qua các đường dẫn không cần Token (chủ yếu là Swagger)
@@ -50,7 +49,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
         try {
             Claims claims = jwtTokenUtil.getClaims(token);
-            Long userId  = ((Number) claims.get("id")).longValue();
+            Long userId = ((Number) claims.get("id")).longValue();
             String email = claims.getSubject();
             String roleStr = (String) claims.get("role");
 
@@ -62,8 +61,8 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
             AuthUser authUser = new AuthUser(stub);
 
-            UsernamePasswordAuthenticationToken auth =
-                    new UsernamePasswordAuthenticationToken(authUser, null, authUser.getAuthorities());
+            UsernamePasswordAuthenticationToken auth = new UsernamePasswordAuthenticationToken(authUser, null,
+                    authUser.getAuthorities());
 
             SecurityContextHolder.getContext().setAuthentication(auth);
 
@@ -75,7 +74,8 @@ public class JwtAuthFilter extends OncePerRequestFilter {
     }
 
     private Role parseRole(String roleStr) {
-        if (roleStr == null) return Role.CANDIDATE;
+        if (roleStr == null)
+            return Role.CANDIDATE;
         try {
             // Parse rồi normalize: USER→CANDIDATE, COMPANY→EMPLOYER
             return Role.valueOf(roleStr.toUpperCase()).normalize();

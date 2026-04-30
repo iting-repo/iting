@@ -19,7 +19,7 @@ public class Admin { // Đổi tên từ AdminAccount thành Admin
 
     @Id
     @Column(name = "id")
-    private Long id;  // ID này sẽ trùng với Account ID
+    private Long id; // ID này sẽ trùng với Account ID
 
     @Column(name = "full_name", nullable = false, length = 100)
     private String fullName;
@@ -54,8 +54,10 @@ public class Admin { // Đổi tên từ AdminAccount thành Admin
     @PrePersist
     protected void onCreate() {
         createdAt = LocalDateTime.now();
-        if (active == null) active = true;
-        if (loginCount == null) loginCount = 0;
+        if (active == null)
+            active = true;
+        if (loginCount == null)
+            loginCount = 0;
     }
 
     @PreUpdate

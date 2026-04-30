@@ -25,4 +25,3 @@ public class CertificateRequest {
 
     private Boolean doesNotExpire = false;
 }
-

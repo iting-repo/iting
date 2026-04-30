@@ -51,14 +51,15 @@ public class MlServiceClientImpl implements MlServiceClient {
             Map<String, Object> body = Map.of(
                     "query", query,
                     "documents", documents,
-                    "doc_ids", docIds
-            );
+                    "doc_ids", docIds);
 
             JsonNode response = postRequest("/rerank", body);
-            if (response == null) return List.of();
+            if (response == null)
+                return List.of();
 
             JsonNode results = response.get("results");
-            if (results == null || !results.isArray()) return List.of();
+            if (results == null || !results.isArray())
+                return List.of();
 
             List<RankedResult> ranked = new ArrayList<>();
             for (JsonNode item : results) {
@@ -87,10 +88,12 @@ public class MlServiceClientImpl implements MlServiceClient {
             Map<String, Object> body = Map.of("text", text);
 
             JsonNode response = postRequest("/extract-skills", body);
-            if (response == null) return List.of();
+            if (response == null)
+                return List.of();
 
             JsonNode skills = response.get("skills");
-            if (skills == null || !skills.isArray()) return List.of();
+            if (skills == null || !skills.isArray())
+                return List.of();
 
             List<String> result = new ArrayList<>();
             for (JsonNode skill : skills) {
@@ -107,7 +110,8 @@ public class MlServiceClientImpl implements MlServiceClient {
 
     @Override
     public boolean isAvailable() {
-        if (!enabled) return false;
+        if (!enabled)
+            return false;
 
         try {
             String url = normalizeUrl(mlServiceUrl) + "/health";

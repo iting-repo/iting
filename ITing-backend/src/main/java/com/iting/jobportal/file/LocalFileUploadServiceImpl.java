@@ -40,7 +40,8 @@ public class LocalFileUploadServiceImpl implements FileUploadService {
 
     @Override
     public void deleteByUrl(String fileUrl) {
-        if (fileUrl == null || fileUrl.isBlank()) return;
+        if (fileUrl == null || fileUrl.isBlank())
+            return;
 
         try {
             String relativePath = fileUrl.startsWith("/") ? fileUrl.substring(1) : fileUrl;

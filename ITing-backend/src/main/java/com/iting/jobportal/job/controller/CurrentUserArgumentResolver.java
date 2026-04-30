@@ -18,7 +18,7 @@ public class CurrentUserArgumentResolver implements HandlerMethodArgumentResolve
         return (parameter.hasParameterAnnotation(CurrentUser.class)
                 || parameter.hasParameterAnnotation(com.iting.jobportal.user.controller.CurrentUser.class))
                 && (Long.class.isAssignableFrom(parameter.getParameterType())
-                || String.class.isAssignableFrom(parameter.getParameterType()));
+                        || String.class.isAssignableFrom(parameter.getParameterType()));
     }
 
     @Override
@@ -26,10 +26,10 @@ public class CurrentUserArgumentResolver implements HandlerMethodArgumentResolve
             MethodParameter parameter,
             ModelAndViewContainer mavContainer,
             NativeWebRequest webRequest,
-            WebDataBinderFactory binderFactory
-    ) {
+            WebDataBinderFactory binderFactory) {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        if (auth == null || auth.getPrincipal() == null) return null;
+        if (auth == null || auth.getPrincipal() == null)
+            return null;
 
         Object principal = auth.getPrincipal();
         if (!(principal instanceof AuthUser)) {

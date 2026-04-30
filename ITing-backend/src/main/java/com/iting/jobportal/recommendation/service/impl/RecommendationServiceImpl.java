@@ -63,8 +63,9 @@ public class RecommendationServiceImpl implements RecommendationService {
 
     private List<JobResponse> recommendByCv(Long userId, int limit) {
         List<Job> candidates = jobRepository.findTop50ByStatusOrderByCreatedAtDesc(JobStatus.ACTIVE);
-        List<UserSearchHistory> searchHistories = searchHistoryRepository.findByAccountIdOrderByCreatedAtDesc(userId, PageRequest.of(0, 5));
-        
+        List<UserSearchHistory> searchHistories = searchHistoryRepository.findByAccountIdOrderByCreatedAtDesc(userId,
+                PageRequest.of(0, 5));
+
         // Phase 3: Bonus from history behavior
         return candidates.stream()
                 .map(job -> {
@@ -79,12 +80,13 @@ public class RecommendationServiceImpl implements RecommendationService {
 
     private List<JobResponse> recommendHybrid(Long userId, int limit) {
         // 1. Lấy đề xuất từ Collaborative Filtering (Dựa trên người dùng tương đồng)
-        List<Long> collaborativeIds = interactionRepository.findSuggestedJobsByUserInterest(userId, PageRequest.of(0, limit));
+        List<Long> collaborativeIds = interactionRepository.findSuggestedJobsByUserInterest(userId,
+                PageRequest.of(0, limit));
         List<Job> collaborativeJobs = jobRepository.findAllById(collaborativeIds);
-        
+
         // 2. Lấy đề xuất từ Content (Search history)
         List<JobResponse> contentBased = recommendByCv(userId, limit);
-        
+
         // 3. Lấy đề xuất Trending (Dành cho sự mới mẻ/phổ quát)
         List<JobResponse> trending = getTrendingJobs(limit / 2);
 
@@ -94,7 +96,8 @@ public class RecommendationServiceImpl implements RecommendationService {
         // Ưu tiên 1: Collaborative (Hàn gắn sở thích chung) - Max 40%
         int colLimit = (int) (limit * 0.4);
         for (Job job : collaborativeJobs) {
-            if (finalResults.size() >= colLimit) break;
+            if (finalResults.size() >= colLimit)
+                break;
             if (job.getStatus() == JobStatus.ACTIVE && job.getCompany() != null) {
                 JobResponse resp = JobResponse.fromEntity(job);
                 if (resp.getCompanyName() != null) {
@@ -106,7 +109,8 @@ public class RecommendationServiceImpl implements RecommendationService {
 
         // Ưu tiên 2: Content (Sở thích cá nhân) - Max đến khi gần đủ limit
         for (JobResponse resp : contentBased) {
-            if (finalResults.size() >= (limit - 2)) break; // Chừa chỗ cho trending
+            if (finalResults.size() >= (limit - 2))
+                break; // Chừa chỗ cho trending
             if (!seenIds.contains(resp.getId()) && resp.getCompanyName() != null) {
                 finalResults.add(resp);
                 seenIds.add(resp.getId());
@@ -115,7 +119,8 @@ public class RecommendationServiceImpl implements RecommendationService {
 
         // Ưu tiên 3: Trending (Lắp đầy chỗ trống)
         for (JobResponse resp : trending) {
-            if (finalResults.size() >= limit) break;
+            if (finalResults.size() >= limit)
+                break;
             if (!seenIds.contains(resp.getId()) && resp.getCompanyName() != null) {
                 finalResults.add(resp);
                 seenIds.add(resp.getId());
@@ -127,28 +132,32 @@ public class RecommendationServiceImpl implements RecommendationService {
 
     private double calculateScore(Job job, List<UserSearchHistory> searchHistories) {
         double score = 0.0;
-        if (searchHistories.isEmpty()) return 0.0;
+        if (searchHistories.isEmpty())
+            return 0.0;
 
         for (UserSearchHistory history : searchHistories) {
             if (history.getKeyword() != null) {
                 String keyword = history.getKeyword().toLowerCase();
-                if (job.getTitle().toLowerCase().contains(keyword)) score += 20.0;
-                
+                if (job.getTitle().toLowerCase().contains(keyword))
+                    score += 20.0;
+
                 // Fix tech match
                 if (job.getSkills() != null && job.getSkills().stream()
                         .anyMatch(tech -> tech.toLowerCase().contains(keyword))) {
                     score += 15.0;
                 }
             }
-            
+
             if (history.getLocation() != null && job.getProvince() != null) {
-                if (job.getProvince().equalsIgnoreCase(history.getLocation())) score += 10.0;
+                if (job.getProvince().equalsIgnoreCase(history.getLocation()))
+                    score += 10.0;
             }
         }
-        
+
         // Bonus cho job có "featured" (tin nổi bật trả phí)
-        if (Boolean.TRUE.equals(job.getFeatured())) score += 5.0;
-        
+        if (Boolean.TRUE.equals(job.getFeatured()))
+            score += 5.0;
+
         return score;
     }
 

@@ -16,7 +16,7 @@ public interface CompanyService {
 
     CompanyResponse getMyCompany(Long accountId);
 
-//    CompanyResponse getCompanyByUserId(Long userId);
+    // CompanyResponse getCompanyByUserId(Long userId);
 
     // (A) Basic Info
     CompanyResponse updateBasicInfo(Long id, CompanyBasicInfoRequest request);
@@ -40,23 +40,35 @@ public interface CompanyService {
 
     // (G) Submit for Review
     CompanyResponse submitInfoReview(Long id);
+
     CompanyResponse submitDocumentReview(Long id);
 
     String getBusinessLicensePresignedUrlByAccountId(Long accountId, int minutes);
 
     CompanyResponse updateBasicInfoByAccountId(Long accountId, CompanyBasicInfoRequest request);
+
     CompanyResponse updateRepresentativeByAccountId(Long accountId, CompanyRepresentativeRequest request);
+
     BusinessLicenseFormResponse getBusinessLicenseFormByAccountId(Long accountId);
+
     CompanyResponse updateBusinessLicenseByAccountId(Long accountId, BusinessLicenseUploadRequest request);
+
     CompanyResponse updateConsentDocumentByAccountId(Long accountId, ConsentDocumentUploadRequest request);
+
     void verifyPhoneByAccountId(Long accountId, VerifyPhoneRequest request);
+
     CompanyResponse verifyLicenseByAccountId(Long accountId, VerifyLicenseRequest request);
+
     CompanyResponse submitInfoReviewByAccountId(Long accountId);
+
     CompanyResponse submitDocumentReviewByAccountId(Long accountId);
+
     CompanyResponse submitBusinessLicenseReviewByAccountId(Long accountId);
+
     CompanyResponse submitConsentDocumentReviewByAccountId(Long accountId);
 
     String uploadLogoByAccountId(Long accountId, org.springframework.web.multipart.MultipartFile file);
-    
-    Page<CompanyResponse> searchCompanies(String keyword, String location, String industry, String size, int page, int sizePage);
+
+    Page<CompanyResponse> searchCompanies(String keyword, String location, String industry, String size, int page,
+            int sizePage);
 }

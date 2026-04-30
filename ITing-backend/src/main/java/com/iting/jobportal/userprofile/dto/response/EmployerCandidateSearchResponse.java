@@ -29,4 +29,3 @@ public class EmployerCandidateSearchResponse {
     // Phase 5: Explainability - KG-based match explanations
     private List<String> matchReasons;
 }
-

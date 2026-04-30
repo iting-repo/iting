@@ -15,4 +15,3 @@ public class PermissionDTO {
     private String action;
     private Boolean active;
 }
-

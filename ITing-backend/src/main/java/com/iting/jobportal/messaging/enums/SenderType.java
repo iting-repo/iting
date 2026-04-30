@@ -8,7 +8,7 @@ public enum SenderType {
      * Message sent by a user (candidate)
      */
     USER,
-    
+
     /**
      * Message sent by a company (recruiter)
      */

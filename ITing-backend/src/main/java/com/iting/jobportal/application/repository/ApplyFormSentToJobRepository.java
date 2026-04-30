@@ -16,7 +16,8 @@ public interface ApplyFormSentToJobRepository extends JpaRepository<ApplyFormSen
     // ✅ Kiểm tra tồn tại bằng cặp ID (JobId và ApplyFormId đều là Long)
     boolean existsByIdJobIdAndIdApplyFormId(Long jobId, Long applyFormId);
 
-    // ✅ Tìm danh sách ứng tuyển theo UserId (Long) - Khớp với thiết kế kế thừa Account/User
+    // ✅ Tìm danh sách ứng tuyển theo UserId (Long) - Khớp với thiết kế kế thừa
+    // Account/User
     @Query("SELECT s FROM ApplyFormSentToJob s JOIN ApplyForm f ON f.id = s.id.applyFormId WHERE f.userId = :userId")
     Page<ApplyFormSentToJob> findByUserId(@Param("userId") Long userId, Pageable pageable);
 

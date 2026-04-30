@@ -20,7 +20,7 @@ public class JobResponse {
     private Long companyId;
     private String companyName;
     private String companyLogo;
-    private String logo;    // Alias for companyLogo
+    private String logo; // Alias for companyLogo
     private String logoUrl; // Alias for companyLogo
 
     // Basic
@@ -78,18 +78,18 @@ public class JobResponse {
 
     private List<JobReviewHistoryResponse> reviewHistories;
 
-
     public static JobResponse fromEntity(Job job) {
         String companyName = null;
         String companyLogo = null;
-        
+
         try {
             if (job.getCompany() != null) {
                 companyName = job.getCompany().getName();
                 companyLogo = job.getCompany().getLogoUrl();
             }
         } catch (Exception e) {
-            // Handle cases where company proxy exists but the underlying record is missing (e.g., stale data)
+            // Handle cases where company proxy exists but the underlying record is missing
+            // (e.g., stale data)
             // We use the ID if we can't get the name
         }
 
@@ -141,8 +141,7 @@ public class JobResponse {
                 .reviewReason(
                         job.getStatus() == JobStatus.REJECTED || job.getStatus() == JobStatus.SUSPENDED
                                 ? job.getReviewReason()
-                                : null
-                )
+                                : null)
                 .reviewedBy(job.getReviewedBy())
                 .reviewedAt(job.getReviewedAt())
 

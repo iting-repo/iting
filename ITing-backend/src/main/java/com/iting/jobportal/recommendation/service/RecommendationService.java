@@ -5,5 +5,6 @@ import java.util.List;
 
 public interface RecommendationService {
     List<JobResponse> recommendHomepage(Long userId, int limit);
+
     List<JobResponse> getTrendingJobs(int limit);
 }

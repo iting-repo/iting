@@ -13,7 +13,7 @@ import java.util.concurrent.ConcurrentHashMap;
 @Service
 public class RateLimitingService {
 
-    // Lưu trữ Bucket trong bộ nhớ (Cho hệ thống 1 server). 
+    // Lưu trữ Bucket trong bộ nhớ (Cho hệ thống 1 server).
     // Nếu scaling nhiều server, bạn cần dùng RedisBucket4j.
     private final Map<String, Bucket> cache = new ConcurrentHashMap<>();
 

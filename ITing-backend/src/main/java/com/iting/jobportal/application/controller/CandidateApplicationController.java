@@ -31,7 +31,8 @@ public class CandidateApplicationController {
             @Valid @RequestBody ApplyJobRequest request) {
         ApplicationSubmitResponse response = candidateApplicationService.applyJob(userId, request);
         if (userId != null && request.getJobId() != null) {
-            interactionService.trackInteraction(userId, request.getJobId(), com.iting.jobportal.recommendation.entity.enums.InteractionType.APPLY);
+            interactionService.trackInteraction(userId, request.getJobId(),
+                    com.iting.jobportal.recommendation.entity.enums.InteractionType.APPLY);
         }
         return ResponseEntity.ok(response);
     }

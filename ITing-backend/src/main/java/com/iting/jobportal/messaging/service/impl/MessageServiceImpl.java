@@ -44,7 +44,7 @@ public class MessageServiceImpl implements MessageService {
     public MessageResponse sendMessage(SendMessageRequest request, Long senderId) {
         // Get or create conversation
         Conversation conversation;
-        
+
         if (request.getConversationId() != null) {
             // Use existing conversation
             conversation = conversationRepository.findById(request.getConversationId())
@@ -52,19 +52,18 @@ public class MessageServiceImpl implements MessageService {
         } else {
             // Create new conversation
             ConversationType conversationType = determineConversationType(request);
-            
+
             // Check if conversation already exists
             conversation = conversationRepository.findByParticipantsAndType(
-                    senderId, request.getReceiverId(), conversationType
-            ).orElseGet(() -> {
-                // Create new conversation
-                Conversation newConv = Conversation.builder()
-                        .type(conversationType)
-                        .participant1Id(senderId)
-                        .participant2Id(request.getReceiverId())
-                        .build();
-                return conversationRepository.save(newConv);
-            });
+                    senderId, request.getReceiverId(), conversationType).orElseGet(() -> {
+                        // Create new conversation
+                        Conversation newConv = Conversation.builder()
+                                .type(conversationType)
+                                .participant1Id(senderId)
+                                .participant2Id(request.getReceiverId())
+                                .build();
+                        return conversationRepository.save(newConv);
+                    });
         }
 
         // Create message
@@ -116,16 +115,14 @@ public class MessageServiceImpl implements MessageService {
                             NotificationType.MESSAGE_NEW,
                             "New message from " + senderDisplayName + ": " + contentPreview,
                             "CONVERSATION", convId,
-                            "/messages?conversationId=" + convId
-                    );
+                            "/messages?conversationId=" + convId);
                 } else {
                     domainNotificationPublisher.notifyCompany(
                             request.getReceiverId(),
                             NotificationType.MESSAGE_NEW,
                             "New message from " + senderDisplayName + ": " + contentPreview,
                             "CONVERSATION", convId,
-                            "/messages?conversationId=" + convId
-                    );
+                            "/messages?conversationId=" + convId);
                 }
             } catch (Exception e) {
                 // Log but don't fail the send
@@ -138,11 +135,14 @@ public class MessageServiceImpl implements MessageService {
     @Override
     public Page<MessageResponse> getMessagesByConversation(Long conversationId, int page, int size) {
         // Validate pagination
-        if (page < 0) page = 0;
-        if (size <= 0 || size > 100) size = 20;
+        if (page < 0)
+            page = 0;
+        if (size <= 0 || size > 100)
+            size = 20;
 
         Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
-        Page<Message> messagePage = messageRepository.findByConversationIdOrderByCreatedAtDesc(conversationId, pageable);
+        Page<Message> messagePage = messageRepository.findByConversationIdOrderByCreatedAtDesc(conversationId,
+                pageable);
 
         return messagePage.map(this::convertToMessageResponse);
     }
@@ -287,7 +287,8 @@ public class MessageServiceImpl implements MessageService {
                     return companyRepository.findById(message.getSenderId())
                             .map(Company::getName).orElse("Someone");
             }
-        } catch (Exception ignored) {}
+        } catch (Exception ignored) {
+        }
         return "Someone";
     }
 }

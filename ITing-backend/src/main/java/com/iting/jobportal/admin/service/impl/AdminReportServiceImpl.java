@@ -22,7 +22,8 @@ public class AdminReportServiceImpl implements AdminReportService {
     private final UserReportRepository reportRepository;
 
     @Override
-    public Page<UserReport> getReports(String status, String type, String targetType, String priority, String search, int page, int size) {
+    public Page<UserReport> getReports(String status, String type, String targetType, String priority, String search,
+            int page, int size) {
         Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
         // For now, simple return all. In real app, use Specification or QueryDSL
         return reportRepository.findAll(pageable);
@@ -60,7 +61,7 @@ public class AdminReportServiceImpl implements AdminReportService {
         long total = reportRepository.count();
         long pending = reportRepository.countByStatus("PENDING");
         long critical = reportRepository.countByPriority("CRITICAL");
-        
+
         Map<String, Long> byStatus = new HashMap<>();
         byStatus.put("PENDING", pending);
         byStatus.put("REVIEWING", reportRepository.countByStatus("REVIEWING"));

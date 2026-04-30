@@ -11,14 +11,13 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 public interface ActivityLogRepository extends JpaRepository<ActivityLog, Long> {
-    
+
     Page<ActivityLog> findByUserIdOrderByCreatedAtDesc(Long userId, Pageable pageable);
-    
+
     Page<ActivityLog> findByActionOrderByCreatedAtDesc(String action, Pageable pageable);
-    
+
     @Query("SELECT a FROM ActivityLog a WHERE a.createdAt >= :since ORDER BY a.createdAt DESC")
     List<ActivityLog> findRecentActivities(@Param("since") LocalDateTime since, Pageable pageable);
-    
+
     long countByActionAndCreatedAtAfter(String action, LocalDateTime since);
 }
-

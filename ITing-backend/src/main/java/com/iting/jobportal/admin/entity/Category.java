@@ -19,21 +19,21 @@ public class Category extends AuditEntity {
     private Long id;
 
     @Column(nullable = false, length = 50)
-    private String type;  // INDUSTRY, SKILL, LOCATION
+    private String type; // INDUSTRY, SKILL, LOCATION
 
     @Column(nullable = false, length = 100)
     private String name;
 
     @Column(length = 100)
-    private String nameEn;  // English name for internationalization
+    private String nameEn; // English name for internationalization
 
     @Column(length = 255)
     private String description;
 
     @Column(length = 500)
-    private String icon;  // Icon class or image path
+    private String icon; // Icon class or image path
 
-    private Long parentId;  // Cho category phân cấp
+    private Long parentId; // Cho category phân cấp
 
     private Integer sortOrder;
 
@@ -41,7 +41,9 @@ public class Category extends AuditEntity {
 
     @PrePersist
     protected void onCreate() {
-        if (active == null) active = true;
-        if (sortOrder == null) sortOrder = 0;
+        if (active == null)
+            active = true;
+        if (sortOrder == null)
+            sortOrder = 0;
     }
 }

@@ -8,7 +8,7 @@ import java.util.Optional;
 
 @Repository
 public interface SystemConfigRepository extends JpaRepository<SystemConfig, Long> {
-    
+
     // We only need the first row, as it's a singleton config
     Optional<SystemConfig> findFirstByOrderByIdAsc();
 }

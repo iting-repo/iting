@@ -10,7 +10,8 @@ public interface MessageService {
 
     /**
      * Send a message
-     * @param request Message request
+     * 
+     * @param request  Message request
      * @param senderId Sender ID (from @CurrentUser)
      * @return Created message
      */
@@ -18,15 +19,17 @@ public interface MessageService {
 
     /**
      * Get messages in a conversation (paginated)
+     * 
      * @param conversationId Conversation ID
-     * @param page Page number
-     * @param size Page size
+     * @param page           Page number
+     * @param size           Page size
      * @return Page of messages
      */
     Page<MessageResponse> getMessagesByConversation(Long conversationId, int page, int size);
 
     /**
      * Get messages in a conversation (all, for chat display)
+     * 
      * @param conversationId Conversation ID
      * @return List of messages
      */
@@ -34,20 +37,23 @@ public interface MessageService {
 
     /**
      * Mark a message as read
+     * 
      * @param messageId Message ID
-     * @param userId User ID (to verify it's the receiver)
+     * @param userId    User ID (to verify it's the receiver)
      */
     void markMessageAsRead(Long messageId, Long userId);
 
     /**
      * Mark all messages in a conversation as read
+     * 
      * @param conversationId Conversation ID
-     * @param userId User ID (receiver)
+     * @param userId         User ID (receiver)
      */
     void markAllMessagesAsReadInConversation(Long conversationId, Long userId);
 
     /**
      * Get unread message count for a user
+     * 
      * @param userId User ID
      * @return Unread count
      */
@@ -55,6 +61,7 @@ public interface MessageService {
 
     /**
      * Get unread messages for a user
+     * 
      * @param userId User ID
      * @return List of unread messages
      */
@@ -62,13 +69,15 @@ public interface MessageService {
 
     /**
      * Delete a message (soft delete or actual delete)
+     * 
      * @param messageId Message ID
-     * @param userId User ID (to verify ownership)
+     * @param userId    User ID (to verify ownership)
      */
     void deleteMessage(Long messageId, Long userId);
 
     /**
      * Get message by ID
+     * 
      * @param messageId Message ID
      * @return Message response
      */

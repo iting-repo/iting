@@ -18,7 +18,7 @@ public class CompanyReviewResponse {
     public static CompanyReviewResponse fromEntity(CompanyReview review) {
         String name = "Anonymous";
         String avatar = null;
-        
+
         if (review.getAccount().getUser() != null) {
             name = review.getAccount().getUser().getFullName();
             avatar = review.getAccount().getUser().getAvatarUrl();

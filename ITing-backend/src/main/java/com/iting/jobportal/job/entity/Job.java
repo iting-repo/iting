@@ -12,14 +12,11 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 @Entity
-@Table(
-        name = "Job",
-        indexes = {
-                @Index(name = "idx_job_company", columnList = "Company_id"),
-                @Index(name = "idx_job_status", columnList = "Status"),
-                @Index(name = "idx_job_city", columnList = "Province")
-        }
-)
+@Table(name = "Job", indexes = {
+        @Index(name = "idx_job_company", columnList = "Company_id"),
+        @Index(name = "idx_job_status", columnList = "Status"),
+        @Index(name = "idx_job_city", columnList = "Province")
+})
 @Getter
 @Setter
 @NoArgsConstructor
@@ -45,7 +42,6 @@ public class Job {
     @Convert(converter = StringListConverter.class)
     @Column(name = "skills", columnDefinition = "TEXT")
     private List<String> skills;
-
 
     @Enumerated(EnumType.STRING)
     private JobType jobType;
@@ -106,7 +102,7 @@ public class Job {
     private LocalDateTime reviewedAt;
 
     private String aiReviewStatus;
-    
+
     @Column(columnDefinition = "TEXT")
     private String aiReviewReason;
 
@@ -122,14 +118,22 @@ public class Job {
     // ===== AUTO LOGIC =====
     @PrePersist
     protected void onCreate() {
-        if (status == null) status = JobStatus.PENDING;
-        if (createdAt == null) createdAt = LocalDateTime.now();
-        if (lastUpdate == null) lastUpdate = LocalDateTime.now();
-        if (viewCount == null) viewCount = 0;
-        if (applicationCount == null) applicationCount = 0;
-        if (currentAccepted == null) currentAccepted = 0;
-        if (maxAccept == null) maxAccept = 0;
-        if (featured == null) featured = false;
+        if (status == null)
+            status = JobStatus.PENDING;
+        if (createdAt == null)
+            createdAt = LocalDateTime.now();
+        if (lastUpdate == null)
+            lastUpdate = LocalDateTime.now();
+        if (viewCount == null)
+            viewCount = 0;
+        if (applicationCount == null)
+            applicationCount = 0;
+        if (currentAccepted == null)
+            currentAccepted = 0;
+        if (maxAccept == null)
+            maxAccept = 0;
+        if (featured == null)
+            featured = false;
 
         if (location == null) {
             location = buildLocation();
@@ -144,9 +148,12 @@ public class Job {
     private String buildLocation() {
         StringBuilder sb = new StringBuilder();
 
-        if (address != null) sb.append(address);
-        if (ward != null) sb.append(", ").append(ward);
-        if (province != null) sb.append(", ").append(province);
+        if (address != null)
+            sb.append(address);
+        if (ward != null)
+            sb.append(", ").append(ward);
+        if (province != null)
+            sb.append(", ").append(province);
 
         return sb.toString();
     }

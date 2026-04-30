@@ -34,7 +34,8 @@ public class AdminApplicationServiceImpl implements AdminApplicationService {
 
     @Override
     public void deleteApplication(Long applicationId) {
-        adminApplicationRepository.deleteById(new com.iting.jobportal.application.entity.ApplyFormSentToJob.ApplyFormSentToJobId(0L, applicationId));
+        adminApplicationRepository.deleteById(
+                new com.iting.jobportal.application.entity.ApplyFormSentToJob.ApplyFormSentToJobId(0L, applicationId));
         applyFormRepository.deleteById(applicationId);
     }
 }

@@ -53,10 +53,9 @@ public class Company {
     @Column(name = "Company_email", length = 255)
     private String companyEmail;
 
-
     // enums
-//    @Column(name = "Industry", length = 255)
-//    private String industry;
+    // @Column(name = "Industry", length = 255)
+    // private String industry;
 
     @ElementCollection(targetClass = Industry.class)
     @Enumerated(EnumType.STRING)
@@ -120,7 +119,7 @@ public class Company {
 
     @Column(name = "Consent_confirmed_at")
     private LocalDateTime consentConfirmedAt;
-    
+
     @Column(name = "Consent_document_version")
     private String consentDocumentVersion;
 

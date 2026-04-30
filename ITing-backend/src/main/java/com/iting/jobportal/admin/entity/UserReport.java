@@ -21,19 +21,19 @@ public class UserReport extends AuditEntity {
     private Long id;
 
     @Column(nullable = false)
-    private Long reporterId;  // Người báo cáo
+    private Long reporterId; // Người báo cáo
 
     @Column(nullable = false)
-    private Long targetId;  // ID của đối tượng bị báo cáo (JobId, CompanyId, UserId...)
+    private Long targetId; // ID của đối tượng bị báo cáo (JobId, CompanyId, UserId...)
 
     @Column(nullable = false, length = 50)
     private String targetType; // JOB, COMPANY, USER, REVIEW
 
     @Column(length = 255)
-    private String targetName; 
+    private String targetName;
 
     @Column(nullable = false, length = 50)
-    private String type;  // Category: SPAM, SCAM, INAPPROPRIATE, FAKE_INFO, HARASSMENT, COPYRIGHT, OTHER
+    private String type; // Category: SPAM, SCAM, INAPPROPRIATE, FAKE_INFO, HARASSMENT, COPYRIGHT, OTHER
 
     @Column(nullable = false, length = 500)
     private String reason;
@@ -42,7 +42,7 @@ public class UserReport extends AuditEntity {
     private String description;
 
     @Column(length = 50)
-    private String status;  // PENDING, REVIEWING, RESOLVED, DISMISSED
+    private String status; // PENDING, REVIEWING, RESOLVED, DISMISSED
 
     @Column(length = 20)
     private String priority; // LOW, MEDIUM, HIGH, CRITICAL
@@ -50,15 +50,17 @@ public class UserReport extends AuditEntity {
     @Column(length = 1000)
     private String adminNote;
 
-    private Long handledBy;  // Admin xử lý
+    private Long handledBy; // Admin xử lý
 
     private LocalDateTime handledAt;
 
     @PrePersist
     protected void onCreate() {
-        if (status == null) status = "PENDING";
-        if (priority == null) priority = "MEDIUM";
-        if (targetType == null) targetType = "USER";
+        if (status == null)
+            status = "PENDING";
+        if (priority == null)
+            priority = "MEDIUM";
+        if (targetType == null)
+            targetType = "USER";
     }
 }
-

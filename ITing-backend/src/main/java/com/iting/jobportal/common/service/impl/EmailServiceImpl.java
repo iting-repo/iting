@@ -20,17 +20,17 @@ public class EmailServiceImpl implements EmailService {
     public void sendBanNotification(String toEmail, String reason, Integer durationDays) {
         String subject = "[ITing Job Portal] Thông báo khóa tài khoản";
         String durationStr = (durationDays == null) ? "vĩnh viễn" : durationDays + " ngày";
-        
+
         String body = String.format(
-            "Chào bạn,\n\n" +
-            "Tài khoản của bạn trên hệ thống ITing Job Portal đã bị khóa.\n" +
-            "Lý do: %s\n" +
-            "Thời hạn: %s\n\n" +
-            "Nếu bạn cho rằng đây là một sai sót, bạn có thể phản hồi lại email này để thực hiện kháng cáo.\n\n" +
-            "Trân trọng,\n" +
-            "Đội ngũ ITing.",
-            reason, durationStr
-        );
+                "Chào bạn,\n\n" +
+                        "Tài khoản của bạn trên hệ thống ITing Job Portal đã bị khóa.\n" +
+                        "Lý do: %s\n" +
+                        "Thời hạn: %s\n\n" +
+                        "Nếu bạn cho rằng đây là một sai sót, bạn có thể phản hồi lại email này để thực hiện kháng cáo.\n\n"
+                        +
+                        "Trân trọng,\n" +
+                        "Đội ngũ ITing.",
+                reason, durationStr);
 
         sendEmail(toEmail, subject, body);
     }
@@ -55,12 +55,12 @@ public class EmailServiceImpl implements EmailService {
         try {
             MimeMessage message = mailSender.createMimeMessage();
             MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
-            
+
             helper.setFrom("ITing Job Portal <no-reply@iting.com>");
             helper.setTo(to);
             helper.setSubject(subject);
             helper.setText(htmlBody, true); // true indicates HTML
-            
+
             mailSender.send(message);
             log.info("HTML Email sent successfully to {}", to);
         } catch (Exception e) {

@@ -17,7 +17,8 @@ public class ExcelHelper {
     /**
      * Xuất dữ liệu ra Excel định dạng XSPF (xlsx).
      */
-    public static <T> ByteArrayInputStream dataToExcel(List<T> items, String[] headers, String sheetName, BiConsumer<T, Row> rowMapper) {
+    public static <T> ByteArrayInputStream dataToExcel(List<T> items, String[] headers, String sheetName,
+            BiConsumer<T, Row> rowMapper) {
         Workbook workbook = new XSSFWorkbook();
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         try {
@@ -28,7 +29,7 @@ public class ExcelHelper {
             CellStyle headerCellStyle = workbook.createCellStyle();
             headerCellStyle.setFillForegroundColor(IndexedColors.GREY_25_PERCENT.getIndex());
             headerCellStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
-            
+
             Font font = workbook.createFont();
             font.setBold(true);
             headerCellStyle.setFont(font);
@@ -79,7 +80,8 @@ public class ExcelHelper {
 
             for (int i = 1; i <= sheet.getLastRowNum(); i++) {
                 Row row = sheet.getRow(i);
-                if (row == null) continue;
+                if (row == null)
+                    continue;
                 T item = rowMapper.apply(row);
                 if (item != null) {
                     items.add(item);
@@ -95,6 +97,7 @@ public class ExcelHelper {
      * Tạo file mẫu Excel chỉ có header.
      */
     public static ByteArrayInputStream createTemplate(String[] headers, String sheetName) {
-        return dataToExcel(new ArrayList<>(), headers, sheetName, (item, row) -> {});
+        return dataToExcel(new ArrayList<>(), headers, sheetName, (item, row) -> {
+        });
     }
 }

@@ -38,7 +38,8 @@ public class CompanyController {
     private final CompanyFollowService companyFollowService;
     private final RateLimitingService rateLimitingService;
 
-    public CompanyController(CompanyService companyService, CompanyFollowService companyFollowService, RateLimitingService rateLimitingService) {
+    public CompanyController(CompanyService companyService, CompanyFollowService companyFollowService,
+            RateLimitingService rateLimitingService) {
         this.companyService = companyService;
         this.companyFollowService = companyFollowService;
         this.rateLimitingService = rateLimitingService;
@@ -59,17 +60,11 @@ public class CompanyController {
     public ResponseEntity<CompanyResponse> uploadConsentDocument(
             @Parameter(hidden = true) @CurrentUser Long userId,
 
-            @io.swagger.v3.oas.annotations.Parameter(
-                    description = "File văn bản thỏa thuận dữ liệu cá nhân",
-                    required = true,
-                    schema = @io.swagger.v3.oas.annotations.media.Schema(type = "string", format = "binary")
-            )
-            @RequestPart("file") MultipartFile file,
+            @io.swagger.v3.oas.annotations.Parameter(description = "File văn bản thỏa thuận dữ liệu cá nhân", required = true, schema = @io.swagger.v3.oas.annotations.media.Schema(type = "string", format = "binary")) @RequestPart("file") MultipartFile file,
 
             @RequestPart("confirmed") Boolean confirmed,
 
-            @RequestPart(value = "version", required = false) String version
-    ) {
+            @RequestPart(value = "version", required = false) String version) {
         ConsentDocumentUploadRequest request = new ConsentDocumentUploadRequest();
         request.setFile(file);
         request.setConfirmed(confirmed);
@@ -112,12 +107,7 @@ public class CompanyController {
     @Operation(summary = "Upload giấy đăng ký doanh nghiệp của tôi")
     public ResponseEntity<CompanyResponse> updateBusinessLicense(
             @Parameter(hidden = true) @CurrentUser Long userId,
-            @io.swagger.v3.oas.annotations.Parameter(
-                    description = "File PDF giấy phép kinh doanh",
-                    required = true,
-                    schema = @io.swagger.v3.oas.annotations.media.Schema(type = "string", format = "binary")
-            )
-            @RequestPart("file") MultipartFile file) {
+            @io.swagger.v3.oas.annotations.Parameter(description = "File PDF giấy phép kinh doanh", required = true, schema = @io.swagger.v3.oas.annotations.media.Schema(type = "string", format = "binary")) @RequestPart("file") MultipartFile file) {
 
         BusinessLicenseUploadRequest request = new BusinessLicenseUploadRequest();
         request.setFile(file);

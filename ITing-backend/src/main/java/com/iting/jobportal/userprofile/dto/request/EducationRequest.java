@@ -25,4 +25,4 @@ public class EducationRequest {
     private LocalDate endDate;
 
     private String description;
-}
+}

@@ -8,6 +8,5 @@ import lombok.Data;
 public class UpdateUserRequest {
     private Role role;
     private AccountStatus status;
-    private String note;  // Ghi chú lý do thay đổi
+    private String note; // Ghi chú lý do thay đổi
 }
-

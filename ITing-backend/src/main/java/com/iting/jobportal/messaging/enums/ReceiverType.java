@@ -8,7 +8,7 @@ public enum ReceiverType {
      * Message received by a user (candidate)
      */
     USER,
-    
+
     /**
      * Message received by a company (recruiter)
      */

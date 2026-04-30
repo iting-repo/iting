@@ -55,13 +55,15 @@ public class AdminDashboardServiceImpl implements AdminDashboardService {
 
         // --- CHART DATA (Last 7 Days) ---
         List<DashboardStats.ChartRecord> chartData = new ArrayList<>();
-        String[] days = {"Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"};
+        String[] days = { "Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun" };
         LocalDateTime currentDay = todayStart.minusDays(6);
         for (int i = 0; i < 7; i++) {
             LocalDateTime nextDay = currentDay.plusDays(1);
-            long dayJobs = jobRepository.countByCreatedAtAfter(currentDay) - jobRepository.countByCreatedAtAfter(nextDay);
-            long dayUsers = accountRepository.countByCreatedAtAfter(currentDay) - accountRepository.countByCreatedAtAfter(nextDay);
-            
+            long dayJobs = jobRepository.countByCreatedAtAfter(currentDay)
+                    - jobRepository.countByCreatedAtAfter(nextDay);
+            long dayUsers = accountRepository.countByCreatedAtAfter(currentDay)
+                    - accountRepository.countByCreatedAtAfter(nextDay);
+
             chartData.add(DashboardStats.ChartRecord.builder()
                     .day(days[currentDay.getDayOfWeek().getValue() % 7]) // Basic alignment
                     .jobPosts(dayJobs)
@@ -71,7 +73,8 @@ public class AdminDashboardServiceImpl implements AdminDashboardService {
         }
 
         // --- RECENT ACTIVITY ---
-        List<DashboardStats.RecentJobActivity> recentActivities = jobRepository.findHotJobs(JobStatus.ACTIVE, PageRequest.of(0, 5))
+        List<DashboardStats.RecentJobActivity> recentActivities = jobRepository
+                .findHotJobs(JobStatus.ACTIVE, PageRequest.of(0, 5))
                 .getContent()
                 .stream()
                 .map(j -> DashboardStats.RecentJobActivity.builder()
@@ -80,8 +83,7 @@ public class AdminDashboardServiceImpl implements AdminDashboardService {
                         .dateTime(j.getCreatedAt() != null ? j.getCreatedAt().format(DATE_TIME_FORMATTER) : "N/A")
                         .applications(j.getApplicationCount() != null ? j.getApplicationCount() : 0)
                         .status(j.getStatus() != null ? j.getStatus().name() : "PENDING")
-                        .build()
-                )
+                        .build())
                 .toList();
 
         return DashboardStats.builder()
@@ -99,7 +101,8 @@ public class AdminDashboardServiceImpl implements AdminDashboardService {
     }
 
     private double calculateChange(long today, long yesterday) {
-        if (yesterday == 0) return today > 0 ? 100.0 : 0.0;
+        if (yesterday == 0)
+            return today > 0 ? 100.0 : 0.0;
         return ((double) (today - yesterday) / yesterday) * 100.0;
     }
 }

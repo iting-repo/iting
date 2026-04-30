@@ -35,8 +35,10 @@ public class OpenAiEmbeddingClient implements EmbeddingClient {
 
     @Override
     public Optional<double[]> embed(String input) {
-        if (apiKey == null || apiKey.isBlank()) return Optional.empty();
-        if (input == null || input.isBlank()) return Optional.empty();
+        if (apiKey == null || apiKey.isBlank())
+            return Optional.empty();
+        if (input == null || input.isBlank())
+            return Optional.empty();
 
         try {
             String url = baseUrl.endsWith("/") ? baseUrl.substring(0, baseUrl.length() - 1) : baseUrl;
@@ -44,8 +46,7 @@ public class OpenAiEmbeddingClient implements EmbeddingClient {
 
             String body = objectMapper.writeValueAsString(Map.of(
                     "model", embeddingModel,
-                    "input", input
-            ));
+                    "input", input));
 
             HttpRequest request = HttpRequest.newBuilder(uri)
                     .timeout(Duration.ofSeconds(30))
@@ -61,7 +62,8 @@ public class OpenAiEmbeddingClient implements EmbeddingClient {
 
             JsonNode root = objectMapper.readTree(response.body());
             JsonNode embeddingNode = root.path("data").path(0).path("embedding");
-            if (!embeddingNode.isArray() || embeddingNode.isEmpty()) return Optional.empty();
+            if (!embeddingNode.isArray() || embeddingNode.isEmpty())
+                return Optional.empty();
 
             double[] embedding = new double[embeddingNode.size()];
             for (int i = 0; i < embeddingNode.size(); i++) {
@@ -74,4 +76,3 @@ public class OpenAiEmbeddingClient implements EmbeddingClient {
         }
     }
 }
-

@@ -9,5 +9,6 @@ import java.util.List;
 @Repository
 public interface BannerRepository extends JpaRepository<Banner, Long> {
     List<Banner> findByPositionOrderByPriorityDesc(String position);
+
     List<Banner> findByStatusOrderByPriorityDesc(String status);
 }

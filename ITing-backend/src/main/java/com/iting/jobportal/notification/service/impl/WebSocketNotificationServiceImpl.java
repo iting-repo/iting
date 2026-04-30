@@ -17,7 +17,8 @@ public class WebSocketNotificationServiceImpl implements WebSocketNotificationSe
     private final SimpMessagingTemplate messagingTemplate;
 
     @Override
-    public void sendNotificationToRecipient(Long recipientId, RecipientType recipientType, NotificationResponse notification) {
+    public void sendNotificationToRecipient(Long recipientId, RecipientType recipientType,
+            NotificationResponse notification) {
         String destination = buildDestination(recipientId, recipientType, "notifications");
         messagingTemplate.convertAndSend(destination, notification);
     }

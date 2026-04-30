@@ -6,7 +6,8 @@ import lombok.*;
 @Entity
 @Table(name = "user_follow_company")
 @IdClass(UserFollowCompanyId.class)
-@Getter @Setter
+@Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder

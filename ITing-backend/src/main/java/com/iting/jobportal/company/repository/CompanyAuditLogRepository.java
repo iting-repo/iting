@@ -17,45 +17,44 @@ public interface CompanyAuditLogRepository extends JpaRepository<CompanyAuditLog
     List<CompanyAuditLog> findAllByOrderByCreatedAtDesc();
 
     @Query("""
-        SELECT
-            l.createdAt as createdAt,
-            c.name as companyName,
-            l.action as action,
-            l.fromStatus as fromStatus,
-            l.toStatus as toStatus,
-            l.reason as reason,
-            l.note as note,
-            l.actor as actor,
-            l.actorId as actorId
-        FROM CompanyAuditLog l
-        LEFT JOIN l.company c
-        ORDER BY l.createdAt DESC
-    """)
+                SELECT
+                    l.createdAt as createdAt,
+                    c.name as companyName,
+                    l.action as action,
+                    l.fromStatus as fromStatus,
+                    l.toStatus as toStatus,
+                    l.reason as reason,
+                    l.note as note,
+                    l.actor as actor,
+                    l.actorId as actorId
+                FROM CompanyAuditLog l
+                LEFT JOIN l.company c
+                ORDER BY l.createdAt DESC
+            """)
     List<CompanyAuditLogView> findAllWithCompany();
 
     @Query("""
-        SELECT
-            l.createdAt as createdAt,
-            c.name as companyName,
-            l.action as action,
-            l.fromStatus as fromStatus,
-            l.toStatus as toStatus,
-            l.reason as reason,
-            l.note as note,
-            l.actor as actor,
-            l.actorId as actorId
-        FROM CompanyAuditLog l
-        LEFT JOIN l.company c
-        WHERE (:action IS NULL OR l.action = :action)
-          AND (:companyId IS NULL OR c.id = :companyId)
-          AND l.createdAt >= :fromDate
-          AND l.createdAt <= :toDate
-        ORDER BY l.createdAt DESC
-    """)
+                SELECT
+                    l.createdAt as createdAt,
+                    c.name as companyName,
+                    l.action as action,
+                    l.fromStatus as fromStatus,
+                    l.toStatus as toStatus,
+                    l.reason as reason,
+                    l.note as note,
+                    l.actor as actor,
+                    l.actorId as actorId
+                FROM CompanyAuditLog l
+                LEFT JOIN l.company c
+                WHERE (:action IS NULL OR l.action = :action)
+                  AND (:companyId IS NULL OR c.id = :companyId)
+                  AND l.createdAt >= :fromDate
+                  AND l.createdAt <= :toDate
+                ORDER BY l.createdAt DESC
+            """)
     List<CompanyAuditLogView> findAllWithCompanyFiltered(
             @Param("action") CompanyAuditAction action,
             @Param("companyId") Long companyId,
             @Param("fromDate") LocalDateTime fromDate,
-            @Param("toDate") LocalDateTime toDate
-    );
+            @Param("toDate") LocalDateTime toDate);
 }

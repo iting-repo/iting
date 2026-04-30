@@ -1,4 +1,4 @@
-package com.iting.jobportal.job.service;
+package com.iting.jobportal.job.service.impl;
 
 import com.iting.jobportal.job.entity.Job;
 import com.iting.jobportal.job.entity.JobReviewHistory;

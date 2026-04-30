@@ -18,12 +18,13 @@ public class RateLimitInterceptor implements HandlerInterceptor {
     private final RateLimitService rateLimitService;
 
     @Override
-    public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
+    public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler)
+            throws Exception {
         String ip = getRemoteAddr(request);
         String uri = request.getRequestURI();
-        
+
         Bucket bucket = null;
-        
+
         if (uri.endsWith("/api/auth/login")) {
             bucket = rateLimitService.resolveLoginBucket(ip);
         } else if (uri.endsWith("/api/auth/register")) {
@@ -44,8 +45,8 @@ public class RateLimitInterceptor implements HandlerInterceptor {
             } else {
                 long waitForRefill = probe.getNanosToWaitForRefill() / 1_000_000_000;
                 response.addHeader("X-Rate-Limit-Retry-After-Seconds", String.valueOf(waitForRefill));
-                response.sendError(HttpStatus.TOO_MANY_REQUESTS.value(), 
-                    "Bạn đã gửi quá nhiều yêu cầu. Vui lòng thử lại sau " + waitForRefill + " giây.");
+                response.sendError(HttpStatus.TOO_MANY_REQUESTS.value(),
+                        "Bạn đã gửi quá nhiều yêu cầu. Vui lòng thử lại sau " + waitForRefill + " giây.");
                 log.warn("Rate limit exceeded for IP: {} on URI: {}", ip, uri);
                 return false;
             }

@@ -35,22 +35,24 @@ public class AdminJobNotificationTask {
 
         if (pendingCount > 0) {
             log.info("[SCHEDULED TASK] Found {} pending jobs. Sending notifications to all admins.", pendingCount);
-            
+
             List<Account> admins = accountRepository.findByRole(Role.ADMIN);
-            
+
             for (Account admin : admins) {
                 CreateNotificationRequest request = CreateNotificationRequest.builder()
                         .recipientId(admin.getId())
                         .recipientType(RecipientType.ADMIN)
                         .type(NotificationType.SYSTEM)
-                        .content("Công việc đang chờ duyệt: Hiện đang có " + pendingCount + " công việc đang chờ bạn kiểm duyệt. Hãy kiểm tra ngay!")
+                        .content("Công việc đang chờ duyệt: Hiện đang có " + pendingCount
+                                + " công việc đang chờ bạn kiểm duyệt. Hãy kiểm tra ngay!")
                         .actionUrl("/admin/jobs")
                         .build();
-                
+
                 try {
                     notificationService.createNotification(request);
                 } catch (Exception e) {
-                    log.error("Failed to send pending job notification to admin {}: {}", admin.getEmail(), e.getMessage());
+                    log.error("Failed to send pending job notification to admin {}: {}", admin.getEmail(),
+                            e.getMessage());
                 }
             }
         } else {

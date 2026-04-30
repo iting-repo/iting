@@ -16,64 +16,67 @@ import java.util.List;
 
 public interface AdminCompanyService {
 
-    Page<CompanyResponse> getAllCompanies(int page, int size);
+        Page<CompanyResponse> getAllCompanies(int page, int size);
 
-    CompanyResponse getCompanyDetail(Long companyId);
+        CompanyResponse getCompanyDetail(Long companyId);
 
-    Page<CompanyResponse> filterCompanies(
-            CompanyReviewStatus status,
-            VerificationLevel verificationLevel,
-            Boolean active,
-            String keyword,
-            int page,
-            int size
-    );
+        Page<CompanyResponse> filterCompanies(
+                        CompanyReviewStatus status,
+                        VerificationLevel verificationLevel,
+                        Boolean active,
+                        String keyword,
+                        int page,
+                        int size);
 
-    Page<CompanyResponse> getPendingReviewCompanies(int page, int size);
+        Page<CompanyResponse> getPendingReviewCompanies(int page, int size);
 
-    List<KybNoteResponse> getCompanyKybNotes(Long companyId);
+        List<KybNoteResponse> getCompanyKybNotes(Long companyId);
 
-    KybNoteResponse addCompanyKybNote(Long adminId, Long companyId, CreateKybNoteRequest request);
+        KybNoteResponse addCompanyKybNote(Long adminId, Long companyId, CreateKybNoteRequest request);
 
-    String getCompanyBusinessLicenseViewUrl(Long adminId, Long companyId, int minutes);
-    String getCompanyConsentDocumentViewUrl(Long companyId, int minutes);
+        String getCompanyBusinessLicenseViewUrl(Long adminId, Long companyId, int minutes);
 
-    void approveCompany(Long adminId, Long companyId, CompanyApprovalRequest request);
-    void approveCompanyInfo(Long adminId, Long companyId, CompanyApprovalRequest request);
-    void approveCompanyDocuments(Long adminId, Long companyId, CompanyApprovalRequest request);
+        String getCompanyConsentDocumentViewUrl(Long companyId, int minutes);
 
-    void rejectCompany(Long adminId, Long companyId, ReviewRejectRequest request);
-    void rejectCompanyInfo(Long adminId, Long companyId, ReviewRejectRequest request);
-    void rejectCompanyDocuments(Long adminId, Long companyId, ReviewRejectRequest request);
+        void approveCompany(Long adminId, Long companyId, CompanyApprovalRequest request);
 
-    void requestCompanyResubmission(Long adminId, Long companyId, ReviewRejectRequest request);
+        void approveCompanyInfo(Long adminId, Long companyId, CompanyApprovalRequest request);
 
-    void suspendCompany(Long adminId, Long companyId, ReviewRejectRequest request);
+        void approveCompanyDocuments(Long adminId, Long companyId, CompanyApprovalRequest request);
 
-    void unsuspendCompany(Long adminId, Long companyId);
+        void rejectCompany(Long adminId, Long companyId, ReviewRejectRequest request);
 
-    void deleteCompany(Long adminId, Long companyId);
+        void rejectCompanyInfo(Long adminId, Long companyId, ReviewRejectRequest request);
 
-    void bulkApproveCompanies(Long adminId, java.util.List<Long> companyIds, CompanyApprovalRequest request);
+        void rejectCompanyDocuments(Long adminId, Long companyId, ReviewRejectRequest request);
 
-    void bulkRejectCompanies(Long adminId, java.util.List<Long> companyIds, ReviewRejectRequest request);
+        void requestCompanyResubmission(Long adminId, Long companyId, ReviewRejectRequest request);
 
-    void bulkSuspendCompanies(Long adminId, java.util.List<Long> companyIds, ReviewRejectRequest request);
+        void suspendCompany(Long adminId, Long companyId, ReviewRejectRequest request);
 
-    void bulkDeleteCompanies(Long adminId, java.util.List<Long> companyIds);
+        void unsuspendCompany(Long adminId, Long companyId);
 
-    ByteArrayInputStream exportCompaniesToExcel();
+        void deleteCompany(Long adminId, Long companyId);
 
-    void importCompaniesFromExcel(MultipartFile file);
+        void bulkApproveCompanies(Long adminId, java.util.List<Long> companyIds, CompanyApprovalRequest request);
 
-    ByteArrayInputStream getImportTemplate();
+        void bulkRejectCompanies(Long adminId, java.util.List<Long> companyIds, ReviewRejectRequest request);
 
-    List<CompanyAuditLogResponse> getCompanyAuditLogs(Long companyId);
+        void bulkSuspendCompanies(Long adminId, java.util.List<Long> companyIds, ReviewRejectRequest request);
 
-    List<CompanyAuditLogResponse> getAllCompanyAuditLogs(
-            com.iting.jobportal.company.entity.enums.CompanyAuditAction action,
-            Long companyId,
-            java.time.LocalDate fromDate,
-            java.time.LocalDate toDate
-    );
+        void bulkDeleteCompanies(Long adminId, java.util.List<Long> companyIds);
+
+        ByteArrayInputStream exportCompaniesToExcel();
+
+        void importCompaniesFromExcel(MultipartFile file);
+
+        ByteArrayInputStream getImportTemplate();
+
+        List<CompanyAuditLogResponse> getCompanyAuditLogs(Long companyId);
+
+        List<CompanyAuditLogResponse> getAllCompanyAuditLogs(
+                        com.iting.jobportal.company.entity.enums.CompanyAuditAction action,
+                        Long companyId,
+                        java.time.LocalDate fromDate,
+                        java.time.LocalDate toDate);
 }

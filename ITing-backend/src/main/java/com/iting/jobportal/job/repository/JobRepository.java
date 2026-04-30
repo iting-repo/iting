@@ -35,7 +35,8 @@ public interface JobRepository extends JpaRepository<Job, Long>, JpaSpecificatio
 
     // Lấy jobs của company theo company_id và status
     @Query("SELECT j FROM Job j WHERE j.company.id = :companyId AND j.status = :status ORDER BY j.createdAt DESC")
-    Page<Job> findByCompany_IdAndStatus(@Param("companyId") Long companyId, @Param("status") JobStatus status, Pageable pageable);
+    Page<Job> findByCompany_IdAndStatus(@Param("companyId") Long companyId, @Param("status") JobStatus status,
+            Pageable pageable);
 
     // Tăng view count
     @Modifying
@@ -51,8 +52,11 @@ public interface JobRepository extends JpaRepository<Job, Long>, JpaSpecificatio
     void decrementApplicationCount(@Param("id") Long id);
 
     long countByCreatedAtAfter(java.time.LocalDateTime dateTime);
+
     long countByCreatedAtBefore(java.time.LocalDateTime dateTime);
+
     long countByStatus(JobStatus status);
+
     long countByCompany_IdAndStatus(Long companyId, JobStatus status);
 
     // ===== EMBEDDING / VECTOR SEARCH =====

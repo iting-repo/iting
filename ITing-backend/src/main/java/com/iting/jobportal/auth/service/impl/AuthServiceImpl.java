@@ -81,13 +81,12 @@ public class AuthServiceImpl implements AuthService {
 
             String primaryRole = account.getRole().normalizedName();
             String jwtToken = jwtTokenUtil.generateToken(account.getId(), account.getEmail(), primaryRole);
-            
+
             var refreshToken = refreshTokenService.createRefreshToken(
-                    account.getId(), 
-                    account.getEmail(), 
-                    "Google Social Login", 
-                    "Unknown"
-            );
+                    account.getId(),
+                    account.getEmail(),
+                    "Google Social Login",
+                    "Unknown");
 
             return LoginResponse.builder()
                     .userId(account.getId())
@@ -125,22 +124,23 @@ public class AuthServiceImpl implements AuthService {
 
         String normalizedEmail = request.getEmail().trim().toLowerCase();
         Account account = accountRepository.findByEmail(normalizedEmail).orElse(null);
-        
+
         if (account != null) {
             boolean isPending = account.getStatus() == AccountStatus.PENDING;
             boolean neverLoggedIn = account.getLastLoginAt() == null;
-            
+
             if (!isPending && !neverLoggedIn) {
                 Role requestedRole = request.getRole().normalize();
                 Role existingRoleNormalized = account.getRole().normalize();
-                
+
                 if (existingRoleNormalized != requestedRole) {
                     String roleName = existingRoleNormalized == Role.CANDIDATE ? "Ứng viên" : "Nhà tuyển dụng";
-                    throw new RuntimeException("Email này đã được đăng ký với vai trò " + roleName + ". Vui lòng sử dụng email khác hoặc đăng nhập.");
+                    throw new RuntimeException("Email này đã được đăng ký với vai trò " + roleName
+                            + ". Vui lòng sử dụng email khác hoặc đăng nhập.");
                 }
                 throw new RuntimeException("Email này đã được sử dụng. Vui lòng sử dụng email khác.");
             }
-            
+
             // Cập nhật thông tin mới cho tài khoản cũ
             account.setPasswordHash(passwordEncoder.encode(request.getPassword()));
             account.setRole(request.getRole().normalize());
@@ -161,7 +161,8 @@ public class AuthServiceImpl implements AuthService {
         switch (savedAccount.getRole()) {
             case CANDIDATE -> createUserIfNeeded(savedAccount, request);
             case EMPLOYER -> createCompanyIfNeeded(savedAccount, request);
-            default -> {}
+            default -> {
+            }
         }
 
         // Gửi OTP mới
@@ -171,7 +172,7 @@ public class AuthServiceImpl implements AuthService {
 
     private void sendVerificationOtp(String email) {
         String otp = String.format("%06d", (int) (Math.random() * 1000000));
-        
+
         // Save to DB
         otpCodeRepository.deleteByEmail(email);
         OtpCode otpCode = OtpCode.builder()
@@ -209,7 +210,7 @@ public class AuthServiceImpl implements AuthService {
 
         account.setStatus(AccountStatus.ACTIVE);
         accountRepository.save(account);
-        
+
         // Sử dụng normalizedEmail để xóa sạch mã OTP
         otpCodeRepository.deleteByEmail(normalizedEmail);
 
@@ -221,7 +222,7 @@ public class AuthServiceImpl implements AuthService {
         String normalizedEmail = email != null ? email.trim().toLowerCase() : "";
         Account account = accountRepository.findByEmail(normalizedEmail)
                 .orElseThrow(() -> new RuntimeException("Tài khoản không tồn tại: " + normalizedEmail));
-        
+
         if (account.getStatus() == AccountStatus.ACTIVE) {
             throw new RuntimeException("Tài khoản đã được kích hoạt");
         }
@@ -240,8 +241,7 @@ public class AuthServiceImpl implements AuthService {
         user.setFullName(
                 request.getFullName() != null && !request.getFullName().isBlank()
                         ? request.getFullName().trim()
-                        : account.getEmail()
-        );
+                        : account.getEmail());
         user.setLastUpdate(LocalDateTime.now());
 
         userRepository.save(user);
@@ -258,10 +258,9 @@ public class AuthServiceImpl implements AuthService {
         // quan trọng với shared primary key: Hibernate tự lấy ID từ account nhờ @MapsId
         company.setAccount(account);
 
-        String defaultName =
-                request.getFullName() != null && !request.getFullName().isBlank()
-                        ? request.getFullName().trim()
-                        : "Chưa cập nhật";
+        String defaultName = request.getFullName() != null && !request.getFullName().isBlank()
+                ? request.getFullName().trim()
+                : "Chưa cập nhật";
 
         company.setName(defaultName);
         company.setAccountEmail(account.getEmail());
@@ -311,8 +310,7 @@ public class AuthServiceImpl implements AuthService {
                 account.getId(),
                 account.getEmail(),
                 request.getDeviceInfo() != null ? request.getDeviceInfo() : "Unknown",
-                request.getIpAddress() != null ? request.getIpAddress() : "Unknown"
-        );
+                request.getIpAddress() != null ? request.getIpAddress() : "Unknown");
 
         return LoginResponse.builder()
                 .userId(account.getId())

@@ -33,10 +33,10 @@ public class CompanyAdminController {
     private final AdminCompanyService adminCompanyService;
 
     /*
-    ================================
-    DANH SÁCH CÔNG TY
-    ================================
-    */
+     * ================================
+     * DANH SÁCH CÔNG TY
+     * ================================
+     */
 
     @GetMapping
     @Operation(summary = "Lấy danh sách công ty (có filter)")
@@ -46,10 +46,9 @@ public class CompanyAdminController {
             @RequestParam(required = false) Boolean active,
             @RequestParam(required = false) String keyword,
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size
-    ) {
-        Page<CompanyResponse> companies =
-                adminCompanyService.filterCompanies(status, verificationLevel, active, keyword, page, size);
+            @RequestParam(defaultValue = "10") int size) {
+        Page<CompanyResponse> companies = adminCompanyService.filterCompanies(status, verificationLevel, active,
+                keyword, page, size);
 
         return ResponseEntity.ok(companies);
     }
@@ -58,22 +57,20 @@ public class CompanyAdminController {
     @Operation(summary = "Lấy danh sách các công ty đang chờ duyệt")
     public ResponseEntity<Page<CompanyResponse>> getPendingReviewCompanies(
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size
-    ) {
+            @RequestParam(defaultValue = "10") int size) {
         return ResponseEntity.ok(adminCompanyService.getPendingReviewCompanies(page, size));
     }
 
     /*
-    ================================
-    CHI TIẾT CÔNG TY & GHI CHÚ
-    ================================
-    */
+     * ================================
+     * CHI TIẾT CÔNG TY & GHI CHÚ
+     * ================================
+     */
 
     @GetMapping("/{id}/notes")
     @Operation(summary = "Lấy danh sách ghi chú nội bộ của công ty")
     public ResponseEntity<List<com.iting.jobportal.admin.dto.response.KybNoteResponse>> getCompanyKybNotes(
-            @PathVariable Long id
-    ) {
+            @PathVariable Long id) {
         return ResponseEntity.ok(adminCompanyService.getCompanyKybNotes(id));
     }
 
@@ -81,8 +78,7 @@ public class CompanyAdminController {
     @Operation(summary = "Thêm ghi chú nội bộ cho công ty")
     public ResponseEntity<com.iting.jobportal.admin.dto.response.KybNoteResponse> addCompanyKybNote(
             @PathVariable Long id,
-            @Valid @RequestBody com.iting.jobportal.admin.dto.request.CreateKybNoteRequest request
-    ) {
+            @Valid @RequestBody com.iting.jobportal.admin.dto.request.CreateKybNoteRequest request) {
         Long adminId = 1L; // Real app would get from token
         return ResponseEntity.ok(adminCompanyService.addCompanyKybNote(adminId, id, request));
     }
@@ -90,8 +86,7 @@ public class CompanyAdminController {
     @GetMapping("/{id}")
     @Operation(summary = "Lấy chi tiết công ty")
     public ResponseEntity<CompanyResponse> getCompanyDetail(
-            @PathVariable Long id
-    ) {
+            @PathVariable Long id) {
         return ResponseEntity.ok(adminCompanyService.getCompanyDetail(id));
     }
 
@@ -105,8 +100,7 @@ public class CompanyAdminController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
         return ResponseEntity.ok(
-                adminCompanyService.filterCompanies(status, verificationLevel, active, keyword, page, size)
-        );
+                adminCompanyService.filterCompanies(status, verificationLevel, active, keyword, page, size));
     }
 
     @PostMapping("/{id}/approve")
@@ -115,7 +109,7 @@ public class CompanyAdminController {
             @PathVariable Long id,
             @RequestBody CompanyApprovalRequest request) {
         // In a real app, adminId would come from SecurityContext
-        Long adminId = 1L; 
+        Long adminId = 1L;
         adminCompanyService.approveCompany(adminId, id, request);
         return ResponseEntity.ok(Map.of("message", "Company approved successfully"));
     }
@@ -125,7 +119,7 @@ public class CompanyAdminController {
     public ResponseEntity<?> approveCompanyInfo(
             @PathVariable Long id,
             @RequestBody CompanyApprovalRequest request) {
-        Long adminId = 1L; 
+        Long adminId = 1L;
         adminCompanyService.approveCompanyInfo(adminId, id, request);
         return ResponseEntity.ok(Map.of("message", "Company info approved successfully"));
     }
@@ -135,7 +129,7 @@ public class CompanyAdminController {
     public ResponseEntity<?> approveCompanyDocuments(
             @PathVariable Long id,
             @RequestBody CompanyApprovalRequest request) {
-        Long adminId = 1L; 
+        Long adminId = 1L;
         adminCompanyService.approveCompanyDocuments(adminId, id, request);
         return ResponseEntity.ok(Map.of("message", "Company documents approved successfully"));
     }
@@ -201,8 +195,7 @@ public class CompanyAdminController {
     @GetMapping("/{id}/business-license/view")
     @Operation(summary = "Admin lấy presigned URL để xem giấy phép kinh doanh của công ty")
     public ResponseEntity<Map<String, String>> viewCompanyBusinessLicense(
-            @PathVariable Long id
-    ) {
+            @PathVariable Long id) {
         Long adminId = 1L;
         String url = adminCompanyService.getCompanyBusinessLicenseViewUrl(adminId, id, 15);
         return ResponseEntity.ok(Map.of("url", url));
@@ -211,8 +204,7 @@ public class CompanyAdminController {
     @GetMapping("/{id}/consent-document/view")
     @Operation(summary = "Admin lấy presigned URL để xem văn bản thỏa thuận dữ liệu")
     public ResponseEntity<Map<String, String>> viewCompanyConsentDocument(
-            @PathVariable Long id
-    ) {
+            @PathVariable Long id) {
         String url = adminCompanyService.getCompanyConsentDocumentViewUrl(id, 15);
         return ResponseEntity.ok(Map.of("url", url));
     }
@@ -226,10 +218,10 @@ public class CompanyAdminController {
     }
 
     /*
-    ================================
-    BULK ACTIONS
-    ================================
-    */
+     * ================================
+     * BULK ACTIONS
+     * ================================
+     */
 
     @PostMapping("/bulk-approve")
     @Operation(summary = "Duyệt nhiều công ty")
@@ -238,7 +230,7 @@ public class CompanyAdminController {
         CompanyApprovalRequest singleReq = new CompanyApprovalRequest();
         singleReq.setVerificationLevel(request.getVerificationLevel());
         singleReq.setNote(request.getNote());
-        
+
         adminCompanyService.bulkApproveCompanies(adminId, request.getIds(), singleReq);
         return ResponseEntity.ok(Map.of("message", "Companies approved successfully"));
     }
@@ -272,11 +264,11 @@ public class CompanyAdminController {
         adminCompanyService.bulkDeleteCompanies(adminId, request.getIds());
         return ResponseEntity.ok(Map.of("message", "Companies deleted successfully"));
     }
+
     @GetMapping("/{id}/audit-logs")
     @Operation(summary = "Lấy lịch sử duyệt công ty")
     public ResponseEntity<List<CompanyAuditLogResponse>> getCompanyAuditLogs(
-            @PathVariable Long id
-    ) {
+            @PathVariable Long id) {
         return ResponseEntity.ok(adminCompanyService.getCompanyAuditLogs(id));
     }
 
@@ -286,12 +278,11 @@ public class CompanyAdminController {
             @RequestParam(required = false) CompanyAuditAction action,
             @RequestParam(required = false) Long companyId,
             @RequestParam(required = false) LocalDate fromDate,
-            @RequestParam(required = false) LocalDate toDate
-    ) {
+            @RequestParam(required = false) LocalDate toDate) {
         return ResponseEntity.ok(
-                adminCompanyService.getAllCompanyAuditLogs(action, companyId, fromDate, toDate)
-        );
+                adminCompanyService.getAllCompanyAuditLogs(action, companyId, fromDate, toDate));
     }
+
     @GetMapping("/export")
     @Operation(summary = "Xuất danh sách công ty ra file Excel")
     public ResponseEntity<Resource> exportCompanies() {
@@ -300,7 +291,8 @@ public class CompanyAdminController {
 
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=" + filename)
-                .contentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
+                .contentType(
+                        MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
                 .body(file);
     }
 
@@ -319,7 +311,8 @@ public class CompanyAdminController {
 
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=" + filename)
-                .contentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
+                .contentType(
+                        MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
                 .body(file);
     }
 }

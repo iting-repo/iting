@@ -102,7 +102,8 @@ public class EmployerJobController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
         if (employerId == null) {
-            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Bạn cần đăng nhập để xem danh sách tin tuyển dụng");
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
+                    "Bạn cần đăng nhập để xem danh sách tin tuyển dụng");
         }
         return ResponseEntity.ok(jobService.getJobsByEmployer(employerId, page, size));
     }
@@ -119,10 +120,10 @@ public class EmployerJobController {
     }
 
     /*
-    ============================
-    BULK ACTIONS
-    ============================
-    */
+     * ============================
+     * BULK ACTIONS
+     * ============================
+     */
 
     @PostMapping("/bulk-delete")
     @Operation(summary = "Xóa nhiều tin tuyển dụng")

@@ -50,7 +50,8 @@ public class KnowledgeGraphServiceImpl implements KnowledgeGraphService {
     private final Map<String, Map<String, Double>> regionAdjacency = new HashMap<>();
     private double unknownLocationScore = 0.5;
 
-    private record Edge(String targetId, String relation) {}
+    private record Edge(String targetId, String relation) {
+    }
 
     @PostConstruct
     public void init() {
@@ -107,9 +108,8 @@ public class KnowledgeGraphServiceImpl implements KnowledgeGraphService {
             JsonNode root = objectMapper.readTree(is);
             JsonNode synonyms = root.get("synonyms");
             if (synonyms != null) {
-                synonyms.fields().forEachRemaining(entry ->
-                    synonymMap.put(entry.getKey().toLowerCase(), entry.getValue().asText())
-                );
+                synonyms.fields().forEachRemaining(
+                        entry -> synonymMap.put(entry.getKey().toLowerCase(), entry.getValue().asText()));
             }
         } catch (Exception e) {
             log.error("❌ Failed to load skill synonyms: {}", e.getMessage());
@@ -141,9 +141,8 @@ public class KnowledgeGraphServiceImpl implements KnowledgeGraphService {
                 adjacency.fields().forEachRemaining(outerEntry -> {
                     String fromRegion = outerEntry.getKey();
                     Map<String, Double> innerMap = new HashMap<>();
-                    outerEntry.getValue().fields().forEachRemaining(innerEntry ->
-                        innerMap.put(innerEntry.getKey(), innerEntry.getValue().asDouble(0.0))
-                    );
+                    outerEntry.getValue().fields().forEachRemaining(
+                            innerEntry -> innerMap.put(innerEntry.getKey(), innerEntry.getValue().asDouble(0.0)));
                     regionAdjacency.put(fromRegion, innerMap);
                 });
             }
@@ -162,15 +161,17 @@ public class KnowledgeGraphServiceImpl implements KnowledgeGraphService {
 
     @Override
     public double locationScore(String employerLocation, String candidateLocation) {
-        if (employerLocation == null || employerLocation.isBlank()) return unknownLocationScore;
-        if (candidateLocation == null || candidateLocation.isBlank()) return unknownLocationScore;
+        if (employerLocation == null || employerLocation.isBlank())
+            return unknownLocationScore;
+        if (candidateLocation == null || candidateLocation.isBlank())
+            return unknownLocationScore;
 
-        String empLow  = employerLocation.toLowerCase().trim();
+        String empLow = employerLocation.toLowerCase().trim();
         String candLow = candidateLocation.toLowerCase().trim();
 
         // Check for same-city substring match (e.g. both contain "hà nội")
         for (String provinceKey : provinceToRegion.keySet()) {
-            boolean empHas  = empLow.contains(provinceKey);
+            boolean empHas = empLow.contains(provinceKey);
             boolean candHas = candLow.contains(provinceKey);
             if (empHas && candHas) {
                 return 1.0; // same city / province
@@ -178,19 +179,23 @@ public class KnowledgeGraphServiceImpl implements KnowledgeGraphService {
         }
 
         // Resolve each location to a region
-        String empRegion  = resolveRegion(empLow);
+        String empRegion = resolveRegion(empLow);
         String candRegion = resolveRegion(candLow);
 
-        if (empRegion == null || candRegion == null) return unknownLocationScore;
+        if (empRegion == null || candRegion == null)
+            return unknownLocationScore;
 
         // Look up adjacency score between the two regions
         Map<String, Double> rowMap = regionAdjacency.get(empRegion);
-        if (rowMap == null) return unknownLocationScore;
+        if (rowMap == null)
+            return unknownLocationScore;
 
         return rowMap.getOrDefault(candRegion, unknownLocationScore);
     }
 
-    /** Returns the region id that best matches the given lowercased location string. */
+    /**
+     * Returns the region id that best matches the given lowercased location string.
+     */
     private String resolveRegion(String locationLow) {
         // Direct province match
         for (Map.Entry<String, String> entry : provinceToRegion.entrySet()) {
@@ -203,7 +208,8 @@ public class KnowledgeGraphServiceImpl implements KnowledgeGraphService {
 
     @Override
     public String normalize(String rawSkill) {
-        if (rawSkill == null || rawSkill.isBlank()) return null;
+        if (rawSkill == null || rawSkill.isBlank())
+            return null;
         String lower = rawSkill.trim().toLowerCase();
 
         // 1. Check synonym map
@@ -236,7 +242,8 @@ public class KnowledgeGraphServiceImpl implements KnowledgeGraphService {
     @Override
     public Set<String> expandKeyword(String keyword) {
         Set<String> result = new LinkedHashSet<>();
-        if (keyword == null || keyword.isBlank()) return result;
+        if (keyword == null || keyword.isBlank())
+            return result;
 
         result.add(keyword); // Always include original
 
@@ -268,10 +275,12 @@ public class KnowledgeGraphServiceImpl implements KnowledgeGraphService {
     @Override
     public Set<String> getRelatedSkills(String skill, int depth) {
         Set<String> result = new LinkedHashSet<>();
-        if (skill == null || skill.isBlank()) return result;
+        if (skill == null || skill.isBlank())
+            return result;
 
         String nodeId = normalize(skill);
-        if (nodeId == null) return result;
+        if (nodeId == null)
+            return result;
 
         result.add(getLabel(nodeId));
         result.addAll(collectNeighborLabels(nodeId, depth));
@@ -326,15 +335,18 @@ public class KnowledgeGraphServiceImpl implements KnowledgeGraphService {
     @Override
     public List<String> explainMatch(List<String> cvSkills, List<String> jdSkills) {
         List<String> explanations = new ArrayList<>();
-        if (cvSkills == null || jdSkills == null) return explanations;
+        if (cvSkills == null || jdSkills == null)
+            return explanations;
 
         for (String cvSkill : cvSkills) {
             String cvId = normalize(cvSkill);
-            if (cvId == null) continue;
+            if (cvId == null)
+                continue;
 
             for (String jdSkill : jdSkills) {
                 String jdId = normalize(jdSkill);
-                if (jdId == null) continue;
+                if (jdId == null)
+                    continue;
 
                 // Direct match
                 if (cvId.equals(jdId)) {
@@ -362,7 +374,8 @@ public class KnowledgeGraphServiceImpl implements KnowledgeGraphService {
      * BFS to find shortest path between two nodes.
      */
     private List<String> findPath(String fromId, String toId, int maxDepth) {
-        if (fromId.equals(toId)) return List.of(fromId);
+        if (fromId.equals(toId))
+            return List.of(fromId);
 
         Map<String, String> parent = new HashMap<>();
         Queue<String> queue = new LinkedList<>();

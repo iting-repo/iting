@@ -65,8 +65,10 @@ public class CompanyFollowServiceImpl implements CompanyFollowService {
     @Override
     public Page<FollowedCompanyResponse> getFollowedCompanies(Long userId, int page, int size) {
         // Validate pagination
-        if (page < 0) page = 0;
-        if (size <= 0 || size > 100) size = 10;
+        if (page < 0)
+            page = 0;
+        if (size <= 0 || size > 100)
+            size = 10;
 
         Pageable pageable = PageRequest.of(page, size, Sort.by("followDate").descending());
         Page<UserFollowCompany> followPage = userFollowCompanyRepository.findByUserId(userId, pageable);
@@ -85,8 +87,7 @@ public class CompanyFollowServiceImpl implements CompanyFollowService {
                     company.getName(),
                     company.getLogoUrl(),
                     company.getIndustries(),
-                    follow.getFollowDate()
-            );
+                    follow.getFollowDate());
         });
     }
 

@@ -39,8 +39,7 @@ public class MessageController {
         MessageResponse response = messageService.sendMessage(request, userId);
         messagingTemplate.convertAndSend(
                 "/topic/conversation/" + response.getConversationId(),
-                response
-        );
+                response);
         return ResponseEntity.ok(response);
     }
 

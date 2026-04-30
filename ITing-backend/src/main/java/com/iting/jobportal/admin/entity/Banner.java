@@ -37,7 +37,7 @@ public class Banner extends AuditEntity {
 
     @Column(name = "start_at")
     private LocalDateTime startAt;
-    
+
     @Column(name = "end_at")
     private LocalDateTime endAt;
 
@@ -48,7 +48,9 @@ public class Banner extends AuditEntity {
 
     @PrePersist
     protected void onCreate() {
-        if (priority == null) priority = 0;
-        if (status == null) status = "ACTIVE";
+        if (priority == null)
+            priority = 0;
+        if (status == null)
+            status = "ACTIVE";
     }
 }

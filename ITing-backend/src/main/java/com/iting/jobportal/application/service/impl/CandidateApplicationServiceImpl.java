@@ -102,7 +102,8 @@ public class CandidateApplicationServiceImpl implements CandidateApplicationServ
 
         // Find the jobId before deleting
         ApplyFormSentToJob sent = candidateApplicationRepository.findByIdApplyFormId(applicationId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Không tìm thấy liên kết ứng tuyển"));
+                .orElseThrow(
+                        () -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Không tìm thấy liên kết ứng tuyển"));
         Long jobId = sent.getId().getJobId();
 
         candidateApplicationRepository.deleteByIdApplyFormId(applicationId);

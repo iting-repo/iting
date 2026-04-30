@@ -22,7 +22,7 @@ public class CompanyMapper {
         res.setName(company.getName());
         res.setWebsite(company.getWebsite());
         res.setAddress(company.getAddress());
-        
+
         // Presign Logo URL if exists
         String logoUrl = company.getLogoUrl();
         if (logoUrl != null && !logoUrl.isBlank()) {
@@ -47,7 +47,7 @@ public class CompanyMapper {
 
         res.setBusinessLicenseFileUrl(company.getBusinessLicenseFileUrl());
         res.setBusinessLicenseDocumentType(company.getBusinessLicenseDocumentType());
-        
+
         // Presign Business License Preview if exists
         String licenseUrl = company.getBusinessLicenseFileUrl();
         if (licenseUrl != null && !licenseUrl.isBlank()) {

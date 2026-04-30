@@ -10,5 +10,6 @@ import java.util.List;
 @Repository
 public interface ReportAccountRepository extends JpaRepository<ReportAccount, Long> {
     List<ReportAccount> findByStatus(ReportStatus status);
+
     long countByStatus(ReportStatus status);
 }

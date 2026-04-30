@@ -87,7 +87,6 @@ public class CompanyResponse {
                 0, // activeJobCount - set later
                 company.getStatusReason(),
                 company.getActive(),
-                company.getProfileSetup()
-        );
+                company.getProfileSetup());
     }
 }

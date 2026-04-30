@@ -44,4 +44,4 @@ public interface AdminContentService {
 
     void unpublishStaticContent(Long id);
 
-}
+}

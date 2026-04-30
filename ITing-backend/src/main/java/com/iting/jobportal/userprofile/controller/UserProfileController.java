@@ -13,8 +13,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 import java.util.Map;
 
-
-@Tag(name ="05. User Professional Profile")
+@Tag(name = "05. User Professional Profile")
 @RestController
 @RequestMapping("/api/user/professional-profile")
 @RequiredArgsConstructor

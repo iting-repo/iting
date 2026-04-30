@@ -49,73 +49,76 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
-            .csrf(AbstractHttpConfigurer::disable)
-            .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-            .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .csrf(AbstractHttpConfigurer::disable)
+                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+                .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 
-            .authorizeHttpRequests(auth -> auth
+                .authorizeHttpRequests(auth -> auth
 
-                // ── Public: Auth (register, login, etc) ──────────────────
-                .requestMatchers("/api/auth/login", "/api/auth/register", "/api/auth/google", "/api/auth/refresh").permitAll()
-                .requestMatchers("/api/auth/forgot-password", "/api/auth/reset-password", "/api/auth/verify-otp", "/api/auth/resend-otp").permitAll()
+                        // ── Public: Auth (register, login, etc) ──────────────────
+                        .requestMatchers("/api/auth/login", "/api/auth/register", "/api/auth/google",
+                                "/api/auth/refresh")
+                        .permitAll()
+                        .requestMatchers("/api/auth/forgot-password", "/api/auth/reset-password",
+                                "/api/auth/verify-otp", "/api/auth/resend-otp")
+                        .permitAll()
 
-                // ── Public: Swagger / API Docs ────────────────────────────
-                .requestMatchers(
-                    "/swagger-ui/**", "/swagger-ui.html",
-                    "/v3/api-docs/**", "/api-docs/**"
-                ).permitAll()
+                        // ── Public: Swagger / API Docs ────────────────────────────
+                        .requestMatchers(
+                                "/swagger-ui/**", "/swagger-ui.html",
+                                "/v3/api-docs/**", "/api-docs/**")
+                        .permitAll()
 
-                // ── Public: Actuator health for container healthcheck ─────
-                .requestMatchers("/actuator/health", "/actuator/health/**").permitAll()
+                        // ── Public: Actuator health for container healthcheck ─────
+                        .requestMatchers("/actuator/health", "/actuator/health/**").permitAll()
 
-                // ── Public: Public API endpoints ─────────────────────────
-                .requestMatchers("/api/public/**").permitAll()
+                        // ── Public: Public API endpoints ─────────────────────────
+                        .requestMatchers("/api/public/**").permitAll()
 
-                // ── Public: error endpoint (avoid secondary 403 loop) ──────
-                .requestMatchers("/error").permitAll()
+                        // ── Public: error endpoint (avoid secondary 403 loop) ──────
+                        .requestMatchers("/error").permitAll()
 
-                // ── Public: WebSocket handshake endpoint ───────────────────
-                .requestMatchers("/ws/**").permitAll()
+                        // ── Public: WebSocket handshake endpoint ───────────────────
+                        .requestMatchers("/ws/**").permitAll()
 
-                // ── EMPLOYER: Quản lý Job (phải khai báo TRƯỚC các rule /{id}) ──
-                .requestMatchers(HttpMethod.GET,  "/api/jobs/my-jobs").hasRole("EMPLOYER")
-                .requestMatchers(HttpMethod.POST, "/api/jobs").hasRole("EMPLOYER")
-                .requestMatchers(HttpMethod.PUT,  "/api/jobs/**").hasRole("EMPLOYER")
-                .requestMatchers(HttpMethod.DELETE, "/api/jobs/**").hasRole("EMPLOYER")
-                .requestMatchers(HttpMethod.POST, "/api/jobs/*/extend").hasRole("EMPLOYER")
-                .requestMatchers(HttpMethod.POST, "/api/jobs/*/close").hasRole("EMPLOYER")
+                        // ── EMPLOYER: Quản lý Job (phải khai báo TRƯỚC các rule /{id}) ──
+                        .requestMatchers(HttpMethod.GET, "/api/jobs/my-jobs").hasRole("EMPLOYER")
+                        .requestMatchers(HttpMethod.POST, "/api/jobs").hasRole("EMPLOYER")
+                        .requestMatchers(HttpMethod.PUT, "/api/jobs/**").hasRole("EMPLOYER")
+                        .requestMatchers(HttpMethod.DELETE, "/api/jobs/**").hasRole("EMPLOYER")
+                        .requestMatchers(HttpMethod.POST, "/api/jobs/*/extend").hasRole("EMPLOYER")
+                        .requestMatchers(HttpMethod.POST, "/api/jobs/*/close").hasRole("EMPLOYER")
 
-                // ── Public: Job (đọc công khai — sau các rule EMPLOYER) ────
-                .requestMatchers(HttpMethod.GET, "/api/jobs/search").permitAll()
-                .requestMatchers(HttpMethod.GET, "/api/jobs/latest").permitAll()
-                .requestMatchers(HttpMethod.GET, "/api/jobs/hot").permitAll()
-                .requestMatchers(HttpMethod.GET, "/api/jobs/{id}").permitAll()
-                .requestMatchers(HttpMethod.GET, "/api/jobs/salary-report").permitAll()
+                        // ── Public: Job (đọc công khai — sau các rule EMPLOYER) ────
+                        .requestMatchers(HttpMethod.GET, "/api/jobs/search").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/jobs/latest").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/jobs/hot").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/jobs/{id}").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/jobs/salary-report").permitAll()
 
-                // ── Public: AI / Knowledge Graph ────────────────────────
-                .requestMatchers(HttpMethod.GET, "/api/ai/**").permitAll()
+                        // ── Public: AI / Knowledge Graph ────────────────────────
+                        .requestMatchers(HttpMethod.GET, "/api/ai/**").permitAll()
 
-                // ── Public: Company (xem thông tin công ty) ───────────────
-                .requestMatchers(HttpMethod.GET, "/api/companies/{id}").permitAll()
+                        // ── Public: Company (xem thông tin công ty) ───────────────
+                        .requestMatchers(HttpMethod.GET, "/api/companies/{id}").permitAll()
 
-                // ── CANDIDATE: Follow Company ────────────────────────────
-                .requestMatchers("/api/companies/follow/**").hasRole("CANDIDATE")
+                        // ── CANDIDATE: Follow Company ────────────────────────────
+                        .requestMatchers("/api/companies/follow/**").hasRole("CANDIDATE")
 
-                // ── EMPLOYER: Quản lý Company profile ────────────────────
-                .requestMatchers(HttpMethod.PUT, "/api/companies/**").hasRole("EMPLOYER")
-                .requestMatchers(HttpMethod.POST, "/api/companies/**").hasRole("EMPLOYER")
+                        // ── EMPLOYER: Quản lý Company profile ────────────────────
+                        .requestMatchers(HttpMethod.PUT, "/api/companies/**").hasRole("EMPLOYER")
+                        .requestMatchers(HttpMethod.POST, "/api/companies/**").hasRole("EMPLOYER")
 
-                // ── CANDIDATE + EMPLOYER + ADMIN: Nộp / xem đơn ─────────
-                .requestMatchers("/api/applications/**").hasAnyRole("CANDIDATE", "EMPLOYER", "ADMIN")
+                        // ── CANDIDATE + EMPLOYER + ADMIN: Nộp / xem đơn ─────────
+                        .requestMatchers("/api/applications/**").hasAnyRole("CANDIDATE", "EMPLOYER", "ADMIN")
 
-                // ── ADMIN: Toàn quyền quản trị ────────────────────────────
-                .requestMatchers("/api/admin/**").hasRole("ADMIN")
+                        // ── ADMIN: Toàn quyền quản trị ────────────────────────────
+                        .requestMatchers("/api/admin/**").hasRole("ADMIN")
 
-                // ── Các request còn lại: phải đăng nhập ──────────────────
-                .anyRequest().authenticated()
-            )
+                        // ── Các request còn lại: phải đăng nhập ──────────────────
+                        .anyRequest().authenticated())
 
-            .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
+                .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }
