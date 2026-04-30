@@ -50,7 +50,7 @@ export const JobTable = ({
           ),
           className: "w-10",
         },
-        { label: "Mã Job" },
+        { label: "Mã công việc" },
         { label: "Tiêu đề công việc" },
         { label: "Tên công ty" },
         { label: "Địa điểm", className: "w-48" },

@@ -39,6 +39,7 @@ const HomePage = () => {
     const [isAiModalOpen, setIsAiModalOpen] = useState(false);
     const [cvText, setCvText] = useState("");
     const [isAnalyzing, setIsAnalyzing] = useState(false);
+    const [blogs, setBlogs] = useState([]);
 
     const handleJobClick = (job) => {
         const jobKey = getJobPublicKey(job);
@@ -115,6 +116,23 @@ const HomePage = () => {
         };
         fetchRecommendations();
     }, [currentUser]);
+
+    useEffect(() => {
+        const fetchBlogs = async () => {
+            try {
+                const response = await publicService.getBlogs({ page: 0, size: 2 });
+                const data = response.data || response;
+                if (data && data.content) {
+                    setBlogs(data.content);
+                } else if (Array.isArray(data)) {
+                    setBlogs(data);
+                }
+            } catch (error) {
+                console.error("Failed to fetch blogs:", error);
+            }
+        };
+        fetchBlogs();
+    }, []);
 
     const handleToggleSave = async (e, jobId) => {
         e.stopPropagation();
@@ -317,22 +335,7 @@ const HomePage = () => {
         },
     ];
 
-    const blogs = [
-        {
-            id: 1,
-            tag: "News",
-            date: "30 March 2024",
-            title: "Revitalizing Workplace Morale: Innovative Tactics For Boosting Employee Engagement In 2024",
-            image: "https://ui-avatars.com/api/?name=News&background=3AB4E6&color=fff&size=600",
-        },
-        {
-            id: 2,
-            tag: "Blog",
-            date: "30 March 2024",
-            title: "How To Avoid The Top Six Most Common Job Interview Mistakes",
-            image: "https://ui-avatars.com/api/?name=Blog&background=3AB4E6&color=fff&size=600",
-        }
-    ];
+    // Dynamic blogs fetched from API
 
     return (
         <div className="bg-white font-sans">
@@ -806,22 +809,22 @@ const HomePage = () => {
                             <p className="text-gray-500 text-sm">Cập nhật tin tức mới nhất về công nghệ và thị trường tuyển dụng</p>
                         </div>
                         {/* FIX: Thay BsArrowRight bằng FaArrowRight */}
-                        <a href="#" className="text-[#3AB4E6] font-medium hover:underline flex items-center gap-1">
+                        <Link to="/blogs" className="text-[#3AB4E6] font-medium hover:underline flex items-center gap-1">
                             View all <FaArrowRight />
-                        </a>
+                        </Link>
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                         {blogs.map((blog) => (
-                            <div key={blog.id} className="group cursor-pointer">
+                            <div key={blog.id} className="group cursor-pointer" onClick={() => navigate(`/blog/${blog.slug}`)}>
                                 <div className="overflow-hidden rounded-xl mb-4 relative">
-                                    <img src={blog.image} alt={blog.title} className="w-full h-64 object-cover transform group-hover:scale-105 transition-transform duration-500" />
+                                    <img src={blog.thumbnailUrl || `https://ui-avatars.com/api/?name=${blog.category || 'Blog'}&background=3AB4E6&color=fff&size=600`} alt={blog.title} className="w-full h-64 object-cover transform group-hover:scale-105 transition-transform duration-500" />
                                     <span className="absolute top-4 left-4 bg-[#3AB4E6] text-white text-xs font-bold px-3 py-1 rounded-full uppercase">
-                                        {blog.tag}
+                                        {blog.category || 'Tin tức'}
                                     </span>
                                 </div>
-                                <div className="text-gray-400 text-xs mb-2">{blog.date}</div>
-                                <h3 className="text-xl font-bold text-gray-800 mb-3 group-hover:text-[#3AB4E6] transition-colors leading-snug">
+                                <div className="text-gray-400 text-xs mb-2">{timeAgo(blog.createdAt)}</div>
+                                <h3 className="text-xl font-bold text-gray-800 mb-3 group-hover:text-[#3AB4E6] transition-colors leading-snug line-clamp-2 min-h-[3.5rem]">
                                     {blog.title}
                                 </h3>
                                 {/* FIX: Thay BsArrowRight bằng FaArrowRight */}

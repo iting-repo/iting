@@ -216,8 +216,8 @@ const CandidateDetailModal = ({ candidate, onClose, onStatusUpdate }) => {
                             <button
                                 onClick={handleToggleFavorite}
                                 className={`p-2.5 rounded-xl transition-all ${isFavorited
-                                        ? 'text-amber-500 bg-amber-50 hover:bg-amber-100'
-                                        : 'text-slate-400 hover:text-amber-500 hover:bg-amber-50'
+                                    ? 'text-amber-500 bg-amber-50 hover:bg-amber-100'
+                                    : 'text-slate-400 hover:text-amber-500 hover:bg-amber-50'
                                     }`}
                                 title={isFavorited ? 'Bỏ yêu thích' : 'Thêm yêu thích'}
                             >
@@ -447,55 +447,56 @@ const CandidateDetailModal = ({ candidate, onClose, onStatusUpdate }) => {
                                 </h3>
                                 <p className="text-slate-500 text-sm mb-8 font-medium">Bạn đang báo cáo ứng viên <span className="text-slate-800 font-bold">{candidate.applicantName}</span>. Vui lòng chọn lý do chính xác.</p>
 
-                                {/* Cột Trái: Thông tin chính */}
-                                <div className="lg:col-span-2 space-y-8">
-                                    <section>
-                                        <h3 className="text-lg font-bold text-gray-800 mb-4 border-b pb-2">Kinh nghiệm làm việc</h3>
-                                        <div className="space-y-4">
-                                            {/* Mock Item */}
-                                            <div className="flex gap-4">
-                                                <div className="mt-1"><FaUserTie className="text-gray-400" /></div>
-                                                <div>
-                                                    <h4 className="font-bold text-gray-800">Senior UI Designer</h4>
-                                                    <p className="text-sm text-gray-500">Google Inc • 2020 - Present</p>
-                                                    <p className="text-sm text-gray-600 mt-1">Chịu trách nhiệm thiết kế hệ thống Design System...</p>
-                                                </div>
+                                <div className="space-y-5">
+                                    <div>
+                                        <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2.5 ml-1">Lý do chính</label>
+                                        <div className="relative">
+                                            <select
+                                                value={reportData.type}
+                                                onChange={(e) => setReportData({ ...reportData, type: e.target.value })}
+                                                className="w-full h-14 px-4 pr-10 bg-slate-50 border-2 border-slate-100 rounded-2xl text-slate-700 font-bold focus:border-blue-400 outline-none transition-all cursor-pointer appearance-none"
+                                            >
+                                                {REPORT_REASONS.map(r => (
+                                                    <option key={r.value} value={r.value}>{r.label}</option>
+                                                ))}
+                                            </select>
+                                            <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-4 text-slate-400">
+                                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
                                             </div>
                                         </div>
-                                    </section>
-                                </div>
+                                    </div>
 
-                                <div>
-                                    <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2.5 ml-1">Mô tả chi tiết</label>
-                                    <textarea
-                                        rows="4"
-                                        placeholder="Vui lòng cung cấp thêm thông tin để bộ phận hỗ trợ xử lý nhanh hơn..."
-                                        value={reportData.description}
-                                        onChange={(e) => setReportData({ ...reportData, description: e.target.value })}
-                                        className="w-full p-4 bg-slate-50 border-2 border-slate-100 rounded-2xl text-slate-700 font-medium focus:border-blue-400 outline-none transition-all resize-none"
-                                    />
-                                </div>
+                                    <div>
+                                        <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2.5 ml-1">Mô tả chi tiết</label>
+                                        <textarea
+                                            rows="4"
+                                            placeholder="Vui lòng cung cấp thêm thông tin để bộ phận hỗ trợ xử lý nhanh hơn..."
+                                            value={reportData.description}
+                                            onChange={(e) => setReportData({ ...reportData, description: e.target.value })}
+                                            className="w-full p-4 bg-slate-50 border-2 border-slate-100 rounded-2xl text-slate-700 font-medium focus:border-blue-400 outline-none transition-all resize-none"
+                                        />
+                                    </div>
 
-                                <div className="flex gap-3 pt-4">
-                                    <button
-                                        onClick={() => setShowReportModal(false)}
-                                        className="flex-1 py-4 bg-slate-100 text-slate-600 font-bold rounded-2xl hover:bg-slate-200 transition-all"
-                                    >
-                                        Hủy bỏ
-                                    </button>
-                                    <button
-                                        onClick={handleReport}
-                                        disabled={isReporting}
-                                        className="flex-[1.5] py-4 bg-red-500 text-white font-bold rounded-2xl hover:bg-red-600 shadow-lg shadow-red-100 transition-all disabled:opacity-50"
-                                    >
-                                        {isReporting ? 'Đang gửi...' : 'Gửi báo cáo'}
-                                    </button>
+                                    <div className="flex gap-3 pt-4">
+                                        <button
+                                            onClick={() => setShowReportModal(false)}
+                                            className="flex-1 py-4 bg-slate-100 text-slate-600 font-bold rounded-2xl hover:bg-slate-200 transition-all"
+                                        >
+                                            Hủy bỏ
+                                        </button>
+                                        <button
+                                            onClick={handleReport}
+                                            disabled={isReporting}
+                                            className="flex-[1.5] py-4 bg-red-500 text-white font-bold rounded-2xl hover:bg-red-600 shadow-lg shadow-red-100 transition-all disabled:opacity-50"
+                                        >
+                                            {isReporting ? 'Đang gửi...' : 'Gửi báo cáo'}
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
                         </div>
-                    </div>
             </div>
-        </div>
+            </div>
         </div >
     );
 };

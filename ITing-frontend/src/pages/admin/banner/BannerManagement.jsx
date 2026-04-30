@@ -26,7 +26,7 @@ const BannerManagement = () => {
     try {
       setLoading(true);
       const res = await axiosInstance.get("/admin/banners");
-      setBanners(res.data);
+      setBanners(res || []);
     } catch (error) {
       toast.error("Lỗi khi tải danh sách banner");
     } finally {

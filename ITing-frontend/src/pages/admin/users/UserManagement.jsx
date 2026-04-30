@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState, useRef, useCallback } from "react";
 import {
     FaSearch,
     FaDownload,
@@ -25,13 +25,8 @@ import {
     Dialog,
 } from "../../../components";
 import { ActionMenuPortal } from "../../../components/admin/ActionMenuPortal";
-import { 
-    Eye as LucideEye, 
-    Ban as LucideBan, 
-    Unlock as LucideUnlock, 
-    Trash2 as LucideTrash 
-} from "lucide-react";
 import adminUserService from "../../../services/adminUserService";
+import chatRealtimeService from "../../../services/chatRealtimeService";
 
 const PAGE_SIZE = 10;
 
@@ -58,24 +53,46 @@ const RoleBadge = ({ role }) => {
     );
 };
 
-const StatusBadge = ({ status }) => {
-    const map = {
-        ACTIVE: "bg-green-50 text-green-700 border border-green-200",
-        BANNED: "bg-red-50 text-red-700 border border-red-200",
-        INACTIVE: "bg-gray-50 text-gray-700 border border-gray-200",
-        PENDING: "bg-yellow-50 text-yellow-700 border border-yellow-200",
-    };
+const StatusBadge = ({ status, isOnline }) => {
+    if (status === "BANNED") {
+        return (
+            <span className="inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold bg-red-50 text-red-700 border border-red-200">
+                Bị khóa
+            </span>
+        );
+    }
+    if (status === "INACTIVE") {
+        return (
+            <span className="inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold bg-gray-50 text-gray-700 border border-gray-200">
+                Chưa kích hoạt
+            </span>
+        );
+    }
+    if (status === "PENDING") {
+        return (
+            <span className="inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold bg-yellow-50 text-yellow-700 border border-yellow-200">
+                Chờ duyệt
+            </span>
+        );
+    }
+
+    // ACTIVE status - show online/offline realtime
+    if (isOnline) {
+        return (
+            <span className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                <span className="relative flex h-2 w-2">
+                    <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
+                    <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500" />
+                </span>
+                Đang online
+            </span>
+        );
+    }
 
     return (
-        <span
-            className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold ${map[status] || "bg-gray-50 text-gray-700 border border-gray-200"
-                }`}
-        >
-            {status === "ACTIVE" ? "Đang hoạt động" : 
-             status === "BANNED" ? "Bị khóa" : 
-             status === "INACTIVE" ? "Chưa kích hoạt" : 
-             status === "PENDING" ? "Chờ duyệt" : 
-             status || "Không xác định"}
+        <span className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold bg-slate-50 text-slate-500 border border-slate-200">
+            <span className="inline-flex h-2 w-2 rounded-full bg-slate-300" />
+            Ngoại tuyến
         </span>
     );
 };
@@ -90,27 +107,27 @@ const UserRowActionMenu = ({
     const actions = [
         {
             label: "Xem chi tiết",
-            icon: LucideEye,
+            icon: FaEye,
             onClick: () => onViewDetail(user),
             className: "text-slate-700 font-medium"
         },
         {
             label: "Khóa tài khoản",
-            icon: LucideBan,
+            icon: FaBanIcon,
             onClick: () => onAction(user, "ban"),
             className: "text-orange-600 font-medium",
             hidden: user.status !== "ACTIVE"
         },
         {
             label: "Mở khóa tài khoản",
-            icon: LucideUnlock,
+            icon: FaUnlock,
             onClick: () => onAction(user, "unban"),
             className: "text-green-600 font-medium",
             hidden: user.status !== "BANNED"
         },
         {
             label: "Xóa người dùng",
-            icon: LucideTrash,
+            icon: FaTrash,
             onClick: () => onAction(user, "delete"),
             className: "text-red-600 font-medium border-t border-slate-50"
         }
@@ -226,6 +243,8 @@ const UserManagement = () => {
     const [openMenuId, setOpenMenuId] = useState(null);
     const [showImportModal, setShowImportModal] = useState(false);
     const [selectedIds, setSelectedIds] = useState([]);
+    const [onlineUserIds, setOnlineUserIds] = useState(new Set());
+    const onlineRef = useRef(new Set());
 
     const isAllSelected = users.length > 0 && selectedIds.length === users.length;
 
@@ -297,6 +316,46 @@ const UserManagement = () => {
     useEffect(() => {
         fetchUsers();
     }, [currentPage, keyword, roleFilter, statusFilter]);
+
+    // ── Real-time online presence ──
+    useEffect(() => {
+        // 1. Fetch initial online list
+        const fetchOnline = async () => {
+            try {
+                const ids = await adminUserService.getOnlineUserIds();
+                const set = new Set(Array.isArray(ids) ? ids : []);
+                onlineRef.current = set;
+                setOnlineUserIds(new Set(set));
+            } catch (e) {
+                console.error("Failed to fetch online user IDs:", e);
+            }
+        };
+        fetchOnline();
+
+        // 2. Subscribe to WebSocket presence updates
+        const token = localStorage.getItem("token");
+        if (token) {
+            chatRealtimeService.connect(token);
+            chatRealtimeService.subscribe('/topic/presence', 'admin-user-mgmt-presence', (event) => {
+                if (!event || event.userId == null) return;
+                const uid = Number(event.userId);
+                if (event.online) {
+                    onlineRef.current.add(uid);
+                } else {
+                    onlineRef.current.delete(uid);
+                }
+                setOnlineUserIds(new Set(onlineRef.current));
+            });
+        }
+
+        // 3. Refresh online list every 30s as a fallback
+        const interval = setInterval(fetchOnline, 30000);
+
+        return () => {
+            clearInterval(interval);
+            chatRealtimeService.unsubscribe('admin-user-mgmt-presence');
+        };
+    }, []);
 
     const handleSearch = () => {
         setCurrentPage(1);
@@ -417,7 +476,7 @@ const UserManagement = () => {
                 <div>
                     <h2 className="text-xl font-bold text-slate-800">Quản lý người dùng</h2>
                     <p className="mt-1 text-sm text-slate-500">
-                        Tổng cộng {totalElements} người dùng · Trang hiện tại có {stats.activeCount} active · {stats.bannedCount} bị khóa
+                        Tổng cộng {totalElements} người dùng · {onlineUserIds.size} đang online · {stats.bannedCount} bị khóa
                     </p>
                 </div>
 
@@ -570,7 +629,7 @@ const UserManagement = () => {
                                 </Td>
 
                                 <Td className="whitespace-nowrap">
-                                    <StatusBadge status={user.status} />
+                                    <StatusBadge status={user.status} isOnline={onlineUserIds.has(user.id)} />
                                 </Td>
 
                                 <Td className="text-sm text-slate-500 whitespace-nowrap">

@@ -1,14 +1,26 @@
-import React from 'react';
+import React, { useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { X } from "lucide-react";
 import { useModalEscape } from "../../hooks/useModalEscape";
 
 const Dialog = ({ open, onClose, title, children }) => {
   useModalEscape(open ? onClose : null);
   
+  useEffect(() => {
+    if (open) {
+      const originalStyle = window.getComputedStyle(document.body).overflow;
+      document.body.style.overflow = 'hidden';
+      return () => {
+        document.body.style.overflow = originalStyle;
+      };
+    }
+  }, [open]);
+
   if (!open) return null;
-  return (
+  
+  return createPortal(
     <div 
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4 md:p-6 transition-all animate-fade-in"
+      className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40 backdrop-blur-sm p-4 md:p-6 transition-all animate-fade-in"
       onClick={onClose}
     >
       <div 
@@ -26,7 +38,8 @@ const Dialog = ({ open, onClose, title, children }) => {
         </div>
         <div className="px-6 py-6 overflow-y-auto custom-scrollbar">{children}</div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };
 

@@ -109,6 +109,11 @@ const adminUserService = {
     });
     return response;
   },
+
+  getOnlineUserIds: async () => {
+    const response = await axiosInstance.get("/admin/users/online-ids");
+    return response;
+  },
 };
 
 export default adminUserService;

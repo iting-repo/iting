@@ -46,15 +46,29 @@ const formatDeadline = (dueDate) => {
   }
 };
 
-const mapJobToTableRow = (job) => ({
-  id: job.id,
-  title: job.title || job.position || "Chưa cập nhật",
-  type: formatJobType(job.jobType),
-  deadline: formatDeadline(job.dueDate),
-  status: job.status,
-  apps: job.applicationCount ?? 0,
-  raw: job,
-});
+const mapJobToTableRow = (job) => {
+  // Auto-detect expired: if status is ACTIVE but dueDate has passed, treat as EXPIRED
+  let effectiveStatus = job.status;
+  if (job.dueDate && (job.status === 'ACTIVE' || job.status === 'active')) {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const dueDate = new Date(job.dueDate);
+    dueDate.setHours(0, 0, 0, 0);
+    if (dueDate < today) {
+      effectiveStatus = 'EXPIRED';
+    }
+  }
+
+  return {
+    id: job.id,
+    title: job.title || job.position || "Chưa cập nhật",
+    type: formatJobType(job.jobType),
+    deadline: formatDeadline(job.dueDate),
+    status: effectiveStatus,
+    apps: job.applicationCount ?? 0,
+    raw: job,
+  };
+};
 
 const ManageJobs = () => {
   const navigate = useNavigate();

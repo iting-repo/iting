@@ -2,7 +2,7 @@ import axiosInstance from "../utils/axiosInstance";
 
 const companyService = {
   getMyCompany: async () => {
-    return await axiosInstance.get("/companies");
+    return await axiosInstance.get("/companies/me");
   },
 
   updateCompanyBasicInfo: async (id, companyData) => {

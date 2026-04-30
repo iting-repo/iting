@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { FaCheck, FaArrowLeft, FaArrowRight, FaClock, FaTimes, FaEye, FaEnvelope } from 'react-icons/fa';
+import { FaCheck, FaArrowLeft, FaArrowRight, FaClock, FaTimes, FaEye, FaEnvelope, FaBan } from 'react-icons/fa';
 import { useNavigate, Link } from 'react-router-dom';
 import { buildJobDetailPath } from '../../utils/jobUrl';
 import axiosInstance from '../../utils/axiosInstance';
@@ -112,16 +112,25 @@ const AppliedJobs = () => {
             ) : applications.length === 0 ? (
               <tr><td colSpan="4" className="p-8 text-center text-gray-500">Bạn chưa ứng tuyển công việc nào.</td></tr>
             ) : (
-              applications.map((app) => (
-                <tr key={app.id} className="hover:bg-blue-50/30 transition-colors group">
+              applications.map((app) => {
+                const isUnavailable = app.companyActive === false;
+                return (
+                <tr key={app.id} className={`transition-colors group ${isUnavailable ? 'bg-gray-50/40' : 'hover:bg-blue-50/30'}`}>
                   <td className="p-4">
                     <div className="flex items-center gap-4">
-                      <div className="w-12 h-12 rounded-lg flex items-center justify-center overflow-hidden shrink-0 border border-gray-100 bg-white">
+                      <div className={`w-12 h-12 rounded-lg flex items-center justify-center overflow-hidden shrink-0 border bg-white ${isUnavailable ? 'border-gray-200 grayscale' : 'border-gray-100'}`}>
                         <img src={app.companyLogo || 'https://via.placeholder.com/50?text=Job'} alt="Company Logo" className="w-full h-full object-cover" onError={(e) => { e.target.src = 'https://via.placeholder.com/50?text=Job'; }} />
                       </div>
                       <div>
-                        <div className="font-bold text-gray-900 text-base mb-0.5">{app.jobTitle || 'Không rõ vị trí'}</div>
-                        <div className="text-[#3AB4E6] font-medium text-xs">{app.companyName || 'Công ty chưa xác định'}</div>
+                        <div className="flex items-center gap-2 mb-0.5">
+                          <div className={`font-bold text-base ${isUnavailable ? 'text-gray-400' : 'text-gray-900'}`}>{app.jobTitle || 'Không rõ vị trí'}</div>
+                          {isUnavailable && (
+                            <span className="text-[10px] px-2 py-0.5 rounded font-bold bg-red-50 text-red-500 border border-red-100 inline-flex items-center gap-1">
+                              <FaBan size={8} /> Công ty ngừng hoạt động
+                            </span>
+                          )}
+                        </div>
+                        <div className={`font-medium text-xs ${isUnavailable ? 'text-gray-400' : 'text-[#3AB4E6]'}`}>{app.companyName || 'Công ty chưa xác định'}</div>
                       </div>
                     </div>
                   </td>
@@ -134,25 +143,34 @@ const AppliedJobs = () => {
                   <td className="p-4 text-right">
                     <div className="flex items-center justify-end gap-2">
                       <button
-                        onClick={() => handleStartChatWithEmployer(app)}
-                        disabled={chatLoadingId === app.id}
-                        className="bg-[#EAF6FF] hover:bg-[#3AB4E6] hover:text-white text-[#3AB4E6] text-xs font-bold px-4 py-2.5 rounded-lg transition-all shadow-sm inline-flex items-center gap-2 disabled:opacity-60"
+                        onClick={() => !isUnavailable && handleStartChatWithEmployer(app)}
+                        disabled={chatLoadingId === app.id || isUnavailable}
+                        className={`text-xs font-bold px-4 py-2.5 rounded-lg transition-all shadow-sm inline-flex items-center gap-2 ${
+                          isUnavailable
+                            ? 'bg-gray-100 text-gray-400 cursor-not-allowed border border-gray-200'
+                            : 'bg-[#EAF6FF] hover:bg-[#3AB4E6] hover:text-white text-[#3AB4E6] disabled:opacity-60'
+                        }`}
                       >
-                        <FaEnvelope size={11} /> {chatLoadingId === app.id ? 'Đang mở...' : 'Nhắn tin NTD'}
+                        <FaEnvelope size={11} /> {isUnavailable ? 'Không khả dụng' : chatLoadingId === app.id ? 'Đang mở...' : 'Nhắn tin NTD'}
                       </button>
                         <Link to={buildJobDetailPath({ 
                           id: app.jobId, 
                           title: app.jobTitle,
                           jobKey: app.jobKey
                         })}
-                        className="bg-gray-100 hover:bg-[#3AB4E6] hover:text-white text-gray-500 text-xs font-bold px-5 py-2.5 rounded-lg transition-all shadow-sm inline-block"
+                        className={`text-xs font-bold px-5 py-2.5 rounded-lg transition-all shadow-sm inline-block ${
+                          isUnavailable
+                            ? 'bg-gray-100 text-gray-400 border border-gray-200'
+                            : 'bg-gray-100 hover:bg-[#3AB4E6] hover:text-white text-gray-500'
+                        }`}
                       >
                         Xem Chi Tiết
                       </Link>
                     </div>
                   </td>
                 </tr>
-              ))
+                );
+              })
             )}
           </tbody>
         </table>

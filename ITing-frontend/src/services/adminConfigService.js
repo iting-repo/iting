@@ -17,6 +17,12 @@ const adminConfigService = {
   resetToDefault: async () => {
     const response = await axiosInstance.post("/admin/config/reset");
     return response;
+  },
+
+  // Test kết nối SMTP
+  testEmailConnection: async (config) => {
+    const response = await axiosInstance.post("/admin/config/test-email", config);
+    return response;
   }
 };
 

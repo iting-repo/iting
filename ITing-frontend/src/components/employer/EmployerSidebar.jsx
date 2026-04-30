@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 import {
   FaHome,
@@ -8,8 +8,10 @@ import {
   FaSignOutAlt,
   FaSearch,
 } from "react-icons/fa";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { logout } from "../../store/auth/authSlice";
+import companyService from "../../services/companyService";
+import ScrollToTop from "../common/ScrollToTop";
 
 const EmployerSidebar = () => {
   const dispatch = useDispatch();

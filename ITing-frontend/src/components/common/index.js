@@ -18,3 +18,4 @@ export { default as CompanyLogo } from './CompanyLogo';
 export { default as LocationPicker } from './LocationPicker';
 export { default as CategoryPicker } from './CategoryPicker';
 export * from './AppIcons';
+export { default as GlobalLoading } from './GlobalLoading';

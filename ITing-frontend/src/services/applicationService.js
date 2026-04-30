@@ -19,6 +19,18 @@ const applicationService = {
             params: { note }
         });
         return response;
+    },
+
+    // 4. Lấy thống kê đơn ứng tuyển
+    getEmployerStats: async () => {
+        try {
+            // Placeholder: chờ backend triển khai endpoint thực tế
+            // const response = await axiosInstance.get('/employer/applications/stats');
+            // return response;
+            return { total: 0 };
+        } catch (error) {
+            return { total: 0 };
+        }
     }
 };
 

@@ -431,11 +431,26 @@ const JobDetailPage = () => {
 
     if (!currentJob || !jobDetail) {
         return (
-            <div className="text-center py-20 font-bold text-red-500">
-                Không tìm thấy công việc này.
+            <div className="bg-[#f8fafc] min-h-screen py-20">
+                <div className="max-w-2xl mx-auto text-center px-4">
+                    <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-red-50 flex items-center justify-center">
+                        <FaExclamationTriangle className="text-red-400 text-3xl" />
+                    </div>
+                    <h2 className="text-2xl font-bold text-gray-800 mb-3">Không tìm thấy công việc này</h2>
+                    <p className="text-gray-500 mb-8">Tin tuyển dụng có thể đã bị xóa hoặc không còn khả dụng.</p>
+                    <button
+                        onClick={() => navigate('/jobs')}
+                        className="bg-[#3AB4E6] text-white font-bold px-6 py-3 rounded-xl hover:bg-[#2a9fd4] transition-colors"
+                    >
+                        Quay lại trang việc làm
+                    </button>
+                </div>
             </div>
         );
     }
+
+    // Kiểm tra công ty bị đình chỉ
+    const isCompanySuspended = currentJob.companyActive === false;
 
     const mapQuery =
         [currentJob.address, currentJob.ward, currentJob.province, currentJob.location]
@@ -465,6 +480,19 @@ const JobDetailPage = () => {
                         { label: jobDetail.title },
                     ]}
                 />
+
+                {/* Banner cảnh báo công ty bị đình chỉ */}
+                {isCompanySuspended && (
+                    <div className="mb-6 p-5 bg-amber-50 border border-amber-200 rounded-2xl flex items-center gap-4">
+                        <div className="w-12 h-12 rounded-full bg-amber-100 flex items-center justify-center shrink-0">
+                            <FaExclamationTriangle className="text-amber-500 text-xl" />
+                        </div>
+                        <div>
+                            <h3 className="font-bold text-amber-800 text-base">Tin tuyển dụng hiện không khả dụng</h3>
+                            <p className="text-amber-600 text-sm mt-0.5">Công ty đăng tin này đang tạm ngừng hoạt động. Bạn không thể ứng tuyển hoặc liên hệ vào lúc này.</p>
+                        </div>
+                    </div>
+                )}
 
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
                     <div className="lg:col-span-8 space-y-10">
@@ -547,20 +575,24 @@ const JobDetailPage = () => {
 
                             <div className="flex gap-3">
                                 <button
-                                    onClick={() => !hasApplied && setIsApplyModalOpen(true)}
-                                    disabled={hasApplied}
-                                    className={`flex-1 py-3 font-bold rounded-lg shadow-md transition-all transform ${hasApplied
-                                        ? 'bg-gray-100 text-gray-400 cursor-not-allowed border border-gray-200'
-                                        : 'bg-[#00B4D8] text-white hover:bg-[#0096B4] hover:-translate-y-0.5'
+                                    onClick={() => !hasApplied && !isCompanySuspended && setIsApplyModalOpen(true)}
+                                    disabled={hasApplied || isCompanySuspended}
+                                    className={`flex-1 py-3 font-bold rounded-lg shadow-md transition-all transform ${isCompanySuspended
+                                            ? 'bg-gray-100 text-gray-400 cursor-not-allowed border border-gray-200'
+                                            : hasApplied
+                                                ? 'bg-gray-100 text-gray-400 cursor-not-allowed border border-gray-200'
+                                                : 'bg-[#00B4D8] text-white hover:bg-[#0096B4] hover:-translate-y-0.5'
                                         }`}
                                 >
-                                    {hasApplied ? 'Đã Ứng Tuyển' : 'Ứng Tuyển Ngay'}
+                                    {isCompanySuspended ? 'Không khả dụng' : hasApplied ? 'Đã Ứng Tuyển' : 'Ứng Tuyển Ngay'}
                                 </button>
 
                                 <button
-                                    onClick={handleToggleSave}
-                                    disabled={isSaving}
-                                    className={`px-4 py-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors ${isSaved ? 'text-blue-500 bg-blue-50' : 'text-gray-400'
+                                    onClick={isCompanySuspended ? undefined : handleToggleSave}
+                                    disabled={isSaving || isCompanySuspended}
+                                    className={`px-4 py-3 border border-gray-200 rounded-lg transition-colors ${isCompanySuspended
+                                            ? 'text-gray-300 cursor-not-allowed'
+                                            : isSaved ? 'text-blue-500 bg-blue-50 hover:bg-gray-50' : 'text-gray-400 hover:bg-gray-50'
                                         }`}
                                 >
                                     {isSaved ? <FaBookmark size={20} /> : <FaRegBookmark size={20} />}

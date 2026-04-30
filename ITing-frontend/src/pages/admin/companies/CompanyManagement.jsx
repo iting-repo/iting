@@ -1,27 +1,27 @@
 import React, { useEffect, useMemo, useState } from "react";
 import adminCompanyService from '../../../services/adminCompanyService';
 import {
-  Button, Badge, Input, PageHeader, Card, Table, Td, StatsCard, Pagination
+  Button, Badge, Input, PageHeader, Card, Table, Td, StatsCard, Pagination, GlobalLoading
 } from "../../../components";
 import { RowActionMenu } from "../../../components/admin/RowActionMenu";
 import { CompanyDetailDialog } from "../../../components/admin/CompanyDetailDialog";
 import { ActionDialog } from "../../../components/admin/ActionDialog";
 import {
-  Building2,
-  Users,
-  UserCheck,
-  UserX,
-  FileText,
-  ShieldCheck,
-  Search,
-  Download,
-  FileUp,
-  CheckSquare,
-  Trash2,
-  Ban,
-  XCircle,
-  CheckCircle2
-} from "lucide-react";
+  FaBuilding,
+  FaUsers,
+  FaUserCheck,
+  FaUserTimes,
+  FaFileAlt,
+  FaShieldAlt,
+  FaSearch,
+  FaDownload,
+  FaUpload,
+  FaCheckSquare,
+  FaTrashAlt,
+  FaBan,
+  FaTimesCircle,
+  FaCheckCircle
+} from "react-icons/fa";
 import ImportExcelModal from "../../../components/admin/ImportExcelModal";
 import { toast } from "sonner";
 
@@ -167,11 +167,14 @@ const CompanyManagement = () => {
 
 
 
+  const [isProcessing, setIsProcessing] = useState(false);
+
   const confirmAction = async () => {
     if (!actionDialog) return;
 
     const { company, action } = actionDialog;
 
+    setIsProcessing(true);
     try {
       if (action === "approve") {
         await adminCompanyService.approveCompany(
@@ -201,11 +204,13 @@ const CompanyManagement = () => {
 
       setActionDialog(null);
       setActionNote("");
-      fetchCompanies();
+      await fetchCompanies();
       toast.success("Cập nhật trạng thái thành công!");
     } catch (error) {
       console.error("Lỗi xử lý action công ty:", error);
       toast.error("Cập nhật trạng thái thất bại!");
+    } finally {
+      setIsProcessing(false);
     }
   };
 
@@ -252,6 +257,7 @@ const CompanyManagement = () => {
   };
   return (
     <div className="space-y-6 pb-60">
+      {isProcessing && <GlobalLoading fullScreen={true} message="Đang xử lý tác vụ..." />}
       <PageHeader
         title="Quản lý Công ty"
         description="Duyệt hồ sơ đăng ký doanh nghiệp và quản lý trạng thái hoạt động."
@@ -261,7 +267,7 @@ const CompanyManagement = () => {
           className="flex items-center gap-2 border-slate-200 text-slate-600 hover:bg-slate-50"
           onClick={() => setShowImportModal(true)}
         >
-          <FileUp className="h-4 w-4 text-slate-500" />
+          <FaUpload className="h-4 w-4 text-slate-500" />
           Nhập Excel
         </Button>
         <Button
@@ -269,11 +275,11 @@ const CompanyManagement = () => {
           className="flex items-center gap-2 border-[#1967D2] text-[#1967D2] hover:bg-blue-50"
           onClick={handleExportExcel}
         >
-          <Download className="h-4 w-4" />
+          <FaDownload className="h-4 w-4" />
           Xuất Excel
         </Button>
         <Button className="bg-[#1967D2] hover:bg-[#1452A8]">
-          <ShieldCheck className="mr-2 h-4 w-4" />
+          <FaShieldAlt className="mr-2 h-4 w-4" />
           Duyệt nhanh
         </Button>
       </PageHeader>
@@ -282,28 +288,28 @@ const CompanyManagement = () => {
         <StatsCard
           title="Tổng công ty"
           value={stats.total}
-          icon={<Building2 />}
+          icon={<FaBuilding />}
           percentage="12"
           isIncrease={true}
         />
         <StatsCard
           title="Chờ duyệt"
           value={stats.pending}
-          icon={<Users />}
+          icon={<FaUsers />}
           percentage="5"
           isIncrease={true}
         />
         <StatsCard
           title="Đã duyệt"
           value={stats.approved}
-          icon={<UserCheck />}
+          icon={<FaUserCheck />}
           percentage="8"
           isIncrease={true}
         />
         <StatsCard
           title="Bị khóa"
           value={stats.suspended}
-          icon={<UserX />}
+          icon={<FaUserTimes />}
           percentage="2"
           isIncrease={false}
         />
@@ -312,7 +318,7 @@ const CompanyManagement = () => {
       <Card className="!p-4">
         <div className="flex flex-col gap-4 md:flex-row md:items-center">
           <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+            <FaSearch className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
             <Input
               placeholder="Tìm theo tên công ty, MST, email..."
               value={search}
@@ -331,7 +337,7 @@ const CompanyManagement = () => {
             <option value="APPROVED">Đã duyệt</option>
             <option value="REJECTED">Bị từ chối</option>
             <option value="NEEDS_RESUBMISSION">Yêu cầu nộp lại</option>
-            <option value="SUSPENDED">Đã suspend</option>
+            <option value="SUSPENDED">Bị đình chỉ</option>
           </select>
         </div>
       </Card>
@@ -363,10 +369,8 @@ const CompanyManagement = () => {
         >
           {loading ? (
             <tr>
-              <Td colSpan={10} className="text-center py-10">
-                <div className="flex justify-center">
-                  <div className="h-6 w-6 animate-spin rounded-full border-2 border-sky-500 border-t-transparent"></div>
-                </div>
+              <Td colSpan={10}>
+                <GlobalLoading fullScreen={false} message="Đang nạp dữ liệu..." />
               </Td>
             </tr>
           ) : filteredCompanies.length > 0 ? (
@@ -390,7 +394,7 @@ const CompanyManagement = () => {
                       <img src={company.logoUrl} alt="" className="h-full w-full object-cover" />
                     ) : (
                       <div className="flex h-full w-full items-center justify-center text-slate-400">
-                        <Building2 className="h-5 w-5" />
+                        <FaBuilding className="h-5 w-5" />
                       </div>
                     )}
                   </div>
@@ -406,6 +410,7 @@ const CompanyManagement = () => {
                     {company.companyInfoUpdateStatus === "PENDING_REVIEW" ? "CHỜ DUYỆT" : 
                      company.companyInfoUpdateStatus === "APPROVED" ? "ĐÃ DUYỆT" :
                      company.companyInfoUpdateStatus === "REJECTED" ? "BỊ TỪ CHỐI" :
+                     company.companyInfoUpdateStatus === "SUSPENDED" ? "BỊ ĐÌNH CHỈ" :
                      company.companyInfoUpdateStatus || "CHƯA XÁC ĐỊNH"}
                   </Badge>
                 </Td>
@@ -485,7 +490,7 @@ const CompanyManagement = () => {
         <div className="fixed bottom-6 left-1/2 z-[60] flex -translate-x-1/2 items-center gap-6 rounded-2xl border border-sky-100 bg-white px-6 py-4 shadow-2xl animate-in fade-in slide-in-from-bottom-4">
           <div className="flex items-center gap-3 border-r border-slate-100 pr-6">
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-sky-100 text-sky-600">
-              <CheckSquare className="h-5 w-5" />
+              <FaCheckSquare className="h-5 w-5" />
             </div>
             <div>
               <p className="text-sm font-bold text-slate-800">Đã chọn {selectedIds.length} mục</p>
@@ -503,7 +508,7 @@ const CompanyManagement = () => {
               onClick={() => handleBulkAction('approve')}
               className="flex items-center gap-2 rounded-xl bg-emerald-500 px-4 py-2.5 text-sm font-bold text-white shadow-lg shadow-emerald-100 transition-all hover:bg-emerald-600 hover:scale-105 active:scale-95"
             >
-              <CheckCircle2 className="h-4 w-4" />
+              <FaCheckCircle className="h-4 w-4" />
               Duyệt
             </button>
 
@@ -511,7 +516,7 @@ const CompanyManagement = () => {
               onClick={() => handleBulkAction('reject')}
               className="flex items-center gap-2 rounded-xl bg-amber-500 px-4 py-2.5 text-sm font-bold text-white shadow-lg shadow-amber-100 transition-all hover:bg-amber-600 hover:scale-105 active:scale-95"
             >
-              <XCircle className="h-4 w-4" />
+              <FaTimesCircle className="h-4 w-4" />
               Từ chối
             </button>
 
@@ -519,7 +524,7 @@ const CompanyManagement = () => {
               onClick={() => handleBulkAction('suspend')}
               className="flex items-center gap-2 rounded-xl bg-slate-700 px-4 py-2.5 text-sm font-bold text-white shadow-lg shadow-slate-100 transition-all hover:bg-slate-800 hover:scale-105 active:scale-95"
             >
-              <Ban className="h-4 w-4" />
+              <FaBan className="h-4 w-4" />
               Đình chỉ
             </button>
 
@@ -527,7 +532,7 @@ const CompanyManagement = () => {
               onClick={() => handleBulkAction('delete')}
               className="flex items-center gap-2 rounded-xl bg-red-500 px-4 py-2.5 text-sm font-bold text-white shadow-lg shadow-red-100 transition-all hover:bg-red-600 hover:scale-105 active:scale-95"
             >
-              <Trash2 className="h-4 w-4" />
+              <FaTrashAlt className="h-4 w-4" />
               Xóa
             </button>
           </div>
