@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { BsBriefcase, BsCardChecklist, BsThreeDotsVertical, BsEye, BsXCircle } from 'react-icons/bs';
-import { FaUserFriends } from 'react-icons/fa';
+import { FaUserFriends, FaBan } from 'react-icons/fa';
 import { useTranslation } from 'react-i18next';
 import { useNavigate, Link } from 'react-router-dom';
 import { buildEmployerJobApplicationsPath } from '../../utils/jobUrl';
@@ -140,7 +140,9 @@ const EmployerDashboard = () => {
                             {recentJobs.length > 0 ? (
                                 recentJobs.map((job) => {
                                     const daysLeft = calculateDaysLeft(job.dueDate);
-                                    const isActive = job.status === 'ACTIVE' || job.status === 'active';
+                                    const isExpiredByDate = job.dueDate && daysLeft === 0;
+                                    const isExpiredByStatus = job.status === 'EXPIRED' || job.status === 'expired' || job.status === 'CLOSED' || job.status === 'closed';
+                                    const isActive = (job.status === 'ACTIVE' || job.status === 'active') && !isExpiredByDate;
                                     
                                     return (
                                         <tr key={job.id} className="hover:bg-gray-50/40 transition-all group">
@@ -165,7 +167,11 @@ const EmployerDashboard = () => {
                                             </td>
 
                                             <td className="py-6 px-6">
-                                                {isActive ? (
+                                                {job.status === 'SUSPENDED' ? (
+                                                    <span className="inline-flex items-center gap-2 text-purple-600 bg-purple-50 px-4 py-1.5 rounded-full text-xs font-extrabold border border-purple-100/50">
+                                                        <FaBan size={12} /> Bị tạm dừng
+                                                    </span>
+                                                ) : isActive ? (
                                                     <span className="inline-flex items-center gap-2 text-green-600 bg-green-50 px-4 py-1.5 rounded-full text-xs font-extrabold border border-green-100/50">
                                                         <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
                                                         {t('employer_dashboard.table.active')}

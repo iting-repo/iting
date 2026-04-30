@@ -41,6 +41,8 @@ const SystemConfig = () => {
   const [activeGroup, setActiveGroup] = useState("general");
   const [loading, setLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const [testingEmail, setTestingEmail] = useState(false);
+  const [emailTestStatus, setEmailTestStatus] = useState(null);
   const [config, setConfig] = useState(null);
 
   useEffect(() => {
@@ -87,6 +89,21 @@ const SystemConfig = () => {
       toast.error("Không thể khôi phục cấu hình");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleTestEmail = async () => {
+    setTestingEmail(true);
+    setEmailTestStatus(null);
+    try {
+      await adminConfigService.testEmailConnection(config);
+      setEmailTestStatus("success");
+      toast.success("Kết nối SMTP thành công!");
+    } catch (error) {
+      setEmailTestStatus("error");
+      toast.error(error.message || "Kết nối SMTP thất bại. Vui lòng kiểm tra lại cấu hình.");
+    } finally {
+      setTestingEmail(false);
     }
   };
 
@@ -218,10 +235,24 @@ const SystemConfig = () => {
                   <Input value={config.emailFromName} onChange={(e) => updateConfig("emailFromName", e.target.value)} />
                 </div>
                 <div className="flex items-center gap-3 pt-2">
-                  <Button variant="outline" className="text-xs font-bold uppercase tracking-widest h-10 px-6 border-slate-200">Gửi email test</Button>
-                  <div className="flex items-center gap-2 px-4 py-2 bg-emerald-50 text-emerald-600 rounded-lg text-xs font-bold border border-emerald-100">
-                    <CheckCircle2 className="w-3 h-3" /> Kết nối OK
-                  </div>
+                  <Button 
+                    variant="outline" 
+                    className="text-xs font-bold uppercase tracking-widest h-10 px-6 border-slate-200"
+                    onClick={handleTestEmail}
+                    disabled={testingEmail}
+                  >
+                    {testingEmail ? "Đang kiểm tra..." : "Gửi email test"}
+                  </Button>
+                  {emailTestStatus === "success" && (
+                    <div className="flex items-center gap-2 px-4 py-2 bg-emerald-50 text-emerald-600 rounded-lg text-xs font-bold border border-emerald-100 animate-in fade-in">
+                      <CheckCircle2 className="w-3 h-3" /> Kết nối OK
+                    </div>
+                  )}
+                  {emailTestStatus === "error" && (
+                    <div className="flex items-center gap-2 px-4 py-2 bg-rose-50 text-rose-600 rounded-lg text-xs font-bold border border-rose-100 animate-in fade-in">
+                      <AlertCircle className="w-3 h-3" /> Lỗi kết nối
+                    </div>
+                  )}
                 </div>
               </CardContent>
             </Card>

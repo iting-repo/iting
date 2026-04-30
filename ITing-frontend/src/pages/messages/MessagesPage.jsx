@@ -608,12 +608,14 @@ const MessagesPage = () => {
                   <p style={{ fontWeight: 700, color: TEXT_PRIMARY, fontSize: 15, margin: 0 }}>
                     {activeConversation.otherParticipantName || 'Unknown'}
                   </p>
-                  <p style={{ fontSize: 12, color: TEXT_SECONDARY, margin: '2px 0 0' }}>
-                    {typingUsers[activeConversation.otherParticipantId]
-                      ? '✏️ Đang nhập...'
-                      : (onlineUsers[activeConversation.otherParticipantId]
-                        ? '🟢 Đang hoạt động'
-                        : 'Cuộc trò chuyện')}
+                  <p style={{ fontSize: 12, margin: '2px 0 0', color: activeConversation.otherParticipantActive === false ? '#EF4444' : TEXT_SECONDARY }}>
+                    {activeConversation.otherParticipantActive === false 
+                      ? '🚫 Tài khoản bị đình chỉ'
+                      : typingUsers[activeConversation.otherParticipantId]
+                        ? '✏️ Đang nhập...'
+                        : (onlineUsers[activeConversation.otherParticipantId]
+                          ? '🟢 Đang hoạt động'
+                          : 'Cuộc trò chuyện')}
                   </p>
                 </div>
               </div>
@@ -659,43 +661,57 @@ const MessagesPage = () => {
               </div>
 
               {/* Input */}
-              <form onSubmit={handleSend} style={{
-                padding: '12px 24px',
-                borderTop: `1px solid ${BORDER}`,
-                background: BG,
-                display: 'flex', alignItems: 'center', gap: 10,
-                flexShrink: 0,
-              }}>
-                <input
-                  value={draft}
-                  onChange={(e) => handleDraftChange(e.target.value)}
-                  placeholder="Nhập tin nhắn..."
-                  style={{
-                    flex: 1, height: 42, padding: '0 16px',
-                    borderRadius: 12,
-                    border: `1px solid ${BORDER}`,
-                    background: BG_SECONDARY,
-                    color: TEXT_PRIMARY, fontSize: 14, outline: 'none',
-                    boxSizing: 'border-box',
-                  }}
-                  onFocus={e => e.currentTarget.style.borderColor = PRIMARY}
-                  onBlur={e => e.currentTarget.style.borderColor = BORDER}
-                />
-                <button
-                  type="submit"
-                  disabled={!draft.trim() || sending}
-                  style={{
-                    width: 42, height: 42, borderRadius: 12,
-                    background: !draft.trim() || sending ? '#c3e6f5' : PRIMARY,
-                    color: '#fff', border: 'none',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    cursor: !draft.trim() || sending ? 'not-allowed' : 'pointer',
-                    transition: 'all 0.2s', flexShrink: 0,
-                  }}
-                >
-                  <FaPaperPlane size={14} />
-                </button>
-              </form>
+              {activeConversation.otherParticipantActive === false ? (
+                <div style={{
+                  padding: '16px 24px',
+                  borderTop: `1px solid ${BORDER}`,
+                  background: '#FEF2F2',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  flexShrink: 0,
+                }}>
+                  <p style={{ color: '#DC2626', fontSize: 14, margin: 0, fontWeight: 500, textAlign: 'center' }}>
+                    Tài khoản công ty này hiện đang bị đình chỉ. Không thể gửi hoặc nhận tin nhắn mới.
+                  </p>
+                </div>
+              ) : (
+                <form onSubmit={handleSend} style={{
+                  padding: '12px 24px',
+                  borderTop: `1px solid ${BORDER}`,
+                  background: BG,
+                  display: 'flex', alignItems: 'center', gap: 10,
+                  flexShrink: 0,
+                }}>
+                  <input
+                    value={draft}
+                    onChange={(e) => handleDraftChange(e.target.value)}
+                    placeholder="Nhập tin nhắn..."
+                    style={{
+                      flex: 1, height: 42, padding: '0 16px',
+                      borderRadius: 12,
+                      border: `1px solid ${BORDER}`,
+                      background: BG_SECONDARY,
+                      color: TEXT_PRIMARY, fontSize: 14, outline: 'none',
+                      boxSizing: 'border-box',
+                    }}
+                    onFocus={e => e.currentTarget.style.borderColor = PRIMARY}
+                    onBlur={e => e.currentTarget.style.borderColor = BORDER}
+                  />
+                  <button
+                    type="submit"
+                    disabled={!draft.trim() || sending}
+                    style={{
+                      width: 42, height: 42, borderRadius: 12,
+                      background: !draft.trim() || sending ? '#c3e6f5' : PRIMARY,
+                      color: '#fff', border: 'none',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      cursor: !draft.trim() || sending ? 'not-allowed' : 'pointer',
+                      transition: 'all 0.2s', flexShrink: 0,
+                    }}
+                  >
+                    <FaPaperPlane size={14} />
+                  </button>
+                </form>
+              )}
             </>
           ) : (
             <div style={{

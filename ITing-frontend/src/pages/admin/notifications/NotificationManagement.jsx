@@ -41,6 +41,9 @@ const TYPE_MAP = {
   ACCOUNT_UPDATE: { label: "Người dùng", icon: Users, color: "text-orange-600", bg: "bg-orange-50" },
   JOB_NEW: { label: "Tuyển dụng", icon: Briefcase, color: "text-green-600", bg: "bg-green-50" },
   SYSTEM_ANNOUNCEMENT: { label: "Thông báo", icon: Flag, color: "text-red-600", bg: "bg-red-50" },
+  ADMIN_COMPANY_REGISTERED: { label: "Công ty mới", icon: Building2, color: "text-blue-600", bg: "bg-blue-50" },
+  ADMIN_JOB_CREATED: { label: "Việc làm mới", icon: Briefcase, color: "text-green-600", bg: "bg-green-50" },
+  ADMIN_REPORT_RECEIVED: { label: "Báo cáo", icon: AlertTriangle, color: "text-red-600", bg: "bg-red-50" },
 };
 
 const getNotiTypeInfo = (type) => {

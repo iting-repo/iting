@@ -1,10 +1,11 @@
 import React from 'react';
 
-export const Card = ({ children, className = "" }) => (
-  <div className={`rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden ${className}`}>
+export const Card = React.forwardRef(({ children, className = "", ...props }, ref) => (
+  <div ref={ref} className={`rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden ${className}`} {...props}>
     {children}
   </div>
-);
+));
+Card.displayName = "Card";
 
 export const CardHeader = ({ children, className = "" }) => (
   <div className={`p-6 pb-2 space-y-1.5 ${className}`}>

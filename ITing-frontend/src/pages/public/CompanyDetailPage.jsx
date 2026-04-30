@@ -167,6 +167,30 @@ const CompanyDetailPage = () => {
 
   if (!company) return null;
 
+  // Kiểm tra công ty bị đình chỉ
+  if (company.active === false) {
+    return (
+      <div className="min-h-screen bg-[#F1F5F9] flex items-center justify-center">
+        <div className="max-w-lg mx-auto text-center px-6 py-16">
+          <div className="w-24 h-24 mx-auto mb-8 rounded-full bg-amber-50 flex items-center justify-center border border-amber-200">
+            <Building2 className="w-10 h-10 text-amber-500" />
+          </div>
+          <h2 className="text-2xl font-bold text-gray-800 mb-4">Công ty hiện không khả dụng</h2>
+          <p className="text-gray-500 leading-relaxed mb-8">
+            Trang công ty này đang tạm ngừng hoạt động. 
+            Các tin tuyển dụng liên quan cũng không khả dụng vào lúc này.
+          </p>
+          <button
+            onClick={() => navigate('/companies')}
+            className="bg-[#3AB4E6] text-white font-bold px-8 py-3.5 rounded-xl hover:bg-[#2a9fd4] transition-all shadow-lg shadow-blue-500/20 hover:shadow-xl hover:-translate-y-0.5"
+          >
+            Xem các công ty khác
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-[#F1F5F9]">
       {/* Hero Banner Area */}

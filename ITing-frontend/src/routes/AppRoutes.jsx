@@ -20,6 +20,7 @@ const EditJob = lazy(() => import('../pages/employer/EditJob'));
 const JobApplications = lazy(() => import('../pages/employer/JobApplications'));
 const ManageApplications = lazy(() => import('../pages/employer/ManageApplications'));
 const LegacyEmployerJobApplicationsRedirect = lazy(() => import('../pages/employer/LegacyEmployerJobApplicationsRedirect'));
+const SuspendAppealPage = lazy(() => import('../pages/employer/SuspendAppealPage'));
 const Verification = lazy(() => import('../pages/employer/Verification'));
 const DataProcessing = lazy(() => import('../pages/employer/DataProcessing'));
 const FindCandidate = lazy(() => import('../pages/employer/FindCandidate'));
@@ -36,6 +37,8 @@ const CompanyManagement = lazy(() => import('../pages/admin/companies/CompanyMan
 const ReportManagement = lazy(() => import('../pages/admin/reports/ReportManagement'));
 const JobDetailPage = lazy(() => import('../pages/public/JobDetailPage'));
 const LegacyJobRedirect = lazy(() => import('../pages/public/LegacyJobRedirect'));
+const BlogPage = lazy(() => import('../pages/public/BlogPage'));
+const BlogDetailPage = lazy(() => import('../pages/public/BlogDetailPage'));
 const AboutPage = lazy(() => import('../pages/public/AboutPage'));
 const ContactPage = lazy(() => import('../pages/public/ContactPage'));
 const AdminJobPage = lazy(() => import('../pages/admin/jobs/AdminJobPage'));
@@ -45,23 +48,24 @@ const SystemConfig = lazy(() => import('../pages/admin/config/SystemConfig'));
 const NotificationManagement = lazy(() => import('../pages/admin/notifications/NotificationManagement'));
 const CategoryManagement = lazy(() => import('../pages/admin/categories/CategoryManagement'));
 const BannerManagement = lazy(() => import('../pages/admin/banner/BannerManagement'));
+const BlogManagement = lazy(() => import('../pages/admin/blog/BlogManagement'));
 const CompaniesPage = lazy(() => import('../pages/public/CompaniesPage'));
 const CompanyDetailPage = lazy(() => import('../pages/public/CompanyDetailPage'));
 const SalaryLookupPage = lazy(() => import('../pages/public/SalaryLookupPage'));
 const MessagesPage = lazy(() => import('../pages/messages/MessagesPage'));
 
-import { LoadingSpinner } from '../components';
-import { Settings } from 'lucide-react';
+import { GlobalLoading } from '../components/common';
 
 const AppRoutes = () => {
   return (
-    <Suspense fallback={<LoadingSpinner />}>
+    <Suspense fallback={<GlobalLoading message="Đang nạp ứng dụng..." />}>
       <Routes>
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route path="/verify-otp" element={<VerifyOtpPage />} />
         <Route path="/forgot-password" element={<ForgotPasswordPage />} />
         <Route path="/reset-password" element={<ResetPasswordPage />} />
+        <Route path="/blogs" element={<BlogPage />} />
 
         <Route element={<MainLayout />}>
           <Route path="/" element={<HomePage />} />
@@ -69,9 +73,8 @@ const AppRoutes = () => {
           <Route path="/tim-viec-lam-:keyword" element={<JobPage />} />
           <Route path="/companies" element={<CompaniesPage />} />
           <Route path="/companies/:id" element={<CompanyDetailPage />} />
-          <Route path="/salary-lookup" element={<SalaryLookupPage />} />
-          <Route path="/jobs/:id" element={<LegacyJobRedirect />} />
           <Route path="/viec-lam/:slug/:jobKey" element={<JobDetailPage />} />
+          <Route path="/blog/:slug" element={<BlogDetailPage />} />
           <Route path="/about" element={<AboutPage />} />
           <Route path="/contact" element={<ContactPage />} />
         </Route>
@@ -89,6 +92,7 @@ const AppRoutes = () => {
             <Route path="notifications" element={<NotificationManagement />} />
             <Route path="categories" element={<CategoryManagement />} />
             <Route path="banner" element={<BannerManagement />} />
+            <Route path="blog" element={<BlogManagement />} />
           </Route>
         </Route>
 
@@ -98,6 +102,7 @@ const AppRoutes = () => {
               <Route index element={<Navigate to="dashboard" replace />} />
               <Route path="dashboard" element={<EmployerDashboard />} />
               <Route path="company-profile" element={<CompanyProfile />} />
+              <Route path="appeal" element={<SuspendAppealPage />} />
               <Route path="verification" element={<Verification />} />
               <Route path="data-processing" element={<DataProcessing />} />
               <Route path="post-job" element={<PostJob />} />
@@ -123,7 +128,7 @@ const AppRoutes = () => {
               <Route path="applied-jobs" element={<AppliedJobs />} />
               <Route path="favorite-jobs" element={<FavoriteJobs />} />
               <Route path="job-alerts" element={<JobAlerts />} />
-              <Route path="settings" element={<Settings defaultTab="account" />} />
+              <Route path="settings" element={<div>Trang cài đặt (Đang phát triển)</div>} />
 
             </Route>
           </Route>

@@ -452,15 +452,20 @@ const CandidateDetailModal = ({ candidate, onClose, onStatusUpdate }) => {
                             <div className="space-y-5">
                                 <div>
                                     <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2.5 ml-1">Lý do chính</label>
-                                    <select
-                                        value={reportData.type}
-                                        onChange={(e) => setReportData({ ...reportData, type: e.target.value })}
-                                        className="w-full h-14 px-4 bg-slate-50 border-2 border-slate-100 rounded-2xl text-slate-700 font-bold focus:border-blue-400 outline-none transition-all cursor-pointer appearance-none"
-                                    >
-                                        {REPORT_REASONS.map(r => (
-                                            <option key={r.value} value={r.value}>{r.label}</option>
-                                        ))}
-                                    </select>
+                                    <div className="relative">
+                                      <select
+                                          value={reportData.type}
+                                          onChange={(e) => setReportData({ ...reportData, type: e.target.value })}
+                                          className="w-full h-14 px-4 pr-10 bg-slate-50 border-2 border-slate-100 rounded-2xl text-slate-700 font-bold focus:border-blue-400 outline-none transition-all cursor-pointer appearance-none"
+                                      >
+                                          {REPORT_REASONS.map(r => (
+                                              <option key={r.value} value={r.value}>{r.label}</option>
+                                          ))}
+                                      </select>
+                                      <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-4 text-slate-400">
+                                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
+                                      </div>
+                                    </div>
                                 </div>
 
                                 <div>

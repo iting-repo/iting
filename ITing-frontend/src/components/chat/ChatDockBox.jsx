@@ -3,6 +3,7 @@ import { FaPaperPlane, FaTimes, FaWindowMinimize } from 'react-icons/fa';
 import messageService from '../../services/messageService';
 import chatRealtimeService from '../../services/chatRealtimeService';
 import { formatChatTime } from '../../utils/chatFormat';
+import { toast } from 'sonner';
 
 const ChatDockBox = ({ conversation, currentUser, onClose, onMinimize, onSent }) => {
   const [messages, setMessages] = useState([]);
@@ -97,6 +98,10 @@ const ChatDockBox = ({ conversation, currentUser, onClose, onMinimize, onSent })
       setDraft('');
       chatRealtimeService.send('/app/chat.typing', { conversationId: conversation.id, typing: false });
       if (onSent) onSent(sent);
+    } catch (error) {
+      console.error('Failed to send message:', error);
+      toast.error(error?.message || error?.error || error?.response?.data?.error || 'Không thể gửi tin nhắn.');
+      setDraft(content); // Giữ lại tin nhắn đang nhập
     } finally {
       setSending(false);
     }
@@ -125,7 +130,11 @@ const ChatDockBox = ({ conversation, currentUser, onClose, onMinimize, onSent })
       <div className="px-4 py-3 bg-slate-900 text-white flex items-center justify-between">
         <div className="min-w-0">
           <p className="font-semibold truncate">{receiverInfo?.name || 'Cuộc trò chuyện'}</p>
-          <p className="text-xs text-slate-300">Nhắn tin nhanh</p>
+          {conversation?.otherParticipantActive === false ? (
+            <p className="text-xs text-red-300">🚫 Bị đình chỉ</p>
+          ) : (
+            <p className="text-xs text-slate-300">Nhắn tin nhanh</p>
+          )}
         </div>
         <div className="flex items-center gap-1">
           <button onClick={onMinimize} className="p-2 rounded-lg hover:bg-slate-700" title="Thu gọn">
@@ -157,21 +166,29 @@ const ChatDockBox = ({ conversation, currentUser, onClose, onMinimize, onSent })
         ) : null}
       </div>
 
-      <form onSubmit={handleSend} className="p-3 border-t border-gray-100 bg-white flex items-center gap-2">
-        <input
-          value={draft}
-          onChange={(e) => handleDraftChange(e.target.value)}
-          placeholder="Nhập tin nhắn..."
-          className="flex-1 h-10 px-3 rounded-xl border border-gray-200 text-sm outline-none focus:ring-2 focus:ring-[#3AB4E6]"
-        />
-        <button
-          type="submit"
-          disabled={sending || !draft.trim()}
-          className="h-10 w-10 rounded-xl bg-[#1967D2] text-white flex items-center justify-center disabled:opacity-50"
-        >
-          <FaPaperPlane size={12} />
-        </button>
-      </form>
+      {conversation?.otherParticipantActive === false ? (
+        <div className="p-3 border-t border-gray-100 bg-red-50">
+          <p className="text-center text-xs text-red-600 font-medium">
+            Tài khoản công ty này hiện đang bị đình chỉ. Không thể gửi hoặc nhận tin nhắn mới.
+          </p>
+        </div>
+      ) : (
+        <form onSubmit={handleSend} className="p-3 border-t border-gray-100 bg-white flex items-center gap-2">
+          <input
+            value={draft}
+            onChange={(e) => handleDraftChange(e.target.value)}
+            placeholder="Nhập tin nhắn..."
+            className="flex-1 h-10 px-3 rounded-xl border border-gray-200 text-sm outline-none focus:ring-2 focus:ring-[#3AB4E6]"
+          />
+          <button
+            type="submit"
+            disabled={sending || !draft.trim()}
+            className="h-10 w-10 rounded-xl bg-[#1967D2] text-white flex items-center justify-center disabled:opacity-50"
+          >
+            <FaPaperPlane size={12} />
+          </button>
+        </form>
+      )}
     </div>
   );
 };

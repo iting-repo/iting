@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import {
   FaMapMarkerAlt, FaDollarSign, FaTrashAlt,
-  FaArrowRight, FaClock, FaArrowLeft
+  FaArrowRight, FaClock, FaArrowLeft, FaBan, FaExclamationTriangle
 } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
 import { ConfirmDialog, Table, Td } from "../../components/common";
@@ -101,25 +101,32 @@ const FavoriteJobs = () => {
               { label: "Hành động", className: "text-right" }
             ]}
           >
-            {savedJobs.map((job) => (
+            {savedJobs.map((job) => {
+              const isUnavailable = job.companyActive === false;
+              return (
               <tr
                 key={job.jobId}
-                className="hover:bg-gray-50/60 transition-all group"
+                className={`transition-all group ${isUnavailable ? 'opacity-60 bg-gray-50/50' : 'hover:bg-gray-50/60'}`}
               >
                 <Td>
                   <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 shrink-0 bg-white rounded-lg border border-gray-100 p-2 flex items-center justify-center">
+                    <div className={`w-12 h-12 shrink-0 bg-white rounded-lg border p-2 flex items-center justify-center ${isUnavailable ? 'border-gray-200 grayscale' : 'border-gray-100'}`}>
                       <img src={job.companyLogo || "https://via.placeholder.com/50"} alt={job.companyName} className="w-full h-full object-contain" />
                     </div>
                     <div>
                       <div className="flex items-center gap-2 mb-1">
                         <h3
-                          onClick={() => navigate(buildJobDetailPath({ ...job, title: job.jobTitle, id: job.jobId }))}
-                          className="font-bold text-gray-800 text-sm group-hover:text-[#3AB4E6] transition-colors cursor-pointer"
+                          onClick={() => !isUnavailable && navigate(buildJobDetailPath({ ...job, title: job.jobTitle, id: job.jobId }))}
+                          className={`font-bold text-sm transition-colors ${isUnavailable ? 'text-gray-400 cursor-default line-through' : 'text-gray-800 group-hover:text-[#3AB4E6] cursor-pointer'}`}
                         >
                           {job.jobTitle}
                         </h3>
-                        {job.jobType && (
+                        {isUnavailable && (
+                          <span className="text-[10px] px-2 py-0.5 rounded font-bold bg-red-50 text-red-500 border border-red-100 flex items-center gap-1">
+                            <FaBan size={8} /> Không khả dụng
+                          </span>
+                        )}
+                        {!isUnavailable && job.jobType && (
                           <span className={`text-[10px] px-2 py-0.5 rounded font-bold uppercase ${getTypeStyle(job.jobType)}`}>
                             {job.jobType === 'FULL_TIME' ? 'Full Time' : job.jobType === 'PART_TIME' ? 'Part Time' : job.jobType === 'REMOTE' ? 'Remote' : job.jobType === 'INTERN' ? 'Internship' : job.jobType}
                           </span>
@@ -134,13 +141,19 @@ const FavoriteJobs = () => {
                 </Td>
 
                 <Td>
-                  <span className="font-bold text-gray-700">{formatSalary(job)}</span>
+                  <span className={`font-bold ${isUnavailable ? 'text-gray-400' : 'text-gray-700'}`}>{formatSalary(job)}</span>
                 </Td>
 
                 <Td>
-                  <span className="flex items-center gap-1.5 text-xs text-green-600 bg-green-50 px-2.5 py-1 rounded-full w-fit">
-                    <FaClock size={10} /> Đã lưu
-                  </span>
+                  {isUnavailable ? (
+                    <span className="flex items-center gap-1.5 text-xs text-red-500 bg-red-50 px-2.5 py-1 rounded-full w-fit border border-red-100">
+                      <FaExclamationTriangle size={10} /> Ngừng hoạt động
+                    </span>
+                  ) : (
+                    <span className="flex items-center gap-1.5 text-xs text-green-600 bg-green-50 px-2.5 py-1 rounded-full w-fit">
+                      <FaClock size={10} /> Đã lưu
+                    </span>
+                  )}
                 </Td>
 
                 <Td className="text-right">
@@ -153,16 +166,23 @@ const FavoriteJobs = () => {
                       <FaTrashAlt size={16} />
                     </button>
 
-                    <button
-                      onClick={() => navigate(buildJobDetailPath({ ...job, title: job.jobTitle, id: job.jobId }))}
-                      className="bg-[#EAF6FF] text-[#3AB4E6] hover:bg-[#3AB4E6] hover:text-white font-bold py-2 px-4 rounded-lg transition-all flex items-center gap-2 text-xs whitespace-nowrap shadow-sm border border-transparent"
-                    >
-                      Chi Tiết <FaArrowRight size={10} />
-                    </button>
+                    {isUnavailable ? (
+                      <span className="bg-gray-100 text-gray-400 font-bold py-2 px-4 rounded-lg text-xs whitespace-nowrap border border-gray-200 cursor-not-allowed inline-flex items-center gap-2">
+                        <FaBan size={10} /> Đã khóa
+                      </span>
+                    ) : (
+                      <button
+                        onClick={() => navigate(buildJobDetailPath({ ...job, title: job.jobTitle, id: job.jobId }))}
+                        className="bg-[#EAF6FF] text-[#3AB4E6] hover:bg-[#3AB4E6] hover:text-white font-bold py-2 px-4 rounded-lg transition-all flex items-center gap-2 text-xs whitespace-nowrap shadow-sm border border-transparent"
+                      >
+                        Chi Tiết <FaArrowRight size={10} />
+                      </button>
+                    )}
                   </div>
                 </Td>
               </tr>
-            ))}
+              );
+            })}
           </Table>
 
           {totalPages > 1 && (

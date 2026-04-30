@@ -8,6 +8,14 @@ const publicService = {
   getSalaryReport: async (params) => {
     return axiosInstance.get("/jobs/salary-report", { params });
   },
+
+  getBlogs: async (params) => {
+    return axiosInstance.get("/public/v2/blogs", { params });
+  },
+
+  getBlogBySlug: async (slug) => {
+    return axiosInstance.get(`/public/v2/blogs/${slug}`);
+  },
 };
 
 export default publicService;
