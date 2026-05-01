@@ -5,9 +5,9 @@
 Set up Nginx as a reverse proxy for the ITing application with SSL/TLS termination using Let's Encrypt and Certbot. Nginx will handle:
 - HTTPS redirection (HTTP → HTTPS)
 - SSL termination with Let's Encrypt certificates
-- Reverse proxy to backend (api.iting.vn)
-- Reverse proxy to frontend (iting.vn)
-- Reverse proxy to monitoring tools (monitor.iting.vn)
+- Reverse proxy to backend (api.datnhk252iting.dpdns.org)
+- Reverse proxy to frontend (datnhk252iting.dpdns.org)
+- Reverse proxy to monitoring tools (monitor.datnhk252iting.dpdns.org)
 - Rate limiting at the Nginx level
 - Security headers
 - Gzip compression
@@ -16,9 +16,9 @@ Set up Nginx as a reverse proxy for the ITing application with SSL/TLS terminati
 
 - Task 01 completed (EC2 instance, Route 53 DNS configured)
 - Domain names pointing to EC2 Elastic IP:
-  - `iting.vn` → frontend
-  - `api.iting.vn` → backend
-  - `monitor.iting.vn` → Grafana/Portainer
+  - `datnhk252iting.dpdns.org` → frontend
+  - `api.datnhk252iting.dpdns.org` → backend
+  - `monitor.datnhk252iting.dpdns.org` → Grafana/Portainer
 - Task 02 completed (Docker foundation, iting-net network)
 
 ## Step-by-Step Instructions
@@ -26,10 +26,10 @@ Set up Nginx as a reverse proxy for the ITing application with SSL/TLS terminati
 ### 6.1 Create Nginx Configuration
 
 ```bash
-ssh -i iting-key-pair.pem ubuntu@$PUBLIC_IP
-
+# Run locally, commit to GitHub (do not edit on EC2)
+mkdir -p ./deploy/config/nginx
 # Create main Nginx configuration
-cat > /opt/iting/config/nginx/nginx.conf << 'NGINXEOF'
+cat > ./deploy/config/nginx/nginx.conf << 'NGINXEOF'
 user nginx;
 worker_processes auto;
 error_log /var/log/nginx/error.log warn;
@@ -125,7 +125,9 @@ NGINXEOF
 ### 6.2 Create SSL Configuration Snippet
 
 ```bash
-cat > /opt/iting/config/nginx/ssl-params.conf << 'SSLEOF'
+# Run locally, commit to GitHub (do not edit on EC2)
+mkdir -p ./deploy/config/nginx
+cat > ./deploy/config/nginx/ssl-params.conf << 'SSLEOF'
 # SSL Parameters - Shared by all HTTPS servers
 # Follows Mozilla Modern guidelines
 
@@ -150,12 +152,14 @@ SSLEOF
 ### 6.3 Create Backend API Server Block
 
 ```bash
-cat > /opt/iting/config/nginx/api.iting.vn.conf << 'APIEOF'
-# API Server - api.iting.vn
+# Run locally, commit to GitHub (do not edit on EC2)
+mkdir -p ./deploy/config/nginx
+cat > ./deploy/config/nginx/api.datnhk252iting.dpdns.org.conf << 'APIEOF'
+# API Server - api.datnhk252iting.dpdns.org
 # HTTP → HTTPS redirect
 server {
     listen 80;
-    server_name api.iting.vn;
+    server_name api.datnhk252iting.dpdns.org;
     
     location /.well-known/acme-challenge/ {
         root /var/www/certbot;
@@ -169,10 +173,10 @@ server {
 # HTTPS Server
 server {
     listen 443 ssl http2;
-    server_name api.iting.vn;
+    server_name api.datnhk252iting.dpdns.org;
 
-    ssl_certificate /etc/letsencrypt/live/api.iting.vn/fullchain.pem;
-    ssl_certificate_key /etc/letsencrypt/live/api.iting.vn/privkey.pem;
+    ssl_certificate /etc/letsencrypt/live/api.datnhk252iting.dpdns.org/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/api.datnhk252iting.dpdns.org/privkey.pem;
     include /etc/nginx/ssl-params.conf;
 
     # Security headers for API
@@ -244,12 +248,14 @@ APIEOF
 ### 6.4 Create Frontend Server Block
 
 ```bash
-cat > /opt/iting/config/nginx/iting.vn.conf << 'FRONTENDEOF'
-# Frontend Server - iting.vn + www.iting.vn
+# Run locally, commit to GitHub (do not edit on EC2)
+mkdir -p ./deploy/config/nginx
+cat > ./deploy/config/nginx/datnhk252iting.dpdns.org.conf << 'FRONTENDEOF'
+# Frontend Server - datnhk252iting.dpdns.org + www.datnhk252iting.dpdns.org
 # HTTP → HTTPS redirect
 server {
     listen 80;
-    server_name iting.vn www.iting.vn;
+    server_name datnhk252iting.dpdns.org www.datnhk252iting.dpdns.org;
     
     location /.well-known/acme-challenge/ {
         root /var/www/certbot;
@@ -263,10 +269,10 @@ server {
 # HTTPS Server
 server {
     listen 443 ssl http2;
-    server_name iting.vn www.iting.vn;
+    server_name datnhk252iting.dpdns.org www.datnhk252iting.dpdns.org;
 
-    ssl_certificate /etc/letsencrypt/live/iting.vn/fullchain.pem;
-    ssl_certificate_key /etc/letsencrypt/live/iting.vn/privkey.pem;
+    ssl_certificate /etc/letsencrypt/live/datnhk252iting.dpdns.org/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/datnhk252iting.dpdns.org/privkey.pem;
     include /etc/nginx/ssl-params.conf;
 
     # Security headers
@@ -323,12 +329,14 @@ FRONTENDEOF
 ### 6.5 Create Monitoring Server Block
 
 ```bash
-cat > /opt/iting/config/nginx/monitor.iting.vn.conf << 'MONITOREOF'
-# Monitoring Server - monitor.iting.vn
+# Run locally, commit to GitHub (do not edit on EC2)
+mkdir -p ./deploy/config/nginx
+cat > ./deploy/config/nginx/monitor.datnhk252iting.dpdns.org.conf << 'MONITOREOF'
+# Monitoring Server - monitor.datnhk252iting.dpdns.org
 # HTTP → HTTPS redirect
 server {
     listen 80;
-    server_name monitor.iting.vn;
+    server_name monitor.datnhk252iting.dpdns.org;
     
     location /.well-known/acme-challenge/ {
         root /var/www/certbot;
@@ -342,10 +350,10 @@ server {
 # HTTPS Server
 server {
     listen 443 ssl http2;
-    server_name monitor.iting.vn;
+    server_name monitor.datnhk252iting.dpdns.org;
 
-    ssl_certificate /etc/letsencrypt/live/monitor.iting.vn/fullchain.pem;
-    ssl_certificate_key /etc/letsencrypt/live/monitor.iting.vn/privkey.pem;
+    ssl_certificate /etc/letsencrypt/live/monitor.datnhk252iting.dpdns.org/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/monitor.datnhk252iting.dpdns.org/privkey.pem;
     include /etc/nginx/ssl-params.conf;
 
     # Security headers
@@ -398,36 +406,34 @@ MONITOREOF
 ### 6.6 Create htpasswd for Monitoring Auth
 
 ```bash
-# Install httpd-tools for htpasswd
+# Install httpd-tools for htpasswd (local)
 sudo apt-get install -y apache2-utils
 
-# Create htpasswd file (replace ADMIN_USERNAME and ADMIN_PASSWORD)
-ADMIN_USERNAME="admin"
-htpasswd -cb /opt/iting/config/nginx/.htpasswd $ADMIN_USERNAME "$(openssl rand -base64 16)"
+mkdir -p ./deploy/config/nginx
 
-# Note: The actual password will be in .env as MONITOR_PASSWORD
-# Generate it:
+# Create htpasswd file (local, commit to GitHub)
+ADMIN_USERNAME="admin"
 MONITOR_PASSWORD=$(openssl rand -base64 16)
-htpasswd -cb /opt/iting/config/nginx/.htpasswd admin "$MONITOR_PASSWORD"
+htpasswd -cb ./deploy/config/nginx/.htpasswd $ADMIN_USERNAME "$MONITOR_PASSWORD"
 
 echo "Monitoring credentials:"
 echo "  Username: $ADMIN_USERNAME"
 echo "  Password: $MONITOR_PASSWORD"
 echo "  Save these to .env MONITOR_PASSWORD=$MONITOR_PASSWORD"
 
-chmod 640 /opt/iting/config/nginx/.htpasswd
+chmod 640 ./deploy/config/nginx/.htpasswd
 ```
 
 ### 6.7 Create Initial Self-Signed Certificate (for Nginx to start)
 
 ```bash
 # Create SSL directory
-sudo mkdir -p /etc/letsencrypt/live/{iting.vn,api.iting.vn,monitor.iting.vn}
+sudo mkdir -p /etc/letsencrypt/live/{datnhk252iting.dpdns.org,api.datnhk252iting.dpdns.org,monitor.datnhk252iting.dpdns.org}
 
 # Generate self-signed certificates for initial startup
 # These will be replaced by Let's Encrypt certificates in the next step
 
-for DOMAIN in iting.vn api.iting.vn monitor.iting.vn; do
+for DOMAIN in datnhk252iting.dpdns.org api.datnhk252iting.dpdns.org monitor.datnhk252iting.dpdns.org; do
   sudo openssl req -x509 -nodes -days 1 \
     -newkey rsa:2048 \
     -keyout /etc/letsencrypt/live/$DOMAIN/privkey.pem \
@@ -443,7 +449,7 @@ sudo chown -R ubuntu:ubuntu /var/www/certbot
 ### 6.8 Add Nginx Service to docker-compose.yml
 
 ```bash
-cat >> /opt/iting/docker-compose.yml << 'COMPOSEEOF'
+cat >> ./deploy/docker-compose.yml << 'COMPOSEEOF'
 
   # ========================================
   # Nginx - Reverse Proxy & Load Balancer
@@ -459,9 +465,9 @@ cat >> /opt/iting/docker-compose.yml << 'COMPOSEEOF'
       - "443:443"
     volumes:
       - ./config/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
-      - ./config/nginx/api.iting.vn.conf:/etc/nginx/conf.d/api.iting.vn.conf:ro
-      - ./config/nginx/iting.vn.conf:/etc/nginx/conf.d/iting.vn.conf:ro
-      - ./config/nginx/monitor.iting.vn.conf:/etc/nginx/conf.d/monitor.iting.vn.conf:ro
+      - ./config/nginx/api.datnhk252iting.dpdns.org.conf:/etc/nginx/conf.d/api.datnhk252iting.dpdns.org.conf:ro
+      - ./config/nginx/datnhk252iting.dpdns.org.conf:/etc/nginx/conf.d/datnhk252iting.dpdns.org.conf:ro
+      - ./config/nginx/monitor.datnhk252iting.dpdns.org.conf:/etc/nginx/conf.d/monitor.datnhk252iting.dpdns.org.conf:ro
       - ./config/nginx/ssl-params.conf:/etc/nginx/ssl-params.conf:ro
       - ./config/nginx/.htpasswd:/etc/nginx/.htpasswd:ro
       - /etc/letsencrypt:/etc/letsencrypt:ro
@@ -514,20 +520,20 @@ COMPOSEEOF
 
 ```bash
 # Start Nginx with self-signed certificates first
-cd /opt/iting
-docker compose --env-file .env up -d nginx-proxy
+cd /opt/iting/iting-repo/deploy
+docker compose -f /opt/iting/iting-repo/deploy/docker-compose.yml --env-file /opt/iting/.env --env-file /opt/iting/.env.prod up -d nginx-proxy
 
 # Wait for Nginx to start
 sleep 5
 
 # Verify Nginx is running
-docker compose --env-file .env ps nginx-proxy
+docker compose -f /opt/iting/iting-repo/deploy/docker-compose.yml --env-file /opt/iting/.env --env-file /opt/iting/.env.prod ps nginx-proxy
 
 # Test Nginx configuration
 docker exec iting-nginx nginx -t
 
 # Obtain Let's Encrypt certificates (repeat for each domain)
-for DOMAIN in iting.vn api.iting.vn monitor.iting.vn; do
+for DOMAIN in datnhk252iting.dpdns.org api.datnhk252iting.dpdns.org monitor.datnhk252iting.dpdns.org; do
   echo "Obtaining certificate for $DOMAIN..."
   docker run --rm \
     -v /etc/letsencrypt:/etc/letsencrypt \
@@ -535,7 +541,7 @@ for DOMAIN in iting.vn api.iting.vn monitor.iting.vn; do
     certbot/certbot certonly \
     --webroot \
     --webroot-path /var/www/certbot \
-    --email admin@iting.vn \
+    --email admin@datnhk252iting.dpdns.org \
     --agree-tos \
     --no-eff-email \
     --non-interactive \
@@ -546,9 +552,9 @@ done
 docker exec iting-nginx nginx -s reload
 
 # Verify SSL certificates
-echo | openssl s_client -connect iting.vn:443 -servername iting.vn 2>/dev/null | openssl x509 -noout -subject -dates
-echo | openssl s_client -connect api.iting.vn:443 -servername api.iting.vn 2>/dev/null | openssl x509 -noout -subject -dates
-echo | openssl s_client -connect monitor.iting.vn:443 -servername monitor.iting.vn 2>/dev/null | openssl x509 -noout -subject -dates
+echo | openssl s_client -connect datnhk252iting.dpdns.org:443 -servername datnhk252iting.dpdns.org 2>/dev/null | openssl x509 -noout -subject -dates
+echo | openssl s_client -connect api.datnhk252iting.dpdns.org:443 -servername api.datnhk252iting.dpdns.org 2>/dev/null | openssl x509 -noout -subject -dates
+echo | openssl s_client -connect monitor.datnhk252iting.dpdns.org:443 -servername monitor.datnhk252iting.dpdns.org 2>/dev/null | openssl x509 -noout -subject -dates
 
 # Set up automatic certificate renewal cron
 cat > /opt/iting/scripts/renew-ssl.sh << 'SSLEOF'
@@ -567,44 +573,44 @@ chmod +x /opt/iting/scripts/renew-ssl.sh
 (crontab -l 2>/dev/null; echo "0 0,12 * * * /opt/iting/scripts/renew-ssl.sh >> /var/log/ssl-renewal.log 2>&1") | crontab -
 
 # Start certbot container for auto-renewal
-docker compose --env-file .env up -d certbot
+docker compose -f /opt/iting/iting-repo/deploy/docker-compose.yml --env-file /opt/iting/.env --env-file /opt/iting/.env.prod up -d certbot
 ```
 
 ## Verification
 
 ```bash
 # Test HTTP redirect to HTTPS
-curl -I http://iting.vn
-# Expected: 301 redirect to https://iting.vn
+curl -I http://datnhk252iting.dpdns.org
+# Expected: 301 redirect to https://datnhk252iting.dpdns.org
 
 # Test HTTPS
-curl -I https://iting.vn
+curl -I https://datnhk252iting.dpdns.org
 # Expected: 200 OK with SSL
 
 # Test API endpoint
-curl -I https://api.iting.vn/actuator/health
+curl -I https://api.datnhk252iting.dpdns.org/actuator/health
 # Expected: 200 OK (after backend is deployed in Task 07)
 
 # Test SSL certificate validity
-echo | openssl s_client -connect iting.vn:443 -servername iting.vn 2>/dev/null | openssl x509 -noout -dates
+echo | openssl s_client -connect datnhk252iting.dpdns.org:443 -servername datnhk252iting.dpdns.org 2>/dev/null | openssl x509 -noout -dates
 # Expected: Valid dates, not expired
 
 # Test monitoring endpoint (requires auth)
-curl -I https://monitor.iting.vn
+curl -I https://monitor.datnhk252iting.dpdns.org
 # Expected: 401 Unauthorized (Basic auth required)
 
 # Check Nginx logs
-docker compose --env-file .env logs nginx-proxy --tail=50
+docker compose -f /opt/iting/iting-repo/deploy/docker-compose.yml --env-file /opt/iting/.env --env-file /opt/iting/.env.prod logs nginx-proxy --tail=50
 ```
 
 ## Rollback
 
 ```bash
 # Stop Nginx and Certbot
-docker compose --env-file .env down nginx-proxy certbot
+docker compose -f /opt/iting/iting-repo/deploy/docker-compose.yml --env-file /opt/iting/.env --env-file /opt/iting/.env.prod down nginx-proxy certbot
 
 # Remove Let's Encrypt certificates
-sudo rm -rf /etc/letsencrypt/live/{iting.vn,api.iting.vn,monitor.iting.vn}
+sudo rm -rf /etc/letsencrypt/live/{datnhk252iting.dpdns.org,api.datnhk252iting.dpdns.org,monitor.datnhk252iting.dpdns.org}
 
 # Remove Nginx configuration
 rm -rf /opt/iting/config/nginx/

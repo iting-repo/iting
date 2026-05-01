@@ -15,7 +15,7 @@ Deploy Loki for log aggregation and Promtail for log collection from all Docker 
 ```bash
 ssh -i iting-key-pair.pem ubuntu@$PUBLIC_IP
 
-cat > /opt/iting/monitoring/loki/loki-config.yml << 'LOKIEOF'
+cat > ./deploy/monitoring/loki/loki-config.yml << 'LOKIEOF'
 # ITing Loki Configuration
 # Reference: https://grafana.com/docs/loki/latest/configuration/
 
@@ -83,7 +83,7 @@ LOKIEOF
 ### 10.2 Create Promtail Configuration
 
 ```bash
-cat > /opt/iting/monitoring/loki/promtail-config.yml << 'PROMTAILEOF'
+cat > ./deploy/monitoring/loki/promtail-config.yml << 'PROMTAILEOF'
 # ITing Promtail Configuration
 
 server:
@@ -169,7 +169,7 @@ PROMTAILEOF
 ### 10.3 Add Loki and Promtail to docker-compose.yml
 
 ```bash
-cat >> /opt/iting/docker-compose.yml << 'COMPOSEEOF'
+cat >> ./deploy/docker-compose.yml << 'COMPOSEEOF'
 
   # ========================================
   # Loki - Log Aggregation
@@ -241,7 +241,7 @@ COMPOSEEOF
 cd /opt/iting
 
 # Start Loki and Promtail
-docker compose --env-file .env up -d loki promtail
+docker compose -f /opt/iting/iting-repo/deploy/docker-compose.yml --env-file /opt/iting/.env --env-file /opt/iting/.env.prod up -d loki promtail
 
 # Wait for startup
 sleep 10
@@ -279,7 +279,7 @@ curl -s -u admin:${GF_ADMIN_PASSWORD} \
 
 ```bash
 # Loki is running
-docker compose --env-file .env ps loki promtail
+docker compose -f /opt/iting/iting-repo/deploy/docker-compose.yml --env-file /opt/iting/.env --env-file /opt/iting/.env.prod ps loki promtail
 
 # Loki is ready
 curl -s http://localhost:3100/ready
@@ -294,13 +294,13 @@ curl -s 'http://localhost:3100/loki/api/v1/query_range?query={service="iting-bac
 curl -s 'http://localhost:3100/loki/api/v1/query_range?query={service="nginx-proxy"}&limit=10' | jq '.data.result[0].values[:3]'
 
 # All Docker containers have logs
-docker compose --env-file .env logs --tail=5 loki promtail
+docker compose -f /opt/iting/iting-repo/deploy/docker-compose.yml --env-file /opt/iting/.env --env-file /opt/iting/.env.prod logs --tail=5 loki promtail
 ```
 
 ## Rollback
 
 ```bash
-docker compose --env-file .env down loki promtail
+docker compose -f /opt/iting/iting-repo/deploy/docker-compose.yml --env-file /opt/iting/.env --env-file /opt/iting/.env.prod down loki promtail
 docker volume rm iting_loki_data
 rm -rf /opt/iting/monitoring/loki
 ```

@@ -16,8 +16,7 @@ import com.iting.jobportal.job.controller.CurrentUser;
 import com.iting.jobportal.user.entity.User;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
-import com.iting.jobportal.common.ratelimit.RateLimitingService;
-import io.github.bucket4j.Bucket;
+import com.iting.service.RedisRateLimitingService;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
@@ -36,13 +35,13 @@ public class CompanyController {
 
     private final CompanyService companyService;
     private final CompanyFollowService companyFollowService;
-    private final RateLimitingService rateLimitingService;
+    private final RedisRateLimitingService redisRateLimitingService;
 
     public CompanyController(CompanyService companyService, CompanyFollowService companyFollowService,
-            RateLimitingService rateLimitingService) {
+            RedisRateLimitingService redisRateLimitingService) {
         this.companyService = companyService;
         this.companyFollowService = companyFollowService;
-        this.rateLimitingService = rateLimitingService;
+        this.redisRateLimitingService = redisRateLimitingService;
     }
 
     @GetMapping("/me/business-license/view")
@@ -156,8 +155,7 @@ public class CompanyController {
     public ResponseEntity<?> submitInfoReview(
             @Parameter(hidden = true) @CurrentUser Long userId) {
 
-        Bucket bucket = rateLimitingService.resolveBucket("submit_info_" + userId);
-        if (!bucket.tryConsume(1)) {
+        if (!redisRateLimitingService.isAllowed(String.valueOf(userId), "submit_info", 1, 300)) {
             return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
                     .body(Map.of("message", "Bạn thao tác quá nhanh. Vui lòng thử lại sau 5 phút."));
         }

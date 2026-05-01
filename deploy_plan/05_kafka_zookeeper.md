@@ -17,7 +17,7 @@ Deploy Apache Kafka with Zookeeper as Docker containers for the event-driven mes
 ssh -i iting-key-pair.pem ubuntu@$PUBLIC_IP
 
 # Kafka server.properties for production optimization
-cat > /opt/iting/config/kafka/server.properties << 'EOF'
+cat > ./deploy/config/kafka/server.properties << 'EOF'
 # ITing Kafka Configuration
 # Single-node production setup
 
@@ -52,7 +52,7 @@ EOF
 ### 5.2 Add Kafka and Zookeeper Services to docker-compose.yml
 
 ```bash
-cat >> /opt/iting/docker-compose.yml << 'COMPOSEEOF'
+cat >> ./deploy/docker-compose.yml << 'COMPOSEEOF'
 
   # ========================================
   # Zookeeper - Kafka dependency
@@ -143,18 +143,18 @@ COMPOSEEOF
 cd /opt/iting
 
 # Start Zookeeper and Kafka
-docker compose --env-file .env up -d zookeeper kafka
+docker compose -f /opt/iting/iting-repo/deploy/docker-compose.yml --env-file /opt/iting/.env --env-file /opt/iting/.env.prod up -d zookeeper kafka
 
 # Wait for services to be healthy
 echo "Waiting for Zookeeper and Kafka to start..."
 sleep 30
 
 # Verify Zookeeper
-docker compose --env-file .env ps zookeeper
+docker compose -f /opt/iting/iting-repo/deploy/docker-compose.yml --env-file /opt/iting/.env --env-file /opt/iting/.env.prod ps zookeeper
 # Expected: Up (healthy)
 
 # Verify Kafka
-docker compose --env-file .env ps kafka
+docker compose -f /opt/iting/iting-repo/deploy/docker-compose.yml --env-file /opt/iting/.env --env-file /opt/iting/.env.prod ps kafka
 # Expected: Up (healthy)
 
 # Test Kafka by listing topics
@@ -216,7 +216,7 @@ docker exec iting-kafka kafka-topics --bootstrap-server localhost:9092 \
 
 ```bash
 # Add JMX exporter configuration for Kafka metrics
-cat > /opt/iting/monitoring/kafka-jmx-config.yml << 'EOF'
+cat > ./deploy/monitoring/kafka-jmx-config.yml << 'EOF'
 ---
 lowercaseOutputName: true
 lowercaseOutputLabelNames: true
@@ -246,7 +246,7 @@ EOF
 
 ```bash
 # Verify both containers are running
-docker compose --env-file .env ps zookeeper kafka
+docker compose -f /opt/iting/iting-repo/deploy/docker-compose.yml --env-file /opt/iting/.env --env-file /opt/iting/.env.prod ps zookeeper kafka
 
 # Test connectivity from within the Docker network
 docker exec iting-kafka kafka-broker-api-versions --bootstrap-server localhost:9092 | head -5
@@ -255,10 +255,10 @@ docker exec iting-kafka kafka-broker-api-versions --bootstrap-server localhost:9
 docker exec iting-kafka kafka-topics --bootstrap-server localhost:9092 --list
 
 # Check Kafka logs for errors
-docker compose --env-file .env logs kafka --tail=20
+docker compose -f /opt/iting/iting-repo/deploy/docker-compose.yml --env-file /opt/iting/.env --env-file /opt/iting/.env.prod logs kafka --tail=20
 
 # Check Zookeeper logs for errors
-docker compose --env-file .env logs zookeeper --tail=20
+docker compose -f /opt/iting/iting-repo/deploy/docker-compose.yml --env-file /opt/iting/.env --env-file /opt/iting/.env.prod logs zookeeper --tail=20
 
 # Verify Kafka is accessible from backend network
 docker run --rm --network iting-net confluentinc/cp-kafka:7.4.0 \
@@ -269,7 +269,7 @@ docker run --rm --network iting-net confluentinc/cp-kafka:7.4.0 \
 
 ```bash
 # Stop Kafka and Zookeeper
-docker compose --env-file .env down kafka zookeeper
+docker compose -f /opt/iting/iting-repo/deploy/docker-compose.yml --env-file /opt/iting/.env --env-file /opt/iting/.env.prod down kafka zookeeper
 
 # Remove Kafka data (destructive - loses all messages)
 docker volume rm iting_kafka_data iting_zookeeper_data

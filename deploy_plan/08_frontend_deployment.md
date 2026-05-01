@@ -35,7 +35,7 @@ RUN npm ci
 COPY . .
 
 # Build argument for API URL (injected at build time)
-ARG REACT_APP_API_BASE_URL=https://api.iting.vn/api
+ARG REACT_APP_API_BASE_URL=https://api.datnhk252iting.dpdns.org/api
 ENV REACT_APP_API_BASE_URL=$REACT_APP_API_BASE_URL
 
 # Build production bundle
@@ -73,7 +73,7 @@ CMD ["nginx", "-g", "daemon off;"]
 
 ### 8.2 Create Frontend Nginx Configuration
 
-Create `ITing-frontend/docker/nginx.conf`:
+Create `ITing-frontend/docker/nginx.conf` (local):
 
 ```nginx
 server {
@@ -154,7 +154,7 @@ cd ITing-frontend
 
 # Build the Docker image with production API URL
 docker build \
-  --build-arg REACT_APP_API_BASE_URL=https://api.iting.vn/api \
+  --build-arg REACT_APP_API_BASE_URL=https://api.datnhk252iting.dpdns.org/api \
   -t iting-frontend:latest .
 
 # Test locally
@@ -178,45 +178,26 @@ curl -f http://localhost:3000/login
 docker stop iting-frontend-test && docker rm iting-frontend-test
 ```
 
-### 8.5 Transfer Frontend Image to EC2
+### 8.5 CI/CD Image Publishing (Local-First)
 
-```bash
-# Option A: Push to GitHub Container Registry
-docker tag iting-frontend:latest ghcr.io/YOUR_ORG/iting-frontend:latest
-docker push ghcr.io/YOUR_ORG/iting-frontend:latest
-
-# Option B: Transfer directly to EC2
-docker save iting-frontend:latest | gzip > iting-frontend.tar.gz
-scp -i iting-key-pair.pem iting-frontend.tar.gz ubuntu@$PUBLIC_IP:/opt/iting/
-
-# On EC2:
-ssh -i iting-key-pair.pem ubuntu@$PUBLIC_IP
-cd /opt/iting
-docker load < iting-frontend.tar.gz
-rm iting-frontend.tar.gz
-```
+CI/CD will build and push the frontend image to GHCR. EC2 pulls the image during the deploy job (no SCP of images).
 
 ### 8.6 Add Frontend Service to docker-compose.yml
 
 ```bash
-cat >> /opt/iting/docker-compose.yml << 'COMPOSEEOF'
+cat >> ./deploy/docker-compose.yml << 'COMPOSEEOF'
 
   # ========================================
   # Frontend - React SPA with Nginx
   # ========================================
   frontend:
-    build:
-      context: /opt/iting/iting-repo/ITing-frontend
-      dockerfile: Dockerfile
-      args:
-        REACT_APP_API_BASE_URL: https://api.iting.vn/api
-    image: iting-frontend:latest
+    image: ${FRONTEND_IMAGE}
     container_name: iting-frontend
     restart: unless-stopped
     networks:
       - iting-net
     environment:
-      REACT_APP_API_BASE_URL: https://api.iting.vn/api
+      REACT_APP_API_BASE_URL: ${REACT_APP_API_BASE_URL}
     healthcheck:
       test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:80/health"]
       interval: 30s
@@ -240,16 +221,16 @@ COMPOSEEOF
 ### 8.7 Start Frontend and Verify
 
 ```bash
-cd /opt/iting
+cd /opt/iting/iting-repo/deploy
 
 # Start frontend
-docker compose --env-file .env up -d frontend
+docker compose -f /opt/iting/iting-repo/deploy/docker-compose.yml --env-file /opt/iting/.env --env-file /opt/iting/.env.prod up -d frontend
 
 # Wait for startup
 sleep 5
 
 # Verify frontend container
-docker compose --env-file .env ps frontend
+docker compose -f /opt/iting/iting-repo/deploy/docker-compose.yml --env-file /opt/iting/.env --env-file /opt/iting/.env.prod ps frontend
 
 # Test frontend directly
 curl -f http://localhost:80/ | head -20
@@ -260,15 +241,15 @@ curl -f http://localhost:80/health
 # Expected: OK
 
 # Test through Nginx (after Task 06)
-curl -f https://iting.vn/
+curl -f https://datnhk252iting.dpdns.org/
 # Expected: ITing frontend
 
 # Test SPA routing
-curl -f https://iting.vn/login
+curl -f https://datnhk252iting.dpdns.org/login
 # Expected: Returns index.html
 
 # Verify API proxy through same origin
-curl -f https://iting.vn/api/actuator/health
+curl -f https://datnhk252iting.dpdns.org/api/actuator/health
 # Expected: Backend health response
 ```
 
@@ -276,7 +257,7 @@ curl -f https://iting.vn/api/actuator/health
 
 ```bash
 # Container is running
-docker compose --env-file .env ps frontend
+docker compose -f /opt/iting/iting-repo/deploy/docker-compose.yml --env-file /opt/iting/.env --env-file /opt/iting/.env.prod ps frontend
 
 # Frontend serves HTML
 curl -s http://frontend/ | head -5
@@ -291,17 +272,17 @@ curl -s http://frontend/login | grep -o '<title>.*</title>'
 curl -I http://frontend/static/js/main.js
 
 # SSL works through Nginx
-curl -I https://iting.vn/
+curl -I https://datnhk252iting.dpdns.org/
 
 # API proxy works
-curl https://iting.vn/api/actuator/health
+curl https://datnhk252iting.dpdns.org/api/actuator/health
 ```
 
 ## Rollback
 
 ```bash
 # Stop frontend
-docker compose --env-file .env down frontend
+docker compose -f /opt/iting/iting-repo/deploy/docker-compose.yml --env-file /opt/iting/.env --env-file /opt/iting/.env.prod down frontend
 
 # Revert to previous image
 docker tag iting-frontend:previous iting-frontend:latest

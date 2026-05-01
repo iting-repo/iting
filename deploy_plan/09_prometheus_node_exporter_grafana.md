@@ -6,7 +6,7 @@ Deploy the monitoring stack: Prometheus for metrics collection, Node Exporter fo
 
 ## Prerequisites
 - Task 02 completed (Docker foundation, iting-net network, volumes)
-- Task 06 completed (Nginx with SSL for monitor.iting.vn)
+- Task 06 completed (Nginx with SSL for monitor.datnhk252iting.dpdns.org)
 
 ## Step-by-Step Instructions
 
@@ -15,7 +15,7 @@ Deploy the monitoring stack: Prometheus for metrics collection, Node Exporter fo
 ```bash
 ssh -i iting-key-pair.pem ubuntu@$PUBLIC_IP
 
-cat > /opt/iting/monitoring/prometheus/prometheus.yml << 'PROMEOF'
+cat > ./deploy/monitoring/prometheus/prometheus.yml << 'PROMEOF'
 # ITing Prometheus Configuration
 global:
   scrape_interval: 15s
@@ -110,7 +110,7 @@ PROMEOF
 ```bash
 mkdir -p /opt/iting/monitoring/prometheus/alerts
 
-cat > /opt/iting/monitoring/prometheus/alerts/iting-alerts.yml << 'ALERTEOF'
+cat > ./deploy/monitoring/prometheus/alerts/iting-alerts.yml << 'ALERTEOF'
 # ITing Alert Rules
 # Reference: .opencode/skills/monitoring-observability/skills/SKILL.md (Alert Design)
 
@@ -246,7 +246,7 @@ ALERTEOF
 
 ```bash
 # Grafana datasources
-cat > /opt/iting/monitoring/grafana/provisioning/datasources.yml << 'DSEOF'
+cat > ./deploy/monitoring/grafana/provisioning/datasources.yml << 'DSEOF'
 apiVersion: 1
 datasources:
   - name: Prometheus
@@ -276,7 +276,7 @@ datasources:
 DSEOF
 
 # Grafana dashboard provider
-cat > /opt/iting/monitoring/grafana/provisioning/dashboards.yml << 'DBEOF'
+cat > ./deploy/monitoring/grafana/provisioning/dashboards.yml << 'DBEOF'
 apiVersion: 1
 providers:
   - name: 'ITing Dashboards'
@@ -297,7 +297,7 @@ mkdir -p /opt/iting/monitoring/grafana/dashboards
 ### 9.4 Create ITing Overview Dashboard
 
 ```bash
-cat > /opt/iting/monitoring/grafana/dashboards/iting-overview.json << 'DASHBOARDEOF'
+cat > ./deploy/monitoring/grafana/dashboards/iting-overview.json << 'DASHBOARDEOF'
 {
   "annotations": { "list": [] },
   "editable": true,
@@ -395,7 +395,7 @@ DASHBOARDEOF
 ### 9.5 Add Monitoring Services to docker-compose.yml
 
 ```bash
-cat >> /opt/iting/docker-compose.yml << 'COMPOSEEOF'
+cat >> ./deploy/docker-compose.yml << 'COMPOSEEOF'
 
   # ========================================
   # Node Exporter - Host Metrics
@@ -485,7 +485,7 @@ cat >> /opt/iting/docker-compose.yml << 'COMPOSEEOF'
       GF_SECURITY_ADMIN_USER: ${GF_ADMIN_USER:-admin}
       GF_SECURITY_ADMIN_PASSWORD: ${GF_ADMIN_PASSWORD}
       GF_USERS_ALLOW_SIGN_UP: "false"
-      GF_SERVER_ROOT_URL: https://monitor.iting.vn
+      GF_SERVER_ROOT_URL: https://monitor.datnhk252iting.dpdns.org
       GF_SERVER_ENABLE_GZIP: "true"
       GF_ANALYTICS_CHECK_FOR_UPDATES: "false"
       GF_AUTH_ANONYMOUS_ENABLED: "false"
@@ -541,7 +541,7 @@ COMPOSEEOF
 
 ### 9.6 Add Nginx Stub Status for Metrics
 
-Add to the Nginx `iting.vn.conf` (inside the server block, before the location blocks):
+Add to the Nginx `datnhk252iting.dpdns.org.conf` (inside the server block, before the location blocks):
 
 ```nginx
 # Add this to each server block in nginx config files:
@@ -560,7 +560,7 @@ Update `/opt/iting/config/nginx/nginx.conf` to include the stub_status module. T
 cd /opt/iting
 
 # Start monitoring services
-docker compose --env-file .env up -d node-exporter prometheus grafana nginx-exporter
+docker compose -f /opt/iting/iting-repo/deploy/docker-compose.yml --env-file /opt/iting/.env --env-file /opt/iting/.env.prod up -d node-exporter prometheus grafana nginx-exporter
 
 # Wait for startup
 sleep 15
@@ -583,7 +583,7 @@ curl -s http://localhost:9090/api/v1/targets | jq '.data.activeTargets[] | selec
 
 ```bash
 # All monitoring containers running
-docker compose --env-file .env ps node-exporter prometheus grafana nginx-exporter
+docker compose -f /opt/iting/iting-repo/deploy/docker-compose.yml --env-file /opt/iting/.env --env-file /opt/iting/.env.prod ps node-exporter prometheus grafana nginx-exporter
 
 # Prometheus targets are up
 curl -s http://localhost:9090/api/v1/targets | jq '.data.activeTargets[] | .labels.job + ": " + .health'
@@ -595,13 +595,13 @@ curl -s -u admin:${GF_ADMIN_PASSWORD} http://localhost:3000/api/dashboards/home 
 curl -s 'http://localhost:9090/api/v1/query?query=up{job="iting-backend"}' | jq .
 
 # Access Grafana through Nginx
-curl -I https://monitor.iting.vn/ -u admin:${GF_ADMIN_PASSWORD}
+curl -I https://monitor.datnhk252iting.dpdns.org/ -u admin:${GF_ADMIN_PASSWORD}
 ```
 
 ## Rollback
 
 ```bash
-docker compose --env-file .env down node-exporter prometheus grafana nginx-exporter
+docker compose -f /opt/iting/iting-repo/deploy/docker-compose.yml --env-file /opt/iting/.env --env-file /opt/iting/.env.prod down node-exporter prometheus grafana nginx-exporter
 docker volume rm iting_prometheus_data iting_grafana_data
 rm -rf /opt/iting/monitoring/prometheus /opt/iting/monitoring/grafana
 ```

@@ -16,14 +16,14 @@ The `docker-compose.yml` has been built incrementally in Tasks 02-15. Verify the
 
 ```bash
 ssh -i iting-key-pair.pem ubuntu@$PUBLIC_IP
-cd /opt/iting
+cd /opt/iting/iting-repo/deploy
 
 # Verify the docker-compose.yml is valid
-docker compose --env-file .env config --quiet
+docker compose -f /opt/iting/iting-repo/deploy/docker-compose.yml --env-file /opt/iting/.env --env-file /opt/iting/.env.prod config --quiet
 echo "Compose file is valid!"
 
 # Check all services are defined
-docker compose --env-file .env config --services
+docker compose -f /opt/iting/iting-repo/deploy/docker-compose.yml --env-file /opt/iting/.env --env-file /opt/iting/.env.prod config --services
 # Expected output:
 # zookeeper
 # kafka
@@ -80,26 +80,27 @@ done
 ```bash
 # Check all required configuration files
 config_files=(
-  "/opt/iting/config/nginx/nginx.conf"
-  "/opt/iting/config/nginx/api.iting.vn.conf"
-  "/opt/iting/config/nginx/iting.vn.conf"
-  "/opt/iting/config/nginx/monitor.iting.vn.conf"
-  "/opt/iting/config/nginx/ssl-params.conf"
-  "/opt/iting/config/nginx/.htpasswd"
-  "/opt/iting/config/redis/redis.conf"
-  "/opt/iting/config/kafka/server.properties"
-  "/opt/iting/config/otel/otel-collector-config.yaml"
-  "/opt/iting/monitoring/prometheus/prometheus.yml"
-  "/opt/iting/monitoring/prometheus/alerts/iting-alerts.yml"
-  "/opt/iting/monitoring/grafana/provisioning/datasources.yml"
-  "/opt/iting/monitoring/grafana/provisioning/dashboards.yml"
-  "/opt/iting/monitoring/grafana/dashboards/iting-overview.json"
-  "/opt/iting/monitoring/loki/loki-config.yml"
-  "/opt/iting/monitoring/loki/promtail-config.yml"
-  "/opt/iting/monitoring/tempo/tempo-config.yml"
-  "/opt/iting/monitoring/alertmanager/alertmanager.yml"
+  "/opt/iting/iting-repo/deploy/config/nginx/nginx.conf"
+  "/opt/iting/iting-repo/deploy/config/nginx/api.datnhk252iting.dpdns.org.conf"
+  "/opt/iting/iting-repo/deploy/config/nginx/datnhk252iting.dpdns.org.conf"
+  "/opt/iting/iting-repo/deploy/config/nginx/monitor.datnhk252iting.dpdns.org.conf"
+  "/opt/iting/iting-repo/deploy/config/nginx/ssl-params.conf"
+  "/opt/iting/iting-repo/deploy/config/nginx/.htpasswd"
+  "/opt/iting/iting-repo/deploy/config/redis/redis.conf"
+  "/opt/iting/iting-repo/deploy/config/kafka/server.properties"
+  "/opt/iting/iting-repo/deploy/config/otel/otel-collector-config.yaml"
+  "/opt/iting/iting-repo/deploy/monitoring/prometheus/prometheus.yml"
+  "/opt/iting/iting-repo/deploy/monitoring/prometheus/alerts/iting-alerts.yml"
+  "/opt/iting/iting-repo/deploy/monitoring/grafana/provisioning/datasources.yml"
+  "/opt/iting/iting-repo/deploy/monitoring/grafana/provisioning/dashboards.yml"
+  "/opt/iting/iting-repo/deploy/monitoring/grafana/dashboards/iting-overview.json"
+  "/opt/iting/iting-repo/deploy/monitoring/loki/loki-config.yml"
+  "/opt/iting/iting-repo/deploy/monitoring/loki/promtail-config.yml"
+  "/opt/iting/iting-repo/deploy/monitoring/tempo/tempo-config.yml"
+  "/opt/iting/iting-repo/deploy/monitoring/alertmanager/alertmanager.yml"
   "/opt/iting/.env"
-  "/opt/iting/docker-compose.yml"
+  "/opt/iting/.env.prod"
+  "/opt/iting/iting-repo/deploy/docker-compose.yml"
 )
 
 for file in "${config_files[@]}"; do
@@ -114,26 +115,26 @@ done
 ### 16.4 Full Deployment
 
 ```bash
-cd /opt/iting
+cd /opt/iting/iting-repo/deploy
 
 # Stop all services first
-docker compose --env-file .env down
+docker compose -f /opt/iting/iting-repo/deploy/docker-compose.yml --env-file /opt/iting/.env --env-file /opt/iting/.env.prod down
 
 # Pull all images
-docker compose --env-file .env pull
+docker compose -f /opt/iting/iting-repo/deploy/docker-compose.yml --env-file /opt/iting/.env --env-file /opt/iting/.env.prod pull
 
 # Build custom images
-docker compose --env-file .env build alertmanager-discord
+docker compose -f /opt/iting/iting-repo/deploy/docker-compose.yml --env-file /opt/iting/.env --env-file /opt/iting/.env.prod build alertmanager-discord
 
 # Start all services
-docker compose --env-file .env up -d
+docker compose -f /opt/iting/iting-repo/deploy/docker-compose.yml --env-file /opt/iting/.env --env-file /opt/iting/.env.prod up -d
 
 # Wait for all services to start
 echo "Waiting 60 seconds for all services to initialize..."
 sleep 60
 
 # Check status of all services
-docker compose --env-file .env ps
+docker compose -f /opt/iting/iting-repo/deploy/docker-compose.yml --env-file /opt/iting/.env --env-file /opt/iting/.env.prod ps
 ```
 
 ### 16.5 Smoke Test - Service Health Checks
@@ -160,7 +161,7 @@ echo ""
 
 # 3. All containers running
 echo "3. Checking all containers..."
-docker compose --env-file .env ps --format "table {{.Name}}\t{{.Status}}\t{{.Ports}}"
+docker compose -f /opt/iting/iting-repo/deploy/docker-compose.yml --env-file /opt/iting/.env --env-file /opt/iting/.env.prod ps --format "table {{.Name}}\t{{.Status}}\t{{.Ports}}"
 echo ""
 
 # 4. Redis
@@ -191,9 +192,9 @@ echo ""
 
 # 9. SSL/HTTPS
 echo "9. Checking SSL/HTTPS..."
-curl -sf https://iting.vn/ -o /dev/null && echo "iting.vn HTTPS: OK" || echo "iting.vn HTTPS: FAILED"
-curl -sf https://api.iting.vn/actuator/health -o /dev/null && echo "api.iting.vn HTTPS: OK" || echo "api.iting.vn HTTPS: FAILED"
-curl -sf https://monitor.iting.vn/ -o /dev/null && echo "monitor.iting.vn HTTPS: OK" || echo "monitor.iting.vn HTTPS: FAILED"
+curl -sf https://datnhk252iting.dpdns.org/ -o /dev/null && echo "datnhk252iting.dpdns.org HTTPS: OK" || echo "datnhk252iting.dpdns.org HTTPS: FAILED"
+curl -sf https://api.datnhk252iting.dpdns.org/actuator/health -o /dev/null && echo "api.datnhk252iting.dpdns.org HTTPS: OK" || echo "api.datnhk252iting.dpdns.org HTTPS: FAILED"
+curl -sf https://monitor.datnhk252iting.dpdns.org/ -o /dev/null && echo "monitor.datnhk252iting.dpdns.org HTTPS: OK" || echo "monitor.datnhk252iting.dpdns.org HTTPS: FAILED"
 echo ""
 
 # 10. Prometheus
@@ -236,15 +237,15 @@ echo "=== End-to-End Functional Test ==="
 
 # Test 1: User registration (should fail gracefully at API level)
 echo "Test 1: API is reachable..."
-curl -sf https://api.iting.vn/actuator/health | jq .status
+curl -sf https://api.datnhk252iting.dpdns.org/actuator/health | jq .status
 
 # Test 2: Frontend loads
 echo "Test 2: Frontend loads..."
-curl -sf https://iting.vn/ | grep -o '<title>.*</title>'
+curl -sf https://datnhk252iting.dpdns.org/ | grep -o '<title>.*</title>'
 
 # Test 3: WebSocket endpoint exists
 echo "Test 3: WebSocket endpoint..."
-curl -sf -o /dev/null -w "%{http_code}" https://api.iting.vn/ws/
+curl -sf -o /dev/null -w "%{http_code}" https://api.datnhk252iting.dpdns.org/ws/
 
 # Test 4: Prometheus can scrape backend
 echo "Test 4: Prometheus scraping backend..."
@@ -312,7 +313,7 @@ ls -la /var/run/docker.sock
 # Expected: srw-rw---- (docker group)
 
 # Check SSL certificate
-echo | openssl s_client -connect iting.vn:443 -servername iting.vn 2>/dev/null | openssl x509 -noout -dates
+echo | openssl s_client -connect datnhk252iting.dpdns.org:443 -servername datnhk252iting.dpdns.org 2>/dev/null | openssl x509 -noout -dates
 
 # Verify all Docker services are using memory limits
 docker stats --no-stream --format "table {{.Name}}\t{{.MemUsage}}\t{{.MemPerc}}"
@@ -332,16 +333,16 @@ $(date)
 - EC2: m7i-flex.large (2 vCPU, 8GB RAM)
 - RDS: db.t3.micro PostgreSQL 16
 - Region: ap-southeast-1
-- Domain: iting.vn
+- Domain: datnhk252iting.dpdns.org
 
 ## Services Running
-$(docker compose --env-file .env ps --format "table {{.Name}}\t{{.Status}}\t{{.Image}}")
+$(docker compose -f /opt/iting/iting-repo/deploy/docker-compose.yml --env-file /opt/iting/.env --env-file /opt/iting/.env.prod ps --format "table {{.Name}}\t{{.Status}}\t{{.Image}}")
 
 ## Memory Usage
 $(docker stats --no-stream --format "table {{.Name}}\t{{.MemUsage}}")
 
 ## SSL Certificates
-$(echo | openssl s_client -connect iting.vn:443 -servername iting.vn 2>/dev/null | openssl x509 -noout -subject -dates)
+$(echo | openssl s_client -connect datnhk252iting.dpdns.org:443 -servername datnhk252iting.dpdns.org 2>/dev/null | openssl x509 -noout -subject -dates)
 
 ## Health Status
 $(curl -sf http://localhost:8080/actuator/health | jq .)
@@ -359,12 +360,12 @@ echo "Deployment manifest saved to /opt/iting/DEPLOYMENT_INFO.md"
 - [ ] EC2 instance is running and healthy
 - [ ] RDS PostgreSQL is accessible
 - [ ] Elastic IP is associated
-- [ ] DNS records are configured (iting.vn, api.iting.vn, monitor.iting.vn)
+- [ ] DNS records are configured (datnhk252iting.dpdns.org, api.datnhk252iting.dpdns.org, monitor.datnhk252iting.dpdns.org)
 - [ ] SSL certificates are valid and auto-renewing
 
 ### Core Services
-- [ ] Backend is accessible on https://api.iting.vn/actuator/health
-- [ ] Frontend is accessible on https://iting.vn/
+- [ ] Backend is accessible on https://api.datnhk252iting.dpdns.org/actuator/health
+- [ ] Frontend is accessible on https://datnhk252iting.dpdns.org/
 - [ ] Redis is connected (check backend logs)
 - [ ] Kafka is connected (check backend logs)
 - [ ] Database is connected (check backend logs)
@@ -375,7 +376,7 @@ echo "Deployment manifest saved to /opt/iting/DEPLOYMENT_INFO.md"
 - [ ] Logs are flowing to Loki
 - [ ] Traces are flowing to Tempo
 - [ ] Alertmanager has Discord configured
-- [ ] Portainer is accessible at monitor.iting.vn/portainer/
+- [ ] Portainer is accessible at monitor.datnhk252iting.dpdns.org/portainer/
 
 ### Security
 - [ ] Only ports 22, 80, 443 are externally accessible
@@ -387,7 +388,7 @@ echo "Deployment manifest saved to /opt/iting/DEPLOYMENT_INFO.md"
 - [ ] RDS is in a private subnet
 
 ### CI/CD
-- [ ] GitHub Actions pipeline triggers on push to main
+- [ ] GitHub Actions pipeline triggers on tagged releases
 - [ ] All CI pipeline jobs pass (build, test, scan)
 - [ ] Deployment to EC2 works
 - [ ] Discord notifications are working
@@ -398,6 +399,51 @@ echo "Deployment manifest saved to /opt/iting/DEPLOYMENT_INFO.md"
 - [ ] Backup script tested manually
 ```
 
+### 16.11 Reset EC2 Data (Delete Data/Files Only)
+
+Use this when you want to clear data and generated files on EC2 while keeping Docker, system packages, and base configuration intact.
+
+```bash
+ssh -i iting-key-pair.pem ubuntu@$PUBLIC_IP
+
+cd /opt/iting
+
+# 1) Stop all containers
+docker compose -f /opt/iting/iting-repo/deploy/docker-compose.yml --env-file /opt/iting/.env --env-file /opt/iting/.env.prod down
+
+# 2) Remove application data volumes (keeps docker install/config)
+docker volume rm \
+  iting_redis_data \
+  iting_kafka_data \
+  iting_zookeeper_data \
+  iting_prometheus_data \
+  iting_grafana_data \
+  iting_loki_data \
+  iting_tempo_data \
+  iting_portainer_data \
+  iting_certbot_data \
+  iting_nginx_ssl \
+  iting_nginx_dhparam || true
+
+# 3) Remove generated files and configs
+sudo rm -rf /opt/iting/config/*
+sudo rm -rf /opt/iting/monitoring/*
+sudo rm -rf /opt/iting/backups/*
+sudo rm -rf /opt/iting/nginx/ssl/*
+
+# 4) Remove old images to save space (optional)
+docker image prune -af
+
+# 5) Keep these files (do NOT delete):
+# - /opt/iting/.env
+# - /opt/iting/.env.prod
+# - /opt/iting/infrastructure.env
+# - /opt/iting/iting-repo/
+# - /opt/iting/scripts/
+
+echo "EC2 data reset complete. Re-deploy using tag-based CI/CD."
+```
+
 ## Verification
 
 ```bash
@@ -406,12 +452,12 @@ echo "=== Platform Health Summary ==="
 echo ""
 
 # Count healthy containers
-HEALTHY=$(docker compose --env-file .env ps --format json | jq -s '[.[] | select(.Health=="healthy")] | length')
-TOTAL=$(docker compose --env-file .env ps --format json | jq 'length')
+HEALTHY=$(docker compose -f /opt/iting/iting-repo/deploy/docker-compose.yml --env-file /opt/iting/.env --env-file /opt/iting/.env.prod ps --format json | jq -s '[.[] | select(.Health=="healthy")] | length')
+TOTAL=$(docker compose -f /opt/iting/iting-repo/deploy/docker-compose.yml --env-file /opt/iting/.env --env-file /opt/iting/.env.prod ps --format json | jq 'length')
 echo "Containers: $HEALTHY/$TOTAL healthy"
 
 # Check SSL
-echo "SSL: $(echo | openssl s_client -connect iting.vn:443 -servername iting.vn 2>/dev/null | openssl x509 -noout -enddate)"
+echo "SSL: $(echo | openssl s_client -connect datnhk252iting.dpdns.org:443 -servername datnhk252iting.dpdns.org 2>/dev/null | openssl x509 -noout -enddate)"
 
 # Check backend
 echo "Backend: $(curl -sf http://localhost:8080/actuator/health | jq -r .status)"
@@ -427,10 +473,10 @@ echo "Alertmanager: $(curl -sf http://localhost:9093/api/v2/status | jq -r .clus
 
 echo ""
 echo "=== Platform is LIVE ==="
-echo "Frontend:  https://iting.vn"
-echo "Backend:   https://api.iting.vn"
-echo "Grafana:    https://monitor.iting.vn"
-echo "Portainer:  https://monitor.iting.vn/portainer/"
+echo "Frontend:  https://datnhk252iting.dpdns.org"
+echo "Backend:   https://api.datnhk252iting.dpdns.org"
+echo "Grafana:    https://monitor.datnhk252iting.dpdns.org"
+echo "Portainer:  https://monitor.datnhk252iting.dpdns.org/portainer/"
 ```
 
 ## Troubleshooting Guide
@@ -455,21 +501,21 @@ echo "Portainer:  https://monitor.iting.vn/portainer/"
 /opt/iting/scripts/deploy.sh restart
 
 # Restart single service
-docker compose --env-file .env restart backend
+docker compose -f /opt/iting/iting-repo/deploy/docker-compose.yml --env-file /opt/iting/.env --env-file /opt/iting/.env.prod restart backend
 
 # Check all logs
-docker compose --env-file .env logs --tail=100
+docker compose -f /opt/iting/iting-repo/deploy/docker-compose.yml --env-file /opt/iting/.env --env-file /opt/iting/.env.prod logs --tail=100
 
 # Reset everything
-docker compose --env-file .elf down
-docker compose --env-file .elf up -d
+docker compose -f /opt/iting/iting-repo/deploy/docker-compose.yml --env-file /opt/iting/.env --env-file /opt/iting/.env.prod down
+docker compose -f /opt/iting/iting-repo/deploy/docker-compose.yml --env-file /opt/iting/.env --env-file /opt/iting/.env.prod up -d
 
 # Emergency database backup
 /opt/iting/scripts/backup.sh
 
 # Emergency deployment rollback
 docker tag iting-backend:previous iting-backend:latest
-docker compose --env-file .env up -d backend
+docker compose -f /opt/iting/iting-repo/deploy/docker-compose.yml --env-file /opt/iting/.env --env-file /opt/iting/.env.prod up -d backend
 ```
 
 ## References

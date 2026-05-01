@@ -79,11 +79,11 @@ ALTER DEFAULT PRIVILEGES IN SCHEMA public
 
 ```bash
 # Copy schema files from the project repository to EC2
-# Option A: Clone repository on EC2
+# Option A: Clone repository on EC2 (recommended)
 cd /opt/iting
 git clone https://github.com/YOUR_ORG/ITing.git iting-repo
 
-# Option B: SCP from local machine
+# Option B: SCP from local machine (avoid for ongoing changes)
 scp -i $SSH_KEY \
   /path/to/ITing/schema.sql \
   /path/to/ITing/setup-database.sql \

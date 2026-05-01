@@ -70,7 +70,7 @@
                           │    ├── Semgrep (SAST)                    │   │
                           │    ├── Trivy (Container Scan)            │   │
                           │    ├── Super-Linter (Lint)               │   │
-                          │    └── Deploy to EC2 (main branch)       │   │
+                          │    └── Deploy to EC2 (tagged releases)   │   │
                           └─────────────────────────────────────────────┘
 ```
 
@@ -199,7 +199,10 @@ All secrets are stored in `.env` on the server (never committed to Git):
 
 ```env
 # Domain
-DOMAIN=iting.vn
+DOMAIN=datnhk252iting.dpdns.org
+API_DOMAIN=api.datnhk252iting.dpdns.org
+MONITOR_DOMAIN=monitor.datnhk252iting.dpdns.org
+
 
 # Database (RDS) - already exists
 DB_HOST=jobweb.cbkcwwk8ug43.ap-southeast-1.rds.amazonaws.com
@@ -236,6 +239,7 @@ GOOGLE_CLIENT_SECRET=<secret>
 # Discord Webhook
 DISCORD_WEBHOOK_URL=<webhook-url>
 
+
 # Grafana
 GF_ADMIN_PASSWORD=<strong-password>
 
@@ -249,6 +253,7 @@ PORTAINER_PASSWORD=<strong-password>
 |------|---------|
 | `ITing-backend/.env` | Local dev environment (contains existing RDS endpoint & S3 credentials) |
 | `ITing-backend/.env.production` | Production environment template |
+| `deploy/` | Deployment configs and docker-compose (local-first, pushed to GitHub) |
 | `ITing-backend/Dockerfile` | Backend container definition |
 | `ITing-backend/docker-compose.yml` | Existing Docker Compose (local dev) |
 | `ITing-backend/.env.example` | Environment variable template |

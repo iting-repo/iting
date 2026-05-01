@@ -18,7 +18,7 @@ Set up Redis as a Docker container for caching and rate limiting, then migrate t
 # SSH into EC2
 ssh -i iting-key-pair.pem ubuntu@$PUBLIC_IP
 
-cat > /opt/iting/config/redis/redis.conf << 'EOF'
+cat > ./deploy/config/redis/redis.conf << 'EOF'
 # ITing Redis Configuration
 # Reference: https://redis.io/docs/manual/config/
 
@@ -62,7 +62,7 @@ chmod 640 /opt/iting/config/redis/redis.conf
 ### 4.2 Add Redis Service to docker-compose.yml
 
 ```bash
-cat >> /opt/iting/docker-compose.yml << 'COMPOSEEOF'
+cat >> ./deploy/docker-compose.yml << 'COMPOSEEOF'
 
   # ========================================
   # Redis - Caching & Rate Limiting
@@ -107,13 +107,13 @@ COMPOSEEOF
 cd /opt/iting
 
 # Start Redis only
-docker compose --env-file .env up -d redis
+docker compose -f /opt/iting/iting-repo/deploy/docker-compose.yml --env-file /opt/iting/.env --env-file /opt/iting/.env.prod up -d redis
 
 # Wait for Redis to be ready
 sleep 5
 
 # Verify Redis is running
-docker compose --env-file .env ps redis
+docker compose -f /opt/iting/iting-repo/deploy/docker-compose.yml --env-file /opt/iting/.env --env-file /opt/iting/.env.prod ps redis
 
 # Test Redis connection
 source /opt/iting/.env
@@ -433,7 +433,7 @@ environment:
 
 ```bash
 # Verify Redis container is running
-docker compose --env-file .env ps redis
+docker compose -f /opt/iting/iting-repo/deploy/docker-compose.yml --env-file /opt/iting/.env --env-file /opt/iting/.env.prod ps redis
 
 # Test Redis connection
 source /opt/iting/.env
@@ -455,7 +455,7 @@ docker exec iting-redis redis-cli -a "$REDIS_PASSWORD" info memory | grep used_m
 # Expected: ~low MB range
 
 # After backend deployment (Task 07), verify rate limiting:
-# curl -X POST https://api.iting.vn/api/auth/login (5 times rapidly)
+# curl -X POST https://api.datnhk252iting.dpdns.org/api/auth/login (5 times rapidly)
 # Should get 429 Too Many Requests on 6th attempt
 ```
 
@@ -463,7 +463,7 @@ docker exec iting-redis redis-cli -a "$REDIS_PASSWORD" info memory | grep used_m
 
 ```bash
 # Stop and remove Redis container
-docker compose --env-file .env down redis
+docker compose -f /opt/iting/iting-repo/deploy/docker-compose.yml --env-file /opt/iting/.env --env-file /opt/iting/.env.prod down redis
 
 # Remove Redis volume (destructive - loses all cached data)
 docker volume rm iting_redis_data

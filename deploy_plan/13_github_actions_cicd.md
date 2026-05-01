@@ -27,7 +27,7 @@ Go to GitHub → Settings → Secrets and variables → Actions, and add:
 
 ### 13.2 Create CI Pipeline
 
-Create `.github/workflows/ci.yml`:
+Create `.github/workflows/ci.yml` (deploys only on tags):
 
 ```yaml
 ---
@@ -36,6 +36,7 @@ name: CI Pipeline
 on:
   push:
     branches: [main, develop]
+    tags: ["v*"]
   pull_request:
     branches: [main]
 
@@ -129,7 +130,7 @@ jobs:
         working-directory: ITing-frontend
         run: npm run build
         env:
-          REACT_APP_API_BASE_URL: https://api.iting.vn/api
+          REACT_APP_API_BASE_URL: https://api.datnhk252iting.dpdns.org/api
       
       - name: Upload frontend build
         uses: actions/upload-artifact@v4
@@ -214,10 +215,10 @@ jobs:
   # Job 5: Build Docker Images
   # ========================================
   docker-build:
-    name: Build Docker Images
+    name: Build Docker Images (Tagged Releases)
     runs-on: ubuntu-latest
     needs: [backend-build-test, frontend-build-test]
-    if: github.event_name == 'push'
+    if: startsWith(github.ref, 'refs/tags/')
     
     steps:
       - name: Checkout code
@@ -285,7 +286,7 @@ jobs:
           tags: ${{ steps.meta-frontend.outputs.tags }}
           labels: ${{ steps.meta-frontend.outputs.labels }}
           build-args: |
-            REACT_APP_API_BASE_URL=https://api.iting.vn/api
+            REACT_APP_API_BASE_URL=https://api.datnhk252iting.dpdns.org/api
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
@@ -293,13 +294,13 @@ jobs:
   # Job 6: Deploy to Production
   # ========================================
   deploy:
-    name: Deploy to Production
+    name: Deploy to Production (Tagged Releases)
     runs-on: ubuntu-latest
     needs: [docker-build, security-scan, code-quality]
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    if: startsWith(github.ref, 'refs/tags/')
     environment:
       name: production
-      url: https://iting.vn
+      url: https://datnhk252iting.dpdns.org
     
     steps:
       - name: Configure AWS credentials
@@ -315,29 +316,29 @@ jobs:
           username: ubuntu
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
-            cd /opt/iting
+            cd /opt/iting/iting-repo/deploy
             
             # Log in to GitHub Container Registry
             echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
             
             # Pull latest images
-            docker compose --env-file .env pull
+            docker compose -f /opt/iting/iting-repo/deploy/docker-compose.yml --env-file /opt/iting/.env --env-file /opt/iting/.env.prod pull
             
             # Deploy with zero-downtime
-            docker compose --env-file .env up -d --remove-orphans
+            docker compose -f /opt/iting/iting-repo/deploy/docker-compose.yml --env-file /opt/iting/.env --env-file /opt/iting/.env.prod up -d --remove-orphans
             
             # Clean up old images
             docker image prune -f
             
             # Verify deployment
             sleep 15
-            docker compose --env-file .env ps
+            docker compose -f /opt/iting/iting-repo/deploy/docker-compose.yml --env-file /opt/iting/.env --env-file /opt/iting/.env.prod ps
       
       - name: Health check
         run: |
           sleep 30
-          curl -sf https://iting.vn/ || exit 1
-          curl -sf https://api.iting.vn/actuator/health || exit 1
+          curl -sf https://datnhk252iting.dpdns.org/ || exit 1
+          curl -sf https://api.datnhk252iting.dpdns.org/actuator/health || exit 1
       
       - name: Notify Discord - Success
         if: success()
@@ -383,7 +384,7 @@ jobs:
         working-directory: ITing-frontend
         run: npm ci && npm run build
         env:
-          REACT_APP_API_BASE_URL: https://api.iting.vn/api
+          REACT_APP_API_BASE_URL: https://api.datnhk252iting.dpdns.org/api
       
       - name: Docker backend build (no push)
         uses: docker/build-push-action@v5
@@ -401,7 +402,7 @@ jobs:
           file: ./ITing-frontend/Dockerfile
           push: false
           build-args: |
-            REACT_APP_API_BASE_URL=https://api.iting.vn/api
+            REACT_APP_API_BASE_URL=https://api.datnhk252iting.dpdns.org/api
           cache-from: type=gha
           cache-to: type=gha,mode=max
 ```
@@ -409,8 +410,9 @@ jobs:
 ## Verification
 
 ```bash
-# Push a commit to main branch to trigger the pipeline
-git push origin main
+# Create and push a release tag to trigger deployment
+git tag v1.0.0
+git push origin v1.0.0
 
 # Check pipeline status
 gh run list --limit 5
@@ -425,7 +427,7 @@ gh run view <run-id>
 # 6. Deploy to Production ✅
 
 # Verify deployment on EC2
-ssh -i iting-key-pair.pem ubuntu@$PUBLIC_IP "docker compose -f /opt/iting/docker-compose.yml ps"
+ssh -i iting-key-pair.pem ubuntu@$PUBLIC_IP "docker compose -f /opt/iting/iting-repo/deploy/docker-compose.yml --env-file /opt/iting/.env --env-file /opt/iting/.env.prod ps"
 ```
 
 ## Rollback
@@ -443,7 +445,7 @@ docker tag ghcr.io/<org>/iting-backend:<previous-sha> ghcr.io/<org>/iting-backen
 docker tag ghcr.io/<org>/iting-frontend:<previous-sha> ghcr.io/<org>/iting-frontend:latest
 
 # Redeploy
-docker compose --env-file .env up -d
+docker compose -f /opt/iting/iting-repo/deploy/docker-compose.yml --env-file /opt/iting/.env --env-file /opt/iting/.env.prod up -d
 ```
 
 ## References

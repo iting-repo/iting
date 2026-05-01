@@ -539,7 +539,7 @@ echo "  DB_PASSWORD=<STRONG_PASSWORD>  (change from default!)"
 ```bash
 # Create hosted zone
 HOSTED_ZONE=$(aws route53 create-hosted-zone \
-  --name iting.vn \
+  --name datnhk252iting.dpdns.org \
   --caller-reference "iting-$(date +%s)" \
   --query 'HostedZone.Id' --output text --region $AWS_REGION)
 
@@ -555,10 +555,10 @@ echo "$NAMESERVERS"
 # Create A records pointing to EC2 Elastic IP
 CHANGE_BATCH='{
   "Changes": [
-    {"Action":"CREATE","ResourceRecordSet":{"Name":"iting.vn","Type":"A","TTL":300,"ResourceRecords":[{"Value":"'$PUBLIC_IP'"}]}},
-    {"Action":"CREATE","ResourceRecordSet":{"Name":"www.iting.vn","Type":"A","TTL":300,"ResourceRecords":[{"Value":"'$PUBLIC_IP'"}]}},
-    {"Action":"CREATE","ResourceRecordSet":{"Name":"api.iting.vn","Type":"A","TTL":300,"ResourceRecords":[{"Value":"'$PUBLIC_IP'"}]}},
-    {"Action":"CREATE","ResourceRecordSet":{"Name":"monitor.iting.vn","Type":"A","TTL":300,"ResourceRecords":[{"Value":"'$PUBLIC_IP'"}]}}
+    {"Action":"CREATE","ResourceRecordSet":{"Name":"datnhk252iting.dpdns.org","Type":"A","TTL":300,"ResourceRecords":[{"Value":"'$PUBLIC_IP'"}]}},
+    {"Action":"CREATE","ResourceRecordSet":{"Name":"www.datnhk252iting.dpdns.org","Type":"A","TTL":300,"ResourceRecords":[{"Value":"'$PUBLIC_IP'"}]}},
+    {"Action":"CREATE","ResourceRecordSet":{"Name":"api.datnhk252iting.dpdns.org","Type":"A","TTL":300,"ResourceRecords":[{"Value":"'$PUBLIC_IP'"}]}},
+    {"Action":"CREATE","ResourceRecordSet":{"Name":"monitor.datnhk252iting.dpdns.org","Type":"A","TTL":300,"ResourceRecords":[{"Value":"'$PUBLIC_IP'"}]}}
   ]
 }'
 
@@ -568,10 +568,10 @@ aws route53 change-resource-record-sets \
   --region $AWS_REGION
 
 echo "=== DNS Records Created ==="
-echo "iting.vn        → $PUBLIC_IP"
-echo "www.iting.vn     → $PUBLIC_IP"
-echo "api.iting.vn     → $PUBLIC_IP"
-echo "monitor.iting.vn → $PUBLIC_IP"
+echo "datnhk252iting.dpdns.org        → $PUBLIC_IP"
+echo "www.datnhk252iting.dpdns.org     → $PUBLIC_IP"
+echo "api.datnhk252iting.dpdns.org     → $PUBLIC_IP"
+echo "monitor.datnhk252iting.dpdns.org → $PUBLIC_IP"
 ```
 
 ### 1.8 Save Infrastructure Info
@@ -606,7 +606,7 @@ RDS_USERNAME=postgres
 S3_BUCKET=datn-jobweb
 S3_REGION=ap-southeast-1
 
-DOMAIN=iting.vn
+DOMAIN=datnhk252iting.dpdns.org
 EOF
 
 chmod 600 /opt/iting/infrastructure.env
@@ -628,8 +628,8 @@ ssh -i iting-key-pair.pem ubuntu@$PUBLIC_IP "docker --version && docker compose 
 ssh -i iting-key-pair.pem ubuntu@$PUBLIC_IP "sudo apt-get install -y postgresql-client && psql --host=$RDS_ENDPOINT --username=postgres --dbname=iting_job_portal -c 'SELECT 1;'"
 
 # Verify DNS propagation (may take up to 48 hours for nameservers)
-dig iting.vn +short
-dig api.iting.vn +short
+dig datnhk252iting.dpdns.org +short
+dig api.datnhk252iting.dpdns.org +short
 ```
 
 ## Rollback

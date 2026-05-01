@@ -16,7 +16,7 @@ Deploy OpenTelemetry Collector for instrumentation collection and Grafana Tempo 
 ```bash
 ssh -i iting-key-pair.pem ubuntu@$PUBLIC_IP
 
-cat > /opt/iting/monitoring/tempo/tempo-config.yml << 'TEMPOEOF'
+cat > ./deploy/monitoring/tempo/tempo-config.yml << 'TEMPOEOF'
 # ITing Tempo Configuration
 # Reference: https://grafana.com/docs/tempo/latest/configuration/
 
@@ -72,7 +72,7 @@ TEMPOEOF
 ### 11.2 Create OTel Collector Configuration
 
 ```bash
-cat > /opt/iting/config/otel/otel-collector-config.yaml << 'OTELEOF'
+cat > ./deploy/config/otel/otel-collector-config.yaml << 'OTELEOF'
 # ITing OpenTelemetry Collector Configuration
 # Reference: .opencode/skills/monitoring-observability/skills/assets/templates/otel-config/collector-config.yaml
 
@@ -165,7 +165,7 @@ OTELEOF
 ### 11.3 Add Tempo and OTel Collector to docker-compose.yml
 
 ```bash
-cat >> /opt/iting/docker-compose.yml << 'COMPOSEEOF'
+cat >> ./deploy/docker-compose.yml << 'COMPOSEEOF'
 
   # ========================================
   # Tempo - Distributed Tracing Storage
@@ -262,7 +262,7 @@ Update the Grafana datasource provisioning to add Tempo tracing:
 # Verify it's connecting properly.
 
 # Update the datasources.yml if needed to add trace-to-log correlation
-cat > /opt/iting/monitoring/grafana/provisioning/datasources.yml << 'DSEOF'
+cat > ./deploy/monitoring/grafana/provisioning/datasources.yml << 'DSEOF'
 apiVersion: 1
 datasources:
   - name: Prometheus
@@ -317,7 +317,7 @@ DSEOF
 cd /opt/iting
 
 # Start Tempo and OTel Collector
-docker compose --env-file .env up -d tempo otel-collector
+docker compose -f /opt/iting/iting-repo/deploy/docker-compose.yml --env-file /opt/iting/.env --env-file /opt/iting/.env.prod up -d tempo otel-collector
 
 # Wait for startup
 sleep 15
@@ -334,13 +334,13 @@ curl -s http://localhost:13133/
 curl -s http://localhost:8889/metrics | head -20
 
 # Restart backend to pick up OTel agent changes (if needed)
-docker compose --env-file .env restart backend
+docker compose -f /opt/iting/iting-repo/deploy/docker-compose.yml --env-file /opt/iting/.env --env-file /opt/iting/.env.prod restart backend
 
 # Wait for backend to start
 sleep 30
 
 # Generate a test trace
-curl -s https://api.iting.vn/actuator/health
+curl -s https://api.datnhk252iting.dpdns.org/actuator/health
 
 # Search for traces in Tempo
 curl -s "http://localhost:3200/api/traces?service=iting-backend&limit=10" | jq .
@@ -353,7 +353,7 @@ curl -s "http://localhost:3200/api/traces?service=iting-backend&limit=10" | jq .
 
 ```bash
 # All tracing containers running
-docker compose --env-file .env ps tempo otel-collector
+docker compose -f /opt/iting/iting-repo/deploy/docker-compose.yml --env-file /opt/iting/.env --env-file /opt/iting/.env.prod ps tempo otel-collector
 
 # Tempo is ready
 curl -s http://localhost:3200/ready
@@ -362,10 +362,10 @@ curl -s http://localhost:3200/ready
 curl -s http://localhost:13133/
 
 # Backend is sending traces (check backend logs)
-docker compose --env-file .env logs backend | grep -i "opentelemetry\|otel" | head -10
+docker compose -f /opt/iting/iting-repo/deploy/docker-compose.yml --env-file /opt/iting/.env --env-file /opt/iting/.env.prod logs backend | grep -i "opentelemetry\|otel" | head -10
 
 # Generate a trace and verify
-curl -s https://api.iting.vn/api/auth/health || true
+curl -s https://api.datnhk252iting.dpdns.org/api/auth/health || true
 
 # Search Tempo for recent traces
 curl -s "http://localhost:3200/api/traces?service=iting-backend&limit=10"
@@ -377,7 +377,7 @@ curl -s -u admin:${GF_ADMIN_PASSWORD} http://localhost:3000/api/datasources/name
 ## Rollback
 
 ```bash
-docker compose --env-file .env down tempo otel-collector
+docker compose -f /opt/iting/iting-repo/deploy/docker-compose.yml --env-file /opt/iting/.env --env-file /opt/iting/.env.prod down tempo otel-collector
 docker volume rm iting_tempo_data
 rm -rf /opt/iting/monitoring/tempo /opt/iting/config/otel
 ```

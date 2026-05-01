@@ -84,7 +84,6 @@ ENV JAVA_OPTS="-XX:+UseZGC -XX:MaxRAMPercentage=75.0 -Xms256m -Xmx768m"
 ENV OTEL_JAVAAGENT_ENABLED=true
 ENV OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4317
 ENV OTEL_SERVICE_NAME=iting-backend
-ENV OTEL_RESOURCE_ATTRIBUTES=service.name=iting-backend,service.namespace=iting,deployment.environment=production
 ENV OTEL_TRACES_EXPORTER=otlp
 ENV OTEL_METRICS_EXPORTER=otlp
 ENV OTEL_LOGS_EXPORTER=none
@@ -100,7 +99,7 @@ HEALTHCHECK --interval=30s --timeout=5s --start-period=60s --retries=3 \
 # Run with OTel agent and production profile
 ENTRYPOINT ["sh", "-c", "java \
   -javaagent:/opt/opentelemetry-javaagent.jar \
-  -Dspring.profiles.active=prod \
+  -Dspring.profiles.active=${SPRING_PROFILES_ACTIVE:-prod} \
   ${JAVA_OPTS} \
   -cp /app/loader org.springframework.boot.loader.launch.JarLauncher"]
 DOCKERFILEEOF
@@ -223,7 +222,7 @@ spring.security.oauth2.client.registration.google.client-secret=${GOOGLE_CLIENT_
 # On the local development machine
 cd ITing-backend
 
-# Build the Docker image
+# Build the Docker image (local build/test only)
 docker build -f Dockerfile.prod -t iting-backend:latest .
 
 # Test locally
@@ -241,35 +240,20 @@ docker run -d --name iting-backend-test \
 sleep 30
 curl -f http://localhost:8080/actuator/health
 
-# Push to GitHub Container Registry (or Docker Hub)
-# Option A: GitHub Container Registry
-docker tag iting-backend:latest ghcr.io/YOUR_ORG/iting-backend:latest
-docker push ghcr.io/YOUR_ORG/iting-backend:latest
-
-# Option B: Transfer directly to EC2
-docker save iting-backend:latest | gzip > iting-backend.tar.gz
-scp -i iting-key-pair.pem iting-backend.tar.gz ubuntu@$PUBLIC_IP:/opt/iting/
-
-# On EC2:
-ssh -i iting-key-pair.pem ubuntu@$PUBLIC_IP
-cd /opt/iting
-docker load < iting-backend.tar.gz
-rm iting-backend.tar.gz
+# CI/CD will build and push the backend image to GHCR.
+# EC2 pulls the image during the deploy job (no SCP of images).
 ```
 
 ### 7.4 Add Backend Service to docker-compose.yml
 
 ```bash
-cat >> /opt/iting/docker-compose.yml << 'COMPOSEEOF'
+cat >> ./deploy/docker-compose.yml << 'COMPOSEEOF'
 
   # ========================================
   # Backend - Spring Boot API
   # ========================================
   backend:
-    build:
-      context: /opt/iting/iting-repo/ITing-backend
-      dockerfile: Dockerfile.prod
-    image: iting-backend:latest
+    image: ${BACKEND_IMAGE}
     container_name: iting-backend
     restart: unless-stopped
     networks:
@@ -344,7 +328,7 @@ cat >> /opt/iting/docker-compose.yml << 'COMPOSEEOF'
 
       # Application
       SPRING_APPLICATION_NAME: iting-job-portal
-      SPRING_PROFILES_ACTIVE: prod
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE}
       SERVER_PORT: 8080
       SERVER_SHUTDOWN: graceful
 
@@ -362,7 +346,7 @@ cat >> /opt/iting/docker-compose.yml << 'COMPOSEEOF'
       OTEL_JAVAAGENT_ENABLED: "true"
       OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
       OTEL_SERVICE_NAME: iting-backend
-      OTEL_RESOURCE_ATTRIBUTES: service.name=iting-backend,service.namespace=iting,deployment.environment=production
+      OTEL_RESOURCE_ATTRIBUTES: service.name=iting-backend,service.namespace=iting,deployment.environment=prod
       OTEL_TRACES_EXPORTER: otlp
       OTEL_METRICS_EXPORTER: otlp
       OTEL_LOGS_EXPORTER: none
@@ -394,7 +378,7 @@ COMPOSEEOF
 cd /opt/iting
 
 # Start backend
-docker compose --env-file .env up -d backend
+docker compose -f /opt/iting/iting-repo/deploy/docker-compose.yml --env-file /opt/iting/.env --env-file /opt/iting/.env.prod up -d backend
 
 # Wait for startup (Spring Boot takes ~30-60 seconds)
 echo "Waiting for backend to start (this may take 60 seconds)..."
@@ -414,17 +398,17 @@ curl -f http://localhost:8080/actuator/health | jq .
 curl -s http://localhost:8080/actuator/prometheus | head -20
 
 # Verify backend logs
-docker compose --env-file .env logs backend --tail=30
+docker compose -f /opt/iting/iting-repo/deploy/docker-compose.yml --env-file /opt/iting/.env --env-file /opt/iting/.env.prod logs backend --tail=30
 
 # Test through Nginx (after Task 06)
-curl -f https://api.iting.vn/actuator/health | jq .
+curl -f https://api.datnhk252iting.dpdns.org/actuator/health | jq .
 ```
 
 ## Verification
 
 ```bash
 # 1. Container is running
-docker compose --env-file .env ps backend
+docker compose -f /opt/iting/iting-repo/deploy/docker-compose.yml --env-file /opt/iting/.env --env-file /opt/iting/.env.prod ps backend
 
 # 2. Health endpoint responds
 curl -f http://localhost:8080/actuator/health
@@ -433,26 +417,26 @@ curl -f http://localhost:8080/actuator/health
 curl -s http://localhost:8080/actuator/prometheus | grep jvm_memory_used
 
 # 4. Redis connectivity (from backend logs)
-docker compose --env-file .env logs backend | grep -i redis | head -5
+docker compose -f /opt/iting/iting-repo/deploy/docker-compose.yml --env-file /opt/iting/.env --env-file /opt/iting/.env.prod logs backend | grep -i redis | head -5
 
 # 5. Kafka connectivity (from backend logs)
-docker compose --env-file .env logs backend | grep -i kafka | head -5
+docker compose -f /opt/iting/iting-repo/deploy/docker-compose.yml --env-file /opt/iting/.env --env-file /opt/iting/.env.prod logs backend | grep -i kafka | head -5
 
 # 6. Database connectivity (from backend logs)
-docker compose --env-file .env logs backend | grep -i "datasource\|hibernate\|flyway" | head -5
+docker compose -f /opt/iting/iting-repo/deploy/docker-compose.yml --env-file /opt/iting/.env --env-file /opt/iting/.env.prod logs backend | grep -i "datasource\|hibernate\|flyway" | head -5
 
 # 7. OpenTelemetry agent loaded
-docker compose --env-file .env logs backend | grep -i "opentelemetry\|otel" | head -5
+docker compose -f /opt/iting/iting-repo/deploy/docker-compose.yml --env-file /opt/iting/.env --env-file /opt/iting/.env.prod logs backend | grep -i "opentelemetry\|otel" | head -5
 
 # 8. SSL access through Nginx (after Task 06)
-curl -f https://api.iting.vn/actuator/health
+curl -f https://api.datnhk252iting.dpdns.org/actuator/health
 ```
 
 ## Rollback
 
 ```bash
 # Stop backend
-docker compose --env-file .env down backend
+docker compose -f /opt/iting/iting-repo/deploy/docker-compose.yml --env-file /opt/iting/.env --env-file /opt/iting/.env.prod down backend
 
 # Revert to previous image version
 docker tag iting-backend:previous iting-backend:latest

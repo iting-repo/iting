@@ -2,7 +2,7 @@
 
 ## Objective
 
-Configure Docker on the EC2 instance, create the application directory structure, set up Docker networks and volumes, and prepare the shared `.env` file with all environment variables.
+Configure Docker on the EC2 instance, create the application directory structure, set up Docker networks and volumes, and prepare the shared `.env` file with all environment variables. Configuration files should be prepared locally and committed to GitHub; EC2 should not be used for ongoing edits.
 
 ## Prerequisites
 
@@ -86,7 +86,7 @@ REDIS_PASSWORD=$(openssl rand -base64 24 | tr -d '=/+')
 GF_ADMIN_PASSWORD=$(openssl rand -base64 24 | tr -d '=/+')
 PORTAINER_PASSWORD=$(openssl rand -base64 24 | tr -d '=/+')
 
-# Create .env file
+# Create .env file (base configuration)
 cat > /opt/iting/.env << EOF
 # ==========================================
 # ITing Production Environment Configuration
@@ -94,7 +94,9 @@ cat > /opt/iting/.env << EOF
 # ==========================================
 
 # ---- Domain ----
-DOMAIN=iting.vn
+DOMAIN=datnhk252iting.dpdns.org
+API_DOMAIN=api.datnhk252iting.dpdns.org
+MONITOR_DOMAIN=monitor.datnhk252iting.dpdns.org
 
 # ---- Database (Existing RDS PostgreSQL) ----
 DB_HOST=jobweb.cbkcwwk8ug43.ap-southeast-1.rds.amazonaws.com
@@ -135,7 +137,7 @@ GOOGLE_CLIENT_ID=CHANGE_ME_GOOGLE_CLIENT_ID
 GOOGLE_CLIENT_SECRET=CHANGE_ME_GOOGLE_CLIENT_SECRET
 
 # ---- CORS ----
-CORS_ORIGINS=https://iting.vn,https://www.iting.vn
+CORS_ORIGINS=https://datnhk252iting.dpdns.org,https://www.datnhk252iting.dpdns.org
 
 # ---- Swagger (disable for prod) ----
 SWAGGER_ENABLED=false
@@ -168,11 +170,11 @@ OTEL_SERVICE_NAME=iting-backend
 OTEL_RESOURCE_ATTRIBUTES=service.name=iting-backend,service.namespace=iting,deployment.environment=production
 
 # ---- Nginx ----
-NGINX_HOST=iting.vn
+NGINX_HOST=datnhk252iting.dpdns.org
 
 # ---- Docker Image Tags ----
-BACKEND_IMAGE=iting-backend:latest
-FRONTEND_IMAGE=iting-frontend:latest
+BACKEND_IMAGE=ghcr.io/YOUR_ORG/iting-backend:latest
+FRONTEND_IMAGE=ghcr.io/YOUR_ORG/iting-frontend:latest
 
 # ---- Kafka ----
 KAFKA_ZOOKEEPER_CONNECT=zookeeper:2181
@@ -182,6 +184,11 @@ KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR=1
 # ---- Logging ----
 LOGGING_LEVEL_ROOT=INFO
 LOGGING_LEVEL_COM_ITING=DEBUG
+EOF
+
+# Create environment-specific overlay
+cat > /opt/iting/.env.prod << EOF
+DEPLOY_ENV=prod
 EOF
 
 # Set secure permissions (only owner can read)
@@ -240,7 +247,7 @@ cat > /opt/iting/scripts/deploy.sh << 'DEPLOYEOF'
 #!/bin/bash
 set -e
 
-COMPOSE_FILE="/opt/iting/docker-compose.yml"
+COMPOSE_FILE="/opt/iting/iting-repo/deploy/docker-compose.yml"
 ENV_FILE="/opt/iting/.env"
 
 echo "=== ITing Deployment Script ==="
@@ -339,11 +346,28 @@ chmod +x /opt/iting/scripts/backup.sh
 (crontab -l 2>/dev/null; echo "0 3 * * * /opt/iting/scripts/backup.sh >> /var/log/iting-backup.log 2>&1") | crontab -
 ```
 
-### 2.7 Create docker-compose.yml Skeleton
+### 2.7 Local-First Configuration (No EC2 File Editing)
+
+All configuration files (docker-compose, nginx, monitoring configs) should be created locally and committed to the repository (recommended: `deploy/` directory). EC2 should only receive:
+
+- `.env` and `.env.prod` (secrets, not committed)
+- The repository clone (for compose/configs)
+- Docker images pulled from GHCR during CI/CD deploy
+
+Once the repository is cloned on EC2, update paths to reference the repo:
 
 ```bash
-# Create initial docker-compose.yml that will be built up in later tasks
-cat > /opt/iting/docker-compose.yml << 'COMPOSEEOF'
+# Example layout on EC2
+/opt/iting/iting-repo/deploy/docker-compose.yml
+/opt/iting/iting-repo/deploy/config/nginx/...
+```
+
+### 2.8 Create docker-compose.yml Skeleton (Local)
+
+```bash
+# Create initial docker-compose.yml locally (commit to GitHub)
+mkdir -p ./deploy
+cat > ./deploy/docker-compose.yml << 'COMPOSEEOF'
 # ITing Production Docker Compose
 # This file is assembled incrementally in Task 16
 # Each service is defined in its respective task file
@@ -414,8 +438,8 @@ sysctl vm.max_map_count
 # Verify scripts are executable
 ls -la /opt/iting/scripts/
 
-# Verify docker-compose.yml exists
-cat /opt/iting/docker-compose.yml
+# Verify docker-compose.yml exists locally
+cat ./deploy/docker-compose.yml
 ```
 
 ## Rollback

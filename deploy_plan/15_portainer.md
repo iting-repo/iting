@@ -2,11 +2,11 @@
 
 ## Objective
 
-Deploy Portainer CE (Community Edition) as a web UI for managing Docker containers, images, volumes, and networks on the EC2 instance. Portainer provides an intuitive interface for container management accessible via `monitor.iting.vn/portainer/`.
+Deploy Portainer CE (Community Edition) as a web UI for managing Docker containers, images, volumes, and networks on the EC2 instance. Portainer provides an intuitive interface for container management accessible via `monitor.datnhk252iting.dpdns.org/portainer/`.
 
 ## Prerequisites
 - Task 02 completed (Docker foundation, iting-net network)
-- Task 06 completed (Nginx proxy for monitor.iting.vn)
+- Task 06 completed (Nginx proxy for monitor.datnhk252iting.dpdns.org)
 
 ## Step-by-Step Instructions
 
@@ -15,7 +15,7 @@ Deploy Portainer CE (Community Edition) as a web UI for managing Docker containe
 ```bash
 ssh -i iting-key-pair.pem ubuntu@$PUBLIC_IP
 
-cat >> /opt/iting/docker-compose.yml << 'COMPOSEEOF'
+cat >> ./deploy/docker-compose.yml << 'COMPOSEEOF'
 
   # ========================================
   # Portainer - Container Management UI
@@ -75,24 +75,24 @@ docker run --rm httpd:alpine htpasswd -nbB admin "$PORTAINER_PASSWORD" | cut -d:
 cd /opt/iting
 
 # Start Portainer
-docker compose --env-file .env up -d portainer
+docker compose -f /opt/iting/iting-repo/deploy/docker-compose.yml --env-file /opt/iting/.env --env-file /opt/iting/.env.prod up -d portainer
 
 # Wait for startup
 sleep 15
 
 # Verify Portainer is running
-docker compose --env-file .env ps portainer
+docker compose -f /opt/iting/iting-repo/deploy/docker-compose.yml --env-file /opt/iting/.env --env-file /opt/iting/.env.prod ps portainer
 
 # Portainer is accessible at:
 # - Direct: http://localhost:9000
-# - Via Nginx: https://monitor.iting.vn/portainer/
+# - Via Nginx: https://monitor.datnhk252iting.dpdns.org/portainer/
 ```
 
 ### 15.4 Initial Portainer Setup
 
 After starting Portainer for the first time:
 
-1. Navigate to `https://monitor.iting.vn/portainer/`
+1. Navigate to `https://monitor.datnhk252iting.dpdns.org/portainer/`
 2. Log in with the Basic Auth credentials (from Task 06)
 3. Create the Portainer admin user:
    - Username: `admin`
@@ -135,14 +135,14 @@ curl -s -u admin:$PORTAINER_PASSWORD http://localhost:9000/api/endpoints/1/docke
 curl -s -u admin:$PORTAINER_PASSWORD http://localhost:9000/api/endpoints/1/docker/volumes | jq '.Volumes[].Name'
 
 # Access Portainer UI
-# Open browser: https://monitor.iting.vn/portainer/
+# Open browser: https://monitor.datnhk252iting.dpdns.org/portainer/
 ```
 
 ## Verification
 
 ```bash
 # Portainer container is running
-docker compose --env-file .env ps portainer
+docker compose -f /opt/iting/iting-repo/deploy/docker-compose.yml --env-file /opt/iting/.env --env-file /opt/iting/.env.prod ps portainer
 
 # Portainer health check
 curl -s http://localhost:9000/api/status | jq .status
@@ -152,24 +152,24 @@ docker ps --format '{{.Names}}' | wc -l
 # Should match the number in Portainer dashboard
 
 # Verify Nginx proxy is working
-curl -I https://monitor.iting.vn/portainer/ -u admin:$MONITOR_PASSWORD
+curl -I https://monitor.datnhk252iting.dpdns.org/portainer/ -u admin:$MONITOR_PASSWORD
 # Expected: 200 OK or 302 redirect
 
 # Check Portainer logs
-docker compose --env-file .env logs portainer --tail=20
+docker compose -f /opt/iting/iting-repo/deploy/docker-compose.yml --env-file /opt/iting/.env --env-file /opt/iting/.env.prod logs portainer --tail=20
 ```
 
 ## Rollback
 
 ```bash
 # Stop and remove Portainer
-docker compose --env-file .env down portainer
+docker compose -f /opt/iting/iting-repo/deploy/docker-compose.yml --env-file /opt/iting/.env --env-file /opt/iting/.env.prod down portainer
 
 # Remove Portainer data (destructive - loses all Portainer configuration)
 docker volume rm iting_portainer_data
 
 # Remove Portainer configuration from docker-compose.yml
-# Edit /opt/iting/docker-compose.yml and remove the portainer service block
+# Edit /opt/iting/iting-repo/deploy/docker-compose.yml and remove the portainer service block
 ```
 
 ## References

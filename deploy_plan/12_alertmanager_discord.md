@@ -14,7 +14,7 @@ Deploy Alertmanager to handle alerts from Prometheus and route them to Discord v
 ```bash
 ssh -i iting-key-pair.pem ubuntu@$PUBLIC_IP
 
-cat > /opt/iting/monitoring/alertmanager/alertmanager.yml << 'AMEOF'
+cat > ./deploy/monitoring/alertmanager/alertmanager.yml << 'AMEOF'
 # ITing Alertmanager Configuration
 global:
   resolve_timeout: 5m
@@ -69,7 +69,7 @@ We need a small bridge service to convert Alertmanager notifications to Discord 
 ```bash
 mkdir -p /opt/iting/config/alertmanager-discord
 
-cat > /opt/iting/config/alertmanager-discord/Dockerfile << 'DISCORDEOF'
+cat > ./deploy/config/alertmanager-discord/Dockerfile << 'DISCORDEOF'
 FROM python:3.12-alpine
 
 RUN pip install --no-cache-dir requests flask
@@ -82,7 +82,7 @@ EXPOSE 9094
 CMD ["python", "/app/app.py"]
 DISCORDEOF
 
-cat > /opt/iting/config/alertmanager-discord/app.py << 'PYEOF'
+cat > ./deploy/config/alertmanager-discord/app.py << 'PYEOF'
 import json
 import os
 import requests
@@ -188,7 +188,7 @@ PYEOF
 ### 12.3 Add Alertmanager and Discord Bridge to docker-compose.yml
 
 ```bash
-cat >> /opt/iting/docker-compose.yml << 'COMPOSEEOF'
+cat >> ./deploy/docker-compose.yml << 'COMPOSEEOF'
 
   # ========================================
   # Alertmanager - Alert Routing
@@ -207,7 +207,7 @@ cat >> /opt/iting/docker-compose.yml << 'COMPOSEEOF'
       - '--config.file=/etc/alertmanager/alertmanager.yml'
       - '--storage.path=/alertmanager'
       - '--web.listen-address=:9093'
-      - '--web.external-url=https://monitor.iting.vn/alertmanager'
+      - '--web.external-url=https://monitor.datnhk252iting.dpdns.org/alertmanager'
     healthcheck:
       test: ["CMD-SHELL", "wget --quiet --tries=1 --spider http://localhost:9093/-/healthy || exit 1"]
       interval: 30s
@@ -275,7 +275,7 @@ grep -A3 "alerting:" /opt/iting/monitoring/prometheus/prometheus.yml
 
 ### 12.5 Add Alertmanager to Nginx (Monitoring Subdomain)
 
-Add to `/opt/iting/config/nginx/monitor.iting.vn.conf`, inside the HTTPS server block:
+Add to `/opt/iting/config/nginx/monitor.datnhk252iting.dpdns.org.conf`, inside the HTTPS server block:
 
 ```nginx
 # Alertmanager
@@ -294,13 +294,13 @@ location /alertmanager/ {
 cd /opt/iting
 
 # Build the Discord bridge image
-docker compose --env-file .env build alertmanager-discord
+docker compose -f /opt/iting/iting-repo/deploy/docker-compose.yml --env-file /opt/iting/.env --env-file /opt/iting/.env.prod build alertmanager-discord
 
 # Start Alertmanager and bridge
-docker compose --env-file .env up -d alertmanager alertmanager-discord
+docker compose -f /opt/iting/iting-repo/deploy/docker-compose.yml --env-file /opt/iting/.env --env-file /opt/iting/.env.prod up -d alertmanager alertmanager-discord
 
 # Reload Prometheus to pick up Alertmanager
-docker compose --env-file .env restart prometheus
+docker compose -f /opt/iting/iting-repo/deploy/docker-compose.yml --env-file /opt/iting/.env --env-file /opt/iting/.env.prod restart prometheus
 
 # Wait for startup
 sleep 10
@@ -339,7 +339,7 @@ curl -s http://localhost:9093/api/v2/alerts | jq .
 
 ```bash
 # Alertmanager is running
-docker compose --env-file .env ps alertmanager alertmanager-discord
+docker compose -f /opt/iting/iting-repo/deploy/docker-compose.yml --env-file /opt/iting/.env --env-file /opt/iting/.env.prod ps alertmanager alertmanager-discord
 
 # Alertmanager is healthy
 curl -s http://localhost:9093/api/v2/status | jq '.cluster'
@@ -362,7 +362,7 @@ curl -X POST http://localhost:9093/api/v1/alerts -H "Content-Type: application/j
 ## Rollback
 
 ```bash
-docker compose --env-file .env down alertmanager alertmanager-discord
+docker compose -f /opt/iting/iting-repo/deploy/docker-compose.yml --env-file /opt/iting/.env --env-file /opt/iting/.env.prod down alertmanager alertmanager-discord
 rm -rf /opt/iting/monitoring/alertmanager /opt/iting/config/alertmanager-discord
 
 # Remove alertmanager reference from prometheus.yml

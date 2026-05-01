@@ -11,7 +11,7 @@ services:
     ports:
       - "2181:2181"
     healthcheck:
-      test: ["CMD", "echo", "ruok", "|", "nc", "localhost", "2181"]
+      test: [ "CMD", "echo", "ruok", "|", "nc", "localhost", "2181" ]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -33,7 +33,7 @@ services:
       KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT_INTERNAL
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
     healthcheck:
-      test: ["CMD", "nc", "-z", "localhost", "9092"]
+      test: [ "CMD", "nc", "-z", "localhost", "9092" ]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -49,7 +49,7 @@ services:
     ports:
       - "5433:5432" # Exposed on 5433 to host to avoid conflicts
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d iting_job_portal"]
+      test: [ "CMD-SHELL", "pg_isready -U postgres -d iting_job_portal" ]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -79,58 +79,64 @@ services:
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/iting_job_portal?currentSchema=testdb
       SPRING_DATASOURCE_USERNAME: postgres
       SPRING_DATASOURCE_PASSWORD: 250904
-      
+
       # JPA/Hibernate
       SPRING_JPA_HIBERNATE_DDL_AUTO: none
       SPRING_JPA_PROPERTIES_HIBERNATE_DIALECT: org.hibernate.dialect.PostgreSQLDialect
       SPRING_JPA_PROPERTIES_HIBERNATE_FORMAT_SQL: true
       SPRING_JPA_PROPERTIES_HIBERNATE_DEFAULT_SCHEMA: testdb
-      
+
       # Kafka configuration
       SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:29092
       SPRING_FLYWAY_ENABLED: true
       SPRING_FLYWAY_DEFAULT_SCHEMA: testdb
       SPRING_FLYWAY_SCHEMAS: testdb
       SPRING_SQL_INIT_MODE: never
-      
+
       # Logging
       LOGGING_LEVEL_ROOT: INFO
       LOGGING_LEVEL_COM_ITING: DEBUG
       LOGGING_LEVEL_ORG_SPRINGFRAMEWORK_SECURITY: DEBUG
-      
+
       # Server config
       SERVER_PORT: 8080
       SERVER_SHUTDOWN: graceful
-      
+
       # Actuator
       MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE: health,info,metrics
       MANAGEMENT_ENDPOINT_HEALTH_SHOW_DETAILS: when_authorized
       MANAGEMENT_HEALTH_MAIL_ENABLED: false
-      
+
       # Application name
       SPRING_APPLICATION_NAME: iting-job-portal
-      
+
       # Swagger / OpenAPI
       SPRINGDOC_API_DOCS_ENABLED: true
       SPRINGDOC_API_DOCS_PATH: /v3/api-docs
       SPRINGDOC_SWAGGER_UI_ENABLED: true
       SPRINGDOC_SWAGGER_UI_PATH: /swagger-ui.html
-      
+
       # JWT configuration
       JWT_SECRET: 404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970
       JWT_EXPIRATION: 86400000
       JWT_REFRESH_SECRET: 7134743777217A25432A462D4A614E645267556B58703272357538782F413F4428472B4B6250645367566B5970
       JWT_REFRESH_EXPIRATION: 604800000
       JWT_REFRESH_MAX_TOKENS_PER_USER: 5
-      
+
       # AWS S3
       AWS_ACCESS_KEY: ${AWS_ACCESS_KEY:-local-dev-access-key}
       AWS_SECRET_KEY: ${AWS_SECRET_KEY:-local-dev-secret-key}
       AWS_REGION: ${AWS_REGION:-ap-southeast-1}
       AWS_S3_BUCKET: ${AWS_S3_BUCKET:-datn-jobweb}
       AWS_ENABLED: ${AWS_ENABLED:-true}
+
+      # Redis Configuration
+      SPRING_DATA_REDIS_HOST: redis
+      SPRING_DATA_REDIS_PORT: 6379
+      SPRING_DATA_REDIS_PASSWORD: ${REDIS_PASSWORD}
+      SPRING_CACHE_TYPE: redis
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health"]
+      test: [ "CMD", "curl", "-f", "http://localhost:8080/actuator/health" ]
       interval: 30s
       timeout: 5s
       start_period: 45s
