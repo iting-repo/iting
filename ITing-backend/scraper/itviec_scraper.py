@@ -41,9 +41,9 @@ class Config:
     # Scraper
     BASE_URL = "https://itviec.com"
     JOBS_URL = "https://itviec.com/it-jobs"
-    SCRAPE_PAGES = int(os.getenv('SCRAPE_PAGES', 5))
+    SCRAPE_PAGES = int(os.getenv('SCRAPE_PAGES', 0))
     DELAY_MIN = 1
-    DELAY_MAX = 3
+    DELAY_MAX = 7
     
     # Default employer_id for scraped jobs
     DEFAULT_EMPLOYER_ID = 11  # FPT Software (or create a "Scraped" company)
@@ -304,44 +304,77 @@ class ITviecScraper:
         return job
     
     def scrape_all(self, pages=None):
-        """Scrape all jobs from multiple pages"""
-        pages = pages or Config.SCRAPE_PAGES
-        
+        """
+        Scrape jobs from multiple pages.
+        If pages is None or 0, scrape until no more jobs are found.
+        """
         print("=" * 60)
         print("ITviec Scraper - Starting...")
         print("=" * 60)
-        
+
         all_jobs = []
-        
-        for page in range(1, pages + 1):
+        seen_urls = set()
+        page = 1
+        empty_page_count = 0
+        max_empty_pages = 2
+
+        while True:
+            if pages and page > pages:
+                break
+
             jobs = self.scrape_job_list(page)
-            
-            # Fetch details for each job
+
+            if not jobs:
+                empty_page_count += 1
+                print(f"  [!] Page {page} has no jobs. Empty count: {empty_page_count}")
+
+                if empty_page_count >= max_empty_pages:
+                    print("[*] Stop scraping because there are no more jobs.")
+                    break
+
+                page += 1
+                self.delay()
+                continue
+
+            empty_page_count = 0
+
             for i, job in enumerate(jobs):
                 try:
+                    detail_url = job.get("detail_url")
+
+                    if detail_url and detail_url in seen_urls:
+                        print(f"    [-] Duplicate skipped: {detail_url}")
+                        continue
+
+                    if detail_url:
+                        seen_urls.add(detail_url)
+
                     job = self.scrape_job_detail(job)
                     all_jobs.append(job)
-                    
-                    # Store company info
-                    if job.get('company_name'):
-                        self.companies[job['company_name']] = {
-                            'name': job.get('company_name'),
-                            'logo_url': job.get('company_logo'),
-                            'website': job.get('company_website'),
-                            'address': job.get('company_address'),
-                            'description': job.get('company_description'),
-                            'industry': job.get('company_industry'),
-                            'company_size': job.get('company_size'),
+
+                    if job.get("company_name"):
+                        self.companies[job["company_name"]] = {
+                            "name": job.get("company_name"),
+                            "logo_url": job.get("company_logo"),
+                            "website": job.get("company_website"),
+                            "address": job.get("company_address"),
+                            "description": job.get("company_description"),
+                            "industry": job.get("company_industry"),
+                            "company_size": job.get("company_size"),
                         }
+
                 except Exception as e:
                     print(f"  [!] Error processing job: {e}")
-            
+
+            print(f"[+] Page {page} done. Total jobs so far: {len(all_jobs)}")
+
+            page += 1
             self.delay()
-        
+
         self.jobs = all_jobs
         print(f"\n[+] Total jobs scraped: {len(self.jobs)}")
         print(f"[+] Total companies found: {len(self.companies)}")
-        
+
         return self.jobs
 
 # ==========================================

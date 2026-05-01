@@ -7,6 +7,7 @@ import com.iting.jobportal.admin.service.AdminCompanyService;
 import com.iting.jobportal.company.dto.mapper.CompanyMapper;
 import com.iting.jobportal.company.dto.response.CompanyResponse;
 import com.iting.jobportal.company.entity.Company;
+import com.iting.jobportal.company.entity.CompanyAuditLog;
 import com.iting.jobportal.company.entity.enums.CompanyAuditAction;
 import com.iting.jobportal.company.entity.enums.CompanyReviewStatus;
 import com.iting.jobportal.company.entity.enums.DocumentReviewStatus;
@@ -15,6 +16,10 @@ import com.iting.jobportal.company.repository.CompanyAuditLogRepository;
 import com.iting.jobportal.company.repository.CompanyRepository;
 import com.iting.jobportal.company.service.CompanyAuditService;
 import com.iting.jobportal.file.FileUploadService;
+import com.iting.jobportal.notification.dto.request.CreateNotificationRequest;
+import com.iting.jobportal.notification.enums.NotificationType;
+import com.iting.jobportal.notification.enums.RecipientType;
+import com.iting.jobportal.notification.service.NotificationService;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import com.iting.jobportal.company.repository.CompanyKybNoteRepository;
@@ -33,6 +38,7 @@ public class AdminCompanyServiceImpl implements AdminCompanyService {
         private final CompanyAuditService companyAuditService;
         private final CompanyAuditLogRepository companyAuditLogRepository;
         private final CompanyKybNoteRepository companyKybNoteRepository;
+        private final NotificationService notificationService;
 
         @Override
         public Page<CompanyResponse> getAllCompanies(int page, int size) {
@@ -305,6 +311,16 @@ public class AdminCompanyServiceImpl implements AdminCompanyService {
                 company.setStatusReason(request != null ? request.getReason() : null);
                 companyRepository.save(company);
 
+                // Đình chỉ tất cả job ACTIVE của công ty
+                if (company.getJobs() != null) {
+                        for (var job : company.getJobs()) {
+                                if (job.getStatus() == com.iting.jobportal.job.entity.enums.JobStatus.ACTIVE) {
+                                        job.setStatus(com.iting.jobportal.job.entity.enums.JobStatus.SUSPENDED);
+                                        job.setReviewReason("Công ty bị đình chỉ bởi quản trị viên");
+                                }
+                        }
+                }
+
                 companyAuditService.log(
                                 company,
                                 CompanyAuditAction.SUSPEND,
@@ -314,6 +330,25 @@ public class AdminCompanyServiceImpl implements AdminCompanyService {
                                 "Đình chỉ công ty",
                                 "admin#" + adminId,
                                 adminId);
+
+                // Gửi thông báo đình chỉ cho công ty
+                String reason = request != null && request.getReason() != null ? request.getReason()
+                                : "Không có lý do cụ thể";
+                try {
+                        notificationService.createNotification(CreateNotificationRequest.builder()
+                                        .recipientId(companyId)
+                                        .recipientType(RecipientType.COMPANY)
+                                        .type(NotificationType.COMPANY_SUSPENDED)
+                                        .content("Công ty của bạn đã bị đình chỉ hoạt động. Lý do: " + reason
+                                                        + ". Tất cả tin tuyển dụng đã bị tạm ẩn.")
+                                        .entityType("COMPANY")
+                                        .entityId(companyId)
+                                        .actionUrl("/employer/dashboard")
+                                        .build());
+                } catch (Exception e) {
+                        // Log but don't fail the suspend action if notification fails
+                        System.err.println("Failed to send suspend notification: " + e.getMessage());
+                }
         }
 
         @Override
@@ -326,47 +361,97 @@ public class AdminCompanyServiceImpl implements AdminCompanyService {
                                 ? company.getCompanyInfoUpdateStatus().name()
                                 : null;
 
-                company.setCompanyInfoUpdateStatus(CompanyReviewStatus.APPROVED);
+                // Khôi phục trạng thái cũ trước khi bị đình chỉ từ audit log
+                CompanyReviewStatus restoredStatus = CompanyReviewStatus.APPROVED; // default fallback
+                List<CompanyAuditLog> suspendLogs = companyAuditLogRepository
+                                .findTopByCompanyIdAndActionOrderByCreatedAtDesc(companyId, CompanyAuditAction.SUSPEND);
+                if (!suspendLogs.isEmpty()) {
+                        String previousStatus = suspendLogs.get(0).getFromStatus();
+                        if (previousStatus != null) {
+                                try {
+                                        restoredStatus = CompanyReviewStatus.valueOf(previousStatus);
+                                } catch (IllegalArgumentException ignored) {
+                                        // Fallback to APPROVED if the saved status is invalid
+                                }
+                        }
+                }
+
+                company.setCompanyInfoUpdateStatus(restoredStatus);
                 company.setActive(true);
                 company.setStatusReason(null); // Clear reason when unsuspending
                 companyRepository.save(company);
+
+                // Khôi phục tất cả job SUSPENDED của công ty về ACTIVE
+                if (company.getJobs() != null) {
+                        for (var job : company.getJobs()) {
+                                if (job.getStatus() == com.iting.jobportal.job.entity.enums.JobStatus.SUSPENDED) {
+                                        job.setStatus(com.iting.jobportal.job.entity.enums.JobStatus.ACTIVE);
+                                        job.setReviewReason(null);
+                                }
+                        }
+                }
 
                 companyAuditService.log(
                                 company,
                                 CompanyAuditAction.UNSUSPEND,
                                 oldStatus,
-                                CompanyReviewStatus.APPROVED.name(),
+                                restoredStatus.name(),
                                 null,
                                 "Kích hoạt lại công ty",
                                 "admin#" + adminId,
                                 adminId);
+
+                // Gửi thông báo gỡ đình chỉ cho công ty
+                try {
+                        notificationService.createNotification(CreateNotificationRequest.builder()
+                                        .recipientId(companyId)
+                                        .recipientType(RecipientType.COMPANY)
+                                        .type(NotificationType.COMPANY_UNSUSPENDED)
+                                        .content("Công ty của bạn đã được gỡ đình chỉ và hoạt động trở lại bình thường. "
+                                                        + "Các tin tuyển dụng đã được khôi phục.")
+                                        .entityType("COMPANY")
+                                        .entityId(companyId)
+                                        .actionUrl("/employer/dashboard")
+                                        .build());
+                } catch (Exception e) {
+                        System.err.println("Failed to send unsuspend notification: " + e.getMessage());
+                }
+        }
+
+    @Override
+    public String getCompanyBusinessLicenseViewUrl(Long adminId, Long companyId, int minutes) {
+        Company company = companyRepository.findById(companyId)
+                .orElseThrow(() -> new RuntimeException("Company not found"));
+
+        String fileUrl = company.getBusinessLicenseFileUrl();
+        if (fileUrl == null || fileUrl.isBlank()) {
+            throw new RuntimeException("Company has not uploaded business license");
         }
 
         @Override
-        public String getCompanyBusinessLicenseViewUrl(Long adminId, Long companyId, int minutes) {
-                Company company = companyRepository.findById(companyId)
-                                .orElseThrow(() -> new RuntimeException("Company not found"));
-
-                String fileUrl = company.getBusinessLicenseFileUrl();
-                if (fileUrl == null || fileUrl.isBlank()) {
-                        throw new RuntimeException("Company has not uploaded business license");
-                }
-
-                return fileUploadService.generatePresignedUrl(fileUrl, minutes);
+        public List<com.iting.jobportal.admin.dto.response.KybNoteResponse> getCompanyKybNotes(Long companyId) {
+                return companyKybNoteRepository.findByCompanyIdOrderByCreatedAtDesc(companyId)
+                                .stream()
+                                .map(note -> com.iting.jobportal.admin.dto.response.KybNoteResponse.builder()
+                                                .id(note.getId())
+                                                .companyId(note.getCompany().getId())
+                                                .adminId(note.getAdminId())
+                                                .noteContent(note.getNoteContent())
+                                                .createdAt(note.getCreatedAt())
+                                                .build())
+                                .toList();
         }
 
         @Override
-        public String getCompanyConsentDocumentViewUrl(Long companyId, int minutes) {
+        public com.iting.jobportal.admin.dto.response.KybNoteResponse addCompanyKybNote(Long adminId, Long companyId,
+                        com.iting.jobportal.admin.dto.request.CreateKybNoteRequest request) {
                 Company company = companyRepository.findById(companyId)
                                 .orElseThrow(() -> new RuntimeException("Company not found"));
-
-                String fileUrl = company.getConsentDocumentFileUrl();
-                if (fileUrl == null || fileUrl.isBlank()) {
-                        throw new RuntimeException("Company has not uploaded consent document");
-                }
-
-                return fileUploadService.generatePresignedUrl(fileUrl, minutes);
-        }
+                com.iting.jobportal.company.entity.CompanyKybNote note = new com.iting.jobportal.company.entity.CompanyKybNote();
+                note.setCompany(company);
+                note.setAdminId(adminId);
+                note.setNoteContent(request.getContent());
+                note = companyKybNoteRepository.save(note);
 
         @Override
         @Transactional
@@ -389,14 +474,13 @@ public class AdminCompanyServiceImpl implements AdminCompanyService {
                 companyRepository.delete(company);
         }
 
-        @Override
-        @Transactional
-        public void bulkApproveCompanies(Long adminId, List<Long> companyIds, CompanyApprovalRequest request) {
-                if (companyIds != null) {
-                        for (Long id : companyIds) {
-                                approveCompany(adminId, id, request);
-                        }
-                }
+    @Override
+    @Transactional
+    public void bulkApproveCompanies(Long adminId, List<Long> companyIds, CompanyApprovalRequest request) {
+        if (companyIds != null) {
+            for (Long id : companyIds) {
+                approveCompany(adminId, id, request);
+            }
         }
 
         @Override
@@ -409,128 +493,117 @@ public class AdminCompanyServiceImpl implements AdminCompanyService {
                 }
         }
 
-        @Override
-        @org.springframework.transaction.annotation.Transactional
-        public void bulkSuspendCompanies(Long adminId, java.util.List<Long> companyIds, ReviewRejectRequest request) {
-                if (companyIds != null) {
-                        for (Long id : companyIds) {
-                                suspendCompany(adminId, id, request);
-                        }
-                }
+        company.setCompanyInfoUpdateStatus(CompanyReviewStatus.APPROVED);company.setStatusReason(request!=null?request.getNote():null);
+
+    @Override
+    @org.springframework.transaction.annotation.Transactional
+    public void bulkDeleteCompanies(Long adminId, java.util.List<Long> companyIds) {
+        if (companyIds != null) {
+            for (Long id : companyIds) {
+                deleteCompany(adminId, id);
+            }
         }
+    }
 
-        @Override
-        @org.springframework.transaction.annotation.Transactional
-        public void bulkDeleteCompanies(Long adminId, java.util.List<Long> companyIds) {
-                if (companyIds != null) {
-                        for (Long id : companyIds) {
-                                deleteCompany(adminId, id);
-                        }
-                }
-        }
+    @Override
+    public List<CompanyAuditLogResponse> getCompanyAuditLogs(Long companyId) {
+        Company company = companyRepository.findById(companyId)
+                .orElseThrow(() -> new RuntimeException("Company not found"));
 
-        @Override
-        public List<CompanyAuditLogResponse> getCompanyAuditLogs(Long companyId) {
-                Company company = companyRepository.findById(companyId)
-                                .orElseThrow(() -> new RuntimeException("Company not found"));
+        return companyAuditLogRepository.findByCompany_IdOrderByCreatedAtDesc(companyId)
+                .stream()
+                .map(log -> CompanyAuditLogResponse.builder()
+                        .time(log.getCreatedAt())
+                        .companyName(company.getName())
+                        .action(log.getAction())
+                        .fromStatus(log.getFromStatus())
+                        .toStatus(log.getToStatus())
+                        .reason(log.getReason())
+                        .note(log.getNote())
+                        .actor(log.getActor())
+                        .actorId(log.getActorId())
+                        .build())
+                .toList();
+    }
 
-                return companyAuditLogRepository.findByCompany_IdOrderByCreatedAtDesc(companyId)
-                                .stream()
-                                .map(log -> CompanyAuditLogResponse.builder()
-                                                .time(log.getCreatedAt())
-                                                .companyName(company.getName())
-                                                .action(log.getAction())
-                                                .fromStatus(log.getFromStatus())
-                                                .toStatus(log.getToStatus())
-                                                .reason(log.getReason())
-                                                .note(log.getNote())
-                                                .actor(log.getActor())
-                                                .actorId(log.getActorId())
-                                                .build())
-                                .toList();
-        }
+    private CompanyAuditLogResponse mapToResponse(com.iting.jobportal.admin.dto.response.CompanyAuditLogView view) {
+        return CompanyAuditLogResponse.builder()
+                .time(view.getCreatedAt())
+                .companyName(view.getCompanyName())
+                .action(view.getAction())
+                .fromStatus(view.getFromStatus())
+                .toStatus(view.getToStatus())
+                .reason(view.getReason())
+                .note(view.getNote())
+                .actor(view.getActor())
+                .actorId(view.getActorId())
+                .build();
+    }
 
-        private CompanyAuditLogResponse mapToResponse(com.iting.jobportal.admin.dto.response.CompanyAuditLogView view) {
-                return CompanyAuditLogResponse.builder()
-                                .time(view.getCreatedAt())
-                                .companyName(view.getCompanyName())
-                                .action(view.getAction())
-                                .fromStatus(view.getFromStatus())
-                                .toStatus(view.getToStatus())
-                                .reason(view.getReason())
-                                .note(view.getNote())
-                                .actor(view.getActor())
-                                .actorId(view.getActorId())
-                                .build();
-        }
+    @Override
+    public List<CompanyAuditLogResponse> getAllCompanyAuditLogs(
+            CompanyAuditAction action,
+            Long companyId,
+            java.time.LocalDate fromDate,
+            java.time.LocalDate toDate) {
+        java.time.LocalDateTime fromDateTime = fromDate != null
+                ? fromDate.atStartOfDay()
+                : java.time.LocalDateTime.of(1970, 1, 1, 0, 0);
 
-        @Override
-        public List<CompanyAuditLogResponse> getAllCompanyAuditLogs(
-                        CompanyAuditAction action,
-                        Long companyId,
-                        java.time.LocalDate fromDate,
-                        java.time.LocalDate toDate) {
-                java.time.LocalDateTime fromDateTime = fromDate != null
-                                ? fromDate.atStartOfDay()
-                                : java.time.LocalDateTime.of(1970, 1, 1, 0, 0);
+        java.time.LocalDateTime toDateTime = toDate != null
+                ? toDate.atTime(23, 59, 59)
+                : java.time.LocalDateTime.of(2999, 12, 31, 23, 59, 59);
 
-                java.time.LocalDateTime toDateTime = toDate != null
-                                ? toDate.atTime(23, 59, 59)
-                                : java.time.LocalDateTime.of(2999, 12, 31, 23, 59, 59);
+        return companyAuditLogRepository.findAllWithCompanyFiltered(
+                action,
+                companyId,
+                fromDateTime,
+                toDateTime).stream()
+                .map(this::mapToResponse)
+                .toList();
+    }
 
-                return companyAuditLogRepository.findAllWithCompanyFiltered(
-                                action,
-                                companyId,
-                                fromDateTime,
-                                toDateTime).stream()
-                                .map(this::mapToResponse)
-                                .toList();
-        }
+    @Override
+    public java.io.ByteArrayInputStream exportCompaniesToExcel() {
+        List<Company> companies = companyRepository.findAll();
+        String[] headers = { "ID", "Name", "Tax Code", "Status", "Verification Level", "Email", "Phone" };
 
-        @Override
-        public java.io.ByteArrayInputStream exportCompaniesToExcel() {
-                List<Company> companies = companyRepository.findAll();
-                String[] headers = { "ID", "Name", "Tax Code", "Status", "Verification Level", "Email", "Phone" };
+        return com.iting.jobportal.common.excel.ExcelHelper.dataToExcel(
+                companies,
+                headers,
+                "Companies",
+                (company, row) -> {
+                    row.createCell(0).setCellValue(company.getId());
+                    row.createCell(1).setCellValue(company.getName());
+                    row.createCell(2).setCellValue(company.getTaxCode());
+                    row.createCell(3)
+                            .setCellValue(company.getCompanyInfoUpdateStatus() != null
+                                    ? company.getCompanyInfoUpdateStatus().name()
+                                    : "");
+                    row.createCell(4).setCellValue(
+                            company.getVerificationLevel() != null ? company.getVerificationLevel().name() : "");
+                    row.createCell(5).setCellValue(company.getCompanyEmail());
+                    row.createCell(6).setCellValue(company.getPhone());
+                });
+    }
 
-                return com.iting.jobportal.common.excel.ExcelHelper.dataToExcel(
-                                companies,
-                                headers,
-                                "Companies",
-                                (company, row) -> {
-                                        row.createCell(0).setCellValue(company.getId());
-                                        row.createCell(1).setCellValue(company.getName());
-                                        row.createCell(2).setCellValue(company.getTaxCode());
-                                        row.createCell(3)
-                                                        .setCellValue(company.getCompanyInfoUpdateStatus() != null
-                                                                        ? company.getCompanyInfoUpdateStatus().name()
-                                                                        : "");
-                                        row.createCell(4)
-                                                        .setCellValue(company.getVerificationLevel() != null
-                                                                        ? company.getVerificationLevel().name()
-                                                                        : "");
-                                        row.createCell(5).setCellValue(company.getCompanyEmail());
-                                        row.createCell(6).setCellValue(company.getPhone());
-                                });
-        }
-
-        @Override
-        @jakarta.transaction.Transactional
-        public void importCompaniesFromExcel(org.springframework.web.multipart.MultipartFile file) {
-                try {
-                        List<Company> companies = com.iting.jobportal.common.excel.ExcelHelper.excelToData(
-                                        file.getInputStream(),
-                                        row -> {
-                                                Company company = new Company();
-                                                company.setName(row.getCell(0).getStringCellValue());
-                                                company.setTaxCode(row.getCell(1).getStringCellValue());
-                                                company.setCompanyInfoUpdateStatus(CompanyReviewStatus.PENDING_REVIEW);
-                                                company.setVerificationLevel(VerificationLevel.UNVERIFIED);
-                                                return company;
-                                        });
-                        companyRepository.saveAll(companies);
-                } catch (java.io.IOException e) {
-                        throw new RuntimeException("fail to store excel data: " + e.getMessage());
-                }
+    @Override
+    @jakarta.transaction.Transactional
+    public void importCompaniesFromExcel(org.springframework.web.multipart.MultipartFile file) {
+        try {
+            List<Company> companies = com.iting.jobportal.common.excel.ExcelHelper.excelToData(
+                    file.getInputStream(),
+                    row -> {
+                        Company company = new Company();
+                        company.setName(row.getCell(0).getStringCellValue());
+                        company.setTaxCode(row.getCell(1).getStringCellValue());
+                        company.setCompanyInfoUpdateStatus(CompanyReviewStatus.PENDING_REVIEW);
+                        company.setVerificationLevel(VerificationLevel.UNVERIFIED);
+                        return company;
+                    });
+            companyRepository.saveAll(companies);
+        } catch (java.io.IOException e) {
+            throw new RuntimeException("fail to store excel data: " + e.getMessage());
         }
 
         @Override

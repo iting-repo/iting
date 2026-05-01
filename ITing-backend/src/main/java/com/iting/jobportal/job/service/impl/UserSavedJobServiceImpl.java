@@ -75,6 +75,7 @@ public class UserSavedJobServiceImpl implements UserSavedJobService {
                 .jobTitle(job.getTitle())
                 .companyName(job.getCompany() != null ? job.getCompany().getName() : null)
                 .companyLogo(job.getCompany() != null ? job.getCompany().getLogoUrl() : null)
+                .companyActive(job.getCompany() != null ? job.getCompany().getActive() : null)
                 .jobType(job.getJobType() != null ? job.getJobType().name() : null)
                 .location(job.getLocation())
                 .minSalary(job.getMinSalary())

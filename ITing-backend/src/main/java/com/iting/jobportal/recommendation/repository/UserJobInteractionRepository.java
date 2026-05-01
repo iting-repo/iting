@@ -21,6 +21,11 @@ public interface UserJobInteractionRepository extends JpaRepository<UserJobInter
     @Query("SELECT SUM(i.weight) FROM UserJobInteraction i WHERE i.account.id = :accountId")
     Long sumWeightByAccountId(@Param("accountId") Long accountId);
 
+    /**
+     * Collaborative Filtering — dùng SUM(weight) thay vì COUNT(id).
+     * Job mà user tương đồng đã APPLY (weight=5) sẽ xếp cao hơn job chỉ được VIEW
+     * (weight=1).
+     */
     @Query(value = """
                 SELECT i2.job_id FROM user_job_interactions i2
                 WHERE i2.user_id IN (
@@ -33,7 +38,20 @@ public interface UserJobInteractionRepository extends JpaRepository<UserJobInter
                     SELECT job_id FROM user_job_interactions WHERE user_id = :userId
                 )
                 GROUP BY i2.job_id
-                ORDER BY COUNT(i2.id) DESC
+                ORDER BY SUM(i2.weight) DESC
             """, nativeQuery = true)
     List<Long> findSuggestedJobsByUserInterest(@Param("userId") Long userId, Pageable pageable);
+
+    /**
+     * Lấy các job mà user đã tương tác gần đây (có weight cao nhất trước).
+     * Dùng để xây dựng "behavioral preference profile" — suy ra user thích
+     * skill/location nào.
+     */
+    @Query("SELECT i FROM UserJobInteraction i " +
+            "JOIN FETCH i.job j " +
+            "WHERE i.account.id = :accountId " +
+            "AND j.status = 'ACTIVE' " +
+            "ORDER BY i.weight DESC, i.createdAt DESC")
+    List<UserJobInteraction> findRecentInteractionsWithJobs(
+            @Param("accountId") Long accountId, Pageable pageable);
 }

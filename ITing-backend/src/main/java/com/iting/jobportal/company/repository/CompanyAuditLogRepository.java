@@ -57,4 +57,13 @@ public interface CompanyAuditLogRepository extends JpaRepository<CompanyAuditLog
             @Param("companyId") Long companyId,
             @Param("fromDate") LocalDateTime fromDate,
             @Param("toDate") LocalDateTime toDate);
+
+    /**
+     * Tìm bản ghi SUSPEND gần nhất của công ty để khôi phục trạng thái cũ khi
+     * unsuspend
+     */
+    @Query("SELECT l FROM CompanyAuditLog l WHERE l.company.id = :companyId AND l.action = :action ORDER BY l.createdAt DESC")
+    List<CompanyAuditLog> findTopByCompanyIdAndActionOrderByCreatedAtDesc(
+            @Param("companyId") Long companyId,
+            @Param("action") CompanyAuditAction action);
 }

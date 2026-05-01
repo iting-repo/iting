@@ -807,7 +807,10 @@ const FoundingInfoTab = ({ onTabChange }) => {
                 <option value="1-10">1-10 nhân sự</option>
                 <option value="11-50">11-50 nhân sự</option>
                 <option value="51-100">51-100 nhân sự</option>
-                <option value="100+">Trên 100 nhân sự</option>
+                <option value="100-500">100-500 nhân sự</option>
+                <option value="500-1000">500-1000 nhân sự</option>
+                <option value="1000+">1,000+ nhân sự</option>
+                <option value="5,000+">5,000+ nhân sự</option>
               </select>
             </div>
             <div>

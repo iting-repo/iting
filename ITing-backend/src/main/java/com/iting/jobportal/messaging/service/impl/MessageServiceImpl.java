@@ -42,6 +42,24 @@ public class MessageServiceImpl implements MessageService {
     @Override
     @Transactional
     public MessageResponse sendMessage(SendMessageRequest request, Long senderId) {
+        // Validate sender suspension if COMPANY
+        if (request.getSenderType() == SenderType.COMPANY) {
+            Company senderCompany = companyRepository.findById(senderId)
+                    .orElseThrow(() -> new RuntimeException("Company not found"));
+            if (senderCompany.getActive() != null && !senderCompany.getActive()) {
+                throw new RuntimeException("Tài khoản công ty của bạn đã bị đình chỉ. Không thể gửi tin nhắn.");
+            }
+        }
+
+        // Validate receiver suspension if COMPANY
+        if (request.getReceiverType() == ReceiverType.COMPANY) {
+            Company receiverCompany = companyRepository.findById(request.getReceiverId())
+                    .orElseThrow(() -> new RuntimeException("Company not found"));
+            if (receiverCompany.getActive() != null && !receiverCompany.getActive()) {
+                throw new RuntimeException("Công ty này hiện đang bị đình chỉ. Không thể gửi tin nhắn.");
+            }
+        }
+
         // Get or create conversation
         Conversation conversation;
 

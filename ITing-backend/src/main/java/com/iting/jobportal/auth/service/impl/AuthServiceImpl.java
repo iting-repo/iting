@@ -23,6 +23,7 @@ import com.iting.jobportal.auth.repository.OtpCodeRepository;
 import com.iting.jobportal.auth.entity.OtpCode;
 import com.iting.jobportal.common.service.EmailService;
 import com.iting.jobportal.common.service.EmailTemplateService;
+import com.iting.jobportal.admin.service.AdminNotificationService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -46,6 +47,7 @@ public class AuthServiceImpl implements AuthService {
     private final OtpCodeRepository otpCodeRepository;
     private final EmailService emailService;
     private final EmailTemplateService emailTemplateService;
+    private final AdminNotificationService adminNotificationService;
 
     @Override
     @Transactional
@@ -274,6 +276,13 @@ public class AuthServiceImpl implements AuthService {
         company.setLastUpdate(LocalDateTime.now());
 
         companyRepository.save(company);
+        
+        // Gửi thông báo cho Admin
+        try {
+            adminNotificationService.notifyNewCompany(company);
+        } catch (Exception e) {
+            log.error("Lỗi khi gửi thông báo cho admin về công ty mới đăng ký", e);
+        }
     }
 
     @Transactional

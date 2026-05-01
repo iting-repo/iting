@@ -42,4 +42,16 @@ public class AdminConfigController {
         adminConfigService.resetToDefault();
         return ResponseEntity.ok().build();
     }
+
+    @PostMapping("/test-email")
+    @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "Test SMTP connection")
+    public ResponseEntity<?> testEmailConnection(@RequestBody SystemConfig config) {
+        boolean success = adminConfigService.testSmtpConnection(config);
+        if (success) {
+            return ResponseEntity.ok().build();
+        } else {
+            return ResponseEntity.badRequest().body("Kết nối SMTP thất bại. Vui lòng kiểm tra lại cấu hình.");
+        }
+    }
 }

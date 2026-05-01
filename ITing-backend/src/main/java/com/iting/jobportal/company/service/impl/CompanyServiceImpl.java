@@ -46,6 +46,7 @@ public class CompanyServiceImpl implements CompanyService {
     private final JobRepository jobRepository;
     private final ApplicationEventPublisher eventPublisher;
     private final CompanyMapper companyMapper;
+    private final com.iting.jobportal.company.repository.CompanyReviewRepository companyReviewRepository;
 
     public CompanyServiceImpl(CompanyRepository companyRepository,
             CompanyFollowService companyFollowService,
@@ -53,7 +54,8 @@ public class CompanyServiceImpl implements CompanyService {
             AccountRepository accountRepository,
             JobRepository jobRepository,
             ApplicationEventPublisher eventPublisher,
-            CompanyMapper companyMapper) {
+            CompanyMapper companyMapper,
+            com.iting.jobportal.company.repository.CompanyReviewRepository companyReviewRepository) {
         this.companyRepository = companyRepository;
         this.companyFollowService = companyFollowService;
         this.fileUploadService = fileUploadService;
@@ -61,6 +63,7 @@ public class CompanyServiceImpl implements CompanyService {
         this.jobRepository = jobRepository;
         this.eventPublisher = eventPublisher;
         this.companyMapper = companyMapper;
+        this.companyReviewRepository = companyReviewRepository;
     }
 
     @Override
@@ -480,8 +483,12 @@ public class CompanyServiceImpl implements CompanyService {
     // ==========================================
     private CompanyResponse mapToResponse(Company company) {
         CompanyResponse response = companyMapper.toResponse(company);
-        response.setActiveJobCount((int) jobRepository.countByCompany_IdAndStatus(company.getId(), JobStatus.ACTIVE));
+        response.setActiveJobCount((int) jobRepository.countActiveAndNotExpiredByCompanyId(company.getId()));
         response.setFollowerCount(companyFollowService.getFollowerCount(company.getId()));
+        // Set average rating & review count
+        Double avgRating = companyReviewRepository.getAverageRating(company.getId());
+        response.setAverageRating(avgRating != null ? Math.round(avgRating * 10.0) / 10.0 : null);
+        response.setReviewCount(companyReviewRepository.countByCompanyId(company.getId()));
         return response;
     }
 
@@ -519,6 +526,9 @@ public class CompanyServiceImpl implements CompanyService {
 
             // Only show setup profiles
             predicates.add(cb.equal(root.get("profileSetup"), true));
+
+            // Only show active companies (exclude suspended)
+            predicates.add(cb.equal(root.get("active"), true));
 
             return cb.and(predicates.toArray(new Predicate[0]));
         };

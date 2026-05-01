@@ -59,7 +59,8 @@ const CompanyDetailPage = () => {
 
         if (isAuthenticated && user?.role === 'CANDIDATE') {
           const followRes = await companyService.checkFollowing(id);
-          setIsFollowing(followRes.data?.isFollowing ?? followRes.data ?? followRes);
+          // axiosInstance already unwraps response.data, so followRes = { isFollowing: true/false }
+          setIsFollowing(followRes?.isFollowing === true);
         }
 
         // Fetch jobs separately to not block main content
@@ -177,7 +178,7 @@ const CompanyDetailPage = () => {
           </div>
           <h2 className="text-2xl font-bold text-gray-800 mb-4">Công ty hiện không khả dụng</h2>
           <p className="text-gray-500 leading-relaxed mb-8">
-            Trang công ty này đang tạm ngừng hoạt động. 
+            Trang công ty này đang tạm ngừng hoạt động.
             Các tin tuyển dụng liên quan cũng không khả dụng vào lúc này.
           </p>
           <button
@@ -279,8 +280,8 @@ const CompanyDetailPage = () => {
                 onClick={handleFollowToggle}
                 disabled={isProcessingFollow}
                 className={`flex-1 md:flex-none flex items-center justify-center gap-2 h-14 px-8 rounded-2xl font-black text-sm transition-all duration-300 ${isFollowing
-                    ? "bg-[#2fa0cf] text-white shadow-xl shadow-blue-100"
-                    : "bg-[#3AB4E6] text-white hover:bg-[#2A9DCB] shadow-xl shadow-blue-200 hover:-translate-y-1 active:scale-95"
+                  ? "bg-[#2fa0cf] text-white shadow-xl shadow-blue-100"
+                  : "bg-[#3AB4E6] text-white hover:bg-[#2A9DCB] shadow-xl shadow-blue-200 hover:-translate-y-1 active:scale-95"
                   }`}
               >
                 {isFollowing ? (
@@ -299,8 +300,8 @@ const CompanyDetailPage = () => {
                 onClick={handleFollowToggle}
                 disabled={isProcessingFollow}
                 className={`w-14 h-14 flex items-center justify-center rounded-2xl transition-all duration-300 border-2 ${isFollowing
-                    ? "border-red-100 bg-red-50 text-red-500 shadow-inner"
-                    : "border-gray-100 bg-white text-gray-400 hover:border-[#3AB4E6] hover:text-[#3AB4E6] hover:-translate-y-1"
+                  ? "border-red-100 bg-red-50 text-red-500 shadow-inner"
+                  : "border-gray-100 bg-white text-gray-400 hover:border-[#3AB4E6] hover:text-[#3AB4E6] hover:-translate-y-1"
                   }`}
               >
                 <Heart className={`w-6 h-6 ${isFollowing ? "fill-current" : ""}`} />
@@ -382,7 +383,7 @@ const CompanyDetailPage = () => {
                   <div className="w-12 h-12 rounded-2xl bg-blue-50 flex items-center justify-center">
                     <Briefcase className="w-7 h-7 text-[#3AB4E6]" />
                   </div>
-                  Tuyển dụng ({company.activeJobCount || jobs.length})
+                  Tuyển dụng ({isLoadingJobs ? (company.activeJobCount || '...') : jobs.length})
                 </h2>
                 {(company.activeJobCount > jobs.length || jobs.length > 5) && (
                   <button
@@ -600,8 +601,8 @@ const CompanyDetailPage = () => {
                   onClick={handleFollowToggle}
                   disabled={isProcessingFollow}
                   className={`w-full h-14 rounded-2xl font-black transition-all relative z-10 shadow-xl ${isFollowing
-                      ? "bg-white/20 text-white hover:bg-white/30 border border-white/30 backdrop-blur-md"
-                      : "bg-white !text-[#3AB4E6] !opacity-100 hover:bg-gray-50 hover:shadow-2xl hover:-translate-y-1 active:scale-95"
+                    ? "bg-white/20 text-white hover:bg-white/30 border border-white/30 backdrop-blur-md"
+                    : "bg-white !text-[#3AB4E6] !opacity-100 hover:bg-gray-50 hover:shadow-2xl hover:-translate-y-1 active:scale-95"
                     }`}
                 >
                   {isFollowing ? "Đang nhận tin" : "Theo dõi ngay"}

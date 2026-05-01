@@ -6,7 +6,9 @@ import com.iting.jobportal.admin.service.AdminConfigService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
+import org.springframework.mail.javamail.JavaMailSenderImpl;
+import jakarta.mail.MessagingException;
+import java.util.Properties;
 @Service
 @RequiredArgsConstructor
 public class AdminConfigServiceImpl implements AdminConfigService {
@@ -61,6 +63,32 @@ public class AdminConfigServiceImpl implements AdminConfigService {
     public void resetToDefault() {
         systemConfigRepository.deleteAll();
         createDefaultConfig();
+    }
+
+    @Override
+    public boolean testSmtpConnection(SystemConfig config) {
+        JavaMailSenderImpl mailSender = new JavaMailSenderImpl();
+        mailSender.setHost(config.getSmtpHost());
+        try {
+            mailSender.setPort(Integer.parseInt(config.getSmtpPort()));
+        } catch (NumberFormatException e) {
+            return false;
+        }
+        mailSender.setUsername(config.getSmtpUser());
+        mailSender.setPassword(config.getSmtpPassword());
+
+        Properties props = mailSender.getJavaMailProperties();
+        props.put("mail.transport.protocol", "smtp");
+        props.put("mail.smtp.auth", "true");
+        props.put("mail.smtp.starttls.enable", "true");
+        props.put("mail.debug", "false");
+
+        try {
+            mailSender.testConnection();
+            return true;
+        } catch (MessagingException | RuntimeException e) {
+            return false;
+        }
     }
 
     private SystemConfig createDefaultConfig() {

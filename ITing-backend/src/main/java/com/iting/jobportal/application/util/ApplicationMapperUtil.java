@@ -43,6 +43,7 @@ public class ApplicationMapperUtil {
         Long companyId = null;
         String companyName = null;
         String companyLogo = null;
+        Boolean companyActive = null;
 
         Optional<Job> jobOpt = jobRepository.findById(jobId);
         if (jobOpt.isPresent()) {
@@ -53,6 +54,7 @@ public class ApplicationMapperUtil {
                 companyId = company.getId();
                 companyName = company.getName();
                 companyLogo = company.getLogoUrl();
+                companyActive = company.getActive();
             }
         }
         String avatarUrl = userRepository.findById(userId).map(User::getAvatarUrl).orElse(null);
@@ -146,6 +148,7 @@ public class ApplicationMapperUtil {
                 .avatarUrl(avatarUrl)
                 .jobTitle(jobTitle)
                 .companyLogo(companyLogo)
+                .companyActive(companyActive)
                 .introduction(applyForm.getIntroduction())
                 .cvFileName(cvFileName)
                 .cvFileType(cvFileType)
