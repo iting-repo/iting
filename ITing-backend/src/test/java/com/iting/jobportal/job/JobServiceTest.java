@@ -21,6 +21,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.Optional;
 
@@ -77,9 +78,9 @@ class JobServiceTest {
         request.setDescription("Develop software");
         request.setProvince("Hanoi");
         request.setAddress("123 Main St");
-        request.setSalaryType(SalaryType.MONTHLY);
-        request.setMinSalary(10_000_000L);
-        request.setMaxSalary(20_000_000L);
+        request.setSalaryType(SalaryType.MONTH);
+        request.setMinSalary(BigDecimal.valueOf(10_000_000));
+        request.setMaxSalary(BigDecimal.valueOf(20_000_000));
         request.setDueDate(LocalDate.now().plusDays(30));
         request.setMaxAccept(5);
 
