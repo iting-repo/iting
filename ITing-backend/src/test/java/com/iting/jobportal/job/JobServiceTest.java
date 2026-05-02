@@ -21,6 +21,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.lang.reflect.Field;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.Optional;
@@ -55,7 +56,7 @@ class JobServiceTest {
     private Long employerId = 1L;
 
     @BeforeEach
-    void setUp() {
+    void setUp() throws Exception {
         testCompany = new Company();
         testCompany.setId(employerId);
         testCompany.setName("Test Company");
@@ -68,6 +69,10 @@ class JobServiceTest {
                 .position("Developer")
                 .status(JobStatus.PENDING)
                 .build();
+
+        Field emField = JobServiceImpl.class.getDeclaredField("entityManager");
+        emField.setAccessible(true);
+        emField.set(jobService, entityManager);
     }
 
     @Test
