@@ -663,9 +663,10 @@ const HomePage = () => {
                         )}
                         {(jobs ?? []).length === 0 && !isLoading ? (
                             <div className="text-center py-20 text-gray-500">Không tìm thấy công việc nào.</div>
-                        ) : (jobs ?? []).map((job) => {
-                            const isSaved = savedJobIds.includes(job.id);
-                            return (
+                        ) : (
+                            (jobs ?? []).map((job) => {
+                                const isSaved = savedJobIds.includes(job.id);
+                                return (
                                 <div
                                     key={job.id}
                                     onClick={() => handleJobClick(job)}
@@ -734,7 +735,9 @@ const HomePage = () => {
                                         </div>
                                     </div>
                                 </div>
-                            ))}
+                                );
+                            })
+                        )}
                     </div>
 
                     {/* 5. PAGINATION: Bỏ nút đen, dùng style Clean */}

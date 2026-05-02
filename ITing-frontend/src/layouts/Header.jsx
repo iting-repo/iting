@@ -49,12 +49,6 @@ const Header = () => {
     setTimeout(() => dispatch(logout()), 100);
   };
 
-  const isActive = (path) => {
-    return location.pathname === path
-      ? 'text-[#3AB4E6] font-bold'
-      : 'text-gray-600 hover:text-[#3AB4E6] font-medium';
-  };
-
   const updateRecentOnIncomingMessage = (msg) => {
     if (!msg?.conversationId) return;
     setRecentConversations((prev) => {

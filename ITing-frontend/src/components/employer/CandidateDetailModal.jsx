@@ -495,9 +495,9 @@ const CandidateDetailModal = ({ candidate, onClose, onStatusUpdate }) => {
                                 </div>
                             </div>
                         </div>
+                    )}
             </div>
-            </div>
-        </div >
+        </div>
     );
 };
 

@@ -23,6 +23,7 @@ on:
 
 permissions:
   contents: read
+  actions: read
   packages: write
   security-events: write
 
@@ -48,25 +49,21 @@ jobs:
         with:
           java-version: ${{ env.JAVA_VERSION }}
           distribution: "temurin"
-          cache: "gradle"
-
-      - name: Grant execute permission
-        working-directory: ITing-backend
-        run: chmod +x gradlew
+          cache: "maven"
 
       - name: Build backend
         working-directory: ITing-backend
-        run: ./gradlew bootJar --no-daemon
+        run: mvn -B clean package -DskipTests
 
       - name: Run tests
         working-directory: ITing-backend
-        run: ./gradlew test --no-daemon
+        run: mvn -B test
 
       - name: Upload JAR
         uses: actions/upload-artifact@v4
         with:
           name: backend-jar
-          path: ITing-backend/build/libs/*.jar
+          path: ITing-backend/target/*.jar
           retention-days: 5
 
   # ========================================
@@ -127,8 +124,9 @@ jobs:
           severity: "CRITICAL,HIGH"
 
       - name: Upload Trivy results
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/codeql-action/upload-sarif@v4
         if: always()
+        continue-on-error: true
         with:
           sarif_file: "trivy-results.sarif"
 
@@ -159,7 +157,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: backend-jar
-          path: ITing-backend/build/libs/
+          path: ITing-backend/target/
 
       - name: Download frontend dist
         uses: actions/download-artifact@v4
