@@ -1,0 +1,74 @@
+@startuml
+title ACT-HR-MANAGE-JOBS (Revised - Employer Job Lifecycle)
+
+skinparam activity {
+  BackgroundColor #ffffff
+  DiamondBackgroundColor #EEF2FF
+  StartColor #10B981
+  EndColor #EF4444
+  ArrowColor #6366F1
+}
+
+|Employer (HR)|
+start
+:Mở Quản lý tin tuyển dụng;
+
+|Frontend (UI)|
+:Tải danh sách tin (GET /api/employer/jobs/my-jobs);
+:Hiển thị danh sách kèm trạng thái\n(ACTIVE, PENDING, REJECTED, CLOSED);
+
+|Employer (HR)|
+if (Hành động?) then (Đăng tin mới)
+  |Frontend (UI)|
+  :Nhập thông tin Job;
+  :Gửi yêu cầu POST /api/employer/jobs;
+  
+  |Backend (JobService)|
+  :Kiểm tra quy định công ty (validateJobBeforeSubmit);
+  if (Company == PREMIUM?) then (Yes)
+    :Status = **ACTIVE**;
+  else (No)
+    :Status = **PENDING**;
+  endif
+  :Lưu Job vào DB;
+  :Lưu Audit vào **company_upload_job**;
+  
+  |Frontend (UI)|
+  if (Status == PENDING) then (Yes)
+    :Thông báo "Chờ Admin duyệt";
+  else (No)
+    :Thông báo "Đăng tin thành công";
+  endif
+
+elseif (Sửa/Gia hạn) then (Có)
+  |Frontend (UI)|
+  :Cập nhật thông tin / Gia hạn thêm ngày;
+  :Gửi yêu cầu PUT/{id} hoặc POST/{id}/extend;
+  |Backend (JobService)|
+  :Cập nhật bản ghi;
+  :Ghi nhận lịch sử (Audit);
+  |Frontend (UI)|
+  :Xác nhận cập nhật thành công;
+
+elseif (Bị từ chối -> Gửi lại) then (Có)
+  |Employer (HR)|
+  :Xem lý do từ chối (reviewReason);
+  :Chỉnh sửa nội dung;
+  |Frontend (UI)|
+  :Gửi yêu cầu POST /{id}/submit-review;
+  |Backend (JobService)|
+  :Chuyển trạng thái REJECTED -> **PENDING**;
+  :Xóa các ghi chú cũ;
+
+else (Đóng/Xóa/Mở lại)
+  |Frontend (UI)|
+  :Gửi yêu cầu close/reopen/delete;
+  |Backend (JobService)|
+  :Cập nhật status của Job tương ứng;
+  :Cập nhật applicationCount nếu cần;
+endif
+
+|Frontend (UI)|
+:Làm mới danh sách tin;
+stop
+@enduml

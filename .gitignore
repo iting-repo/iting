@@ -1,14 +1,102 @@
-# IntelliJ
+# IntelliJ / IDE
 .idea/
 *.iml
+.vscode/
 
 # Gradle build
+.gradle/
+build/
 ITing/.gradle/
 ITing/build/
 
-# Logs
-*.log
+# Frontend deps/build
+node_modules/
+dist/
+.next/
+coverage/
 
 node_modules
 dist
 .env
+
+# Node / frontend
+**/node_modules/
+ITing-frontend/node_modules/
+ITing-frontend/dist/
+
+# IDEs, editors
+.vscode/
+.classpath
+.project
+.settings/
+.DS_Store
+
+# Java artifacts
+*.class
+*.jar
+*.war
+
+# Test / coverage
+coverage/
+.coverage
+test-results/
+playwright-report/
+.pytest_cache/
+
+# Maven
+.mvn/
+
+# Temporary files
+*.tmp
+*.swp
+*~
+
+.opencode/
+
+iting-key-pair.pem
+
+skills-lock.json
+# Environment files
+.env
+.env.*
+
+# Python virtual environments
+.venv/
+venv/
+env/
+
+# Python cache
+__pycache__/
+*.py[cod]
+.pytest_cache/
+
+# Playwright / test artifacts
+playwright-report/
+test-results/
+*.webm
+
+# LaTeX build files
+*.aux
+*.fdb_latexmk
+*.fls
+*.out
+*.toc
+*.synctex.gz
+
+# Logs / temp
+*.log
+*.tmp
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Local/private config
+.codex/
+# Markdown docs
+*.md
+
+# LaTeX source files
+*.tex
+
+client_secret_827083893126-sagt6pmtatd2nkfpkag4t94ajcikbmun.apps.googleusercontent.com.json

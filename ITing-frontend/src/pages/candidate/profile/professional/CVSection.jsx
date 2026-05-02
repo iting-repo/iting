@@ -1,15 +1,18 @@
 import React, { useState, useEffect } from 'react';
-import { FileText, Upload, CheckCircle, MoreVertical, Trash2, Star, Plus } from 'lucide-react';
+import { FileText, Upload, CheckCircle, MoreVertical, Trash2, Star, Plus, Loader2 } from 'lucide-react';
 import { Button, Card, Input } from "../../../../components/common";
 import axiosInstance from "../../../../utils/axiosInstance";
+import cvService from "../../../../services/cvService";
+import { toast } from "sonner";
 
 const CVSection = () => {
     const [cvs, setCvs] = useState([]);
     const [isAdding, setIsAdding] = useState(false);
+    const [isUploading, setIsUploading] = useState(false);
+    const [selectedFile, setSelectedFile] = useState(null);
     
     const [formData, setFormData] = useState({
         title: '',
-        fileUrl: '',
         isDefault: false
     });
 
@@ -36,16 +39,35 @@ const CVSection = () => {
 
     const handleAddSubmit = async (e) => {
         e.preventDefault();
-        if (!formData.title.trim() || !formData.fileUrl.trim()) return;
+        if (!selectedFile) {
+            toast.error("Vui lòng chọn file CV!");
+            return;
+        }
         
+        const uploadData = new FormData();
+        uploadData.append('file', selectedFile);
+        if (formData.title) {
+            uploadData.append('title', formData.title);
+        }
+
         try {
-            await axiosInstance.post('/user/professional-profile/cv', formData);
-            setFormData({ title: '', fileUrl: '', isDefault: false });
+            setIsUploading(true);
+            await cvService.uploadCV(uploadData);
+            
+            // If user wants it default, we need a separate call if the upload endpoint doesn't handle it
+            // Backend CVServiceImpl.uploadCV sets isDefault=false by default.
+            // Let's check if we need to call setDefaultCV.
+            
+            toast.success("Tải CV lên thành công!");
+            setFormData({ title: '', isDefault: false });
+            setSelectedFile(null);
             setIsAdding(false);
             fetchCVs();
         } catch (error) {
-            console.error("Failed to add CV", error);
-            alert("Có lỗi xảy ra khi thêm CV!");
+            console.error("Failed to upload CV", error);
+            toast.error(error.message || "Có lỗi xảy ra khi tải CV lên!");
+        } finally {
+            setIsUploading(false);
         }
     };
 
@@ -79,7 +101,7 @@ const CVSection = () => {
                 </div>
                 {!isAdding && (
                     <Button variant="outline" className="text-blue-600 border-blue-200 hover:bg-blue-50" onClick={() => setIsAdding(true)}>
-                        <Plus className="w-4 h-4 mr-2" /> Thêm CV (URL)
+                        <Upload className="w-4 h-4 mr-2" /> Tải lên CV (PDF)
                     </Button>
                 )}
             </div>
@@ -93,30 +115,39 @@ const CVSection = () => {
                         </div>
                         <div className="p-4 md:p-6 overflow-y-auto">
                             <form onSubmit={handleAddSubmit} className="space-y-4">
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div className="space-y-4">
                                     <div>
-                                        <label className="block text-xs font-medium text-gray-700 mb-1">Tên CV *</label>
-                                        <Input name="title" value={formData.title} onChange={handleChange} required placeholder="VD: Backend Developer CV" />
+                                        <label className="block text-xs font-medium text-gray-700 mb-1">Tên CV (Tùy chọn)</label>
+                                        <Input name="title" value={formData.title} onChange={handleChange} placeholder="VD: Backend Developer CV" />
                                     </div>
-                                    <div>
-                                        <label className="block text-xs font-medium text-gray-700 mb-1">URL file CV (Cloud storage, Dropbox...) *</label>
-                                        <Input name="fileUrl" value={formData.fileUrl} onChange={handleChange} required placeholder="https://..." />
+                                    
+                                    <div className="border-2 border-dashed border-gray-200 rounded-xl p-6 flex flex-col items-center justify-center text-center hover:bg-gray-50 transition-colors cursor-pointer relative">
+                                        <input 
+                                            type="file" 
+                                            accept=".pdf,.doc,.docx" 
+                                            onChange={(e) => setSelectedFile(e.target.files[0])}
+                                            className="absolute inset-0 opacity-0 cursor-pointer"
+                                            required
+                                        />
+                                        <div className="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center text-blue-600 mb-2">
+                                            <Upload className="w-5 h-5" />
+                                        </div>
+                                        <p className="text-sm font-medium text-gray-700">
+                                            {selectedFile ? selectedFile.name : "Kéo thả hoặc nhấp để chọn file"}
+                                        </p>
+                                        <p className="text-xs text-gray-400 mt-1">Hỗ trợ PDF, DOC, DOCX (Tối đa 5MB)</p>
                                     </div>
-                                </div>
-                                <div className="flex items-center mt-2">
-                                    <input 
-                                        type="checkbox" 
-                                        id="isDefault" 
-                                        name="isDefault" 
-                                        checked={formData.isDefault} 
-                                        onChange={handleChange} 
-                                        className="mr-2 rounded border-gray-300 text-blue-600 focus:ring-blue-500" 
-                                    />
-                                    <label htmlFor="isDefault" className="text-xs text-gray-600 font-medium">Đặt làm CV mặc định</label>
                                 </div>
                                 <div className="flex gap-3 justify-end mt-6 pt-4 border-t border-gray-100">
-                                    <Button type="button" variant="outline" onClick={() => setIsAdding(false)}>Hủy</Button>
-                                    <Button type="submit" variant="primary">Lưu CV</Button>
+                                    <Button type="button" variant="outline" onClick={() => setIsAdding(false)} disabled={isUploading}>Hủy</Button>
+                                    <Button type="submit" variant="primary" disabled={isUploading || !selectedFile}>
+                                        {isUploading ? (
+                                            <>
+                                                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                                Đang tải lên...
+                                            </>
+                                        ) : "Bắt đầu tải lên"}
+                                    </Button>
                                 </div>
                             </form>
                         </div>

@@ -1,0 +1,22 @@
+@startuml
+left to right direction
+actor "Candidate" as c
+actor "Employer (HR)" as hr
+actor "Admin" as adm
+
+rectangle "Hệ thống AI (Gemma Embedding)" {
+  usecase "Matching CV & Job" as UC1
+  usecase "Gợi ý việc làm thông minh" as UC2
+  usecase "Tìm ứng viên bằng CV (Scanner)" as UC3
+  usecase "Tìm ứng viên bằng Keyword CV" as UC4
+  usecase "Tự động kiểm duyệt tin (AI Review)" as UC5
+}
+
+c --> UC1
+c --> UC2
+hr --> UC3
+hr --> UC4
+adm --> UC5
+
+UC1 ..> UC2 : <<include>>
+@enduml

@@ -1,0 +1,22 @@
+@startuml
+actor Guest as User
+participant FE
+participant AuthSvc
+database DB
+
+User -> FE : Nhập email/pw
+FE -> AuthSvc : login(email,pw)                ' sync
+AuthSvc -> DB : findUser(email)                ' sync
+DB --> AuthSvc : user?/null                    ' reply
+
+alt user không tồn tại
+  AuthSvc --> FE : error("Email hoặc mật khẩu không chính xác")
+else user tồn tại
+  AuthSvc -> AuthSvc : verifyPassword(hash)    ' SELF
+  alt đúng mật khẩu & active
+    AuthSvc --> FE : success(session)
+  else sai mật khẩu / chưa kích hoạt
+    AuthSvc --> FE : error("Email hoặc mật khẩu không chính xác")
+  end
+end
+@enduml

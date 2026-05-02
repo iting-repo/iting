@@ -6,7 +6,7 @@ import Footer from './Footer'; // 1. Import Footer
 const MainLayout = () => {
   return (
     // Flex-col và min-h-screen giúp footer luôn nằm đáy
-    <div className="flex flex-col min-h-screen font-sans bg-gray-50">
+    <div className="flex flex-col min-h-screen bg-gray-50">
       
       {/* HEADER (Sticky) */}
       <Header />

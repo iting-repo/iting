@@ -1,0 +1,20 @@
+@startuml
+actor HR
+participant FE
+participant NotifSvc
+participant ApplicantSvc
+database DB
+
+
+HR -> FE : Tạo nội dung + chọn mẫu
+FE -> ApplicantSvc : queryRecipients(filters) ' sync
+ApplicantSvc -> DB : SELECT candidates by filters ' sync
+DB --> ApplicantSvc : recipients
+ApplicantSvc --> FE : recipients ' reply
+HR -> FE : Gửi
+FE -> NotifSvc : sendTo(recipients,payload) ' sync (enqueue)
+NotifSvc ->> NotifSvc : enqueueBatch(recipients) ' SELF + ASYNC dispatch
+NotifSvc -> DB : INSERT notification logs (batch) ' sync
+DB --> NotifSvc : ok
+NotifSvc --> FE : result(summary) ' reply
+@enduml

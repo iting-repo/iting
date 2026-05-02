@@ -1,0 +1,98 @@
+/project/src/main/java/com/ITing/JobPortal/admin/entity/Admin.java:37: warning: @Builder will ignore the initializing expression entirely. If you want the initializing expression to serve as default, add @Builder.Default. If it is not supposed to be settable during building, make the field final.
+    private Integer loginCount = 0;
+                    ^
+/project/src/main/java/com/ITing/JobPortal/admin/entity/Admin.java:43: warning: @Builder will ignore the initializing expression entirely. If you want the initializing expression to serve as default, add @Builder.Default. If it is not supposed to be settable during building, make the field final.
+    private Boolean active = true;
+                    ^
+/project/src/main/java/com/ITing/JobPortal/notification/entity/Notification.java:42: warning: @Builder will ignore the initializing expression entirely. If you want the initializing expression to serve as default, add @Builder.Default. If it is not supposed to be settable during building, make the field final.
+    private Boolean isRead = false;
+                    ^
+/project/src/main/java/com/ITing/JobPortal/userprofile/entity/CV.java:36: warning: @Builder will ignore the initializing expression entirely. If you want the initializing expression to serve as default, add @Builder.Default. If it is not supposed to be settable during building, make the field final.
+    private Boolean isDefault = false;
+                    ^
+/project/src/main/java/com/ITing/JobPortal/auth/entity/Account.java:35: warning: @Builder will ignore the initializing expression entirely. If you want the initializing expression to serve as default, add @Builder.Default. If it is not supposed to be settable during building, make the field final.
+    private Role role = Role.CANDIDATE;
+                 ^
+/project/src/main/java/com/ITing/JobPortal/messaging/entity/Message.java:44: warning: @Builder will ignore the initializing expression entirely. If you want the initializing expression to serve as default, add @Builder.Default. If it is not supposed to be settable during building, make the field final.
+    private Boolean isRead = false;
+                    ^
+/project/src/main/java/com/ITing/JobPortal/auth/entity/BanHistory.java:40: warning: @Builder will ignore the initializing expression entirely. If you want the initializing expression to serve as default, add @Builder.Default. If it is not supposed to be settable during building, make the field final.
+    private Boolean isActive = true; // Lệnh cấm này còn hiệu lực hay không
+                    ^
+/project/src/main/java/com/ITing/JobPortal/auth/entity/RefreshToken.java:40: warning: @SuperBuilder will ignore the initializing expression entirely. If you want the initializing expression to serve as default, add @Builder.Default. If it is not supposed to be settable during building, make the field final.
+    private Boolean isUsed = false;
+                    ^
+/project/src/main/java/com/ITing/JobPortal/auth/entity/RefreshToken.java:43: warning: @SuperBuilder will ignore the initializing expression entirely. If you want the initializing expression to serve as default, add @Builder.Default. If it is not supposed to be settable during building, make the field final.
+    private Boolean isRevoked = false;
+                    ^
+9 warnings
+/project/src/test/java/com/iting/jobportal/notification/service/NotificationServiceImplTest.java:10: error: cannot find symbol
+import com.iting.jobportal.notification.service.impl.WebSocketNotificationService;
+                                                    ^
+  symbol:   class WebSocketNotificationService
+  location: package com.iting.jobportal.notification.service.impl
+/project/src/test/java/com/iting/jobportal/messaging/service/ConversationServiceImplTest.java:58: error: cannot find symbol
+        testUser = User.builder()
+                       ^
+  symbol:   method builder()
+  location: class User
+/project/src/test/java/com/iting/jobportal/messaging/service/ConversationServiceImplTest.java:230: error: isParticipant(Conversation,Long) has private access in ConversationServiceImpl
+            assertTrue(conversationService.isParticipant(testConversation, 1L));
+                                          ^
+/project/src/test/java/com/iting/jobportal/messaging/service/ConversationServiceImplTest.java:236: error: isParticipant(Conversation,Long) has private access in ConversationServiceImpl
+            assertTrue(conversationService.isParticipant(testConversation, 2L));
+                                          ^
+/project/src/test/java/com/iting/jobportal/messaging/service/ConversationServiceImplTest.java:242: error: isParticipant(Conversation,Long) has private access in ConversationServiceImpl
+            assertFalse(conversationService.isParticipant(testConversation, 999L));
+                                           ^
+/project/src/test/java/com/iting/jobportal/messaging/service/ConversationServiceImplTest.java:311: error: cannot find symbol
+            User participant2 = User.builder()
+                                    ^
+  symbol:   method builder()
+  location: class User
+/project/src/test/java/com/iting/jobportal/messaging/service/MessageServiceImplTest.java:70: error: cannot find symbol
+        testUser = User.builder()
+                       ^
+  symbol:   method builder()
+  location: class User
+/project/src/test/java/com/iting/jobportal/messaging/service/MessageServiceImplTest.java:76: error: cannot find symbol
+        testCompany = Company.builder()
+                             ^
+  symbol:   method builder()
+  location: class Company
+/project/src/test/java/com/iting/jobportal/messaging/service/MessageServiceImplTest.java:413: error: determineConversationType(SendMessageRequest) has private access in MessageServiceImpl
+            assertEquals(ConversationType.USER_USER, messageService.determineConversationType(req));
+                                                                   ^
+/project/src/test/java/com/iting/jobportal/messaging/service/MessageServiceImplTest.java:423: error: determineConversationType(SendMessageRequest) has private access in MessageServiceImpl
+            assertEquals(ConversationType.USER_COMPANY, messageService.determineConversationType(req));
+                                                                      ^
+/project/src/test/java/com/iting/jobportal/notification/service/NotificationServiceImplTest.java:422: error: toResponse(Notification) has private access in NotificationServiceImpl
+            NotificationResponse response = notificationService.toResponse(testNotification);
+                                                               ^
+/project/src/test/java/com/iting/jobportal/notification/service/WebSocketNotificationServiceImplTest.java:182: error: buildDestination(Long,RecipientType,String) has private access in WebSocketNotificationServiceImpl
+            String destination = wsNotificationService.buildDestination(1L, RecipientType.USER, "notifications");
+                                                      ^
+/project/src/test/java/com/iting/jobportal/notification/service/WebSocketNotificationServiceImplTest.java:189: error: buildDestination(Long,RecipientType,String) has private access in WebSocketNotificationServiceImpl
+            String destination = wsNotificationService.buildDestination(2L, RecipientType.COMPANY, "notifications");
+                                                      ^
+/project/src/test/java/com/iting/jobportal/notification/service/WebSocketNotificationServiceImplTest.java:196: error: buildDestination(Long,RecipientType,String) has private access in WebSocketNotificationServiceImpl
+            String destination = wsNotificationService.buildDestination(1L, RecipientType.ADMIN, "notifications/unread-count");
+                                                      ^
+/project/src/test/java/com/iting/jobportal/notification/service/WebSocketNotificationServiceImplTest.java:203: error: buildDestination(Long,RecipientType,String) has private access in WebSocketNotificationServiceImpl
+            String destination = wsNotificationService.buildDestination(1L, RecipientType.USER, "channel");
+                                                      ^
+Note: /project/src/test/java/com/iting/jobportal/notification/service/WebSocketNotificationServiceImplTest.java uses unchecked or unsafe operations.
+Note: Recompile with -Xlint:unchecked for details.
+15 errors
+
+FAILURE: Build failed with an exception.
+
+* What went wrong:
+Execution failed for task ':compileTestJava'.
+> Compilation failed; see the compiler error output for details.
+
+* Try:
+> Run with --info option to get more log output.
+> Run with --scan to get full insights.
+
+BUILD FAILED in 3m 55s

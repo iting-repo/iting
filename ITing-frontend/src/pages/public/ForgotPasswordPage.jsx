@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import authService from '../../services/authService';
 import { FaArrowRight, FaEye, FaEyeSlash, FaCheckCircle } from 'react-icons/fa';
 import { BsBriefcaseFill, BsBuilding, BsFileText } from 'react-icons/bs';
 import bgImage from '../../assets/bg_login.jpg';
@@ -12,7 +13,7 @@ const ForgotPasswordPage = () => {
   
   // State dữ liệu
   const [email, setEmail] = useState("");
-  const [otp, setOtp] = useState(""); // Nếu bạn cần nhập mã OTP thì dùng state này
+  const [otp, setOtp] = useState(""); 
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   
@@ -21,25 +22,36 @@ const ForgotPasswordPage = () => {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   // Xử lý gửi Email (Bước 1)
-  const handleSendEmail = (e) => {
+  const handleSendEmail = async (e) => {
     e.preventDefault();
-    console.log("Gửi mã xác nhận tới:", email);
-    // Gọi API gửi mail ở đây...
-    // Thành công thì chuyển sang bước 2
-    setStep(2);
+    try {
+      await authService.forgotPassword(email);
+      setStep(2);
+    } catch (err) {
+      alert(err || 'Gửi email thất bại');
+    }
   };
 
   // Xử lý Đổi mật khẩu (Bước 2)
-  const handleResetPassword = (e) => {
+  const handleResetPassword = async (e) => {
     e.preventDefault();
     if (password !== confirmPassword) {
       alert("Mật khẩu không khớp!");
       return;
     }
-    console.log("Reset mật khẩu với:", { email, password, otp }); // Gửi kèm OTP nếu có
-    // Gọi API đổi pass...
-    // Thành công thì về trang login
-    navigate('/login');
+    
+    if (!otp || otp.length < 6) {
+      alert("Vui lòng nhập mã OTP 6 chữ số");
+      return;
+    }
+
+    try {
+        await authService.resetPassword(email, otp, password);
+        alert("Đặt lại mật khẩu thành công! Vui lòng đăng nhập với mật khẩu mới.");
+        navigate('/login');
+    } catch (err) {
+        alert(err || 'Đặt lại mật khẩu thất bại. Vui lòng kiểm tra mã OTP.');
+    }
   };
 
   return (
@@ -51,7 +63,7 @@ const ForgotPasswordPage = () => {
         {/* Logo */}
         <div className="flex items-center gap-2 mb-8">
            <BsBriefcaseFill className="text-[#3AB4E6] text-2xl" />
-           <span className="text-2xl font-bold text-gray-800 tracking-tight">ITWork</span>
+           <span className="text-2xl font-bold text-gray-800 tracking-tight">ITing</span>
         </div>
 
         <div className="mt-10">
@@ -88,33 +100,32 @@ const ForgotPasswordPage = () => {
               </div>
             )}
 
-            {/* === BƯỚC 2: NHẬP MẬT KHẨU MỚI (Như hình bạn gửi) === */}
+            {/* === BƯỚC 2: NHẬP MẬT KHẨU MỚI === */}
             {step === 2 && (
               <div className="animate-fade-in-up">
                 <h1 className="text-[32px] font-bold text-[#1F2937] mb-6 leading-tight text-center">
                   Đặt lại mật khẩu
                 </h1>
 
-                {/* Thông báo đã gửi mã */}
+                {/* Thông báo đã gửi mail */}
                 <div className="mb-8 p-4 bg-green-50 border border-green-100 rounded-lg flex items-start gap-3">
                     <FaCheckCircle className="text-green-500 mt-0.5 text-lg shrink-0" />
                     <p className="text-sm text-gray-600">
-                      Chúng tôi đã gửi đến email <span className="font-bold text-gray-800">{email}</span> một mã xác nhận. 
-                      Vui lòng kiểm tra và nhập mật khẩu mới bên dưới.
+                      Mã xác thực đã được gửi tới <span className="font-bold text-gray-800">{email}</span>.<br/>
+                      Vui lòng nhập mã OTP và mật khẩu mới bên dưới.
                     </p>
                 </div>
 
                 <form onSubmit={handleResetPassword} className="space-y-5">
                    
-                   {/* NOTE: Thường thì cần 1 ô nhập "Mã xác nhận (OTP)" ở đây 
-                       để server biết đúng là người dùng đó đang đổi pass.
-                       Nếu bạn muốn thêm ô OTP thì uncomment đoạn dưới:
-                   */}
                    <div>
                      <input 
                        type="text" 
-                       placeholder="Nhập mã xác nhận (OTP)" 
-                       className="w-full px-5 py-3.5 bg-[#F0F5FA] rounded-lg focus:outline-none focus:border-blue-500 border border-transparent"
+                       required
+                       value={otp}
+                       onChange={(e) => setOtp(e.target.value)}
+                       placeholder="Nhập mã xác nhận (OTP) 6 chữ số" 
+                       className="w-full px-5 py-3.5 bg-[#F0F5FA] rounded-lg focus:outline-none focus:border-[#3AB4E6] border border-transparent font-bold tracking-widest text-center"
                      />
                    </div> 
                   
@@ -170,11 +181,11 @@ const ForgotPasswordPage = () => {
 
         {/* Copyright */}
         <div className="absolute bottom-6 text-xs text-gray-400">
-           © 2024 ITWork. All rights reserved.
+           © 2024 ITing. Bảo lưu mọi quyền.
         </div>
       </div>
 
-      {/* ================= RIGHT COLUMN (Giữ nguyên) ================= */}
+      {/* ================= RIGHT COLUMN ================= */}
       <div 
         className="hidden lg:block w-[50%] relative bg-cover bg-center"
         style={{ 
@@ -191,17 +202,16 @@ const ForgotPasswordPage = () => {
               Hơn <span className="text-blue-400">1,75,324</span> ứng viên đang tham gia để có công việc chất lượng.
             </h2>
             
-            {/* Stats Cards (Copy lại từ trang trước nếu cần) */}
              <div className="flex gap-4">
                <div className="bg-white/10 backdrop-blur-md border border-white/10 p-4 rounded-xl flex-1 min-w-[140px]">
                   <div className="w-10 h-10 bg-white/20 rounded-lg flex items-center justify-center mb-3 text-blue-300">
                      <BsBriefcaseFill size={20} />
                   </div>
                   <div className="text-xl font-bold">1,75,324</div>
-                  <div className="text-[11px] text-gray-300 uppercase tracking-wide mt-1">Việc làm active</div>
+                  <div className="text-[11px] text-gray-300 uppercase tracking-wide mt-1">Việc làm đang tuyển</div>
                </div>
                <div className="bg-white/10 backdrop-blur-md border border-white/10 p-4 rounded-xl flex-1 min-w-[140px]">
-                  <div className="w-10 h-10 bg-white/20 rounded-lg flex items-center justify-center mb-3 text-purple-300">
+                  <div className="w-10 h-10 bg-white/20 rounded-lg flex items-center justify-center mb-3 text-sky-300">
                      <BsBuilding size={20} />
                   </div>
                   <div className="text-xl font-bold">97,354</div>

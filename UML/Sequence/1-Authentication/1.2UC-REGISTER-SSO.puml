@@ -1,0 +1,26 @@
+@startuml
+actor Guest
+participant FE
+participant AuthSvc
+participant "OAuth(Google)" as Google
+participant UserSvc
+database DB
+
+Guest -> FE : Click "Đăng ký với Google"
+FE -> Google : OAuth authorize (code) ' sync (trình duyệt chuyển hướng)
+Google --> FE : authCode ' reply
+FE -> AuthSvc : exchangeCode(authCode) ' sync
+AuthSvc -> Google : tokenRequest(code) ' sync
+Google --> AuthSvc : id_token, profile ' reply
+AuthSvc -> DB : findUserByEmail(profile.email) ' sync
+
+alt chưa tồn tại
+  AuthSvc -> UserSvc : createSSOUser(profile) ' sync
+  UserSvc -> DB : insert user(provider=google)
+  DB --> UserSvc : ok
+  UserSvc --> AuthSvc : userId
+  AuthSvc --> FE : loginSuccess(session)     ' dùng reply, không dùng return
+else đã tồn tại
+  AuthSvc --> FE : loginSuccess(session)     ' dùng reply, không dùng return
+end
+@enduml

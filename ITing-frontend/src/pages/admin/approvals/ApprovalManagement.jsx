@@ -12,7 +12,7 @@ const ApprovalManagement = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                 {/* Pending Posts - Màu Vàng Cam */}
                 <StatsCard
-                    title="Pending Posts"
+                    title="Bài đăng chờ duyệt"
                     value="156"
                     icon={<FaPen />}
                     percentage="24"
@@ -21,7 +21,7 @@ const ApprovalManagement = () => {
 
                 {/* Pending Profiles - Màu Xanh Dương */}
                 <StatsCard
-                    title="Pending Profiles"
+                    title="Hồ sơ chờ duyệt"
                     value="89"
                     icon={<FaUserClock />}
                     percentage="12"
@@ -30,7 +30,7 @@ const ApprovalManagement = () => {
 
                 {/* Approved Today - Màu Xanh Lá */}
                 <StatsCard
-                    title="Approved Today"
+                    title="Đã duyệt hôm nay"
                     value="342"
                     icon={<FaCheckCircle />}
                     percentage="18"
@@ -39,7 +39,7 @@ const ApprovalManagement = () => {
 
                 {/* Rejected Today - Màu Đỏ */}
                 <StatsCard
-                    title="Rejected Today"
+                    title="Bị từ chối hôm nay"
                     value="23"
                     icon={<FaTimesCircle />}
                     percentage="5"

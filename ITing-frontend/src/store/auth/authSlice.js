@@ -27,7 +27,12 @@ const authSlice = createSlice({
       state.isLoading = false;
       state.error = action.payload;
     },
-    // 4. Action Logout
+    // 4. Action Google Login
+    googleLoginRequest: (state) => {
+      state.isLoading = true;
+      state.error = null;
+    },
+    // 5. Action Logout
     logout: (state) => {
       state.currentUser = null;
       state.error = null;
@@ -58,7 +63,7 @@ const authSlice = createSlice({
 });
 
 export const {
-  loginRequest, loginSuccess, loginFailure, logout,
+  loginRequest, loginSuccess, loginFailure, googleLoginRequest, logout,
   registerRequest, registerSuccess, registerFailure, checkAuth
 } = authSlice.actions;
 export default authSlice.reducer;

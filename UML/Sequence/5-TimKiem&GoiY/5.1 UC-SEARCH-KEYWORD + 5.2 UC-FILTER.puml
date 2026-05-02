@@ -1,0 +1,14 @@
+@startuml
+actor Candidate
+participant FE
+participant JobSvc
+database DB
+
+
+Candidate -> FE : Nhập từ khóa -> Tìm kiếm
+FE -> JobSvc : search(keyword, filters?, sort?, page)
+JobSvc -> DB : SELECT ... WHERE textmatch + filters
+DB --> JobSvc : rows
+JobSvc --> FE : results
+FE --> Candidate : Danh sách + Bộ lọc
+@enduml

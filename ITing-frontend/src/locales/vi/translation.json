@@ -1,0 +1,148 @@
+{
+  "editJob": {
+    "title": "Chỉnh sửa công việc",
+    "jobTitle": "Tiêu đề công việc",
+    "details": "Thông tin chi tiết",
+    "position": "Vị trí",
+    "tech": "Công nghệ",
+    "workType": "Hình thức",
+    "quantity": "Số lượng",
+    "deadline": "Ngày hết hạn",
+    "addressAndSalary": "Địa chỉ & Lương",
+    "address": "Địa chỉ",
+    "minSalary": "Min Lương",
+    "maxSalary": "Max Lương",
+    "content": "Nội dung",
+    "save": "Lưu Thay Đổi",
+    "cancel": "Hủy bỏ",
+    "loading": "Đang tải dữ liệu công việc...",
+    "success": "Cập nhật công việc thành công!"
+  },
+  "companyProfile": {
+    "title": "Thông tin công ty",
+    "foundingInfo": "Thông tin giới thiệu",
+    "socialMedia": "Mạng xã hội",
+    "settings": "Cài đặt tài khoản",
+    "companyName": "Tên công ty",
+    "companyType": "Loại hình công ty",
+    "industry": "Ngành nghề",
+    "foundingDate": "Ngày thành lập",
+    "description": "Mô tả",
+    "website": "Website",
+    "facebook": "Facebook",
+    "linkedin": "LinkedIn",
+    "twitter": "Twitter",
+    "instagram": "Instagram",
+    "changePassword": "Đổi mật khẩu",
+    "currentPassword": "Mật khẩu hiện tại",
+    "newPassword": "Mật khẩu mới",
+    "confirmPassword": "Xác nhận mật khẩu",
+    "saveChanges": "Lưu thay đổi",
+    "cancel": "Hủy bỏ"
+  },
+  "company_profile": {
+    "title": "Hồ sơ công ty",
+    "tabs": {
+      "founding": "Thông tin chung",
+      "social": "Mạng xã hội",
+      "settings": "Thiết lập"
+    }
+  },
+  "employer_dashboard": {
+    "welcome": "Xin chào, {{name}}",
+    "description": "Dưới đây là thống kê các công việc và số lượng ứng viên đã ứng tuyển",
+    "stats": {
+      "posted_jobs": "Công việc đã đăng tải",
+      "total_applications": "Ứng viên đã nộp hồ sơ"
+    },
+    "recent_jobs": "Các công việc đã đăng gần đây",
+    "view_all": "Xem tất cả",
+    "table": {
+      "job": "Công việc",
+      "status": "Trạng thái",
+      "applicants_count": "Số lượng ứng tuyển",
+      "action": "Hành động",
+      "active": "Còn hoạt động",
+      "expired": "Đã hết hạn",
+      "days_left": "Còn {{count}} ngày",
+      "view_applications": "Xem Hồ Sơ Ứng Viên",
+      "view_detail": "Xem chi tiết",
+      "mark_expired": "Đánh dấu hết hạn"
+    }
+  },
+  "manage_jobs": {
+    "title": "Tất cả công việc",
+    "subtitle": "Quản lý trạng thái và hồ sơ ứng tuyển",
+    "btn_post": "Đăng công việc",
+    "filter_status": "Trạng thái",
+    "loading": "Đang tải dữ liệu...",
+    "no_data": "Không tìm thấy công việc nào phù hợp.",
+    "table": {
+      "col_job": "Công việc",
+      "col_status": "Trạng thái",
+      "col_apps": "Số lượng hồ sơ",
+      "col_action": "Hành động"
+    },
+    "actions": {
+      "view_apps": "Xem hồ sơ ({{count}})",
+      "edit": "Xem / Chỉnh sửa",
+      "close": "Dừng đăng bài",
+      "reopen": "Mở lại tin",
+      "delete": "Xóa tin tuyển dụng"
+    },
+    "confirm": {
+      "reopen": "Bạn có muốn mở lại tin tuyển dụng này?",
+      "delete": "Bạn có chắc chắn muốn xóa?",
+      "close": "Bạn có chắc muốn đóng tin tuyển dụng này?"
+    },
+    "messages": {
+      "fetch_error": "Không tải được danh sách công việc",
+      "reopen_success": "Mở lại tin tuyển dụng thành công",
+      "delete_success": "Xóa tin tuyển dụng thành công",
+      "close_success": "Đóng tin tuyển dụng thành công"
+    },
+    "job_types": {
+      "FULL_TIME": "Toàn thời gian",
+      "PART_TIME": "Bán thời gian",
+      "CONTRACT": "Hợp đồng",
+      "INTERNSHIP": "Thực tập",
+      "REMOTE": "Làm việc từ xa",
+      "FREELANCE": "Tự do",
+      "not_updated": "Chưa cập nhật"
+    },
+    "experience_levels": {
+      "INTERN": "Thực tập sinh",
+      "FRESHER": "Mới ra trường / Fresher",
+      "JUNIOR": "Junior (1-2 năm)",
+      "MIDDLE": "Middle (2-4 năm)",
+      "MID_LEVEL": "Mid-level (2-4 năm)",
+      "SENIOR": "Senior (4-7 năm)",
+      "LEAD": "Lead (7+ năm)",
+      "EXPERT": "Chuyên gia",
+      "MANAGER": "Quản lý",
+      "not_updated": "Chưa cập nhật"
+    },
+    "salary_types": {
+      "NEGOTIABLE": "Thỏa thuận",
+      "MONTH": "Theo tháng",
+      "YEAR": "Theo năm",
+      "PROJECT": "Theo dự án",
+      "HOUR": "Theo giờ",
+      "not_updated": "Chưa cập nhật"
+    },
+    "deadline": {
+      "no_limit": "Chưa có hạn"
+    },
+    "status": {
+      "active": "Đang hoạt động",
+      "pending": "Chờ duyệt",
+      "draft": "Nháp",
+      "expired": "Hết hạn",
+      "closed": "Đã đóng",
+      "rejected": "Bị từ chối",
+      "needs_revision": "Cần chỉnh sửa",
+      "suspended": "Bị tạm dừng",
+      "all": "Tất cả"
+    }
+  }
+}

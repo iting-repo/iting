@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 import {
   FaHome,
@@ -8,12 +8,50 @@ import {
   FaSignOutAlt,
   FaSearch,
 } from "react-icons/fa";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { logout } from "../../store/auth/authSlice";
+import companyService from "../../services/companyService";
+import ScrollToTop from "../common/ScrollToTop";
 
 const EmployerSidebar = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
+  const { currentUser } = useSelector((state) => state.auth);
+  const [showVerificationPopover, setShowVerificationPopover] = useState(false);
+  const [company, setCompany] = useState(null);
+  const popoverRef = useRef(null);
+
+  const user = currentUser || { name: "Nghia Vo", role: "EMPLOYER" };
+
+  useEffect(() => {
+    const fetchCompanyData = async () => {
+      try {
+        const res = await companyService.getMyCompany();
+        setCompany(res);
+      } catch (error) {
+        console.error("Error fetching company data:", error);
+      }
+    };
+    fetchCompanyData();
+  }, []);
+
+  const getVerificationLevel = () => {
+    if (!company) return "Cấp 1/3";
+    const level = company.verificationLevel || company.verificationStatus;
+    if (level === "VERIFIED" || level === "ADVANCED") return "Cấp 3/3";
+    if (company.taxCode && company.representativeName) return "Cấp 2/3";
+    return "Cấp 1/3";
+  };
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (popoverRef.current && !popoverRef.current.contains(event.target)) {
+        setShowVerificationPopover(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   const handleLogout = () => {
     navigate("/");
@@ -44,6 +82,7 @@ const EmployerSidebar = () => {
 
   return (
     <div className="w-64 bg-white min-h-screen border-r border-gray-100 hidden lg:block sticky top-20 h-[calc(100vh-80px)]">
+      <ScrollToTop />
       <div className="p-6">
         <h3 className="text-xs font-bold text-gray-400 uppercase mb-4 tracking-wider">
           Employers

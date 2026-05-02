@@ -1,87 +1,160 @@
 package com.iting.jobportal.job.entity;
 
-import com.iting.jobportal.common.entity.AuditEntity;
-import com.iting.jobportal.job.entity.enums.ExperienceLevel;
-import com.iting.jobportal.job.entity.enums.JobStatus;
-import com.iting.jobportal.job.entity.enums.JobType;
+import com.iting.jobportal.common.converter.StringListConverter;
+import com.iting.jobportal.company.entity.Company;
+import com.iting.jobportal.job.entity.enums.*;
 import jakarta.persistence.*;
-import java.time.LocalDate;
 import lombok.*;
 
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.List;
+
 @Entity
-@Table(name = "jobs")
+@Table(name = "Job", indexes = {
+        @Index(name = "idx_job_company", columnList = "Company_id"),
+        @Index(name = "idx_job_status", columnList = "Status"),
+        @Index(name = "idx_job_city", columnList = "Province")
+})
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-@EqualsAndHashCode(callSuper = false)
-public class Job extends AuditEntity {
+public class Job {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false)
-    private Long employerId;
+    // ===== RELATION =====
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "Company_id", nullable = false)
+    private Company company;
 
-    @Column(nullable = false, length = 255)
+    // ===== BASIC INFO =====
+    @Column(nullable = false)
+    private String title;
+
     private String position;
 
-    @Column(length = 5000)
-    private String description;
-
-    @Column(length = 500)
-    private String requirements;
-
-    @Column(length = 500)
-    private String techRequired;
-
-    @Column(length = 500)
-    private String benefits;
-
-    @Column(length = 100)
-    private String location;
+    @Convert(converter = StringListConverter.class)
+    @Column(name = "skills", columnDefinition = "TEXT")
+    private List<String> skills;
 
     @Enumerated(EnumType.STRING)
-    @Column(length = 20)
-    private JobType jobType; // FULL_TIME, PART_TIME, CONTRACT, INTERNSHIP, REMOTE
+    private JobType jobType;
 
     @Enumerated(EnumType.STRING)
-    @Column(length = 20)
-    private ExperienceLevel experienceLevel; // FRESHER, JUNIOR, MIDDLE, SENIOR, LEAD, MANAGER
+    private ExperienceLevel experienceLevel;
 
     @Enumerated(EnumType.STRING)
-    @Column(length = 20)
-    private JobStatus status; // DRAFT, PENDING, ACTIVE, EXPIRED, CLOSED
+    private WorkingDays workingDays;
 
+    // ===== SALARY =====
+    private BigDecimal minSalary;
+    private BigDecimal maxSalary;
+
+    @Enumerated(EnumType.STRING)
+    private SalaryType salaryType;
+
+    // ===== QUANTITY =====
     private Integer maxAccept;
-
     private Integer currentAccepted;
-
-    private Long minSalary;
-
-    private Long maxSalary;
 
     private LocalDate dueDate;
 
+    // ===== LOCATION =====
+    private String province;
+    private String ward;
+    private String address;
+    private String location;
+
+    private Long locId; // ✅ GIỮ
+
+    // ===== CONTENT =====
+    @Column(columnDefinition = "TEXT")
+    private String description;
+
+    @Column(columnDefinition = "TEXT")
+    private String responsibilities;
+
+    @Column(columnDefinition = "TEXT")
+    private String requirements;
+
+    @Column(columnDefinition = "TEXT")
+    private String benefits;
+
+    // ===== SYSTEM =====
     private Integer viewCount;
-
     private Integer applicationCount;
+    private Boolean featured;
 
+    @Enumerated(EnumType.STRING)
+    private JobStatus status;
+
+    // ===== REVIEW =====
+    @Column(columnDefinition = "TEXT")
+    private String reviewReason;
+
+    private Long reviewedBy;
+    private LocalDateTime reviewedAt;
+
+    private String aiReviewStatus;
+
+    @Column(columnDefinition = "TEXT")
+    private String aiReviewReason;
+
+    @Column(columnDefinition = "TEXT")
+    private String jobEmbedding;
+
+    private LocalDateTime embeddingUpdatedAt;
+
+    // ===== AUDIT =====
+    private LocalDateTime createdAt;
+    private LocalDateTime lastUpdate;
+
+    // ===== AUTO LOGIC =====
     @PrePersist
     protected void onCreate() {
-        if (status == null) {
-            status = JobStatus.ACTIVE;
-        }
-        if (viewCount == null) {
+        if (status == null)
+            status = JobStatus.PENDING;
+        if (createdAt == null)
+            createdAt = LocalDateTime.now();
+        if (lastUpdate == null)
+            lastUpdate = LocalDateTime.now();
+        if (viewCount == null)
             viewCount = 0;
-        }
-        if (applicationCount == null) {
+        if (applicationCount == null)
             applicationCount = 0;
-        }
-        if (currentAccepted == null) {
+        if (currentAccepted == null)
             currentAccepted = 0;
+        if (maxAccept == null)
+            maxAccept = 0;
+        if (featured == null)
+            featured = false;
+
+        if (location == null) {
+            location = buildLocation();
         }
+    }
+
+    @PreUpdate
+    protected void onUpdate() {
+        lastUpdate = LocalDateTime.now();
+    }
+
+    private String buildLocation() {
+        StringBuilder sb = new StringBuilder();
+
+        if (address != null)
+            sb.append(address);
+        if (ward != null)
+            sb.append(", ").append(ward);
+        if (province != null)
+            sb.append(", ").append(province);
+
+        return sb.toString();
     }
 }

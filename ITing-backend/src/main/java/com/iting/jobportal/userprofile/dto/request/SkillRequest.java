@@ -1,0 +1,10 @@
+package com.iting.jobportal.userprofile.dto.request;
+
+import jakarta.validation.constraints.NotBlank;
+import lombok.Data;
+
+@Data
+public class SkillRequest {
+    @NotBlank(message = "Skill name is required")
+    private String name;
+}

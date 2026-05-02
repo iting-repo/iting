@@ -11,16 +11,13 @@ const authService = {
     },
 
     // API Register
-    register: async (email, password, name, role, phone, address, website) => {
+    register: async (userData) => {
         // Gọi API: POST /auth/register
+        // Đảm bảo gửi fullName và các trường khác
         const response = await axiosInstance.post('/auth/register', {
-            email,
-            password,
-            name,
-            role,
-            phone,
-            address,
-            website
+            ...userData,
+            name: userData.fullName, // Elias name
+            full_name: userData.fullName // Elias full_name cho chắc chắn
         });
         return response;
     },
@@ -39,5 +36,22 @@ const authService = {
         return Promise.resolve();
     }
 };
+
+// Forgot / Reset password
+authService.forgotPassword = async (email) => {
+    return axiosInstance.post('/auth/forgot-password', { email });
+}
+
+authService.resetPassword = async (token, newPassword) => {
+    return axiosInstance.post('/auth/reset-password', { token, newPassword });
+}
+
+authService.verifyOtp = async (data) => {
+    return axiosInstance.post('/auth/verify-otp', data);
+}
+
+authService.resendOtp = async (data) => {
+    return axiosInstance.post('/auth/resend-otp', data);
+}
 
 export default authService;

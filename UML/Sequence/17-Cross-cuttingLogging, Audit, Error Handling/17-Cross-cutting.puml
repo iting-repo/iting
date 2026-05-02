@@ -1,0 +1,24 @@
+@startuml
+participant FE
+participant AnyService as Svc
+database DB
+participant NotifSvc
+
+
+== Request ==
+FE -> Svc : API call
+Svc -> DB : query
+alt lỗi
+DB --> Svc : error
+Svc -> DB : INSERT audit(error, request)
+Svc --> FE : error(message, code)
+else thành công
+DB --> Svc : data
+Svc -> DB : INSERT audit(success, request)
+Svc --> FE : data
+end
+== Alerting (opt) ==
+opt severity >= HIGH
+Svc -> NotifSvc : alertOnCall(team, incident)
+end
+@enduml

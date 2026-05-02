@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { FaPlusCircle, FaTimes } from 'react-icons/fa';
 import { FaFacebook, FaTwitter, FaLinkedin, FaYoutube, FaInstagram } from 'react-icons/fa';
+import { toast } from 'sonner';
 
 const SocialMediaTab = () => {
   // Mock state ban đầu
@@ -63,7 +64,7 @@ const SocialMediaTab = () => {
                 <div className="flex-1">
                     <input 
                         type="text" 
-                        placeholder="Profile link/url..." 
+                        placeholder="Dán liên kết hồ sơ tại đây..." 
                         value={item.url}
                         className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:border-[#3AB4E6]"
                         onChange={(e) => {
@@ -95,7 +96,10 @@ const SocialMediaTab = () => {
       </button>
 
       {/* Save Button */}
-      <button className="bg-[#1967D2] text-white font-bold py-3 px-8 rounded-lg hover:bg-blue-700 transition-colors">
+      <button 
+        onClick={() => toast.success("Cập nhật mạng xã hội thành công!")}
+        className="bg-[#1967D2] text-white font-bold py-3 px-8 rounded-lg hover:bg-blue-700 transition-colors"
+      >
         Lưu Thay Đổi
       </button>
     </div>

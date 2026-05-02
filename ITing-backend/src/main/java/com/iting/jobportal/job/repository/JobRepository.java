@@ -1,63 +1,76 @@
 package com.iting.jobportal.job.repository;
 
 import com.iting.jobportal.job.entity.Job;
-import com.iting.jobportal.job.entity.enums.ExperienceLevel;
 import com.iting.jobportal.job.entity.enums.JobStatus;
-import com.iting.jobportal.job.entity.enums.JobType;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.util.List;
 
-public interface JobRepository extends JpaRepository<Job, Long> {
-    
-    // Tìm jobs theo employer
-    List<Job> findByEmployerId(Long employerId);
-    
-    Page<Job> findByEmployerId(Long employerId, Pageable pageable);
-    
-    // Tìm jobs theo status
-    List<Job> findByStatus(JobStatus status);
-    
-    Page<Job> findByStatus(JobStatus status, Pageable pageable);
-    
-    // Tìm jobs active
-    Page<Job> findByStatusOrderByCreatedAtDesc(JobStatus status, Pageable pageable);
-    
-    // Tìm kiếm và lọc nâng cao
-    @Query("SELECT j FROM Job j WHERE j.status = :status " +
-           "AND (:keyword IS NULL OR LOWER(j.position) LIKE LOWER(CONCAT('%', :keyword, '%')) " +
-           "OR LOWER(j.description) LIKE LOWER(CONCAT('%', :keyword, '%'))) " +
-           "AND (:location IS NULL OR LOWER(j.location) LIKE LOWER(CONCAT('%', :location, '%'))) " +
-           "AND (:jobType IS NULL OR j.jobType = :jobType) " +
-           "AND (:experienceLevel IS NULL OR j.experienceLevel = :experienceLevel) " +
-           "AND (:minSalary IS NULL OR j.maxSalary >= :minSalary) " +
-           "AND (:maxSalary IS NULL OR j.minSalary <= :maxSalary) " +
-           "AND (:employerId IS NULL OR j.employerId = :employerId) " +
-           "AND (:techRequired IS NULL OR LOWER(j.techRequired) LIKE LOWER(CONCAT('%', :techRequired, '%')))")
-    Page<Job> searchJobs(
-            @Param("status") JobStatus status,
-            @Param("keyword") String keyword,
-            @Param("location") String location,
-            @Param("jobType") JobType jobType,
-            @Param("experienceLevel") ExperienceLevel experienceLevel,
-            @Param("minSalary") Long minSalary,
-            @Param("maxSalary") Long maxSalary,
-            @Param("employerId") Long employerId,
-            @Param("techRequired") String techRequired,
-            Pageable pageable
-    );
-    
-    // Đếm số jobs của employer
-    long countByEmployerId(Long employerId);
-    
-    // Đếm số jobs active của employer
-    long countByEmployerIdAndStatus(Long employerId, JobStatus status);
-    
+public interface JobRepository extends JpaRepository<Job, Long>, JpaSpecificationExecutor<Job> {
+
+    // Tìm jobs theo status VÀ công ty đang hoạt động
+    @Query("SELECT j FROM Job j JOIN j.company c WHERE j.status = :status AND c.active = true")
+    Page<Job> findAllByStatus(@Param("status") JobStatus status, Pageable pageable);
+
+    // Lấy jobs hot (sắp xếp theo lượt ứng tuyển + view) VÀ công ty đang hoạt động
+    @Query("SELECT j FROM Job j JOIN j.company c WHERE j.status = :status AND c.active = true ORDER BY j.applicationCount DESC, j.viewCount DESC")
+    Page<Job> findHotJobs(@Param("status") JobStatus status, Pageable pageable);
+
+    List<Job> findTop50ByStatusOrderByCreatedAtDesc(JobStatus status);
+
+    List<Job> findTop50ByStatusOrderByViewCountDesc(JobStatus status);
+
     // Tìm jobs hết hạn
     @Query("SELECT j FROM Job j WHERE j.dueDate < CURRENT_DATE AND j.status = 'ACTIVE'")
     List<Job> findExpiredJobs();
+
+    // Lấy jobs của company theo company_id (= Account ID của employer)
+    @Query("SELECT j FROM Job j WHERE j.company.id = :companyId ORDER BY j.lastUpdate DESC")
+    Page<Job> findByCompany_Id(@Param("companyId") Long companyId, Pageable pageable);
+
+    // Lấy jobs của company theo company_id và status
+    @Query("SELECT j FROM Job j WHERE j.company.id = :companyId AND j.status = :status ORDER BY j.createdAt DESC")
+    Page<Job> findByCompany_IdAndStatus(@Param("companyId") Long companyId, @Param("status") JobStatus status,
+            Pageable pageable);
+
+    // Tăng view count
+    @Modifying
+    @Query("UPDATE Job j SET j.viewCount = j.viewCount + 1 WHERE j.id = :id")
+    void incrementViewCount(@Param("id") Long id);
+
+    @Modifying
+    @Query("UPDATE Job j SET j.applicationCount = j.applicationCount + 1 WHERE j.id = :id")
+    void incrementApplicationCount(@Param("id") Long id);
+
+    @Modifying
+    @Query("UPDATE Job j SET j.applicationCount = CASE WHEN j.applicationCount > 0 THEN j.applicationCount - 1 ELSE 0 END WHERE j.id = :id")
+    void decrementApplicationCount(@Param("id") Long id);
+
+    long countByCreatedAtAfter(java.time.LocalDateTime dateTime);
+
+    long countByCreatedAtBefore(java.time.LocalDateTime dateTime);
+
+    long countByStatus(JobStatus status);
+
+    long countByCompany_IdAndStatus(Long companyId, JobStatus status);
+
+    // Count truly active jobs: status ACTIVE and not past dueDate
+    @Query("SELECT COUNT(j) FROM Job j WHERE j.company.id = :companyId AND j.status = 'ACTIVE' AND (j.dueDate IS NULL OR j.dueDate >= CURRENT_DATE)")
+    long countActiveAndNotExpiredByCompanyId(@Param("companyId") Long companyId);
+
+    // ===== EMBEDDING / VECTOR SEARCH =====
+
+    /** Tìm các job ACTIVE chưa có embedding (để batch embed) */
+    @Query("SELECT j FROM Job j WHERE j.status = :status AND j.jobEmbedding IS NULL ORDER BY j.lastUpdate DESC")
+    List<Job> findJobsWithoutEmbedding(@Param("status") JobStatus status, Pageable pageable);
+
+    /** Tìm tất cả job ACTIVE có embedding (để vector search in-memory) */
+    @Query("SELECT j FROM Job j WHERE j.status = 'ACTIVE' AND j.jobEmbedding IS NOT NULL")
+    List<Job> findAllActiveWithEmbedding();
 }

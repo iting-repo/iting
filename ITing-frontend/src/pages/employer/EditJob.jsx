@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { FaBold, FaItalic, FaUnderline, FaLink, FaListUl, FaListOl, FaSave, FaArrowLeft, FaChevronDown } from 'react-icons/fa';
 
 const EditJob = () => {
+  const { t } = useTranslation();
   const { id } = useParams(); // Lấy ID từ URL
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
@@ -58,7 +60,7 @@ const EditJob = () => {
   const handleSubmit = (e) => {
     e.preventDefault();
     console.log("Dữ liệu cập nhật:", formData);
-    alert("Cập nhật công việc thành công!");
+    alert(t('editJob.success', 'Cập nhật công việc thành công!'));
     navigate('/employer/manage-jobs'); // Quay về danh sách
   };
 
@@ -74,7 +76,7 @@ const EditJob = () => {
     </div>
   );
 
-  if (loading) return <div className="p-10 text-center text-gray-500">Đang tải dữ liệu công việc...</div>;
+  if (loading) return <div className="p-10 text-center text-gray-500">{t('editJob.loading', 'Đang tải dữ liệu công việc...')}</div>;
 
   return (
     <div className="animate-fade-in">
@@ -84,7 +86,7 @@ const EditJob = () => {
             <FaArrowLeft />
         </button>
         <div>
-            <h2 className="text-2xl font-bold text-gray-800">Chỉnh sửa công việc</h2>
+            <h2 className="text-2xl font-bold text-gray-800">{t('editJob.title', 'Chỉnh sửa công việc')}</h2>
             <p className="text-gray-500 text-sm">ID: #{id}</p>
         </div>
       </div>
@@ -94,7 +96,7 @@ const EditJob = () => {
           
           {/* === 1. TIÊU ĐỀ === */}
           <div className="mb-8">
-            <h3 className="text-lg font-bold text-gray-800 mb-4">Tiêu đề công việc</h3>
+            <h3 className="text-lg font-bold text-gray-800 mb-4">{t('editJob.jobTitle', 'Tiêu đề công việc')}</h3>
             <input 
               type="text" 
               name="jobTitle"
@@ -106,11 +108,11 @@ const EditJob = () => {
 
           {/* === 2. CHI TIẾT === */}
           <div className="mb-8">
-            <h3 className="text-lg font-bold text-gray-800 mb-4">Thông tin chi tiết</h3>
+            <h3 className="text-lg font-bold text-gray-800 mb-4">{t('editJob.details', 'Thông tin chi tiết')}</h3>
             
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
                <div>
-                  <label className="block text-gray-700 text-sm font-medium mb-2">Vị trí</label>
+                  <label className="block text-gray-700 text-sm font-medium mb-2">{t('editJob.position', 'Vị trí')}</label>
                   <div className="relative">
                      <select name="jobPosition" value={formData.jobPosition} onChange={handleChange} className="w-full px-4 py-3 border border-gray-200 rounded-lg appearance-none bg-white focus:outline-none focus:border-[#3AB4E6] text-sm">
                         <option value="frontend">Frontend Developer</option>
@@ -122,7 +124,7 @@ const EditJob = () => {
                </div>
                {/* Các select khác tương tự (Tech stack, Work type) - Giữ nguyên code form cũ */}
                <div>
-                  <label className="block text-gray-700 text-sm font-medium mb-2">Công nghệ</label>
+                  <label className="block text-gray-700 text-sm font-medium mb-2">{t('editJob.tech', 'Công nghệ')}</label>
                   <div className="relative">
                      <select name="techStack" value={formData.techStack} onChange={handleChange} className="w-full px-4 py-3 border border-gray-200 rounded-lg appearance-none bg-white focus:outline-none focus:border-[#3AB4E6] text-sm">
                         <option value="react">ReactJS</option>
@@ -132,7 +134,7 @@ const EditJob = () => {
                   </div>
                </div>
                <div>
-                  <label className="block text-gray-700 text-sm font-medium mb-2">Hình thức</label>
+                  <label className="block text-gray-700 text-sm font-medium mb-2">{t('editJob.workType', 'Hình thức')}</label>
                   <div className="relative">
                      <select name="workType" value={formData.workType} onChange={handleChange} className="w-full px-4 py-3 border border-gray-200 rounded-lg appearance-none bg-white focus:outline-none focus:border-[#3AB4E6] text-sm">
                         <option value="fulltime">Full-time</option>
@@ -145,11 +147,11 @@ const EditJob = () => {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                <div>
-                  <label className="block text-gray-700 text-sm font-medium mb-2">Số lượng</label>
+                  <label className="block text-gray-700 text-sm font-medium mb-2">{t('editJob.quantity', 'Số lượng')}</label>
                   <input type="number" name="quantity" value={formData.quantity} onChange={handleChange} className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:border-[#3AB4E6] text-sm" />
                </div>
                <div>
-                  <label className="block text-gray-700 text-sm font-medium mb-2">Ngày hết hạn</label>
+                  <label className="block text-gray-700 text-sm font-medium mb-2">{t('editJob.deadline', 'Ngày hết hạn')}</label>
                   <input type="date" name="deadline" value={formData.deadline} onChange={handleChange} className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:border-[#3AB4E6] text-sm" />
                </div>
             </div>
@@ -157,19 +159,19 @@ const EditJob = () => {
 
           {/* === 3. ĐỊA CHỈ & LƯƠNG (Giản lược code cho gọn, logic y hệt PostJob nhưng thêm value={formData...}) === */}
           <div className="mb-8">
-             <h3 className="text-lg font-bold text-gray-800 mb-4">Địa chỉ & Lương</h3>
+             <h3 className="text-lg font-bold text-gray-800 mb-4">{t('editJob.addressAndSalary', 'Địa chỉ & Lương')}</h3>
              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                <input type="text" name="address" value={formData.address} onChange={handleChange} className="w-full px-4 py-3 border border-gray-200 rounded-lg text-sm" placeholder="Địa chỉ" />
+                <input type="text" name="address" value={formData.address} onChange={handleChange} className="w-full px-4 py-3 border border-gray-200 rounded-lg text-sm" placeholder={t('editJob.address', 'Địa chỉ')} />
                 <div className="flex gap-4">
-                    <input type="number" name="minSalary" value={formData.minSalary} onChange={handleChange} className="w-1/2 px-4 py-3 border border-gray-200 rounded-lg text-sm" placeholder="Min Lương" />
-                    <input type="number" name="maxSalary" value={formData.maxSalary} onChange={handleChange} className="w-1/2 px-4 py-3 border border-gray-200 rounded-lg text-sm" placeholder="Max Lương" />
+                    <input type="number" name="minSalary" value={formData.minSalary} onChange={handleChange} className="w-1/2 px-4 py-3 border border-gray-200 rounded-lg text-sm" placeholder={t('editJob.minSalary', 'Min Lương')} />
+                    <input type="number" name="maxSalary" value={formData.maxSalary} onChange={handleChange} className="w-1/2 px-4 py-3 border border-gray-200 rounded-lg text-sm" placeholder={t('editJob.maxSalary', 'Max Lương')} />
                 </div>
              </div>
           </div>
 
           {/* === 4. MÔ TẢ === */}
           <div className="mb-10">
-            <h3 className="text-lg font-bold text-gray-800 mb-4">Nội dung</h3>
+            <h3 className="text-lg font-bold text-gray-800 mb-4">{t('editJob.content', 'Nội dung')}</h3>
             <div className="border border-gray-200 rounded-lg overflow-hidden mb-6">
                <EditorToolbar />
                <textarea name="description" value={formData.description} onChange={handleChange} className="w-full p-4 h-40 focus:outline-none text-sm text-gray-600" />
@@ -182,14 +184,14 @@ const EditJob = () => {
               type="submit"
               className="bg-[#1967D2] hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-lg transition-colors flex items-center gap-2"
             >
-              <FaSave /> Lưu Thay Đổi
+              <FaSave /> {t('editJob.save', 'Lưu Thay Đổi')}
             </button>
             <button 
               type="button"
               onClick={() => navigate('/employer/manage-jobs')}
               className="bg-gray-100 hover:bg-gray-200 text-gray-600 font-bold py-3 px-8 rounded-lg transition-colors"
             >
-              Hủy bỏ
+              {t('editJob.cancel', 'Hủy bỏ')}
             </button>
           </div>
 

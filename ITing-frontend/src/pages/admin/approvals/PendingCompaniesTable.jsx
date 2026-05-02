@@ -26,15 +26,15 @@ const PendingCompaniesTable = () => {
             {/* HEADER */}
             <CardHeader
                 className="px-6 pt-6 mb-4"
-                title={<span className="text-gray-800">Company Profile Reviews</span>}
+                title={<span className="text-gray-800">Duyệt hồ sơ công ty</span>}
                 icon={<FaUserFriends className="text-blue-500" />}
                 action={
                     <div className="flex gap-2">
                         <Button variant="outline" className="flex items-center gap-2">
-                            <FaFilter size={12} /> Filter
+                            <FaFilter size={12} /> Lọc
                         </Button>
                         <Button className="flex items-center gap-2 bg-green-500 hover:bg-green-600 text-white border-0">
-                            <FaCheck size={12} /> Approve All
+                            <FaCheck size={12} /> Duyệt tất cả
                         </Button>
                     </div>
                 }
@@ -43,11 +43,11 @@ const PendingCompaniesTable = () => {
             {/* TABLE */}
             <Table
                 headers={[
-                    { label: "Profile ID" },
-                    { label: "Name" },
-                    { label: "Type" },
-                    { label: "Registration Date" },
-                    { label: "Actions", className: "text-right" }
+                    { label: "Mã hồ sơ" },
+                    { label: "Tên" },
+                    { label: "Loại" },
+                    { label: "Ngày đăng ký" },
+                    { label: "Thao tác", className: "text-right" }
                 ]}
             >
                         {profiles.map((profile) => (
@@ -63,7 +63,7 @@ const PendingCompaniesTable = () => {
                                 <Td className="text-gray-500">{profile.date}</Td>
                                 <Td className="text-right">
                                     <div className="flex items-center justify-end gap-2">
-                                        <button className="w-8 h-8 rounded-lg flex items-center justify-center bg-purple-100 text-purple-600 hover:bg-purple-200 transition-colors">
+                                        <button className="w-8 h-8 rounded-lg flex items-center justify-center bg-sky-100 text-sky-600 hover:bg-sky-200 transition-colors">
                                             <FaEye size={12} />
                                         </button>
                                         <button className="w-8 h-8 rounded-lg flex items-center justify-center bg-green-100 text-green-600 hover:bg-green-200 transition-colors">

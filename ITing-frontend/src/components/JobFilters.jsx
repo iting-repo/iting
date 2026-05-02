@@ -1,155 +1,363 @@
-import React, { useState } from 'react';
-import { FaSearch, FaMapMarkerAlt } from 'react-icons/fa';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
+import { FaSearch, FaMapMarkerAlt, FaMagic } from 'react-icons/fa';
+import { LocationPicker } from './common';
 
-const JobFilters = () => {
-    const [salaryRange, setSalaryRange] = useState(5000);
+const jobTypeOptions = [
+    { label: 'Toàn thời gian', value: 'FULL_TIME' },
+    { label: 'Bán thời gian', value: 'PART_TIME' },
+    { label: 'Hợp đồng', value: 'CONTRACT' },
+    { label: 'Thực tập', value: 'INTERNSHIP' },
+    { label: 'Làm việc từ xa', value: 'REMOTE' },
+    { label: 'Tự do', value: 'FREELANCE' },
+];
 
-    // Component con hiển thị checkbox
-    const FilterCheckbox = ({ label, count }) => (
+const experienceOptions = [
+    { label: 'Thực tập sinh', value: 'INTERN' },
+    { label: 'Mới ra trường / Fresher', value: 'FRESHER' },
+    { label: 'Junior (1-2 năm)', value: 'JUNIOR' },
+    { label: 'Middle (2-4 năm)', value: 'MIDDLE' },
+    { label: 'Mid-level (2-4 năm)', value: 'MID_LEVEL' },
+    { label: 'Senior (4-7 năm)', value: 'SENIOR' },
+    { label: 'Lead (7+ năm)', value: 'LEAD' },
+    { label: 'Chuyên gia', value: 'EXPERT' },
+    { label: 'Quản lý', value: 'MANAGER' },
+];
+
+const postedTimeOptions = [
+    { label: 'Tất cả', value: '' },
+    { label: '1 giờ qua', value: '1' },
+    { label: '24 giờ qua', value: '24' },
+    { label: '7 ngày qua', value: '168' },
+    { label: '30 ngày qua', value: '720' },
+];
+
+const SALARY_MIN = 0;
+const SALARY_MAX = 100000000; // 100 triệu
+const SALARY_STEP = 1000000;  // 1 triệu
+
+const formatVND = (value) => {
+    const num = Number(value);
+    if (num >= 1000000) return `${(num / 1000000).toFixed(0)} tr`;
+    if (num >= 1000) return `${(num / 1000).toFixed(0)}k`;
+    return num.toLocaleString('vi-VN');
+};
+
+const DualRangeSlider = ({ min, max, minVal, maxVal, step, onChange }) => {
+    const trackRef = useRef(null);
+    const minPercent = ((minVal - min) / (max - min)) * 100;
+    const maxPercent = ((maxVal - min) / (max - min)) * 100;
+
+    return (
+        <div className="relative pt-2 pb-1">
+            {/* Track background */}
+            <div className="relative h-1.5 rounded-full bg-gray-200">
+                {/* Active range */}
+                <div
+                    className="absolute h-full rounded-full"
+                    style={{
+                        left: `${minPercent}%`,
+                        width: `${maxPercent - minPercent}%`,
+                        background: 'linear-gradient(90deg, #00B4D8, #0096B4)',
+                    }}
+                />
+            </div>
+
+            {/* Min thumb */}
+            <input
+                type="range"
+                min={min}
+                max={max}
+                step={step}
+                value={minVal}
+                onChange={(e) => {
+                    const val = Math.min(Number(e.target.value), maxVal - step);
+                    onChange(val, maxVal);
+                }}
+                className="salary-range-thumb"
+                style={{ zIndex: minVal > max - 100 ? 5 : 3 }}
+            />
+
+            {/* Max thumb */}
+            <input
+                type="range"
+                min={min}
+                max={max}
+                step={step}
+                value={maxVal}
+                onChange={(e) => {
+                    const val = Math.max(Number(e.target.value), minVal + step);
+                    onChange(minVal, val);
+                }}
+                className="salary-range-thumb"
+                style={{ zIndex: 4 }}
+            />
+
+            {/* Inline styles for range thumbs */}
+            <style>{`
+                .salary-range-thumb {
+                    position: absolute;
+                    top: -2px;
+                    left: 0;
+                    width: 100%;
+                    height: 12px;
+                    -webkit-appearance: none;
+                    appearance: none;
+                    background: transparent;
+                    pointer-events: none;
+                    outline: none;
+                    margin: 0;
+                }
+                .salary-range-thumb::-webkit-slider-thumb {
+                    -webkit-appearance: none;
+                    appearance: none;
+                    width: 20px;
+                    height: 20px;
+                    border-radius: 50%;
+                    background: white;
+                    border: 3px solid #00B4D8;
+                    box-shadow: 0 1px 4px rgba(0,0,0,0.15);
+                    cursor: pointer;
+                    pointer-events: all;
+                    transition: transform 0.15s ease, box-shadow 0.15s ease;
+                }
+                .salary-range-thumb::-webkit-slider-thumb:hover {
+                    transform: scale(1.15);
+                    box-shadow: 0 2px 8px rgba(0,180,216,0.35);
+                }
+                .salary-range-thumb::-webkit-slider-thumb:active {
+                    transform: scale(1.2);
+                    background: #E6F6FD;
+                }
+                .salary-range-thumb::-moz-range-thumb {
+                    width: 20px;
+                    height: 20px;
+                    border-radius: 50%;
+                    background: white;
+                    border: 3px solid #00B4D8;
+                    box-shadow: 0 1px 4px rgba(0,0,0,0.15);
+                    cursor: pointer;
+                    pointer-events: all;
+                }
+            `}</style>
+        </div>
+    );
+};
+
+const JobFilters = ({
+    filters,
+    provinces,
+    onFieldChange,
+    onApply,
+    onReset,
+}) => {
+    const selectedJobTypeSet = new Set(filters.jobTypes || []);
+    const selectedExperienceSet = new Set(filters.experienceLevels || []);
+
+    const [salaryRange, setSalaryRange] = useState([
+        Number(filters.minSalary) || SALARY_MIN,
+        Number(filters.maxSalary) || SALARY_MAX,
+    ]);
+
+    // Sync when filters change externally (e.g. reset)
+    useEffect(() => {
+        setSalaryRange([
+            Number(filters.minSalary) || SALARY_MIN,
+            Number(filters.maxSalary) || SALARY_MAX,
+        ]);
+    }, [filters.minSalary, filters.maxSalary]);
+
+    const handleSalaryChange = useCallback((newMin, newMax) => {
+        setSalaryRange([newMin, newMax]);
+        // Only push to parent on change to avoid excessive re-renders
+        onFieldChange('minSalary', newMin === SALARY_MIN ? '' : String(newMin));
+        onFieldChange('maxSalary', newMax === SALARY_MAX ? '' : String(newMax));
+    }, [onFieldChange]);
+
+    const toggleMulti = (field, value) => {
+        const current = Array.isArray(filters[field]) ? filters[field] : [];
+        const next = current.includes(value)
+            ? current.filter((v) => v !== value)
+            : [...current, value];
+        onFieldChange(field, next);
+    };
+
+    const FilterCheckbox = ({ label, value, checked, onToggle }) => (
         <label className="flex items-center justify-between cursor-pointer group mb-2 last:mb-0">
             <div className="flex items-center gap-2">
                 <input
                     type="checkbox"
+                    checked={checked}
+                    onChange={() => onToggle(value)}
                     className="w-4 h-4 text-[#00B4D8] rounded border-gray-300 focus:ring-[#00B4D8] cursor-pointer"
                 />
                 <span className="text-gray-600 group-hover:text-[#00B4D8] text-sm transition-colors">
                     {label}
                 </span>
             </div>
-            <span className="text-xs text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full min-w-[24px] text-center font-medium">
-                {count}
-            </span>
         </label>
     );
 
+    const isDefaultSalary = salaryRange[0] === SALARY_MIN && salaryRange[1] === SALARY_MAX;
+
     return (
         <div className="space-y-6">
-
-            {/* KHỐI 1: TÌM KIẾM & ĐỊA ĐIỂM (Nền xanh nhạt giống ảnh) */}
             <div className="bg-[#E6F6FD] p-5 rounded-xl border border-[#E6F6FD] space-y-5">
-                {/* Tìm kiếm theo Chức danh */}
                 <div>
                     <h3 className="font-bold text-gray-800 mb-3 text-sm">Tìm kiếm theo Chức danh</h3>
                     <div className="relative">
                         <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs" />
                         <input
                             type="text"
+                            value={filters.keyword}
+                            onChange={(e) => onFieldChange('keyword', e.target.value)}
                             placeholder="Chức danh hoặc tên Công ty"
                             className="w-full pl-9 pr-3 py-2.5 bg-white border border-transparent focus:border-[#00B4D8] rounded-lg outline-none text-sm transition-all placeholder-gray-400 shadow-sm"
                         />
                     </div>
                 </div>
 
-                {/* Địa điểm làm việc */}
                 <div>
                     <h3 className="font-bold text-gray-800 mb-3 text-sm">Địa điểm làm việc</h3>
-                    <div className="relative">
-                        <FaMapMarkerAlt className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs" />
-                        <select className="w-full pl-9 pr-3 py-2.5 bg-white border border-transparent focus:border-[#00B4D8] rounded-lg outline-none text-sm appearance-none cursor-pointer text-gray-600 shadow-sm">
-                            <option>Chọn thành phố</option>
-                            <option>Hồ Chí Minh</option>
-                            <option>Hà Nội</option>
-                            <option>Đà Nẵng</option>
-                        </select>
+                    <div className="relative bg-white border border-transparent focus-within:border-[#00B4D8] rounded-lg shadow-sm">
+                        <FaMapMarkerAlt className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs z-10" />
+                        <div className="pl-9 pr-3 py-2.5">
+                            <LocationPicker 
+                                value={filters.location}
+                                onChange={(val) => onFieldChange('location', val)}
+                                provinces={provinces}
+                            />
+                        </div>
                     </div>
                 </div>
+
+
+                <button
+                    onClick={onApply}
+                    className="w-full py-2 bg-[#00B4D8] hover:bg-[#0096B4] text-white text-xs font-bold rounded-lg transition-colors shadow-sm"
+                >
+                    Tìm kiếm
+                </button>
             </div>
 
-            {/* KHỐI 2: CÁC BỘ LỌC CHI TIẾT (Nền trắng) */}
             <div className="bg-[#E6F6FD] p-5 rounded-xl border border-gray-100 shadow-sm space-y-7">
-
-                {/* LĨNH VỰC */}
-                <div>
-                    <h3 className="font-bold text-gray-800 mb-3 text-sm">Lĩnh vực</h3>
-                    <div className="space-y-1">
-                        <FilterCheckbox label="Software Development" count={10} />
-                        <FilterCheckbox label="DevOps & Cloud" count={10} />
-                        <FilterCheckbox label="Cybersecurity" count={10} />
-                        <FilterCheckbox label="Data & AI" count={10} />
-                        <FilterCheckbox label="Web Development" count={10} />
-                    </div>
-                    <button className="w-full mt-3 py-2 bg-[#00B4D8] hover:bg-[#0096B4] text-white text-xs font-bold rounded-lg transition-colors shadow-sm">
-                        Xem Thêm
-                    </button>
-                </div>
-
-                <hr className="border-gray-100" />
-
-                {/* HÌNH THỨC LÀM VIỆC */}
                 <div>
                     <h3 className="font-bold text-gray-800 mb-3 text-sm">Hình thức làm việc</h3>
                     <div className="space-y-1">
-                        <FilterCheckbox label="Toàn thời gian" count={10} />
-                        <FilterCheckbox label="Bán thời gian" count={10} />
-                        <FilterCheckbox label="Freelance" count={10} />
-                        <FilterCheckbox label="Thực tập" count={10} />
-                        <FilterCheckbox label="Khác" count={10} />
+                        {jobTypeOptions.map((item) => (
+                            <FilterCheckbox
+                                key={item.value}
+                                label={item.label}
+                                value={item.value}
+                                checked={selectedJobTypeSet.has(item.value)}
+                                onToggle={(value) => toggleMulti('jobTypes', value)}
+                            />
+                        ))}
                     </div>
                 </div>
 
                 <hr className="border-gray-100" />
 
-                {/* CẤP BẬC */}
                 <div>
                     <h3 className="font-bold text-gray-800 mb-3 text-sm">Cấp bậc</h3>
-                    <div className="space-y-1">
-                        <FilterCheckbox label="Thực tập" count={10} />
-                        <FilterCheckbox label="Nhân viên mới" count={10} />
-                        <FilterCheckbox label="Chuyên viên" count={10} />
-                        <FilterCheckbox label="Trưởng phòng" count={10} />
+                    <div className="space-y-1 max-h-48 overflow-y-auto pr-1">
+                        {experienceOptions.map((item) => (
+                            <FilterCheckbox
+                                key={item.value}
+                                label={item.label}
+                                value={item.value}
+                                checked={selectedExperienceSet.has(item.value)}
+                                onToggle={(value) => toggleMulti('experienceLevels', value)}
+                            />
+                        ))}
                     </div>
                 </div>
 
                 <hr className="border-gray-100" />
 
-                {/* THỜI GIAN ĐĂNG */}
                 <div>
                     <h3 className="font-bold text-gray-800 mb-3 text-sm">Thời gian đăng</h3>
                     <div className="space-y-1">
-                        <FilterCheckbox label="Tất cả" count={10} />
-                        <FilterCheckbox label="Giờ trước" count={10} />
-                        <FilterCheckbox label="24 Giờ trước" count={10} />
-                        <FilterCheckbox label="7 Ngày trước" count={10} />
-                        <FilterCheckbox label="30 Ngày trước" count={10} />
-                    </div>
-                </div>
-
-                <hr className="border-gray-100" />
-
-                {/* MỨC LƯƠNG */}
-                <div>
-                    <h3 className="font-bold text-gray-800 mb-3 text-sm">Mức lương</h3>
-                    <div className="px-1 mb-4">
-                        <input
-                            type="range"
-                            min="0" max="10000"
-                            value={salaryRange}
-                            onChange={(e) => setSalaryRange(e.target.value)}
-                            className="w-full h-1.5 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-[#00B4D8]"
-                        />
-                    </div>
-                    <div className="flex justify-between items-center">
-                        <div className="text-xs font-bold text-gray-600">
-                            <p>Lương: <span className="text-gray-900">0đ - {salaryRange}đ</span></p>
-                        </div>
-                        <button className="px-3 py-1.5 text-[10px] font-bold text-white bg-[#00B4D8] rounded hover:bg-[#0096B4] transition-colors">
-                            Áp dụng
-                        </button>
-                    </div>
-                </div>
-
-                <hr className="border-gray-100" />
-
-                {/* TAGS */}
-                <div>
-                    <h3 className="font-bold text-gray-800 mb-3 text-sm">Tags</h3>
-                    <div className="flex flex-wrap gap-2">
-                        {['engineering', 'design', 'ui/ux', 'marketing', 'management', 'soft', 'construction'].map((tag, idx) => (
-                            <span key={idx} className="px-3 py-1 bg-[#E6F6FD] text-[#00B4D8] text-xs font-medium rounded-md cursor-pointer hover:bg-[#d0f0fd] transition-colors">
-                                {tag}
-                            </span>
+                        {postedTimeOptions.map((item) => (
+                            <label key={item.label} className="flex items-center gap-2 cursor-pointer group mb-2 last:mb-0">
+                                <input
+                                    type="radio"
+                                    name="postedWithinHours"
+                                    checked={String(filters.postedWithinHours || '') === item.value}
+                                    onChange={() => onFieldChange('postedWithinHours', item.value)}
+                                    className="w-4 h-4 text-[#00B4D8] border-gray-300 focus:ring-[#00B4D8] cursor-pointer"
+                                />
+                                <span className="text-gray-600 group-hover:text-[#00B4D8] text-sm transition-colors">
+                                    {item.label}
+                                </span>
+                            </label>
                         ))}
                     </div>
+                </div>
+
+                <hr className="border-gray-100" />
+
+                {/* Salary Range Slider */}
+                <div>
+                    <div className="flex items-center justify-between mb-3">
+                        <h3 className="font-bold text-gray-800 text-sm">Mức lương</h3>
+                        {!isDefaultSalary && (
+                            <button
+                                onClick={() => handleSalaryChange(SALARY_MIN, SALARY_MAX)}
+                                className="text-[10px] text-gray-400 hover:text-[#00B4D8] transition-colors"
+                            >
+                                Đặt lại
+                            </button>
+                        )}
+                    </div>
+
+                    {/* Value display */}
+                    <div className="flex items-center justify-between mb-4">
+                        <div className="bg-white border border-gray-200 rounded-lg px-3 py-1.5 min-w-[70px] text-center">
+                            <span className="text-xs font-semibold text-[#00B4D8]">
+                                {salaryRange[0] === SALARY_MIN ? '0' : formatVND(salaryRange[0])}
+                            </span>
+                        </div>
+                        <span className="text-gray-300 text-xs mx-2">—</span>
+                        <div className="bg-white border border-gray-200 rounded-lg px-3 py-1.5 min-w-[70px] text-center">
+                            <span className="text-xs font-semibold text-[#00B4D8]">
+                                {salaryRange[1] === SALARY_MAX ? '100 tr+' : formatVND(salaryRange[1])}
+                            </span>
+                        </div>
+                    </div>
+
+                    {/* Dual Range Slider */}
+                    <DualRangeSlider
+                        min={SALARY_MIN}
+                        max={SALARY_MAX}
+                        step={SALARY_STEP}
+                        minVal={salaryRange[0]}
+                        maxVal={salaryRange[1]}
+                        onChange={handleSalaryChange}
+                    />
+
+                    {/* Scale labels */}
+                    <div className="flex justify-between mt-1.5">
+                        <span className="text-[10px] text-gray-400">0</span>
+                        <span className="text-[10px] text-gray-400">25 tr</span>
+                        <span className="text-[10px] text-gray-400">50 tr</span>
+                        <span className="text-[10px] text-gray-400">75 tr</span>
+                        <span className="text-[10px] text-gray-400">100 tr</span>
+                    </div>
+                </div>
+
+                <div className="flex gap-2">
+                    <button
+                        onClick={onApply}
+                        className="flex-1 py-2 bg-[#00B4D8] hover:bg-[#0096B4] text-white text-xs font-bold rounded-lg transition-colors"
+                    >
+                        Áp dụng
+                    </button>
+                    <button
+                        onClick={onReset}
+                        className="flex-1 py-2 bg-white border border-gray-200 text-gray-700 text-xs font-bold rounded-lg hover:bg-gray-50 transition-colors"
+                    >
+                        Đặt lại
+                    </button>
                 </div>
             </div>
         </div>
@@ -157,3 +365,4 @@ const JobFilters = () => {
 };
 
 export default JobFilters;
+

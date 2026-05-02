@@ -1,0 +1,94 @@
+{
+  "comment": "Vietnam Location Knowledge Graph for candidate-employer proximity scoring",
+  "regions": [
+    {
+      "id": "north",
+      "label": "Miền Bắc",
+      "provinces": [
+        "hà nội", "ha noi", "hanoi",
+        "hải phòng", "hai phong",
+        "quảng ninh", "quang ninh",
+        "bắc ninh", "bac ninh",
+        "hưng yên", "hung yen",
+        "hải dương", "hai duong",
+        "thái bình", "thai binh",
+        "nam định", "nam dinh",
+        "ninh bình", "ninh binh",
+        "hà nam", "ha nam",
+        "vĩnh phúc", "vinh phuc",
+        "bắc giang", "bac giang",
+        "thái nguyên", "thai nguyen",
+        "phú thọ", "phu tho",
+        "yên bái", "yen bai",
+        "lào cai", "lao cai",
+        "hà giang", "ha giang",
+        "tuyên quang", "tuyen quang",
+        "cao bằng", "cao bang",
+        "lạng sơn", "lang son",
+        "bắc kạn", "bac kan",
+        "sơn la", "son la",
+        "lai châu", "lai chau",
+        "điện biên", "dien bien",
+        "hòa bình", "hoa binh"
+      ]
+    },
+    {
+      "id": "central",
+      "label": "Miền Trung",
+      "provinces": [
+        "đà nẵng", "da nang", "danang",
+        "thừa thiên huế", "thua thien hue", "huế", "hue",
+        "quảng nam", "quang nam",
+        "quảng ngãi", "quang ngai",
+        "bình định", "binh dinh",
+        "phú yên", "phu yen",
+        "khánh hòa", "khanh hoa", "nha trang",
+        "ninh thuận", "ninh thuan",
+        "bình thuận", "binh thuan",
+        "thanh hóa", "thanh hoa",
+        "nghệ an", "nghe an",
+        "hà tĩnh", "ha tinh",
+        "quảng bình", "quang binh",
+        "quảng trị", "quang tri",
+        "đắk lắk", "dak lak", "buôn ma thuột",
+        "đắk nông", "dak nong",
+        "gia lai", "pleiku",
+        "kon tum",
+        "lâm đồng", "lam dong", "đà lạt", "da lat"
+      ]
+    },
+    {
+      "id": "south",
+      "label": "Miền Nam",
+      "provinces": [
+        "tp. hồ chí minh", "tp.hcm", "hồ chí minh", "ho chi minh", "hcm", "sài gòn", "saigon",
+        "bình dương", "binh duong",
+        "đồng nai", "dong nai",
+        "bà rịa vũng tàu", "ba ria vung tau", "vũng tàu", "vung tau",
+        "long an",
+        "tiền giang", "tien giang",
+        "bến tre", "ben tre",
+        "vĩnh long", "vinh long",
+        "trà vinh", "tra vinh",
+        "đồng tháp", "dong thap",
+        "an giang",
+        "kiên giang", "kien giang",
+        "cần thơ", "can tho",
+        "hậu giang", "hau giang",
+        "sóc trăng", "soc trang",
+        "bạc liêu", "bac lieu",
+        "cà mau", "ca mau",
+        "tây ninh", "tay ninh",
+        "bình phước", "binh phuoc"
+      ]
+    }
+  ],
+  "adjacency": {
+    "north":   {"north": 1.0, "central": 0.35, "south": 0.05},
+    "central": {"north": 0.35, "central": 1.0, "south": 0.35},
+    "south":   {"north": 0.05, "central": 0.35, "south": 1.0}
+  },
+  "same_city_bonus": 1.0,
+  "same_region_score": 0.75,
+  "unknown_location_score": 0.5
+}

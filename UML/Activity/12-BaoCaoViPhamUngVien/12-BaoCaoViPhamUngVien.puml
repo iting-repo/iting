@@ -1,0 +1,52 @@
+@startuml
+title ACT-REPORT-VIOLATION (Revised - User Violation Reporting)
+
+skinparam activity {
+  BackgroundColor #ffffff
+  DiamondBackgroundColor #EEF2FF
+  StartColor #10B981
+  EndColor #EF4444
+  ArrowColor #6366F1
+}
+
+|User|
+start
+:Click nút "Báo cáo vi phạm"\ntại Job / Company / Profile;
+
+|Frontend (UI)|
+if (Đã đăng nhập?) then (No)
+  :Yêu cầu đăng nhập;
+  stop
+else (Yes)
+  :Hiển thị Form báo cáo;
+  :Nhập lý do (reason), mô tả (description),\nvà mức độ ưu tiên (priority);
+  :Gửi yêu cầu POST /api/reports;
+endif
+
+|Backend (UserReportController)|
+:Xác thực @AuthenticationPrincipal;
+
+|Backend (AdminReportService)|
+:Khởi tạo đối tượng **UserReport**;
+:Gán reporterId = Current User;
+:Thiết lập trạng thái mặc định = **PENDING**;
+:Lưu báo cáo vào Database;
+
+|Frontend (UI)|
+:Thông báo "Gửi báo cáo thành công";
+
+|Admin (Cửa sổ quản trị)|
+:Xem danh sách báo cáo (getReports);
+:Chọn báo cáo để xử lý;
+:Cập nhật trạng thái (RESOLVED/DISMISSED/REVIEWING);
+:Ghi chú kết quả xử lý (adminNote);
+
+|Backend (AdminReportService)|
+:Lưu lịch sử xử lý (handleReport);
+:Ghi nhận thời gian và người xử lý;
+
+|Admin (Cửa sổ quản trị)|
+:Cập nhật thống kê báo cáo (getReportStats);
+
+stop
+@enduml

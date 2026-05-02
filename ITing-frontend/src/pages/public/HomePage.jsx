@@ -1,15 +1,24 @@
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { useEffect } from 'react';
 import { fetchJobsRequest, fetchJobDetailRequest } from '../../store/job/jobSlice';
+import { buildJobDetailPath, getJobPublicKey, getCompanyLogoUrl } from '../../utils/jobUrl';
+import publicService from '../../services/publicService';
+import { CompanyLogo, LocationPicker, CategoryPicker } from '../../components/common';
+import { useModalEscape } from '../../hooks/useModalEscape';
 
 // FIX: Gom tất cả icon về react-icons/fa để tránh lỗi import undefined
 import {
     FaSearch, FaMapMarkerAlt, FaBriefcase, FaBuilding, FaUserFriends,
     FaCode, FaCloud, FaShieldAlt, FaDatabase, FaMobileAlt, FaPencilRuler, FaBug,
-    FaArrowRight, FaRegBookmark, FaClock, FaFilter, FaArrowLeft, FaMagic, FaChevronRight
+    FaArrowRight, FaRegBookmark, FaBookmark, FaClock, FaFilter, FaArrowLeft, FaMagic, FaChevronRight,
+    FaCubes, FaGamepad, FaLaptopCode
 } from 'react-icons/fa';
+import { toast } from 'sonner';
+import jobService from '../../services/jobService';
+import recommendationService from '../../services/recommendationService';
+import JobCard from '../../components/JobCard';
 
 // Import hình nền
 import heroBg from '../../assets/bg_login.jpg';
@@ -17,22 +26,136 @@ import heroBg from '../../assets/bg_login.jpg';
 const HomePage = () => {
     const dispatch = useDispatch();
     const navigate = useNavigate();
+    const [searchParams, setSearchParams] = useSearchParams();
     const { jobs = [], totalJobs = 0, isLoading } = useSelector((state) => state.job || {});
+    const { currentUser } = useSelector((state) => state.auth || {});
     const [currentPage, setCurrentPage] = useState(1);
+    const [savedJobIds, setSavedJobIds] = useState([]);
+    const [provinces, setProvinces] = useState([]);
+    const [selectedLocationFilter, setSelectedLocationFilter] = useState(searchParams.get('location') || '');
+    const [stats, setStats] = useState({ totalJobs: 0, totalCandidates: 0, totalCompanies: 0 });
+    const [recommendedJobs, setRecommendedJobs] = useState([]);
+    const [isRecommending, setIsRecommending] = useState(false);
+    const [isAiModalOpen, setIsAiModalOpen] = useState(false);
+    const [cvText, setCvText] = useState("");
+    const [isAnalyzing, setIsAnalyzing] = useState(false);
+    const [blogs, setBlogs] = useState([]);
 
-    const handleJobClick = (jobId) => {
-        dispatch(fetchJobDetailRequest(jobId));
-        navigate(`/jobs/${jobId}`);
+    const handleJobClick = (job) => {
+        const jobKey = getJobPublicKey(job);
+        dispatch(fetchJobDetailRequest(jobKey));
+        navigate(buildJobDetailPath(job));
     };
 
     useEffect(() => {
+        const locationFromUrl = searchParams.get('location') || '';
+        setSelectedLocationFilter(locationFromUrl);
+        setSearchForm((prev) => ({ ...prev, location: locationFromUrl }));
         dispatch(fetchJobsRequest({
+            location: locationFromUrl || undefined,
             page: 0,
             size: 10,
             sortBy: 'lastUpdate',
             sortOrder: 'desc',
         }));
     }, [dispatch]);
+
+    useEffect(() => {
+        fetch('https://provinces.open-api.vn/api/v2/p/')
+            .then((res) => res.json())
+            .then((data) => {
+                if (Array.isArray(data)) {
+                    setProvinces(data);
+                }
+            })
+            .catch(() => {
+                setProvinces([]);
+            });
+    }, []);
+
+    useEffect(() => {
+        const fetchStats = async () => {
+            try {
+                const data = await publicService.getHomeStats();
+                setStats(data || { totalJobs: 0, totalCandidates: 0, totalCompanies: 0 });
+            } catch (error) {
+                console.error("Failed to fetch home stats:", error);
+            }
+        };
+        fetchStats();
+    }, []);
+
+    useEffect(() => {
+        if (!currentUser || (currentUser.role !== 'CANDIDATE' && currentUser.role !== 'USER')) {
+            setSavedJobIds([]);
+            return;
+        }
+
+        const fetchSavedIds = async () => {
+            try {
+                const ids = await jobService.getSavedJobIds();
+                setSavedJobIds(Array.isArray(ids) ? ids : []);
+            } catch (error) {
+                console.error("Failed to fetch saved job IDs", error);
+            }
+        };
+        fetchSavedIds();
+    }, [currentUser]);
+
+    useEffect(() => {
+        const fetchRecommendations = async () => {
+            setIsRecommending(true);
+            try {
+                const data = await recommendationService.getHomepageRecommendations(8);
+                setRecommendedJobs(Array.isArray(data) ? data : []);
+            } catch (error) {
+                console.error("Failed to fetch recommendations:", error);
+            } finally {
+                setIsRecommending(false);
+            }
+        };
+        fetchRecommendations();
+    }, [currentUser]);
+
+    useEffect(() => {
+        const fetchBlogs = async () => {
+            try {
+                const response = await publicService.getBlogs({ page: 0, size: 2 });
+                const data = response.data || response;
+                if (data && data.content) {
+                    setBlogs(data.content);
+                } else if (Array.isArray(data)) {
+                    setBlogs(data);
+                }
+            } catch (error) {
+                console.error("Failed to fetch blogs:", error);
+            }
+        };
+        fetchBlogs();
+    }, []);
+
+    const handleToggleSave = async (e, jobId) => {
+        e.stopPropagation();
+        if (!currentUser) {
+            toast.error("Vui lòng đăng nhập để lưu công việc!");
+            return;
+        }
+
+        const isCurrentlySaved = savedJobIds.includes(jobId);
+        try {
+            if (isCurrentlySaved) {
+                await jobService.unsaveJob(jobId);
+                setSavedJobIds(prev => prev.filter(id => id !== jobId));
+                toast.success("Đã bỏ lưu công việc.");
+            } else {
+                await jobService.saveJob(jobId);
+                setSavedJobIds(prev => [...prev, jobId]);
+                toast.success("Đã lưu công việc thành công!");
+            }
+        } catch (error) {
+            toast.error("Không thể thao tác lúc này.");
+        }
+    };
 
     // Helper: Format Salary
     const formatSalary = (min, max) => {
@@ -47,12 +170,13 @@ const HomePage = () => {
     const [searchForm, setSearchForm] = useState({
         keyword: '',
         location: '',
+        category: '',
         jobType: '',
         experienceLevel: '',
         minSalary: '',
         maxSalary: '',
         companyId: '',
-        techRequired: '',
+        skills: '',
         sortBy: 'lastUpdate',
         sortOrder: 'desc',
         page: 0,
@@ -67,13 +191,25 @@ const HomePage = () => {
             [field]: value,
             page: 0,
         }));
+
+        if (field === 'location') {
+            setSelectedLocationFilter(value);
+        }
+    };
+
+    const updateLocationQuery = (locationValue) => {
+        if (locationValue) {
+            setSearchParams({ location: locationValue });
+            return;
+        }
+        setSearchParams({});
     };
 
     const handlePageChange = (newPage) => {
         setCurrentPage(newPage);
         const updatedForm = { ...searchForm, page: newPage - 1 };
         setSearchForm(updatedForm);
-        
+
         const params = {
             ...updatedForm,
             minSalary: updatedForm.minSalary || undefined,
@@ -83,32 +219,58 @@ const HomePage = () => {
             location: updatedForm.location || undefined,
             jobType: updatedForm.jobType || undefined,
             experienceLevel: updatedForm.experienceLevel || undefined,
-            techRequired: updatedForm.techRequired || undefined,
+            techRequired: updatedForm.skills || undefined,
         };
+        updateLocationQuery(updatedForm.location);
         dispatch(fetchJobsRequest(params));
     };
 
 
-    // submit form
     const handleSearch = () => {
-        setCurrentPage(1);
-        setSearchForm(prev => ({ ...prev, page: 0 }));
-        
-        const params = {
-            ...searchForm,
-            page: 0,
-            minSalary: searchForm.minSalary || undefined,
-            maxSalary: searchForm.maxSalary || undefined,
-            companyId: searchForm.companyId || undefined,
-            keyword: searchForm.keyword || undefined,
-            location: searchForm.location || undefined,
-            jobType: searchForm.jobType || undefined,
-            experienceLevel: searchForm.experienceLevel || undefined,
-            techRequired: searchForm.techRequired || undefined,
-        };
+        const params = new URLSearchParams();
+        const finalKeyword = [searchForm.category, searchForm.keyword].filter(Boolean).join(' ');
 
-        dispatch(fetchJobsRequest(params));
+        if (finalKeyword) params.append('keyword', finalKeyword);
+        if (searchForm.location) params.append('location', searchForm.location);
+        if (searchForm.jobType) params.append('jobTypes', searchForm.jobType);
+
+        navigate(`/jobs?${params.toString()}`);
     };
+
+    const handleAiSearch = () => {
+        setIsAiModalOpen(true);
+    };
+
+    const handleConfirmAiSearch = async () => {
+        if (!cvText.trim()) {
+            toast.error("Vui lòng dán nội dung CV để AI phân tích!");
+            return;
+        }
+
+        setIsAnalyzing(true);
+        try {
+            const response = await jobService.analyzeCv(cvText);
+            const criteria = response.data || response; // handle axios wrap
+
+            const params = new URLSearchParams();
+            if (criteria.keyword) params.append('keyword', criteria.keyword);
+            if (criteria.location) params.append('location', searchForm.location);
+            if (criteria.techs && criteria.techs.length > 0) params.append('techs', criteria.techs.join(','));
+            if (criteria.experienceLevel) params.append('experienceLevels', criteria.experienceLevel);
+            params.append('isAiSearch', 'true');
+
+            toast.success("Đã phân tích CV thành công! Đang tìm việc phù hợp...");
+            navigate(`/jobs?${params.toString()}`);
+        } catch (error) {
+            console.error("AI Analysis failed:", error);
+            toast.error("Phân tích CV thất bại. Vui lòng thử lại!");
+        } finally {
+            setIsAnalyzing(false);
+            setIsAiModalOpen(false);
+        }
+    };
+
+    useModalEscape(isAiModalOpen ? () => setIsAiModalOpen(false) : null);
 
     // Helper: Time Ago (Simple version)
     const timeAgo = (dateString) => {
@@ -130,16 +292,20 @@ const HomePage = () => {
         return Math.floor(seconds) + " giây trước";
     };
 
-    // --- MOCK DATA ---
+    // --- DANH MỤC NGÀNH NGHỀ (sync với Industry.java enum) ---
     const categories = [
-        { id: 1, name: "Software Development", count: 1254, icon: <FaCode /> },
-        { id: 2, name: "DevOps & Cloud", count: 816, icon: <FaCloud /> },
-        { id: 3, name: "Cybersecurity", count: 2082, icon: <FaShieldAlt /> },
-        { id: 4, name: "Data & AI", count: 1520, icon: <FaDatabase /> },
-        { id: 5, name: "Web Development", count: 1022, icon: <FaBriefcase /> },
-        { id: 6, name: "Mobile Development", count: 1496, icon: <FaMobileAlt /> },
-        { id: 7, name: "UI/UX & Design", count: 1529, icon: <FaPencilRuler /> },
-        { id: 8, name: "QA & Testing", count: 1244, icon: <FaBug /> },
+        { id: 'SOFTWARE_DEVELOPMENT', name: "Phát triển phần mềm", icon: <FaCode /> },
+        { id: 'WEB_DEVELOPMENT', name: "Phát triển Web", icon: <FaLaptopCode /> },
+        { id: 'MOBILE_DEVELOPMENT', name: "Phát triển Mobile", icon: <FaMobileAlt /> },
+        { id: 'CLOUD_COMPUTING', name: "Điện toán đám mây", icon: <FaCloud /> },
+        { id: 'DEVOPS', name: "DevOps", icon: <FaCubes /> },
+        { id: 'DATA_SCIENCE', name: "Khoa học dữ liệu", icon: <FaDatabase /> },
+        { id: 'AI', name: "Trí tuệ nhân tạo (AI)", icon: <FaMagic /> },
+        { id: 'CYBERSECURITY', name: "An ninh mạng", icon: <FaShieldAlt /> },
+        { id: 'BLOCKCHAIN', name: "Blockchain", icon: <FaCubes /> },
+        { id: 'GAME_DEVELOPMENT', name: "Phát triển Game", icon: <FaGamepad /> },
+        { id: 'QA_TESTING', name: "Kiểm thử (QA)", icon: <FaBug /> },
+        { id: 'IT_SOFTWARE', name: "Phần mềm & CNTT", icon: <FaBriefcase /> },
     ];
 
     const bestJobs = [
@@ -169,24 +335,7 @@ const HomePage = () => {
         },
     ];
 
-    const blogs = [
-        {
-            id: 1,
-            tag: "News",
-            date: "30 March 2024",
-            title: "Revitalizing Workplace Morale: Innovative Tactics For Boosting Employee Engagement In 2024",
-            image: "https://via.placeholder.com/600x400",
-        },
-        {
-            id: 2,
-            tag: "Blog",
-            date: "30 March 2024",
-            title: "How To Avoid The Top Six Most Common Job Interview Mistakes",
-            image: "https://via.placeholder.com/600x400",
-        }
-    ];
-
-    const locations = ["Thành phố Hồ Chí Minh", "Quận 1", "Quận 2", "Quận 3", "Quận 4", "Quận 5", "Quận 6", "Quận 7"];
+    // Dynamic blogs fetched from API
 
     return (
         <div className="bg-white font-sans">
@@ -203,11 +352,19 @@ const HomePage = () => {
                         Tìm việc làm IT <span className="text-white">chất lượng trên toàn quốc</span>
                     </h1>
                     <p className="text-gray-400 mb-10 text-sm md:text-base max-w-2xl mx-auto">
-                        Tiếp cận 60.000+ tin tuyển dụng việc làm mỗi ngày từ hàng nghìn doanh nghiệp uy tín tại Việt Nam
+                        Tiếp cận {stats.totalJobs.toLocaleString('vi-VN')}+ tin tuyển dụng việc làm mỗi ngày từ hàng nghìn doanh nghiệp uy tín tại Việt Nam
                     </p>
 
                     {/* Search Box */}
-                    <div className="bg-white rounded-lg md:rounded-full p-1.5 flex flex-col md:flex-row items-center max-w-4xl mx-auto shadow-2xl">
+                    <div className="bg-white rounded-lg md:rounded-full p-1.5 flex flex-col md:flex-row items-center max-w-5xl mx-auto shadow-2xl overflow-visible">
+                        {/* 1. Category Picker (Far Left) */}
+                        <div className="w-full md:w-[25%] h-12 flex items-center px-4 relative">
+                            <CategoryPicker
+                                value={searchForm.category}
+                                onChange={(val) => handleChangeSearchField('category', val)}
+                            />
+                        </div>
+
                         <div className="flex-1 w-full md:w-auto px-4 py-3 flex items-center border-b md:border-b-0 md:border-r border-gray-200">
                             <FaSearch className="text-gray-400 mr-2" />
                             <input
@@ -219,51 +376,45 @@ const HomePage = () => {
                                     if (e.key === 'Enter') handleSearch();
                                 }}
                                 className="w-full outline-none text-gray-700 text-sm placeholder-gray-400"
-                            />                        
-                            </div>
-                        <div className="w-full md:w-[20%] px-4 py-3 flex items-center border-b md:border-b-0 md:border-r border-gray-200">
-                            <FaMapMarkerAlt className="text-gray-400 mr-2" />
-                            <select
+                            />
+                        </div>
+                        <div className="w-full md:w-[25%] px-4 py-3 flex items-center border-b md:border-b-0 md:border-r border-gray-200 relative">
+                            <FaMapMarkerAlt className="text-gray-400 mr-2 flex-shrink-0" />
+                            <LocationPicker
                                 value={searchForm.location}
-                                onChange={(e) => handleChangeSearchField('location', e.target.value)}
-                                className="w-full outline-none text-gray-700 text-sm bg-transparent"
-                            >
-                                <option value="">Địa điểm</option>
-                                {locations.map((loc, i) => (
-                                    <option key={i} value={loc}>{loc}</option>
-                                ))}
-                            </select>
+                                onChange={(val) => handleChangeSearchField('location', val)}
+                                provinces={provinces}
+                            />
                         </div>
-                        <div className="w-full md:w-[25%] px-4 py-3 flex items-center border-b md:border-b-0 md:border-r border-gray-200">
-                            <FaBriefcase className="text-gray-400 mr-2" />
-                            <select
-                                value={searchForm.jobType}
-                                onChange={(e) => handleChangeSearchField('jobType', e.target.value)}
-                                className="w-full outline-none text-gray-700 text-sm bg-transparent"
-                            >
-                                <option value="">Loại công việc</option>
-                                <option value="FULL_TIME">Full-time</option>
-                                <option value="PART_TIME">Part-time</option>
-                                <option value="INTERNSHIP">Internship</option>
-                                <option value="REMOTE">Remote</option>
-                            </select>
-                        </div>
-                        <button className="w-full md:w-auto bg-[#3AB4E6] hover:bg-blue-500 text-white px-5 py-3 font-bold text-sm flex items-center justify-center gap-1 transition-colors border-r border-blue-400/30">
-                            {/* FIX: Thay HiSparkles bằng FaMagic */}
+                        <button
+                            onClick={handleAiSearch}
+                            className="w-full md:w-auto bg-[#3AB4E6] hover:bg-blue-500 text-white px-5 py-3 font-bold text-sm flex items-center justify-center gap-1 transition-colors border-r border-blue-400/30"
+                        >
                             <FaMagic className="text-yellow-300" /> AI
                         </button>
                         <button
-                        onClick={handleSearch}
-                        className="w-full md:w-auto bg-[#3AB4E6] hover:bg-blue-500 text-white px-8 py-3 rounded-b-lg md:rounded-r-full md:rounded-bl-none font-bold text-sm transition-all flex items-center justify-center gap-2"
-                    >
-                        <FaSearch /> Tìm kiếm
-                    </button>
+                            onClick={handleSearch}
+                            className="w-full md:w-auto bg-[#3AB4E6] hover:bg-blue-500 text-white px-8 py-3 rounded-b-lg md:rounded-r-full md:rounded-bl-none font-bold text-sm transition-all flex items-center justify-center gap-2"
+                        >
+                            <FaSearch /> Tìm kiếm
+                        </button>
                     </div>
 
                     <div className="mt-6 flex flex-wrap justify-center gap-2 items-center">
                         <span className="text-gray-400 text-sm font-medium">Gợi ý:</span>
                         {['Intern', 'Thực tập sinh IT', 'Thực tập sinh tiếng Trung', 'Thực tập sinh tư vấn', 'Chuyên viên vận hành'].map((tag, i) => (
-                            <span key={i} className="bg-white/10 hover:bg-white/20 text-white px-3 py-1 rounded-full text-xs cursor-pointer transition-all border border-white/5">
+                            <span
+                                key={i}
+                                onClick={() => {
+                                    handleChangeSearchField('keyword', tag);
+                                    const params = new URLSearchParams();
+                                    params.append('keyword', tag);
+                                    if (searchForm.location) params.append('location', searchForm.location);
+                                    if (searchForm.jobType) params.append('jobTypes', searchForm.jobType);
+                                    navigate(`/jobs?${params.toString()}`);
+                                }}
+                                className="bg-white/10 hover:bg-white/20 text-white px-3 py-1 rounded-full text-xs cursor-pointer transition-all border border-white/5"
+                            >
                                 {tag}
                             </span>
                         ))}
@@ -274,28 +425,139 @@ const HomePage = () => {
                             <div className="w-12 h-12 rounded-full bg-[#3AB4E6] flex items-center justify-center shadow-lg shadow-blue-500/30">
                                 <FaBriefcase className="text-white text-xl" />
                             </div>
-                            <div><div className="text-2xl font-bold text-white">25,850</div><div className="text-gray-400 text-xs">Công việc</div></div>
+                            <div>
+                                <div className="text-2xl font-bold text-white">
+                                    {stats.totalJobs.toLocaleString('vi-VN')}
+                                </div>
+                                <div className="text-gray-400 text-xs">Công việc</div>
+                            </div>
                         </div>
                         <div className="flex items-center gap-3 text-left">
                             <div className="w-12 h-12 rounded-full bg-[#3AB4E6] flex items-center justify-center shadow-lg shadow-blue-500/30">
                                 <FaUserFriends className="text-white text-xl" />
                             </div>
-                            <div><div className="text-2xl font-bold text-white">10,250</div><div className="text-gray-400 text-xs">Ứng viên</div></div>
+                            <div>
+                                <div className="text-2xl font-bold text-white">
+                                    {stats.totalCandidates.toLocaleString('vi-VN')}
+                                </div>
+                                <div className="text-gray-400 text-xs">Ứng viên</div>
+                            </div>
                         </div>
                         <div className="flex items-center gap-3 text-left">
                             <div className="w-12 h-12 rounded-full bg-[#3AB4E6] flex items-center justify-center shadow-lg shadow-blue-500/30">
                                 <FaBuilding className="text-white text-xl" />
                             </div>
-                            <div><div className="text-2xl font-bold text-white">18,400</div><div className="text-gray-400 text-xs">Công ty</div></div>
+                            <div>
+                                <div className="text-2xl font-bold text-white">
+                                    {stats.totalCompanies.toLocaleString('vi-VN')}
+                                </div>
+                                <div className="text-gray-400 text-xs">Công ty</div>
+                            </div>
                         </div>
                     </div>
                 </div>
             </section>
 
             {/* =================================================================
-          PHẦN 3: VIỆC LÀM TỐT NHẤT (MODERN CLEAN UI FIX)
+          PHẦN: DÀNH CHO BẠN (RECOMMENDATIONS)
          ================================================================= */}
-            <section className="py-10 px-8 bg-white">
+            <section className="py-16 px-4 bg-[#F8FAFC]">
+                <div className="container mx-auto">
+                    <div className="flex items-center gap-3 mb-8">
+                        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-white shadow-lg shadow-blue-500/20">
+                            <FaMagic />
+                        </div>
+                        <div>
+                            <h2 className="text-2xl md:text-3xl font-bold text-gray-900">
+                                {currentUser ? "Dành cho bạn" : "Việc làm nổi bật"}
+                            </h2>
+                            <p className="text-gray-500 text-sm">
+                                {currentUser
+                                    ? "Dựa trên hồ sơ và những gì bạn đã xem"
+                                    : "Khám phá các cơ hội việc làm tốt nhất ngay hôm nay"}
+                            </p>
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                        {isRecommending ? (
+                            Array.from({ length: 4 }).map((_, i) => (
+                                <div key={i} className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 animate-pulse">
+                                    <div className="w-12 h-12 bg-gray-100 rounded-xl mb-4"></div>
+                                    <div className="h-4 bg-gray-100 rounded w-3/4 mb-2"></div>
+                                    <div className="h-3 bg-gray-50 rounded w-1/2 mb-4"></div>
+                                    <div className="flex gap-2">
+                                        <div className="h-6 bg-gray-50 rounded w-16"></div>
+                                        <div className="h-6 bg-gray-50 rounded w-16"></div>
+                                    </div>
+                                </div>
+                            ))
+                        ) : recommendedJobs.length > 0 ? (
+                            recommendedJobs.map((job) => {
+                                const isSaved = savedJobIds.includes(job.id);
+                                return (
+                                    <div
+                                        key={job.id}
+                                        onClick={() => handleJobClick(job.id)}
+                                        className="group bg-white rounded-2xl p-6 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 border border-gray-100 relative cursor-pointer"
+                                    >
+                                        <div className="flex justify-between items-start mb-4">
+                                            <CompanyLogo
+                                                logoUrl={job.companyLogo || job.logo || job.logoUrl}
+                                                companyId={job.companyId}
+                                                companyName={job.companyName}
+                                                className="w-12 h-12 rounded-xl object-contain bg-gray-50 p-1"
+                                            />
+                                            <button
+                                                onClick={(e) => handleToggleSave(e, job.id)}
+                                                className={`w-8 h-8 rounded-lg flex items-center justify-center transition-all ${isSaved ? 'bg-blue-500 text-white shadow-md' : 'bg-gray-50 text-gray-400 group-hover:bg-blue-50'}`}
+                                            >
+                                                {isSaved ? <FaBookmark size={12} /> : <FaRegBookmark size={12} />}
+                                            </button>
+                                        </div>
+
+                                        <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-blue-50 text-blue-600 text-[10px] font-bold mb-3 uppercase tracking-wider">
+                                            <FaMagic size={10} /> Gợi ý AI
+                                        </div>
+
+                                        <h3 className="text-base font-bold text-gray-900 group-hover:text-blue-500 transition-colors line-clamp-2 min-h-[3rem]">
+                                            {job.title || job.position}
+                                        </h3>
+                                        <p className="text-xs text-gray-500 font-medium mb-4 truncate">{job.companyName}</p>
+
+                                        <div className="flex items-center gap-4 text-[11px] text-gray-400 mb-4 pt-4 border-t border-gray-50">
+                                            <span className="flex items-center gap-1">
+                                                <FaMapMarkerAlt className="text-red-400" /> {job.province || "Việt Nam"}
+                                            </span>
+                                            <span className="flex items-center gap-1">
+                                                <FaClock className="text-sky-400" /> {timeAgo(job.createdAt)}
+                                            </span>
+                                        </div>
+
+                                        <div className="flex items-center justify-between">
+                                            <span className="text-sm font-bold text-blue-500">
+                                                {job.minSalary || job.maxSalary ? formatSalary(job.minSalary, job.maxSalary) : "Thỏa thuận"}
+                                            </span>
+                                            <div className="w-8 h-8 rounded-full bg-gray-50 group-hover:bg-blue-500 group-hover:text-white flex items-center justify-center transition-all">
+                                                <FaChevronRight size={10} />
+                                            </div>
+                                        </div>
+                                    </div>
+                                );
+                            })
+                        ) : (
+                            <div className="col-span-full py-20 text-center bg-white rounded-3xl border border-dashed border-gray-200">
+                                <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-4 text-gray-300">
+                                    <FaBriefcase size={24} />
+                                </div>
+                                <h3 className="text-lg font-bold text-gray-900 mb-1">Hiện chưa có đề xuất nào</h3>
+                                <p className="text-gray-500 text-sm">Hãy cập nhật CV và xem thêm nhiều việc làm để chúng tôi gợi ý tốt hơn nhé!</p>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            </section>
+            <section id="best-jobs-section" className="py-10 px-8 bg-white">
                 <div className="container mx-auto px-4">
 
                     {/* 1. HEADER: Loại bỏ nút đen, dùng nút viền mảnh tinh tế */}
@@ -335,13 +597,37 @@ const HomePage = () => {
                             </button>
 
                             <div className="flex gap-3 overflow-x-auto no-scrollbar px-1 py-1 scroll-smooth flex-1">
-                                {locations.map((loc, i) => (
-                                    <button key={i} className={`flex-shrink-0 px-5 py-2 rounded-full text-xs font-bold transition-all border
-                      ${i === 0
-                                            ? 'bg-[#3AB4E6] border-[#3AB4E6] text-white shadow-md shadow-blue-200'
-                                            : 'bg-white border-gray-200 text-gray-500 hover:border-gray-300 hover:bg-gray-50'
-                                        }`}>
-                                        {loc}
+                                {provinces.map((province) => (
+                                    <button
+                                        key={province.code}
+                                        onClick={() => {
+                                            const newLocation = selectedLocationFilter === province.name ? '' : province.name;
+                                            setSelectedLocationFilter(newLocation);
+                                            setSearchForm((prev) => ({ ...prev, location: newLocation, page: 0 }));
+                                            setCurrentPage(1);
+
+                                            const params = {
+                                                ...searchForm,
+                                                location: newLocation || undefined,
+                                                page: 0,
+                                                minSalary: searchForm.minSalary || undefined,
+                                                maxSalary: searchForm.maxSalary || undefined,
+                                                companyId: searchForm.companyId || undefined,
+                                                keyword: searchForm.keyword || undefined,
+                                                jobType: searchForm.jobType || undefined,
+                                                experienceLevel: searchForm.experienceLevel || undefined,
+                                                techRequired: searchForm.skills || undefined,
+                                            };
+
+                                            dispatch(fetchJobsRequest(params));
+                                        }}
+                                        className={`flex-shrink-0 px-5 py-2 rounded-full text-xs font-bold transition-all border
+                      ${selectedLocationFilter === province.name
+                                                ? 'bg-[#3AB4E6] border-[#3AB4E6] text-white shadow-md shadow-blue-200'
+                                                : 'bg-white border-gray-200 text-gray-500 hover:border-gray-300 hover:bg-gray-50'
+                                            }`}
+                                    >
+                                        {province.name}
                                     </button>
                                 ))}
                             </div>
@@ -366,13 +652,24 @@ const HomePage = () => {
                     </div>
 
                     {/* 4. JOB LIST: Thêm hiệu ứng hover xịn & bo góc mềm */}
-                    <div className="space-y-5 mb-12">
-                        {isLoading ? (
-                            <div className="text-center py-10">Đang tải danh sách việc làm...</div>
-                        ) : (jobs ?? []).map((job) => (
-                                <div 
-                                    key={job.id} 
-                                    onClick={() => handleJobClick(job.id)}
+                    <div className="space-y-5 mb-12 min-h-[800px] relative">
+                        {isLoading && (
+                            <div className="absolute inset-0 bg-white/60 backdrop-blur-[1px] z-10 flex justify-center pt-20 rounded-2xl">
+                                <div className="flex items-center gap-3 px-6 py-3 bg-white rounded-full shadow-xl border border-blue-100 text-[#3AB4E6] font-bold h-fit">
+                                    <div className="w-5 h-5 border-2 border-[#3AB4E6] border-t-transparent rounded-full animate-spin"></div>
+                                    Đang tải dữ liệu...
+                                </div>
+                            </div>
+                        )}
+                        {(jobs ?? []).length === 0 && !isLoading ? (
+                            <div className="text-center py-20 text-gray-500">Không tìm thấy công việc nào.</div>
+                        ) : (
+                            (jobs ?? []).map((job) => {
+                                const isSaved = savedJobIds.includes(job.id);
+                                return (
+                                <div
+                                    key={job.id}
+                                    onClick={() => handleJobClick(job)}
                                     className="group relative border border-gray-100 rounded-2xl p-6 hover:shadow-xl hover:shadow-blue-500/5 transition-all duration-300 bg-white overflow-hidden cursor-pointer">
 
                                     {/* Hiệu ứng: Thanh màu xanh trượt ra khi hover */}
@@ -381,11 +678,11 @@ const HomePage = () => {
                                     <div className="flex flex-col md:flex-row gap-6">
                                         {/* Logo */}
                                         <div className="shrink-0">
-                                            <img
-                                                src={job.companyLogo || "https://via.placeholder.com/100"}
-                                                alt="Logo"
+                                            <CompanyLogo
+                                                logoUrl={job.companyLogo || job.logo || job.logoUrl}
+                                                companyId={job.companyId}
+                                                companyName={job.companyName}
                                                 className="w-14 h-14 rounded-xl object-contain bg-gray-50 p-1 border border-gray-100"
-                                                onError={(e) => e.target.src = "https://via.placeholder.com/100"}
                                             />
                                         </div>
 
@@ -394,14 +691,14 @@ const HomePage = () => {
                                             <div className="flex justify-between items-start mb-2">
                                                 <div>
                                                     <h3 className="text-lg font-bold text-gray-900 group-hover:text-[#3AB4E6] transition-colors cursor-pointer">
-                                                        {job.position}
+                                                        {job.title || job.position}
                                                     </h3>
                                                     <p className="text-sm text-gray-500 font-medium mt-1">{job.companyName}</p>
                                                 </div>
-                                                <button 
-                                                    onClick={(e) => { e.stopPropagation(); /* handle bookmark */ }}
-                                                    className="w-9 h-9 rounded-full bg-gray-50 text-gray-400 flex items-center justify-center hover:bg-[#3AB4E6] hover:text-white transition-all">
-                                                    <FaRegBookmark />
+                                                <button
+                                                    onClick={(e) => handleToggleSave(e, job.id)}
+                                                    className={`w-9 h-9 rounded-full flex items-center justify-center transition-all ${isSaved ? 'bg-[#3AB4E6] text-white shadow-md shadow-blue-200' : 'bg-gray-50 text-gray-400 hover:bg-[#3AB4E6] hover:text-white'}`}>
+                                                    {isSaved ? <FaBookmark size={14} /> : <FaRegBookmark size={14} />}
                                                 </button>
                                             </div>
 
@@ -411,12 +708,12 @@ const HomePage = () => {
                                                     <FaBriefcase className="text-blue-400" /> {job.jobType || "Full-time"}
                                                 </span>
                                                 <span className="flex items-center gap-1.5 bg-gray-50 px-3 py-1.5 rounded-lg border border-gray-100">
-                                                    <FaClock className="text-purple-400" /> {formatSalary(job.minSalary, job.maxSalary)}
+                                                    <FaClock className="text-sky-400" /> {formatSalary(job.minSalary, job.maxSalary)}
                                                 </span>
                                                 {/* Tech Stack */}
-                                                {job.techRequired && (
+                                                {job.skills && (
                                                     <span className="flex items-center gap-1.5 bg-green-50 text-green-700 px-3 py-1.5 rounded-lg border border-green-100 font-bold truncate max-w-[200px]">
-                                                        {job.techRequired}
+                                                        {Array.isArray(job.skills) ? job.skills.join(', ') : job.skills}
                                                     </span>
                                                 )}
 
@@ -438,19 +735,21 @@ const HomePage = () => {
                                         </div>
                                     </div>
                                 </div>
-                            ))}
+                                );
+                            })
+                        )}
                     </div>
 
                     {/* 5. PAGINATION: Bỏ nút đen, dùng style Clean */}
                     {totalJobs > 0 && (
                         <div className="flex justify-center items-center gap-2">
-                            <button 
+                            <button
                                 onClick={() => currentPage > 1 && handlePageChange(currentPage - 1)}
                                 disabled={currentPage === 1}
                                 className={`w-10 h-10 rounded-full flex items-center justify-center border transition-all ${currentPage === 1 ? 'border-gray-100 text-gray-300 bg-gray-50 cursor-not-allowed' : 'border-gray-200 text-gray-400 hover:border-[#3AB4E6] hover:text-[#3AB4E6] bg-white'}`}>
                                 <FaArrowLeft size={12} />
                             </button>
-                            
+
                             {Array.from({ length: Math.ceil(totalJobs / searchForm.size) }, (_, i) => i + 1)
                                 .filter(p => p === 1 || p === Math.ceil(totalJobs / searchForm.size) || Math.abs(p - currentPage) <= 2)
                                 .map((page, index, array) => (
@@ -470,8 +769,8 @@ const HomePage = () => {
                                     </React.Fragment>
                                 ))
                             }
-                            
-                            <button 
+
+                            <button
                                 onClick={() => currentPage < Math.ceil(totalJobs / searchForm.size) && handlePageChange(currentPage + 1)}
                                 disabled={currentPage === Math.ceil(totalJobs / searchForm.size)}
                                 className={`w-10 h-10 rounded-full flex items-center justify-center border transition-all ${currentPage === Math.ceil(totalJobs / searchForm.size) ? 'border-gray-100 text-gray-300 bg-gray-50 cursor-not-allowed' : 'border-gray-200 text-gray-400 hover:border-[#3AB4E6] hover:text-[#3AB4E6] bg-white'}`}>
@@ -490,16 +789,13 @@ const HomePage = () => {
                         <p className="text-gray-500 text-sm">Khám phá các cơ hội nghề nghiệp trong lĩnh vực công nghệ – từ phát triển phần mềm, AI, đến an ninh mạng.</p>
                     </div>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-6">
                         {categories.map((cat) => (
                             <div key={cat.id} className="bg-white p-8 rounded-xl shadow-sm hover:shadow-lg transition-all duration-300 cursor-pointer group flex flex-col items-center text-center border border-transparent hover:border-blue-200">
                                 <div className="w-16 h-16 mb-4 text-[#3AB4E6] text-4xl group-hover:scale-110 transition-transform flex items-center justify-center">
                                     {cat.icon}
                                 </div>
-                                <h3 className="text-lg font-bold text-gray-800 mb-2 group-hover:text-[#3AB4E6] transition-colors">{cat.name}</h3>
-                                <span className="bg-blue-50 text-blue-600 px-3 py-1 rounded text-xs font-medium">
-                                    {cat.count} jobs
-                                </span>
+                                <h3 className="text-base font-bold text-gray-800 group-hover:text-[#3AB4E6] transition-colors">{cat.name}</h3>
                             </div>
                         ))}
                     </div>
@@ -516,22 +812,22 @@ const HomePage = () => {
                             <p className="text-gray-500 text-sm">Cập nhật tin tức mới nhất về công nghệ và thị trường tuyển dụng</p>
                         </div>
                         {/* FIX: Thay BsArrowRight bằng FaArrowRight */}
-                        <a href="#" className="text-[#3AB4E6] font-medium hover:underline flex items-center gap-1">
+                        <Link to="/blogs" className="text-[#3AB4E6] font-medium hover:underline flex items-center gap-1">
                             View all <FaArrowRight />
-                        </a>
+                        </Link>
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                         {blogs.map((blog) => (
-                            <div key={blog.id} className="group cursor-pointer">
+                            <div key={blog.id} className="group cursor-pointer" onClick={() => navigate(`/blog/${blog.slug}`)}>
                                 <div className="overflow-hidden rounded-xl mb-4 relative">
-                                    <img src={blog.image} alt={blog.title} className="w-full h-64 object-cover transform group-hover:scale-105 transition-transform duration-500" />
+                                    <img src={blog.thumbnailUrl || `https://ui-avatars.com/api/?name=${blog.category || 'Blog'}&background=3AB4E6&color=fff&size=600`} alt={blog.title} className="w-full h-64 object-cover transform group-hover:scale-105 transition-transform duration-500" />
                                     <span className="absolute top-4 left-4 bg-[#3AB4E6] text-white text-xs font-bold px-3 py-1 rounded-full uppercase">
-                                        {blog.tag}
+                                        {blog.category || 'Tin tức'}
                                     </span>
                                 </div>
-                                <div className="text-gray-400 text-xs mb-2">{blog.date}</div>
-                                <h3 className="text-xl font-bold text-gray-800 mb-3 group-hover:text-[#3AB4E6] transition-colors leading-snug">
+                                <div className="text-gray-400 text-xs mb-2">{timeAgo(blog.createdAt)}</div>
+                                <h3 className="text-xl font-bold text-gray-800 mb-3 group-hover:text-[#3AB4E6] transition-colors leading-snug line-clamp-2 min-h-[3.5rem]">
                                     {blog.title}
                                 </h3>
                                 {/* FIX: Thay BsArrowRight bằng FaArrowRight */}
@@ -544,6 +840,72 @@ const HomePage = () => {
                 </div>
             </section>
 
+            {/* AI CV Modal */}
+            {isAiModalOpen && (
+                <div
+                    className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+                    onClick={() => setIsAiModalOpen(false)}
+                >
+                    <div
+                        className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden transform transition-all animate-in fade-in zoom-in duration-300"
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <div className="bg-[#3AB4E6] p-6 text-white relative">
+                            <button
+                                onClick={() => setIsAiModalOpen(false)}
+                                className="absolute top-4 right-4 text-white/80 hover:text-white transition-colors"
+                            >
+                                <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                </svg>
+                            </button>
+                            <h3 className="text-2xl font-bold flex items-center gap-2">
+                                <FaMagic className="text-yellow-300" /> Tìm việc bằng AI
+                            </h3>
+                            <p className="text-blue-50/80 mt-1">Dán nội dung CV của bạn vào đây, AI sẽ tự động phân tích và tìm kiếm công việc phù hợp nhất.</p>
+                        </div>
+
+                        <div className="p-6 space-y-4">
+                            <div className="relative">
+                                <textarea
+                                    value={cvText}
+                                    onChange={(e) => setCvText(e.target.value)}
+                                    placeholder="Ví dụ: Tôi là lập trình viên Java có 3 năm kinh nghiệm, thành thạo Spring Boot, React và AWS..."
+                                    className="w-full h-64 p-4 bg-gray-50 border-2 border-gray-100 rounded-xl focus:border-[#3AB4E6] focus:ring-0 outline-none transition-all resize-none text-gray-700 placeholder-gray-400"
+                                />
+                                <div className="absolute bottom-3 right-3 text-gray-400 text-xs font-medium">
+                                    {cvText.length} ký tự
+                                </div>
+                            </div>
+
+                            <div className="flex gap-3 pt-2">
+                                <button
+                                    onClick={() => setIsAiModalOpen(false)}
+                                    className="flex-1 px-6 py-3.5 border-2 border-gray-100 text-gray-500 font-bold rounded-xl hover:bg-gray-50 transition-all"
+                                >
+                                    Hủy bỏ
+                                </button>
+                                <button
+                                    onClick={handleConfirmAiSearch}
+                                    disabled={isAnalyzing}
+                                    className="flex-[2] px-6 py-3.5 bg-[#3AB4E6] hover:bg-blue-500 text-white font-bold rounded-xl shadow-lg shadow-blue-200 transition-all flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
+                                >
+                                    {isAnalyzing ? (
+                                        <>
+                                            <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                                            Đang phân tích...
+                                        </>
+                                    ) : (
+                                        <>
+                                            <FaSearch size={16} /> Phân tích & Tìm kiếm
+                                        </>
+                                    )}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

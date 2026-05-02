@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from 'react';
-import { FaUserCircle, FaCamera, FaSave, FaEnvelope } from 'react-icons/fa';
+import React, { useState, useEffect, useRef } from 'react';
+import { FaUserCircle, FaCamera, FaSave, FaEnvelope, FaSpinner } from 'react-icons/fa';
 import axiosInstance from '../../../../utils/axiosInstance';
+import { toast } from 'sonner';
 
 const PersonalInfoTab = () => {
 
@@ -12,6 +13,8 @@ const PersonalInfoTab = () => {
     });
     const [isLoading, setIsLoading] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
+    const [isUploading, setIsUploading] = useState(false);
+    const fileInputRef = useRef(null);
 
     useEffect(() => {
         const fetchProfile = async () => {
@@ -46,17 +49,53 @@ const PersonalInfoTab = () => {
         e.preventDefault();
         setIsSaving(true);
         try {
-            await axiosInstance.put('user/profile/personal', {
+            await axiosInstance.put('/user/profile/personal', {
                 fullName: formData.fullName,
                 phoneNum: formData.phoneNum,
                 avatarUrl: formData.avatarUrl
             });
-            alert("Cập nhật thông tin thành công!");
+            toast.success("Cập nhật thông tin thành công!");
         } catch (error) {
             console.error("Failed to update personal info", error);
-            alert("Có lỗi xảy ra khi cập nhật!");
+            toast.error("Có lỗi xảy ra khi cập nhật!");
         } finally {
             setIsSaving(false);
+        }
+    };
+
+    const handleCameraClick = () => {
+        fileInputRef.current?.click();
+    };
+
+    const handleFileChange = async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        // Validate file size and type
+        if (file.size > 5 * 1024 * 1024) {
+            toast.error("Kích thước tệp không được vượt quá 5MB");
+            return;
+        }
+
+        const formDataUpload = new FormData();
+        formDataUpload.append('file', file);
+
+        setIsUploading(true);
+        try {
+            const response = await axiosInstance.post('/user/profile/avatar/upload', formDataUpload, {
+                headers: {
+                    'Content-Type': 'multipart/form-data',
+                },
+            });
+            
+            const newAvatarUrl = response.avatarUrl || response.data?.avatarUrl;
+            setFormData(prev => ({ ...prev, avatarUrl: newAvatarUrl }));
+            toast.success("Tải ảnh đại diện lên thành công!");
+        } catch (error) {
+            console.error("Failed to upload avatar", error);
+            toast.error("Không thể tải ảnh lên. Vui lòng thử lại!");
+        } finally {
+            setIsUploading(false);
         }
     };
 
@@ -71,14 +110,31 @@ const PersonalInfoTab = () => {
                 <div className="lg:col-span-1 border-r border-gray-100 pr-8">
                     <div className="flex flex-col items-center text-center">
                         <div className="relative mb-4 group">
-                            <div className="w-32 h-32 rounded-full border-4 border-blue-50 bg-gray-100 flex items-center justify-center overflow-hidden">
+                            <div className="w-32 h-32 rounded-full border-4 border-blue-50 bg-gray-100 flex items-center justify-center overflow-hidden relative">
+                                {isUploading && (
+                                    <div className="absolute inset-0 bg-black/20 flex items-center justify-center z-10 rounded-full">
+                                        <FaSpinner className="animate-spin text-white text-2xl" />
+                                    </div>
+                                )}
                                 {formData.avatarUrl ? (
                                     <img src={formData.avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
                                 ) : (
                                     <FaUserCircle className="w-full h-full text-gray-300" />
                                 )}
                             </div>
-                            <button className="absolute bottom-1 right-1 w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center text-white border-2 border-white hover:bg-blue-700 transition-colors shadow-sm">
+                            <input 
+                                type="file" 
+                                ref={fileInputRef} 
+                                className="hidden" 
+                                accept="image/*" 
+                                onChange={handleFileChange} 
+                            />
+                            <button 
+                                type="button"
+                                onClick={handleCameraClick}
+                                disabled={isUploading}
+                                className="absolute bottom-1 right-1 w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center text-white border-2 border-white hover:bg-blue-700 transition-colors shadow-sm disabled:bg-gray-400"
+                            >
                                 <FaCamera size={14} />
                             </button>
                         </div>

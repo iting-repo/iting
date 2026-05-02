@@ -1,0 +1,76 @@
+@startuml
+title ACT-HR-MANAGE-APPLICANTS (Revised - Employer Applicant Management)
+
+skinparam activity {
+  BackgroundColor #ffffff
+  DiamondBackgroundColor #EEF2FF
+  StartColor #10B981
+  EndColor #EF4444
+  ArrowColor #6366F1
+}
+
+|Employer (HR)|
+start
+:Mở trang Quản lý ứng viên;
+
+|Frontend (UI)|
+:Gửi yêu cầu lấy thống kê\n(GET /api/employer/applications/stats);
+:Tải danh sách ứng viên mặc định\n(GET /api/employer/applications);
+
+|Backend (EmployerApplicationService)|
+:Kiểm tra quyền sở hữu Job (verifyJobOwnership);
+:Truy vấn danh sách ứng tuyển thuộc công ty;
+:Trả về danh sách ApplicationResponse;
+
+|Frontend (UI)|
+:Render bảng danh sách ứng viên (trạng thái, ngày nộp, tin tuyển dụng);
+
+|Employer (HR)|
+if (Tìm kiếm / Lọc?) then (Có)
+  :Nhập từ khóa hoặc Chọn Job/Trạng thái;
+  |Frontend (UI)|
+  :Gửi yêu cầu GET .../search?status=...&keyword=...;
+  |Backend (EmployerApplicationService)|
+  :Xử lý Search Query lọc từ Database;
+  |Frontend (UI)|
+  :Cập nhật danh sách ứng viên hiển thị;
+endif
+
+|Employer (HR)|
+:Click xem chi tiết bộ hồ sơ;
+
+|Frontend (UI)|
+:Gửi yêu cầu GET /api/employer/applications/{id};
+
+|Backend (EmployerApplicationService)|
+:Tìm bản ghi ứng tuyển;
+if (Trạng thái == PENDING?) then (Yes)
+  :Chuyển trạng thái sang **VIEWED**;
+  :Gửi thông báo "Hồ sơ đã được xem" cho ứng viên;
+endif
+:Trả về dữ liệu chi tiết (CV URL, Thư giới thiệu...);
+
+|Frontend (UI)|
+:Hiển thị chi tiết hồ sơ & Nút Chấp nhận/Từ chối;
+
+|Employer (HR)|
+if (Quyết định?) then (Chấp nhận)
+  |Frontend (UI)|
+  :Gửi yêu cầu POST /{id}/accept;
+  |Backend (EmployerApplicationService)|
+  :Cập nhật trạng thái = **ACCEPTED**;
+  :Tạo thông báo trúng tuyển (APPLICATION_ACCEPTED);
+elseif (Từ chối)
+  |Frontend (UI)|
+  :Gửi yêu cầu POST /{id}/reject;
+  |Backend (EmployerApplicationService)|
+  :Cập nhật trạng thái = **REJECTED**;
+  :Tạo thông báo từ chối (APPLICATION_REJECTED);
+endif
+
+|Frontend (UI)|
+:Hiển thị Toast thành công;
+:Cập nhật trạng thái hiển thị trên bảng;
+
+stop
+@enduml

@@ -25,7 +25,7 @@ const AboutPage = () => {
         },
         {
             question: "Nền tảng có tuyển dụng cho sinh viên mới ra trường hoặc thực tập sinh?",
-            answer: "Có, ITWork có rất nhiều vị trí Internship và Fresher dành cho các bạn sinh viên mới ra trường."
+            answer: "Có, ITing có rất nhiều vị trí Internship và Fresher dành cho các bạn sinh viên mới ra trường."
         },
         {
             question: "Tôi có thể nhận thông báo khi có công việc mới phù hợp không?",
@@ -41,12 +41,12 @@ const AboutPage = () => {
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 mb-12">
                     <div>
                         <h1 className="text-3xl lg:text-4xl font-bold text-gray-900 leading-tight">
-                            Về ITWork – Nơi kết nối nhân tài công nghệ với doanh nghiệp hàng đầu
+                            Về ITing – Nơi kết nối nhân tài công nghệ với doanh nghiệp hàng đầu
                         </h1>
                     </div>
                     <div className="text-sm lg:text-base text-gray-500 space-y-4">
                         <p>
-                            ITWork là nền tảng tuyển dụng chuyên biệt cho lĩnh vực Công nghệ Thông tin, giúp ứng viên dễ dàng tìm thấy công việc phù hợp với kỹ năng và mục tiêu nghề nghiệp.
+                            ITing là nền tảng tuyển dụng chuyên biệt cho lĩnh vực Công nghệ Thông tin, giúp ứng viên dễ dàng tìm thấy công việc phù hợp với kỹ năng và mục tiêu nghề nghiệp.
                         </p>
                         <p>
                             Với mạng lưới hàng trăm doanh nghiệp công nghệ uy tín và hệ thống lọc việc thông minh, chúng tôi mang đến trải nghiệm tìm việc nhanh chóng, minh bạch và hiệu quả.
@@ -61,7 +61,7 @@ const AboutPage = () => {
                 <div className="rounded-3xl overflow-hidden h-[300px] lg:h-[500px] shadow-lg">
                     <img
                         src="https://images.unsplash.com/photo-1522071820081-009f0129c71c?ixlib=rb-4.0.3&auto=format&fit=crop&w=1600&q=80"
-                        alt="ITWork Team"
+                        alt="ITing Team"
                         className="w-full h-full object-cover"
                     />
                 </div>
@@ -70,7 +70,7 @@ const AboutPage = () => {
             {/* ================= SECTION 2: HOW IT WORKS ================= */}
             <div className="container mx-auto px-4 max-w-7xl py-16">
                 <div className="text-center mb-12">
-                    <h2 className="text-3xl font-bold text-gray-900 mb-2">Cách ITWork hoạt động</h2>
+                    <h2 className="text-3xl font-bold text-gray-900 mb-2">Cách ITing hoạt động</h2>
                     <p className="text-gray-500">Chỉ với vài bước đơn giản, bạn có thể bắt đầu hành trình nghề nghiệp trong lĩnh vực công nghệ.</p>
                 </div>
 
@@ -166,7 +166,7 @@ const AboutPage = () => {
             <div className="container mx-auto px-4 max-w-4xl py-20">
                 <div className="text-center mb-12">
                     <h2 className="text-3xl font-bold text-gray-900 mb-2">Câu hỏi thường gặp</h2>
-                    <p className="text-gray-500">Giúp bạn hiểu rõ hơn cách ITWork hoạt động.</p>
+                    <p className="text-gray-500">Giúp bạn hiểu rõ hơn cách ITing hoạt động.</p>
                 </div>
 
                 <div className="space-y-4">

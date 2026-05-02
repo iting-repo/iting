@@ -55,6 +55,13 @@ const adminJobService = {
     return response;
   },
 
+  runAiReview: async (jobId) => {
+    const response = await axiosInstance.post(
+      `/admin/jobs/${jobId}/ai-review`
+    );
+    return response;
+  },
+
   // Suspend job
   suspendJob: async (jobId, reason) => {
     const response = await axiosInstance.post(
@@ -90,12 +97,53 @@ const adminJobService = {
 
   // Unfeature job
   unfeatureJob: async (jobId) => {
-    const response = await axiosInstance.post(
-      `/admin/jobs/${jobId}/unfeature`
-    );
+    const response = await axiosInstance.post(`/admin/jobs/${jobId}/unfeature`);
     return response;
-  }
+  },
 
+  exportJobs: async () => {
+    return await axiosInstance.get("/admin/jobs/export", {
+      responseType: "blob",
+    });
+  },
+
+  importJobs: async (file) => {
+    const formData = new FormData();
+    formData.append("file", file);
+    return await axiosInstance.post("/admin/jobs/import", formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+  },
+
+  downloadTemplate: async () => {
+    return await axiosInstance.get("/admin/jobs/template", {
+      responseType: "blob",
+    });
+  },
+
+  deleteJob: async (id) => {
+    return await axiosInstance.delete(`/admin/jobs/${id}`);
+  },
+
+  bulkApprove: async (ids) => {
+    return await axiosInstance.post('/admin/jobs/bulk-approve', { ids });
+  },
+
+  bulkReject: async (ids, reason) => {
+    return await axiosInstance.post('/admin/jobs/bulk-reject', { ids, reason });
+  },
+
+  bulkSuspend: async (ids, reason) => {
+    return await axiosInstance.post('/admin/jobs/bulk-suspend', { ids, reason });
+  },
+
+  bulkClose: async (ids) => {
+    return await axiosInstance.post('/admin/jobs/bulk-close', { ids });
+  },
+
+  bulkDelete: async (ids) => {
+    return await axiosInstance.post('/admin/jobs/bulk-delete', { ids });
+  }
 };
 
 export default adminJobService;

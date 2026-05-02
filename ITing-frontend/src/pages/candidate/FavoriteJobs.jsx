@@ -1,207 +1,234 @@
-import React, { useState } from 'react';
-import { 
-  FaMapMarkerAlt, FaDollarSign, FaCalendarAlt, FaBookmark, 
-  FaArrowRight, FaClock, FaArrowLeft, FaTrashAlt
+import React, { useState, useEffect } from 'react';
+import {
+  FaMapMarkerAlt, FaDollarSign, FaTrashAlt,
+  FaArrowRight, FaClock, FaArrowLeft, FaBan, FaExclamationTriangle
 } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
+import { ConfirmDialog, Table, Td } from "../../components/common";
+import { toast } from 'sonner';
+import { buildJobDetailPath } from '../../utils/jobUrl';
+import axiosInstance from '../../utils/axiosInstance';
 
 const FavoriteJobs = () => {
   const navigate = useNavigate();
 
-  // 1. MOCK DATA
-  // Danh sách này đều là việc đã lưu
-  const savedJobs = [
-    {
-      id: 1,
-      title: "Senior UX Designer",
-      company: "Slack",
-      logo: "https://upload.wikimedia.org/wikipedia/commons/d/d5/Slack_icon_2019.svg",
-      type: "Full Time",
-      location: "United Kingdom",
-      salary: "$30k-$35k",
-      postedTime: "Vừa xong",
-    },
-    {
-      id: 2,
-      title: "Internship Graphics",
-      company: "Pinterest",
-      logo: "https://upload.wikimedia.org/wikipedia/commons/0/08/Pinterest-logo.png",
-      type: "Internship",
-      location: "Remote",
-      salary: "$500-$800",
-      postedTime: "1 ngày trước",
-    },
-    {
-      id: 3,
-      title: "Marketing Officer",
-      company: "Intel", 
-      logo: "https://upload.wikimedia.org/wikipedia/commons/c/c9/Intel-logo.svg",
-      type: "Full Time",
-      location: "Montana, USA",
-      salary: "$50k-$60k",
-      postedTime: "2 ngày trước",
-    },
-    {
-      id: 4,
-      title: "Networking Engineer",
-      company: "Instagram",
-      logo: "https://upload.wikimedia.org/wikipedia/commons/e/e7/Instagram_logo_2016.svg",
-      type: "Full Time",
-      location: "Michigan, USA",
-      salary: "$5k-$10k",
-      postedTime: "3 ngày trước",
-    },
-    {
-      id: 5,
-      title: "Product Designer",
-      company: "Figma",
-      logo: "https://upload.wikimedia.org/wikipedia/commons/3/33/Figma-logo.svg",
-      type: "Full Time",
-      location: "San Francisco",
-      salary: "$80k-$100k",
-      postedTime: "5 ngày trước",
-    },
-    {
-      id: 6,
-      title: "Java Developer",
-      company: "Oracle",
-      logo: "https://upload.wikimedia.org/wikipedia/commons/5/50/Oracle_logo.svg",
-      type: "Contract",
-      location: "Austin, Texas",
-      salary: "$40k-$50k",
-      postedTime: "1 tuần trước",
-    }
-  ];
-
-  // 2. PAGINATION STATE
+  const [savedJobs, setSavedJobs] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(0);
+  const [totalElements, setTotalElements] = useState(0);
+  const [confirmModal, setConfirmModal] = useState({ isOpen: false, id: null });
   const itemsPerPage = 5;
-  
-  const indexOfLastItem = currentPage * itemsPerPage;
-  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-  const currentJobs = savedJobs.slice(indexOfFirstItem, indexOfLastItem);
-  const totalPages = Math.ceil(savedJobs.length / itemsPerPage);
 
-  // Helper đổi màu Badge
+  useEffect(() => {
+    const fetchSavedJobs = async () => {
+      try {
+        setLoading(true);
+        const response = await axiosInstance.get('/candidates/saved-jobs', {
+          params: { page: currentPage - 1, size: itemsPerPage }
+        });
+        const content = response?.content || response?.data?.content || [];
+        setSavedJobs(content);
+        setTotalPages(response?.totalPages || response?.data?.totalPages || 0);
+        setTotalElements(response?.totalElements || response?.data?.totalElements || 0);
+      } catch (error) {
+        console.error("Failed to fetch saved jobs:", error);
+        setSavedJobs([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchSavedJobs();
+  }, [currentPage]);
+
   const getTypeStyle = (type) => {
-    if (type === 'Full Time') return 'bg-blue-50 text-blue-600';
-    if (type === 'Internship') return 'bg-purple-50 text-purple-600';
-    if (type === 'Remote') return 'bg-green-50 text-green-600';
+    if (type === 'FULL_TIME') return 'bg-blue-50 text-blue-600';
+    if (type === 'INTERN') return 'bg-sky-50 text-sky-600';
+    if (type === 'REMOTE') return 'bg-green-50 text-green-600';
     return 'bg-gray-100 text-gray-600';
   };
 
-  // Hàm xử lý xóa việc đã lưu (Giả lập)
-  const handleRemove = (id) => {
-    if(window.confirm("Bạn có chắc muốn bỏ lưu công việc này?")) {
-        console.log("Remove job id:", id);
-        // Logic gọi API xóa...
+  const formatSalary = (job) => {
+    if (job.minSalary && job.maxSalary) {
+      const formatNum = (n) => {
+        if (n >= 1000000) return `${(n / 1000000).toFixed(0)}M`;
+        if (n >= 1000) return `${(n / 1000).toFixed(0)}K`;
+        return n.toString();
+      };
+      return `${formatNum(job.minSalary)} - ${formatNum(job.maxSalary)}`;
     }
-  }
+    return 'Thỏa thuận';
+  };
+
+  const handleRemove = (jobId) => {
+    setConfirmModal({ isOpen: true, id: jobId });
+  };
+
+  const confirmRemove = async () => {
+    const jobId = confirmModal.id;
+    try {
+      await axiosInstance.delete(`/candidates/saved-jobs/${jobId}`);
+      toast.success("Đã bỏ lưu công việc thành công!");
+      setSavedJobs(prev => prev.filter(j => j.jobId !== jobId));
+      setTotalElements(prev => Math.max(0, prev - 1));
+    } catch (error) {
+      toast.error("Không thể bỏ lưu công việc");
+    }
+    setConfirmModal({ isOpen: false, id: null });
+  };
 
   return (
     <div className="bg-white rounded-xl p-8 min-h-screen shadow-sm border border-gray-100">
-      
-      {/* Header */}
       <div className="flex items-center justify-between mb-8">
         <h2 className="text-2xl font-bold text-gray-800">
-          Công việc đã lưu <span className="text-gray-400 font-normal text-lg">({savedJobs.length})</span>
+          Công việc đã lưu <span className="text-gray-400 font-normal text-lg">({totalElements})</span>
         </h2>
       </div>
 
-      {/* JOB LIST */}
-      <div className="space-y-4 mb-8">
-        {currentJobs.map((job) => (
-          <div 
-            key={job.id} 
-            className="group relative border border-gray-100 rounded-xl p-5 hover:border-[#3AB4E6] hover:shadow-lg transition-all bg-white flex flex-col md:flex-row items-center gap-6"
+      {loading ? (
+        <div className="text-center py-12 text-gray-500">Đang tải...</div>
+      ) : savedJobs.length === 0 ? (
+        <div className="text-center py-12 text-gray-500">Bạn chưa lưu công việc nào.</div>
+      ) : (
+        <>
+          {/* JOB TABLE */}
+          <Table
+            headers={[
+              { label: "Công việc" },
+              { label: "Mức lương" },
+              { label: "Thời gian" },
+              { label: "Hành động", className: "text-right" }
+            ]}
           >
-             {/* Logo */}
-             <div className="w-14 h-14 shrink-0 bg-white rounded-lg border border-gray-100 p-2 flex items-center justify-center">
-                <img src={job.logo} alt={job.company} className="w-full h-full object-contain" />
-             </div>
+            {savedJobs.map((job) => {
+              const isUnavailable = job.companyActive === false;
+              return (
+              <tr
+                key={job.jobId}
+                className={`transition-all group ${isUnavailable ? 'opacity-60 bg-gray-50/50' : 'hover:bg-gray-50/60'}`}
+              >
+                <Td>
+                  <div className="flex items-center gap-4">
+                    <div className={`w-12 h-12 shrink-0 bg-white rounded-lg border p-2 flex items-center justify-center ${isUnavailable ? 'border-gray-200 grayscale' : 'border-gray-100'}`}>
+                      <img src={job.companyLogo || "https://via.placeholder.com/50"} alt={job.companyName} className="w-full h-full object-contain" />
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2 mb-1">
+                        <h3
+                          onClick={() => !isUnavailable && navigate(buildJobDetailPath({ ...job, title: job.jobTitle, id: job.jobId }))}
+                          className={`font-bold text-sm transition-colors ${isUnavailable ? 'text-gray-400 cursor-default line-through' : 'text-gray-800 group-hover:text-[#3AB4E6] cursor-pointer'}`}
+                        >
+                          {job.jobTitle}
+                        </h3>
+                        {isUnavailable && (
+                          <span className="text-[10px] px-2 py-0.5 rounded font-bold bg-red-50 text-red-500 border border-red-100 flex items-center gap-1">
+                            <FaBan size={8} /> Không khả dụng
+                          </span>
+                        )}
+                        {!isUnavailable && job.jobType && (
+                          <span className={`text-[10px] px-2 py-0.5 rounded font-bold uppercase ${getTypeStyle(job.jobType)}`}>
+                            {job.jobType === 'FULL_TIME' ? 'Full Time' : job.jobType === 'PART_TIME' ? 'Part Time' : job.jobType === 'REMOTE' ? 'Remote' : job.jobType === 'INTERN' ? 'Internship' : job.jobType}
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-4 text-xs text-gray-500">
+                        <span className="flex items-center gap-1"><FaMapMarkerAlt size={10} className="text-gray-400" /> {job.location || 'Không rõ'}</span>
+                        <span className="font-medium">{job.companyName}</span>
+                      </div>
+                    </div>
+                  </div>
+                </Td>
 
-             {/* Info */}
-             <div className="flex-1 w-full">
-                <div className="flex flex-wrap items-center gap-3 mb-2">
-                   <h3 
-                     onClick={() => navigate(`/jobs/${job.id}`)}
-                     className="font-bold text-gray-800 text-lg group-hover:text-[#3AB4E6] transition-colors cursor-pointer"
-                   >
-                      {job.title}
-                   </h3>
-                   <span className={`text-xs px-2 py-1 rounded font-bold ${getTypeStyle(job.type)}`}>
-                      {job.type}
-                   </span>
-                </div>
+                <Td>
+                  <span className={`font-bold ${isUnavailable ? 'text-gray-400' : 'text-gray-700'}`}>{formatSalary(job)}</span>
+                </Td>
 
-                <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-sm text-gray-500">
-                   <span className="flex items-center gap-1.5"><FaMapMarkerAlt className="text-gray-400" /> {job.location}</span>
-                   <span className="flex items-center gap-1.5"><FaDollarSign className="text-gray-400" /> {job.salary}</span>
-                   {/* Thời gian đăng */}
-                   <span className="flex items-center gap-1.5 text-xs text-green-600 bg-green-50 px-2 py-0.5 rounded">
-                      <FaClock size={10} /> {job.postedTime}
-                   </span>
-                </div>
-             </div>
+                <Td>
+                  {isUnavailable ? (
+                    <span className="flex items-center gap-1.5 text-xs text-red-500 bg-red-50 px-2.5 py-1 rounded-full w-fit border border-red-100">
+                      <FaExclamationTriangle size={10} /> Ngừng hoạt động
+                    </span>
+                  ) : (
+                    <span className="flex items-center gap-1.5 text-xs text-green-600 bg-green-50 px-2.5 py-1 rounded-full w-fit">
+                      <FaClock size={10} /> Đã lưu
+                    </span>
+                  )}
+                </Td>
 
-             {/* Actions */}
-             <div className="flex items-center gap-4 w-full md:w-auto justify-between md:justify-end">
-                {/* Nút Xóa (Trash Icon) thay vì Bookmark để người dùng dễ hiểu là "Bỏ lưu" */}
-                <button 
-                    onClick={() => handleRemove(job.id)}
-                    className="w-10 h-10 rounded-full flex items-center justify-center text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors tooltip"
-                    title="Bỏ lưu"
-                >
-                   <FaTrashAlt /> 
-                </button>
+                <Td className="text-right">
+                  <div className="flex items-center justify-end gap-3 transition-opacity">
+                    <button
+                      onClick={() => handleRemove(job.jobId)}
+                      className="w-10 h-10 rounded-full flex items-center justify-center text-gray-300 hover:text-red-500 hover:bg-red-50 transition-all"
+                      title="Bỏ lưu"
+                    >
+                      <FaTrashAlt size={16} />
+                    </button>
 
-                {/* Nút Ứng tuyển */}
-                <button 
-                   onClick={() => navigate(`/jobs/${job.id}`)}
-                   className="bg-[#EAF6FF] text-[#3AB4E6] hover:bg-[#3AB4E6] hover:text-white font-bold py-2.5 px-6 rounded-lg transition-all flex items-center gap-2 text-sm whitespace-nowrap"
-                >
-                   Ứng Tuyển <FaArrowRight size={12} />
-                </button>
-             </div>
-          </div>
-        ))}
-      </div>
+                    {isUnavailable ? (
+                      <span className="bg-gray-100 text-gray-400 font-bold py-2 px-4 rounded-lg text-xs whitespace-nowrap border border-gray-200 cursor-not-allowed inline-flex items-center gap-2">
+                        <FaBan size={10} /> Đã khóa
+                      </span>
+                    ) : (
+                      <button
+                        onClick={() => navigate(buildJobDetailPath({ ...job, title: job.jobTitle, id: job.jobId }))}
+                        className="bg-[#EAF6FF] text-[#3AB4E6] hover:bg-[#3AB4E6] hover:text-white font-bold py-2 px-4 rounded-lg transition-all flex items-center gap-2 text-xs whitespace-nowrap shadow-sm border border-transparent"
+                      >
+                        Chi Tiết <FaArrowRight size={10} />
+                      </button>
+                    )}
+                  </div>
+                </Td>
+              </tr>
+              );
+            })}
+          </Table>
 
-      {/* PAGINATION */}
-      {totalPages > 1 && (
-        <div className="flex justify-center items-center gap-2">
-            <button 
+          {totalPages > 1 && (
+            <div className="flex justify-center items-center gap-2">
+              <button
                 onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
                 disabled={currentPage === 1}
                 className={`w-9 h-9 rounded-full flex items-center justify-center transition-colors border ${currentPage === 1 ? 'border-gray-100 text-gray-300 cursor-not-allowed' : 'border-gray-200 text-[#3AB4E6] hover:bg-blue-50'}`}
-            >
+              >
                 <FaArrowLeft size={10} />
-            </button>
+              </button>
 
-            {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
+              {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
                 <button
-                    key={page}
-                    onClick={() => setCurrentPage(page)}
-                    className={`w-9 h-9 rounded-full flex items-center justify-center font-bold text-sm transition-all ${
-                        currentPage === page 
-                        ? 'bg-[#1967D2] text-white shadow-md' 
-                        : 'text-gray-500 hover:bg-gray-50'
-                    }`}
+                  key={page}
+                  onClick={() => setCurrentPage(page)}
+                  className={`w-9 h-9 rounded-full flex items-center justify-center font-bold text-sm transition-all ${
+                    currentPage === page
+                      ? 'bg-[#1967D2] text-white shadow-md'
+                      : 'text-gray-500 hover:bg-gray-50'
+                  }`}
                 >
-                    {page < 10 ? `0${page}` : page}
+                  {page < 10 ? `0${page}` : page}
                 </button>
-            ))}
+              ))}
 
-            <button 
+              <button
                 onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
                 disabled={currentPage === totalPages}
                 className={`w-9 h-9 rounded-full flex items-center justify-center transition-colors border ${currentPage === totalPages ? 'border-gray-100 text-gray-300 cursor-not-allowed' : 'border-gray-200 text-[#3AB4E6] hover:bg-blue-50'}`}
-            >
-                <FaArrowRight size={10} />
-            </button>
-        </div>
+              >
+                <FaArrowLeft className="rotate-180" size={10} />
+              </button>
+            </div>
+          )}
+        </>
       )}
 
+      <ConfirmDialog
+        isOpen={confirmModal.isOpen}
+        onClose={() => setConfirmModal({ isOpen: false, id: null })}
+        onConfirm={confirmRemove}
+        title="Bỏ lưu công việc"
+        message="Bạn có chắc muốn bỏ lưu công việc này?"
+        type="warning"
+      />
     </div>
   );
 };

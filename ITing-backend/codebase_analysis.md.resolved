@@ -1,0 +1,577 @@
+# 🔍 Phân Tích Codebase ITing Backend — Đề Xuất Cải Tiến
+
+## 📋 Tổng Quan Hiện Tại
+
+| Mục | Giá trị |
+|-----|---------|
+| Framework | Spring Boot **3.2.1** / Java **17** |
+| Kiến trúc | **Modular Monolith** |
+| Database | **PostgreSQL** |
+| Auth | **JWT (JJWT 0.11.5)** + Refresh Token |
+| File Storage | **Cloudinary** + Local fallback |
+| API Doc | **SpringDoc OpenAPI 2.5 (Swagger UI)** |
+| Build | **Maven** |
+
+### Cấu trúc Module (7 module)
+
+```
+com.iting.jobportal
+├── admin/          # Quản trị: user, job approval, reports, stats
+├── application/    # Đơn ứng tuyển: apply, withdraw, status
+├── auth/           # Xác thực: login, register, JWT, refresh token
+├── company/        # Thông tin công ty
+├── job/            # Tin tuyển dụng CRUD + search
+├── messaging/      # 🚨 Chỉ có entity rỗng - CHƯA TRIỂN KHAI
+├── notification/   # 🚨 Chỉ có entity rỗng - CHƯA TRIỂN KHAI
+├── file/           # Upload file local
+├── common/         # DTOs, exceptions (phần lớn rỗng)
+└── config/         # CORS, OpenAPI, KeepAlive scheduler
+```
+
+---
+
+## ✅ Điểm Mạnh Hiện Tại
+
+- **Phân tách module rõ ràng** — mỗi domain có controller/service/dto/entity/repository riêng
+- **JWT stateless** — không cần session, phù hợp scale horizontal
+- **Refresh Token** — có cơ chế lưu trữ DB với max-tokens-per-user
+- **JPA Specification** — `JobSpecification` cho phép filter động thay vì JPQL cứng
+- **Lombok** — giảm boilerplate code
+- **SpringDoc** — API docs tự động từ annotations
+- **`@Transactional`** — được dùng đúng ở các write operations
+- **pgvector embedding** — có `job_embedding` field, gợi ý AI similarity search
+- **Cloudinary** integration — file storage trên cloud
+
+---
+
+## 🚨 Vấn Đề Cần Cải Thiện
+
+### 1. Exception Handling — **Ưu tiên cao**
+
+**Hiện trạng:** [GlobalExceptionHandler](file:///c:/Users/Admin/Desktop/dacn/ITing/ITing-backend/src/main/java/com/iting/jobportal/common/exception/GlobalExceptionHandler.java#3-5) và [ApiException](file:///c:/Users/Admin/Desktop/dacn/ITing/ITing-backend/src/main/java/com/iting/jobportal/common/exception/ApiException.java#3-5) hoàn toàn rỗng (chỉ 5 dòng mỗi file). Toàn bộ service dùng `RuntimeException` thô, một số nơi dùng `ResponseStatusException`.
+
+```java
+// ❌ Hiện tại — không nhất quán
+throw new RuntimeException("Email already exists");       // AuthServiceImpl
+throw new RuntimeException("Invalid email or password");  // AuthServiceImpl  
+throw new ResponseStatusException(HttpStatus.NOT_FOUND, "...");  // JobServiceImpl
+```
+
+**Đề xuất:**
+
+```java
+// ✅ Tạo custom exception hierarchy
+public class AppException extends RuntimeException {
+    private final HttpStatus status;
+    private final String errorCode;
+    
+    public AppException(HttpStatus status, String errorCode, String message) {
+        super(message);
+        this.status = status;
+        this.errorCode = errorCode;
+    }
+}
+// Các subclass cụ thể:
+public class ResourceNotFoundException extends AppException { ... }
+public class DuplicateEmailException extends AppException { ... }
+public class ForbiddenException extends AppException { ... }
+```
+
+```java
+// ✅ Implement GlobalExceptionHandler đầy đủ
+@RestControllerAdvice
+public class GlobalExceptionHandler {
+
+    @ExceptionHandler(AppException.class)
+    public ResponseEntity<ApiError> handleAppException(AppException ex) {
+        return ResponseEntity.status(ex.getStatus())
+            .body(new ApiError(ex.getErrorCode(), ex.getMessage()));
+    }
+
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseEntity<ApiError> handleValidation(MethodArgumentNotValidException ex) {
+        // Trả về danh sách lỗi validation cụ thể
+    }
+    
+    @ExceptionHandler(AuthenticationException.class)
+    public ResponseEntity<ApiError> handleAuth(AuthenticationException ex) { ... }
+}
+```
+
+---
+
+### 2. Security — **Ưu tiên cao**
+
+#### 2a. Credentials/Secrets Hardcode
+
+```properties
+# ❌ Hiện tại — credentials lộ trong application.properties
+spring.datasource.password=lengocnhuy
+jwt.secret=404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970
+jwt.refresh.secret=7134743777217A25...
+```
+
+```properties
+# ✅ Đề xuất — dùng biến môi trường
+spring.datasource.password=${DB_PASSWORD}
+jwt.secret=${JWT_SECRET}
+jwt.refresh.secret=${JWT_REFRESH_SECRET}
+```
+
+#### 2b. Không kiểm tra Account Status khi Login
+
+```java
+// ❌ Hiện tại — user bị ban vẫn có thể login
+Account account = accountRepository.findByEmail(request.getEmail())
+        .orElseThrow(() -> new RuntimeException("Invalid email or password"));
+// (thiếu check status)
+String accessToken = jwtTokenUtil.generateToken(...);
+```
+
+```java
+// ✅ Thêm kiểm tra ban status
+if (account.getStatus() == AccountStatus.BANNED) {
+    throw new AppException(HttpStatus.FORBIDDEN, "ACCOUNT_BANNED", "Tài khoản đã bị khóa");
+}
+```
+
+#### 2c. CORS chỉ cho `localhost:3000`
+
+```java
+// ❌ Hiện tại — hardcode Origin, không cho production domain
+.allowedOrigins("http://localhost:3000")
+```
+
+```java
+// ✅ Đọc từ config
+@Value("${cors.allowed-origins}")
+private String[] allowedOrigins;
+
+registry.addMapping("/**").allowedOrigins(allowedOrigins);
+```
+
+#### 2d. Thiếu Rate Limiting
+
+Hiện không có rate limiting trên các endpoint nhạy cảm như `/api/auth/login`, `/api/auth/register`. Đề xuất dùng **Bucket4j** hoặc **Resilience4j**.
+
+```java
+// ✅ Thêm Rate Limiting với Bucket4j
+@RateLimiter(name = "loginRateLimit", fallbackMethod = "loginRateLimitFallback")
+public LoginResponse login(LoginRequest request) { ... }
+```
+
+---
+
+### 3. Performance — **Ưu tiên trung bình**
+
+#### 3a. N+1 Query trong enrichWithCompany()
+
+```java
+// ❌ Hiện tại — searchJobs() gọi companyRepository.findById() cho MỖI job
+private JobResponse enrichWithCompany(Job job) {
+    return companyRepository.findById(job.getCompanyId())  // N queries!
+            .map(c -> JobResponse.fromEntityWithCompany(job, c.getName(), c.getLogoUrl()))
+            .orElseGet(() -> JobResponse.fromEntity(job));
+}
+```
+
+```java
+// ✅ Batch fetch — dùng JOIN FETCH hoặc fetch company trong 1 query
+@Query("SELECT j FROM Job j JOIN FETCH Company c ON j.companyId = c.id " +
+       "WHERE j.status = :status")
+Page<Object[]> findJobsWithCompany(JobStatus status, Pageable pageable);
+```
+
+hoặc dùng **@EntityGraph** / DTO Projection để JOIN trong 1 lần query.
+
+#### 3b. Thiếu Caching
+
+Các endpoint public như `/api/jobs/latest`, `/api/jobs/hot`, `/api/jobs/{id}` được gọi rất thường xuyên nhưng không có cache.
+
+```java
+// ✅ Thêm Spring Cache + Redis
+@Cacheable(value = "latestJobs", key = "#limit")
+public List<JobResponse> getLatestJobs(int limit) { ... }
+
+@CacheEvict(value = "latestJobs", allEntries = true)
+@Transactional
+public JobResponse createJob(...) { ... }
+```
+
+Thêm dependency:
+```xml
+<dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-data-redis</artifactId>
+</dependency>
+```
+
+#### 3c. View Count Race Condition
+
+```java
+// ❌ Hiện tại — đọc rồi +1, có thể xảy ra race condition
+job.setViewCount((job.getViewCount() != null ? job.getViewCount() : 0) + 1);
+```
+
+```java
+// ✅ Dùng atomic DB update (đã có incrementViewCount nhưng cần đồng bộ)
+@Modifying
+@Query("UPDATE Job j SET j.viewCount = j.viewCount + 1 WHERE j.id = :jobId")
+void incrementViewCount(Long jobId);
+// → Bỏ dòng job.setViewCount(...) + 1 thủ công
+```
+
+---
+
+### 4. Kiến Trúc & Design Pattern — **Ưu tiên trung bình**
+
+#### 4a. Notification & Messaging Module Chưa Triển Khai
+
+Ba entity quan trọng ([Notification](file:///c:/Users/Admin/Desktop/dacn/ITing/ITing-backend/src/main/java/com/iting/jobportal/notification/entity/Notification.java#3-5), `UserSaveJob`, `UserFollowCompany`) hoàn toàn rỗng — không có field, không có service, không có controller.
+
+**Đề xuất:** Triển khai theo pattern **Observer/Event-Driven** nội bộ:
+
+```java
+// ✅ Dùng Spring Application Events
+@Component
+public class ApplicationEventListener {
+    
+    @EventListener
+    public void onApplicationStatusChanged(ApplicationStatusChangedEvent event) {
+        // Tạo notification cho candidate
+        notificationService.createNotification(
+            event.getCandidateId(),
+            "Trạng thái đơn ứng tuyển của bạn đã thay đổi: " + event.getNewStatus()
+        );
+    }
+}
+```
+
+#### 4b. Thiếu MapStruct / ModelMapper
+
+Hiện tại, mỗi DTO phải tự implement mapping (ví dụ `JobResponse.fromEntity()`, `JobResponse.fromEntityWithCompany()`). Khi codebase lớn hơn, đây sẽ trở nên khó bảo trì.
+
+**Đề xuất dùng MapStruct:**
+
+```java
+// ✅ Tự động generate mapping code tại compile time
+@Mapper(componentModel = "spring")
+public interface JobMapper {
+    JobResponse toResponse(Job job);
+    Job toEntity(CreateJobRequest request);
+}
+```
+
+#### 4c. Native Query cho Company_upload_job
+
+```java
+// ❌ Hiện tại — native query trong service layer
+entityManager.createNativeQuery(
+    "INSERT INTO Company_upload_job (Job_id, Company_id, Time) VALUES (:jobId, :companyId, CURRENT_TIMESTAMP)"
+)...
+```
+
+```java
+// ✅ Nên dùng entity + repository
+// CompanyUploadJob entity đã có, dùng repository để save
+companyUploadJobRepository.save(
+    CompanyUploadJob.builder().jobId(saved.getId()).companyId(employerId).time(LocalDateTime.now()).build()
+);
+```
+
+---
+
+### 5. Code Quality — **Ưu tiên thấp-trung bình**
+
+#### 5a. Thiếu Unit & Integration Tests
+
+```
+src/test/   # Hầu như rỗng
+```
+
+**Đề xuất:** Ít nhất viết tests cho:
+- [AuthServiceImpl](file:///c:/Users/Admin/Desktop/dacn/ITing/ITing-backend/src/main/java/com/iting/jobportal/auth/service/impl/AuthServiceImpl.java#20-115) — register, login, duplicate email
+- [JobServiceImpl](file:///c:/Users/Admin/Desktop/dacn/ITing/ITing-backend/src/main/java/com/iting/jobportal/job/service/impl/JobServiceImpl.java#30-308) — CRUD, ownership check, search
+- [ApplicationService](file:///c:/Users/Admin/Desktop/dacn/ITing/ITing-backend/src/main/java/com/iting/jobportal/application/service/ApplicationService.java#6-85) — apply, duplicate apply, withdraw
+
+```java
+@SpringBootTest
+@Transactional
+class AuthServiceTest {
+    @Autowired AuthService authService;
+    
+    @Test
+    void register_shouldCreateAccountAndUser() { ... }
+    
+    @Test
+    void register_withDuplicateEmail_shouldThrowException() { ... }
+    
+    @Test
+    void login_withBannedAccount_shouldThrow() { ... }
+}
+```
+
+#### 5b. Magic Numbers trong Code
+
+```java
+// ❌ Hiện tại
+.expiresIn(86400L)             // Magic number — 24 giờ?
+if (days <= 0 || days > 365)   // Hardcode 365
+int safeSize = Math.max(1, Math.min(size, 100)); // Hardcode 100
+```
+
+```java
+// ✅ Đặt vào constants/config
+@Value("${job.max-page-size:100}")
+private int maxPageSize;
+
+@ConfigurationProperties("jwt")
+public record JwtProperties(String secret, long expiration) {}
+```
+
+#### 5c. `@Data` trên Entity — Hibernate Anti-pattern
+
+```java
+// ❌ @Data tạo hashCode/equals dựa trên tất cả fields → vấn đề với LazyLoading
+@Data  // trên Account.java
+public class Account { ... }
+```
+
+```java
+// ✅ Dùng @Getter @Setter riêng, implement equals/hashCode dựa trên ID
+@Entity
+@Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
+@EqualsAndHashCode(onlyExplicitlyIncluded = true)
+public class Account {
+    @EqualsAndHashCode.Include
+    @Id private Long id;
+    ...
+}
+```
+
+---
+
+### 6. Configuration — **Ưu tiên cao**
+
+#### 6a. `ddl-auto=create-drop` trong Dev
+
+```properties
+# ❌ Nguy hiểm — drop toàn bộ schema khi restart
+spring.jpa.hibernate.ddl-auto=create-drop
+```
+
+**Đề xuất dùng Flyway/Liquibase để quản lý database migration:**
+
+```properties
+# ✅ Dùng validate + migration tool
+spring.jpa.hibernate.ddl-auto=validate
+
+# Flyway tự chạy migration scripts
+spring.flyway.enabled=true
+spring.flyway.locations=classpath:db/migration
+```
+
+```xml
+<dependency>
+    <groupId>org.flywaydb</groupId>
+    <artifactId>flyway-core</artifactId>
+</dependency>
+```
+
+#### 6b. JWT Version Cũ
+
+```xml
+<!-- ❌ Hiện tại — JJWT 0.11.5 (2022) -->
+<artifactId>jjwt-api</artifactId>
+<version>0.11.5</version>
+```
+
+**Đề xuất nâng lên JJWT 0.12.x** (API mới hơn, bảo mật tốt hơn):
+
+```xml
+<!-- ✅ JJWT 0.12.6 (2024) -->
+<version>0.12.6</version>
+```
+
+---
+
+### 7. AI/ML Integration — **Gợi ý mở rộng**
+
+#### 7a. Job Embedding đã có nhưng chưa tận dụng
+
+```java
+// Job entity đã có field này:
+@Column(name = "Job_embedding", columnDefinition = "TEXT")
+private String jobEmbedding;
+```
+
+Và file [embeddings_update.sql](file:///c:/Users/Admin/Desktop/dacn/ITing/ITing-backend/src/main/resources/embeddings_update.sql) (179KB) đã được tạo. Đây là nền tảng tốt để triển khai **AI Job Recommendation**.
+
+**Đề xuất:** Tích hợp **pgvector** extension cho PostgreSQL để tìm kiếm similarity:
+
+```sql
+-- Trong schema.sql thêm vector extension
+CREATE EXTENSION IF NOT EXISTS vector;
+ALTER TABLE Job ADD COLUMN job_embedding_vec vector(1536);
+
+-- Tìm job tương tự
+SELECT id, position FROM Job 
+ORDER BY job_embedding_vec <-> $1  -- cosine distance
+LIMIT 10;
+```
+
+Kết hợp với **Spring AI** (OpenAI/Gemini embedding):
+
+```xml
+<dependency>
+    <groupId>org.springframework.ai</groupId>
+    <artifactId>spring-ai-openai-spring-boot-starter</artifactId>
+    <version>1.0.0-M6</version>
+</dependency>
+```
+
+---
+
+## 📊 Bảng Tóm Tắt Ưu Tiên
+
+| # | Vấn đề | Ưu tiên | Effort | Impact |
+|---|--------|---------|--------|--------|
+| 1 | Implement GlobalExceptionHandler + custom exceptions | 🔴 Cao | Thấp | Cao |
+| 2 | Tách secrets ra biến môi trường | 🔴 Cao | Thấp | Cao |
+| 3 | Kiểm tra ban status khi login | 🔴 Cao | Thấp | Cao |
+| 4 | Flyway/Liquibase thay create-drop | 🔴 Cao | Trung bình | Cao |
+| 5 | Fix N+1 query (enrichWithCompany) | 🟠 Trung bình | Trung bình | Cao |
+| 6 | Implement Notification + Messaging module | 🟠 Trung bình | Cao | Cao |
+| 7 | Thêm Redis Cache | 🟠 Trung bình | Trung bình | Trung bình |
+| 8 | CORS từ config thay hardcode | 🟠 Trung bình | Thấp | Trung bình |
+| 9 | Rate Limiting (Bucket4j) | 🟠 Trung bình | Trung bình | Cao |
+| 10 | MapStruct cho DTO mapping | 🟡 Thấp | Thấp | Trung bình |
+| 11 | Unit/Integration Tests | 🟡 Thấp | Cao | Cao |
+| 12 | @Data → @Getter/@Setter trên Entity | 🟡 Thấp | Thấp | Thấp |
+| 13 | Spring AI + pgvector cho Job Recommendation | 🟢 Mở rộng | Cao | Rất cao |
+| 14 | Nâng JJWT lên 0.12.x | 🟡 Thấp | Thấp | Trung bình |
+
+---
+
+## 🗺️ Lộ Trình Đề Xuất
+
+```mermaid
+gantt
+    title Lộ trình cải thiện ITing Backend
+    dateFormat  YYYY-MM-DD
+    section Phase 1 - Nền tảng
+    Exception Handling          :p1a, 2026-03-10, 3d
+    Secrets & Config            :p1b, 2026-03-10, 2d
+    Ban Status Check ở Login    :p1c, 2026-03-12, 1d
+    section Phase 2 - Performance
+    Fix N+1 Query               :p2a, 2026-03-13, 3d
+    Redis Cache                 :p2b, 2026-03-16, 4d
+    Rate Limiting               :p2c, 2026-03-20, 3d
+    section Phase 3 - Feature
+    Notification Module         :p3a, 2026-03-23, 5d
+    Messaging Module            :p3b, 2026-03-28, 5d
+    section Phase 4 - AI
+    pgvector + Spring AI        :p4a, 2026-04-02, 7d
+```
+
+
+Dựa trên cấu trúc hiện tại của codebase (đặc biệt là field job_embedding đã có sẵn trong bảng 
+
+Job
+ và file 
+
+embeddings_update.sql
+), dưới đây là các chức năng AI thiết thực và đột phá mà bạn có thể triển khai ngay cho ITing Job Portal:
+
+1. Hệ thống Gợi ý Việc làm Thông minh (Smart AI Recommendation)
+Đây là chức năng quan trọng nhất vì bạn đã có nền tảng job_embedding.
+
+Chức năng: Tự động hiển thị các công việc "Phù hợp nhất với bạn" trên trang chủ của ứng viên dựa trên Vector Similarity (độ tương đồng vector).
+Cách hoạt động:
+Sử dụng Spring AI (kết hợp OpenAI hoặc Gemini) để tạo embedding cho Profile ứng viên (kỹ năng, kinh nghiệm).
+Sử dụng pgvector (extension của PostgreSQL) để so sánh vector của ứng viên với job_embedding trong database.
+Ưu điểm: Gợi ý chính xác ngay cả khi từ khóa không khớp hoàn toàn (ví dụ: ứng viên biết "React" vẫn được gợi ý job "Frontend Developer" dùng "Next.js").
+2. Tìm kiếm theo Ý nghĩa (Semantic Search)
+Thay thế kiểu tìm kiếm từ khóa (Keyword match) truyền thống bằng tìm kiếm ngữ nghĩa.
+
+Chức năng: Người dùng có thể tìm kiếm bằng câu tự nhiên như: "Việc làm Java lương trên 20tr ở Hà Nội cho người mới" thay vì chỉ gõ "Java".
+Cách hoạt động: Chuyển câu truy vấn của người dùng thành vector, sau đó dùng toán tử <-> (độ đo Cosine) trong SQL để lấy ra các Job có ý nghĩa gần nhất.
+3. Tự động Phân tích CV (AI CV Parsing)
+Chức năng: Ứng viên chỉ cần upload CV (PDF/Word), AI sẽ tự động trích xuất các thông tin: Họ tên, Số điện thoại, Kỹ năng, Kinh nghiệm làm việc để điền vào Profile.
+Cách hoạt động: Sử dụng LLM (Large Language Model) với kỹ thuật Structured Output. Bạn gửi nội dung text của CV cho AI và yêu cầu nó trả về JSON đúng định dạng DTO của bạn.
+Lợi ích: Tăng trải nghiệm người dùng, ứng viên không phải gõ lại thông tin từ đầu.
+4. Hỗ trợ Nhà tuyển dụng Viết tin (AI Job Description Generator)
+Chức năng: Nhà tuyển dụng chỉ cần nhập tên vị trí (ví dụ: "Senior Java Dev"), AI sẽ tự động sinh ra bản mô tả công việc (Job Description) chuyên nghiệp gồm: Yêu cầu, Quyền lợi, Trách nhiệm.
+Cách hoạt động: Tích hợp mô hình GPT hoặc Gemini thông qua API, cho phép user chỉnh sửa lại trước khi đăng.
+5. Đánh giá Độ phù hợp (Match Score)
+Chức năng: Hiển thị phần trăm (%) phù hợp giữa Ứng viên và một Công việc cụ thể (ví dụ: "Bạn phù hợp 85% với vị trí này").
+Cách hoạt động: AI phân tích sự thiếu hụt kỹ năng (Skill gap analysis) và trả về điểm số kèm lý do (ví dụ: "Bạn thiếu kỹ năng Docker mà công ty yêu cầu").
+🛠 Lộ trình Công nghệ Đề xuất để thực hiện:
+Để triển khai các tính năng trên, bạn nên bổ sung các công nghệ sau vào project:
+
+PostgreSQL Extension: Cài đặt pgvector trên database hiện tại.
+Spring AI Starter: Thêm dependency spring-ai-openai-spring-boot-starter hoặc spring-ai-google-vertex-ai-spring-boot-starter vào 
+
+pom.xml
+.
+Vector Store: Sử dụng trực tiếp PostgreSQL làm Vector Store (Spring AI hỗ trợ cực tốt phần này).
+Bạn muốn tôi viết code mẫu cho chức năng "Tìm kiếm việc làm tương đồng" sử dụng pgvector và Spring AI không?
+
+
+Việc tích hợp Spring Cloud Eureka, Kafka, và Redis sẽ giúp hệ thống của bạn chuyển mình từ một Modular Monolith (vốn đã tốt) sang một kiến trúc Microservices mạnh mẽ, có khả năng mở rộng cao và trải nghiệm người dùng mượt mà hơn.
+
+Dưới đây là đề xuất chi tiết cách tích hợp từng công nghệ vào project ITing:
+
+1. Spring Cloud Eureka (Service Discovery)
+Tại sao cần? Hiện tại bạn đang gộp chung tất cả vào 1 project. Khi bạn muốn tách riêng module Job-Service, Auth-Service, User-Service ra chạy độc lập để dễ scale, các service này cần tìm thấy nhau mà không cần cấu hình IP cứng.
+
+Cách tích hợp:
+Eureka Server: Tạo một module mới (discovery-service) để làm tổng đài quản lý.
+Eureka Client: Các module hiện tại (auth, job, company) sẽ đăng ký với Server.
+Lợi ích: Khi bạn chạy 5 instance của job-service, các service khác chỉ cần gọi thông qua tên JOB-SERVICE, Eureka sẽ tự động điều phối (Load Balancing).
+2. Redis (Caching & Rate Limiting)
+Đây là công nghệ nên ưu tiên tích hợp sớm nhất vì nó mang lại hiệu quả tức thì cho Performance.
+
+Bộ nhớ đệm (Caching):
+Hot Jobs & Latest Jobs: Các danh sách này thay đổi không quá nhanh nhưng được truy cập cực nhiều. Thay vì bắt PostgreSQL "cày" SQL mỗi lần User vào trang chủ, hãy lưu kết quả vào Redis.
+User Profile: Lưu thông tin cơ bản của candidate/employer thường xuyên truy cập.
+Quản lý Token (Security):
+Lưu danh sách Blacklisted JWT (khi user logout) để vô hiệu hóa token ngay lập tức thay vì đợi nó hết hạn.
+Lưu Refresh Token giúp truy vấn nhanh hơn lưu trong DB.
+Rate Limiting (Chống Spam):
+Tích hợp Redis với Bucket4j để giới hạn: "1 IP chỉ được phép gọi API Login 5 lần/phút" để chống Brute-force.
+3. Apache Kafka (Event-Driven Architecture)
+Đây là "hệ thần kinh trung ương" để xử lý các module notification và messaging hiện đang để trống của bạn.
+
+Xử lý không đồng bộ (Async Processing):
+Luồng Ứng tuyển: User nhấn "Apply" -> Thay vì đợi server gửi Email (tốn 2-3s) rồi mới báo thành công, Server chỉ cần bắn 1 message vào Kafka topic job-applied-topic và báo "Thành công" ngay. Một Notification-Service sẽ nghe message này và gửi email/push sau (Background process).
+Đăng tin mới: Khi Employer đăng Job -> Bắn message vào Kafka -> Hệ thống tự động đẩy thông báo cho các Candidate quan tâm đến Skill đó.
+AI Data Pipeline:
+Dùng Kafka để đẩy dữ liệu Job mới sang module AI để tính toán Job_embedding mà không làm chậm logic nghiệp vụ chính.
+🗺️ Mô hình kiến trúc sau khi tích hợp
+mermaid
+graph TD
+    Gateway[API Gateway] --> Discovery[Eureka Server]
+    
+    subgraph "Microservices"
+        Auth[Auth Service]
+        Job[Job Service]
+        App[Application Service]
+        Noti[Notification Service]
+    end
+    
+    Auth -- "Register Event" --> Kafka((Kafka Broker))
+    Job -- "New Job Event" --> Kafka
+    App -- "Apply Event" --> Kafka
+    
+    Kafka --> Noti
+    
+    Job -- "Get Hot Jobs" --> Redis[(Redis Cache)]
+    Redis -- "Hit/Miss" --> PSQL[(PostgreSQL)]
+    
+    Noti -- "Send Mail/Push" --> User((End User))
+🚀 Lộ trình triển khai (Roadmap)
+Giai đoạn 1 (Performance): Tích hợp Redis ngay trong dự án Monolith hiện tại để Cache và chặn Spam. (Effort: Thấp | Impact: Cao).
+Giai đoạn 2 (UX & Extensibility): Cài đặt Kafka để xử lý module Trò chuyện (messaging) và Thông báo (notification). (Effort: Trung bình | Impact: Rất cao).
+Giai đoạn 3 (Scalability): Khi traffic đạt mức hàng ngàn user cùng lúc, hãy dùng Eureka để bắt đầu tách ra Microservices. (Effort: Cao | Impact: Duy trì tính ổn định).
+Bạn có muốn tôi viết file docker-compose.yml để setup nhanh Redis và Kafka cho dự án của bạn không?

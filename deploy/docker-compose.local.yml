@@ -1,0 +1,20 @@
+services:
+  backend:
+    build:
+      context: ../ITing-backend
+      dockerfile: Dockerfile.prod
+    image: iting-backend:local
+    environment:
+      SPRING_PROFILES_ACTIVE: dev
+    ports:
+      - "8081:8080"
+
+  frontend:
+    build:
+      context: ../ITing-frontend
+      dockerfile: Dockerfile
+      args:
+        VITE_API_BASE: ${VITE_API_BASE}
+    image: iting-frontend:local
+    ports:
+      - "3000:80"

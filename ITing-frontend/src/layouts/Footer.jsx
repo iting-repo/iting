@@ -13,8 +13,7 @@ const Footer = () => {
           {/* CỘT 1: LOGO & GIỚI THIỆU */}
           <div>
             <Link to="/" className="flex items-center gap-2 mb-6">
-               <BsBriefcaseFill className="text-white text-2xl" />
-               <span className="text-2xl font-bold tracking-tight">ITWork</span>
+               <img src="/assets/logo.png" alt="ITing Logo" className="h-10 w-auto object-contain brightness-110" />
             </Link>
             <p className="text-gray-400 text-sm leading-relaxed mb-4">
               Nền tảng tuyển dụng dành riêng cho lĩnh vực công nghệ thông tin.
@@ -40,11 +39,11 @@ const Footer = () => {
           <div>
             <h3 className="text-lg font-bold mb-6">Danh mục việc làm</h3>
             <ul className="space-y-3 text-sm text-gray-400">
-              <li><Link to="/jobs/software" className="hover:text-white transition-colors">Lập trình & Phát triển phần mềm</Link></li>
-              <li><Link to="/jobs/mobile" className="hover:text-white transition-colors">Hotels & Lập trình & Phát triển phần mềm</Link></li>
-              <li><Link to="/jobs/ui-ux" className="hover:text-white transition-colors">Thiết kế UI/UX</Link></li>
-              <li><Link to="/jobs/pm" className="hover:text-white transition-colors">Quản lý dự án IT</Link></li>
-              <li><Link to="/jobs/security" className="hover:text-white transition-colors">An ninh mạng & Hệ thống</Link></li>
+              <li><Link to="/jobs?category=SOFTWARE_DEVELOPMENT" className="hover:text-white transition-colors">Lập trình & Phát triển phần mềm</Link></li>
+              <li><Link to="/jobs?category=MOBILE_DEVELOPMENT" className="hover:text-white transition-colors">Lập trình Di động</Link></li>
+              <li><Link to="/jobs?category=UI_UX" className="hover:text-white transition-colors">Thiết kế UI/UX</Link></li>
+              <li><Link to="/jobs?category=PROJECT_MANAGEMENT" className="hover:text-white transition-colors">Quản lý dự án IT</Link></li>
+              <li><Link to="/jobs?category=CYBERSECURITY" className="hover:text-white transition-colors">An ninh mạng & Hệ thống</Link></li>
             </ul>
           </div>
 
@@ -72,7 +71,7 @@ const Footer = () => {
         {/* --- PHẦN DƯỚI: COPYRIGHT --- */}
         <div className="border-t border-gray-800 pt-8 flex flex-col md:flex-row justify-between items-center text-sm text-gray-500">
           <p className="mb-4 md:mb-0">
-             © 2025 ITWork – Nền tảng tuyển dụng công nghệ hàng đầu Việt Nam.
+             © 2025 ITing – Nền tảng tuyển dụng công nghệ hàng đầu Việt Nam.
           </p>
           <div className="flex gap-6">
              <Link to="/privacy" className="hover:text-white transition-colors underline">Chính sách bảo mật</Link>

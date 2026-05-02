@@ -1,0 +1,68 @@
+@startuml
+title ACT-REGISTER-EMAIL (Revised - Based on AuthServiceImpl)
+
+skinparam activity {
+  BackgroundColor #ffffff
+  DiamondBackgroundColor #EEF2FF
+  StartColor #10B981
+  EndColor #EF4444
+  ArrowColor #6366F1
+}
+
+|User|
+start
+:Truy cập Trang đăng ký;
+:Nhập email, mật khẩu & Chọn Role\n(Candidate hoặc Employer);
+
+|UI|
+:Validate form (định dạng email, độ dài pass...);
+
+|Auth (Backend)|
+if (Email đã tồn tại & ACTIVE?) then (Yes)
+  |UI|
+  :Hiển thị lỗi "Email đã được sử dụng";
+  stop
+else (No)
+  |Auth (Backend)|
+  :Hash mật khẩu;
+  :Tạo **Account** (status = **PENDING**);
+  
+  if (Role == CANDIDATE?) then (Yes)
+    :Khởi tạo **User Profile** (Ứng viên);
+  else (Yes)
+    :Khởi tạo **Company Profile** (Nhà tuyển dụng);
+  endif
+
+  :Tạo mã **OTP** ngẫu nhiên (6 chữ số);
+  :Lưu OTP + TTL (5 phút);
+
+  split
+    |Mail|
+    :Gửi email chứa mã OTP;
+  split again
+    |Auth|
+    :Ghi Audit Log;
+  end split
+
+  |UI|
+  :Hiển thị form nhập OTP;
+
+  |User|
+  :Nhập mã OTP từ email;
+
+  |Auth|
+  if (OTP chính xác & còn hạn?) then (Yes)
+    :Kích hoạt Account (**ACTIVE**);
+    :Xóa mã OTP đã dùng;
+    |UI|
+    :Thông báo thành công & Điều hướng Đăng nhập;
+  else (No)
+    |UI|
+    :Báo lỗi OTP sai/hết hạn;
+    :Hiển thị nút "Gửi lại mã";
+  endif
+
+endif
+
+stop
+@enduml

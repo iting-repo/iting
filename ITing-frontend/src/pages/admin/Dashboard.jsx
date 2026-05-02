@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { FaUserFriends, FaFileAlt, FaClipboardList, FaHourglassHalf } from 'react-icons/fa';
-import { StatsCard } from '../../components';
+import { StatsCard, Table, Td, LoadingSpinner } from '../../components';
+import adminDashboardService from '../../services/adminDashboardService';
 
 // 1. IMPORT CHART.JS
 import {
@@ -9,12 +10,14 @@ import {
     LinearScale,
     PointElement,
     LineElement,
+    ArcElement,
     Title,
     Tooltip,
     Filler,
     Legend,
 } from 'chart.js';
-import { Line } from 'react-chartjs-2';
+import { Line, Doughnut } from 'react-chartjs-2';
+import { Card, CardHeader, CardTitle, CardContent } from '../../components/common';
 
 // 2. ĐĂNG KÝ CÁC THÀNH PHẦN BIỂU ĐỒ
 ChartJS.register(
@@ -22,13 +25,14 @@ ChartJS.register(
     LinearScale,
     PointElement,
     LineElement,
+    ArcElement,
     Title,
     Tooltip,
     Filler,
     Legend
 );
 
-// 3. CẤU HÌNH DỮ LIỆU VÀ GIAO DIỆN BIỂU ĐỒ
+// 3. CẤU HÌNH GIAO DIỆN BIỂU ĐỒ
 const chartOptions = {
     responsive: true,
     maintainAspectRatio: false,
@@ -62,8 +66,8 @@ const chartOptions = {
         },
         y: {
             grid: { borderDash: [4, 4], color: '#F3F4F6' },
-            ticks: { display: false }, // Ẩn số trục Y cho gọn giống design
-            border: { display: false } // Ẩn đường kẻ trục Y
+            ticks: { display: false },
+            border: { display: false }
         }
     },
     interaction: {
@@ -72,125 +76,240 @@ const chartOptions = {
         intersect: false
     },
     elements: {
-        line: { tension: 0.4 } // Tạo đường cong mềm mại
+        line: { tension: 0.4 }
     }
 };
 
-const chartData = {
-    labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
-    datasets: [
-        {
-            label: 'Job Posts',
-            data: [4000, 3000, 2000, 2780, 1890, 2390, 3490],
-            borderColor: '#9D5CE9', // Màu tím chủ đạo
-            backgroundColor: (context) => {
-                const ctx = context.chart.ctx;
-                const gradient = ctx.createLinearGradient(0, 0, 0, 300);
-                gradient.addColorStop(0, 'rgba(157, 92, 233, 0.4)');
-                gradient.addColorStop(1, 'rgba(157, 92, 233, 0.0)');
-                return gradient;
-            },
-            fill: true,
-            pointBackgroundColor: '#9D5CE9',
-            pointBorderColor: '#fff',
-            pointHoverBackgroundColor: '#fff',
-            pointHoverBorderColor: '#9D5CE9',
-        },
-        {
-            label: 'Users',
-            data: [2400, 1398, 9800, 3908, 4800, 3800, 4300],
-            borderColor: '#34D399', // Màu xanh
-            backgroundColor: (context) => {
-                const ctx = context.chart.ctx;
-                const gradient = ctx.createLinearGradient(0, 0, 0, 300);
-                gradient.addColorStop(0, 'rgba(52, 211, 153, 0.4)');
-                gradient.addColorStop(1, 'rgba(52, 211, 153, 0.0)');
-                return gradient;
-            },
-            fill: true,
-            pointBackgroundColor: '#34D399',
-            pointBorderColor: '#fff',
-            pointHoverBackgroundColor: '#fff',
-            pointHoverBorderColor: '#34D399',
-        },
-    ],
-};
-
-// 4. DỮ LIỆU BẢNG (Giữ nguyên)
-const recentJobs = [
-    { id: 1, title: "Software Engineer", company: "Tech Corp", date: "12.09.2025 - 12:53 PM", applications: 423, status: "Active" },
-    { id: 2, title: "Data Analyst", company: "Data Inc", date: "11.09.2025 - 09:30 AM", applications: 156, status: "Active" },
-    { id: 3, title: "Product Manager", company: "Innovate Ltd", date: "10.09.2025 - 04:15 PM", applications: 89, status: "Pending" },
-    { id: 4, title: "UI/UX Designer", company: "Creative Studio", date: "09.09.2025 - 11:20 AM", applications: 230, status: "Closed" },
-];
-
 const getStatusColor = (status) => {
     switch (status) {
-        case 'Active': return 'bg-green-100 text-green-600';
-        case 'Pending': return 'bg-yellow-100 text-yellow-600';
-        case 'Closed': return 'bg-red-100 text-red-600';
+        case 'ACTIVE': return 'bg-green-100 text-green-600';
+        case 'PENDING': return 'bg-yellow-100 text-yellow-600';
+        case 'CLOSED':
+        case 'REJECTED': return 'bg-red-100 text-red-600';
         default: return 'bg-gray-100 text-gray-600';
     }
 };
 
+const getStatusLabel = (status) => {
+    const map = {
+        ACTIVE: 'Đang hoạt động',
+        PENDING: 'Chờ duyệt',
+        CLOSED: 'Đã đóng',
+        REJECTED: 'Bị từ chối',
+        EXPIRED: 'Hết hạn',
+        SUSPENDED: 'Bị đình chỉ',
+        NEEDS_REVISION: 'Cần chỉnh sửa',
+    };
+
+    return map[status] || status || 'Chưa cập nhật';
+};
+
+const formatter = new Intl.NumberFormat('en-US');
+
 const AdminDashboard = () => {
+    const [stats, setStats] = useState(null);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        const fetchStats = async () => {
+            try {
+                const data = await adminDashboardService.getStats();
+                setStats(data);
+            } catch (error) {
+                console.error("Oops! Something went wrong fetching dashboard stats:", error);
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchStats();
+    }, []);
+
+    if (loading) return <div className="flex justify-center items-center h-64"><LoadingSpinner /></div>;
+    if (!stats) return <div className="p-8 text-center text-gray-500">Không thể tải dữ liệu bảng điều khiển.</div>;
+
+    const chartData = {
+        labels: stats.chartData.map(d => d.day),
+        datasets: [
+            {
+                label: 'Tin tuyển dụng',
+                data: stats.chartData.map(d => d.jobPosts),
+                borderColor: '#3AB4E6',
+                backgroundColor: (context) => {
+                    const ctx = context.chart.ctx;
+                    const gradient = ctx.createLinearGradient(0, 0, 0, 300);
+                    gradient.addColorStop(0, 'rgba(58, 180, 230, 0.4)');
+                    gradient.addColorStop(1, 'rgba(58, 180, 230, 0.0)');
+                    return gradient;
+                },
+                fill: true,
+                pointBackgroundColor: '#3AB4E6',
+            },
+            {
+                label: 'Người dùng',
+                data: stats.chartData.map(d => d.users),
+                borderColor: '#34D399',
+                backgroundColor: (context) => {
+                    const ctx = context.chart.ctx;
+                    const gradient = ctx.createLinearGradient(0, 0, 0, 300);
+                    gradient.addColorStop(0, 'rgba(52, 211, 153, 0.4)');
+                    gradient.addColorStop(1, 'rgba(52, 211, 153, 0.0)');
+                    return gradient;
+                },
+                fill: true,
+                pointBackgroundColor: '#34D399',
+            },
+        ],
+    };
+
+    const statusLabels = ['Đang hoạt động', 'Chờ duyệt', 'Đã đóng', 'Khác'];
+    const statusValues = stats.jobStatusDistribution ? [
+        stats.jobStatusDistribution.ACTIVE || 0,
+        stats.jobStatusDistribution.PENDING || 0,
+        stats.jobStatusDistribution.CLOSED || 0,
+        (stats.jobStatusDistribution.REJECTED || 0) + (stats.jobStatusDistribution.EXPIRED || 0),
+    ] : [stats.totalJobs || 0, 0, 0, 0];
+    const statusColors = ['#34D399', '#FBBF24', '#F87171', '#9CA3AF'];
+
+    const doughnutData = {
+        labels: statusLabels,
+        datasets: [
+            {
+                data: statusValues,
+                backgroundColor: statusColors,
+                borderWidth: 0,
+                hoverOffset: 10,
+            },
+        ],
+    };
+
+    const doughnutOptions = {
+        responsive: true,
+        maintainAspectRatio: false,
+        cutout: '70%',
+        plugins: {
+            legend: { display: false },
+            tooltip: {
+                backgroundColor: 'white',
+                titleColor: '#6B7280',
+                bodyColor: '#1F2937',
+                borderColor: '#E5E7EB',
+                borderWidth: 1,
+                padding: 10,
+                usePointStyle: true,
+            }
+        }
+    };
+
     return (
-        <div className="space-y-8">
+        <div className="space-y-8 animate-in fade-in duration-500">
             {/* TITLE */}
-            <h2 className="text-2xl font-bold text-gray-800">Dashboard Overview</h2>
+            <h2 className="text-2xl font-bold text-gray-800">Tổng quan hệ thống</h2>
 
             {/* ROW 1: STATS CARDS */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                <StatsCard title="Total Users" value="40,689" icon={<FaUserFriends />} percentage="8.5" isIncrease={true} />
-                <StatsCard title="Total Job Posts" value="10,293" icon={<FaFileAlt />} percentage="1.3" isIncrease={true} />
-                <StatsCard title="Total Applications" value="89,000" icon={<FaClipboardList />} percentage="4.3" isIncrease={false} />
-                <StatsCard title="Pending Applications" value="2,040" icon={<FaHourglassHalf />} percentage="1.8" isIncrease={true} />
+                <StatsCard 
+                    title="Tổng người dùng" 
+                    value={formatter.format(stats.totalUsers)} 
+                    icon={<FaUserFriends />} 
+                    percentage={Math.abs(stats.userChange).toFixed(1)} 
+                    isIncrease={stats.userChange >= 0} 
+                />
+                <StatsCard 
+                    title="Tổng tin tuyển dụng" 
+                    value={formatter.format(stats.totalJobs)} 
+                    icon={<FaFileAlt />} 
+                    percentage={Math.abs(stats.jobChange).toFixed(1)} 
+                    isIncrease={stats.jobChange >= 0} 
+                />
+                <StatsCard 
+                    title="Tổng lượt ứng tuyển" 
+                    value={formatter.format(stats.totalApplications)} 
+                    icon={<FaClipboardList />} 
+                    percentage={Math.abs(stats.applicationChange).toFixed(1)} 
+                    isIncrease={stats.applicationChange >= 0} 
+                />
+                <StatsCard 
+                    title="Ứng tuyển chờ duyệt" 
+                    value={formatter.format(stats.pendingApplications)} 
+                    icon={<FaHourglassHalf />} 
+                    percentage={Math.abs(stats.pendingChange).toFixed(1)} 
+                    isIncrease={stats.pendingChange >= 0} 
+                />
             </div>
 
-            {/* ROW 2: JOB ANALYTICS CHART (DÙNG CHART.JS) */}
-            <div className="bg-white p-6 rounded-2xl shadow-sm">
-                <h3 className="font-bold text-gray-800 mb-6 flex items-center gap-2">
-                    <span className="w-1 h-6 bg-[#9D5CE9] rounded-full"></span> Job Analytics
-                </h3>
-                {/* Container cần set chiều cao cố định để ChartJS fill vào */}
-                <div className="h-[350px] w-full">
-                    <Line options={chartOptions} data={chartData} />
+            {/* ROW 2: CHARTS */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                {/* LINE CHART */}
+                <div className="lg:col-span-2 bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+                    <h3 className="text-lg font-bold text-gray-800 mb-6 flex items-center gap-2">
+                        <span className="w-1 h-6 bg-[#3AB4E6] rounded-full"></span> Phân tích tuyển dụng
+                    </h3>
+                    <div className="h-[350px] w-full">
+                        <Line options={chartOptions} data={chartData} />
+                    </div>
                 </div>
+
+                {/* PIE CHART (Doughnut) */}
+                <Card className="flex flex-col">
+                    <div className="p-6 pb-2">
+                        <h3 className="text-lg font-bold text-gray-800 flex items-center gap-2">
+                            <span className="w-1 h-6 bg-[#3AB4E6] rounded-full"></span> Phân bố trạng thái Job
+                        </h3>
+                    </div>
+                    <CardContent className="flex-1 flex flex-col justify-center">
+                        <div className="h-[250px] w-full relative">
+                            <Doughnut data={doughnutData} options={doughnutOptions} />
+                            {/* Optional center text */}
+                            <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                                <span className="text-2xl font-bold text-gray-800">{stats.totalJobs}</span>
+                                <span className="text-xs text-gray-500 font-medium">Tổng việc</span>
+                            </div>
+                        </div>
+                        <div className="flex flex-wrap gap-4 justify-center mt-6">
+                            {statusLabels.map((label, i) => (
+                                <div key={label} className="flex items-center gap-2 text-xs">
+                                    <div className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: statusColors[i] }} />
+                                    <span className="text-gray-500">{label}</span>
+                                    <span className="font-bold text-gray-800">{statusValues[i]}</span>
+                                </div>
+                            ))}
+                        </div>
+                    </CardContent>
+                </Card>
             </div>
 
             {/* ROW 3: TABLE */}
-            <div className="bg-white p-6 rounded-2xl shadow-sm">
+            <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
                 <h3 className="font-bold text-gray-800 mb-6 flex items-center gap-2">
-                    <span className="w-1 h-6 bg-red-400 rounded-full"></span> Recent Activity
+                    <span className="w-1 h-6 bg-[#3AB4E6] rounded-full"></span> Hoạt động gần đây
                 </h3>
-                <div className="overflow-x-auto">
-                    <table className="w-full text-left border-collapse">
-                        <thead className="bg-gray-50 text-xs font-bold text-gray-500 uppercase tracking-wider">
-                            <tr>
-                                <th className="p-4 rounded-tl-lg">Job Title</th>
-                                <th className="p-4">Company</th>
-                                <th className="p-4">Date - Time</th>
-                                <th className="p-4">Applications</th>
-                                <th className="p-4 rounded-tr-lg text-center">Status</th>
-                            </tr>
-                        </thead>
-                        <tbody className="text-sm divide-y divide-gray-100">
-                            {recentJobs.map((job) => (
-                                <tr key={job.id} className="hover:bg-gray-50 transition-colors">
-                                    <td className="p-4 font-bold text-gray-800">{job.title}</td>
-                                    <td className="p-4 text-gray-600">{job.company}</td>
-                                    <td className="p-4 text-gray-500">{job.date}</td>
-                                    <td className="p-4 font-medium">{job.applications}</td>
-                                    <td className="p-4 text-center">
-                                        <span className={`px-3 py-1 rounded-full text-xs font-bold ${getStatusColor(job.status)}`}>
-                                            {job.status}
-                                        </span>
-                                    </td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                </div>
+                <Table
+                    headers={[
+                        { label: "Tiêu đề công việc" },
+                        { label: "Công ty" },
+                        { label: "Ngày - Giờ" },
+                        { label: "Lượt ứng tuyển" },
+                        { label: "Trạng thái", className: "text-center" }
+                    ]}
+                >
+                    {stats.recentActivities.length > 0 ? stats.recentActivities.map((job, idx) => (
+                        <tr key={idx} className="hover:bg-gray-50/60 transition-colors group">
+                            <Td className="font-bold text-gray-800">{job.jobTitle}</Td>
+                            <Td className="text-gray-600">{job.company}</Td>
+                            <Td className="text-gray-500 whitespace-nowrap">{job.dateTime}</Td>
+                            <Td className="font-medium text-gray-700">{formatter.format(job.applications)}</Td>
+                            <Td className="text-center">
+                                <span className={`px-3 py-1 rounded-full text-xs font-bold ${getStatusColor(job.status)}`}>
+                                    {getStatusLabel(job.status)}
+                                </span>
+                            </Td>
+                        </tr>
+                    )) : (
+                        <tr>
+                            <td colSpan="5" className="py-8 text-center text-gray-400 text-sm">Không có hoạt động gần đây.</td>
+                        </tr>
+                    )}
+                </Table>
             </div>
         </div>
     );

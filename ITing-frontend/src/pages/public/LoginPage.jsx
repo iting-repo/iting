@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
-import { loginRequest } from '../../store/auth/authSlice';
+import { useGoogleLogin } from '@react-oauth/google';
+import { loginRequest, googleLoginRequest } from '../../store/auth/authSlice';
 import { FaEye, FaEyeSlash, FaArrowRight, FaUserShield, FaUserTie } from 'react-icons/fa';
 import { BsBriefcaseFill, BsBuilding, BsFileText } from 'react-icons/bs';
-// Import hình background caro của bạn
 import bgImage from '../../assets/bg_login.jpg';
 
 // 1. Component Logo Google chuẩn
@@ -26,20 +26,29 @@ const FacebookIcon = () => (
 );
 
 const LoginPage = () => {
-
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-
-  // STATE MỚI: Quản lý loại đăng nhập ('user' hoặc 'admin')
   const [loginType, setLoginType] = useState('user');
-
+  
   const dispatch = useDispatch();
   const navigate = useNavigate();
-
   const { isLoading, error, currentUser } = useSelector((state) => state.auth);
   const [showPassword, setShowPassword] = useState(false);
 
-  // Redirect nếu đã login
+  // --- GOOGLE LOGIN HOOK ---
+  const handleGoogleLogin = useGoogleLogin({
+    onSuccess: (tokenResponse) => {
+      console.log("Google Auth Success, access token:", tokenResponse.access_token);
+      dispatch(googleLoginRequest({ 
+        tokenId: tokenResponse.access_token, 
+        navigate 
+      }));
+    },
+    onError: (error) => {
+      console.error("Lỗi đăng nhập Google:", error);
+    },
+  });
+
   useEffect(() => {
     if (currentUser && currentUser.token) {
       const role = currentUser.role;
@@ -48,88 +57,60 @@ const LoginPage = () => {
       } else if (role === 'ADMIN') {
         navigate('/admin/dashboard');
       } else {
-        navigate('/jobs');
+        navigate('/');
       }
     }
   }, [currentUser, navigate]);
 
   const handleLogin = (e) => {
     e.preventDefault();
-    // Gửi thêm loginType để Saga/API biết đường xử lý nếu cần
     dispatch(loginRequest({ email, password, navigate, loginType }));
   }
 
-  // Hàm chuyển tab
   const switchTab = (type) => {
     setLoginType(type);
-    setEmail(""); // Reset form khi chuyển tab
+    setEmail("");
     setPassword("");
   };
 
   return (
-    <div className="min-h-screen flex bg-white font-sans">
-
-      {/* ================= LEFT COLUMN ================= */}
+    <div className="min-h-screen flex bg-white font-sans animate-in fade-in duration-500">
       <div className="w-full lg:w-[50%] flex flex-col px-8 md:px-20 xl:px-32 relative z-10 h-full overflow-y-auto no-scrollbar py-12">
-        {/* Logo */}
-        <Link to="/" className="flex items-center gap-2 mb-8 w-fit hover:opacity-80 transition-opacity">
-          <BsBriefcaseFill className="text-[#3AB4E6] text-2xl" />
-          <span className="text-2xl font-semibold text-gray-800 tracking-tight">ITWork</span>
+        <Link to="/" className="flex items-center gap-2 mb-6 w-fit hover:opacity-80 transition-opacity">
+          <img src="/assets/logo_white.png" alt="ITing Logo" className="h-20 w-auto object-contain drop-shadow-sm" />
         </Link>
-
         <div>
-          {/* Header */}
           <h1 className="text-[30px] font-semibold text-[#1F2937] mb-6">
             {loginType === 'user' ? 'Chào mừng trở lại!' : 'Đăng nhập cho Quản trị viên'}
           </h1>
-
-          {/* === 2. TAB SWITCHER (STYLE MỚI THEO YÊU CẦU) === */}
           <div className="bg-[#F3F4F6] p-1.5 rounded-lg flex mb-6 shadow-inner w-full">
             <button
               type="button"
               onClick={() => switchTab('user')}
-              className={`flex-1 py-2.5 rounded-md text-sm font-semibold transition-all duration-200 flex items-center justify-center gap-2 ${loginType === 'user'
-                ? 'bg-[#3AB4E6] text-white shadow-sm'
-                : 'text-gray-500 hover:text-gray-600'
-                }`}
+              className={`flex-1 py-2.5 rounded-md text-sm font-semibold transition-all duration-200 flex items-center justify-center gap-2 ${loginType === 'user' ? 'bg-[#3AB4E6] text-white shadow-sm' : 'text-gray-500 hover:text-gray-600'}`}
             >
               <FaUserTie /> Ứng viên / Nhà tuyển dụng
             </button>
             <button
               type="button"
               onClick={() => switchTab('admin')}
-              className={`flex-1 py-2.5 rounded-md text-sm font-semibold transition-all duration-200 flex items-center justify-center gap-2 ${loginType === 'admin'
-                ? 'bg-[#3AB4E6] text-white shadow-sm'
-                : 'text-gray-500 hover:text-gray-600'
-                }`}
+              className={`flex-1 py-2.5 rounded-md text-sm font-semibold transition-all duration-200 flex items-center justify-center gap-2 ${loginType === 'admin' ? 'bg-[#3AB4E6] text-white shadow-sm' : 'text-gray-500 hover:text-gray-600'}`}
             >
-              <FaUserShield /> Admin
+              <FaUserShield /> Quản trị viên
             </button>
           </div>
-          {/* ================================================== */}
-
-          {/* Mô tả */}
           <p className="text-[#6B7280] text-md mb-8 min-h-[50px]">
             {loginType === 'user' ? (
-              <>
-                Cùng tìm công việc IT chất lượng.<br />
-                Bạn chưa có tài khoản? <Link to="/register" className="text-[#3AB4E6] font-medium hover:underline">Tạo mới ngay</Link>
-              </>
+              <>Cùng tìm công việc IT chất lượng.<br />Bạn chưa có tài khoản? <Link to="/register" className="text-[#3AB4E6] font-medium hover:underline">Tạo mới ngay</Link></>
             ) : (
-              <>
-                Truy cập vào hệ thống quản trị viên.<br />
-                Vui lòng sử dụng tài khoản được cấp quyền.
-              </>
+              <>Truy cập vào hệ thống quản trị viên.<br />Vui lòng sử dụng tài khoản được cấp quyền.</>
             )}
           </p>
-
           {error && (
             <div className="mb-4 p-3 bg-red-50 text-red-500 text-sm rounded border border-red-100 flex items-center gap-2 animate-fade-in">
               ⚠️ {error}
             </div>
           )}
-
-          {/* Form */}
           <form onSubmit={handleLogin} className="space-y-5">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
@@ -139,10 +120,9 @@ const LoginPage = () => {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder={loginType === 'user' ? "Nhập email của bạn" : "admin@system.com"}
-                className="w-full px-5 py-3.5 bg-[#F0F5FA] border border-transparent rounded-lg text-gray-700 placeholder-gray-400 focus:outline-none focus:bg-white focus:border-[#3AB4E6] focus:ring-2 focus:ring-blue-100 transition-all"
+                className="w-full px-5 py-3.5 bg-[#F0F5FA] border border-transparent rounded-lg text-gray-700 focus:outline-none focus:bg-white focus:border-[#3AB4E6] focus:ring-2 focus:ring-blue-100 transition-all"
               />
             </div>
-
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Mật khẩu</label>
               <div className="relative">
@@ -152,7 +132,7 @@ const LoginPage = () => {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="•••••••••"
-                  className="w-full px-5 py-3.5 bg-[#F0F5FA] border border-transparent rounded-lg text-gray-700 placeholder-gray-400 focus:outline-none focus:bg-white focus:border-[#3AB4E6] focus:ring-2 focus:ring-blue-100 transition-all"
+                  className="w-full px-5 py-3.5 bg-[#F0F5FA] border border-transparent rounded-lg text-gray-700 focus:outline-none focus:bg-white focus:border-[#3AB4E6] focus:ring-2 focus:ring-blue-100 transition-all"
                 />
                 <button
                   type="button"
@@ -163,17 +143,13 @@ const LoginPage = () => {
                 </button>
               </div>
             </div>
-
             <div className="flex justify-between items-center text-sm mt-2">
               <label className="flex items-center text-gray-500 cursor-pointer select-none">
                 <input type="checkbox" className="mr-2 w-4 h-4 text-[#3AB4E6] border-gray-300 rounded focus:ring-blue-500" />
                 Ghi nhớ tài khoản
               </label>
-              <Link to="/forgot-password" className="text-[#3AB4E6] font-medium hover:underline">
-                Quên mật khẩu?
-              </Link>
+              <Link to="/forgot-password" className="text-[#3AB4E6] font-medium hover:underline">Quên mật khẩu?</Link>
             </div>
-
             <button
               type="submit"
               disabled={isLoading}
@@ -183,45 +159,31 @@ const LoginPage = () => {
               {!isLoading && <FaArrowRight size={14} />}
             </button>
           </form>
-
-          {/* Social Buttons Area */}
           <div className="min-h-[140px]">
             {loginType === 'user' && (
               <div className="animate-fade-in">
                 <div className="relative my-8 text-center">
-                  <div className="absolute inset-0 flex items-center">
-                    <div className="w-full border-t border-gray-200"></div>
-                  </div>
-                  <span className="relative bg-white px-4 text-xs text-gray-400 uppercase tracking-wide">
-                    Hoặc đăng nhập bằng
-                  </span>
+                  <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-gray-200"></div></div>
+                  <span className="relative bg-white px-4 text-xs text-gray-400 uppercase tracking-wide">Hoặc đăng nhập bằng</span>
                 </div>
-
                 <div className="grid grid-cols-2 gap-4">
                   <button type="button" className="flex items-center justify-center gap-3 border border-gray-200 py-3 rounded-lg hover:bg-gray-50 transition font-medium text-gray-700">
-                    <FacebookIcon />
-                    <span className="text-sm">Facebook</span>
+                    <FacebookIcon /><span className="text-sm">Facebook</span>
                   </button>
-
-                  <button type="button" className="flex items-center justify-center gap-3 border border-gray-200 py-3 rounded-lg hover:bg-gray-50 transition font-medium text-gray-700">
-                    <GoogleIcon />
-                    <span className="text-sm">Google</span>
+                  <button 
+                    type="button" 
+                    onClick={() => handleGoogleLogin()}
+                    className="flex items-center justify-center gap-3 border border-gray-200 py-3 rounded-lg hover:bg-gray-50 transition font-medium text-gray-700 shadow-sm"
+                  >
+                    <GoogleIcon /><span className="text-sm">Google</span>
                   </button>
                 </div>
               </div>
             )}
           </div>
-
         </div>
-
-        {/* Copyright */}
-        <div className="absolute bottom-6 text-xs text-gray-400">
-          © 2024 ITWork. All rights reserved.
-        </div>
+        <div className="absolute bottom-6 text-xs text-gray-400">© 2024 ITing. Bảo lưu mọi quyền.</div>
       </div>
-
-      {/* ================= RIGHT COLUMN: BACKGROUND & STATS ================= */}
-      {/* Giữ nguyên phần bên phải của bạn */}
       <div
         className="hidden lg:block w-[50%] relative bg-cover bg-center"
         style={{
@@ -232,44 +194,33 @@ const LoginPage = () => {
       >
         <div className="absolute inset-0 bg-[#1e293b]/85 mix-blend-multiply"></div>
         <div className="absolute inset-0 bg-gradient-to-t from-[#0f172a] via-transparent to-transparent opacity-90"></div>
-
         <div className="absolute bottom-0 left-0 right-0 p-12 pl-24 text-white">
-          <h2 className="text-4xl font-bold leading-tight mb-8 drop-shadow-lg animate-fade-in-up">
+          <h2 className="text-4xl font-bold leading-tight mb-8 drop-shadow-lg">
             {loginType === 'user' ? (
               <>Hơn <span className="text-blue-400">1,75,324</span> ứng viên đang tham gia để có công việc chất lượng.</>
             ) : (
-              <>Hệ thống <span className="text-blue-400">Quản trị tập trung</span> dành cho Admin & Staff.</>
+              <>Hệ thống <span className="text-blue-400">quản trị tập trung</span> dành cho quản trị viên và nhân sự nội bộ.</>
             )}
           </h2>
-
-          <div className="flex gap-4 animate-fade-in-up delay-100">
+          <div className="flex gap-4">
             <div className="bg-white/10 backdrop-blur-md border border-white/10 p-4 rounded-xl flex-1 min-w-[140px]">
-              <div className="w-10 h-10 bg-white/20 rounded-lg flex items-center justify-center mb-3 text-blue-300">
-                <BsBriefcaseFill size={20} />
-              </div>
+              <div className="w-10 h-10 bg-white/20 rounded-lg flex items-center justify-center mb-3 text-blue-300"><BsBriefcaseFill size={20} /></div>
               <div className="text-xl font-bold">1,75,324</div>
               <div className="text-[11px] text-gray-300 uppercase tracking-wide mt-1">Việc làm đang tuyển</div>
             </div>
-
             <div className="bg-white/10 backdrop-blur-md border border-white/10 p-4 rounded-xl flex-1 min-w-[140px]">
-              <div className="w-10 h-10 bg-white/20 rounded-lg flex items-center justify-center mb-3 text-purple-300">
-                <BsBuilding size={20} />
-              </div>
+              <div className="w-10 h-10 bg-white/20 rounded-lg flex items-center justify-center mb-3 text-sky-300"><BsBuilding size={20} /></div>
               <div className="text-xl font-bold">97,354</div>
               <div className="text-[11px] text-gray-300 uppercase tracking-wide mt-1">Công ty</div>
             </div>
-
             <div className="bg-white/10 backdrop-blur-md border border-white/10 p-4 rounded-xl flex-1 min-w-[140px]">
-              <div className="w-10 h-10 bg-white/20 rounded-lg flex items-center justify-center mb-3 text-green-300">
-                <BsFileText size={20} />
-              </div>
+              <div className="w-10 h-10 bg-white/20 rounded-lg flex items-center justify-center mb-3 text-green-300"><BsFileText size={20} /></div>
               <div className="text-xl font-bold">7,532</div>
               <div className="text-[11px] text-gray-300 uppercase tracking-wide mt-1">Công việc Mới</div>
             </div>
           </div>
         </div>
       </div>
-
     </div>
   );
 };
