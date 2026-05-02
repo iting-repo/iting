@@ -2,17 +2,18 @@
 
 ## Objective
 
-Assemble the complete `docker-compose.yml` with all services, perform a full deployment smoke test, validate all services are healthy, and ensure end-to-end functionality of the entire ITing platform.
+Verify the complete `docker-compose.yml` (already assembled in `deploy/`), perform a full deployment smoke test, validate all services are healthy, and ensure end-to-end functionality.
 
 ## Prerequisites
 - Tasks 01-15 completed (all services individually configured and tested)
-- All configuration files in place
+- All configuration files committed to `deploy/` folder
+- `.env` file filled in on EC2
 
 ## Step-by-Step Instructions
 
-### 16.1 Complete docker-compose.yml
+### 16.1 Verify docker-compose.yml
 
-The `docker-compose.yml` has been built incrementally in Tasks 02-15. Verify the complete file:
+The `docker-compose.yml` is already complete in `deploy/docker-compose.yml`. Verify it:
 
 ```bash
 ssh -i iting-key-pair.pem ubuntu@$PUBLIC_IP

@@ -14,8 +14,8 @@ Set up Nginx as a reverse proxy for the ITing application with SSL/TLS terminati
 
 ## Prerequisites
 
-- Task 01 completed (EC2 instance, Route 53 DNS configured)
-- Domain names pointing to EC2 Elastic IP:
+- Task 01 completed (EC2 instance, Cloudflare DNS configured)
+- Domain names pointing to EC2 Elastic IP (via Cloudflare, proxy status: DNS only):
   - `datnhk252iting.dpdns.org` → frontend
   - `api.datnhk252iting.dpdns.org` → backend
   - `monitor.datnhk252iting.dpdns.org` → Grafana/Portainer

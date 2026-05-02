@@ -1,0 +1,96 @@
+# ==========================================
+# ITing Deploy Pipeline
+# ==========================================
+# Triggers: ONLY on tags (v*)
+#
+# Steps:
+#   1. SSH into EC2
+#   2. Pull latest images from GHCR
+#   3. Deploy with docker compose
+#   4. Health check
+#   5. Notify Discord
+
+name: Deploy to EC2
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: read
+  packages: read
+
+env:
+  REGISTRY: ghcr.io
+
+jobs:
+  deploy:
+    name: Deploy to Production
+    runs-on: ubuntu-latest
+    environment:
+      name: production
+      url: https://datnhk252iting.dpdns.org
+
+    steps:
+      - name: Deploy to EC2
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ubuntu
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            cd /opt/iting/iting-repo
+
+            # Sync repo to the pushed tag
+            git fetch --all --tags --prune
+            git checkout ${{ github.ref_name }}
+            cd /opt/iting/iting-repo/deploy
+
+            # Log in to GHCR
+            echo "${{ secrets.GHCR_TOKEN }}" | docker login ${{ env.REGISTRY }} -u ${{ secrets.GHCR_USERNAME }} --password-stdin
+
+            # Pull latest images
+            docker compose \
+              -f docker-compose.yml \
+              --env-file /opt/iting/.env \
+              --env-file /opt/iting/.env.prod \
+              pull
+
+            # Deploy
+            docker compose \
+              -f docker-compose.yml \
+              --env-file /opt/iting/.env \
+              --env-file /opt/iting/.env.prod \
+              up -d --remove-orphans
+
+            # Clean up old images
+            docker image prune -f
+
+            # Verify
+            sleep 15
+            docker compose \
+              -f docker-compose.yml \
+              --env-file /opt/iting/.env \
+              --env-file /opt/iting/.env.prod \
+              ps
+
+      - name: Health check
+        run: |
+          sleep 30
+          curl -sf https://datnhk252iting.dpdns.org/ || exit 1
+          curl -sf https://api.datnhk252iting.dpdns.org/actuator/health || exit 1
+
+      - name: Notify Discord - Success
+        if: success()
+        run: |
+          curl -X POST "${{ secrets.DISCORD_WEBHOOK_URL }}" \
+            -H "Content-Type: application/json" \
+            -d '{"content":"✅ Deploy succeeded! Tag: ${{ github.ref_name }} by ${{ github.actor }}"}'
+
+      - name: Notify Discord - Failure
+        if: failure()
+        run: |
+          curl -X POST "${{ secrets.DISCORD_WEBHOOK_URL }}" \
+            -H "Content-Type: application/json" \
+            -d '{"content":"🚨 Deploy FAILED! Tag: ${{ github.ref_name }} by ${{ github.actor }}. Check: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"}'

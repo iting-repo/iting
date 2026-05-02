@@ -2,12 +2,12 @@
 
 ## Objective
 
-Provision the AWS infrastructure: VPC, subnets, security groups, EC2 instance (m7i-flex.large with Ubuntu 24.04 LTS), Elastic IP, IAM roles for GitHub Actions OIDC, and Route 53 DNS. **Note:** RDS PostgreSQL and S3 already exist and will be configured to work with the new VPC.
+Provision the AWS infrastructure: VPC, subnets, security groups, EC2 instance (m7i-flex.large with Ubuntu 24.04 LTS), Elastic IP, IAM roles for GitHub Actions OIDC. **Note:** RDS PostgreSQL and S3 already exist and will be configured to work with the new VPC. DNS is managed via Cloudflare (not Route 53).
 
 ## Prerequisites
 
 - AWS account with programmatic access (AWS CLI configured)
-- Domain name registered (for Route 53)
+- Cloudflare account with domain configured (datnhk252iting.dpdns.org → EC2 Elastic IP)
 - SSH key pair created in AWS (or import existing)
 - AWS CLI v2 installed and configured locally
 
@@ -445,14 +445,14 @@ echo "  EC2_INSTANCE_ID=$INSTANCE_ID"
 
 ### 1.6 Configure Existing RDS PostgreSQL
 
-The project already has an RDS PostgreSQL instance running at `jobweb.cbkcwwk8ug43.ap-southeast-1.rds.amazonaws.com`. Instead of creating a new one, we'll configure the security group to allow access from the new EC2 instance and verify connectivity.
+The project already has an RDS PostgreSQL instance running at `iting-db.cbkcwwk8ug43.ap-southeast-1.rds.amazonaws.com`. Instead of creating a new one, we'll configure the security group to allow access from the new EC2 instance and verify connectivity.
 
 ```bash
 # === Existing RDS Configuration ===
 # The project's existing RDS instance:
-RDS_ENDPOINT="jobweb.cbkcwwk8ug43.ap-southeast-1.rds.amazonaws.com"
+RDS_ENDPOINT="iting-db.cbkcwwk8ug43.ap-southeast-1.rds.amazonaws.com"
 # Original DB credentials from .env:
-# DB_NAME=postgres (or iting_job_portal depending on setup)
+# DB_NAME=iting_job_portal (or iting_job_portal depending on setup)
 # DB_USER=postgres
 # DB_PASSWORD=violet250904 (from existing .env - CHANGE IN PRODUCTION)
 
@@ -534,44 +534,64 @@ echo "  DB_PASSWORD=<STRONG_PASSWORD>  (change from default!)"
 # (See Task 03 for full details)
 ```
 
-### 1.7 Configure Route 53 DNS
+### 1.7 Configure Cloudflare DNS
+
+DNS is managed via Cloudflare (not Route 53). Add A records pointing to the EC2 Elastic IP.
+
+#### Option A: Cloudflare Dashboard (Recommended)
+
+1. Log in to [Cloudflare Dashboard](https://dash.cloudflare.com)
+2. Select your zone (`dpdns.org` or the subdomain zone)
+3. Go to **DNS → Records**
+4. Add the following A records:
+
+| Type | Name | Content (IPv4) | TTL | Proxy Status |
+|------|------|----------------|-----|--------------|
+| A | `datnhk252iting` | `$PUBLIC_IP` | Auto | DNS only (gray cloud) |
+| A | `www.datnhk252iting` | `$PUBLIC_IP` | Auto | DNS only (gray cloud) |
+| A | `api.datnhk252iting` | `$PUBLIC_IP` | Auto | DNS only (gray cloud) |
+| A | `monitor.datnhk252iting` | `$PUBLIC_IP` | Auto | DNS only (gray cloud) |
+
+> **Important**: Set proxy status to **DNS only** (gray cloud), not Proxied (orange cloud). Let's Encrypt HTTP-01 challenge requires direct access to your server. You can enable Cloudflare proxy later after SSL is set up.
+
+#### Option B: Cloudflare API
 
 ```bash
-# Create hosted zone
-HOSTED_ZONE=$(aws route53 create-hosted-zone \
-  --name datnhk252iting.dpdns.org \
-  --caller-reference "iting-$(date +%s)" \
-  --query 'HostedZone.Id' --output text --region $AWS_REGION)
+# Set variables
+CF_API_TOKEN="your-cloudflare-api-token"
+CF_ZONE_ID="your-zone-id"
+PUBLIC_IP="<from-step-1.5>"
 
-HZ_ID=$(echo $HOSTED_ZONE | sed 's|/hostedzone/||')
+# Create A records via API
+for NAME in datnhk252iting www.datnhk252iting api.datnhk252iting monitor.datnhk252iting; do
+  curl -s -X POST "https://api.cloudflare.com/client/v4/zones/$CF_ZONE_ID/dns_records" \
+    -H "Authorization: Bearer $CF_API_TOKEN" \
+    -H "Content-Type: application/json" \
+    --data '{
+      "type": "A",
+      "name": "'$NAME'",
+      "content": "'$PUBLIC_IP'",
+      "ttl": 1,
+      "proxied": false
+    }'
+done
 
-# Get nameservers to update at your domain registrar
-NAMESERVERS=$(aws route53 get-hosted-zone --id $HZ_ID \
-  --query 'DelegationSet.NameServers' --output text --region $AWS_REGION)
-
-echo "=== Update your domain registrar nameservers to ==="
-echo "$NAMESERVERS"
-
-# Create A records pointing to EC2 Elastic IP
-CHANGE_BATCH='{
-  "Changes": [
-    {"Action":"CREATE","ResourceRecordSet":{"Name":"datnhk252iting.dpdns.org","Type":"A","TTL":300,"ResourceRecords":[{"Value":"'$PUBLIC_IP'"}]}},
-    {"Action":"CREATE","ResourceRecordSet":{"Name":"www.datnhk252iting.dpdns.org","Type":"A","TTL":300,"ResourceRecords":[{"Value":"'$PUBLIC_IP'"}]}},
-    {"Action":"CREATE","ResourceRecordSet":{"Name":"api.datnhk252iting.dpdns.org","Type":"A","TTL":300,"ResourceRecords":[{"Value":"'$PUBLIC_IP'"}]}},
-    {"Action":"CREATE","ResourceRecordSet":{"Name":"monitor.datnhk252iting.dpdns.org","Type":"A","TTL":300,"ResourceRecords":[{"Value":"'$PUBLIC_IP'"}]}}
-  ]
-}'
-
-aws route53 change-resource-record-sets \
-  --hosted-zone-id $HZ_ID \
-  --change-batch "$CHANGE_BATCH" \
-  --region $AWS_REGION
-
-echo "=== DNS Records Created ==="
+echo "=== DNS Records Created in Cloudflare ==="
 echo "datnhk252iting.dpdns.org        → $PUBLIC_IP"
 echo "www.datnhk252iting.dpdns.org     → $PUBLIC_IP"
 echo "api.datnhk252iting.dpdns.org     → $PUBLIC_IP"
 echo "monitor.datnhk252iting.dpdns.org → $PUBLIC_IP"
+```
+
+#### Verify DNS Propagation
+
+```bash
+# Wait 1-5 minutes for Cloudflare DNS propagation
+dig datnhk252iting.dpdns.org +short
+dig api.datnhk252iting.dpdns.org +short
+dig monitor.datnhk252iting.dpdns.org +short
+
+# Expected: All should return your EC2 Elastic IP
 ```
 
 ### 1.8 Save Infrastructure Info
@@ -597,7 +617,7 @@ EC2_OS=ubuntu-24.04
 EC2_USER=ubuntu
 
 # Existing RDS (already in project)
-RDS_ENDPOINT=jobweb.cbkcwwk8ug43.ap-southeast-1.rds.amazonaws.com
+RDS_ENDPOINT=iting-db.cbkcwwk8ug43.ap-southeast-1.rds.amazonaws.com
 RDS_PORT=5432
 RDS_DB_NAME=iting_job_portal
 RDS_USERNAME=postgres
@@ -606,7 +626,10 @@ RDS_USERNAME=postgres
 S3_BUCKET=datn-jobweb
 S3_REGION=ap-southeast-1
 
+# DNS (Cloudflare)
+DNS_PROVIDER=cloudflare
 DOMAIN=datnhk252iting.dpdns.org
+CF_ZONE_ID=<your-cloudflare-zone-id>
 EOF
 
 chmod 600 /opt/iting/infrastructure.env
@@ -627,9 +650,11 @@ ssh -i iting-key-pair.pem ubuntu@$PUBLIC_IP "docker --version && docker compose 
 # Verify RDS is accessible (from EC2)
 ssh -i iting-key-pair.pem ubuntu@$PUBLIC_IP "sudo apt-get install -y postgresql-client && psql --host=$RDS_ENDPOINT --username=postgres --dbname=iting_job_portal -c 'SELECT 1;'"
 
-# Verify DNS propagation (may take up to 48 hours for nameservers)
+# Verify DNS propagation via Cloudflare (may take 1-5 minutes)
 dig datnhk252iting.dpdns.org +short
 dig api.datnhk252iting.dpdns.org +short
+dig monitor.datnhk252iting.dpdns.org +short
+# Expected: All should return your EC2 Elastic IP
 ```
 
 ## Rollback
@@ -639,7 +664,7 @@ dig api.datnhk252iting.dpdns.org +short
 aws ec2 terminate-instances --instance-ids $INSTANCE_ID --region $AWS_REGION
 
 # NOTE: Do NOT delete the existing RDS instance!
-# The RDS at jobweb.cbkcwwk8ug43.ap-southeast-1.rds.amazonaws.com is a pre-existing resource.
+# The RDS at iting-db.cbkcwwk8ug43.ap-southeast-1.rds.amazonaws.com is a pre-existing resource.
 # Only remove the security group rule we added:
 aws ec2 revoke-security-group-ingress \
   --group-id $RDS_VPC_SG \
@@ -675,6 +700,6 @@ aws iam delete-role --role-name iting-ec2-role
 - `ITing-backend/.env` - Existing RDS endpoint and S3 bucket configuration
 - `ITing-backend/.env.production` - Production environment template
 - **Existing AWS Resources:**
-  - RDS: `jobweb.cbkcwwk8ug43.ap-southeast-1.rds.amazonaws.com` (PostgreSQL)
+  - RDS: `iting-db.cbkcwwk8ug43.ap-southeast-1.rds.amazonaws.com` (PostgreSQL)
   - S3 Bucket: `datn-jobweb` (file uploads)
   - AWS Region: `ap-southeast-1`

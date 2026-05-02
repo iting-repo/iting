@@ -6,13 +6,13 @@
                           ┌─────────────────────────────────────────────────┐
                           │              AWS (ap-southeast-1)               │
                           │                                                   │
-  Internet                │  ┌─────────── m7i-flex.large (8GB) ──────────┐ │
-    │                     │  │                                           │ │
-    ▼                     │  │  ┌─────────────────────────────────────┐  │ │
-┌──────────┐             │  │  │       Nginx (Reverse Proxy)         │  │ │
-│  Route53 │─────────────┼──┼──┤  :80 → :443 (SSL redirect)          │  │ │
-│  Domain  │             │  │  │  :443 → backend/:8080               │  │ │
-└──────────┘             │  │  │         → frontend/:80               │  │ │
+   Internet                │  ┌─────────── m7i-flex.large (8GB) ──────────┐ │
+     │                     │  │                                           │ │
+     ▼                     │  │  ┌─────────────────────────────────────┐  │ │
+ ┌──────────┐             │  │  │       Nginx (Reverse Proxy)         │  │ │
+ │ Cloudflare│────────────┼──┼──┤  :80 → :443 (SSL redirect)          │  │ │
+ │   DNS    │             │  │  │  :443 → backend/:8080               │  │ │
+ └──────────┘             │  │  │         → frontend/:80               │  │ │
                           │  │  │         → grafana/:3000             │  │ │
                           │  │  │         → portainer/:9000           │  │ │
                           │  │  │  Let's Encrypt + Certbot            │  │ │
@@ -108,7 +108,7 @@ Phase 4: CI/CD & Management (Tasks 13-16)
 
 ### Before Starting
 - [ ] AWS account with programmatic access
-- [ ] Registered domain name (for SSL/TLS)
+- [ ] Cloudflare account with domain configured (datnhk252iting.dpdns.org)
 - [ ] GitHub repository with admin access
 - [ ] Discord server with webhook URL for alerts
 - [ ] SSH key pair for EC2 access
@@ -125,11 +125,9 @@ Phase 4: CI/CD & Management (Tasks 13-16)
 | EC2 m7i-flex.large | 2 vCPU, 8GB RAM, 30GB gp3 | ~$61/mo (On-Demand) |
 | RDS (existing) | PostgreSQL, already in project | Already exists |
 | Elastic IP | Static IP for EC2 | Free (when attached) |
-| Route 53 | Hosted zone | $0.50/mo |
-| ACM | SSL certificate | Free |
-| CloudWatch | Basic monitoring | Free tier |
+| Cloudflare | DNS + SSL proxy | Free tier |
 
-**Estimated Total: ~$62/mo** (EC2 m7i-flex.large + RDS already exists + EIP + Route 53)
+**Estimated Total: ~$61/mo** (EC2 m7i-flex.large + RDS already exists + EIP + Cloudflare free)
 
 ## Memory Budget (m7i-flex.large - 8GB)
 
