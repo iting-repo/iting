@@ -1,17 +1,19 @@
 package com.iting.config;
 
-import org.springframework.context.annotation.Bean;
+import lombok.RequiredArgsConstructor;
+import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
+import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
-public class WebMvcConfig {
-    @Bean
-    public RateLimitingInterceptor rateLimitingInterceptor() {
-        return new RateLimitingInterceptor(redisRateLimitingService);
-    }
+@Configuration
+@RequiredArgsConstructor
+public class WebMvcConfig implements WebMvcConfigurer {
+
+    private final RateLimitingInterceptor rateLimitingInterceptor;
 
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
-        registry.addInterceptor(rateLimitingInterceptor())
+        registry.addInterceptor(rateLimitingInterceptor)
                 .addPathPatterns("/api/**")
                 .excludePathPatterns("/api/actuator/**");
     }
