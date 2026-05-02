@@ -47,11 +47,11 @@ class AdminActivityLogServiceImplTest {
         Page<ActivityLog> page = new PageImpl<>(List.of(ActivityLog.builder().action("A").build()));
         ArgumentCaptor<Pageable> pageableCaptor = ArgumentCaptor.forClass(Pageable.class);
 
-        when(activityLogRepository.findAll(any(Pageable.class))).thenReturn(page);
+        when(activityLogRepository.findByUserIdOrderByCreatedAtDesc(any(Long.class), any(Pageable.class))).thenReturn(page);
 
         Page<ActivityLog> result = service.getActivityLogs(1L, "A", 0, 10);
 
-        verify(activityLogRepository).findAll(pageableCaptor.capture());
+        verify(activityLogRepository).findByUserIdOrderByCreatedAtDesc(any(Long.class), pageableCaptor.capture());
         assertEquals(0, pageableCaptor.getValue().getPageNumber());
         assertEquals(10, pageableCaptor.getValue().getPageSize());
         assertSame(page, result);

@@ -65,7 +65,7 @@ class JobServiceTest {
         CreateJobRequest request = new CreateJobRequest();
         request.setPosition("Developer");
 
-        when(companyRepository.findById(employerId)).thenReturn(Optional.of(testCompany));
+        when(companyRepository.findByAccount_Id(employerId)).thenReturn(Optional.of(testCompany));
         when(jobRepository.save(any(Job.class))).thenReturn(testJob);
         when(entityManager.createNativeQuery(anyString())).thenReturn(query);
         when(query.setParameter(anyString(), any())).thenReturn(query);

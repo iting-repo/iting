@@ -41,15 +41,14 @@ class AdminUserServiceImplTest {
 
     @Test
     void getAllUsers_shouldMapSupplementalUserFields() {
-        Account account = Account.builder().id(1L).email("u@test.com").role(Role.CANDIDATE).status(AccountStatus.ACTIVE).build();
         User user = new User();
         user.setId(1L);
         user.setFullName("Test User");
         user.setAvatarUrl("/a.png");
+        Account account = Account.builder().id(1L).email("u@test.com").role(Role.CANDIDATE).status(AccountStatus.ACTIVE).user(user).build();
 
         when(accountRepository.findAll(any(Specification.class), any(Pageable.class)))
                 .thenReturn(new PageImpl<>(List.of(account)));
-        when(userRepository.findById(1L)).thenReturn(Optional.of(user));
 
         Page<UserListResponse> result = service.getAllUsers(null, null, null, 0, 10);
 

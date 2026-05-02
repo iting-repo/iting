@@ -392,6 +392,9 @@ public class CompanyServiceImpl implements CompanyService {
         if (company.getTaxCode() == null || company.getTaxCode().isBlank()) {
             throw new IllegalArgumentException("Mã số thuế không được để trống");
         }
+        if (company.getConsentDocumentVersion() == null || company.getConsentDocumentVersion().isBlank()) {
+            throw new IllegalArgumentException("Phiên bản văn bản thỏa thuận không được để trống");
+        }
 
         company.setCompanyInfoUpdateStatus(CompanyReviewStatus.PENDING_REVIEW);
         company.setLastUpdateRequestDate(LocalDateTime.now());

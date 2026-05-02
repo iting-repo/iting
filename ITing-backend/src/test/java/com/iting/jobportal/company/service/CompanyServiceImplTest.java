@@ -108,6 +108,9 @@ class CompanyServiceImplTest {
         when(companyRepository.findById(1L)).thenReturn(Optional.of(company));
         when(fileUploadService.uploadConsentDocument(request.getFile())).thenReturn("https://new-consent.pdf");
         when(companyRepository.save(any(Company.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        CompanyResponse responseMock = new CompanyResponse();
+        responseMock.setConsentDocumentFileUrl("https://new-consent.pdf");
+        when(companyMapper.toResponse(any(Company.class))).thenReturn(responseMock);
 
         CompanyResponse response = companyService.updateConsentDocumentByAccountId(1L, request);
 
@@ -122,6 +125,7 @@ class CompanyServiceImplTest {
     void submitForReviewByAccountId_withMissingConsentVersion_shouldThrow() {
         company.setConsentDocumentVersion(" ");
         when(companyRepository.findById(1L)).thenReturn(Optional.of(company));
+        when(companyRepository.save(any(Company.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         IllegalArgumentException exception = assertThrows(
                 IllegalArgumentException.class,
@@ -136,6 +140,9 @@ class CompanyServiceImplTest {
     void submitForReviewByAccountId_withCompleteProfile_shouldUpdateStatus() {
         when(companyRepository.findById(1L)).thenReturn(Optional.of(company));
         when(companyRepository.save(any(Company.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        CompanyResponse responseMock = new CompanyResponse();
+        responseMock.setCompanyInfoUpdateStatus(CompanyReviewStatus.PENDING_REVIEW);
+        when(companyMapper.toResponse(any(Company.class))).thenReturn(responseMock);
 
         CompanyResponse response = companyService.submitInfoReviewByAccountId(1L);
 
@@ -153,6 +160,10 @@ class CompanyServiceImplTest {
         when(companyRepository.findById(1L)).thenReturn(Optional.of(company));
         when(fileUploadService.uploadBusinessLicense(request.getFile())).thenReturn("https://new-license.pdf");
         when(companyRepository.save(any(Company.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        CompanyResponse responseMock = new CompanyResponse();
+        responseMock.setBusinessLicenseFileUrl("https://new-license.pdf");
+        responseMock.setBusinessLicenseDocumentType(BusinessDocumentType.BUSINESS_LICENSE);
+        when(companyMapper.toResponse(any(Company.class))).thenReturn(responseMock);
 
         CompanyResponse response = companyService.updateBusinessLicenseByAccountId(1L, request);
 
