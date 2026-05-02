@@ -428,51 +428,40 @@ public class AdminCompanyServiceImpl implements AdminCompanyService {
             throw new RuntimeException("Company has not uploaded business license");
         }
 
-        @Override
-        public List<com.iting.jobportal.admin.dto.response.KybNoteResponse> getCompanyKybNotes(Long companyId) {
-                return companyKybNoteRepository.findByCompanyIdOrderByCreatedAtDesc(companyId)
-                                .stream()
-                                .map(note -> com.iting.jobportal.admin.dto.response.KybNoteResponse.builder()
-                                                .id(note.getId())
-                                                .companyId(note.getCompany().getId())
-                                                .adminId(note.getAdminId())
-                                                .noteContent(note.getNoteContent())
-                                                .createdAt(note.getCreatedAt())
-                                                .build())
-                                .toList();
+        return fileUploadService.generatePresignedUrl(fileUrl, minutes);
+    }
+
+    @Override
+    public String getCompanyConsentDocumentViewUrl(Long companyId, int minutes) {
+        Company company = companyRepository.findById(companyId)
+                .orElseThrow(() -> new RuntimeException("Company not found"));
+
+        String fileUrl = company.getConsentDocumentFileUrl();
+        if (fileUrl == null || fileUrl.isBlank()) {
+            throw new RuntimeException("Company has not uploaded consent document");
         }
 
-        @Override
-        public com.iting.jobportal.admin.dto.response.KybNoteResponse addCompanyKybNote(Long adminId, Long companyId,
-                        com.iting.jobportal.admin.dto.request.CreateKybNoteRequest request) {
-                Company company = companyRepository.findById(companyId)
-                                .orElseThrow(() -> new RuntimeException("Company not found"));
-                com.iting.jobportal.company.entity.CompanyKybNote note = new com.iting.jobportal.company.entity.CompanyKybNote();
-                note.setCompany(company);
-                note.setAdminId(adminId);
-                note.setNoteContent(request.getContent());
-                note = companyKybNoteRepository.save(note);
+        return fileUploadService.generatePresignedUrl(fileUrl, minutes);
+    }
 
-        @Override
-        @Transactional
-        public void deleteCompany(Long adminId, Long companyId) {
-                Company company = companyRepository.findById(companyId)
-                                .orElseThrow(() -> new RuntimeException("Company not found"));
+    @Override
+    @Transactional
+    public void deleteCompany(Long adminId, Long companyId) {
+        Company company = companyRepository.findById(companyId)
+                .orElseThrow(() -> new RuntimeException("Company not found"));
 
-                companyAuditService.log(
-                                company,
-                                CompanyAuditAction.DELETE,
-                                company.getCompanyInfoUpdateStatus() != null
-                                                ? company.getCompanyInfoUpdateStatus().name()
-                                                : null,
-                                "DELETED",
-                                null,
-                                "Xóa công ty",
-                                "admin#" + adminId,
-                                adminId);
+        companyAuditService.log(
+                company,
+                CompanyAuditAction.DELETE,
+                company.getCompanyInfoUpdateStatus() != null ? company.getCompanyInfoUpdateStatus().name() : null,
+                "DELETED",
+                null,
+                "Xóa công ty",
+                "admin#" + adminId,
+                adminId);
 
-                companyRepository.delete(company);
-        }
+        companyRepository.delete(company);
+    }
 
     @Override
     @Transactional
@@ -482,22 +471,31 @@ public class AdminCompanyServiceImpl implements AdminCompanyService {
                 approveCompany(adminId, id, request);
             }
         }
-
-        @Override
-        @org.springframework.transaction.annotation.Transactional
-        public void bulkRejectCompanies(Long adminId, java.util.List<Long> companyIds, ReviewRejectRequest request) {
-                if (companyIds != null) {
-                        for (Long id : companyIds) {
-                                rejectCompany(adminId, id, request);
-                        }
-                }
-        }
-
-        company.setCompanyInfoUpdateStatus(CompanyReviewStatus.APPROVED);company.setStatusReason(request!=null?request.getNote():null);
+    }
 
     @Override
-    @org.springframework.transaction.annotation.Transactional
-    public void bulkDeleteCompanies(Long adminId, java.util.List<Long> companyIds) {
+    @Transactional
+    public void bulkRejectCompanies(Long adminId, List<Long> companyIds, ReviewRejectRequest request) {
+        if (companyIds != null) {
+            for (Long id : companyIds) {
+                rejectCompany(adminId, id, request);
+            }
+        }
+    }
+
+    @Override
+    @Transactional
+    public void bulkSuspendCompanies(Long adminId, List<Long> companyIds, ReviewRejectRequest request) {
+        if (companyIds != null) {
+            for (Long id : companyIds) {
+                suspendCompany(adminId, id, request);
+            }
+        }
+    }
+
+    @Override
+    @Transactional
+    public void bulkDeleteCompanies(Long adminId, List<Long> companyIds) {
         if (companyIds != null) {
             for (Long id : companyIds) {
                 deleteCompany(adminId, id);
@@ -554,11 +552,8 @@ public class AdminCompanyServiceImpl implements AdminCompanyService {
                 ? toDate.atTime(23, 59, 59)
                 : java.time.LocalDateTime.of(2999, 12, 31, 23, 59, 59);
 
-        return companyAuditLogRepository.findAllWithCompanyFiltered(
-                action,
-                companyId,
-                fromDateTime,
-                toDateTime).stream()
+        return companyAuditLogRepository.findAllWithCompanyFiltered(action, companyId, fromDateTime, toDateTime)
+                .stream()
                 .map(this::mapToResponse)
                 .toList();
     }
@@ -576,10 +571,8 @@ public class AdminCompanyServiceImpl implements AdminCompanyService {
                     row.createCell(0).setCellValue(company.getId());
                     row.createCell(1).setCellValue(company.getName());
                     row.createCell(2).setCellValue(company.getTaxCode());
-                    row.createCell(3)
-                            .setCellValue(company.getCompanyInfoUpdateStatus() != null
-                                    ? company.getCompanyInfoUpdateStatus().name()
-                                    : "");
+                    row.createCell(3).setCellValue(
+                            company.getCompanyInfoUpdateStatus() != null ? company.getCompanyInfoUpdateStatus().name() : "");
                     row.createCell(4).setCellValue(
                             company.getVerificationLevel() != null ? company.getVerificationLevel().name() : "");
                     row.createCell(5).setCellValue(company.getCompanyEmail());
@@ -588,7 +581,7 @@ public class AdminCompanyServiceImpl implements AdminCompanyService {
     }
 
     @Override
-    @jakarta.transaction.Transactional
+    @Transactional
     public void importCompaniesFromExcel(org.springframework.web.multipart.MultipartFile file) {
         try {
             List<Company> companies = com.iting.jobportal.common.excel.ExcelHelper.excelToData(
@@ -605,10 +598,11 @@ public class AdminCompanyServiceImpl implements AdminCompanyService {
         } catch (java.io.IOException e) {
             throw new RuntimeException("fail to store excel data: " + e.getMessage());
         }
+    }
 
-        @Override
-        public java.io.ByteArrayInputStream getImportTemplate() {
-                String[] headers = { "Company Name", "Tax Code" };
-                return com.iting.jobportal.common.excel.ExcelHelper.createTemplate(headers, "Company Import Template");
-        }
+    @Override
+    public java.io.ByteArrayInputStream getImportTemplate() {
+        String[] headers = { "Company Name", "Tax Code" };
+        return com.iting.jobportal.common.excel.ExcelHelper.createTemplate(headers, "Company Import Template");
+    }
 }

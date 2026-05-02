@@ -435,6 +435,8 @@ const CandidateDetailModal = ({ candidate, onClose, onStatusUpdate }) => {
                         </div>
                     </div>
 
+                    </div>
+
                     {/* MODAL BÁO CÁO (NESTED) */}
                     {showReportModal && (
                         <div className="absolute inset-0 z-[60] bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-6 animate-in fade-in duration-300">
