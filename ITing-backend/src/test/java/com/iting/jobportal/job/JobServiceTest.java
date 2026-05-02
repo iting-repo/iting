@@ -1,11 +1,14 @@
 package com.iting.jobportal.job;
 
+import com.iting.jobportal.common.service.GeminiService;
 import com.iting.jobportal.company.entity.Company;
+import com.iting.jobportal.company.entity.enums.CompanyReviewStatus;
 import com.iting.jobportal.company.repository.CompanyRepository;
 import com.iting.jobportal.job.dto.request.CreateJobRequest;
 import com.iting.jobportal.job.dto.response.JobResponse;
 import com.iting.jobportal.job.entity.Job;
 import com.iting.jobportal.job.entity.enums.JobStatus;
+import com.iting.jobportal.job.entity.enums.SalaryType;
 import com.iting.jobportal.job.repository.JobRepository;
 import com.iting.jobportal.job.service.impl.JobServiceImpl;
 import jakarta.persistence.EntityManager;
@@ -18,6 +21,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.time.LocalDate;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -39,6 +43,9 @@ class JobServiceTest {
     @Mock
     private Query query;
 
+    @Mock
+    private GeminiService geminiService;
+
     @InjectMocks
     private JobServiceImpl jobService;
 
@@ -51,6 +58,8 @@ class JobServiceTest {
         testCompany = new Company();
         testCompany.setId(employerId);
         testCompany.setName("Test Company");
+        testCompany.setCompanyInfoUpdateStatus(CompanyReviewStatus.APPROVED);
+        testCompany.setActive(true);
 
         testJob = Job.builder()
                 .id(1L)
@@ -64,17 +73,27 @@ class JobServiceTest {
     void createJob_shouldReturnJobResponse() {
         CreateJobRequest request = new CreateJobRequest();
         request.setPosition("Developer");
+        request.setTitle("Software Developer");
+        request.setDescription("Develop software");
+        request.setProvince("Hanoi");
+        request.setAddress("123 Main St");
+        request.setSalaryType(SalaryType.MONTHLY);
+        request.setMinSalary(10_000_000L);
+        request.setMaxSalary(20_000_000L);
+        request.setDueDate(LocalDate.now().plusDays(30));
+        request.setMaxAccept(5);
 
         when(companyRepository.findByAccount_Id(employerId)).thenReturn(Optional.of(testCompany));
         when(jobRepository.save(any(Job.class))).thenReturn(testJob);
         when(entityManager.createNativeQuery(anyString())).thenReturn(query);
         when(query.setParameter(anyString(), any())).thenReturn(query);
+        when(geminiService.reviewJob(any(Job.class))).thenReturn("FINAL_DECISION: [APPROVE]");
 
         JobResponse response = jobService.createJob(employerId, request);
 
         assertNotNull(response);
         assertEquals("Developer", response.getPosition());
-        verify(jobRepository, times(1)).save(any());
+        verify(jobRepository, times(2)).save(any());
         verify(query, times(1)).executeUpdate();
     }
 

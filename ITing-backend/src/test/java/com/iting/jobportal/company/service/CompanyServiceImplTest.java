@@ -125,7 +125,6 @@ class CompanyServiceImplTest {
     void submitForReviewByAccountId_withMissingConsentVersion_shouldThrow() {
         company.setConsentDocumentVersion(" ");
         when(companyRepository.findById(1L)).thenReturn(Optional.of(company));
-        when(companyRepository.save(any(Company.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         IllegalArgumentException exception = assertThrows(
                 IllegalArgumentException.class,
