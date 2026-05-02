@@ -1,5 +1,6 @@
 package com.iting.jobportal.job.repository;
 
+import com.iting.jobportal.job.dto.request.JobSearchRequest;
 import com.iting.jobportal.job.entity.Job;
 import com.iting.jobportal.company.entity.Company;
 import jakarta.persistence.criteria.Join;
