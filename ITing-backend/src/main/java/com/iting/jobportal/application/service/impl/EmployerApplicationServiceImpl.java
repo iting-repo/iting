@@ -115,10 +115,10 @@ public class EmployerApplicationServiceImpl implements EmployerApplicationServic
     @Override
     @Transactional
     public ApplicationResponse viewApplication(Long employerId, Long applicationId) {
-        // We reuse the markApplicationAsViewed logic here so viewing the details
-        // automatically triggers the "VIEWED" status and sends notification to
-        // candidate.
-        return markApplicationAsViewed(employerId, applicationId);
+        ApplyFormSentToJob sent = employerApplicationRepository.findByIdApplyFormId(applicationId)
+                .orElseThrow(() -> new RuntimeException("Application job mapping not found: " + applicationId));
+        verifyJobOwnership(employerId, sent.getId().getJobId());
+        return toResponse(sent);
     }
 
     @Override

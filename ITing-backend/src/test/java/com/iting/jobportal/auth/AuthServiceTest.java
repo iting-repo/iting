@@ -7,10 +7,16 @@ import com.iting.jobportal.auth.entity.Account;
 import com.iting.jobportal.auth.entity.Enum.AccountStatus;
 import com.iting.jobportal.auth.entity.Enum.Role;
 import com.iting.jobportal.auth.repository.AccountRepository;
+import com.iting.jobportal.auth.repository.OtpCodeRepository;
 import com.iting.jobportal.auth.security.JwtTokenUtil;
+import com.iting.jobportal.auth.service.GoogleAuthService;
 import com.iting.jobportal.auth.service.RefreshTokenService;
 import com.iting.jobportal.auth.service.impl.AuthServiceImpl;
+import com.iting.jobportal.company.repository.CompanyRepository;
 import com.iting.jobportal.user.repository.UserRepository;
+import com.iting.jobportal.common.service.EmailService;
+import com.iting.jobportal.common.service.EmailTemplateService;
+import com.iting.jobportal.admin.service.AdminNotificationService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -42,6 +48,24 @@ class AuthServiceTest {
 
     @Mock
     private RefreshTokenService refreshTokenService;
+
+    @Mock
+    private CompanyRepository companyRepository;
+
+    @Mock
+    private GoogleAuthService googleAuthService;
+
+    @Mock
+    private OtpCodeRepository otpCodeRepository;
+
+    @Mock
+    private EmailService emailService;
+
+    @Mock
+    private EmailTemplateService emailTemplateService;
+
+    @Mock
+    private AdminNotificationService adminNotificationService;
 
     @InjectMocks
     private AuthServiceImpl authService;

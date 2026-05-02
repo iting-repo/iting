@@ -85,9 +85,12 @@ class AdminContentServiceImplTest {
     }
 
     @Test
-    void deleteCategory_shouldDeleteById() {
+    void deleteCategory_shouldCheckExistenceThenDeleteById() {
+        when(categoryRepository.existsById(5L)).thenReturn(true);
+
         service.deleteCategory(5L);
 
+        verify(categoryRepository).existsById(5L);
         verify(categoryRepository).deleteById(5L);
         verifyNoInteractions(staticContentRepository);
     }

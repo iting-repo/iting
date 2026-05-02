@@ -9,12 +9,17 @@ import com.iting.jobportal.company.entity.enums.CompanyReviewStatus;
 import com.iting.jobportal.company.repository.CompanyRepository;
 import com.iting.jobportal.company.service.impl.CompanyServiceImpl;
 import com.iting.jobportal.file.FileUploadService;
+import com.iting.jobportal.auth.repository.AccountRepository;
+import com.iting.jobportal.job.repository.JobRepository;
+import com.iting.jobportal.company.dto.mapper.CompanyMapper;
+import com.iting.jobportal.company.repository.CompanyReviewRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.mock.web.MockMultipartFile;
 
 import java.util.Optional;
@@ -39,6 +44,21 @@ class CompanyServiceImplTest {
 
     @Mock
     private FileUploadService fileUploadService;
+
+    @Mock
+    private AccountRepository accountRepository;
+
+    @Mock
+    private JobRepository jobRepository;
+
+    @Mock
+    private ApplicationEventPublisher eventPublisher;
+
+    @Mock
+    private CompanyMapper companyMapper;
+
+    @Mock
+    private CompanyReviewRepository companyReviewRepository;
 
     @InjectMocks
     private CompanyServiceImpl companyService;
