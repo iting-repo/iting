@@ -9,6 +9,7 @@ import com.iting.jobportal.job.entity.enums.JobStatus;
 import com.iting.jobportal.job.repository.JobRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -73,9 +74,13 @@ public class AdminDashboardServiceImpl implements AdminDashboardService {
         }
 
         // --- RECENT ACTIVITY ---
-        List<DashboardStats.RecentJobActivity> recentActivities = jobRepository
-                .findHotJobs(JobStatus.ACTIVE, PageRequest.of(0, 5))
-                .getContent()
+        Page<com.iting.jobportal.job.entity.Job> hotJobsPage = jobRepository
+                .findHotJobs(JobStatus.ACTIVE, PageRequest.of(0, 5));
+        List<com.iting.jobportal.job.entity.Job> hotJobs = hotJobsPage != null && hotJobsPage.getContent() != null
+                ? hotJobsPage.getContent()
+                : List.of();
+
+        List<DashboardStats.RecentJobActivity> recentActivities = hotJobs
                 .stream()
                 .map(j -> DashboardStats.RecentJobActivity.builder()
                         .jobTitle(j.getTitle())

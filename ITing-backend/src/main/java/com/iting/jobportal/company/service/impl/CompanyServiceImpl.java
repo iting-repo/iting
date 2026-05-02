@@ -398,6 +398,9 @@ public class CompanyServiceImpl implements CompanyService {
         company.setLastUpdate(LocalDateTime.now());
 
         Company saved = companyRepository.save(company);
+        if (saved == null) {
+            throw new RuntimeException("Luu thong tin cong ty that bai");
+        }
 
         eventPublisher.publishEvent(new CompanyInfoSubmittedEvent(this, saved.getId(), saved.getName()));
 
@@ -483,6 +486,9 @@ public class CompanyServiceImpl implements CompanyService {
     // ==========================================
     private CompanyResponse mapToResponse(Company company) {
         CompanyResponse response = companyMapper.toResponse(company);
+        if (response == null) {
+            response = new CompanyResponse();
+        }
         response.setActiveJobCount((int) jobRepository.countActiveAndNotExpiredByCompanyId(company.getId()));
         response.setFollowerCount(companyFollowService.getFollowerCount(company.getId()));
         // Set average rating & review count

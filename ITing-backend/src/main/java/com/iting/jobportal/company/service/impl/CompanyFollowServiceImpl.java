@@ -7,6 +7,8 @@ import com.iting.jobportal.company.service.CompanyFollowService;
 import com.iting.jobportal.company.entity.UserFollowCompany;
 import com.iting.jobportal.company.repository.UserFollowCompanyRepository;
 import com.iting.jobportal.notification.entity.Notification;
+import com.iting.jobportal.notification.enums.NotificationType;
+import com.iting.jobportal.notification.enums.RecipientType;
 import com.iting.jobportal.notification.repository.NotificationRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -42,6 +44,17 @@ public class CompanyFollowServiceImpl implements CompanyFollowService {
                 .companyId(companyId)
                 .build();
 
+        Notification notification = Notification.builder()
+                .recipientId(userId)
+                .recipientType(RecipientType.USER)
+                .type(NotificationType.SYSTEM)
+                .content("Ban da theo doi cong ty " + company.getName())
+                .entityType("COMPANY")
+                .entityId(companyId)
+                .actionUrl("/companies/" + companyId)
+                .build();
+
+        notificationRepository.save(notification);
         userFollowCompanyRepository.save(follow);
     }
 

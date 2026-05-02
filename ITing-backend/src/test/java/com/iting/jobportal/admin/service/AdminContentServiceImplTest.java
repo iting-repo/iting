@@ -43,12 +43,12 @@ class AdminContentServiceImplTest {
     @Test
     void getCategoriesByType_shouldReturnOrderedCategoriesFromRepository() {
         List<Category> categories = List.of(new Category(), new Category());
-        when(categoryRepository.findByTypeOrderBySortOrderAsc("job")).thenReturn(categories);
+        when(categoryRepository.findByTypeOrderBySortOrderAsc("JOB")).thenReturn(categories);
 
         List<Category> result = service.getCategoriesByType("job");
 
         assertSame(categories, result);
-        verify(categoryRepository).findByTypeOrderBySortOrderAsc("job");
+        verify(categoryRepository).findByTypeOrderBySortOrderAsc("JOB");
         verifyNoInteractions(staticContentRepository);
     }
 

@@ -17,6 +17,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 
 import java.util.List;
 import java.util.Optional;
@@ -46,7 +47,8 @@ class AdminUserServiceImplTest {
         user.setFullName("Test User");
         user.setAvatarUrl("/a.png");
 
-        when(accountRepository.findAll(any(Pageable.class))).thenReturn(new PageImpl<>(List.of(account)));
+        when(accountRepository.findAll(any(Specification.class), any(Pageable.class)))
+                .thenReturn(new PageImpl<>(List.of(account)));
         when(userRepository.findById(1L)).thenReturn(Optional.of(user));
 
         Page<UserListResponse> result = service.getAllUsers(null, null, null, 0, 10);
@@ -65,8 +67,6 @@ class AdminUserServiceImplTest {
 
         when(accountRepository.findById(2L)).thenReturn(Optional.of(account));
         when(accountRepository.save(account)).thenReturn(account);
-        when(userRepository.findById(2L)).thenReturn(Optional.empty());
-
         UserListResponse result = service.updateUser(1L, 2L, request);
 
         assertEquals(Role.EMPLOYER, account.getRole());

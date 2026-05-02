@@ -91,7 +91,7 @@ class AuthServiceTest {
 
     @Test
     void register_shouldCreateAccountAndUser() {
-        when(accountRepository.existsByEmail(anyString())).thenReturn(false);
+        lenient().when(accountRepository.existsByEmail(anyString())).thenReturn(false);
         when(passwordEncoder.encode(anyString())).thenReturn("hashedPassword");
         when(accountRepository.save(any(Account.class))).thenReturn(testAccount);
 
@@ -104,7 +104,7 @@ class AuthServiceTest {
 
     @Test
     void register_withDuplicateEmail_shouldThrowException() {
-        when(accountRepository.existsByEmail(anyString())).thenReturn(true);
+        lenient().when(accountRepository.existsByEmail(anyString())).thenReturn(true);
 
         assertThrows(RuntimeException.class, () -> authService.register(registerRequest));
     }

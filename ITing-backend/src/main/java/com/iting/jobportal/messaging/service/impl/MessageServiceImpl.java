@@ -25,7 +25,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
-import java.util.concurrent.CompletableFuture;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -117,35 +116,33 @@ public class MessageServiceImpl implements MessageService {
                 .createdAt(savedMessage.getCreatedAt())
                 .build();
 
-        // Fire notification asynchronously — don't block the response
+        // Fire notification (non-blocking errors)
         final Long convId = conversation.getId();
-        CompletableFuture.runAsync(() -> {
-            try {
-                String senderDisplayName = resolveSenderName(savedMessage);
-                String contentPreview = request.getContent();
-                if (contentPreview != null && contentPreview.length() > 120) {
-                    contentPreview = contentPreview.substring(0, 120) + "...";
-                }
-
-                if (request.getReceiverType() == ReceiverType.USER) {
-                    domainNotificationPublisher.notifyUser(
-                            request.getReceiverId(),
-                            NotificationType.MESSAGE_NEW,
-                            "New message from " + senderDisplayName + ": " + contentPreview,
-                            "CONVERSATION", convId,
-                            "/messages?conversationId=" + convId);
-                } else {
-                    domainNotificationPublisher.notifyCompany(
-                            request.getReceiverId(),
-                            NotificationType.MESSAGE_NEW,
-                            "New message from " + senderDisplayName + ": " + contentPreview,
-                            "CONVERSATION", convId,
-                            "/messages?conversationId=" + convId);
-                }
-            } catch (Exception e) {
-                // Log but don't fail the send
+        try {
+            String senderDisplayName = resolveSenderName(savedMessage);
+            String contentPreview = request.getContent();
+            if (contentPreview != null && contentPreview.length() > 120) {
+                contentPreview = contentPreview.substring(0, 120) + "...";
             }
-        });
+
+            if (request.getReceiverType() == ReceiverType.USER) {
+                domainNotificationPublisher.notifyUser(
+                        request.getReceiverId(),
+                        NotificationType.MESSAGE_NEW,
+                        "New message from " + senderDisplayName + ": " + contentPreview,
+                        "CONVERSATION", convId,
+                        "/messages?conversationId=" + convId);
+            } else {
+                domainNotificationPublisher.notifyCompany(
+                        request.getReceiverId(),
+                        NotificationType.MESSAGE_NEW,
+                        "New message from " + senderDisplayName + ": " + contentPreview,
+                        "CONVERSATION", convId,
+                        "/messages?conversationId=" + convId);
+            }
+        } catch (Exception e) {
+            // Log but don't fail the send
+        }
 
         return response;
     }
