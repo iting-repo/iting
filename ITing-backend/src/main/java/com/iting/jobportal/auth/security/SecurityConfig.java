@@ -106,6 +106,9 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.PUT, "/api/companies/**").hasRole("EMPLOYER")
                 .requestMatchers(HttpMethod.POST, "/api/companies/**").hasRole("EMPLOYER")
 
+                // ── EMPLOYER: HR affiliation (Phase 3 — tách Company khỏi Account) ─
+                .requestMatchers("/api/hr/**").hasRole("EMPLOYER")
+
                 // ── CANDIDATE + EMPLOYER + ADMIN: Nộp / xem đơn ─────────
                 .requestMatchers("/api/applications/**").hasAnyRole("CANDIDATE", "EMPLOYER", "ADMIN")
 

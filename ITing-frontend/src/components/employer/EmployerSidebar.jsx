@@ -7,10 +7,12 @@ import {
   FaList,
   FaSignOutAlt,
   FaSearch,
+  FaHeart,
 } from "react-icons/fa";
 import { useDispatch, useSelector } from "react-redux";
 import { logout } from "../../store/auth/authSlice";
 import companyService from "../../services/companyService";
+import favoriteCandidateService from "../../services/favoriteCandidateService";
 import ScrollToTop from "../common/ScrollToTop";
 
 const EmployerSidebar = () => {
@@ -19,6 +21,7 @@ const EmployerSidebar = () => {
   const { currentUser } = useSelector((state) => state.auth);
   const [showVerificationPopover, setShowVerificationPopover] = useState(false);
   const [company, setCompany] = useState(null);
+  const [favoriteCount, setFavoriteCount] = useState(0);
   const popoverRef = useRef(null);
 
   const user = currentUser || { name: "Nghia Vo", role: "EMPLOYER" };
@@ -53,6 +56,26 @@ const EmployerSidebar = () => {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  // Đồng bộ số lượng ứng viên yêu thích — đọc localStorage và lắng nghe
+  // sự kiện `storage` (đồng bộ giữa các tab) + sự kiện custom phát từ service
+  // mỗi khi toggle favorite trong cùng tab.
+  useEffect(() => {
+    const refresh = () => setFavoriteCount(favoriteCandidateService.getCount());
+    refresh();
+
+    const onStorage = (e) => {
+      if (!e.key || e.key === "iting_favorite_candidates") refresh();
+    };
+    const onCustom = () => refresh();
+
+    window.addEventListener("storage", onStorage);
+    window.addEventListener("favorite-candidates-changed", onCustom);
+    return () => {
+      window.removeEventListener("storage", onStorage);
+      window.removeEventListener("favorite-candidates-changed", onCustom);
+    };
+  }, []);
+
   const handleLogout = () => {
     navigate("/");
     setTimeout(() => {
@@ -78,6 +101,12 @@ const EmployerSidebar = () => {
       name: "Tìm kiếm ứng viên",
       icon: <FaSearch />,
     },
+    {
+      path: "/employer/favorite-candidates",
+      name: "Ứng viên yêu thích",
+      icon: <FaHeart />,
+      badge: favoriteCount,
+    },
   ];
 
   return (
@@ -101,7 +130,12 @@ const EmployerSidebar = () => {
                 }
               >
                 <span className="text-lg">{item.icon}</span>
-                {item.name}
+                <span className="flex-1">{item.name}</span>
+                {item.badge > 0 && (
+                  <span className="ml-auto inline-flex items-center justify-center min-w-[22px] h-[22px] px-1.5 text-[10px] font-bold rounded-full bg-amber-100 text-amber-700">
+                    {item.badge > 99 ? "99+" : item.badge}
+                  </span>
+                )}
               </NavLink>
             </li>
           ))}

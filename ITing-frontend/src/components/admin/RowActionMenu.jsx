@@ -7,10 +7,11 @@ import {
   XCircle,
   Ban,
   ShieldCheck,
-  Trash2
+  Trash2,
+  Users,
 } from "lucide-react";
 
-export const RowActionMenu = ({ company, onViewDetail, onAction, openMenuId, setOpenMenuId }) => {
+export const RowActionMenu = ({ company, onViewDetail, onAction, onViewApplicants, openMenuId, setOpenMenuId }) => {
   const buttonRef = useRef(null);
   const menuRef = useRef(null);
   const [position, setPosition] = useState({ top: 0, left: 0 });
@@ -106,7 +107,22 @@ export const RowActionMenu = ({ company, onViewDetail, onAction, openMenuId, set
               Xem chi tiết
             </button>
 
-
+            {onViewApplicants && (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setOpenMenuId(null);
+                  requestAnimationFrame(() => {
+                    onViewApplicants(company);
+                  });
+                }}
+                className="flex w-full items-center gap-2 px-4 py-3 text-left text-sm text-[#1967D2] hover:bg-blue-50 transition-colors font-medium"
+              >
+                <Users className="h-4 w-4" />
+                Xem ứng viên
+              </button>
+            )}
 
             <button
               type="button"

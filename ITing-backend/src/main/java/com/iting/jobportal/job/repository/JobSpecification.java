@@ -22,6 +22,20 @@ public class JobSpecification {
     */
 
     public static Specification<Job> fromRequest(JobSearchRequest req) {
+        // Extract fields to avoid closure evaluating modified request fields later
+        final var reqKeyword = req.getKeyword();
+        final var reqLocation = req.getLocation();
+        final var reqCompanyId = req.getCompanyId();
+        final var reqJobType = req.getJobType();
+        final var reqJobTypes = req.getJobTypes();
+        final var reqExperienceLevel = req.getExperienceLevel();
+        final var reqExperienceLevels = req.getExperienceLevels();
+        final var reqMinSalary = req.getMinSalary();
+        final var reqMaxSalary = req.getMaxSalary();
+        final var reqPostedWithinHours = req.getPostedWithinHours();
+        final var reqDomain = req.getDomain();
+        final var reqSubDomains = req.getSubDomains();
+        final var reqTechs = req.getTechs();
 
         return (root, query, cb) -> {
 
@@ -44,17 +58,21 @@ public class JobSpecification {
             // CHỈ HIỂN THỊ JOB CỦA CÔNG TY ĐANG HOẠT ĐỘNG
             predicates.add(cb.equal(companyJoin.get("active"), true));
 
-            if (req.getKeyword() != null && !req.getKeyword().isBlank()) {
-                String[] tokens = req.getKeyword().trim().toLowerCase().split("\\s+");
+            if (reqKeyword != null && !reqKeyword.isBlank()) {
+                // Strip special chars (parentheses, brackets, etc.) before tokenizing
+                String sanitized = reqKeyword.trim().toLowerCase()
+                        .replaceAll("[^a-zA-Z0-9\\p{L}\\s\\-]", " ");  // keep letters, digits, hyphens
+                String[] tokens = sanitized.split("\\s+");
                 List<Predicate> keywordPredicates = new ArrayList<>();
                 
                 for (String token : tokens) {
                     if (token.length() < 2) continue;
                     String kw = "%" + token + "%";
                     keywordPredicates.add(cb.or(
+                            cb.like(cb.lower(root.get("title")), kw),
                             cb.like(cb.lower(root.get("position")), kw),
                             cb.like(cb.lower(root.get("description")), kw),
-                            cb.like(cb.lower(root.get("skills")), kw)
+                            cb.like(cb.lower(root.get("skills").as(String.class)), kw)
                     ));
                 }
                 
@@ -63,56 +81,56 @@ public class JobSpecification {
                 }
             }
 
-            if (req.getLocation() != null && !req.getLocation().isBlank()) {
+            if (reqLocation != null && !reqLocation.isBlank()) {
 
                 predicates.add(
                         cb.like(
                                 cb.lower(root.get("location")),
-                                "%" + req.getLocation().toLowerCase() + "%"
+                                "%" + reqLocation.toLowerCase() + "%"
                         )
                 );
             }
 
-            if (req.getCompanyId() != null) {
-                predicates.add(cb.equal(companyJoin.get("id"), req.getCompanyId()));
+            if (reqCompanyId != null) {
+                predicates.add(cb.equal(companyJoin.get("id"), reqCompanyId));
             }
 
-            if (req.getJobType() != null) {
-                predicates.add(cb.equal(root.get("jobType"), req.getJobType()));
+            if (reqJobType != null) {
+                predicates.add(cb.equal(root.get("jobType"), reqJobType));
             }
 
-            if (req.getJobTypes() != null && !req.getJobTypes().isEmpty()) {
-                predicates.add(root.get("jobType").in(req.getJobTypes()));
+            if (reqJobTypes != null && !reqJobTypes.isEmpty()) {
+                predicates.add(root.get("jobType").in(reqJobTypes));
             }
 
-            if (req.getExperienceLevel() != null) {
-                predicates.add(cb.equal(root.get("experienceLevel"), req.getExperienceLevel()));
+            if (reqExperienceLevel != null) {
+                predicates.add(cb.equal(root.get("experienceLevel"), reqExperienceLevel));
             }
 
-            if (req.getExperienceLevels() != null && !req.getExperienceLevels().isEmpty()) {
-                predicates.add(root.get("experienceLevel").in(req.getExperienceLevels()));
+            if (reqExperienceLevels != null && !reqExperienceLevels.isEmpty()) {
+                predicates.add(root.get("experienceLevel").in(reqExperienceLevels));
             }
 
-            if (req.getMinSalary() != null) {
+            if (reqMinSalary != null) {
                 predicates.add(
                         cb.greaterThanOrEqualTo(
                                 root.get("maxSalary"),
-                                req.getMinSalary()
+                                reqMinSalary
                         )
                 );
             }
 
-            if (req.getMaxSalary() != null) {
+            if (reqMaxSalary != null) {
                 predicates.add(
                         cb.lessThanOrEqualTo(
                                 root.get("minSalary"),
-                                req.getMaxSalary()
+                                reqMaxSalary
                         )
                 );
             }
 
-            if (req.getPostedWithinHours() != null && req.getPostedWithinHours() > 0) {
-                LocalDateTime fromTime = LocalDateTime.now().minusHours(req.getPostedWithinHours());
+            if (reqPostedWithinHours != null && reqPostedWithinHours > 0) {
+                LocalDateTime fromTime = LocalDateTime.now().minusHours(reqPostedWithinHours);
                 predicates.add(cb.greaterThanOrEqualTo(root.get("createdAt"), fromTime));
             }
 
@@ -121,20 +139,20 @@ public class JobSpecification {
             // -------------------------
 
             // Single domain keyword - match against company's industry
-            if (req.getDomain() != null && !req.getDomain().isBlank()) {
-                String d = "%" + req.getDomain().toLowerCase() + "%";
+            if (reqDomain != null && !reqDomain.isBlank()) {
+                String d = "%" + reqDomain.toLowerCase() + "%";
                 predicates.add(cb.like(cb.lower(companyJoin.get("industry")), d));
             }
 
             // Sub-domains: match against company.industry, job.position or skills
-            if (req.getSubDomains() != null && !req.getSubDomains().isEmpty()) {
+            if (reqSubDomains != null && !reqSubDomains.isEmpty()) {
                 List<Predicate> subPreds = new ArrayList<>();
-                for (String sub : req.getSubDomains()) {
+                for (String sub : reqSubDomains) {
                     if (sub == null) continue;
                     String s = "%" + sub.trim().toLowerCase() + "%";
                     subPreds.add(cb.like(cb.lower(companyJoin.get("industry")), s));
                     subPreds.add(cb.like(cb.lower(root.get("position")), s));
-                    subPreds.add(cb.like(cb.lower(root.get("skills")), s));
+                    subPreds.add(cb.like(cb.lower(root.get("skills").as(String.class)), s));
                 }
                 if (!subPreds.isEmpty()) {
                     predicates.add(cb.or(subPreds.toArray(new Predicate[0])));
@@ -142,12 +160,12 @@ public class JobSpecification {
             }
 
             // Techs: allow searching for multiple tech keywords across skills and position
-            if (req.getTechs() != null && !req.getTechs().isEmpty()) {
+            if (reqTechs != null && !reqTechs.isEmpty()) {
                 List<Predicate> techPreds = new ArrayList<>();
-                for (String tech : req.getTechs()) {
+                for (String tech : reqTechs) {
                     if (tech == null) continue;
                     String t = "%" + tech.trim().toLowerCase() + "%";
-                    techPreds.add(cb.like(cb.lower(root.get("skills")), t));
+                    techPreds.add(cb.like(cb.lower(root.get("skills").as(String.class)), t));
                     techPreds.add(cb.like(cb.lower(root.get("position")), t));
                 }
                 if (!techPreds.isEmpty()) {
@@ -192,7 +210,7 @@ public class JobSpecification {
                         cb.or(
                                 cb.like(cb.lower(root.get("position")), kw),
                                 cb.like(cb.lower(root.get("description")), kw),
-                                cb.like(cb.lower(root.get("skills")), kw)
+                                cb.like(cb.lower(root.get("skills").as(String.class)), kw)
                         )
                 );
             }

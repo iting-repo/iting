@@ -159,10 +159,11 @@ public class AuthServiceImpl implements AuthService {
 
         Account savedAccount = accountRepository.save(account);
 
-        // Đảm bảo Profile cũng được tạo/cập nhật
+        // Đảm bảo Profile cũng được tạo/cập nhật.
+        // Sau Phase 2: EMPLOYER cũng có entity User (như CANDIDATE) — Company KHÔNG còn
+        // được tạo tự động lúc đăng ký, mà phải qua POST /api/hr/affiliations/me/init (Phase 3).
         switch (savedAccount.getRole()) {
-            case CANDIDATE -> createUserIfNeeded(savedAccount, request);
-            case EMPLOYER -> createCompanyIfNeeded(savedAccount, request);
+            case CANDIDATE, EMPLOYER -> createUserIfNeeded(savedAccount, request);
             default -> {}
         }
 
@@ -249,42 +250,12 @@ public class AuthServiceImpl implements AuthService {
         userRepository.save(user);
     }
 
-    private void createCompanyIfNeeded(Account account, RegisterRequest request) {
-        boolean companyExists = companyRepository.existsById(account.getId());
-        if (companyExists) {
-            return;
-        }
-
-        Company company = new Company();
-
-        // quan trọng với shared primary key: Hibernate tự lấy ID từ account nhờ @MapsId
-        company.setAccount(account);
-
-        String defaultName =
-                request.getFullName() != null && !request.getFullName().isBlank()
-                        ? request.getFullName().trim()
-                        : "Chưa cập nhật";
-
-        company.setName(defaultName);
-        company.setAccountEmail(account.getEmail());
-        company.setCompanyEmail(account.getEmail());
-
-        company.setVerificationLevel(VerificationLevel.UNVERIFIED);
-        company.setCompanyInfoUpdateStatus(CompanyReviewStatus.DRAFT);
-        company.setActive(true);
-        company.setFollowerCount(0L);
-        company.setProfileSetup(false);
-        company.setLastUpdate(LocalDateTime.now());
-
-        companyRepository.save(company);
-        
-        // Gửi thông báo cho Admin
-        try {
-            adminNotificationService.notifyNewCompany(company);
-        } catch (Exception e) {
-            log.error("Lỗi khi gửi thông báo cho admin về công ty mới đăng ký", e);
-        }
-    }
+    // NOTE: createCompanyIfNeeded() đã bị bỏ. Trước đây mỗi Account COMPANY/EMPLOYER
+    // được auto-create 1 Company shared-PK lúc đăng ký. Sau Phase 2, Company được
+    // tạo lazy qua endpoint POST /api/hr/affiliations/me/init (Phase 3) khi HR điền
+    // taxCode lần đầu trong FoundingInfoTab.
+    //
+    // adminNotificationService.notifyNewCompany() sẽ được gọi ở init service mới.
 
     @Transactional
     @Override

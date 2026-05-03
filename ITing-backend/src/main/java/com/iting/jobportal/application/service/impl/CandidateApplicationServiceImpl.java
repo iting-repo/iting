@@ -10,12 +10,17 @@ import com.iting.jobportal.job.repository.JobRepository;
 import com.iting.jobportal.job.entity.Job;
 import com.iting.jobportal.user.entity.User;
 import com.iting.jobportal.application.repository.CandidateApplicationRepository;
+import com.iting.jobportal.common.event.KafkaTopics;
+import com.iting.jobportal.common.event.outbox.OutboxAppender;
+import com.iting.jobportal.common.event.payload.ApplicationCreatedEvent;
 import com.iting.jobportal.user.repository.UserRepository;
 import com.iting.jobportal.application.service.CandidateApplicationService;
 import com.iting.jobportal.application.util.ApplicationMapperUtil;
 import com.iting.jobportal.userprofile.entity.CV;
 import com.iting.jobportal.userprofile.repository.CVRepository;
 import lombok.RequiredArgsConstructor;
+
+import java.util.Optional;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -35,6 +40,8 @@ public class CandidateApplicationServiceImpl implements CandidateApplicationServ
     private final UserRepository userRepository;
     private final ApplicationMapperUtil applicationMapperUtil;
     private final CVRepository cvRepository;
+    private final Optional<OutboxAppender> outboxAppender;
+    private final KafkaTopics kafkaTopics;
 
     @Override
     @Transactional
@@ -82,6 +89,16 @@ public class CandidateApplicationServiceImpl implements CandidateApplicationServ
 
         // ✅ Increment application count on the job
         jobRepository.incrementApplicationCount(request.getJobId());
+
+        // Outbox: phát event cho recommendation/notification/audit consume async
+        outboxAppender.ifPresent(appender -> appender.append(
+                kafkaTopics.getApplicationCreated(),
+                "application",
+                ApplicationCreatedEvent.of(
+                        savedForm.getId(),
+                        request.getJobId(),
+                        userId,
+                        job.getPostedByHrId())));
 
         return ApplicationSubmitResponse.builder()
                 .id(savedForm.getId())

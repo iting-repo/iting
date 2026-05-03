@@ -1,5 +1,7 @@
 package com.iting.jobportal.userprofile.controller;
 
+import com.iting.jobportal.common.ratelimit.RateLimitPolicy;
+import com.iting.jobportal.common.ratelimit.RateLimited;
 import com.iting.jobportal.job.controller.CurrentUser;
 import com.iting.jobportal.userprofile.dto.response.CVResponse;
 import com.iting.jobportal.userprofile.service.CVService;
@@ -36,8 +38,9 @@ public class CVController {
     }
 
     @PostMapping(value = "/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    @Operation(summary = "Upload CV mới", 
+    @Operation(summary = "Upload CV mới",
                description = "Upload CV mới cho người dùng. Tự động xóa CV cũ nhất nếu vượt quá 3 CVs")
+    @RateLimited(policy = RateLimitPolicy.FILE_UPLOAD, subject = "user")
     public ResponseEntity<CVResponse> uploadCV(
             @Parameter(hidden = true) @CurrentUser Long userId,
             @RequestParam("file") MultipartFile file,

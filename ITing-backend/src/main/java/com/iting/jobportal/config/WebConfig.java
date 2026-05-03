@@ -1,5 +1,6 @@
 package com.iting.jobportal.config;
 
+import com.iting.jobportal.common.security.DeprecatedPathInterceptor;
 import com.iting.jobportal.common.security.RateLimitInterceptor;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
@@ -14,10 +15,13 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 public class WebConfig implements WebMvcConfigurer {
 
     private final RateLimitInterceptor rateLimitInterceptor;
+    private final DeprecatedPathInterceptor deprecatedPathInterceptor;
 
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
         registry.addInterceptor(rateLimitInterceptor)
+                .addPathPatterns("/api/**");
+        registry.addInterceptor(deprecatedPathInterceptor)
                 .addPathPatterns("/api/**");
     }
 

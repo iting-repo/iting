@@ -28,6 +28,7 @@ export const JobTable = ({
   onPreview,
   onDetail,
   onAction,
+  onViewApplicants,
   openMenuId,
   setOpenMenuId,
   selectedIds = [],
@@ -142,6 +143,7 @@ export const JobTable = ({
                 setOpenMenuId={setOpenMenuId}
                 onViewDetail={onDetail}
                 onAction={onAction}
+                onViewApplicants={onViewApplicants}
               />
             </Td>
           </tr>

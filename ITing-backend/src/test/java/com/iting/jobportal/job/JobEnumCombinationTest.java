@@ -3,6 +3,7 @@ package com.iting.jobportal.job;
 import com.iting.jobportal.company.entity.Company;
 import com.iting.jobportal.company.entity.enums.CompanyReviewStatus;
 import com.iting.jobportal.company.repository.CompanyRepository;
+import com.iting.jobportal.company.service.AuthorizationService;
 import com.iting.jobportal.job.dto.request.CreateJobRequest;
 import com.iting.jobportal.job.dto.response.JobResponse;
 import com.iting.jobportal.job.entity.enums.ExperienceLevel;
@@ -41,6 +42,9 @@ class JobEnumCombinationTest {
 
     @Mock
     private CompanyRepository companyRepository;
+
+    @Mock
+    private AuthorizationService authz;
 
     @Mock
     private EntityManager entityManager;
@@ -92,7 +96,8 @@ class JobEnumCombinationTest {
         request.setMaxAccept(10);
         request.setDescription("Description ok");
 
-        when(companyRepository.findByAccount_Id(employerId)).thenReturn(Optional.of(company));
+        when(authz.requireApprovedCompanyOf(employerId)).thenReturn(company.getId());
+        when(companyRepository.findById(company.getId())).thenReturn(Optional.of(company));
         when(jobRepository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
         when(entityManager.createNativeQuery(anyString())).thenReturn(query);
         when(query.setParameter(anyString(), any())).thenReturn(query);

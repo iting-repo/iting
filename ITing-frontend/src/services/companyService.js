@@ -1,106 +1,160 @@
 import axiosInstance from "../utils/axiosInstance";
+import affiliationService from "./affiliationService";
 
+/**
+ * Phase 5 (HR ↔ Company refactor) — migration status:
+ *   * Jobs:        đã chuyển sang /hr/jobs/** (path mới Phase 4).
+ *   * getMyCompany: resolve qua affiliation → /hr/companies/{id}.
+ *   * Một số endpoint /companies/me/* còn legacy (consent doc, representative, verify-phone)
+ *     vì chưa có HR-side equivalent — giữ nguyên, sẽ migrate khi backend bổ sung.
+ *   * Snapshot info (HR sửa thông tin công ty) → dùng affiliationService trực tiếp,
+ *     KHÔNG qua companyService nữa.
+ */
 const companyService = {
+  /**
+   * Lấy thông tin Company của HR đang login.
+   * Resolve qua affiliation: /hr/affiliations/me → companyId → /hr/companies/{id}.
+   * Trả về null nếu HR chưa init affiliation (chưa nhập taxCode lần đầu).
+   */
   getMyCompany: async () => {
-    return await axiosInstance.get("/companies/me");
+    const me = await affiliationService.getMe();
+    if (!me || !me.companyId) {
+      return null;
+    }
+    return await axiosInstance.get(`/hr/companies/${me.companyId}`);
   },
 
+  /**
+   * @deprecated Sửa Company info giờ qua affiliation snapshot (admin sẽ apply).
+   *             Dùng affiliationService.updateBasicInfo thay vì endpoint này.
+   */
   updateCompanyBasicInfo: async (id, companyData) => {
     return await axiosInstance.put(`/companies/${id}/basic-info`, companyData);
   },
 
+  // ─── JOBS — đã migrate sang /hr/jobs/** (Phase 4) ─────────────────────
+
   createEmployerJob: async (jobData) => {
-    return await axiosInstance.post("/employer/jobs", jobData);
+    return await axiosInstance.post("/hr/jobs", jobData);
   },
 
   updateEmployerJob: async (id, jobData) => {
-    return await axiosInstance.put(`/employer/jobs/${id}`, jobData);
+    return await axiosInstance.put(`/hr/jobs/${id}`, jobData);
   },
 
   closeEmployerJob: async (id) => {
-    const response = await axiosInstance.post(`/employer/jobs/${id}/close`);
-    return response;
+    return await axiosInstance.post(`/hr/jobs/${id}/close`);
   },
 
   reopenEmployerJob: async (id) => {
-    const response = await axiosInstance.post(`/employer/jobs/${id}/reopen`);
-    return response;
+    return await axiosInstance.post(`/hr/jobs/${id}/reopen`);
   },
 
   deleteEmployerJob: async (id) => {
-    const response = await axiosInstance.delete(`/employer/jobs/${id}`);
-    return response;
+    return await axiosInstance.delete(`/hr/jobs/${id}`);
   },
 
   getMyJobs: async (page = 0, size = 10) => {
-    return await axiosInstance.get(
-      `/employer/jobs/my-jobs?page=${page}&size=${size}`,
-    );
+    return await axiosInstance.get(`/hr/jobs/my-jobs?page=${page}&size=${size}`);
   },
 
-  // Lấy presigned URL để preview giấy phép kinh doanh của chính mình
+  // ─── BUSINESS LICENSE / LOGO ──────────────────────────────────────────
+
+  /**
+   * Presigned URL xem giấy phép kinh doanh hiện tại của Company (đã được admin duyệt).
+   * Resolve qua affiliation → /hr/companies/{id}/business-license/view.
+   */
   getBusinessLicensePresignedUrl: async (minutes = 30) => {
-    return await axiosInstance.get("/companies/me/business-license/view", {
-      params: { minutes }
+    const me = await affiliationService.getMe();
+    if (!me || !me.companyId) {
+      return null;
+    }
+    return await axiosInstance.get(`/hr/companies/${me.companyId}/business-license/view`, {
+      params: { minutes },
     });
   },
 
+  /**
+   * @deprecated HR upload license vào snapshot affiliation, không phải Company trực tiếp.
+   *             Dùng `affiliationService.uploadLicense(file)` thay vì endpoint này.
+   */
   uploadBusinessLicense: async (file) => {
-    const formData = new FormData();
-    formData.append("file", file);
-    return await axiosInstance.put("/companies/me/business-license", formData, {
-      headers: {
-        "Content-Type": "multipart/form-data",
-      },
-    });
+    return await affiliationService.uploadLicense(file);
   },
 
+  /**
+   * Upload consent document — TODO: chưa có HR-side equivalent. Giữ legacy.
+   */
   uploadConsentDocument: async (file, confirmed) => {
     const formData = new FormData();
     formData.append("file", file);
     formData.append("confirmed", confirmed);
-    // formData.append("version", "1.0"); // optional
     return await axiosInstance.post("/companies/me/consent-document", formData, {
-      headers: {
-        "Content-Type": "multipart/form-data",
-      },
+      headers: { "Content-Type": "multipart/form-data" },
     });
   },
 
+  /**
+   * @deprecated HR upload logo vào snapshot affiliation. Dùng `affiliationService.uploadLogo(file)`.
+   */
   uploadCompanyLogo: async (file) => {
-    const formData = new FormData();
-    formData.append("file", file);
-    return await axiosInstance.post("/companies/me/logo/upload", formData, {
-      headers: {
-        "Content-Type": "multipart/form-data",
-      },
-    });
+    return await affiliationService.uploadLogo(file);
   },
 
+  // ─── SUBMIT REVIEW — gộp về 1 endpoint mới /hr/affiliations/me/submit-review ─
+
+  /**
+   * @deprecated Phase 5: gộp 4 submit endpoint cũ vào 1 endpoint mới của affiliation.
+   *             Backend mới validate đủ name/email/phone/address/license trước khi accept.
+   */
   submitInfoReview: async () => {
-    return await axiosInstance.post("/companies/me/submit-info-review");
+    return await affiliationService.submitReview();
   },
 
+  /** @deprecated Dùng affiliationService.submitReview. */
   submitDocumentReview: async () => {
-    return await axiosInstance.post("/companies/me/submit-document-review");
+    return await affiliationService.submitReview();
   },
 
+  /** @deprecated Dùng affiliationService.submitReview. */
   submitBusinessLicenseReview: async () => {
-    return await axiosInstance.post("/companies/me/submit-business-license-review");
+    return await affiliationService.submitReview();
   },
 
+  /** @deprecated Dùng affiliationService.submitReview. Consent doc submit chưa có HR-side equivalent. */
   submitConsentDocumentReview: async () => {
     return await axiosInstance.post("/companies/me/submit-consent-document-review");
   },
 
-  // Lấy presigned URL để xem logo của chính mình
-  getLogoPresignedUrl: async (minutes = 60) => {
-    return await axiosInstance.get("/companies/me/logo/view", {
-      params: { minutes }
-    });
+  /**
+   * Presigned URL xem logo của HR đã upload (snapshot affiliation).
+   */
+  getLogoPresignedUrl: async () => {
+    return await affiliationService.getLogoPresignedUrl();
   },
 
-  // PUBLIC
+  // ─── PHONE VERIFICATION ───────────────────────────────────────────────
+
+  sendPhoneOtp: async (phone) => {
+    return await axiosInstance.post("/companies/me/send-phone-otp", { phone });
+  },
+
+  verifyPhone: async (phone, otpCode) => {
+    return await axiosInstance.post("/companies/me/verify-phone", { phone, otpCode });
+  },
+
+  // ─── SOCIAL LINKS ─────────────────────────────────────────────────────
+
+  getMySocialLinks: async () => {
+    return await axiosInstance.get("/companies/me/social-links");
+  },
+
+  updateMySocialLinks: async (links) => {
+    return await axiosInstance.put("/companies/me/social-links", links);
+  },
+
+  // ─── PUBLIC ───────────────────────────────────────────────────────────
+
   searchCompanies: async (params) => {
     return await axiosInstance.get("/public/companies", { params });
   },
@@ -109,7 +163,8 @@ const companyService = {
     return await axiosInstance.get(`/public/companies/${id}`);
   },
 
-  // FOLLOW
+  // ─── FOLLOW (CANDIDATE side, không đổi) ───────────────────────────────
+
   followCompany: async (companyId) => {
     return await axiosInstance.post("/companies/follow", { companyId });
   },
@@ -124,11 +179,12 @@ const companyService = {
 
   getMyFollowedCompanies: async (page = 0, size = 100) => {
     return await axiosInstance.get("/companies/follow/my-followed", {
-      params: { page, size }
+      params: { page, size },
     });
   },
 
-  // REVIEWS
+  // ─── REVIEWS ─────────────────────────────────────────────────────────
+
   getCompanyReviews: async (companyId) => {
     return await axiosInstance.get(`/public/companies/${companyId}/reviews`);
   },
@@ -139,8 +195,7 @@ const companyService = {
 
   postCompanyReview: async (companyId, reviewData) => {
     return await axiosInstance.post(`/candidate/companies/${companyId}/reviews`, reviewData);
-  }
+  },
 };
 
 export default companyService;
-

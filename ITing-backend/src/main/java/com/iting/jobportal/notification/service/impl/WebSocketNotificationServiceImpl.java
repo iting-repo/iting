@@ -1,10 +1,10 @@
 package com.iting.jobportal.notification.service.impl;
 
+import com.iting.jobportal.messaging.relay.ClusterMessagingTemplate;
 import com.iting.jobportal.notification.dto.response.NotificationResponse;
 import com.iting.jobportal.notification.enums.RecipientType;
 import com.iting.jobportal.notification.service.WebSocketNotificationService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 
 import java.util.HashMap;
@@ -14,7 +14,7 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class WebSocketNotificationServiceImpl implements WebSocketNotificationService {
 
-    private final SimpMessagingTemplate messagingTemplate;
+    private final ClusterMessagingTemplate messagingTemplate;
 
     @Override
     public void sendNotificationToRecipient(Long recipientId, RecipientType recipientType, NotificationResponse notification) {

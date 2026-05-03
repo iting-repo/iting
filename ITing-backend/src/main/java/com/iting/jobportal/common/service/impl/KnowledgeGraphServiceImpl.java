@@ -258,6 +258,13 @@ public class KnowledgeGraphServiceImpl implements KnowledgeGraphService {
         // Add the canonical label
         result.add(getLabel(nodeId));
 
+        // Add all synonyms that map to this nodeId
+        synonymMap.forEach((synonym, targetId) -> {
+            if (targetId.equals(nodeId)) {
+                result.add(synonym);
+            }
+        });
+
         // Get directly related skills (depth 1)
         Set<String> related = collectNeighborLabels(nodeId, 1);
         result.addAll(related);

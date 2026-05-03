@@ -80,6 +80,17 @@ dependencies {
 
     // 🛡️ Rate Limiting
     implementation 'com.bucket4j:bucket4j-core:8.1.0'
+    implementation 'com.bucket4j:bucket4j-redis:8.1.0'
+
+    // 🪡 AOP (rate-limit / lock aspects)
+    implementation 'org.springframework.boot:spring-boot-starter-aop'
+
+    // 🔴 Redis (cache + lock + rate-limit + pubsub)
+    implementation 'org.springframework.boot:spring-boot-starter-data-redis'
+    implementation 'org.apache.commons:commons-pool2'
+    implementation 'org.springframework.boot:spring-boot-starter-cache'
+    implementation 'com.github.ben-manes.caffeine:caffeine'
+    implementation 'org.redisson:redisson:3.27.2'
 
     // Database Migration 
     implementation 'org.flywaydb:flyway-core'

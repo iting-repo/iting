@@ -1,21 +1,39 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { FaSearch, FaFilter, FaFileDownload, FaEye, FaArrowLeft, FaSort } from 'react-icons/fa';
-import CandidateDetailModal from '../../components/employer/CandidateDetailModal'; // Import modal từ components/employer
+import CandidateDetailModal from '../../components/employer/CandidateDetailModal';
 import applicationService from '../../services/applicationService';
+import { normalizeJobKey } from '../../utils/jobUrl';
 
 const JobApplications = () => {
-   const { id } = useParams();
+   const { jobKey } = useParams();
+   const id = normalizeJobKey(jobKey);
    const navigate = useNavigate();
    const [selectedCandidate, setSelectedCandidate] = useState(null);
    const [candidates, setCandidates] = useState([]);
    const [isLoading, setIsLoading] = useState(false);
 
+   // Filter and sort states
+   const [keyword, setKeyword] = useState("");
+   const [status, setStatus] = useState("");
+   const [sortBy, setSortBy] = useState("timeSent");
+   const [sortOrder, setSortOrder] = useState("desc");
+
    useEffect(() => {
       const fetchApplications = async () => {
          try {
             setIsLoading(true);
-            const response = await applicationService.getEmployerApplications(id, { page: 0, size: 10 });
+            const params = {
+               jobId: id,
+               page: 0,
+               size: 10,
+               sortBy,
+               sortOrder
+            };
+            if (keyword) params.keyword = keyword;
+            if (status) params.status = status;
+
+            const response = await applicationService.searchApplications(params);
             setCandidates(response.content || []);
          } catch (error) {
             console.error("Failed to fetch applications:", error);
@@ -23,8 +41,13 @@ const JobApplications = () => {
             setIsLoading(false);
          }
       };
-      fetchApplications();
-   }, [id]);
+
+      const debounce = setTimeout(() => {
+         fetchApplications();
+      }, 300);
+
+      return () => clearTimeout(debounce);
+   }, [id, keyword, status, sortBy, sortOrder]);
 
    const getStatusColor = (status) => {
       if (!status) return 'bg-gray-50 text-gray-600';
@@ -58,16 +81,35 @@ const JobApplications = () => {
                <input
                   type="text"
                   placeholder="Tìm kiếm ứng viên..."
+                  value={keyword}
+                  onChange={(e) => setKeyword(e.target.value)}
                   className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:border-[#3AB4E6]"
                />
             </div>
             <div className="flex gap-3">
-               <button className="flex items-center gap-2 px-4 py-2.5 border border-gray-200 rounded-lg hover:bg-gray-50 text-gray-600 text-sm font-medium">
-                  <FaFilter /> Filter
-               </button>
-               <button className="flex items-center gap-2 px-4 py-2.5 bg-[#1967D2] text-white rounded-lg hover:bg-blue-700 text-sm font-bold shadow-md shadow-blue-500/20">
-                  <FaSort /> Sort By
-               </button>
+               <select
+                  value={status}
+                  onChange={(e) => setStatus(e.target.value)}
+                  className="px-4 py-2.5 border border-gray-200 rounded-lg bg-white text-gray-600 text-sm font-medium focus:outline-none focus:border-[#3AB4E6] cursor-pointer"
+               >
+                  <option value="">Lọc: Tất cả trạng thái</option>
+                  <option value="PENDING">Chờ xử lý</option>
+                  <option value="REVIEWED">Đã xem</option>
+                  <option value="INTERVIEW">Phỏng vấn</option>
+                  <option value="REJECTED">Từ chối</option>
+               </select>
+               <select
+                  value={`${sortBy}-${sortOrder}`}
+                  onChange={(e) => {
+                     const [by, order] = e.target.value.split('-');
+                     setSortBy(by);
+                     setSortOrder(order);
+                  }}
+                  className="px-4 py-2.5 border border-gray-200 rounded-lg bg-white text-gray-600 text-sm font-medium focus:outline-none focus:border-[#3AB4E6] cursor-pointer"
+               >
+                  <option value="timeSent-desc">Sắp xếp: Mới nhất</option>
+                  <option value="timeSent-asc">Sắp xếp: Cũ nhất</option>
+               </select>
             </div>
          </div>
 
@@ -159,6 +201,12 @@ const JobApplications = () => {
             <CandidateDetailModal
                candidate={selectedCandidate}
                onClose={() => setSelectedCandidate(null)}
+               onStatusUpdate={(appId, newStatus) => {
+                  setCandidates(prev => prev.map(c =>
+                     c.id === appId ? { ...c, status: newStatus } : c
+                  ));
+                  setSelectedCandidate(prev => prev ? { ...prev, status: newStatus } : prev);
+               }}
             />
          )}
 

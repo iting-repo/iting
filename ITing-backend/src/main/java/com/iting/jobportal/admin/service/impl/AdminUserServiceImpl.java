@@ -8,6 +8,9 @@ import com.iting.jobportal.auth.entity.Account;
 import com.iting.jobportal.auth.entity.Enum.AccountStatus;
 import com.iting.jobportal.auth.entity.Enum.Role;
 import com.iting.jobportal.auth.repository.AccountRepository;
+import com.iting.jobportal.company.entity.CompanyHrAffiliation;
+import com.iting.jobportal.company.entity.enums.AffiliationStatus;
+import com.iting.jobportal.company.repository.CompanyHrAffiliationRepository;
 import com.iting.jobportal.user.entity.User;
 import com.iting.jobportal.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -27,6 +30,7 @@ public class AdminUserServiceImpl implements AdminUserService {
 
     private final AccountRepository accountRepository;
     private final UserRepository userRepository;
+    private final CompanyHrAffiliationRepository affiliationRepository;
 
     @Override
     public Page<UserListResponse> getAllUsers(String keyword, Role role, AccountStatus status, int page, int size) {
@@ -37,15 +41,14 @@ public class AdminUserServiceImpl implements AdminUserService {
             
             if (keyword != null && !keyword.trim().isEmpty()) {
                 String pattern = "%" + keyword.trim().toLowerCase() + "%";
-                
-                // Join với User và Company để tìm theo tên
+
+                // Sau Phase 2: Account không còn @OneToOne với Company → bỏ join company.
+                // Search company name dùng kênh khác (admin endpoint /api/admin/companies).
                 var userJoin = root.join("user", jakarta.persistence.criteria.JoinType.LEFT);
-                var companyJoin = root.join("company", jakarta.persistence.criteria.JoinType.LEFT);
-                
+
                 predicates.add(cb.or(
                     cb.like(cb.lower(root.get("email")), pattern),
-                    cb.like(cb.lower(userJoin.get("fullName")), pattern),
-                    cb.like(cb.lower(companyJoin.get("name")), pattern)
+                    cb.like(cb.lower(userJoin.get("fullName")), pattern)
                 ));
             }
             
@@ -152,10 +155,12 @@ public class AdminUserServiceImpl implements AdminUserService {
                     }
                     row.createCell(4).setCellValue(fullName);
 
-                    String companyName = "";
-                    if (account.getCompany() != null) {
-                        companyName = account.getCompany().getName();
-                    }
+                    // Resolve companyName qua affiliation (lấy company của affiliation
+                    // active gần nhất; chỉ EMPLOYER/HR mới có).
+                    String companyName = affiliationRepository
+                            .findActiveByHrAccountId(account.getId())
+                            .map(a -> a.getCompany() != null ? a.getCompany().getName() : "")
+                            .orElse("");
                     row.createCell(5).setCellValue(companyName);
                     
                     row.createCell(6).setCellValue(account.getCreatedAt() != null ? account.getCreatedAt().toString() : "");
@@ -203,14 +208,18 @@ public class AdminUserServiceImpl implements AdminUserService {
             response.setFullName(account.getUser().getFullName());
             response.setAvatarUrl(account.getUser().getAvatarUrl());
         }
-        
-        if (account.getCompany() != null) {
-            response.setCompanyName(account.getCompany().getName());
-            if (response.getAvatarUrl() == null) {
-                response.setAvatarUrl(account.getCompany().getLogoUrl());
-            }
-        }
-        
+
+        // Resolve company qua affiliation (active = INCOMPLETE/PENDING/APPROVED).
+        affiliationRepository.findActiveByHrAccountId(account.getId())
+                .ifPresent(aff -> {
+                    if (aff.getCompany() != null) {
+                        response.setCompanyName(aff.getCompany().getName());
+                        if (response.getAvatarUrl() == null) {
+                            response.setAvatarUrl(aff.getCompany().getLogoUrl());
+                        }
+                    }
+                });
+
         return response;
     }
 }

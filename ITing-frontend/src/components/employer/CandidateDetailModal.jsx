@@ -3,7 +3,7 @@ import { useModalEscape } from '../../hooks/useModalEscape';
 import {
     FaTimes, FaEnvelope, FaPhone, FaDownload,
     FaStar, FaRegStar, FaCheckCircle, FaUserTie,
-    FaExclamationTriangle, FaExternalLinkAlt
+    FaExclamationTriangle, FaExternalLinkAlt, FaTimesCircle
 } from 'react-icons/fa';
 import { toast } from 'sonner';
 import applicationService from '../../services/applicationService';
@@ -22,6 +22,17 @@ const REPORT_REASONS = [
     { value: 'OTHER', label: 'Lý do khác...', priority: 'LOW' },
 ];
 
+const REJECT_REASONS = [
+    { value: 'EXPERIENCE_MISMATCH', label: 'Kinh nghiệm chưa phù hợp với yêu cầu' },
+    { value: 'SKILL_MISMATCH', label: 'Kỹ năng chưa phù hợp với vị trí' },
+    { value: 'POSITION_FILLED', label: 'Vị trí đã đủ ứng viên / đã tuyển xong' },
+    { value: 'INSUFFICIENT_INFO', label: 'Hồ sơ thiếu thông tin cần thiết' },
+    { value: 'BETTER_CANDIDATE', label: 'Đã chọn ứng viên khác phù hợp hơn' },
+    { value: 'LOCATION', label: 'Khu vực làm việc chưa phù hợp' },
+    { value: 'SALARY', label: 'Mức lương chưa phù hợp' },
+    { value: 'OTHER', label: 'Lý do khác...' },
+];
+
 const CandidateDetailModal = ({ candidate, onClose, onStatusUpdate }) => {
     const navigate = useNavigate();
     const [isAccepting, setIsAccepting] = useState(false);
@@ -31,6 +42,12 @@ const CandidateDetailModal = ({ candidate, onClose, onStatusUpdate }) => {
         description: ''
     });
     const [isReporting, setIsReporting] = useState(false);
+    const [showRejectModal, setShowRejectModal] = useState(false);
+    const [rejectData, setRejectData] = useState({
+        type: 'EXPERIENCE_MISMATCH',
+        description: ''
+    });
+    const [isRejecting, setIsRejecting] = useState(false);
     const [isFavorited, setIsFavorited] = useState(false);
     const [isStartingChat, setIsStartingChat] = useState(false);
     const [fullProfile, setFullProfile] = useState(null);
@@ -93,6 +110,28 @@ const CandidateDetailModal = ({ candidate, onClose, onStatusUpdate }) => {
             toast.error('Có lỗi xảy ra, vui lòng thử lại.');
         } finally {
             setIsAccepting(false);
+        }
+    };
+
+    const handleReject = async () => {
+        const selected = REJECT_REASONS.find(r => r.value === rejectData.type);
+        const note = rejectData.description.trim()
+            ? `${selected?.label || 'Lý do khác'} — ${rejectData.description.trim()}`
+            : (selected?.label || 'Hồ sơ chưa phù hợp');
+
+        try {
+            setIsRejecting(true);
+            await applicationService.rejectApplication(candidate.id, note);
+            if (onStatusUpdate) onStatusUpdate(candidate.id, 'REJECTED');
+            toast.success('Đã từ chối ứng viên và gửi email thông báo.');
+            setShowRejectModal(false);
+            setRejectData({ type: 'EXPERIENCE_MISMATCH', description: '' });
+            onClose();
+        } catch (error) {
+            console.error('Lỗi khi từ chối:', error);
+            toast.error(error?.message || 'Không thể từ chối lúc này, vui lòng thử lại.');
+        } finally {
+            setIsRejecting(false);
         }
     };
 
@@ -427,12 +466,21 @@ const CandidateDetailModal = ({ candidate, onClose, onStatusUpdate }) => {
                             >
                                 <FaEnvelope /> {isStartingChat ? 'Đang mở chat...' : 'Gửi tin nhắn'}
                             </button>
-                            <button
-                                onClick={handleAccept}
-                                disabled={isAccepting}
-                                className={`w-full flex justify-center items-center gap-2 px-6 py-4 bg-[#1967D2] text-white font-bold rounded-2xl hover:bg-blue-700 shadow-xl shadow-blue-100 transition-all active:scale-95 ${isAccepting ? 'opacity-70 cursor-not-allowed' : ''}`}>
-                                <FaCheckCircle /> {isAccepting ? 'Đang xử lý...' : 'Chấp nhận tuyển dụng'}
-                            </button>
+                            <div className="grid grid-cols-2 gap-3">
+                                <button
+                                    onClick={() => setShowRejectModal(true)}
+                                    disabled={isRejecting || candidate.status === 'REJECTED'}
+                                    className="flex justify-center items-center gap-2 px-6 py-4 bg-white border-2 border-red-200 text-red-600 font-bold rounded-2xl hover:bg-red-50 hover:border-red-300 transition-all active:scale-95 disabled:opacity-60 disabled:cursor-not-allowed"
+                                >
+                                    <FaTimesCircle /> {candidate.status === 'REJECTED' ? 'Đã từ chối' : 'Từ chối'}
+                                </button>
+                                <button
+                                    onClick={handleAccept}
+                                    disabled={isAccepting || candidate.status === 'ACCEPTED'}
+                                    className={`flex justify-center items-center gap-2 px-6 py-4 bg-[#1967D2] text-white font-bold rounded-2xl hover:bg-blue-700 shadow-xl shadow-blue-100 transition-all active:scale-95 disabled:opacity-60 disabled:cursor-not-allowed ${isAccepting ? 'opacity-70 cursor-not-allowed' : ''}`}>
+                                    <FaCheckCircle /> {candidate.status === 'ACCEPTED' ? 'Đã nhận' : (isAccepting ? 'Đang xử lý...' : 'Chấp nhận')}
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -492,6 +540,76 @@ const CandidateDetailModal = ({ candidate, onClose, onStatusUpdate }) => {
                                         className="flex-[1.5] py-4 bg-red-500 text-white font-bold rounded-2xl hover:bg-red-600 shadow-lg shadow-red-100 transition-all disabled:opacity-50"
                                     >
                                         {isReporting ? 'Đang gửi...' : 'Gửi báo cáo'}
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {/* MODAL TỪ CHỐI ỨNG VIÊN */}
+                {showRejectModal && (
+                    <div className="absolute inset-0 z-[60] bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-6 animate-in fade-in duration-300">
+                        <div className="bg-white w-full max-w-md rounded-3xl shadow-2xl p-8 animate-in zoom-in-95 duration-200">
+                            <h3 className="text-2xl font-black text-slate-800 mb-2 flex items-center gap-3">
+                                <div className="p-3 bg-red-100 text-red-600 rounded-2xl">
+                                    <FaTimesCircle size={24} />
+                                </div>
+                                Từ chối ứng viên
+                            </h3>
+                            <p className="text-slate-500 text-sm mb-8 font-medium">
+                                Bạn đang từ chối ứng viên <span className="text-slate-800 font-bold">{candidate.applicantName}</span>.
+                                Hệ thống sẽ gửi email thông báo kèm lý do.
+                            </p>
+
+                            <div className="space-y-5">
+                                <div>
+                                    <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2.5 ml-1">Lý do từ chối</label>
+                                    <div className="relative">
+                                        <select
+                                            value={rejectData.type}
+                                            onChange={(e) => setRejectData({ ...rejectData, type: e.target.value })}
+                                            className="w-full h-14 px-4 pr-10 bg-slate-50 border-2 border-slate-100 rounded-2xl text-slate-700 font-bold focus:border-red-400 outline-none transition-all cursor-pointer appearance-none"
+                                        >
+                                            {REJECT_REASONS.map(r => (
+                                                <option key={r.value} value={r.value}>{r.label}</option>
+                                            ))}
+                                        </select>
+                                        <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-4 text-slate-400">
+                                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2.5 ml-1">
+                                        Ghi chú thêm <span className="text-slate-300 normal-case font-medium">(không bắt buộc)</span>
+                                    </label>
+                                    <textarea
+                                        rows="4"
+                                        placeholder="Lời nhắn gửi đến ứng viên (tùy chọn) — thể hiện sự tôn trọng và khuyến khích ứng viên tiếp tục cố gắng..."
+                                        value={rejectData.description}
+                                        onChange={(e) => setRejectData({ ...rejectData, description: e.target.value })}
+                                        maxLength={500}
+                                        className="w-full p-4 bg-slate-50 border-2 border-slate-100 rounded-2xl text-slate-700 font-medium focus:border-red-400 outline-none transition-all resize-none"
+                                    />
+                                    <p className="text-[10px] text-slate-400 text-right mt-1 font-medium">{rejectData.description.length}/500</p>
+                                </div>
+
+                                <div className="flex gap-3 pt-4">
+                                    <button
+                                        onClick={() => setShowRejectModal(false)}
+                                        disabled={isRejecting}
+                                        className="flex-1 py-4 bg-slate-100 text-slate-600 font-bold rounded-2xl hover:bg-slate-200 transition-all disabled:opacity-50"
+                                    >
+                                        Hủy bỏ
+                                    </button>
+                                    <button
+                                        onClick={handleReject}
+                                        disabled={isRejecting}
+                                        className="flex-[1.5] py-4 bg-red-500 text-white font-bold rounded-2xl hover:bg-red-600 shadow-lg shadow-red-100 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                                    >
+                                        {isRejecting ? 'Đang gửi...' : 'Xác nhận từ chối'}
                                     </button>
                                 </div>
                             </div>

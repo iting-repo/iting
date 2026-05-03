@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(rtk ls *)",
+      "Bash(xargs grep *)",
+      "Bash(rtk find *)",
+      "Bash(rtk grep *)",
+      "Bash(mvn test-compile *)"
+    ]
+  }
+}

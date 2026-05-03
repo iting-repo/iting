@@ -15,6 +15,7 @@ import {
   FaTimes,
   FaPlus,
 } from "react-icons/fa";
+import { CheckCircle2 } from "lucide-react";
 import { toast } from "sonner";
 import companyService from "../../services/companyService";
 import axiosInstance from "../../utils/axiosInstance";

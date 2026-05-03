@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { useGoogleLogin } from '@react-oauth/google';
 import { loginRequest, googleLoginRequest } from '../../store/auth/authSlice';
-import { FaEye, FaEyeSlash, FaArrowRight, FaUserShield, FaUserTie } from 'react-icons/fa';
+import { FaEye, FaEyeSlash, FaArrowRight } from 'react-icons/fa';
 import { BsBriefcaseFill, BsBuilding, BsFileText } from 'react-icons/bs';
 import bgImage from '../../assets/bg_login.jpg';
 
@@ -28,8 +28,7 @@ const FacebookIcon = () => (
 const LoginPage = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [loginType, setLoginType] = useState('user');
-  
+
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const { isLoading, error, currentUser } = useSelector((state) => state.auth);
@@ -64,14 +63,8 @@ const LoginPage = () => {
 
   const handleLogin = (e) => {
     e.preventDefault();
-    dispatch(loginRequest({ email, password, navigate, loginType }));
+    dispatch(loginRequest({ email, password, navigate }));
   }
-
-  const switchTab = (type) => {
-    setLoginType(type);
-    setEmail("");
-    setPassword("");
-  };
 
   return (
     <div className="min-h-screen flex bg-white font-sans animate-in fade-in duration-500">
@@ -81,30 +74,14 @@ const LoginPage = () => {
         </Link>
         <div>
           <h1 className="text-[30px] font-semibold text-[#1F2937] mb-6">
-            {loginType === 'user' ? 'Chào mừng trở lại!' : 'Đăng nhập cho Quản trị viên'}
+            Chào mừng trở lại!
           </h1>
-          <div className="bg-[#F3F4F6] p-1.5 rounded-lg flex mb-6 shadow-inner w-full">
-            <button
-              type="button"
-              onClick={() => switchTab('user')}
-              className={`flex-1 py-2.5 rounded-md text-sm font-semibold transition-all duration-200 flex items-center justify-center gap-2 ${loginType === 'user' ? 'bg-[#3AB4E6] text-white shadow-sm' : 'text-gray-500 hover:text-gray-600'}`}
-            >
-              <FaUserTie /> Ứng viên / Nhà tuyển dụng
-            </button>
-            <button
-              type="button"
-              onClick={() => switchTab('admin')}
-              className={`flex-1 py-2.5 rounded-md text-sm font-semibold transition-all duration-200 flex items-center justify-center gap-2 ${loginType === 'admin' ? 'bg-[#3AB4E6] text-white shadow-sm' : 'text-gray-500 hover:text-gray-600'}`}
-            >
-              <FaUserShield /> Quản trị viên
-            </button>
-          </div>
           <p className="text-[#6B7280] text-md mb-8 min-h-[50px]">
-            {loginType === 'user' ? (
-              <>Cùng tìm công việc IT chất lượng.<br />Bạn chưa có tài khoản? <Link to="/register" className="text-[#3AB4E6] font-medium hover:underline">Tạo mới ngay</Link></>
-            ) : (
-              <>Truy cập vào hệ thống quản trị viên.<br />Vui lòng sử dụng tài khoản được cấp quyền.</>
-            )}
+            Cùng tìm công việc IT chất lượng.<br />
+            Bạn chưa có tài khoản?{' '}
+            <Link to="/register" className="text-[#3AB4E6] font-medium hover:underline">
+              Tạo mới ngay
+            </Link>
           </p>
           {error && (
             <div className="mb-4 p-3 bg-red-50 text-red-500 text-sm rounded border border-red-100 flex items-center gap-2 animate-fade-in">
@@ -119,7 +96,7 @@ const LoginPage = () => {
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder={loginType === 'user' ? "Nhập email của bạn" : "admin@system.com"}
+                placeholder="Nhập email của bạn"
                 className="w-full px-5 py-3.5 bg-[#F0F5FA] border border-transparent rounded-lg text-gray-700 focus:outline-none focus:bg-white focus:border-[#3AB4E6] focus:ring-2 focus:ring-blue-100 transition-all"
               />
             </div>
@@ -155,31 +132,29 @@ const LoginPage = () => {
               disabled={isLoading}
               className={`w-full bg-[#3AB4E6] hover:bg-[#2fa0d1] text-white font-bold py-3.5 rounded-lg transition duration-200 flex items-center justify-center gap-2 shadow-lg shadow-blue-500/30 ${isLoading ? 'opacity-70 cursor-not-allowed' : ''}`}
             >
-              {isLoading ? 'Đang xử lý...' : (loginType === 'user' ? 'Đăng Nhập' : 'Vào trang quản trị viên')}
+              {isLoading ? 'Đang xử lý...' : 'Đăng Nhập'}
               {!isLoading && <FaArrowRight size={14} />}
             </button>
           </form>
           <div className="min-h-[140px]">
-            {loginType === 'user' && (
-              <div className="animate-fade-in">
-                <div className="relative my-8 text-center">
-                  <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-gray-200"></div></div>
-                  <span className="relative bg-white px-4 text-xs text-gray-400 uppercase tracking-wide">Hoặc đăng nhập bằng</span>
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <button type="button" className="flex items-center justify-center gap-3 border border-gray-200 py-3 rounded-lg hover:bg-gray-50 transition font-medium text-gray-700">
-                    <FacebookIcon /><span className="text-sm">Facebook</span>
-                  </button>
-                  <button 
-                    type="button" 
-                    onClick={() => handleGoogleLogin()}
-                    className="flex items-center justify-center gap-3 border border-gray-200 py-3 rounded-lg hover:bg-gray-50 transition font-medium text-gray-700 shadow-sm"
-                  >
-                    <GoogleIcon /><span className="text-sm">Google</span>
-                  </button>
-                </div>
+            <div className="animate-fade-in">
+              <div className="relative my-8 text-center">
+                <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-gray-200"></div></div>
+                <span className="relative bg-white px-4 text-xs text-gray-400 uppercase tracking-wide">Hoặc đăng nhập bằng</span>
               </div>
-            )}
+              <div className="grid grid-cols-2 gap-4">
+                <button type="button" className="flex items-center justify-center gap-3 border border-gray-200 py-3 rounded-lg hover:bg-gray-50 transition font-medium text-gray-700">
+                  <FacebookIcon /><span className="text-sm">Facebook</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleGoogleLogin()}
+                  className="flex items-center justify-center gap-3 border border-gray-200 py-3 rounded-lg hover:bg-gray-50 transition font-medium text-gray-700 shadow-sm"
+                >
+                  <GoogleIcon /><span className="text-sm">Google</span>
+                </button>
+              </div>
+            </div>
           </div>
         </div>
         <div className="absolute bottom-6 text-xs text-gray-400">© 2024 ITing. Bảo lưu mọi quyền.</div>
@@ -196,11 +171,7 @@ const LoginPage = () => {
         <div className="absolute inset-0 bg-gradient-to-t from-[#0f172a] via-transparent to-transparent opacity-90"></div>
         <div className="absolute bottom-0 left-0 right-0 p-12 pl-24 text-white">
           <h2 className="text-4xl font-bold leading-tight mb-8 drop-shadow-lg">
-            {loginType === 'user' ? (
-              <>Hơn <span className="text-blue-400">1,75,324</span> ứng viên đang tham gia để có công việc chất lượng.</>
-            ) : (
-              <>Hệ thống <span className="text-blue-400">quản trị tập trung</span> dành cho quản trị viên và nhân sự nội bộ.</>
-            )}
+            Hơn <span className="text-blue-400">1,75,324</span> ứng viên đang tham gia để có công việc chất lượng.
           </h2>
           <div className="flex gap-4">
             <div className="bg-white/10 backdrop-blur-md border border-white/10 p-4 rounded-xl flex-1 min-w-[140px]">

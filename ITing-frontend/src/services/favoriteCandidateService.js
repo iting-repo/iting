@@ -16,6 +16,11 @@ const getAll = () => {
 
 const save = (candidates) => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(candidates));
+    // Phát event để các component trong cùng tab (vd. sidebar badge) refresh count.
+    // Sự kiện `storage` của browser chỉ fire ở các tab khác, không fire chính tab này.
+    if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('favorite-candidates-changed'));
+    }
 };
 
 const favoriteCandidateService = {
@@ -75,6 +80,21 @@ const favoriteCandidateService = {
         const favorites = getAll();
         const filtered = favorites.filter(c => c.id !== candidateId);
         save(filtered);
+    },
+
+    /**
+     * Remove multiple candidates from favorites in 1 batch.
+     * @param {Array<number|string>} candidateIds
+     * @returns {number} số candidate thực sự bị xoá
+     */
+    removeMany: (candidateIds) => {
+        if (!Array.isArray(candidateIds) || candidateIds.length === 0) return 0;
+        const idSet = new Set(candidateIds.map(String));
+        const before = getAll();
+        const after = before.filter(c => !idSet.has(String(c.id)));
+        const removed = before.length - after.length;
+        if (removed > 0) save(after);
+        return removed;
     },
 
     /**

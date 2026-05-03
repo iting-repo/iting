@@ -4,6 +4,8 @@ import com.iting.jobportal.company.dto.response.CompanyResponse;
 import com.iting.jobportal.company.entity.Company;
 import org.springframework.stereotype.Component;
 
+import java.util.ArrayList;
+
 @Component
 @lombok.RequiredArgsConstructor
 public class CompanyMapper {
@@ -36,7 +38,9 @@ public class CompanyMapper {
         res.setDescription(company.getDescription());
 
         res.setCompanyEmail(company.getCompanyEmail());
-        res.setIndustries(company.getIndustries());
+        // Copy to plain ArrayList — entity returns Hibernate's PersistentBag which
+        // is not safely (de)serializable by Jackson's default typing in Redis cache.
+        res.setIndustries(company.getIndustries() == null ? null : new ArrayList<>(company.getIndustries()));
         res.setCompanySize(company.getCompanySize());
         res.setPhone(company.getPhone());
         res.setRepresentativeName(company.getRepresentativeName());

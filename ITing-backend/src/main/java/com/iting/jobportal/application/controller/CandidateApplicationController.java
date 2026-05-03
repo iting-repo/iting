@@ -3,6 +3,8 @@ package com.iting.jobportal.application.controller;
 import com.iting.jobportal.application.dto.request.ApplyJobRequest;
 import com.iting.jobportal.application.dto.response.ApplicationResponse;
 import com.iting.jobportal.application.dto.response.ApplicationSubmitResponse;
+import com.iting.jobportal.common.ratelimit.RateLimitPolicy;
+import com.iting.jobportal.common.ratelimit.RateLimited;
 import com.iting.jobportal.job.controller.CurrentUser;
 import com.iting.jobportal.application.service.CandidateApplicationService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -26,6 +28,7 @@ public class CandidateApplicationController {
 
     @PostMapping("/apply")
     @Operation(summary = "Nộp đơn ứng tuyển")
+    @RateLimited(policy = RateLimitPolicy.APPLY_JOB, subject = "user")
     public ResponseEntity<ApplicationSubmitResponse> applyJob(
             @Parameter(hidden = true) @CurrentUser Long userId,
             @Valid @RequestBody ApplyJobRequest request) {

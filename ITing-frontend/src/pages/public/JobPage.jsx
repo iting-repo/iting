@@ -1,9 +1,11 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { useSearchParams, useParams } from 'react-router-dom';
+import { useSearchParams, useParams, Link } from 'react-router-dom';
 import { JobFilters, JobCard, JobPromo } from '../../components';
+import JobPreviewPane from '../../components/JobPreviewModal';
 import { FaChevronRight, FaChevronLeft } from 'react-icons/fa';
 import { fetchJobsRequest } from '../../store/job/jobSlice';
+import axiosInstance from '../../utils/axiosInstance';
 
 const PAGE_SIZE = 10;
 
@@ -206,9 +208,92 @@ const JobPage = () => {
     const start = totalJobs === 0 ? 0 : filters.page * PAGE_SIZE + 1;
     const end = Math.min((filters.page + 1) * PAGE_SIZE, totalJobs);
 
+    const [recommendedJobs, setRecommendedJobs] = useState([]);
+    const [hoveredJob, setHoveredJob] = useState(null);
+    const [hoverRect, setHoverRect] = useState(null);
+    const enterTimerRef = useRef(null);
+    const leaveTimerRef = useRef(null);
+    const pendingRef = useRef(null);
+
+    const handleCardEnter = (job, el) => {
+        if (leaveTimerRef.current) clearTimeout(leaveTimerRef.current);
+        if (enterTimerRef.current) clearTimeout(enterTimerRef.current);
+        pendingRef.current = { job, el };
+        enterTimerRef.current = setTimeout(() => {
+            const p = pendingRef.current;
+            if (!p) return;
+            setHoveredJob(p.job);
+            setHoverRect(p.el ? p.el.getBoundingClientRect() : null);
+        }, 150);
+    };
+    const handleCardLeave = () => {
+        if (enterTimerRef.current) clearTimeout(enterTimerRef.current);
+        if (leaveTimerRef.current) clearTimeout(leaveTimerRef.current);
+        pendingRef.current = null;
+        leaveTimerRef.current = setTimeout(() => {
+            setHoveredJob(null);
+            setHoverRect(null);
+        }, 250);
+    };
+    const handlePaneEnter = () => {
+        if (leaveTimerRef.current) clearTimeout(leaveTimerRef.current);
+    };
+    const handlePaneLeave = handleCardLeave;
+
+    useEffect(() => () => {
+        if (enterTimerRef.current) clearTimeout(enterTimerRef.current);
+        if (leaveTimerRef.current) clearTimeout(leaveTimerRef.current);
+    }, []);
+    
+    useEffect(() => {
+        if (cardJobs.length === 0 && !isLoading) {
+            axiosInstance.get('/jobs/hot?limit=5')
+                .then(res => {
+                    const formatSalary = (min, max, type) => {
+                        if (!min && !max) return 'Thỏa thuận';
+                        const formatNum = (num) => {
+                            if (num >= 1000000) return `${num / 1000000}Tr`;
+                            return num;
+                        };
+                        return `${formatNum(min)} - ${formatNum(max)}`;
+                    };
+                    
+                    const mapped = res.map(job => ({
+                        id: job.id,
+                        title: job.title,
+                        companyName: job.companyName,
+                        companyLogo: job.companyLogo || job.logoUrl || job.logo,
+                        skills: job.skills || [],
+                        salary: formatSalary(job.minSalary, job.maxSalary, job.salaryType),
+                        location: job.location || job.province,
+                        type: job.jobType,
+                        postedAt: job.lastUpdate || job.createdAt,
+                        isHot: job.viewCount > 100 || job.applicationCount > 50,
+                        featured: job.featured,
+                        isAiSuggested: job.isAiSuggested
+                    }));
+                    setRecommendedJobs(mapped);
+                })
+                .catch(err => console.error('Error fetching recommended jobs', err));
+        }
+    }, [cardJobs.length, isLoading]);
+
     return (
         <div className="bg-[#F5F7FA] min-h-screen py-8">
             <div className="container mx-auto px-4 max-w-7xl">
+                {/* Breadcrumbs */}
+                <nav className="text-sm mb-6 text-gray-500 flex items-center gap-2">
+                    <Link to="/" className="hover:text-[#3AB4E6] transition-colors">Trang chủ</Link>
+                    <FaChevronRight className="text-xs text-gray-400" />
+                    <Link to="/jobs" className="hover:text-[#3AB4E6] transition-colors">Việc làm</Link>
+                    {filters.keyword && (
+                        <>
+                            <FaChevronRight className="text-xs text-gray-400" />
+                            <span className="text-gray-800 font-semibold">{filters.keyword}</span>
+                        </>
+                    )}
+                </nav>
+
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
                     <div className="lg:col-span-3">
                         <JobFilters
@@ -244,10 +329,37 @@ const JobPage = () => {
                         ) : (
                             <div className="space-y-4">
                                 {cardJobs.length > 0 ? (
-                                    cardJobs.map((job) => <JobCard key={job.id} job={job} />)
+                                    cardJobs.map((job) => (
+                                        <JobCard
+                                            key={job.id}
+                                            job={job}
+                                            onHoverIn={handleCardEnter}
+                                            onHoverOut={handleCardLeave}
+                                            isHovered={hoveredJob?.id === job.id}
+                                        />
+                                    ))
                                 ) : (
-                                    <div className="bg-white rounded-xl border border-gray-100 p-8 text-center text-gray-500">
-                                        Không tìm thấy công việc phù hợp bộ lọc.
+                                    <div className="space-y-6">
+                                        <div className="bg-white rounded-xl border border-gray-100 p-8 text-center text-gray-500">
+                                            <p className="text-lg font-semibold mb-2">Không tìm thấy công việc phù hợp bộ lọc.</p>
+                                            <p className="text-sm">Hãy thử thay đổi từ khóa hoặc điều kiện lọc để xem thêm kết quả.</p>
+                                        </div>
+                                        {recommendedJobs.length > 0 && (
+                                            <div>
+                                                <h3 className="text-xl font-bold text-gray-900 mb-4">Gợi ý việc làm tốt nhất cho bạn</h3>
+                                                <div className="space-y-4">
+                                                    {recommendedJobs.map((job) => (
+                                                        <JobCard
+                                                            key={job.id}
+                                                            job={job}
+                                                            onHoverIn={handleCardEnter}
+                                                            onHoverOut={handleCardLeave}
+                                                            isHovered={hoveredJob?.id === job.id}
+                                                        />
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        )}
                                     </div>
                                 )}
                             </div>
@@ -275,6 +387,29 @@ const JobPage = () => {
                     </div>
                 </div>
             </div>
+
+            {hoveredJob && hoverRect && (() => {
+                const PANE_W = 440;
+                const GAP = 12;
+                const MARGIN = 12;
+                const vw = typeof window !== 'undefined' ? window.innerWidth : 1280;
+                const vh = typeof window !== 'undefined' ? window.innerHeight : 800;
+                const fitsRight = hoverRect.right + GAP + PANE_W <= vw - MARGIN;
+                const left = fitsRight
+                    ? hoverRect.right + GAP
+                    : Math.max(MARGIN, hoverRect.left - GAP - PANE_W);
+                const top = Math.max(MARGIN, Math.min(hoverRect.top, vh - 540));
+                return (
+                    <div
+                        className="hidden lg:block fixed z-50"
+                        style={{ top, left, width: PANE_W }}
+                        onMouseEnter={handlePaneEnter}
+                        onMouseLeave={handlePaneLeave}
+                    >
+                        <JobPreviewPane job={hoveredJob} />
+                    </div>
+                );
+            })()}
         </div>
     );
 };

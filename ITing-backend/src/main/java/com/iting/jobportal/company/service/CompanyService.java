@@ -50,6 +50,15 @@ public interface CompanyService {
     CompanyResponse updateBusinessLicenseByAccountId(Long accountId, BusinessLicenseUploadRequest request);
     CompanyResponse updateConsentDocumentByAccountId(Long accountId, ConsentDocumentUploadRequest request);
     void verifyPhoneByAccountId(Long accountId, VerifyPhoneRequest request);
+
+    void sendPhoneOtpByAccountId(Long accountId, String phone);
+
+    java.util.List<com.iting.jobportal.company.dto.request.CompanySocialLinkDto>
+        getMySocialLinks(Long accountId);
+
+    java.util.List<com.iting.jobportal.company.dto.request.CompanySocialLinkDto>
+        updateMySocialLinks(Long accountId,
+                            java.util.List<com.iting.jobportal.company.dto.request.CompanySocialLinkDto> links);
     CompanyResponse verifyLicenseByAccountId(Long accountId, VerifyLicenseRequest request);
     CompanyResponse submitInfoReviewByAccountId(Long accountId);
     CompanyResponse submitDocumentReviewByAccountId(Long accountId);

@@ -1,5 +1,6 @@
 package com.iting.jobportal.company.service;
 
+import com.iting.jobportal.company.dto.mapper.CompanyMapper;
 import com.iting.jobportal.company.dto.request.BusinessLicenseUploadRequest;
 import com.iting.jobportal.company.dto.request.ConsentDocumentUploadRequest;
 import com.iting.jobportal.company.dto.response.CompanyResponse;
@@ -8,13 +9,17 @@ import com.iting.jobportal.company.entity.enums.BusinessDocumentType;
 import com.iting.jobportal.company.entity.enums.CompanyReviewStatus;
 import com.iting.jobportal.company.repository.CompanyRepository;
 import com.iting.jobportal.company.service.impl.CompanyServiceImpl;
+import com.iting.jobportal.company.repository.CompanyReviewRepository;
 import com.iting.jobportal.file.FileUploadService;
+import com.iting.jobportal.job.repository.JobRepository;
+import org.springframework.context.ApplicationEventPublisher;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.Mockito;
 import org.springframework.mock.web.MockMultipartFile;
 
 import java.util.Optional;
@@ -40,6 +45,21 @@ class CompanyServiceImplTest {
     @Mock
     private FileUploadService fileUploadService;
 
+    @Mock
+    private AuthorizationService authz;
+
+    @Mock
+    private CompanyMapper companyMapper;
+
+    @Mock
+    private ApplicationEventPublisher eventPublisher;
+
+    @Mock
+    private JobRepository jobRepository;
+
+    @Mock
+    private CompanyReviewRepository companyReviewRepository;
+
     @InjectMocks
     private CompanyServiceImpl companyService;
 
@@ -59,6 +79,29 @@ class CompanyServiceImplTest {
         company.setConsentDocumentConfirmed(true);
         company.setConsentDocumentVersion("v2.0");
         company.setCompanyInfoUpdateStatus(CompanyReviewStatus.DRAFT);
+
+        // Sau Phase 2: getCompanyByAccountId() resolve company qua AuthorizationService.
+        // Default mock: HR account id 1L thuộc company id 1L (giữ tương thích với data
+        // backfill V48 nơi company.id == account.id cũ).
+        Mockito.lenient().when(authz.requireCompanyOf(1L)).thenReturn(1L);
+
+        // Mapper: map từ Company entity về CompanyResponse — trả về DTO chứa các field
+        // cần thiết để test verify.
+        Mockito.lenient().when(companyMapper.toResponse(any(Company.class)))
+                .thenAnswer(inv -> {
+                    Company c = inv.getArgument(0);
+                    CompanyResponse r = new CompanyResponse();
+                    r.setId(c.getId());
+                    r.setName(c.getName());
+                    r.setBusinessLicenseFileUrl(c.getBusinessLicenseFileUrl());
+                    r.setConsentDocumentFileUrl(c.getConsentDocumentFileUrl());
+                    r.setCompanyInfoUpdateStatus(c.getCompanyInfoUpdateStatus());
+                    return r;
+                });
+
+        // mapToResponse() đọc thêm jobCount + followerCount + rating qua các repo này.
+        Mockito.lenient().when(jobRepository.countActiveAndNotExpiredByCompanyId(any())).thenReturn(0L);
+        Mockito.lenient().when(companyFollowService.getFollowerCount(any())).thenReturn(0L);
     }
 
     @Test

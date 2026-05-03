@@ -115,6 +115,11 @@ public class Job {
 
     private LocalDateTime embeddingUpdatedAt;
 
+    // ===== HR POSTER =====
+    /** Account.id của HR đã đăng job này (audit trail; FK soft tới account). */
+    @Column(name = "posted_by_hr_id")
+    private Long postedByHrId;
+
     // ===== AUDIT =====
     private LocalDateTime createdAt;
     private LocalDateTime lastUpdate;

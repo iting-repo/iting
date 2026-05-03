@@ -12,6 +12,12 @@ import com.iting.jobportal.company.entity.enums.CompanyAuditAction;
 import com.iting.jobportal.company.entity.enums.CompanyReviewStatus;
 import com.iting.jobportal.company.entity.enums.DocumentReviewStatus;
 import com.iting.jobportal.company.entity.enums.VerificationLevel;
+import com.iting.jobportal.common.cache.CacheNames;
+import com.iting.jobportal.common.event.KafkaTopics;
+import com.iting.jobportal.common.event.outbox.OutboxAppender;
+import com.iting.jobportal.common.event.payload.KybReviewCompletedEvent;
+import com.iting.jobportal.common.lock.DistributedLockService;
+import org.springframework.cache.annotation.CacheEvict;
 import com.iting.jobportal.company.repository.CompanyAuditLogRepository;
 import com.iting.jobportal.company.repository.CompanyRepository;
 import com.iting.jobportal.company.service.CompanyAuditService;
@@ -27,6 +33,7 @@ import org.springframework.data.domain.*;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -39,6 +46,9 @@ public class AdminCompanyServiceImpl implements AdminCompanyService {
     private final CompanyAuditLogRepository companyAuditLogRepository;
     private final CompanyKybNoteRepository companyKybNoteRepository;
     private final NotificationService notificationService;
+    private final Optional<OutboxAppender> outboxAppender;
+    private final KafkaTopics kafkaTopics;
+    private final Optional<DistributedLockService> lockService;
 
     @Override
     public Page<CompanyResponse> getAllCompanies(int page, int size) {
@@ -107,7 +117,12 @@ public class AdminCompanyServiceImpl implements AdminCompanyService {
 
     @Override
     @Transactional
+    @CacheEvict(value = CacheNames.COMPANY_DETAIL, key = "#companyId")
     public void approveCompany(Long adminId, Long companyId, CompanyApprovalRequest request) {
+        withCompanyLock(companyId, () -> doApproveCompany(adminId, companyId, request));
+    }
+
+    private void doApproveCompany(Long adminId, Long companyId, CompanyApprovalRequest request) {
         Company company = companyRepository.findById(companyId)
                 .orElseThrow(() -> new RuntimeException("Company not found"));
 
@@ -118,7 +133,6 @@ public class AdminCompanyServiceImpl implements AdminCompanyService {
         company.setCompanyInfoUpdateStatus(CompanyReviewStatus.APPROVED);
         company.setStatusReason(request != null ? request.getNote() : null);
 
-        // Update verificationLevel if provided
         if (request != null && request.getVerificationLevel() != null) {
             company.setVerificationLevel(request.getVerificationLevel());
         }
@@ -134,6 +148,23 @@ public class AdminCompanyServiceImpl implements AdminCompanyService {
                 "Công ty được duyệt",
                 "admin#" + adminId,
                 adminId);
+
+        outboxAppender.ifPresent(appender -> appender.append(
+                kafkaTopics.getKybReviewCompleted(),
+                "company",
+                KybReviewCompletedEvent.of(
+                        company.getId(),
+                        "APPROVED",
+                        request != null ? request.getNote() : null,
+                        adminId)));
+    }
+
+    private void withCompanyLock(Long companyId, Runnable action) {
+        if (lockService.isPresent()) {
+            lockService.get().withLock("kyb:" + companyId, 500, 30_000, action);
+        } else {
+            action.run();
+        }
     }
 
     @Override
@@ -198,7 +229,12 @@ public class AdminCompanyServiceImpl implements AdminCompanyService {
 
     @Override
     @Transactional
+    @CacheEvict(value = CacheNames.COMPANY_DETAIL, key = "#companyId")
     public void rejectCompany(Long adminId, Long companyId, ReviewRejectRequest request) {
+        withCompanyLock(companyId, () -> doRejectCompany(adminId, companyId, request));
+    }
+
+    private void doRejectCompany(Long adminId, Long companyId, ReviewRejectRequest request) {
         Company company = companyRepository.findById(companyId)
                 .orElseThrow(() -> new RuntimeException("Company not found"));
 
@@ -219,6 +255,15 @@ public class AdminCompanyServiceImpl implements AdminCompanyService {
                 "Từ chối công ty",
                 "admin#" + adminId,
                 adminId);
+
+        outboxAppender.ifPresent(appender -> appender.append(
+                kafkaTopics.getKybReviewCompleted(),
+                "company",
+                KybReviewCompletedEvent.of(
+                        company.getId(),
+                        "REJECTED",
+                        request != null ? request.getReason() : null,
+                        adminId)));
     }
 
     @Override

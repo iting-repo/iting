@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { useEffect } from 'react';
-import { fetchJobsRequest, fetchJobDetailRequest } from '../../store/job/jobSlice';
-import { buildJobDetailPath, getJobPublicKey, getCompanyLogoUrl } from '../../utils/jobUrl';
+import { fetchJobsRequest } from '../../store/job/jobSlice';
+import { buildJobDetailPath } from '../../utils/jobUrl';
+import { jobTypeLabel } from '../../utils/enumLabels';
 import publicService from '../../services/publicService';
 import { CompanyLogo, LocationPicker, CategoryPicker } from '../../components/common';
 import { useModalEscape } from '../../hooks/useModalEscape';
@@ -19,6 +20,7 @@ import { toast } from 'sonner';
 import jobService from '../../services/jobService';
 import recommendationService from '../../services/recommendationService';
 import JobCard from '../../components/JobCard';
+import JobPreviewPane from '../../components/JobPreviewModal';
 
 // Import hình nền
 import heroBg from '../../assets/bg_login.jpg';
@@ -40,10 +42,42 @@ const HomePage = () => {
     const [cvText, setCvText] = useState("");
     const [isAnalyzing, setIsAnalyzing] = useState(false);
     const [blogs, setBlogs] = useState([]);
+    const [hoveredJob, setHoveredJob] = useState(null);
+    const [hoverRect, setHoverRect] = useState(null);
+    const enterTimerRef = useRef(null);
+    const leaveTimerRef = useRef(null);
+    const pendingRef = useRef(null);
+
+    const handleCardEnter = (job, el) => {
+        if (leaveTimerRef.current) clearTimeout(leaveTimerRef.current);
+        if (enterTimerRef.current) clearTimeout(enterTimerRef.current);
+        pendingRef.current = { job, el };
+        enterTimerRef.current = setTimeout(() => {
+            const p = pendingRef.current;
+            if (!p) return;
+            setHoveredJob(p.job);
+            setHoverRect(p.el ? p.el.getBoundingClientRect() : null);
+        }, 150);
+    };
+    const handleCardLeave = () => {
+        if (enterTimerRef.current) clearTimeout(enterTimerRef.current);
+        if (leaveTimerRef.current) clearTimeout(leaveTimerRef.current);
+        pendingRef.current = null;
+        leaveTimerRef.current = setTimeout(() => {
+            setHoveredJob(null);
+            setHoverRect(null);
+        }, 250);
+    };
+    const handlePaneEnter = () => {
+        if (leaveTimerRef.current) clearTimeout(leaveTimerRef.current);
+    };
+
+    useEffect(() => () => {
+        if (enterTimerRef.current) clearTimeout(enterTimerRef.current);
+        if (leaveTimerRef.current) clearTimeout(leaveTimerRef.current);
+    }, []);
 
     const handleJobClick = (job) => {
-        const jobKey = getJobPublicKey(job);
-        dispatch(fetchJobDetailRequest(jobKey));
         navigate(buildJobDetailPath(job));
     };
 
@@ -72,12 +106,12 @@ const HomePage = () => {
                 setProvinces([]);
             });
     }, []);
-    
+
     useEffect(() => {
         const fetchStats = async () => {
             try {
                 const data = await publicService.getHomeStats();
-                setStats(data || { totalJobs: 0, totalCandidates: 0, totalCompanies: 0 });
+                setStats({ totalJobs: 0, totalCandidates: 0, totalCompanies: 0, ...(data || {}) });
             } catch (error) {
                 console.error("Failed to fetch home stats:", error);
             }
@@ -209,7 +243,7 @@ const HomePage = () => {
         setCurrentPage(newPage);
         const updatedForm = { ...searchForm, page: newPage - 1 };
         setSearchForm(updatedForm);
-        
+
         const params = {
             ...updatedForm,
             minSalary: updatedForm.minSalary || undefined,
@@ -229,11 +263,11 @@ const HomePage = () => {
     const handleSearch = () => {
         const params = new URLSearchParams();
         const finalKeyword = [searchForm.category, searchForm.keyword].filter(Boolean).join(' ');
-        
+
         if (finalKeyword) params.append('keyword', finalKeyword);
         if (searchForm.location) params.append('location', searchForm.location);
         if (searchForm.jobType) params.append('jobTypes', searchForm.jobType);
-        
+
         navigate(`/jobs?${params.toString()}`);
     };
 
@@ -246,19 +280,19 @@ const HomePage = () => {
             toast.error("Vui lòng dán nội dung CV để AI phân tích!");
             return;
         }
-        
+
         setIsAnalyzing(true);
         try {
             const response = await jobService.analyzeCv(cvText);
             const criteria = response.data || response; // handle axios wrap
-            
+
             const params = new URLSearchParams();
             if (criteria.keyword) params.append('keyword', criteria.keyword);
             if (criteria.location) params.append('location', searchForm.location);
             if (criteria.techs && criteria.techs.length > 0) params.append('techs', criteria.techs.join(','));
             if (criteria.experienceLevel) params.append('experienceLevels', criteria.experienceLevel);
             params.append('isAiSearch', 'true');
-            
+
             toast.success("Đã phân tích CV thành công! Đang tìm việc phù hợp...");
             navigate(`/jobs?${params.toString()}`);
         } catch (error) {
@@ -341,7 +375,7 @@ const HomePage = () => {
         <div className="bg-white font-sans">
 
             {/* PHẦN 1: HERO SEARCH */}
-            <section className="relative bg-gray-900 pt-24 pb-32 overflow-hidden">
+            <section className="relative z-10 bg-gray-900 pt-24 pb-32 overflow-hidden">
                 <div className="absolute inset-0 z-0">
                     <img src={heroBg} alt="Background" className="w-full h-full object-cover opacity-20" />
                     <div className="absolute inset-0 bg-gradient-to-b from-gray-900/10 via-gray-900/60 to-gray-900"></div>
@@ -352,14 +386,14 @@ const HomePage = () => {
                         Tìm việc làm IT <span className="text-white">chất lượng trên toàn quốc</span>
                     </h1>
                     <p className="text-gray-400 mb-10 text-sm md:text-base max-w-2xl mx-auto">
-                        Tiếp cận {stats.totalJobs.toLocaleString('vi-VN')}+ tin tuyển dụng việc làm mỗi ngày từ hàng nghìn doanh nghiệp uy tín tại Việt Nam
+                        Tiếp cận {(stats.totalJobs ?? 0).toLocaleString('vi-VN')}+ tin tuyển dụng việc làm mỗi ngày từ hàng nghìn doanh nghiệp uy tín tại Việt Nam
                     </p>
 
                     {/* Search Box */}
                     <div className="bg-white rounded-lg md:rounded-full p-1.5 flex flex-col md:flex-row items-center max-w-5xl mx-auto shadow-2xl overflow-visible">
                         {/* 1. Category Picker (Far Left) */}
                         <div className="w-full md:w-[25%] h-12 flex items-center px-4 relative">
-                            <CategoryPicker 
+                            <CategoryPicker
                                 value={searchForm.category}
                                 onChange={(val) => handleChangeSearchField('category', val)}
                             />
@@ -376,35 +410,35 @@ const HomePage = () => {
                                     if (e.key === 'Enter') handleSearch();
                                 }}
                                 className="w-full outline-none text-gray-700 text-sm placeholder-gray-400"
-                            />                        
-                            </div>
+                            />
+                        </div>
                         <div className="w-full md:w-[25%] px-4 py-3 flex items-center border-b md:border-b-0 md:border-r border-gray-200 relative">
                             <FaMapMarkerAlt className="text-gray-400 mr-2 flex-shrink-0" />
-                            <LocationPicker 
+                            <LocationPicker
                                 value={searchForm.location}
                                 onChange={(val) => handleChangeSearchField('location', val)}
                                 provinces={provinces}
                             />
                         </div>
-                        <button 
+                        <button
                             onClick={handleAiSearch}
                             className="w-full md:w-auto bg-[#3AB4E6] hover:bg-blue-500 text-white px-5 py-3 font-bold text-sm flex items-center justify-center gap-1 transition-colors border-r border-blue-400/30"
                         >
                             <FaMagic className="text-yellow-300" /> AI
                         </button>
                         <button
-                        onClick={handleSearch}
-                        className="w-full md:w-auto bg-[#3AB4E6] hover:bg-blue-500 text-white px-8 py-3 rounded-b-lg md:rounded-r-full md:rounded-bl-none font-bold text-sm transition-all flex items-center justify-center gap-2"
-                    >
-                        <FaSearch /> Tìm kiếm
-                    </button>
+                            onClick={handleSearch}
+                            className="w-full md:w-auto bg-[#3AB4E6] hover:bg-blue-500 text-white px-8 py-3 rounded-b-lg md:rounded-r-full md:rounded-bl-none font-bold text-sm transition-all flex items-center justify-center gap-2"
+                        >
+                            <FaSearch /> Tìm kiếm
+                        </button>
                     </div>
 
                     <div className="mt-6 flex flex-wrap justify-center gap-2 items-center">
                         <span className="text-gray-400 text-sm font-medium">Gợi ý:</span>
                         {['Intern', 'Thực tập sinh IT', 'Thực tập sinh tiếng Trung', 'Thực tập sinh tư vấn', 'Chuyên viên vận hành'].map((tag, i) => (
-                            <span 
-                                key={i} 
+                            <span
+                                key={i}
                                 onClick={() => {
                                     handleChangeSearchField('keyword', tag);
                                     const params = new URLSearchParams();
@@ -427,7 +461,7 @@ const HomePage = () => {
                             </div>
                             <div>
                                 <div className="text-2xl font-bold text-white">
-                                    {stats.totalJobs.toLocaleString('vi-VN')}
+                                    {(stats.totalJobs ?? 0).toLocaleString('vi-VN')}
                                 </div>
                                 <div className="text-gray-400 text-xs">Công việc</div>
                             </div>
@@ -438,7 +472,7 @@ const HomePage = () => {
                             </div>
                             <div>
                                 <div className="text-2xl font-bold text-white">
-                                    {stats.totalCandidates.toLocaleString('vi-VN')}
+                                    {(stats.totalCandidates ?? 0).toLocaleString('vi-VN')}
                                 </div>
                                 <div className="text-gray-400 text-xs">Ứng viên</div>
                             </div>
@@ -449,11 +483,54 @@ const HomePage = () => {
                             </div>
                             <div>
                                 <div className="text-2xl font-bold text-white">
-                                    {stats.totalCompanies.toLocaleString('vi-VN')}
+                                    {(stats.totalCompanies ?? 0).toLocaleString('vi-VN')}
                                 </div>
                                 <div className="text-gray-400 text-xs">Công ty</div>
                             </div>
                         </div>
+                    </div>
+                </div>
+            </section>
+
+            {/* =================================================================
+             PHẦN BANNER TRỢ LÝ AI (CÁO CÔNG NGHỆ)
+            ================================================================= */}
+            <section className="py-12 md:py-16 bg-gradient-to-br from-slate-900 via-[#0a192f] to-slate-900 relative overflow-hidden border-y border-[#3AB4E6]/20">
+                {/* Background Decor */}
+                <div className="absolute top-0 left-0 w-full h-full overflow-hidden z-0">
+                    <div className="absolute -top-[20%] -right-[10%] w-[50%] h-[100%] rounded-full bg-[#3AB4E6]/10 blur-[120px]"></div>
+                    <div className="absolute bottom-[10%] -left-[10%] w-[40%] h-[80%] rounded-full bg-blue-600/10 blur-[100px]"></div>
+                </div>
+
+                <div className="container mx-auto px-4 flex flex-col md:flex-row items-center justify-between relative z-10 gap-8">
+                    <div className="md:w-1/2 flex justify-center order-2 md:order-1 relative group">
+                        {/* Glow effect behind fox */}
+                        <div className="absolute inset-0 bg-[#3AB4E6] blur-[60px] opacity-30 rounded-full w-64 h-64 top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 group-hover:opacity-50 transition-opacity duration-500"></div>
+                        
+                        {/* Yêu cầu người dùng lưu ảnh với tên tech-fox.png trong thư mục public */}
+                        <img 
+                            src="/tech-fox.png" 
+                            alt="Cáo Công Nghệ AI" 
+                            className="relative z-10 w-full max-w-[320px] object-contain drop-shadow-[0_0_25px_rgba(58,180,230,0.4)] animate-[bounce_4s_ease-in-out_infinite] hover:scale-105 transition-transform duration-500" 
+                        />
+                    </div>
+                    
+                    <div className="md:w-1/2 text-white order-1 md:order-2">
+                        <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-blue-500/20 border border-blue-400/30 text-blue-300 text-sm font-bold mb-6 backdrop-blur-sm">
+                            <FaMagic className="animate-pulse" /> Trợ lý AI ITing
+                        </div>
+                        <h2 className="text-3xl md:text-5xl font-bold mb-6 leading-tight">
+                            Khó tìm việc chuẩn gu?<br/> <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#3AB4E6] to-cyan-300">Đã có Cáo Công Nghệ!</span>
+                        </h2>
+                        <p className="text-gray-300 mb-8 max-w-lg text-lg leading-relaxed">
+                            Cáo Công Nghệ sử dụng AI tiên tiến để đọc hiểu CV của bạn. Không cần điền form dài dòng, chỉ một chạm là ra ngay danh sách việc làm "đo ni đóng giày" cho riêng bạn!
+                        </p>
+                        <button 
+                            onClick={handleAiSearch} 
+                            className="bg-gradient-to-r from-[#3AB4E6] to-blue-600 hover:from-blue-500 hover:to-blue-700 text-white px-8 py-4 rounded-2xl font-bold shadow-[0_0_20px_rgba(58,180,230,0.4)] transition-all flex items-center justify-center gap-3 hover:-translate-y-1.5 text-lg"
+                        >
+                            <FaMagic /> Quét CV ngay với Cáo
+                        </button>
                     </div>
                 </div>
             </section>
@@ -472,8 +549,8 @@ const HomePage = () => {
                                 {currentUser ? "Dành cho bạn" : "Việc làm nổi bật"}
                             </h2>
                             <p className="text-gray-500 text-sm">
-                                {currentUser 
-                                    ? "Dựa trên hồ sơ và những gì bạn đã xem" 
+                                {currentUser
+                                    ? "Dựa trên hồ sơ và những gì bạn đã xem"
                                     : "Khám phá các cơ hội việc làm tốt nhất ngay hôm nay"}
                             </p>
                         </div>
@@ -496,19 +573,21 @@ const HomePage = () => {
                             recommendedJobs.map((job) => {
                                 const isSaved = savedJobIds.includes(job.id);
                                 return (
-                                    <div 
+                                    <div
                                         key={job.id}
                                         onClick={() => handleJobClick(job)}
+                                        onMouseEnter={(e) => handleCardEnter(job, e.currentTarget)}
+                                        onMouseLeave={handleCardLeave}
                                         className="group bg-white rounded-2xl p-6 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 border border-gray-100 relative cursor-pointer"
                                     >
                                         <div className="flex justify-between items-start mb-4">
-                                            <CompanyLogo 
-                                                logoUrl={job.companyLogo || job.logo || job.logoUrl} 
+                                            <CompanyLogo
+                                                logoUrl={job.companyLogo || job.logo || job.logoUrl}
                                                 companyId={job.companyId}
                                                 companyName={job.companyName}
-                                                className="w-12 h-12 rounded-xl object-contain bg-gray-50 p-1" 
+                                                className="w-12 h-12 rounded-xl object-contain bg-gray-50 p-1"
                                             />
-                                            <button 
+                                            <button
                                                 onClick={(e) => handleToggleSave(e, job.id)}
                                                 className={`w-8 h-8 rounded-lg flex items-center justify-center transition-all ${isSaved ? 'bg-blue-500 text-white shadow-md' : 'bg-gray-50 text-gray-400 group-hover:bg-blue-50'}`}
                                             >
@@ -623,9 +702,9 @@ const HomePage = () => {
                                         }}
                                         className={`flex-shrink-0 px-5 py-2 rounded-full text-xs font-bold transition-all border
                       ${selectedLocationFilter === province.name
-                                             ? 'bg-[#3AB4E6] border-[#3AB4E6] text-white shadow-md shadow-blue-200'
-                                             : 'bg-white border-gray-200 text-gray-500 hover:border-gray-300 hover:bg-gray-50'
-                                        }`}
+                                                ? 'bg-[#3AB4E6] border-[#3AB4E6] text-white shadow-md shadow-blue-200'
+                                                : 'bg-white border-gray-200 text-gray-500 hover:border-gray-300 hover:bg-gray-50'
+                                            }`}
                                     >
                                         {province.name}
                                     </button>
@@ -664,12 +743,19 @@ const HomePage = () => {
                         {(jobs ?? []).length === 0 && !isLoading ? (
                             <div className="text-center py-20 text-gray-500">Không tìm thấy công việc nào.</div>
                         ) : (jobs ?? []).map((job) => {
-                                const isSaved = savedJobIds.includes(job.id);
-                                return (
-                                <div 
-                                    key={job.id} 
+                            const isSaved = savedJobIds.includes(job.id);
+                            const isHovered = hoveredJob?.id === job.id;
+                            return (
+                                <div
+                                    key={job.id}
                                     onClick={() => handleJobClick(job)}
-                                    className="group relative border border-gray-100 rounded-2xl p-6 hover:shadow-xl hover:shadow-blue-500/5 transition-all duration-300 bg-white overflow-hidden cursor-pointer">
+                                    onMouseEnter={(e) => handleCardEnter(job, e.currentTarget)}
+                                    onMouseLeave={handleCardLeave}
+                                    className={`group relative border rounded-2xl p-6 transition-all duration-300 bg-white overflow-hidden cursor-pointer ${
+                                        isHovered
+                                            ? 'border-[#3AB4E6] shadow-lg ring-2 ring-[#3AB4E6]/20'
+                                            : 'border-gray-100 hover:shadow-xl hover:shadow-blue-500/5'
+                                    }`}>
 
                                     {/* Hiệu ứng: Thanh màu xanh trượt ra khi hover */}
                                     <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-[#3AB4E6] transform -translate-x-full group-hover:translate-x-0 transition-transform duration-300"></div>
@@ -677,11 +763,11 @@ const HomePage = () => {
                                     <div className="flex flex-col md:flex-row gap-6">
                                         {/* Logo */}
                                         <div className="shrink-0">
-                                            <CompanyLogo 
-                                                logoUrl={job.companyLogo || job.logo || job.logoUrl} 
+                                            <CompanyLogo
+                                                logoUrl={job.companyLogo || job.logo || job.logoUrl}
                                                 companyId={job.companyId}
                                                 companyName={job.companyName}
-                                                className="w-14 h-14 rounded-xl object-contain bg-gray-50 p-1 border border-gray-100" 
+                                                className="w-14 h-14 rounded-xl object-contain bg-gray-50 p-1 border border-gray-100"
                                             />
                                         </div>
 
@@ -694,7 +780,7 @@ const HomePage = () => {
                                                     </h3>
                                                     <p className="text-sm text-gray-500 font-medium mt-1">{job.companyName}</p>
                                                 </div>
-                                                <button 
+                                                <button
                                                     onClick={(e) => handleToggleSave(e, job.id)}
                                                     className={`w-9 h-9 rounded-full flex items-center justify-center transition-all ${isSaved ? 'bg-[#3AB4E6] text-white shadow-md shadow-blue-200' : 'bg-gray-50 text-gray-400 hover:bg-[#3AB4E6] hover:text-white'}`}>
                                                     {isSaved ? <FaBookmark size={14} /> : <FaRegBookmark size={14} />}
@@ -704,7 +790,7 @@ const HomePage = () => {
                                             {/* Tags styled đẹp hơn */}
                                             <div className="flex flex-wrap items-center gap-3 mt-3 text-xs text-gray-500 font-medium">
                                                 <span className="flex items-center gap-1.5 bg-gray-50 px-3 py-1.5 rounded-lg border border-gray-100">
-                                                    <FaBriefcase className="text-blue-400" /> {job.jobType || "Full-time"}
+                                                    <FaBriefcase className="text-blue-400" /> {jobTypeLabel(job.jobType) || "Toàn thời gian"}
                                                 </span>
                                                 <span className="flex items-center gap-1.5 bg-gray-50 px-3 py-1.5 rounded-lg border border-gray-100">
                                                     <FaClock className="text-sky-400" /> {formatSalary(job.minSalary, job.maxSalary)}
@@ -734,20 +820,20 @@ const HomePage = () => {
                                         </div>
                                     </div>
                                 </div>
-                                );
-                            })}
+                            );
+                        })}
                     </div>
 
                     {/* 5. PAGINATION: Bỏ nút đen, dùng style Clean */}
                     {totalJobs > 0 && (
                         <div className="flex justify-center items-center gap-2">
-                            <button 
+                            <button
                                 onClick={() => currentPage > 1 && handlePageChange(currentPage - 1)}
                                 disabled={currentPage === 1}
                                 className={`w-10 h-10 rounded-full flex items-center justify-center border transition-all ${currentPage === 1 ? 'border-gray-100 text-gray-300 bg-gray-50 cursor-not-allowed' : 'border-gray-200 text-gray-400 hover:border-[#3AB4E6] hover:text-[#3AB4E6] bg-white'}`}>
                                 <FaArrowLeft size={12} />
                             </button>
-                            
+
                             {Array.from({ length: Math.ceil(totalJobs / searchForm.size) }, (_, i) => i + 1)
                                 .filter(p => p === 1 || p === Math.ceil(totalJobs / searchForm.size) || Math.abs(p - currentPage) <= 2)
                                 .map((page, index, array) => (
@@ -767,8 +853,8 @@ const HomePage = () => {
                                     </React.Fragment>
                                 ))
                             }
-                            
-                            <button 
+
+                            <button
                                 onClick={() => currentPage < Math.ceil(totalJobs / searchForm.size) && handlePageChange(currentPage + 1)}
                                 disabled={currentPage === Math.ceil(totalJobs / searchForm.size)}
                                 className={`w-10 h-10 rounded-full flex items-center justify-center border transition-all ${currentPage === Math.ceil(totalJobs / searchForm.size) ? 'border-gray-100 text-gray-300 bg-gray-50 cursor-not-allowed' : 'border-gray-200 text-gray-400 hover:border-[#3AB4E6] hover:text-[#3AB4E6] bg-white'}`}>
@@ -779,7 +865,201 @@ const HomePage = () => {
                 </div>
             </section>
 
+            {/* =================================================================
+              PHẦN: BÁO CÁO THỊ TRƯỜNG VIỆC LÀM (MARKET DASHBOARD)
+            ================================================================= */}
+            <section className="py-0 bg-[#0a192f] overflow-hidden relative border-y border-[#3AB4E6]/20">
+                {/* Grid pattern overlay */}
+                <div className="absolute inset-0 opacity-10"
+                    style={{
+                        backgroundImage: 'linear-gradient(rgba(58,180,230,0.15) 1px, transparent 1px), linear-gradient(90deg, rgba(58,180,230,0.15) 1px, transparent 1px)',
+                        backgroundSize: '40px 40px'
+                    }}>
+                </div>
+
+                <div className="relative z-10 container mx-auto px-4 md:px-6 py-10">
+                    {/* HEADER ROW */}
+                    <div className="flex items-center justify-between mb-8">
+                        <div>
+                            <h2 className="text-2xl md:text-3xl font-extrabold text-white">
+                                Thị trường việc làm hôm nay{' '}
+                                <span className="text-[#3AB4E6]">
+                                    {new Date().toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' })}
+                                </span>
+                            </h2>
+                            <p className="text-blue-400/70 text-sm mt-1">Cập nhật theo thời gian thực từ hệ thống ITing</p>
+                        </div>
+                        <div className="hidden md:flex items-center gap-2 text-blue-400/60 text-xs border border-blue-800 rounded-full px-3 py-1.5">
+                            <span className="w-2 h-2 rounded-full bg-blue-400 animate-pulse"></span> Trực tiếp
+                        </div>
+                    </div>
+
+                    {/* MAIN GRID */}
+                    <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+
+                        {/* LEFT COL — Mascot + recent jobs */}
+                        <div className="lg:col-span-1 flex flex-col gap-5">
+                            {/* Fox mascot card */}
+                            <div className="relative rounded-2xl overflow-hidden bg-gradient-to-br from-[#112240] to-[#0a192f] border border-blue-800/60 flex items-end justify-center pt-4 h-52">
+                                <div className="absolute inset-0 bg-gradient-to-t from-[#3AB4E6]/10 to-transparent"></div>
+                                <img
+                                    src="/tech-fox-dashboard.png"
+                                    alt="Cáo Công Nghệ ITing"
+                                    className="relative z-10 h-44 object-contain drop-shadow-[0_0_20px_rgba(58,180,230,0.5)]"
+                                />
+                            </div>
+
+                            {/* Recent jobs list */}
+                            <div className="rounded-2xl bg-[#112240]/80 border border-blue-800/60 p-4 flex-1">
+                                <p className="text-blue-400 text-xs font-bold uppercase tracking-wider mb-3">Việc làm mới nhất</p>
+                                <div className="space-y-3">
+                                    {(jobs ?? []).slice(0, 3).map((job) => (
+                                        <div
+                                            key={job.id}
+                                            onClick={() => handleJobClick(job)}
+                                            onMouseEnter={(e) => handleCardEnter(job, e.currentTarget)}
+                                            onMouseLeave={handleCardLeave}
+                                            className="flex items-center gap-3 cursor-pointer group"
+                                        >
+                                            <CompanyLogo
+                                                logoUrl={job.companyLogo || job.logo}
+                                                companyId={job.companyId}
+                                                companyName={job.companyName}
+                                                className="w-9 h-9 rounded-lg object-contain bg-white/10 p-1 flex-shrink-0"
+                                            />
+                                            <div className="min-w-0 flex-1">
+                                                <p className="text-white text-xs font-semibold group-hover:text-[#3AB4E6] transition-colors truncate">
+                                                    {job.title || job.position}
+                                                </p>
+                                                <p className="text-blue-300/70 text-[10px] truncate">{job.companyName}</p>
+                                                <p className="text-blue-400/50 text-[10px]">{job.location || 'Việt Nam'}</p>
+                                            </div>
+                                        </div>
+                                    ))}
+                                    {(jobs ?? []).length === 0 && (
+                                        <p className="text-blue-500/50 text-xs text-center py-4">Đang tải dữ liệu...</p>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* RIGHT COL — Stats + Charts */}
+                        <div className="lg:col-span-3 flex flex-col gap-5">
+
+                            {/* STATS ROW */}
+                            <div className="grid grid-cols-3 gap-4">
+                                {[
+                                    { label: 'Việc làm mới 24h gần nhất', value: Math.min(stats.totalJobs ?? 0, 999), accent: true },
+                                    { label: 'Việc làm đang tuyển', value: (stats.totalJobs ?? 0).toLocaleString('vi-VN'), accent: false },
+                                    { label: 'Công ty đang tuyển', value: (stats.totalCompanies ?? 0).toLocaleString('vi-VN'), accent: false },
+                                ].map((s, i) => (
+                                    <div
+                                        key={i}
+                                        className={`rounded-2xl p-5 border ${s.accent
+                                            ? 'bg-gradient-to-br from-[#3AB4E6]/20 to-blue-800/10 border-[#3AB4E6]/40'
+                                            : 'bg-[#112240]/80 border-blue-800/60'
+                                        }`}
+                                    >
+                                        <div className={`text-3xl md:text-4xl font-black mb-1 ${s.accent ? 'text-[#3AB4E6]' : 'text-white'}`}>
+                                            {s.value}
+                                        </div>
+                                        <p className="text-blue-400/70 text-xs">{s.label}</p>
+                                    </div>
+                                ))}
+                            </div>
+
+                            {/* CHARTS ROW */}
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-5 flex-1">
+
+                                {/* Line Chart — Job Growth */}
+                                <div className="rounded-2xl bg-[#112240]/80 border border-blue-800/60 p-5">
+                                    <div className="flex items-center gap-2 mb-4">
+                                        <FaArrowRight className="text-[#3AB4E6] text-sm" />
+                                        <span className="text-white text-sm font-bold">Tăng trưởng cơ hội việc làm</span>
+                                    </div>
+                                    {/* SVG Sparkline */}
+                                    <div className="relative h-32">
+                                        <svg viewBox="0 0 300 100" className="w-full h-full" preserveAspectRatio="none">
+                                            <defs>
+                                                <linearGradient id="lineGrad" x1="0" y1="0" x2="0" y2="1">
+                                                    <stop offset="0%" stopColor="#3AB4E6" stopOpacity="0.3" />
+                                                    <stop offset="100%" stopColor="#3AB4E6" stopOpacity="0" />
+                                                </linearGradient>
+                                            </defs>
+                                            {/* Grid lines */}
+                                            {[20, 40, 60, 80].map(y => (
+                                                <line key={y} x1="0" y1={y} x2="300" y2={y} stroke="rgba(58,180,230,0.1)" strokeWidth="1" />
+                                            ))}
+                                            {/* Area fill */}
+                                            <path d="M0,70 C30,65 50,55 80,50 C110,45 130,60 160,55 C190,50 210,35 240,30 C265,26 280,35 300,28 L300,100 L0,100 Z"
+                                                fill="url(#lineGrad)" />
+                                            {/* Line */}
+                                            <path d="M0,70 C30,65 50,55 80,50 C110,45 130,60 160,55 C190,50 210,35 240,30 C265,26 280,35 300,28"
+                                                fill="none" stroke="#3AB4E6" strokeWidth="2.5" strokeLinecap="round" />
+                                            {/* Data points */}
+                                            {[[0,70],[80,50],[160,55],[240,30],[300,28]].map(([x,y],i)=>(
+                                                <circle key={i} cx={x} cy={y} r="3.5" fill="#3AB4E6" stroke="#0a192f" strokeWidth="2"/>
+                                            ))}
+                                        </svg>
+                                        {/* X axis labels */}
+                                        <div className="flex justify-between mt-1">
+                                            {['02/04','09/04','16/04','23/04','30/04', new Date().toLocaleDateString('vi-VN',{day:'2-digit',month:'2-digit'})].map((d,i)=>(
+                                                <span key={i} className="text-[9px] text-blue-500/50">{d}</span>
+                                            ))}
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Bar Chart — Industry Demand */}
+                                <div className="rounded-2xl bg-[#112240]/80 border border-blue-800/60 p-5">
+                                    <div className="flex items-center justify-between mb-4">
+                                        <div className="flex items-center gap-2">
+                                            <FaDatabase className="text-[#3AB4E6] text-sm" />
+                                            <span className="text-white text-sm font-bold">Nhu cầu tuyển dụng theo</span>
+                                        </div>
+                                        <span className="text-xs text-blue-400 border border-blue-700 rounded px-2 py-0.5">Ngành nghề</span>
+                                    </div>
+                                    {/* Horizontal bars */}
+                                    <div className="space-y-2.5">
+                                        {[
+                                            { label: 'Phát triển phần mềm', pct: 90, color: '#3AB4E6' },
+                                            { label: 'Phân tích dữ liệu', pct: 72, color: '#60A5FA' },
+                                            { label: 'Thiết kế UI/UX', pct: 58, color: '#FBBF24' },
+                                            { label: 'DevOps / Cloud', pct: 49, color: '#34D399' },
+                                            { label: 'An ninh mạng', pct: 38, color: '#A78BFA' },
+                                        ].map((item, i) => (
+                                            <div key={i}>
+                                                <div className="flex justify-between mb-1">
+                                                    <span className="text-[10px] text-blue-300/70">{item.label}</span>
+                                                    <span className="text-[10px] font-bold" style={{ color: item.color }}>{item.pct}%</span>
+                                                </div>
+                                                <div className="h-2 rounded-full bg-blue-950/80 overflow-hidden">
+                                                    <div
+                                                        className="h-full rounded-full transition-all duration-700"
+                                                        style={{ width: `${item.pct}%`, backgroundColor: item.color, boxShadow: `0 0 6px ${item.color}80` }}
+                                                    ></div>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                    {/* Legend */}
+                                    <div className="flex flex-wrap gap-3 mt-3 pt-3 border-t border-blue-800/40">
+                                        {['#3AB4E6','#60A5FA','#FBBF24','#34D399','#A78BFA'].map((c, i) => (
+                                            <span key={i} className="flex items-center gap-1 text-[9px] text-blue-400/60">
+                                                <span className="w-2 h-2 rounded-full inline-block" style={{ backgroundColor: c }}></span>
+                                                {['Phần mềm','Dữ liệu','UI/UX','DevOps','Bảo mật'][i]}
+                                            </span>
+                                        ))}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
             {/* PHẦN 2: JOB CATEGORIES */}
+
             <section className="py-10 px-8 bg-[#F0F5FA]">
                 <div className="container mx-auto px-4">
                     <div className="text-center mb-12">
@@ -789,7 +1069,11 @@ const HomePage = () => {
 
                     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-6">
                         {categories.map((cat) => (
-                            <div key={cat.id} className="bg-white p-8 rounded-xl shadow-sm hover:shadow-lg transition-all duration-300 cursor-pointer group flex flex-col items-center text-center border border-transparent hover:border-blue-200">
+                            <div 
+                                key={cat.id} 
+                                onClick={() => navigate(`/jobs?keyword=${encodeURIComponent(cat.name)}`)}
+                                className="bg-white p-8 rounded-xl shadow-sm hover:shadow-lg transition-all duration-300 cursor-pointer group flex flex-col items-center text-center border border-transparent hover:border-blue-200"
+                            >
                                 <div className="w-16 h-16 mb-4 text-[#3AB4E6] text-4xl group-hover:scale-110 transition-transform flex items-center justify-center">
                                     {cat.icon}
                                 </div>
@@ -810,9 +1094,9 @@ const HomePage = () => {
                             <p className="text-gray-500 text-sm">Cập nhật tin tức mới nhất về công nghệ và thị trường tuyển dụng</p>
                         </div>
                         {/* FIX: Thay BsArrowRight bằng FaArrowRight */}
-                        <Link to="/blogs" className="text-[#3AB4E6] font-medium hover:underline flex items-center gap-1">
+                        <a href="#" className="text-[#3AB4E6] font-medium hover:underline flex items-center gap-1">
                             View all <FaArrowRight />
-                        </Link>
+                        </a>
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -840,16 +1124,16 @@ const HomePage = () => {
 
             {/* AI CV Modal */}
             {isAiModalOpen && (
-                <div 
+                <div
                     className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
                     onClick={() => setIsAiModalOpen(false)}
                 >
-                    <div 
+                    <div
                         className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden transform transition-all animate-in fade-in zoom-in duration-300"
                         onClick={(e) => e.stopPropagation()}
                     >
                         <div className="bg-[#3AB4E6] p-6 text-white relative">
-                            <button 
+                            <button
                                 onClick={() => setIsAiModalOpen(false)}
                                 className="absolute top-4 right-4 text-white/80 hover:text-white transition-colors"
                             >
@@ -862,7 +1146,7 @@ const HomePage = () => {
                             </h3>
                             <p className="text-blue-50/80 mt-1">Dán nội dung CV của bạn vào đây, AI sẽ tự động phân tích và tìm kiếm công việc phù hợp nhất.</p>
                         </div>
-                        
+
                         <div className="p-6 space-y-4">
                             <div className="relative">
                                 <textarea
@@ -875,7 +1159,7 @@ const HomePage = () => {
                                     {cvText.length} ký tự
                                 </div>
                             </div>
-                            
+
                             <div className="flex gap-3 pt-2">
                                 <button
                                     onClick={() => setIsAiModalOpen(false)}
@@ -904,6 +1188,29 @@ const HomePage = () => {
                     </div>
                 </div>
             )}
+
+            {hoveredJob && hoverRect && (() => {
+                const PANE_W = 440;
+                const GAP = 12;
+                const MARGIN = 12;
+                const vw = typeof window !== 'undefined' ? window.innerWidth : 1280;
+                const vh = typeof window !== 'undefined' ? window.innerHeight : 800;
+                const fitsRight = hoverRect.right + GAP + PANE_W <= vw - MARGIN;
+                const left = fitsRight
+                    ? hoverRect.right + GAP
+                    : Math.max(MARGIN, hoverRect.left - GAP - PANE_W);
+                const top = Math.max(MARGIN, Math.min(hoverRect.top, vh - 540));
+                return (
+                    <div
+                        className="hidden lg:block fixed z-50 pointer-events-auto"
+                        style={{ top, left, width: PANE_W }}
+                        onMouseEnter={handlePaneEnter}
+                        onMouseLeave={handleCardLeave}
+                    >
+                        <JobPreviewPane job={hoveredJob} />
+                    </div>
+                );
+            })()}
         </div>
     );
 };

@@ -50,7 +50,7 @@ const ProfessionalInfoTab = () => {
                 {/* Main sections */}
                 <ExperienceSection />
                 <EducationSection />
-                
+
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                     <SkillsSection />
                     <CertificateSection />
@@ -60,21 +60,21 @@ const ProfessionalInfoTab = () => {
             </div>
 
             {/* Bottom Help/CTA */}
-            <div className="text-center py-10 bg-gray-50 rounded-2xl border-2 border-dashed border-gray-200">
+            {/* <div className="text-center py-10 bg-gray-50 rounded-2xl border-2 border-dashed border-gray-200">
                 <p className="text-gray-500 mb-4">Bạn muốn thêm mục khác vào hồ sơ?</p>
                 <button className="inline-flex items-center gap-2 bg-gray-800 text-white px-6 py-2.5 rounded-xl font-medium hover:bg-black transition-all">
                     <FaPlusCircle /> Thêm tùy chọn mới
                 </button>
-            </div>
+            </div> */}
 
             <RecruiterPreviewModal
                 isOpen={isPreviewOpen}
                 onClose={() => setIsPreviewOpen(false)}
             />
 
-            <AutoParseCVModal 
-                isOpen={isParseModalOpen} 
-                onClose={() => setIsParseModalOpen(false)} 
+            <AutoParseCVModal
+                isOpen={isParseModalOpen}
+                onClose={() => setIsParseModalOpen(false)}
                 onComplete={() => {
                     toast.success("Đã áp dụng các trường được trích xuất từ CV bằng AI.");
                 }}

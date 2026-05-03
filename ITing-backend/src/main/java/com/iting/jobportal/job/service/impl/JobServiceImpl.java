@@ -4,6 +4,7 @@ import com.iting.jobportal.company.entity.Company;
 import com.iting.jobportal.company.entity.enums.CompanyReviewStatus;
 import com.iting.jobportal.company.entity.enums.VerificationLevel;
 import com.iting.jobportal.company.repository.CompanyRepository;
+import com.iting.jobportal.company.service.AuthorizationService;
 import com.iting.jobportal.job.dto.request.CreateJobRequest;
 import com.iting.jobportal.job.dto.request.JobSearchRequest;
 import com.iting.jobportal.job.dto.request.UpdateJobRequest;
@@ -20,9 +21,17 @@ import com.iting.jobportal.recommendation.service.RecommendationService;
 import com.iting.jobportal.common.service.GeminiService;
 import com.iting.jobportal.common.service.KnowledgeGraphService;
 import com.iting.jobportal.common.service.MlServiceClient;
+import com.iting.jobportal.common.cache.CacheNames;
+import com.iting.jobportal.common.event.KafkaTopics;
+import com.iting.jobportal.common.event.outbox.OutboxAppender;
+import com.iting.jobportal.common.event.payload.JobEmbeddingRequestedEvent;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 import com.iting.jobportal.admin.service.AdminNotificationService;
 import com.iting.jobportal.notification.service.NotificationService;
 import org.springframework.context.annotation.Lazy;
+import java.util.Optional;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import lombok.RequiredArgsConstructor;
@@ -54,6 +63,7 @@ public class JobServiceImpl implements JobService {
 
     private final JobRepository jobRepository;
     private final CompanyRepository companyRepository;
+    private final AuthorizationService authz;
     private final FileUploadService fileUploadService;
     private final ApplicationEventPublisher eventPublisher;
     private final GeminiService geminiService;
@@ -62,6 +72,8 @@ public class JobServiceImpl implements JobService {
     private final MlServiceClient mlServiceClient;
     private final NotificationService notificationService;
     private final AdminNotificationService adminNotificationService;
+    private final Optional<OutboxAppender> outboxAppender;
+    private final KafkaTopics kafkaTopics;
 
     @PersistenceContext
     private EntityManager entityManager;
@@ -83,8 +95,13 @@ public class JobServiceImpl implements JobService {
                 );
     }
 
-    private Company findCompanyOrThrow(Long accountId) {
-        return companyRepository.findByAccount_Id(accountId)
+    /**
+     * Resolve Company của HR đang login qua bảng affiliation.
+     * @param hrAccountId account.id của HR (truyền từ controller).
+     */
+    private Company findCompanyOrThrow(Long hrAccountId) {
+        Long companyId = authz.requireApprovedCompanyOf(hrAccountId);
+        return companyRepository.findById(companyId)
                 .orElseThrow(() ->
                         new ResponseStatusException(
                                 HttpStatus.BAD_REQUEST,
@@ -93,7 +110,11 @@ public class JobServiceImpl implements JobService {
                 );
     }
 
-    private void checkOwnership(Job job, Long employerId) {
+    /**
+     * Kiểm tra HR đang login có quyền thao tác trên job (job phải thuộc Company
+     * mà HR đã được duyệt affiliation APPROVED).
+     */
+    private void checkOwnership(Job job, Long hrAccountId) {
         if (job.getCompany() == null || job.getCompany().getId() == null) {
             throw new ResponseStatusException(
                     HttpStatus.FORBIDDEN,
@@ -101,7 +122,8 @@ public class JobServiceImpl implements JobService {
             );
         }
 
-        if (!job.getCompany().getId().equals(employerId)) {
+        Long allowedCompanyId = authz.requireApprovedCompanyOf(hrAccountId);
+        if (!job.getCompany().getId().equals(allowedCompanyId)) {
             throw new ResponseStatusException(
                     HttpStatus.FORBIDDEN,
                     "Bạn không có quyền thực hiện thao tác này trên tin tuyển dụng này"
@@ -117,6 +139,11 @@ public class JobServiceImpl implements JobService {
                     "Lương tối thiểu không được lớn hơn lương tối đa"
             );
         }
+    }
+
+    private String digestOf(String text) {
+        if (text == null) return null;
+        return text.length() <= 64 ? text : Integer.toHexString(text.hashCode()) + ":" + text.length();
     }
 
     private String buildLocation(String address, String ward, String province) {
@@ -234,6 +261,7 @@ public class JobServiceImpl implements JobService {
 
     @Override
     @Transactional
+    @CacheEvict(value = CacheNames.JOB_DETAIL, key = "#jobId")
     public JobResponse submitJobForReview(Long employerId, Long jobId) {
         Job job = findJobOrThrow(jobId);
         checkOwnership(job, employerId);
@@ -282,6 +310,7 @@ public class JobServiceImpl implements JobService {
 
         Job job = Job.builder()
                 .company(company)
+                .postedByHrId(employerId)
                 .title(request.getTitle())
                 .position(request.getPosition())
                 .skills(request.getSkills())
@@ -317,6 +346,15 @@ public class JobServiceImpl implements JobService {
                 .setParameter("companyId", company.getId())
                 .executeUpdate();
 
+        // Outbox: yêu cầu ML service tính embedding (async qua Kafka khi bật)
+        outboxAppender.ifPresent(appender -> appender.append(
+                kafkaTopics.getJobEmbeddingRequested(),
+                "job",
+                JobEmbeddingRequestedEvent.of(
+                        saved.getId(),
+                        saved.getTitle(),
+                        digestOf(saved.getDescription()))));
+
         // AUTO AI REVIEW - tự động duyệt bằng AI thay vì chờ admin
         if (saved.getStatus() == JobStatus.PENDING) {
             autoAiReview(saved);
@@ -340,6 +378,7 @@ public class JobServiceImpl implements JobService {
 
     @Override
     @Transactional
+    @CacheEvict(value = CacheNames.JOB_DETAIL, key = "#jobId")
     public JobResponse updateJob(Long employerId, Long jobId, UpdateJobRequest request) {
         Job job = findJobOrThrow(jobId);
         checkOwnership(job, employerId);
@@ -395,6 +434,7 @@ public class JobServiceImpl implements JobService {
 
     @Override
     @Transactional
+    @CacheEvict(value = CacheNames.JOB_DETAIL, key = "#jobId")
     public void deleteJob(Long employerId, Long jobId) {
         Job job = findJobOrThrow(jobId);
         checkOwnership(job, employerId);
@@ -407,6 +447,7 @@ public class JobServiceImpl implements JobService {
 
     @Override
     @Transactional
+    @CacheEvict(value = CacheNames.JOB_DETAIL, key = "#jobId")
     public JobResponse extendJob(Long employerId, Long jobId, int days) {
         if (days <= 0 || days > 365) {
             throw new ResponseStatusException(
@@ -443,6 +484,7 @@ public class JobServiceImpl implements JobService {
 
     @Override
     @Transactional
+    @CacheEvict(value = CacheNames.JOB_DETAIL, key = "#jobId")
     public JobResponse closeJob(Long employerId, Long jobId) {
         Job job = findJobOrThrow(jobId);
         checkOwnership(job, employerId);
@@ -465,6 +507,7 @@ public class JobServiceImpl implements JobService {
 
     @Override
     @Transactional
+    @CacheEvict(value = CacheNames.JOB_DETAIL, key = "#jobId")
     public JobResponse reopenJob(Long employerId, Long jobId) {
         Job job = findJobOrThrow(jobId);
         checkOwnership(job, employerId);
@@ -503,6 +546,7 @@ public class JobServiceImpl implements JobService {
     // =========================================================
 
     @Override
+    @Cacheable(value = CacheNames.JOB_DETAIL, key = "#jobId", unless = "#result == null")
     public JobResponse getJobById(Long jobId) {
         Job job = findJobOrThrow(jobId);
         return enrichWithCompany(job);
@@ -584,16 +628,21 @@ public class JobServiceImpl implements JobService {
                 for (String kw : keywordList) {
                     for (String phrase : kw.split(",")) {
                         if (phrase.trim().isBlank()) continue;
-                        String[] tokens = phrase.trim().toLowerCase().split("\\s+");
+                        // Strip special chars (keep letters, digits, hyphens, spaces, Unicode)
+                        String sanitized = phrase.trim().toLowerCase()
+                                .replaceAll("[^a-z0-9\\p{L}\\s\\-]", " ")
+                                .replaceAll("\\s+", " ").trim();
+                        if (sanitized.isBlank()) continue;
+                        String[] tokens = sanitized.split("\\s+");
                         List<Predicate> tokenPredicates = new ArrayList<>();
                         for (String token : tokens) {
                             if (token.length() < 2) continue;
                             String pattern = "%" + token + "%";
                             tokenPredicates.add(cb.or(
+                                    cb.like(cb.lower(root.get("title")), pattern),
                                     cb.like(cb.lower(root.get("position")), pattern),
                                     cb.like(cb.lower(root.get("description")), pattern),
-                                    cb.like(cb.lower(root.get("skills")), pattern),
-                                    cb.like(cb.lower(root.get("title")), pattern)
+                                    cb.like(cb.lower(root.get("skills").as(String.class)), pattern)
                             ));
                         }
                         if (!tokenPredicates.isEmpty()) {

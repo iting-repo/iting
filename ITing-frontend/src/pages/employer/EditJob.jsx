@@ -1,203 +1,80 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { FaBold, FaItalic, FaUnderline, FaLink, FaListUl, FaListOl, FaSave, FaArrowLeft, FaChevronDown } from 'react-icons/fa';
+import { toast } from 'sonner';
+import jobService from '../../services/jobService';
+import PostJob from './PostJob';
 
 const EditJob = () => {
   const { t } = useTranslation();
-  const { id } = useParams(); // Lấy ID từ URL
+  const { id } = useParams();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
+  const [jobData, setJobData] = useState(null);
+  const [error, setError] = useState(null);
 
-  // State quản lý dữ liệu form
-  const [formData, setFormData] = useState({
-    jobTitle: '',
-    jobPosition: '',
-    techStack: '',
-    workType: '',
-    quantity: '',
-    deadline: '',
-    city: '',
-    district: '',
-    address: '',
-    minSalary: '',
-    maxSalary: '',
-    salaryType: 'month',
-    description: '',
-    responsibilities: ''
-  });
-
-  // Giả lập gọi API lấy chi tiết công việc theo ID
   useEffect(() => {
-    // Trong thực tế: const data = await api.getJobById(id);
-    // Ở đây mình fake data mẫu:
-    setTimeout(() => {
-      setFormData({
-        jobTitle: 'Senior UI/UX Designer',
-        jobPosition: 'fullstack',
-        techStack: 'react',
-        workType: 'fulltime',
-        quantity: '5',
-        deadline: '2025-12-31',
-        city: 'hcm',
-        district: 'q1',
-        address: 'Tòa nhà Bitexco, số 2 Hải Triều',
-        minSalary: '15000000',
-        maxSalary: '30000000',
-        salaryType: 'month',
-        description: 'Mô tả mẫu đã được load từ database...',
-        responsibilities: 'Trách nhiệm mẫu...'
-      });
-      setLoading(false);
-    }, 500); // Delay 0.5s cho giống thật
+    const fetchJob = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        const data = await jobService.getJobDetail(id);
+        setJobData(data);
+      } catch (err) {
+        console.error('Failed to fetch job detail:', err);
+        setError(err?.message || 'Không thể tải thông tin công việc');
+        toast.error('Không thể tải thông tin công việc');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (id) {
+      fetchJob();
+    }
   }, [id]);
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData({ ...formData, [name]: value });
-  };
+  if (loading) {
+    return (
+      <div className="p-10 flex flex-col items-center justify-center min-h-[400px]">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#3AB4E6] mb-4"></div>
+        <p className="text-gray-400 text-sm animate-pulse">
+          {t('editJob.loading', 'Đang tải dữ liệu công việc...')}
+        </p>
+      </div>
+    );
+  }
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    console.log("Dữ liệu cập nhật:", formData);
-    alert(t('editJob.success', 'Cập nhật công việc thành công!'));
-    navigate('/employer/manage-jobs'); // Quay về danh sách
-  };
+  if (error || !jobData) {
+    return (
+      <div className="p-10 flex flex-col items-center justify-center min-h-[400px]">
+        <div className="text-red-400 text-6xl mb-4">⚠️</div>
+        <h3 className="text-xl font-bold text-gray-800 mb-2">Không tìm thấy công việc</h3>
+        <p className="text-gray-500 mb-6">{error || 'Công việc không tồn tại hoặc bạn không có quyền chỉnh sửa.'}</p>
+        <button
+          onClick={() => navigate('/employer/manage-jobs')}
+          className="px-6 py-3 bg-[#3AB4E6] text-white rounded-xl font-bold hover:bg-[#2d9dcb] transition-colors"
+        >
+          Quay về danh sách
+        </button>
+      </div>
+    );
+  }
 
-  // Toolbar Component (Tái sử dụng)
-  const EditorToolbar = () => (
-    <div className="bg-gray-50 border-b border-gray-200 px-3 py-2 flex gap-4 text-gray-500 mb-2">
-      <button type="button" className="hover:text-black"><FaBold /></button>
-      <button type="button" className="hover:text-black"><FaItalic /></button>
-      <button type="button" className="hover:text-black"><FaUnderline /></button>
-      <div className="w-px bg-gray-300 mx-1"></div>
-      <button type="button" className="hover:text-black"><FaListUl /></button>
-      <button type="button" className="hover:text-black"><FaListOl /></button>
-    </div>
-  );
-
-  if (loading) return <div className="p-10 text-center text-gray-500">{t('editJob.loading', 'Đang tải dữ liệu công việc...')}</div>;
+  console.log("PostJob component:", PostJob);
+  if (!PostJob) {
+    return <div className="p-10 text-red-500">Error: PostJob component is undefined. This might be an import issue.</div>;
+  }
 
   return (
-    <div className="animate-fade-in">
-      {/* Header: Nút back + Tiêu đề */}
-      <div className="flex items-center gap-4 mb-6">
-        <button onClick={() => navigate(-1)} className="p-2 rounded-full bg-white border border-gray-200 hover:bg-gray-50 text-gray-500">
-            <FaArrowLeft />
-        </button>
-        <div>
-            <h2 className="text-2xl font-bold text-gray-800">{t('editJob.title', 'Chỉnh sửa công việc')}</h2>
-            <p className="text-gray-500 text-sm">ID: #{id}</p>
-        </div>
-      </div>
-
-      <div className="bg-white rounded-xl p-8 shadow-sm border border-gray-100">
-        <form onSubmit={handleSubmit}>
-          
-          {/* === 1. TIÊU ĐỀ === */}
-          <div className="mb-8">
-            <h3 className="text-lg font-bold text-gray-800 mb-4">{t('editJob.jobTitle', 'Tiêu đề công việc')}</h3>
-            <input 
-              type="text" 
-              name="jobTitle"
-              value={formData.jobTitle}
-              onChange={handleChange}
-              className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:border-[#3AB4E6] text-sm font-medium"
-            />
-          </div>
-
-          {/* === 2. CHI TIẾT === */}
-          <div className="mb-8">
-            <h3 className="text-lg font-bold text-gray-800 mb-4">{t('editJob.details', 'Thông tin chi tiết')}</h3>
-            
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-               <div>
-                  <label className="block text-gray-700 text-sm font-medium mb-2">{t('editJob.position', 'Vị trí')}</label>
-                  <div className="relative">
-                     <select name="jobPosition" value={formData.jobPosition} onChange={handleChange} className="w-full px-4 py-3 border border-gray-200 rounded-lg appearance-none bg-white focus:outline-none focus:border-[#3AB4E6] text-sm">
-                        <option value="frontend">Frontend Developer</option>
-                        <option value="backend">Backend Developer</option>
-                        <option value="fullstack">Fullstack Developer</option>
-                     </select>
-                     <FaChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 text-xs pointer-events-none" />
-                  </div>
-               </div>
-               {/* Các select khác tương tự (Tech stack, Work type) - Giữ nguyên code form cũ */}
-               <div>
-                  <label className="block text-gray-700 text-sm font-medium mb-2">{t('editJob.tech', 'Công nghệ')}</label>
-                  <div className="relative">
-                     <select name="techStack" value={formData.techStack} onChange={handleChange} className="w-full px-4 py-3 border border-gray-200 rounded-lg appearance-none bg-white focus:outline-none focus:border-[#3AB4E6] text-sm">
-                        <option value="react">ReactJS</option>
-                        <option value="node">NodeJS</option>
-                     </select>
-                     <FaChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 text-xs pointer-events-none" />
-                  </div>
-               </div>
-               <div>
-                  <label className="block text-gray-700 text-sm font-medium mb-2">{t('editJob.workType', 'Hình thức')}</label>
-                  <div className="relative">
-                     <select name="workType" value={formData.workType} onChange={handleChange} className="w-full px-4 py-3 border border-gray-200 rounded-lg appearance-none bg-white focus:outline-none focus:border-[#3AB4E6] text-sm">
-                        <option value="fulltime">Full-time</option>
-                        <option value="parttime">Part-time</option>
-                     </select>
-                     <FaChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 text-xs pointer-events-none" />
-                  </div>
-               </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-               <div>
-                  <label className="block text-gray-700 text-sm font-medium mb-2">{t('editJob.quantity', 'Số lượng')}</label>
-                  <input type="number" name="quantity" value={formData.quantity} onChange={handleChange} className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:border-[#3AB4E6] text-sm" />
-               </div>
-               <div>
-                  <label className="block text-gray-700 text-sm font-medium mb-2">{t('editJob.deadline', 'Ngày hết hạn')}</label>
-                  <input type="date" name="deadline" value={formData.deadline} onChange={handleChange} className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:border-[#3AB4E6] text-sm" />
-               </div>
-            </div>
-          </div>
-
-          {/* === 3. ĐỊA CHỈ & LƯƠNG (Giản lược code cho gọn, logic y hệt PostJob nhưng thêm value={formData...}) === */}
-          <div className="mb-8">
-             <h3 className="text-lg font-bold text-gray-800 mb-4">{t('editJob.addressAndSalary', 'Địa chỉ & Lương')}</h3>
-             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                <input type="text" name="address" value={formData.address} onChange={handleChange} className="w-full px-4 py-3 border border-gray-200 rounded-lg text-sm" placeholder={t('editJob.address', 'Địa chỉ')} />
-                <div className="flex gap-4">
-                    <input type="number" name="minSalary" value={formData.minSalary} onChange={handleChange} className="w-1/2 px-4 py-3 border border-gray-200 rounded-lg text-sm" placeholder={t('editJob.minSalary', 'Min Lương')} />
-                    <input type="number" name="maxSalary" value={formData.maxSalary} onChange={handleChange} className="w-1/2 px-4 py-3 border border-gray-200 rounded-lg text-sm" placeholder={t('editJob.maxSalary', 'Max Lương')} />
-                </div>
-             </div>
-          </div>
-
-          {/* === 4. MÔ TẢ === */}
-          <div className="mb-10">
-            <h3 className="text-lg font-bold text-gray-800 mb-4">{t('editJob.content', 'Nội dung')}</h3>
-            <div className="border border-gray-200 rounded-lg overflow-hidden mb-6">
-               <EditorToolbar />
-               <textarea name="description" value={formData.description} onChange={handleChange} className="w-full p-4 h-40 focus:outline-none text-sm text-gray-600" />
-            </div>
-          </div>
-
-          {/* === BUTTON ACTIONS === */}
-          <div className="flex gap-4">
-            <button 
-              type="submit"
-              className="bg-[#1967D2] hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-lg transition-colors flex items-center gap-2"
-            >
-              <FaSave /> {t('editJob.save', 'Lưu Thay Đổi')}
-            </button>
-            <button 
-              type="button"
-              onClick={() => navigate('/employer/manage-jobs')}
-              className="bg-gray-100 hover:bg-gray-200 text-gray-600 font-bold py-3 px-8 rounded-lg transition-colors"
-            >
-              {t('editJob.cancel', 'Hủy bỏ')}
-            </button>
-          </div>
-
-        </form>
-      </div>
-    </div>
+    <PostJob
+      initialData={jobData}
+      isEdit={true}
+      onClose={() => navigate('/employer/manage-jobs')}
+      onSubmitSuccess={() => {
+        // PostJob calls handleClose() after this, which triggers onClose → navigate
+      }}
+    />
   );
 };
 

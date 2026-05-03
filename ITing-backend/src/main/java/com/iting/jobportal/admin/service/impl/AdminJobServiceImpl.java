@@ -1,6 +1,7 @@
 package com.iting.jobportal.admin.service.impl;
 
 import com.iting.jobportal.admin.service.AdminJobService;
+import com.iting.jobportal.common.lock.DistributedLockService;
 import com.iting.jobportal.company.entity.Company;
 import com.iting.jobportal.company.repository.CompanyRepository;
 import com.iting.jobportal.job.dto.response.JobResponse;
@@ -11,6 +12,7 @@ import com.iting.jobportal.job.repository.JobRepository;
 import com.iting.jobportal.job.repository.JobReviewHistoryRepository;
 import com.iting.jobportal.job.repository.JobSpecification;
 import lombok.RequiredArgsConstructor;
+import java.util.Optional;
 import org.springframework.data.domain.*;
 import com.iting.jobportal.notification.dto.request.CreateNotificationRequest;
 import com.iting.jobportal.notification.enums.NotificationType;
@@ -34,6 +36,7 @@ public class AdminJobServiceImpl implements AdminJobService {
     private final JobReviewHistoryRepository jobReviewHistoryRepository;
     private final com.iting.jobportal.common.service.GeminiService geminiService;
     private final NotificationService notificationService;
+    private final Optional<DistributedLockService> lockService;
 
     /*
     =========================
@@ -333,47 +336,48 @@ public class AdminJobServiceImpl implements AdminJobService {
     @Override
     @Transactional
     public void bulkApproveJobs(Long adminId, java.util.List<Long> jobIds) {
-        if (jobIds != null) {
-            for (Long jobId : jobIds) {
-                approveJob(adminId, jobId);
-            }
-        }
+        withBulkLock("bulk-approve:" + adminId, () -> {
+            if (jobIds != null) for (Long jobId : jobIds) approveJob(adminId, jobId);
+        });
     }
 
     @Override
     @Transactional
     public void bulkRejectJobs(Long adminId, java.util.List<Long> jobIds, String reason) {
-        if (jobIds != null) {
-            for (Long jobId : jobIds) {
-                rejectJob(adminId, jobId, reason);
-            }
-        }
+        withBulkLock("bulk-reject:" + adminId, () -> {
+            if (jobIds != null) for (Long jobId : jobIds) rejectJob(adminId, jobId, reason);
+        });
     }
 
     @Override
     @Transactional
     public void bulkSuspendJobs(Long adminId, java.util.List<Long> jobIds, String reason) {
-        if (jobIds != null) {
-            for (Long jobId : jobIds) {
-                suspendJob(adminId, jobId, reason);
-            }
-        }
+        withBulkLock("bulk-suspend:" + adminId, () -> {
+            if (jobIds != null) for (Long jobId : jobIds) suspendJob(adminId, jobId, reason);
+        });
     }
 
     @Override
     @Transactional
     public void bulkCloseJobs(Long adminId, java.util.List<Long> jobIds) {
-        if (jobIds != null) {
-            for (Long jobId : jobIds) {
-                closeJobByAdmin(adminId, jobId);
-            }
-        }
+        withBulkLock("bulk-close:" + adminId, () -> {
+            if (jobIds != null) for (Long jobId : jobIds) closeJobByAdmin(adminId, jobId);
+        });
     }
 
     @Override
     @Transactional
     public void bulkDeleteJobs(java.util.List<Long> jobIds) {
-        jobIds.forEach(jobRepository::deleteById);
+        withBulkLock("bulk-delete:global", () -> jobIds.forEach(jobRepository::deleteById));
+    }
+
+    private void withBulkLock(String lockKey, Runnable action) {
+        if (lockService.isPresent()) {
+            // wait up to 1s; hold up to 2 minutes for big batches
+            lockService.get().withLock(lockKey, 1_000, 120_000, action);
+        } else {
+            action.run();
+        }
     }
 
     /*
