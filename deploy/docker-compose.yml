@@ -273,7 +273,7 @@ services:
       - iting_nginx_ssl:/etc/nginx/ssl
     depends_on:
       backend:
-        condition: service_healthy
+        condition: service_started
       frontend:
         condition: service_started
     healthcheck:
