@@ -196,7 +196,7 @@ services:
       SERVER_PORT: 8080
       SERVER_SHUTDOWN: graceful
       # OpenTelemetry
-      OTEL_JAVAAGENT_ENABLED: "true"
+      OTEL_JAVAAGENT_ENABLED: "false"
       OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
       OTEL_SERVICE_NAME: iting-backend
       OTEL_RESOURCE_ATTRIBUTES: service.name=iting-backend,service.namespace=iting,deployment.environment=${DEPLOY_ENV}
@@ -207,8 +207,8 @@ services:
       test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health"]
       interval: 30s
       timeout: 5s
-      retries: 5
-      start_period: 90s
+      retries: 15
+      start_period: 240s
     deploy:
       resources:
         limits:
