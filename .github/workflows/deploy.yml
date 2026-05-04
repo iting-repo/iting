@@ -75,11 +75,26 @@ jobs:
               --env-file /opt/iting/.env.prod \
               ps
 
+            # Internal health checks with retries
+            for i in {1..20}; do
+              curl -sf http://localhost/ >/dev/null && break
+              echo "Waiting for nginx frontend... attempt $i/20"
+              sleep 10
+            done
+
+            for i in {1..20}; do
+              curl -sf http://localhost:8080/actuator/health >/dev/null && break
+              echo "Waiting for backend health... attempt $i/20"
+              sleep 10
+            done
+
+            curl -sf http://localhost/ >/dev/null
+            curl -sf http://localhost:8080/actuator/health >/dev/null
+
       - name: Health check
         run: |
-          sleep 30
-          curl -sf https://datnhk252iting.dpdns.org/ || exit 1
-          curl -sf https://api.datnhk252iting.dpdns.org/actuator/health || exit 1
+          curl -sf --retry 15 --retry-delay 10 --retry-all-errors https://datnhk252iting.dpdns.org/ >/dev/null
+          curl -sf --retry 15 --retry-delay 10 --retry-all-errors https://api.datnhk252iting.dpdns.org/actuator/health >/dev/null
 
       - name: Notify Discord - Success
         if: success()
