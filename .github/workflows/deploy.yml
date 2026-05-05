@@ -83,6 +83,18 @@ jobs:
             done
 
             for i in {1..20}; do
+              BACKEND_STATE=$(docker inspect -f '{{.State.Status}}' iting-backend 2>/dev/null || echo "missing")
+              if [ "$BACKEND_STATE" != "running" ]; then
+                echo "Backend container is not running (state=$BACKEND_STATE)"
+                docker compose \
+                  -f docker-compose.yml \
+                  --env-file /opt/iting/.env \
+                  --env-file /opt/iting/.env.prod \
+                  ps
+                docker logs --tail 200 iting-backend || true
+                exit 1
+              fi
+
               docker exec iting-backend curl -sf http://localhost:8080/actuator/health >/dev/null && break
               echo "Waiting for backend health... attempt $i/20"
               sleep 10
