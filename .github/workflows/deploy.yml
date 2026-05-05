@@ -95,13 +95,24 @@ jobs:
                 exit 1
               fi
 
-              docker exec iting-backend curl -sf http://localhost:8080/actuator/health >/dev/null && break
+              BACKEND_HEALTH=$(docker inspect -f '{{if .State.Health}}{{.State.Health.Status}}{{else}}no-healthcheck{{end}}' iting-backend 2>/dev/null || echo "missing")
+              if [ "$BACKEND_HEALTH" = "healthy" ]; then
+                break
+              fi
+
+              if [ "$BACKEND_HEALTH" = "unhealthy" ]; then
+                echo "Backend container is unhealthy"
+                docker logs --tail 200 iting-backend || true
+                exit 1
+              fi
+
+              echo "Backend state=$BACKEND_STATE health=$BACKEND_HEALTH"
               echo "Waiting for backend health... attempt $i/20"
               sleep 10
             done
 
             curl -sf http://localhost/ >/dev/null
-            docker exec iting-backend curl -sf http://localhost:8080/actuator/health >/dev/null
+            test "$(docker inspect -f '{{if .State.Health}}{{.State.Health.Status}}{{else}}no-healthcheck{{end}}' iting-backend)" = "healthy"
 
       - name: Health check
         run: |
