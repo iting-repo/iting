@@ -13,7 +13,7 @@ RUN npm ci
 COPY . .
 
 # Inject API base for production bundle
-ARG VITE_API_BASE=https://api.datnhk252iting.dpdns.org/api
+ARG VITE_API_BASE=https://datnhk252iting.dpdns.org
 RUN printf "VITE_API_BASE=%s\n" "$VITE_API_BASE" > .env.production
 
 # Build with webpack production mode

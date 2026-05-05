@@ -92,7 +92,7 @@ jobs:
         working-directory: ITing-frontend
         run: npm run build -- --env APP_ENV=production
         env:
-          VITE_API_BASE: https://api.datnhk252iting.dpdns.org/api
+          VITE_API_BASE: https://datnhk252iting.dpdns.org
 
       - name: Upload build
         uses: actions/upload-artifact@v4
@@ -187,6 +187,6 @@ jobs:
             ${{ env.REGISTRY }}/${{ github.repository }}/iting-frontend:${{ github.sha }}
             ${{ env.REGISTRY }}/${{ github.repository }}/iting-frontend:latest
           build-args: |
-            VITE_API_BASE=https://api.datnhk252iting.dpdns.org/api
+            VITE_API_BASE=https://datnhk252iting.dpdns.org
           cache-from: type=gha
           cache-to: type=gha,mode=max

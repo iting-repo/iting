@@ -12,25 +12,7 @@ networks:
 volumes:
   iting_redis_data:
     external: true
-  iting_kafka_data:
-    external: true
-  iting_zookeeper_data:
-    external: true
-  iting_prometheus_data:
-    external: true
-  iting_grafana_data:
-    external: true
-  iting_loki_data:
-    external: true
-  iting_tempo_data:
-    external: true
-  iting_portainer_data:
-    external: true
-  iting_certbot_data:
-    external: true
   iting_nginx_ssl:
-    external: true
-  iting_nginx_dhparam:
     external: true
 
 services:
@@ -60,68 +42,6 @@ services:
           memory: 64M
 
   # ========================================
-  # Zookeeper - Kafka Dependency
-  # ========================================
-  zookeeper:
-    image: confluentinc/cp-zookeeper:7.5.0
-    container_name: iting-zookeeper
-    restart: unless-stopped
-    networks:
-      - iting-net
-    environment:
-      ZOOKEEPER_CLIENT_PORT: 2181
-      ZOOKEEPER_TICK_TIME: 2000
-    volumes:
-      - iting_zookeeper_data:/var/lib/zookeeper/data
-    healthcheck:
-      test: ["CMD", "bash", "-c", "echo ruok | nc localhost 2181"]
-      interval: 10s
-      timeout: 5s
-      retries: 3
-    deploy:
-      resources:
-        limits:
-          memory: 256M
-        reservations:
-          memory: 128M
-
-  # ========================================
-  # Kafka - Message Queue
-  # ========================================
-  kafka:
-    image: confluentinc/cp-kafka:7.5.0
-    container_name: iting-kafka
-    restart: unless-stopped
-    networks:
-      - iting-net
-    depends_on:
-      zookeeper:
-        condition: service_healthy
-    environment:
-      KAFKA_BROKER_ID: 1
-      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
-      KAFKA_LISTENERS: PLAINTEXT://:9092,PLAINTEXT_HOST://:29092
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,PLAINTEXT_HOST://localhost:29092
-      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
-      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
-      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
-      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
-    volumes:
-      - iting_kafka_data:/var/lib/kafka/data
-    healthcheck:
-      test: ["CMD", "kafka-topics", "--bootstrap-server", "localhost:9092", "--list"]
-      interval: 15s
-      timeout: 10s
-      retries: 5
-      start_period: 30s
-    deploy:
-      resources:
-        limits:
-          memory: 768M
-        reservations:
-          memory: 512M
-
-  # ========================================
   # Backend - Spring Boot API
   # ========================================
   backend:
@@ -132,8 +52,6 @@ services:
       - iting-net
     depends_on:
       redis:
-        condition: service_healthy
-      kafka:
         condition: service_healthy
     environment:
       # Database
@@ -151,7 +69,7 @@ services:
       SPRING_FLYWAY_USER: ${DB_USERNAME}
       SPRING_FLYWAY_PASSWORD: ${DB_PASSWORD}
       # Kafka
-      SPRING_KAFKA_BOOTSTRAP_SERVERS: ${KAFKA_BROKERS}
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: ${KAFKA_BROKERS:-localhost:9092}
       # Redis
       SPRING_DATA_REDIS_HOST: redis
       SPRING_DATA_REDIS_PORT: 6379
@@ -230,8 +148,6 @@ services:
     restart: unless-stopped
     networks:
       - iting-net
-    environment:
-      VITE_API_BASE: ${VITE_API_BASE}
     healthcheck:
       test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:80/health"]
       interval: 30s
@@ -312,221 +228,3 @@ services:
           memory: 64M
         reservations:
           memory: 16M
-
-  # ========================================
-  # OpenTelemetry Collector
-  # ========================================
-  otel-collector:
-    image: otel/opentelemetry-collector-contrib:latest
-    container_name: iting-otel-collector
-    restart: unless-stopped
-    networks:
-      - iting-net
-    command: ["--config=/etc/otel-collector-config.yaml"]
-    volumes:
-      - ./config/otel/otel-collector-config.yaml:/etc/otel-collector-config.yaml:ro
-    ports:
-      - "4317:4317"
-      - "4318:4318"
-    deploy:
-      resources:
-        limits:
-          memory: 128M
-        reservations:
-          memory: 64M
-
-  # ========================================
-  # Prometheus - Metrics
-  # ========================================
-  prometheus:
-    image: prom/prometheus:latest
-    container_name: iting-prometheus
-    restart: unless-stopped
-    networks:
-      - iting-net
-    volumes:
-      - ./monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
-      - ./monitoring/prometheus/alerts:/etc/prometheus/alerts:ro
-      - iting_prometheus_data:/prometheus
-    command:
-      - "--config.file=/etc/prometheus/prometheus.yml"
-      - "--storage.tsdb.path=/prometheus"
-      - "--storage.tsdb.retention.time=15d"
-      - "--web.enable-lifecycle"
-    deploy:
-      resources:
-        limits:
-          memory: 256M
-        reservations:
-          memory: 128M
-
-  # ========================================
-  # Node Exporter - System Metrics
-  # ========================================
-  node-exporter:
-    image: prom/node-exporter:latest
-    container_name: iting-node-exporter
-    restart: unless-stopped
-    networks:
-      - iting-net
-    volumes:
-      - /proc:/host/proc:ro
-      - /sys:/host/sys:ro
-      - /:/rootfs:ro
-    command:
-      - "--path.procfs=/host/proc"
-      - "--path.sysfs=/host/sys"
-      - "--collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)"
-    deploy:
-      resources:
-        limits:
-          memory: 32M
-        reservations:
-          memory: 16M
-
-  # ========================================
-  # Grafana - Dashboards
-  # ========================================
-  grafana:
-    image: grafana/grafana:latest
-    container_name: iting-grafana
-    restart: unless-stopped
-    networks:
-      - iting-net
-    volumes:
-      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
-      - ./monitoring/grafana/dashboards:/etc/grafana/provisioning/dashboards:ro
-      - iting_grafana_data:/var/lib/grafana
-    environment:
-      GF_SECURITY_ADMIN_USER: admin
-      GF_SECURITY_ADMIN_PASSWORD: ${GF_ADMIN_PASSWORD}
-      GF_SERVER_ROOT_URL: https://monitor.datnhk252iting.dpdns.org
-      GF_USERS_ALLOW_SIGN_UP: "false"
-    deploy:
-      resources:
-        limits:
-          memory: 256M
-        reservations:
-          memory: 128M
-
-  # ========================================
-  # Loki - Log Aggregation
-  # ========================================
-  loki:
-    image: grafana/loki:latest
-    container_name: iting-loki
-    restart: unless-stopped
-    networks:
-      - iting-net
-    volumes:
-      - ./monitoring/loki/loki-config.yml:/etc/loki/local-config.yaml:ro
-      - iting_loki_data:/tmp/loki
-    command: -config.file=/etc/loki/local-config.yaml
-    deploy:
-      resources:
-        limits:
-          memory: 128M
-        reservations:
-          memory: 64M
-
-  # ========================================
-  # Promtail - Log Shipper
-  # ========================================
-  promtail:
-    image: grafana/promtail:latest
-    container_name: iting-promtail
-    restart: unless-stopped
-    networks:
-      - iting-net
-    volumes:
-      - ./monitoring/loki/promtail-config.yml:/etc/promtail/config.yml:ro
-      - /var/log:/var/log:ro
-      - /var/lib/docker/containers:/var/lib/docker/containers:ro
-    command: -config.file=/etc/promtail/config.yml
-    deploy:
-      resources:
-        limits:
-          memory: 64M
-        reservations:
-          memory: 32M
-
-  # ========================================
-  # Tempo - Tracing
-  # ========================================
-  tempo:
-    image: grafana/tempo:latest
-    container_name: iting-tempo
-    restart: unless-stopped
-    networks:
-      - iting-net
-    volumes:
-      - ./monitoring/tempo/tempo-config.yml:/etc/tempo-config.yml:ro
-      - iting_tempo_data:/tmp/tempo
-    command: -config.file=/etc/tempo-config.yml
-    deploy:
-      resources:
-        limits:
-          memory: 256M
-        reservations:
-          memory: 128M
-
-  # ========================================
-  # Alertmanager - Alert Routing
-  # ========================================
-  alertmanager:
-    image: prom/alertmanager:latest
-    container_name: iting-alertmanager
-    restart: unless-stopped
-    networks:
-      - iting-net
-    volumes:
-      - ./monitoring/alertmanager/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
-    command:
-      - "--config.file=/etc/alertmanager/alertmanager.yml"
-      - "--web.external-url=https://monitor.datnhk252iting.dpdns.org/alertmanager"
-    deploy:
-      resources:
-        limits:
-          memory: 64M
-        reservations:
-          memory: 32M
-
-  # ========================================
-  # Alertmanager Discord Webhook
-  # ========================================
-  alertmanager-discord:
-    build:
-      context: ./config/alertmanager-discord
-    container_name: iting-alertmanager-discord
-    restart: unless-stopped
-    networks:
-      - iting-net
-    environment:
-      DISCORD_WEBHOOK_URL: ${DISCORD_WEBHOOK_URL}
-    deploy:
-      resources:
-        limits:
-          memory: 64M
-        reservations:
-          memory: 32M
-
-  # ========================================
-  # Portainer - Container Management
-  # ========================================
-  portainer:
-    image: portainer/portainer-ce:latest
-    container_name: iting-portainer
-    restart: unless-stopped
-    networks:
-      - iting-net
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
-      - iting_portainer_data:/data
-    environment:
-      - ADMIN_PASSWORD=${PORTAINER_PASSWORD}
-    deploy:
-      resources:
-        limits:
-          memory: 128M
-        reservations:
-          memory: 64M
