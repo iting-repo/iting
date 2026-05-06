@@ -23,6 +23,8 @@ permissions:
 
 env:
   REGISTRY: ghcr.io
+  BACKEND_IMAGE: ghcr.io/${{ github.repository }}/iting-backend:${{ github.ref_name }}
+  FRONTEND_IMAGE: ghcr.io/${{ github.repository }}/iting-frontend:${{ github.ref_name }}
 
 jobs:
   deploy:
@@ -33,6 +35,32 @@ jobs:
       url: https://datnhk252iting.dpdns.org
 
     steps:
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Wait for tagged images in GHCR
+        run: |
+          echo "Waiting for ${{ env.BACKEND_IMAGE }}"
+          echo "Waiting for ${{ env.FRONTEND_IMAGE }}"
+
+          for i in {1..30}; do
+            if docker manifest inspect "${{ env.BACKEND_IMAGE }}" >/dev/null 2>&1 && \
+               docker manifest inspect "${{ env.FRONTEND_IMAGE }}" >/dev/null 2>&1; then
+              echo "Tagged images are available"
+              exit 0
+            fi
+
+            echo "Tagged images not ready yet... attempt $i/30"
+            sleep 10
+          done
+
+          echo "Timed out waiting for tagged images in GHCR"
+          exit 1
+
       - name: Deploy to EC2
         uses: appleboy/ssh-action@v1
         with:
@@ -42,23 +70,57 @@ jobs:
           script: |
             cd /opt/iting/iting-repo
 
+            echo "::group::Deploy context"
+            echo "tag=${{ github.ref_name }}"
+            echo "sha=${{ github.sha }}"
+            echo "::endgroup::"
+
             # Sync repo to the pushed tag
             git fetch --all --tags --prune
             git checkout ${{ github.ref_name }}
             cd /opt/iting/iting-repo/deploy
 
+            echo "::group::Resolved image references"
+            python3 - <<'PY'
+            from pathlib import Path
+
+            env = {}
+            for path in (Path("/opt/iting/.env"), Path("/opt/iting/.env.prod")):
+                if not path.exists():
+                    continue
+                for raw_line in path.read_text(encoding="utf-8").splitlines():
+                    line = raw_line.strip()
+                    if not line or line.startswith("#") or "=" not in line:
+                        continue
+                    key, value = line.split("=", 1)
+                    env[key] = value
+
+            print(f"BACKEND_IMAGE(from-ec2-env)={env.get('BACKEND_IMAGE', 'missing')}")
+            print(f"FRONTEND_IMAGE(from-ec2-env)={env.get('FRONTEND_IMAGE', 'missing')}")
+            print(f"SPRING_PROFILES_ACTIVE={env.get('SPRING_PROFILES_ACTIVE', 'missing')}")
+            PY
+            echo "BACKEND_IMAGE(from-workflow)=${{ env.BACKEND_IMAGE }}"
+            echo "FRONTEND_IMAGE(from-workflow)=${{ env.FRONTEND_IMAGE }}"
+            echo "::endgroup::"
+
             # Log in to GHCR
             echo "${{ secrets.GHCR_TOKEN }}" | docker login ${{ env.REGISTRY }} -u ${{ secrets.GHCR_USERNAME }} --password-stdin
 
             # Pull latest images
-            docker compose \
+            BACKEND_IMAGE="${{ env.BACKEND_IMAGE }}" FRONTEND_IMAGE="${{ env.FRONTEND_IMAGE }}" docker compose \
               -f docker-compose.yml \
               --env-file /opt/iting/.env \
               --env-file /opt/iting/.env.prod \
               pull
 
+            echo "::group::Pulled image metadata"
+            docker inspect --format='backend image={{.Image}} created={{.Created}} started={{.State.StartedAt}}' iting-backend 2>/dev/null || true
+            docker inspect --format='frontend image={{.Image}} created={{.Created}} started={{.State.StartedAt}}' iting-frontend 2>/dev/null || true
+            docker images --digests --format 'table {{.Repository}}\t{{.Tag}}\t{{.Digest}}\t{{.ID}}\t{{.CreatedSince}}' | grep 'iting-' || true
+            echo "::endgroup::"
+
             # Deploy
-            docker compose \
+            BACKEND_IMAGE="${{ env.BACKEND_IMAGE }}" FRONTEND_IMAGE="${{ env.FRONTEND_IMAGE }}" docker compose \
               -f docker-compose.yml \
               --env-file /opt/iting/.env \
               --env-file /opt/iting/.env.prod \
@@ -69,7 +131,7 @@ jobs:
 
             # Verify
             sleep 15
-            docker compose \
+            BACKEND_IMAGE="${{ env.BACKEND_IMAGE }}" FRONTEND_IMAGE="${{ env.FRONTEND_IMAGE }}" docker compose \
               -f docker-compose.yml \
               --env-file /opt/iting/.env \
               --env-file /opt/iting/.env.prod \
@@ -96,17 +158,22 @@ jobs:
               fi
 
               BACKEND_HEALTH=$(docker inspect -f '{{if .State.Health}}{{.State.Health.Status}}{{else}}no-healthcheck{{end}}' iting-backend 2>/dev/null || echo "missing")
+              BACKEND_STARTED_AT=$(docker inspect -f '{{.State.StartedAt}}' iting-backend 2>/dev/null || echo "missing")
+              BACKEND_RESTARTS=$(docker inspect -f '{{.RestartCount}}' iting-backend 2>/dev/null || echo "missing")
               if [ "$BACKEND_HEALTH" = "healthy" ]; then
                 break
               fi
 
               if [ "$BACKEND_HEALTH" = "unhealthy" ]; then
                 echo "Backend container is unhealthy"
+                docker inspect -f '{{json .State.Health}}' iting-backend || true
                 docker logs --tail 200 iting-backend || true
                 exit 1
               fi
 
               echo "Backend state=$BACKEND_STATE health=$BACKEND_HEALTH"
+              echo "Backend startedAt=$BACKEND_STARTED_AT restarts=$BACKEND_RESTARTS"
+              docker inspect -f '{{json .State.Health.Log}}' iting-backend 2>/dev/null || true
               echo "Waiting for backend health... attempt $i/40"
               sleep 10
             done

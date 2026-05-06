@@ -54,8 +54,10 @@ USER appuser
 # Expose port
 EXPOSE 8080
 
-# Optimized JVM args for containers
-ENV JAVA_OPTS="-XX:+UseZGC -XX:MaxRAMPercentage=75.0 -Xms256m -Xmx768m"
+# Safer defaults for a small EC2 instance.
+# Avoid pinning Xmx to the full container limit because Spring, metaspace,
+# native memory, and any agent overhead still need headroom.
+ENV JAVA_OPTS="-XX:InitialRAMPercentage=20.0 -XX:MaxRAMPercentage=60.0"
 
 # OpenTelemetry configuration (set via environment variables in docker-compose)
 ENV OTEL_JAVAAGENT_ENABLED=true
@@ -74,9 +76,5 @@ ENV OTEL_INSTRUMENTATION_KAFKA_ENABLED=true
 HEALTHCHECK --interval=30s --timeout=5s --start-period=60s --retries=3 \
     CMD curl -f http://localhost:8080/actuator/health || exit 1
 
-# Run with OTel agent and production profile
-ENTRYPOINT ["sh", "-c", "java \
-    -javaagent:/opt/opentelemetry-javaagent.jar \
-    -Dspring.profiles.active=prod \
-    ${JAVA_OPTS} \
-    -cp /app/loader org.springframework.boot.loader.launch.JarLauncher"]
+# Run with production profile. Only attach the OTel agent when explicitly enabled.
+ENTRYPOINT ["sh", "-c", "if [ \"${OTEL_JAVAAGENT_ENABLED}\" = \"true\" ]; then JAVA_AGENT_OPTS='-javaagent:/opt/opentelemetry-javaagent.jar'; else JAVA_AGENT_OPTS=''; fi; exec java ${JAVA_AGENT_OPTS} -Dspring.profiles.active=prod ${JAVA_OPTS} -cp /app/loader org.springframework.boot.loader.launch.JarLauncher"]

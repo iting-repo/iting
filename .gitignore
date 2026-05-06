@@ -52,6 +52,7 @@ playwright-report/
 *~
 
 .opencode/
+.cursor/
 
 iting-key-pair.pem
 
