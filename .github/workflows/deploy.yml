@@ -188,15 +188,7 @@ jobs:
               --resolve api.datnhk252iting.dpdns.org:443:127.0.0.1 \
               https://api.datnhk252iting.dpdns.org/actuator/health || true)
             echo "Local API HTTPS status=$API_LOCAL_STATUS"
-            python3 - <<'PY'
-            from pathlib import Path
-
-            path = Path("/tmp/iting-api-health.json")
-            if path.exists():
-                print(path.read_text(encoding="utf-8", errors="replace")[:500])
-            else:
-                print("local api body missing")
-            PY
+            python3 -c "from pathlib import Path; path = Path('/tmp/iting-api-health.json'); print(path.read_text(encoding='utf-8', errors='replace')[:500] if path.exists() else 'local api body missing')"
             echo "::endgroup::"
 
       - name: Health check
@@ -207,15 +199,7 @@ jobs:
 
             echo "External health attempt $i/15 frontend_status=$FRONTEND_STATUS api_status=$API_STATUS"
             echo "API response preview:"
-            python3 - <<'PY'
-            from pathlib import Path
-
-            path = Path("/tmp/api-health.txt")
-            if path.exists():
-                print(path.read_text(encoding="utf-8", errors="replace")[:500])
-            else:
-                print("api body missing")
-            PY
+            python3 -c "from pathlib import Path; path = Path('/tmp/api-health.txt'); print(path.read_text(encoding='utf-8', errors='replace')[:500] if path.exists() else 'api body missing')"
 
             if [ "$FRONTEND_STATUS" = "200" ] && [ "$API_STATUS" = "200" ]; then
               exit 0
