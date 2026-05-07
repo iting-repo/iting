@@ -70,38 +70,10 @@ jobs:
           script: |
             cd /opt/iting/iting-repo
 
-            echo "::group::Deploy context"
-            echo "tag=${{ github.ref_name }}"
-            echo "sha=${{ github.sha }}"
-            echo "::endgroup::"
-
             # Sync repo to the pushed tag
             git fetch --all --tags --prune
             git checkout ${{ github.ref_name }}
             cd /opt/iting/iting-repo/deploy
-
-            echo "::group::Resolved image references"
-            python3 - <<'PY'
-            from pathlib import Path
-
-            env = {}
-            for path in (Path("/opt/iting/.env"), Path("/opt/iting/.env.prod")):
-                if not path.exists():
-                    continue
-                for raw_line in path.read_text(encoding="utf-8").splitlines():
-                    line = raw_line.strip()
-                    if not line or line.startswith("#") or "=" not in line:
-                        continue
-                    key, value = line.split("=", 1)
-                    env[key] = value
-
-            print(f"BACKEND_IMAGE(from-ec2-env)={env.get('BACKEND_IMAGE', 'missing')}")
-            print(f"FRONTEND_IMAGE(from-ec2-env)={env.get('FRONTEND_IMAGE', 'missing')}")
-            print(f"SPRING_PROFILES_ACTIVE={env.get('SPRING_PROFILES_ACTIVE', 'missing')}")
-            PY
-            echo "BACKEND_IMAGE(from-workflow)=${{ env.BACKEND_IMAGE }}"
-            echo "FRONTEND_IMAGE(from-workflow)=${{ env.FRONTEND_IMAGE }}"
-            echo "::endgroup::"
 
             # Log in to GHCR
             echo "${{ secrets.GHCR_TOKEN }}" | docker login ${{ env.REGISTRY }} -u ${{ secrets.GHCR_USERNAME }} --password-stdin
@@ -113,12 +85,6 @@ jobs:
               --env-file /opt/iting/.env.prod \
               pull
 
-            echo "::group::Pulled image metadata"
-            docker inspect --format='backend image={{.Image}} created={{.Created}} started={{.State.StartedAt}}' iting-backend 2>/dev/null || true
-            docker inspect --format='frontend image={{.Image}} created={{.Created}} started={{.State.StartedAt}}' iting-frontend 2>/dev/null || true
-            docker images --digests --format 'table {{.Repository}}\t{{.Tag}}\t{{.Digest}}\t{{.ID}}\t{{.CreatedSince}}' | grep 'iting-' || true
-            echo "::endgroup::"
-
             # Deploy
             BACKEND_IMAGE="${{ env.BACKEND_IMAGE }}" FRONTEND_IMAGE="${{ env.FRONTEND_IMAGE }}" docker compose \
               -f docker-compose.yml \
@@ -129,151 +95,17 @@ jobs:
             # Clean up old images
             docker image prune -f
 
-            # Verify
-            sleep 15
-            BACKEND_IMAGE="${{ env.BACKEND_IMAGE }}" FRONTEND_IMAGE="${{ env.FRONTEND_IMAGE }}" docker compose \
-              -f docker-compose.yml \
-              --env-file /opt/iting/.env \
-              --env-file /opt/iting/.env.prod \
-              ps
-
-            # Internal health checks with retries
-            FRONTEND_WAIT_STARTED_AT=$(date +%s)
-            for i in {1..40}; do
-              FRONTEND_STATE=$(docker inspect -f '{{.State.Status}}' iting-frontend 2>/dev/null || echo "missing")
-              FRONTEND_HEALTH=$(docker inspect -f '{{if .State.Health}}{{.State.Health.Status}}{{else}}no-healthcheck{{end}}' iting-frontend 2>/dev/null || echo "missing")
-              FRONTEND_STARTED_AT=$(docker inspect -f '{{.State.StartedAt}}' iting-frontend 2>/dev/null || echo "missing")
-              FRONTEND_RESTARTS=$(docker inspect -f '{{.RestartCount}}' iting-frontend 2>/dev/null || echo "missing")
-
-              if [ "$FRONTEND_STATE" != "running" ]; then
-                echo "Frontend container is not running (state=$FRONTEND_STATE)"
-                docker logs --tail 200 iting-frontend || true
-                exit 1
-              fi
-
-              if [ "$FRONTEND_HEALTH" = "healthy" ]; then
-                break
-              fi
-
-              if [ "$FRONTEND_HEALTH" = "unhealthy" ]; then
-                echo "Frontend container is unhealthy"
-                docker inspect -f '{{json .State.Health}}' iting-frontend || true
-                docker logs --tail 200 iting-frontend || true
-                echo "::group::Frontend in-container diagnostics"
-                docker exec iting-frontend sh -lc "echo '--- uname'; uname -a || true; echo '--- ps'; ps aux 2>/dev/null || ps || true; echo '--- netstat'; netstat -lntp 2>/dev/null || netstat -lnt 2>/dev/null || true; echo '--- wget /health'; wget -S -O- http://127.0.0.1/health 2>&1 | head -n 50 || true; echo '--- wget /'; wget -S -O- http://127.0.0.1/ 2>&1 | head -n 50 || true" || true
-                echo "::endgroup::"
-                exit 1
-              fi
-
-              echo "Frontend state=$FRONTEND_STATE health=$FRONTEND_HEALTH"
-              echo "Frontend startedAt=$FRONTEND_STARTED_AT restarts=$FRONTEND_RESTARTS"
-              echo "Frontend wait elapsed=$(( $(date +%s) - FRONTEND_WAIT_STARTED_AT ))s"
-              docker inspect -f '{{json .State.Health.Log}}' iting-frontend 2>/dev/null || true
-              echo "Waiting for frontend health... attempt $i/40"
-              sleep 10
-            done
-
-            for i in {1..40}; do
-              BACKEND_STATE=$(docker inspect -f '{{.State.Status}}' iting-backend 2>/dev/null || echo "missing")
-              if [ "$BACKEND_STATE" != "running" ]; then
-                echo "Backend container is not running (state=$BACKEND_STATE)"
-                docker compose \
-                  -f docker-compose.yml \
-                  --env-file /opt/iting/.env \
-                  --env-file /opt/iting/.env.prod \
-                  ps
-                docker logs --tail 200 iting-backend || true
-                exit 1
-              fi
-
-              BACKEND_HEALTH=$(docker inspect -f '{{if .State.Health}}{{.State.Health.Status}}{{else}}no-healthcheck{{end}}' iting-backend 2>/dev/null || echo "missing")
-              BACKEND_STARTED_AT=$(docker inspect -f '{{.State.StartedAt}}' iting-backend 2>/dev/null || echo "missing")
-              BACKEND_RESTARTS=$(docker inspect -f '{{.RestartCount}}' iting-backend 2>/dev/null || echo "missing")
-              if [ "$BACKEND_HEALTH" = "healthy" ]; then
-                break
-              fi
-
-              if [ "$BACKEND_HEALTH" = "unhealthy" ]; then
-                echo "Backend container is unhealthy"
-                docker inspect -f '{{json .State.Health}}' iting-backend || true
-                docker logs --tail 200 iting-backend || true
-                exit 1
-              fi
-
-              echo "Backend state=$BACKEND_STATE health=$BACKEND_HEALTH"
-              echo "Backend startedAt=$BACKEND_STARTED_AT restarts=$BACKEND_RESTARTS"
-              echo "Backend wait elapsed=$(( $(date +%s) - BACKEND_WAIT_STARTED_AT ))s"
-              docker inspect -f '{{json .State.Health.Log}}' iting-backend 2>/dev/null || true
-              echo "Waiting for backend health... attempt $i/40"
-              sleep 10
-            done
-
-            test "$(docker inspect -f '{{if .State.Health}}{{.State.Health.Status}}{{else}}no-healthcheck{{end}}' iting-backend)" = "healthy"
-            test "$(docker inspect -f '{{if .State.Health}}{{.State.Health.Status}}{{else}}no-healthcheck{{end}}' iting-frontend)" = "healthy"
-
-            echo "::group::Recreate nginx proxy to refresh upstream DNS"
+            # Refresh nginx to ensure upstream DNS is updated
             BACKEND_IMAGE="${{ env.BACKEND_IMAGE }}" FRONTEND_IMAGE="${{ env.FRONTEND_IMAGE }}" docker compose \
               -f docker-compose.yml \
               --env-file /opt/iting/.env \
               --env-file /opt/iting/.env.prod \
               up -d --no-deps --force-recreate nginx-proxy
 
-            NGINX_WAIT_STARTED_AT=$(date +%s)
-            for i in {1..20}; do
-              NGINX_STATE=$(docker inspect -f '{{.State.Status}}' iting-nginx 2>/dev/null || echo "missing")
-              NGINX_HEALTH=$(docker inspect -f '{{if .State.Health}}{{.State.Health.Status}}{{else}}no-healthcheck{{end}}' iting-nginx 2>/dev/null || echo "missing")
-
-              if [ "$NGINX_STATE" != "running" ]; then
-                echo "Nginx container is not running (state=$NGINX_STATE)"
-                docker logs --tail 200 iting-nginx || true
-                exit 1
-              fi
-
-              if [ "$NGINX_HEALTH" = "healthy" ]; then
-                break
-              fi
-
-              echo "Nginx state=$NGINX_STATE health=$NGINX_HEALTH"
-              echo "Nginx wait elapsed=$(( $(date +%s) - NGINX_WAIT_STARTED_AT ))s"
-              sleep 5
-            done
-            echo "::endgroup::"
-
-            echo "::group::Local API route verification"
-            API_LOCAL_STATUS=$(curl -skS -o /tmp/iting-api-health.json -w '%{http_code}' \
-              --resolve api.datnhk252iting.dpdns.org:443:127.0.0.1 \
-              https://api.datnhk252iting.dpdns.org/actuator/health || true)
-            echo "Local API HTTPS status=$API_LOCAL_STATUS"
-            python3 -c "from pathlib import Path; path = Path('/tmp/iting-api-health.json'); print(path.read_text(encoding='utf-8', errors='replace')[:500] if path.exists() else 'local api body missing')"
-            echo "::endgroup::"
-
-            echo "::group::Local frontend route verification"
-            FRONTEND_LOCAL_STATUS=$(curl -skS -o /tmp/iting-frontend-health.html -w '%{http_code}' \
-              --resolve datnhk252iting.dpdns.org:443:127.0.0.1 \
-              https://datnhk252iting.dpdns.org/ || true)
-            echo "Local frontend HTTPS status=$FRONTEND_LOCAL_STATUS"
-            python3 -c "from pathlib import Path; path = Path('/tmp/iting-frontend-health.html'); print(path.read_text(encoding='utf-8', errors='replace')[:500] if path.exists() else 'local frontend body missing')"
-            echo "::endgroup::"
-
       - name: Health check
         run: |
-          for i in {1..15}; do
-            FRONTEND_STATUS=$(curl -skS -o /tmp/frontend-health.txt -w '%{http_code}' https://datnhk252iting.dpdns.org/ || true)
-            API_STATUS=$(curl -skS -o /tmp/api-health.txt -w '%{http_code}' https://api.datnhk252iting.dpdns.org/actuator/health || true)
-
-            echo "External health attempt $i/15 frontend_status=$FRONTEND_STATUS api_status=$API_STATUS"
-            echo "API response preview:"
-            python3 -c "from pathlib import Path; path = Path('/tmp/api-health.txt'); print(path.read_text(encoding='utf-8', errors='replace')[:500] if path.exists() else 'api body missing')"
-
-            if [ "$FRONTEND_STATUS" = "200" ] && [ "$API_STATUS" = "200" ]; then
-              exit 0
-            fi
-
-            sleep 10
-          done
-
-          echo "External health check did not reach HTTP 200"
-          exit 1
+          curl -sf --retry 15 --retry-delay 10 --retry-all-errors https://datnhk252iting.dpdns.org/ >/dev/null
+          curl -sf --retry 15 --retry-delay 10 --retry-all-errors https://api.datnhk252iting.dpdns.org/actuator/health >/dev/null
 
       - name: Notify Discord - Success
         if: success()
