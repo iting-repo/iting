@@ -159,6 +159,9 @@ jobs:
                 echo "Frontend container is unhealthy"
                 docker inspect -f '{{json .State.Health}}' iting-frontend || true
                 docker logs --tail 200 iting-frontend || true
+                echo "::group::Frontend in-container diagnostics"
+                docker exec iting-frontend sh -lc "echo '--- uname'; uname -a || true; echo '--- ps'; ps aux 2>/dev/null || ps || true; echo '--- netstat'; netstat -lntp 2>/dev/null || netstat -lnt 2>/dev/null || true; echo '--- wget /health'; wget -S -O- http://127.0.0.1/health 2>&1 | head -n 50 || true; echo '--- wget /'; wget -S -O- http://127.0.0.1/ 2>&1 | head -n 50 || true" || true
+                echo "::endgroup::"
                 exit 1
               fi
 
