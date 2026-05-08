@@ -131,9 +131,11 @@ const JobDetailPage = () => {
     const [contactMessage, setContactMessage] = useState('');
     const [sendingContact, setSendingContact] = useState(false);
 
+    const normalizedJobId = useMemo(() => (id ? normalizeJobKey(id) : null), [id]);
+
     useEffect(() => {
-        if (id) {
-            dispatch(fetchJobDetailRequest(normalizeJobKey(id)));
+        if (normalizedJobId) {
+            dispatch(fetchJobDetailRequest(normalizedJobId));
         }
     }, [dispatch, normalizedJobId]);
 
