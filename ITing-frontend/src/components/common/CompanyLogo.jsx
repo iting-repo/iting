@@ -36,18 +36,24 @@ const CompanyLogo = ({ logoUrl, companyId, companyName = "", alt = "Company Logo
         }
     }, [currentLogo, companyId, hasFailed]);
 
-    const fallbackUrl = companyName 
-        ? `https://ui-avatars.com/api/?name=${encodeURIComponent(companyName)}&background=3AB4E6&color=fff&bold=true` 
-        : "/assets/default-company.png";
+    const computedUrl = getCompanyLogoUrl(currentLogo, companyName);
+
+    const fallbackUrl = companyName
+        ? `https://ui-avatars.com/api/?name=${encodeURIComponent(companyName)}&background=3AB4E6&color=fff&bold=true`
+        : `https://ui-avatars.com/api/?name=Company&background=3AB4E6&color=fff&bold=true`;
+
+    const displayLogo = hasFailed ? fallbackUrl : computedUrl;
 
     return (
         <img 
-            src={getCompanyLogoUrl(currentLogo, companyName)} 
+            src={displayLogo}
             alt={alt} 
             className={className}
-            onError={(e) => {
-                e.target.onerror = null; 
-                e.target.src = fallbackUrl;
+            onError={() => {
+                if (!hasFailed) {
+                    setHasFailed(true);
+                    setCurrentLogo(null);
+                }
             }}
         />
     );

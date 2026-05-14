@@ -39,29 +39,6 @@ import {
     normalizeJobKey,
 } from '../../utils/jobUrl';
 
-// #region agent log
-const __agentLog = (hypothesisId, message, data) => {
-    try {
-        fetch('http://127.0.0.1:7551/ingest/7a4fdce7-5a32-4f17-ae03-3125af2172e9', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-Debug-Session-Id': '17ec69',
-            },
-            body: JSON.stringify({
-                sessionId: '17ec69',
-                runId: 'pre-fix-ux',
-                hypothesisId,
-                location: 'src/pages/public/JobDetailPage.jsx:agent',
-                message,
-                data,
-                timestamp: Date.now(),
-            }),
-        }).catch(() => { });
-    } catch { }
-};
-// #endregion agent log
-
 const normalizeList = (value, delimiter = /\n|\.|;/) => {
     if (!value) return [];
     if (Array.isArray(value)) {
@@ -137,7 +114,7 @@ const formatDeadline = (dueDate) => {
 };
 
 const JobDetailPage = () => {
-    const { slug, jobKey: id } = useParams();
+    const { jobKey: id } = useParams();
     const navigate = useNavigate();
     const dispatch = useDispatch();
 
@@ -157,29 +134,10 @@ const JobDetailPage = () => {
     const normalizedJobId = useMemo(() => (id ? normalizeJobKey(id) : null), [id]);
 
     useEffect(() => {
-        // #region agent log
-        __agentLog('H6', 'jobdetail.params', {
-            pathname: window.location?.pathname,
-            slug: String(slug || ''),
-            jobKeyRaw: String(id || ''),
-            normalizedJobId: String(normalizedJobId || ''),
-        });
-        // #endregion agent log
         if (normalizedJobId) {
             dispatch(fetchJobDetailRequest(normalizedJobId));
         }
     }, [dispatch, normalizedJobId]);
-
-    useEffect(() => {
-        // #region agent log
-        __agentLog('H7', 'jobdetail.state', {
-            normalizedJobId: String(normalizedJobId || ''),
-            isLoading: Boolean(isLoading),
-            hasCurrentJob: Boolean(currentJob),
-            currentJobId: String(currentJob?.id || ''),
-        });
-        // #endregion agent log
-    }, [normalizedJobId, isLoading, currentJob?.id]);
 
     useEffect(() => {
         const checkAppStatus = async () => {

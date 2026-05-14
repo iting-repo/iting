@@ -7,29 +7,6 @@ import { CompanyLogo } from './common';
 import axiosInstance from '../utils/axiosInstance';
 import { storage } from '../utils/storage';
 
-// #region agent log
-const __agentLog = (hypothesisId, message, data) => {
-    try {
-        fetch('http://127.0.0.1:7551/ingest/7a4fdce7-5a32-4f17-ae03-3125af2172e9', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-Debug-Session-Id': '17ec69',
-            },
-            body: JSON.stringify({
-                sessionId: '17ec69',
-                runId: 'pre-fix-ux',
-                hypothesisId,
-                location: 'src/components/JobCard.jsx:agent',
-                message,
-                data,
-                timestamp: Date.now(),
-            }),
-        }).catch(() => { });
-    } catch { }
-};
-// #endregion agent log
-
 const JobCard = ({ job }) => {
     const navigate = useNavigate();
     const [isSaved, setIsSaved] = useState(false);
@@ -68,14 +45,6 @@ const JobCard = ({ job }) => {
 
     const handleNavigate = () => {
         const path = buildJobDetailPath(job);
-        // #region agent log
-        __agentLog('H5', 'jobcard.navigate', {
-            path,
-            jobId: String(job?.id || ''),
-            jobKey: String(job?.jobKey || job?.public_id || job?.publicId || ''),
-            title: String(job?.title || job?.position || ''),
-        });
-        // #endregion agent log
         navigate(path);
     };
 
