@@ -114,7 +114,7 @@ const formatDeadline = (dueDate) => {
 };
 
 const JobDetailPage = () => {
-    const { slug, jobKey: id } = useParams();
+    const { jobKey: id } = useParams();
     const navigate = useNavigate();
     const dispatch = useDispatch();
 
