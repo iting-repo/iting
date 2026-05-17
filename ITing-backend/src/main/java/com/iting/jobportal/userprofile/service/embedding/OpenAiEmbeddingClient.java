@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Service;
 
 import java.net.URI;
@@ -14,7 +15,12 @@ import java.time.Duration;
 import java.util.Map;
 import java.util.Optional;
 
+/**
+ * Fallback EmbeddingClient using OpenAI API.
+ * Only active when ml.service.enabled=false (local ML service unavailable).
+ */
 @Service
+@ConditionalOnProperty(name = "ml.service.enabled", havingValue = "false", matchIfMissing = true)
 @RequiredArgsConstructor
 public class OpenAiEmbeddingClient implements EmbeddingClient {
 
