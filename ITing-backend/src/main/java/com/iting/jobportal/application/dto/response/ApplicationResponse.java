@@ -45,6 +45,7 @@ public class ApplicationResponse {
 
     private LocalDateTime timeSent;
     private ApplicationStatus status;
+    private String employerNote;
 
     public static ApplicationResponse fromEntities(
             ApplyForm form,
@@ -87,6 +88,7 @@ public class ApplicationResponse {
                 .cvUrl(fileUrl)
                 .timeSent(sent.getTimeSent())
                 .status(sent.getStatus() != null ? sent.getStatus() : ApplicationStatus.PENDING)
+                .employerNote(sent.getEmployerNote())
                 .build();
     }
 }

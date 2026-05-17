@@ -15,13 +15,17 @@ import java.util.Optional;
 @Repository
 public interface EmployerApplicationRepository extends JpaRepository<ApplyFormSentToJob, ApplyFormSentToJobId> {
 
-       @Query("SELECT s FROM ApplyFormSentToJob s WHERE s.id.jobId = :jobId")
+       @Query("SELECT s FROM ApplyFormSentToJob s WHERE s.id.jobId = :jobId " +
+                     "AND s.status <> com.iting.jobportal.application.entity.enums.ApplicationStatus.WITHDRAWN")
        Page<ApplyFormSentToJob> findByJobId(@Param("jobId") Long jobId, Pageable pageable);
 
-       Page<ApplyFormSentToJob> findByIdJobIdIn(List<Long> jobIds, Pageable pageable);
+       @Query("SELECT s FROM ApplyFormSentToJob s WHERE s.id.jobId IN :jobIds " +
+                     "AND s.status <> com.iting.jobportal.application.entity.enums.ApplicationStatus.WITHDRAWN")
+       Page<ApplyFormSentToJob> findByIdJobIdIn(@Param("jobIds") List<Long> jobIds, Pageable pageable);
 
        @Query("SELECT s FROM ApplyFormSentToJob s JOIN ApplyForm f ON s.id.applyFormId = f.id " +
                      "WHERE s.id.jobId = :jobId " +
+                     "AND (:status IS NOT NULL OR s.status <> com.iting.jobportal.application.entity.enums.ApplicationStatus.WITHDRAWN) " +
                      "AND (:status IS NULL OR s.status = :status) " +
                      "AND (:keyword IS NULL OR LOWER(CAST(f.applicantName AS string)) LIKE :keyword)")
        Page<ApplyFormSentToJob> searchByJob(@Param("jobId") Long jobId,
@@ -31,6 +35,7 @@ public interface EmployerApplicationRepository extends JpaRepository<ApplyFormSe
 
        @Query("SELECT s FROM ApplyFormSentToJob s JOIN ApplyForm f ON s.id.applyFormId = f.id " +
                      "WHERE s.id.jobId IN :jobIds " +
+                     "AND (:status IS NOT NULL OR s.status <> com.iting.jobportal.application.entity.enums.ApplicationStatus.WITHDRAWN) " +
                      "AND (:status IS NULL OR s.status = :status) " +
                      "AND (:keyword IS NULL OR LOWER(CAST(f.applicantName AS string)) LIKE :keyword)")
        Page<ApplyFormSentToJob> searchAll(@Param("jobIds") List<Long> jobIds,
@@ -38,10 +43,12 @@ public interface EmployerApplicationRepository extends JpaRepository<ApplyFormSe
                      @Param("keyword") String keyword,
                      Pageable pageable);
 
-       @Query("SELECT COUNT(s) FROM ApplyFormSentToJob s WHERE s.id.jobId = :jobId")
+       @Query("SELECT COUNT(s) FROM ApplyFormSentToJob s WHERE s.id.jobId = :jobId " +
+                     "AND s.status <> com.iting.jobportal.application.entity.enums.ApplicationStatus.WITHDRAWN")
        long countByIdJobId(@Param("jobId") Long jobId);
 
-       @Query("SELECT COUNT(s) FROM ApplyFormSentToJob s WHERE s.id.jobId IN :jobIds")
+       @Query("SELECT COUNT(s) FROM ApplyFormSentToJob s WHERE s.id.jobId IN :jobIds " +
+                     "AND s.status <> com.iting.jobportal.application.entity.enums.ApplicationStatus.WITHDRAWN")
        long countByIdJobIdIn(@Param("jobIds") List<Long> jobIds);
 
        Optional<ApplyFormSentToJob> findByIdApplyFormId(Long applyFormId);

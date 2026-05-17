@@ -3,7 +3,7 @@ package com.iting.jobportal.admin.service.impl;
 import com.iting.jobportal.admin.dto.DashboardStats;
 import com.iting.jobportal.admin.service.AdminDashboardService;
 import com.iting.jobportal.application.entity.enums.ApplicationStatus;
-import com.iting.jobportal.application.repository.JobApplicationRepository;
+import com.iting.jobportal.application.repository.AdminApplicationRepository;
 import com.iting.jobportal.auth.repository.AccountRepository;
 import com.iting.jobportal.job.entity.enums.JobStatus;
 import com.iting.jobportal.job.repository.JobRepository;
@@ -23,7 +23,7 @@ public class AdminDashboardServiceImpl implements AdminDashboardService {
 
     private final AccountRepository accountRepository;
     private final JobRepository jobRepository;
-    private final JobApplicationRepository jobApplicationRepository;
+    private final AdminApplicationRepository adminApplicationRepository;
 
     private static final DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern("dd.MM.yyyy - HH:mm a");
 
@@ -45,12 +45,12 @@ public class AdminDashboardServiceImpl implements AdminDashboardService {
         double jobChange = calculateChange(jobsToday, jobsYesterday);
 
         // --- APPLICATIONS ---
-        long totalApplications = jobApplicationRepository.count();
-        long appsToday = jobApplicationRepository.countByTimeSentAfter(todayStart);
-        long appsYesterday = jobApplicationRepository.countByTimeSentAfter(yesterdayStart) - appsToday;
+        long totalApplications = adminApplicationRepository.count();
+        long appsToday = adminApplicationRepository.countByTimeSentAfter(todayStart);
+        long appsYesterday = adminApplicationRepository.countByTimeSentAfter(yesterdayStart) - appsToday;
         double appChange = calculateChange(appsToday, appsYesterday);
 
-        long pendingApps = jobApplicationRepository.countByStatus(ApplicationStatus.PENDING);
+        long pendingApps = adminApplicationRepository.countByStatus(ApplicationStatus.PENDING);
         // Simplified pending change mock or logic
         double pendingChange = 1.8; // Mocked for design parity as in image
 

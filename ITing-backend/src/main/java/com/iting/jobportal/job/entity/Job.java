@@ -116,6 +116,13 @@ public class Job {
     @Column(name = "posted_by_hr_id")
     private Long postedByHrId;
 
+    // Paid boost / featured promotion (added by V75). NULL = not boosted.
+    @Column(name = "featured_until")
+    private LocalDateTime featuredUntil;
+
+    @Column(name = "featured_tier", length = 20)
+    private String featuredTier;
+
     // ===== AUDIT =====
     private LocalDateTime createdAt;
     private LocalDateTime lastUpdate;

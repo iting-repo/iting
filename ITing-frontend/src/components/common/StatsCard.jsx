@@ -19,7 +19,7 @@ const StatsCard = ({ title, value, icon, percentage = "0", isIncrease = true, fo
             {isIncrease ? <FaArrowUp size={10} /> : <FaArrowDown size={10} />}
             {percentage}%
          </span>
-         <span className="text-gray-400">{footerLabel || "Up from yesterday"}</span>
+         <span className="text-gray-400">{footerLabel || "So với hôm qua"}</span>
       </div>
     </div>
   );

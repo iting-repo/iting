@@ -26,6 +26,9 @@ public interface JobRepository extends JpaRepository<Job, Long>, JpaSpecificatio
 
     List<Job> findTop50ByStatusOrderByViewCountDesc(JobStatus status);
 
+    // Saved-search alert digest: newest 5 jobs with id > lastMatchedJobId (used by V70 saved_searches feature).
+    List<Job> findTop5ByStatusAndIdGreaterThanOrderByCreatedAtDesc(JobStatus status, long lastJobId);
+
     // Tìm jobs hết hạn
     @Query("SELECT j FROM Job j WHERE j.dueDate < CURRENT_DATE AND j.status = 'ACTIVE'")
     List<Job> findExpiredJobs();

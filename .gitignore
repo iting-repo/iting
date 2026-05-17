@@ -101,3 +101,14 @@ Thumbs.db
 *.tex
 
 client_secret_827083893126-sagt6pmtatd2nkfpkag4t94ajcikbmun.apps.googleusercontent.com.json
+
+# UML diagrams
+*.puml
+UML/
+
+# Recovery temp
+.recovery-tmp/
+recovered-sql/
+
+# AI matching scripts
+ai-matching/

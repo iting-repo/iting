@@ -1,6 +1,7 @@
 import axios from "axios";
 import { API_BASE_URL } from "../config";
 import { storage } from "./storage";
+import { normalizeFormData } from "./stringUtils";
 
 const axiosInstance = axios.create({
     baseURL: API_BASE_URL,
@@ -14,6 +15,10 @@ axiosInstance.interceptors.request.use(
         const token = storage.getToken();
         if (token) {
             config.headers.Authorization = `Bearer ${token}`
+        }
+        // Auto-trim & normalize all string fields in request body
+        if (config.data && typeof config.data === 'object' && !(config.data instanceof FormData)) {
+            config.data = normalizeFormData(config.data);
         }
         return config
     },

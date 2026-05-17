@@ -4,6 +4,7 @@ import { FaUserFriends, FaBan } from 'react-icons/fa';
 import { useTranslation } from 'react-i18next';
 import { useNavigate, Link } from 'react-router-dom';
 import { buildEmployerJobApplicationsPath } from '../../utils/jobUrl';
+import { Breadcrumb } from '../../components/common';
 import companyService from '../../services/companyService';
 import applicationService from '../../services/applicationService';
 import { toast } from 'sonner';
@@ -80,6 +81,12 @@ const EmployerDashboard = () => {
 
     return (
         <div className="p-8 bg-white rounded-2xl shadow-sm border border-gray-100 min-h-screen">
+
+            <Breadcrumb
+              rootLabel="Tổng quan"
+              rootLink="/employer/dashboard"
+              items={[]}
+            />
 
             {/* Header & Stats */}
             <div className="mb-12">

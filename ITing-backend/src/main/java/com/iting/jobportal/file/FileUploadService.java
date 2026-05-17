@@ -18,5 +18,11 @@ public interface FileUploadService {
 
     String uploadLogo(MultipartFile file);
 
+    /**
+     * Upload raw bytes (e.g. generated PDF invoice/report) to the configured storage
+     * under a specific key. Returns the public URL where the object can be fetched.
+     */
+    String uploadBytes(byte[] bytes, String key, String contentType);
+
     void deleteByUrl(String fileUrl);
 }

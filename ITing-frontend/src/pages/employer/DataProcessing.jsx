@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Upload, AlertTriangle, FileText, CheckCircle, Download } from "lucide-react";
-import { Button } from "../../components/common";
+import { Button, Breadcrumb } from "../../components/common";
 import companyService from "../../services/companyService";
 import { toast } from "sonner";
 
@@ -96,6 +96,11 @@ const DataProcessing = () => {
   return (
     <div className="space-y-6 animate-fade-in pb-10">
       {/* Header */}
+      <Breadcrumb
+        rootLabel="Tổng quan"
+        rootLink="/employer/dashboard"
+        items={[{ label: 'Thỏa thuận dữ liệu' }]}
+      />
       <div className="flex flex-col gap-2">
         <h1 className="text-2xl font-bold text-gray-900">Thỏa thuận xử lý Dữ liệu cá nhân</h1>
         <p className="text-gray-500">Xác thực văn bản thỏa thuận xử lý dữ liệu giữa Nhà tuyển dụng và Ứng viên theo quy định pháp luật.</p>

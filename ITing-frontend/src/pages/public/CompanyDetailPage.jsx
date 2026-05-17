@@ -16,7 +16,7 @@ import { CompanyLogo } from "../../components/common";
 import { formatDistanceToNowStrict, parseISO } from "date-fns";
 import { vi } from "date-fns/locale";
 import { useModalEscape } from "../../hooks/useModalEscape";
-import { buildJobDetailPath } from "../../utils/jobUrl";
+import { buildJobDetailPath, getCompanyLogoUrl } from "../../utils/jobUrl";
 
 
 const CompanyDetailPage = () => {
@@ -41,7 +41,56 @@ const CompanyDetailPage = () => {
   const [reviewContent, setReviewContent] = useState("");
   const [isSubmittingReview, setIsSubmittingReview] = useState(false);
 
+  // Dynamic banner gradient based on logo color
+  const [bannerGradient, setBannerGradient] = useState('from-[#3AB4E6] via-[#2A9DCB] to-[#1E3A8A]');
+
   useModalEscape(showReviewModal ? () => setShowReviewModal(false) : null);
+
+  // Extract dominant color from company logo for dynamic banner
+  useEffect(() => {
+    if (!company?.logoUrl) return;
+    const resolvedUrl = getCompanyLogoUrl(company.logoUrl, company.name);
+    // Only process local images to avoid CORS canvas tainting
+    if (resolvedUrl.startsWith('http') && !resolvedUrl.startsWith(window.location.origin)) return;
+
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = () => {
+      try {
+        const canvas = document.createElement('canvas');
+        canvas.width = img.width;
+        canvas.height = img.height;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0);
+        const data = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+
+        // Sample pixels to find dominant color
+        let r = 0, g = 0, b = 0, count = 0;
+        for (let i = 0; i < data.length; i += 16) { // sample every 4th pixel
+          if (data[i + 3] < 128) continue; // skip transparent
+          if (data[i] > 240 && data[i + 1] > 240 && data[i + 2] > 240) continue; // skip white
+          if (data[i] < 15 && data[i + 1] < 15 && data[i + 2] < 15) continue; // skip black
+          r += data[i];
+          g += data[i + 1];
+          b += data[i + 2];
+          count++;
+        }
+        if (count > 0) {
+          r = Math.round(r / count);
+          g = Math.round(g / count);
+          b = Math.round(b / count);
+          const hex = `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
+          // Darken for secondary color
+          const darken = (c) => Math.max(0, Math.round(c * 0.6));
+          const hexDark = `#${darken(r).toString(16).padStart(2, '0')}${darken(g).toString(16).padStart(2, '0')}${darken(b).toString(16).padStart(2, '0')}`;
+          setBannerGradient(`from-[${hex}] via-[${hexDark}] to-[#1a1a2e]`);
+        }
+      } catch (err) {
+        // Canvas tainted or other error — keep default gradient
+      }
+    };
+    img.src = resolvedUrl;
+  }, [company]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -195,7 +244,7 @@ const CompanyDetailPage = () => {
   return (
     <div className="min-h-screen bg-[#F1F5F9]">
       {/* Hero Banner Area */}
-      <div className="relative h-48 md:h-64 bg-gradient-to-r from-[#3AB4E6] via-[#2A9DCB] to-[#1E3A8A] overflow-hidden">
+      <div className={`relative h-48 md:h-64 bg-gradient-to-r ${bannerGradient} overflow-hidden`}>
         <div className="absolute inset-0 opacity-20">
           <div className="absolute top-0 left-0 w-64 h-64 bg-white rounded-full blur-3xl -translate-x-1/2 -translate-y-1/2"></div>
           <div className="absolute bottom-0 right-0 w-96 h-96 bg-[#3AB4E6] rounded-full blur-3xl translate-x-1/3 translate-y-1/3"></div>

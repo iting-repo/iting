@@ -160,6 +160,7 @@ public class ApplicationMapperUtil {
                 .timeSent(sent.getTimeSent())
                 .status(sent.getStatus() != null ? sent.getStatus()
                         : com.iting.jobportal.application.entity.enums.ApplicationStatus.PENDING)
+                .employerNote(sent.getEmployerNote())
                 .build();
     }
 }

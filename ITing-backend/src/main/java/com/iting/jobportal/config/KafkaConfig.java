@@ -62,6 +62,12 @@ public class KafkaConfig {
     @Bean public NewTopic kybReviewCompletedDlq() {
         return TopicBuilder.name(topics.dlqOf(topics.getKybReviewCompleted())).partitions(1).replicas(1).build();
     }
+    @Bean public NewTopic kybNotificationsTopic() {
+        return TopicBuilder.name(topics.getKybNotifications()).partitions(3).replicas(1).build();
+    }
+    @Bean public NewTopic kybNotificationsDlq() {
+        return TopicBuilder.name(topics.dlqOf(topics.getKybNotifications())).partitions(1).replicas(1).build();
+    }
 
     // ---------- Producer ----------
 

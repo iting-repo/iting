@@ -4,6 +4,7 @@ import { FaSearch, FaFilter, FaFileDownload, FaEye, FaArrowLeft, FaSort } from '
 import CandidateDetailModal from '../../components/employer/CandidateDetailModal';
 import applicationService from '../../services/applicationService';
 import { normalizeJobKey } from '../../utils/jobUrl';
+import { Breadcrumb } from '../../components/common';
 
 const JobApplications = () => {
    const { jobKey } = useParams();
@@ -65,14 +66,17 @@ const JobApplications = () => {
       <div className="bg-white rounded-xl p-8 min-h-screen border border-gray-100">
 
          {/* 1. Header & Toolbar */}
-         <div className="flex items-center gap-4 mb-6">
-            <button onClick={() => navigate(-1)} className="p-2 hover:bg-gray-100 rounded-full transition-colors text-gray-500">
-               <FaArrowLeft />
-            </button>
-            <div>
-               <h2 className="text-2xl font-bold text-gray-800">Danh sách ứng viên</h2>
-               <p className="text-gray-500 text-sm">Công việc: UI/UX Designer (ID: #{id})</p>
-            </div>
+         <Breadcrumb
+           rootLabel="Tổng quan"
+           rootLink="/employer/dashboard"
+           items={[
+             { label: 'Quản lý công việc', link: '/employer/manage-jobs' },
+             { label: `Công việc #${id}` }
+           ]}
+         />
+         <div className="mb-6">
+            <h2 className="text-2xl font-bold text-gray-800">Danh sách ứng viên</h2>
+            <p className="text-gray-500 text-sm">Công việc ID: #{id}</p>
          </div>
 
          <div className="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">

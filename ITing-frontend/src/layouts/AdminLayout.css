@@ -1,0 +1,45 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   Admin Layout
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.admin-layout {
+  min-height: 100vh;
+  background: #f1f5f9;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+/* ── Main content ──────────────────────────────────────────────────────── */
+.admin-layout__main {
+  margin-left: 240px;   /* matches --sb-width-expanded */
+  margin-top: 56px;     /* header height */
+  min-height: calc(100vh - 56px);
+  display: flex;
+  flex-direction: column;
+  transition: margin-left 280ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.admin-layout__main--collapsed {
+  margin-left: 64px;    /* matches --sb-width-collapsed */
+}
+
+.admin-layout__content {
+  padding: 24px 32px;
+  flex: 1;
+  animation: adminFadeIn 300ms ease;
+}
+
+@keyframes adminFadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ── Responsive ────────────────────────────────────────────────────────── */
+@media (max-width: 768px) {
+  .admin-layout__main,
+  .admin-layout__main--collapsed {
+    margin-left: 0;
+  }
+  .admin-layout__content {
+    padding: 16px;
+  }
+}

@@ -1,21 +1,31 @@
-import React from 'react';
+import React, { useState, useCallback } from 'react';
 import { Outlet } from 'react-router-dom';
 import AdminSidebar from '../components/admin/AdminSidebar';
 import AdminHeader from '../components/admin/AdminHeader';
+import './AdminLayout.css';
 
 const AdminLayout = () => {
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+
+  const handleToggleSidebar = useCallback(() => {
+    setSidebarCollapsed(prev => !prev);
+  }, []);
+
   return (
-    <div className="min-h-screen bg-gray-50 flex font-sans">
+    <div className="admin-layout">
       {/* Header */}
       <AdminHeader />
 
-      {/* Sidebar */}
-      <AdminSidebar />
+      {/* Sidebar — state managed here */}
+      <AdminSidebar
+        isCollapsed={sidebarCollapsed}
+        onToggle={handleToggleSidebar}
+      />
 
-      {/* Main Content Area */}
-      <main className="ml-52 mt-14 flex-1 flex flex-col min-w-0">
-        <div className="p-6 md:p-8 flex-1 animate-fade-in-up">
-           <Outlet />
+      {/* Main Content Area — margin syncs with sidebar width */}
+      <main className={`admin-layout__main ${sidebarCollapsed ? 'admin-layout__main--collapsed' : ''}`}>
+        <div className="admin-layout__content">
+          <Outlet />
         </div>
       </main>
     </div>

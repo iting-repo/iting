@@ -33,12 +33,14 @@ const PAGE_SIZE = 10;
 const RoleBadge = ({ role }) => {
     const map = {
         USER: "bg-blue-50 text-blue-700 border border-blue-200",
+        CANDIDATE: "bg-blue-50 text-blue-700 border border-blue-200",
         EMPLOYER: "bg-sky-50 text-sky-700 border border-sky-200",
         ADMIN: "bg-amber-50 text-amber-700 border border-amber-200",
     };
 
     const labelMap = {
         USER: "Ứng viên",
+        CANDIDATE: "Ứng viên",
         EMPLOYER: "Nhà tuyển dụng",
         ADMIN: "Admin",
     };

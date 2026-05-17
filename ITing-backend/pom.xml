@@ -118,6 +118,13 @@
             <artifactId>spring-security-crypto</artifactId>
         </dependency>
 
+        <!-- Spring Security test helpers (@WithMockUser etc.) -->
+        <dependency>
+            <groupId>org.springframework.security</groupId>
+            <artifactId>spring-security-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+
         <!-- 🔌 MySQL Driver -->
         <dependency>
             <groupId>mysql</groupId>
@@ -321,8 +328,14 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <configuration>
+                    <!-- Allow Mockito inline mock-maker to self-attach on JDK 17+ -->
+                    <argLine>-Xmx512m -Xms128m -XX:+UseSerialGC -XX:+EnableDynamicAgentLoading -Djdk.attach.allowAttachSelf=true</argLine>
+                    <forkCount>1</forkCount>
+                    <reuseForks>true</reuseForks>
                     <excludes>
+                        <!-- Integration tests run via mvn verify (failsafe), not mvn test -->
                         <exclude>**/*IntegrationTest.java</exclude>
+                        <exclude>**/*IT.java</exclude>
                     </excludes>
                 </configuration>
             </plugin>

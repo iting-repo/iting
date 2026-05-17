@@ -1,0 +1,270 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   Admin Sidebar — Expand / Collapse
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ── Variables ─────────────────────────────────────────────────────────── */
+:root {
+  --sb-width-expanded: 240px;
+  --sb-width-collapsed: 64px;
+  --sb-bg: #0f172a;
+  --sb-bg-hover: rgba(255, 255, 255, 0.06);
+  --sb-bg-active: rgba(58, 180, 230, 0.12);
+  --sb-text: #94a3b8;
+  --sb-text-hover: #e2e8f0;
+  --sb-text-active: #3AB4E6;
+  --sb-border: rgba(255, 255, 255, 0.06);
+  --sb-section-text: #64748b;
+  --sb-transition: 280ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ── Container ─────────────────────────────────────────────────────────── */
+.adm-sb {
+  position: fixed;
+  left: 0;
+  top: 56px;              /* header height */
+  bottom: 0;
+  width: var(--sb-width-expanded);
+  background: var(--sb-bg);
+  display: flex;
+  flex-direction: column;
+  z-index: 40;
+  transition: width var(--sb-transition);
+  overflow: hidden;
+  border-right: 1px solid var(--sb-border);
+}
+
+.adm-sb--collapsed {
+  width: var(--sb-width-collapsed);
+}
+
+/* ── Toggle bar ────────────────────────────────────────────────────────── */
+.adm-sb__toggle-bar {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding: 8px;
+  height: 44px;
+  flex-shrink: 0;
+  border-bottom: 1px solid var(--sb-border);
+}
+
+.adm-sb__toggle-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  border: none;
+  background: transparent;
+  color: var(--sb-text);
+  cursor: pointer;
+  transition: background 180ms, color 180ms;
+}
+.adm-sb__toggle-btn:hover {
+  background: var(--sb-bg-hover);
+  color: var(--sb-text-hover);
+}
+
+/* ── Brand mark (collapsed) ────────────────────────────────────────────── */
+.adm-sb__brand-mark {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 44px;
+  color: var(--sb-text-active);
+  flex-shrink: 0;
+  border-bottom: 1px solid var(--sb-border);
+}
+
+/* ── Nav ───────────────────────────────────────────────────────────────── */
+.adm-sb__nav {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 8px 0;
+}
+.adm-sb__nav::-webkit-scrollbar { width: 4px; }
+.adm-sb__nav::-webkit-scrollbar-track { background: transparent; }
+.adm-sb__nav::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+}
+
+/* ── Section ───────────────────────────────────────────────────────────── */
+.adm-sb__section {
+  margin-bottom: 4px;
+}
+
+/* Section header button */
+.adm-sb__section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 10px 16px 6px;
+  border: none;
+  background: none;
+  cursor: pointer;
+  transition: color 180ms;
+}
+.adm-sb__section-title {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--sb-section-text);
+  text-transform: uppercase;
+  user-select: none;
+}
+.adm-sb__section-header:hover .adm-sb__section-title {
+  color: var(--sb-text-hover);
+}
+.adm-sb__section-header--active .adm-sb__section-title {
+  color: var(--sb-text-active);
+}
+
+/* Chevron rotation */
+.adm-sb__section-chevron {
+  color: var(--sb-section-text);
+  transition: transform 250ms ease;
+  flex-shrink: 0;
+}
+.adm-sb__section-chevron--closed {
+  transform: rotate(-90deg);
+}
+
+/* Collapsed separator */
+.adm-sb__collapsed-sep {
+  width: 24px;
+  margin: 8px auto;
+  border-bottom: 1px solid var(--sb-border);
+}
+
+/* ── Items container (animated) ────────────────────────────────────────── */
+.adm-sb__items {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 0 8px;
+  overflow: hidden;
+  transition: max-height 300ms ease, opacity 200ms ease;
+}
+.adm-sb__items--open {
+  max-height: 500px;  /* generous upper bound */
+  opacity: 1;
+}
+.adm-sb__items--closed {
+  max-height: 0;
+  opacity: 0;
+  padding-top: 0;
+  padding-bottom: 0;
+}
+
+/* ── Link ──────────────────────────────────────────────────────────────── */
+.adm-sb__link {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 12px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--sb-text);
+  text-decoration: none;
+  white-space: nowrap;
+  position: relative;
+  transition: background 180ms, color 180ms;
+}
+.adm-sb__link:hover {
+  background: var(--sb-bg-hover);
+  color: var(--sb-text-hover);
+}
+.adm-sb__link--active {
+  background: var(--sb-bg-active);
+  color: var(--sb-text-active);
+  font-weight: 600;
+}
+/* Active indicator bar */
+.adm-sb__link--active::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 6px;
+  bottom: 6px;
+  width: 3px;
+  border-radius: 0 3px 3px 0;
+  background: var(--sb-text-active);
+}
+
+/* Icon-only mode */
+.adm-sb__link--icon-only {
+  justify-content: center;
+  padding: 10px;
+  gap: 0;
+}
+
+/* ── Icon & label ──────────────────────────────────────────────────────── */
+.adm-sb__icon {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+}
+.adm-sb__label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ── Tooltip on hover (collapsed) ──────────────────────────────────────── */
+.adm-sb--collapsed .adm-sb__link {
+  position: relative;
+}
+.adm-sb--collapsed .adm-sb__link:hover::after {
+  content: attr(title);
+  position: absolute;
+  left: calc(100% + 10px);
+  top: 50%;
+  transform: translateY(-50%);
+  padding: 6px 12px;
+  background: #1e293b;
+  color: #e2e8f0;
+  font-size: 12px;
+  font-weight: 500;
+  border-radius: 6px;
+  white-space: nowrap;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  z-index: 100;
+  pointer-events: none;
+  animation: sbTooltipIn 150ms ease;
+}
+
+@keyframes sbTooltipIn {
+  from { opacity: 0; transform: translateY(-50%) translateX(-4px); }
+  to   { opacity: 1; transform: translateY(-50%) translateX(0); }
+}
+
+/* ── Footer ────────────────────────────────────────────────────────────── */
+.adm-sb__footer {
+  padding: 12px 16px;
+  border-top: 1px solid var(--sb-border);
+  flex-shrink: 0;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+}
+.adm-sb__version {
+  font-size: 10px;
+  color: var(--sb-section-text);
+  letter-spacing: 0.04em;
+}
+
+/* ── Responsive: hide sidebar on mobile, show toggle ───────────────────── */
+@media (max-width: 768px) {
+  .adm-sb {
+    transform: translateX(-100%);
+  }
+  .adm-sb:not(.adm-sb--collapsed) {
+    transform: translateX(0);
+    width: 240px;
+    box-shadow: 4px 0 24px rgba(0, 0, 0, 0.4);
+  }
+}

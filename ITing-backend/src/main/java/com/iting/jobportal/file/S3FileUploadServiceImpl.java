@@ -109,6 +109,18 @@ public class S3FileUploadServiceImpl implements FileUploadService {
         }
     }
 
+    @Override
+    public String uploadBytes(byte[] bytes, String key, String contentType) {
+        PutObjectRequest request = PutObjectRequest.builder()
+                .bucket(bucket)
+                .key(key)
+                .contentType(contentType)
+                .contentLength((long) bytes.length)
+                .build();
+        s3Client.putObject(request, RequestBody.fromBytes(bytes));
+        return buildPublicUrl(key);
+    }
+
     // ========== PRIVATE HELPERS ==========
 
     private String upload(MultipartFile file, String folder) {

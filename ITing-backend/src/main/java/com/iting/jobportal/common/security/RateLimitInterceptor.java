@@ -1,20 +1,23 @@
 package com.iting.jobportal.common.security;
 
-import com.iting.service.RedisRateLimitingService;
+import com.iting.jobportal.common.ratelimit.RateLimitPolicy;
+import com.iting.jobportal.common.ratelimit.RedisRateLimitingService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 import org.springframework.web.servlet.HandlerInterceptor;
 
 @Component
 @RequiredArgsConstructor
+@ConditionalOnProperty(prefix = "app.redis", name = "enabled", havingValue = "true")
 @Slf4j
 public class RateLimitInterceptor implements HandlerInterceptor {
 
-    private final RedisRateLimitingService redisRateLimitingService;
+    private final RedisRateLimitingService rateLimitingService;
 
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler)
@@ -22,44 +25,28 @@ public class RateLimitInterceptor implements HandlerInterceptor {
         String ip = getRemoteAddr(request);
         String uri = request.getRequestURI();
 
-        String endpoint = null;
-        int maxRequests = 0;
-        int windowSeconds = 60; // default 1 minute
-
-        if (uri.endsWith("/api/auth/login")) {
-            endpoint = "login";
-            maxRequests = 20;
-        } else if (uri.endsWith("/api/auth/register")) {
-            endpoint = "register";
-            maxRequests = 10;
-        } else if (uri.endsWith("/api/auth/refresh")) {
-            endpoint = "refresh";
-            maxRequests = 10;
-        } else if (uri.contains("/api/jobs/search")) {
-            endpoint = "search";
-            maxRequests = 30;
-        } else if (uri.contains("/api/admin/")) {
-            endpoint = "admin";
-            maxRequests = 20;
+        RateLimitPolicy policy = resolvePolicy(uri);
+        if (policy == null) {
+            return true; // no rate-limit for this URI
         }
 
-        if (endpoint != null) {
-            boolean allowed = redisRateLimitingService.isAllowed(ip, endpoint, maxRequests, windowSeconds);
-            if (allowed) {
-                long remaining = maxRequests - redisRateLimitingService.getRemainingRequests(ip, endpoint);
-                response.addHeader("X-Rate-Limit-Remaining", String.valueOf(Math.max(0, remaining)));
-                return true;
-            } else {
-                long waitForRefill = redisRateLimitingService.getTTL(ip, endpoint);
-                response.addHeader("X-Rate-Limit-Retry-After-Seconds", String.valueOf(waitForRefill));
-                response.sendError(HttpStatus.TOO_MANY_REQUESTS.value(),
-                        "Bạn đã gửi quá nhiều yêu cầu. Vui lòng thử lại sau " + waitForRefill + " giây.");
-                log.warn("Rate limit exceeded for IP: {} on URI: {}", ip, uri);
-                return false;
-            }
+        boolean allowed = rateLimitingService.tryConsume(policy, ip);
+        if (!allowed) {
+            response.sendError(HttpStatus.TOO_MANY_REQUESTS.value(),
+                    "Bạn đã gửi quá nhiều yêu cầu. Vui lòng thử lại sau.");
+            log.warn("Rate limit exceeded for IP: {} on URI: {} (policy={})", ip, uri, policy);
+            return false;
         }
-
         return true;
+    }
+
+    private RateLimitPolicy resolvePolicy(String uri) {
+        if (uri.endsWith("/api/auth/login"))       return RateLimitPolicy.LOGIN;
+        if (uri.endsWith("/api/auth/register"))     return RateLimitPolicy.REGISTER;
+        if (uri.endsWith("/api/auth/refresh"))      return RateLimitPolicy.REFRESH;
+        if (uri.contains("/api/jobs/search"))       return RateLimitPolicy.PUBLIC_SEARCH;
+        if (uri.contains("/api/admin/"))            return RateLimitPolicy.ADMIN;
+        return null;
     }
 
     private String getRemoteAddr(HttpServletRequest request) {
@@ -67,6 +54,6 @@ public class RateLimitInterceptor implements HandlerInterceptor {
         if (xfHeader == null) {
             return request.getRemoteAddr();
         }
-        return xfHeader.split(",")[0];
+        return xfHeader.split(",")[0].trim();
     }
 }

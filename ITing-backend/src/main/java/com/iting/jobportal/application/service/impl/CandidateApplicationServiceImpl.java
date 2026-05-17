@@ -5,6 +5,7 @@ import com.iting.jobportal.application.dto.response.ApplicationResponse;
 import com.iting.jobportal.application.dto.response.ApplicationSubmitResponse;
 import com.iting.jobportal.application.entity.ApplyForm;
 import com.iting.jobportal.application.entity.ApplyFormSentToJob;
+import com.iting.jobportal.application.entity.enums.ApplicationStatus;
 import com.iting.jobportal.application.repository.ApplyFormRepository;
 import com.iting.jobportal.job.repository.JobRepository;
 import com.iting.jobportal.job.entity.Job;
@@ -117,17 +118,18 @@ public class CandidateApplicationServiceImpl implements CandidateApplicationServ
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Bạn không có quyền rút đơn này");
         }
 
-        // Find the jobId before deleting
         ApplyFormSentToJob sent = candidateApplicationRepository.findByIdApplyFormId(applicationId)
                 .orElseThrow(
                         () -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Không tìm thấy liên kết ứng tuyển"));
-        Long jobId = sent.getId().getJobId();
 
-        candidateApplicationRepository.deleteByIdApplyFormId(applicationId);
-        applyFormRepository.deleteById(applicationId);
+        if (sent.getStatus() == ApplicationStatus.WITHDRAWN) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Đơn ứng tuyển đã được rút trước đó");
+        }
 
-        // ✅ Decrement application count on the job
-        jobRepository.decrementApplicationCount(jobId);
+        sent.setStatus(ApplicationStatus.WITHDRAWN);
+        candidateApplicationRepository.save(sent);
+
+        jobRepository.decrementApplicationCount(sent.getId().getJobId());
     }
 
     @Override
