@@ -23,7 +23,7 @@ import JobCard from '../../components/JobCard';
 import JobPreviewPane from '../../components/JobPreviewModal';
 
 // Import hình nền
-import heroBg from '../../assets/bg_login.jpg';
+const heroBg = '/homepage-page.png';
 
 const HomePage = () => {
     const dispatch = useDispatch();

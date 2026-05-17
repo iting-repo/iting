@@ -51,9 +51,14 @@ public class Blog extends AuditEntity {
     @Column(name = "seo_meta_description", columnDefinition = "TEXT")
     private String seoMetaDescription;
 
+    @Column(name = "view_count", nullable = false)
+    @Builder.Default
+    private Long viewCount = 0L;
+
     @PrePersist
     protected void onCreate() {
         if (status == null) status = "DRAFT";
         if (isFeatured == null) isFeatured = false;
+        if (viewCount == null) viewCount = 0L;
     }
 }

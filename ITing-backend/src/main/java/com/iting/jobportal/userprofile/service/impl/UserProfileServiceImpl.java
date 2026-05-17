@@ -69,6 +69,14 @@ public class UserProfileServiceImpl implements UserProfileService {
         userProfileRepo.save(profile);
     }
 
+    @Override
+    public void updateOpenToWork(Long userId, boolean status) {
+        UserProfile profile = getOrCreateProfile(userId);
+        profile.setOpenToWork(status);
+        profile.setUpdatedAt(LocalDateTime.now());
+        userProfileRepo.save(profile);
+    }
+
     // Education
     @Override
     public List<Education> getEducations(Long profileId) {

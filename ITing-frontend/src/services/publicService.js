@@ -16,6 +16,12 @@ const publicService = {
   getBlogBySlug: async (slug) => {
     return axiosInstance.get(`/public/v2/blogs/${slug}`);
   },
+
+  trackBlogView: async (id) => {
+    try {
+      await axiosInstance.post(`/public/v2/blogs/${id}/view`);
+    } catch { /* fire-and-forget */ }
+  },
 };
 
 export default publicService;

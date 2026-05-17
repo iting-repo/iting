@@ -86,7 +86,7 @@ const AuthModal = ({ isOpen, onClose, onLoginSuccess, contextTitle, contextDesc 
 
           <div className="mb-3">
             <div className="w-12 h-12 bg-white/20 rounded-2xl flex items-center justify-center mb-3">
-              <img src="/assets/logo_white.png" alt="ITing" className="h-8 w-auto object-contain" onError={(e) => { e.target.style.display='none'; }} />
+              <img src="/logo-iting.png" alt="ITing" className="h-8 w-auto object-contain" onError={(e) => { e.target.style.display='none'; }} />
             </div>
             <h2 className="text-xl font-black">{contextTitle || 'Đăng nhập để tiếp tục'}</h2>
             {contextDesc && <p className="text-sm text-white/80 mt-1">{contextDesc}</p>}

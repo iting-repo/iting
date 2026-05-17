@@ -386,7 +386,7 @@ const Header = () => {
       <div className="container mx-auto px-12 h-full flex items-center justify-between">
         <Link to={role === 'EMPLOYER' ? '/employer/dashboard' : '/'} className="flex items-center gap-2 select-none group">
           <img 
-            src="/assets/logo.png" 
+            src="/logo-iting.png" 
             alt="ITing Logo" 
             className="h-14 w-auto object-contain transition-all duration-500 group-hover:scale-110 group-hover:drop-shadow-[0_0_15px_rgba(58,180,230,0.6)]" 
           />

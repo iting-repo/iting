@@ -4,10 +4,12 @@ import com.iting.jobportal.admin.entity.Blog;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
 import java.util.Optional;
 
 @Repository
@@ -24,4 +26,11 @@ public interface BlogRepository extends JpaRepository<Blog, Long> {
             @Param("keyword") String keyword,
             @Param("status") String status,
             Pageable pageable);
+
+    @Modifying
+    @Query("UPDATE Blog b SET b.viewCount = b.viewCount + 1 WHERE b.id = :id")
+    void incrementViewCount(@Param("id") Long id);
+
+    @Query("SELECT b FROM Blog b WHERE b.status = 'PUBLISHED' ORDER BY b.viewCount DESC")
+    List<Blog> findTopViewed(Pageable pageable);
 }
