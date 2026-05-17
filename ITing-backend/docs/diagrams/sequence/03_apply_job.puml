@@ -1,0 +1,105 @@
+@startuml 03 - Ứng viên nộp đơn xin việc
+
+skinparam sequenceArrowThickness 2
+skinparam roundcorner 10
+skinparam sequenceParticipantBackgroundColor #EEF2FF
+
+title Sequence Diagram: Ứng viên nộp đơn xin việc
+
+actor "Ứng viên" as candidate
+participant "CandidateApplicationController\n/api/candidate/applications" as ctrl
+participant "CandidateApplicationServiceImpl" as svc
+participant "JobRepository" as jobRepo
+participant "ApplyFormRepository" as formRepo
+participant "CandidateApplicationRepository\n(ApplyFormSentToJob)" as appRepo
+participant "CVRepository" as cvRepo
+participant "UserRepository" as userRepo
+participant "NotificationService" as notif
+
+== Nộp đơn ứng tuyển ==
+
+candidate -> ctrl : POST /api/candidate/applications\n{ jobId, cvId, introduction }
+activate ctrl
+
+ctrl -> svc : applyJob(userId, ApplyJobRequest)
+activate svc
+
+svc -> jobRepo : findById(jobId)
+jobRepo --> svc : Job
+
+alt Job không tồn tại hoặc status != ACTIVE
+    svc --> ctrl : throw JobNotFoundException / JobNotActiveException
+    ctrl --> candidate : 404 / 409
+else Job đã hết hạn (dueDate < today)
+    svc --> ctrl : throw JobExpiredException
+    ctrl --> candidate : 409 Conflict\n"Tin tuyển dụng đã hết hạn"
+end
+
+svc -> appRepo : existsByUserIdAndJobId(userId, jobId)
+appRepo --> svc : boolean
+
+alt Đã ứng tuyển rồi
+    svc --> ctrl : throw AlreadyAppliedException
+    ctrl --> candidate : 409 Conflict\n"Bạn đã ứng tuyển công việc này"
+end
+
+svc -> userRepo : findById(userId)
+userRepo --> svc : User
+
+alt cvId được cung cấp
+    svc -> cvRepo : findById(cvId)
+    cvRepo --> svc : CV
+    svc -> svc : validate CV belongs to user
+end
+
+note right of svc : Tạo đơn ứng tuyển
+
+svc -> formRepo : save(ApplyForm {\n  userId, cv,\n  applicantName=user.fullName,\n  introduction\n})
+formRepo --> svc : savedApplyForm
+
+svc -> appRepo : save(ApplyFormSentToJob {\n  jobId, applyFormId, userId,\n  timeSent=now,\n  status=PENDING\n})
+appRepo --> svc : savedApplication
+
+svc -> jobRepo : incrementApplicationCount(jobId)
+
+svc -> notif : notifyEmployerNewApplication(job.companyId, application)
+activate notif
+notif --> svc : (async)
+deactivate notif
+
+svc --> ctrl : ApplicationSubmitResponse {\n  applicationId, jobTitle, appliedAt\n}
+deactivate svc
+
+ctrl --> candidate : 201 Created\n{ applicationId, status=PENDING }
+deactivate ctrl
+
+== Xem danh sách đơn đã nộp ==
+
+candidate -> ctrl : GET /api/candidate/applications?page=0&size=10
+activate ctrl
+ctrl -> svc : getMyApplications(userId, page, size)
+activate svc
+svc -> appRepo : findByUserId(userId, Pageable)
+appRepo --> svc : Page<ApplyFormSentToJob>
+svc -> svc : mapToApplicationResponse(each)
+svc --> ctrl : Page<ApplicationResponse>
+deactivate svc
+ctrl --> candidate : 200 OK { content: [...], totalPages, totalElements }
+deactivate ctrl
+
+== Rút đơn ứng tuyển ==
+
+candidate -> ctrl : DELETE /api/candidate/applications/{applicationId}
+activate ctrl
+ctrl -> svc : withdrawApplication(userId, applicationId)
+activate svc
+svc -> appRepo : findById(applicationId)
+svc -> svc : validate userId matches
+svc -> appRepo : save(application { status=WITHDRAWN })
+svc -> jobRepo : decrementApplicationCount(jobId)
+svc --> ctrl : void
+deactivate svc
+ctrl --> candidate : 200 OK\n"Đã rút đơn thành công"
+deactivate ctrl
+
+@enduml

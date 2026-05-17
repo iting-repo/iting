@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Static sitemap cho các trang public của ITing.
+  Cập nhật lastmod theo lịch quý/half.
+  Dynamic job/company URLs nên được generate bởi backend qua endpoint /api/public/sitemap.xml
+  (TODO: implement Phase 2 — endpoint return XML từ DB).
+-->
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+
+  <!-- Trang chủ -->
+  <url>
+    <loc>https://iting.vn/</loc>
+    <changefreq>daily</changefreq>
+    <priority>1.0</priority>
+  </url>
+
+  <!-- Tìm việc -->
+  <url>
+    <loc>https://iting.vn/jobs</loc>
+    <changefreq>hourly</changefreq>
+    <priority>0.9</priority>
+  </url>
+
+  <!-- Công ty -->
+  <url>
+    <loc>https://iting.vn/companies</loc>
+    <changefreq>daily</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <!-- Blog -->
+  <url>
+    <loc>https://iting.vn/blogs</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+
+  <!-- Salary lookup -->
+  <url>
+    <loc>https://iting.vn/salary-lookup</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+
+  <!-- About -->
+  <url>
+    <loc>https://iting.vn/about</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>
+
+  <!-- Contact -->
+  <url>
+    <loc>https://iting.vn/contact</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>
+
+  <!-- Pháp lý -->
+  <url>
+    <loc>https://iting.vn/privacy</loc>
+    <changefreq>yearly</changefreq>
+    <priority>0.3</priority>
+  </url>
+  <url>
+    <loc>https://iting.vn/terms</loc>
+    <changefreq>yearly</changefreq>
+    <priority>0.3</priority>
+  </url>
+
+  <!-- Auth (noindex nên priority thấp, vẫn list để Google biết) -->
+  <url>
+    <loc>https://iting.vn/login</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.2</priority>
+  </url>
+  <url>
+    <loc>https://iting.vn/register</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.2</priority>
+  </url>
+
+</urlset>

@@ -1,0 +1,168 @@
+@startuml 04 - Class Diagram: Job Module
+
+skinparam classBackgroundColor #EEF2FF
+skinparam classBorderColor #6366F1
+skinparam classArrowColor #374151
+skinparam roundcorner 10
+skinparam classFontSize 11
+
+title Class Diagram: Job Module
+
+package "com.iting.jobportal.job" {
+
+  enum JobStatus {
+    DRAFT
+    PENDING
+    ACTIVE
+    CLOSED
+    CANCELLED
+    REJECTED
+  }
+
+  enum JobType {
+    FULLTIME
+    PARTTIME
+    CONTRACT
+    FREELANCE
+    INTERNSHIP
+  }
+
+  enum ExperienceLevel {
+    ENTRY
+    MID
+    SENIOR
+    LEAD
+    MANAGER
+  }
+
+  enum WorkingDays {
+    MONDAY_TO_FRIDAY
+    FLEXIBLE
+    WEEKENDS
+    ROTATING
+  }
+
+  enum SalaryType {
+    MONTHLY
+    YEARLY
+    HOURLY
+    PROJECT
+  }
+
+  enum JobReviewAction {
+    SUBMITTED
+    APPROVED
+    REJECTED
+    REQUESTED_CHANGES
+    AI_FLAGGED
+    AI_PASSED
+  }
+
+  class Job {
+    - id: Long
+    - title: String
+    - position: String
+    - skills: List<String>
+    - jobType: JobType
+    - experienceLevel: ExperienceLevel
+    - workingDays: WorkingDays
+    - minSalary: BigDecimal
+    - maxSalary: BigDecimal
+    - salaryType: SalaryType
+    - maxAccept: Integer
+    - currentAccepted: Integer
+    - dueDate: LocalDate
+    - province: String
+    - address: String
+    - location: String
+    - locId: Long
+    - description: String
+    - responsibilities: String
+    - requirements: String
+    - benefits: String
+    - viewCount: Integer
+    - applicationCount: Integer
+    - featured: Boolean
+    - status: JobStatus
+    - reviewReason: String
+    - reviewedBy: Long
+    - reviewedAt: LocalDateTime
+    - aiReviewStatus: String
+    - aiReviewReason: String
+    - jobEmbedding: String
+    - embeddingUpdatedAt: LocalDateTime
+    - postedByHrId: Long
+    - createdAt: LocalDateTime
+    - lastUpdate: LocalDateTime
+  }
+
+  class JobReviewHistory {
+    - id: Long
+    - action: JobReviewAction
+    - actor: String
+    - timestamp: LocalDateTime
+    - note: String
+  }
+
+  class UserSaveJob {
+    - userId: Long <<PK>>
+    - jobId: Long <<PK>>
+  }
+
+  class CompanyUploadJob {
+    - jobId: Long <<PK>>
+    - companyId: Long <<PK>>
+    - uploadTime: LocalDateTime
+    - status: String
+    - note: String
+  }
+}
+
+package "com.iting.jobportal.recommendation" {
+
+  enum InteractionType {
+    VIEW
+    APPLY
+    SAVE
+    CLICK
+  }
+
+  class UserJobInteraction {
+    - id: Long
+    - interactionType: InteractionType
+    - weight: Integer
+    - createdAt: LocalDateTime
+    - updatedAt: LocalDateTime
+  }
+
+  class UserSearchHistory {
+    - id: Long
+    - keyword: String
+    - location: String
+    - salaryMin: BigDecimal
+    - salaryMax: BigDecimal
+    - jobType: JobType
+    - createdAt: LocalDateTime
+    - updatedAt: LocalDateTime
+  }
+}
+
+' Relationships
+Job "many" --> "1" Company : postedBy >
+Job "1" *-- "many" JobReviewHistory : history >
+UserSaveJob "many" --> "1" Job : saves >
+CompanyUploadJob "many" --> "1" Job : uploads >
+CompanyUploadJob "many" --> "1" Company : uploadedBy >
+UserJobInteraction "many" --> "1" Account : by >
+UserJobInteraction "many" --> "1" Job : about >
+UserSearchHistory "many" --> "1" Account : searchedBy >
+
+note right of Job
+  jobEmbedding: vector 1536 chiều\n(OpenAI text-embedding-3-small)\nDùng cho AI recommendation
+end note
+
+note right of UserSaveJob
+  Composite PK: (userId, jobId)
+end note
+
+@enduml

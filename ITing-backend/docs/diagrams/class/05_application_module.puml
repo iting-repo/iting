@@ -1,0 +1,149 @@
+@startuml 05 - Class Diagram: Application Module
+
+skinparam classBackgroundColor #EEF2FF
+skinparam classBorderColor #6366F1
+skinparam classArrowColor #374151
+skinparam roundcorner 10
+skinparam classFontSize 11
+
+title Class Diagram: Application Module
+
+package "com.iting.jobportal.application" {
+
+  enum ApplicationStatus {
+    PENDING
+    VIEWED
+    ACCEPTED
+    REJECTED
+    WITHDRAWN
+    INTERVIEW_SCHEDULED
+  }
+
+  class ApplyForm {
+    - id: Long
+    - userId: Long
+    - cvTitle: String
+    - applicantName: String
+    - introduction: String
+  }
+
+  class ApplyFormSentToJob {
+    - jobId: Long <<PK>>
+    - applyFormId: Long <<PK>>
+    - userId: Long
+    - timeSent: LocalDateTime
+    - status: ApplicationStatus
+    - hrNote: String
+  }
+
+  class ApplyFormSentToJobId {
+    - jobId: Long
+    - applyFormId: Long
+  }
+
+  ' DTO classes
+  class ApplicationResponse {
+    + applicationId: Long
+    + jobId: Long
+    + jobTitle: String
+    + companyName: String
+    + companyLogoUrl: String
+    + applicantName: String
+    + applicantEmail: String
+    + cvUrl: String
+    + cvTitle: String
+    + coverLetter: String
+    + status: ApplicationStatus
+    + hrNote: String
+    + appliedAt: LocalDateTime
+    + viewedAt: LocalDateTime
+    + updatedAt: LocalDateTime
+  }
+
+  class ApplyJobRequest {
+    + jobId: Long
+    + cvId: Long
+    + introduction: String
+  }
+
+  class UpdateApplicationStatusRequest {
+    + status: ApplicationStatus
+    + note: String
+  }
+
+  interface CandidateApplicationService {
+    + applyJob(userId: Long, request: ApplyJobRequest): ApplicationSubmitResponse
+    + withdrawApplication(userId: Long, applicationId: Long): void
+    + getMyApplications(userId: Long, page: int, size: int): Page<ApplicationResponse>
+    + hasApplied(userId: Long, jobId: Long): boolean
+  }
+
+  interface EmployerApplicationService {
+    + getApplicationsByJob(employerId: Long, jobId: Long, page: int, size: int): Page<ApplicationResponse>
+    + getAllApplicationsForEmployer(employerId: Long, page: int, size: int): Page<ApplicationResponse>
+    + viewApplication(employerId: Long, applicationId: Long): ApplicationResponse
+    + updateApplicationStatus(employerId: Long, applicationId: Long, request: UpdateApplicationStatusRequest): ApplicationResponse
+    + acceptApplication(employerId: Long, applicationId: Long, note: String): ApplicationResponse
+    + rejectApplication(employerId: Long, applicationId: Long, note: String): ApplicationResponse
+    + bulkReject(employerId: Long, applicationIds: List<Long>, note: String): void
+    + getStatsForEmployer(employerId: Long): ApplicationStats
+    + searchCandidatesByCvKeyword(employerId: Long, keyword: String): List<ApplicationResponse>
+    + searchCandidatesByCvFile(employerId: Long, cvFile: MultipartFile): List<ApplicationResponse>
+  }
+
+  class CandidateApplicationServiceImpl {
+    - applyFormRepository: ApplyFormRepository
+    - candidateApplicationRepository: CandidateApplicationRepository
+    - jobRepository: JobRepository
+    - cvRepository: CVRepository
+    - userRepository: UserRepository
+    - notificationService: NotificationService
+  }
+
+  class EmployerApplicationServiceImpl {
+    - candidateApplicationRepository: CandidateApplicationRepository
+    - jobRepository: JobRepository
+    - authorizationService: AuthorizationService
+    - notificationService: NotificationService
+    - mlService: MlService
+  }
+
+  class CandidateApplicationController {
+    - candidateApplicationService: CandidateApplicationService
+    + applyJob(userId: Long, request: ApplyJobRequest): ResponseEntity
+    + withdrawApplication(userId: Long, applicationId: Long): ResponseEntity
+    + getMyApplications(userId: Long, page: int, size: int): ResponseEntity
+    + hasApplied(userId: Long, jobId: Long): ResponseEntity
+  }
+
+  class EmployerApplicationController {
+    - employerApplicationService: EmployerApplicationService
+    + getApplicationsByJob(employerId: Long, jobId: Long, page: int, size: int): ResponseEntity
+    + viewApplication(employerId: Long, applicationId: Long): ResponseEntity
+    + updateApplicationStatus(employerId: Long, applicationId: Long, request: UpdateApplicationStatusRequest): ResponseEntity
+    + bulkReject(employerId: Long, body: Map): ResponseEntity
+  }
+}
+
+' Relationships
+ApplyFormSentToJob "many" --> "1" ApplyForm : uses >
+ApplyFormSentToJob "many" --> "1" Job : appliesTo >
+ApplyForm "many" --> "1" CV : attachedCV >
+ApplyFormSentToJob *-- ApplyFormSentToJobId : embeddedId >
+
+CandidateApplicationServiceImpl ..|> CandidateApplicationService : implements
+EmployerApplicationServiceImpl ..|> EmployerApplicationService : implements
+CandidateApplicationController --> CandidateApplicationService : uses
+EmployerApplicationController --> EmployerApplicationService : uses
+
+note right of ApplyFormSentToJob
+  Composite PK: (jobId, applyFormId)
+  Bảng chính lưu trạng thái đơn
+end note
+
+note right of ApplyForm
+  Lưu nội dung đơn ứng tuyển
+  (giới thiệu, tên ứng viên, CV)
+end note
+
+@enduml

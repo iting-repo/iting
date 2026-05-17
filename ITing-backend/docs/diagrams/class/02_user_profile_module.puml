@@ -1,0 +1,158 @@
+@startuml 02 - Class Diagram: User & UserProfile Module
+
+skinparam classBackgroundColor #EEF2FF
+skinparam classBorderColor #6366F1
+skinparam classArrowColor #374151
+skinparam roundcorner 10
+skinparam classFontSize 11
+
+title Class Diagram: User & UserProfile Module
+
+package "com.iting.jobportal.user" {
+  class User {
+    - id: Long
+    - fullName: String
+    - phoneNum: String
+    - locId: Long
+    - avatarUrl: String
+    - cvEmbedding: String
+    - lastUpdate: LocalDateTime
+  }
+}
+
+package "com.iting.jobportal.userprofile" {
+
+  enum EducationLevel {
+    HIGH_SCHOOL
+    ASSOCIATE
+    BACHELOR
+    MASTER
+    DOCTOR
+  }
+
+  enum EmploymentStatus {
+    UNEMPLOYED
+    EMPLOYED
+    FREELANCE
+    SEEKING_CHANGE
+  }
+
+  enum CvStatus {
+    ACTIVE
+    INACTIVE
+    ARCHIVED
+  }
+
+  enum SocialPlatform {
+    LINKEDIN
+    GITHUB
+    PORTFOLIO
+    TWITTER
+    FACEBOOK
+  }
+
+  class UserProfile {
+    - id: Long
+    - headline: String
+    - location: String
+    - totalExperienceYears: Integer
+    - educationSummary: EducationLevel
+    - shortBio: String
+    - employmentStatus: EmploymentStatus
+    - openToWork: Boolean
+    - updatedAt: LocalDateTime
+  }
+
+  class CV {
+    - id: Long
+    - title: String
+    - fileName: String
+    - fileUrl: String
+    - s3Key: String
+    - cvStatus: CvStatus
+    - isDefault: Boolean
+    - uploadedAt: LocalDateTime
+  }
+
+  class Experience {
+    - id: Long
+    - companyName: String
+    - position: String
+    - startDate: LocalDate
+    - endDate: LocalDate
+    - isCurrent: Boolean
+    - description: String
+  }
+
+  class Education {
+    - id: Long
+    - schoolName: String
+    - major: String
+    - areaOfStudy: String
+    - degree: String
+    - startDate: LocalDate
+    - endDate: LocalDate
+    - description: String
+  }
+
+  class Skill {
+    - id: Long
+    - name: String
+  }
+
+  class Certificate {
+    - id: Long
+    - title: String
+    - issuingOrganization: String
+    - issueDate: LocalDate
+    - expirationDate: LocalDate
+    - credentialId: String
+    - credentialUrl: String
+    - doesNotExpire: Boolean
+  }
+
+  class SocialLink {
+    - id: Long
+    - platform: SocialPlatform
+    - url: String
+  }
+
+  class Portfolio {
+    - id: Long
+    - title: String
+    - url: String
+    - description: String
+  }
+
+  class ContactInfo {
+    - id: Long
+    - phone: String
+    - email: String
+    - showPhoneToRecruiter: Boolean
+    - showEmailToRecruiter: Boolean
+  }
+}
+
+' Relationships
+User "1" *-- "1" UserProfile : has >
+User "1" *-- "1" ContactInfo : has >
+
+UserProfile "1" *-- "many" CV : has >
+UserProfile "1" *-- "many" Experience : has >
+UserProfile "1" *-- "many" Education : has >
+UserProfile "1" *-- "many" Skill : has >
+UserProfile "1" *-- "many" Certificate : has >
+UserProfile "1" *-- "many" SocialLink : has >
+UserProfile "1" *-- "many" Portfolio : has >
+
+note bottom of UserProfile
+  @OneToOne với User
+  (@MapsId — dùng chung PK)
+end note
+
+note bottom of ContactInfo
+  @OneToOne với UserProfile
+  (@MapsId — dùng chung PK)
+end note
+
+@enduml

@@ -1,0 +1,151 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 864 1536" role="img" aria-labelledby="title desc">
+  <title id="title">Fsoft, VNG, Tiki corporate skyline</title>
+  <desc id="desc">A dark gold vector city skyline with three glowing corporate towers labelled Fsoft, VNG, and Tiki.</desc>
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#040302"/>
+      <stop offset="0.68" stop-color="#120c02"/>
+      <stop offset="1" stop-color="#3a2300"/>
+    </linearGradient>
+
+    <linearGradient id="glass" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#17130b"/>
+      <stop offset="0.42" stop-color="#070706"/>
+      <stop offset="1" stop-color="#1f1608"/>
+    </linearGradient>
+
+    <linearGradient id="sideGlass" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#080806"/>
+      <stop offset="1" stop-color="#2b1b04"/>
+    </linearGradient>
+
+    <linearGradient id="goldLine" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#9a6100"/>
+      <stop offset="0.5" stop-color="#ffd36a"/>
+      <stop offset="1" stop-color="#ff9f00"/>
+    </linearGradient>
+
+    <radialGradient id="groundGlow" cx="50%" cy="100%" r="65%">
+      <stop offset="0" stop-color="#ffae22" stop-opacity="0.48"/>
+      <stop offset="0.45" stop-color="#8b5200" stop-opacity="0.18"/>
+      <stop offset="1" stop-color="#000" stop-opacity="0"/>
+    </radialGradient>
+
+    <filter id="softGlow" x="-60%" y="-60%" width="220%" height="220%">
+      <feGaussianBlur stdDeviation="4" result="blur"/>
+      <feColorMatrix in="blur" type="matrix" values="1 0 0 0 1  0 0.74 0 0 0.55  0 0 0.25 0 0  0 0 0 0.9 0" result="goldBlur"/>
+      <feMerge>
+        <feMergeNode in="goldBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+
+    <filter id="strongGlow" x="-80%" y="-80%" width="260%" height="260%">
+      <feGaussianBlur stdDeviation="8" result="blur"/>
+      <feColorMatrix in="blur" type="matrix" values="1 0 0 0 1  0 0.68 0 0 0.42  0 0 0.08 0 0  0 0 0 1 0" result="goldBlur"/>
+      <feMerge>
+        <feMergeNode in="goldBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+
+    <pattern id="windowGrid" width="28" height="30" patternUnits="userSpaceOnUse">
+      <path d="M0 0H28M0 0V30" fill="none" stroke="#6f4a10" stroke-opacity="0.35" stroke-width="1"/>
+      <rect x="3" y="4" width="20" height="18" fill="#050505" fill-opacity="0.42"/>
+    </pattern>
+
+    <pattern id="smallWindows" width="31" height="44" patternUnits="userSpaceOnUse">
+      <rect x="5" y="16" width="21" height="5" rx="1" fill="#f4ae25" fill-opacity="0.2"/>
+      <rect x="5" y="24" width="21" height="5" rx="1" fill="#f8bb34" fill-opacity="0.44"/>
+    </pattern>
+
+    <pattern id="dotField" width="27" height="27" patternUnits="userSpaceOnUse">
+      <circle cx="7" cy="7" r="4" fill="#ffbf27" opacity="0.9"/>
+    </pattern>
+  </defs>
+
+  <rect width="864" height="1536" fill="url(#sky)"/>
+  <rect y="1010" width="864" height="526" fill="url(#groundGlow)"/>
+
+  <g opacity="0.55">
+    <path d="M0 1440c82-33 134-30 206-12s131 5 202-22 141-14 213 12 157 31 243-12v130H0z" fill="#080603"/>
+    <g fill="#f0a51c" opacity="0.4">
+      <rect x="15" y="1280" width="18" height="148"/>
+      <rect x="45" y="1245" width="32" height="183"/>
+      <rect x="774" y="1205" width="22" height="225"/>
+      <rect x="805" y="1168" width="38" height="263"/>
+      <rect x="823" y="1256" width="20" height="174"/>
+    </g>
+  </g>
+
+  <g id="left-tower">
+    <polygon points="73,181 390,338 390,1430 73,1430" fill="url(#glass)"/>
+    <polygon points="390,338 434,307 434,1430 390,1430" fill="url(#sideGlass)"/>
+    <polygon points="73,181 118,144 434,307 390,338" fill="#201203"/>
+
+    <polygon points="73,181 118,144 434,307 434,1430 73,1430" fill="url(#windowGrid)" opacity="0.68"/>
+    <path d="M74 181L118 144L434 307M74 181V1430M390 338V1430M434 307V1430" fill="none" stroke="url(#goldLine)" stroke-width="2.4" filter="url(#softGlow)"/>
+    <path d="M118 144V1425" fill="none" stroke="#ffb31b" stroke-width="4" opacity="0.75" filter="url(#strongGlow)"/>
+
+    <path d="M109 470L343 736L156 1093L385 816L110 318Z" fill="#060504" opacity="0.92"/>
+    <path d="M109 470L343 736L156 1093M385 816L110 318" fill="none" stroke="#ffbe32" stroke-width="4" filter="url(#strongGlow)"/>
+    <path d="M128 427L313 733L170 1019" fill="none" stroke="#ffd065" stroke-width="2.2" opacity="0.82"/>
+
+    <clipPath id="chevronClip">
+      <path d="M109 470L343 736L156 1093L385 816L110 318Z"/>
+    </clipPath>
+    <rect x="102" y="340" width="260" height="625" fill="url(#dotField)" clip-path="url(#chevronClip)" opacity="0.88"/>
+
+    <g fill="#ffbb2f" opacity="0.75" filter="url(#softGlow)">
+      <rect x="130" y="1188" width="86" height="9" rx="2"/>
+      <rect x="160" y="1258" width="115" height="8" rx="2"/>
+      <rect x="224" y="1002" width="70" height="8" rx="2"/>
+      <rect x="282" y="540" width="52" height="8" rx="2"/>
+      <rect x="272" y="855" width="85" height="8" rx="2"/>
+      <rect x="134" y="1366" width="170" height="7" rx="2"/>
+    </g>
+
+    <text x="170" y="356" fill="#fff4c7" font-family="Arial, Helvetica, sans-serif" font-size="70" font-weight="800" letter-spacing="0" filter="url(#strongGlow)">Fsoft</text>
+  </g>
+
+  <g id="vng-tower">
+    <polygon points="467,597 591,524 704,589 704,1430 467,1430" fill="url(#glass)"/>
+    <polygon points="591,524 704,589 704,1430 591,1378" fill="#090805"/>
+    <path d="M467 597L591 524L704 589M467 597V1430M704 589V1430M591 524V1378" fill="none" stroke="url(#goldLine)" stroke-width="2.4" filter="url(#softGlow)"/>
+    <rect x="492" y="674" width="178" height="674" fill="url(#smallWindows)" opacity="0.92"/>
+    <g stroke="#ffbf2f" stroke-width="2" opacity="0.75">
+      <path d="M616 522V474M634 548V483M652 556V493M670 567V506"/>
+    </g>
+    <circle cx="590" cy="524" r="5" fill="#ffd97a" filter="url(#strongGlow)"/>
+
+    <text x="562" y="716" fill="#fff2bf" font-family="Arial, Helvetica, sans-serif" font-size="54" font-weight="800" filter="url(#strongGlow)">VNG</text>
+  </g>
+
+  <g id="tiki-tower">
+    <polygon points="662,602 719,552 813,612 813,1430 662,1430" fill="url(#glass)"/>
+    <polygon points="719,552 813,612 813,1430 719,1394" fill="#080704"/>
+    <path d="M662 602L719 552L813 612M662 602V1430M813 612V1430M719 552V1394" fill="none" stroke="url(#goldLine)" stroke-width="2.2" filter="url(#softGlow)"/>
+    <rect x="681" y="686" width="108" height="635" fill="url(#smallWindows)" opacity="0.76"/>
+    <g stroke="#ffbf2f" stroke-width="2" opacity="0.75">
+      <path d="M739 556V504M756 574V515M773 586V528M790 598V543"/>
+    </g>
+    <circle cx="719" cy="552" r="5" fill="#ffd97a" filter="url(#strongGlow)"/>
+
+    <text x="720" y="751" fill="#fff2bf" font-family="Arial, Helvetica, sans-serif" font-size="54" font-weight="800" filter="url(#strongGlow)">Tiki</text>
+  </g>
+
+  <g id="foreground" filter="url(#softGlow)">
+    <path d="M0 1451H864" stroke="#ffb424" stroke-width="3"/>
+    <path d="M0 1479C206 1462 461 1462 864 1478" stroke="#ffb424" stroke-width="3" opacity="0.72"/>
+    <path d="M0 1500C243 1484 567 1486 864 1505" stroke="#ffd36a" stroke-width="2" opacity="0.68"/>
+    <path d="M175 1395c-22 14-36 30-39 55h235c-4-30-23-49-50-59-29 18-51 17-70-2-25 18-49 19-76 6z" fill="#050401"/>
+    <path d="M625 1393c-18 12-28 29-31 54h162c-4-28-17-45-43-55-27 14-56 15-88 1z" fill="#050401"/>
+  </g>
+
+  <g fill="#ffd980" filter="url(#strongGlow)">
+    <circle cx="118" cy="144" r="4"/>
+    <circle cx="434" cy="307" r="4"/>
+    <circle cx="704" cy="589" r="4"/>
+    <circle cx="813" cy="612" r="4"/>
+  </g>
+</svg>

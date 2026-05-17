@@ -1,0 +1,25 @@
+User-agent: *
+Allow: /
+Allow: /jobs
+Allow: /companies
+Allow: /blog
+Allow: /blogs
+Allow: /viec-lam/
+Allow: /tim-viec-lam-
+
+# Internal / authenticated routes
+Disallow: /admin/
+Disallow: /employer/
+Disallow: /api/
+Disallow: /login
+Disallow: /register
+Disallow: /verify-otp
+Disallow: /forgot-password
+Disallow: /reset-password
+Disallow: /messages
+Disallow: /me/
+
+# Crawl delay (giảm tải server)
+Crawl-delay: 1
+
+Sitemap: https://iting.vn/sitemap.xml
