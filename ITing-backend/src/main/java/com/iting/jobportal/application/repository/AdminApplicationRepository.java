@@ -2,8 +2,11 @@ package com.iting.jobportal.application.repository;
 
 import com.iting.jobportal.application.entity.ApplyFormSentToJob;
 import com.iting.jobportal.application.entity.ApplyFormSentToJob.ApplyFormSentToJobId;
+import com.iting.jobportal.application.entity.enums.ApplicationStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
+
+import java.time.LocalDateTime;
 
 @Repository
 public interface AdminApplicationRepository extends JpaRepository<ApplyFormSentToJob, ApplyFormSentToJobId> {
@@ -24,4 +27,8 @@ public interface AdminApplicationRepository extends JpaRepository<ApplyFormSentT
     java.util.List<Object[]> countByStatusForJob(
         @org.springframework.data.repository.query.Param("jobId") Long jobId
     );
+
+    long countByStatus(ApplicationStatus status);
+
+    long countByTimeSentAfter(LocalDateTime dateTime);
 }

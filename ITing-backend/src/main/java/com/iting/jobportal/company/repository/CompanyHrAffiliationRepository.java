@@ -53,4 +53,7 @@ public interface CompanyHrAffiliationRepository
     List<CompanyHrAffiliation> findByCompany_Id(Long companyId);
 
     List<CompanyHrAffiliation> findByCompany_IdAndStatus(Long companyId, AffiliationStatus status);
+
+    // All affiliations of an HR account ordered by createdAt desc — used by GDPR export.
+    List<CompanyHrAffiliation> findByHrAccount_IdOrderByCreatedAtDesc(Long hrAccountId);
 }

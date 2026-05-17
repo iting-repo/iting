@@ -77,6 +77,7 @@ const AppRoutes = () => {
           <Route path="/companies/:id" element={<CompanyDetailPage />} />
           <Route path="/viec-lam/:slug/:jobKey" element={<JobDetailPage />} />
           <Route path="/blog/:slug" element={<BlogDetailPage />} />
+          <Route path="/salary-lookup" element={<SalaryLookupPage />} />
           <Route path="/about" element={<AboutPage />} />
           <Route path="/contact" element={<ContactPage />} />
         </Route>

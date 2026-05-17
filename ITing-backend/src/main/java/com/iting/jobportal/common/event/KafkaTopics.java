@@ -17,6 +17,9 @@ public class KafkaTopics {
     @Value("${app.kafka.topics.kyb-review-completed:kyb.review.completed.v1}")
     private String kybReviewCompleted;
 
+    @Value("${app.kafka.topics.kyb-notifications:kyb-notifications}")
+    private String kybNotifications;
+
     @Value("${app.kafka.dlq-suffix:.DLT}")
     private String dlqSuffix;
 

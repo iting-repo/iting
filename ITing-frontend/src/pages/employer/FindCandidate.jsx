@@ -5,7 +5,7 @@ import {
     FaStar, FaRegStar, FaCheckCircle, FaUserTie, 
     FaExclamationTriangle, FaExternalLinkAlt 
 } from 'react-icons/fa';
-import { Button, Badge } from "../../components/common";
+import { Button, Badge, Breadcrumb } from "../../components/common";
 import { toast } from "sonner";
 import { employerCandidateService } from "../../services/employerCandidateService";
 import companyService from "../../services/companyService";
@@ -190,6 +190,11 @@ const FindCandidate = () => {
 
   return (
     <div className="space-y-6 animate-fade-in pb-20">
+      <Breadcrumb
+        rootLabel="Tổng quan"
+        rootLink="/employer/dashboard"
+        items={[{ label: 'Tìm kiếm ứng viên' }]}
+      />
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Tìm kiếm ứng viên</h1>

@@ -146,25 +146,32 @@ const CompaniesPage = () => {
   return (
     <div className="min-h-screen bg-[#F8FAFC]">
       {/* Hero Section */}
-      <div className="bg-white border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="relative overflow-hidden border-b border-gray-200">
+        {/* Background Image */}
+        <div className="absolute inset-0 z-0">
+          <img src="/background.png" alt="" className="w-full h-full object-cover" />
+          <div className="absolute inset-0 bg-gradient-to-b from-gray-900/80 via-gray-900/70 to-gray-900/90"></div>
+        </div>
+
+        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <Breadcrumb 
             items={[
               { label: 'Danh sách công ty' }
             ]} 
+            variant="dark"
           />
           <div className="text-center pt-8 pb-12">
-            <h1 className="text-4xl font-extrabold text-gray-900 tracking-tight mb-4">
+            <h1 className="text-4xl font-extrabold text-white tracking-tight mb-4">
               Khám phá các <span className="text-[#3AB4E6]">Công ty IT</span> hàng đầu
             </h1>
-            <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+            <p className="text-lg text-gray-300 max-w-2xl mx-auto">
               Tra cứu thông tin về môi trường làm việc, công nghệ và tìm kiếm cơ hội nghề nghiệp tại những công ty tốt nhất.
             </p>
           </div>
 
           {/* Search Box */}
-          <form onSubmit={handleSearch} className="max-w-4xl mx-auto">
-            <div className="bg-white p-2 rounded-2xl shadow-xl border border-gray-100 flex flex-col md:flex-row gap-2">
+          <form onSubmit={handleSearch} className="max-w-4xl mx-auto pb-10">
+            <div className="bg-white/95 backdrop-blur-sm p-2 rounded-2xl shadow-2xl border border-white/20 flex flex-col md:flex-row gap-2">
               <div className="flex-1 relative group">
                 <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 group-focus-within:text-[#3AB4E6] transition-colors" />
                 <input

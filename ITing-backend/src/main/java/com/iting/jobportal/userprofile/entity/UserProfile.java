@@ -82,4 +82,22 @@ public class UserProfile {
     @com.fasterxml.jackson.annotation.JsonIgnore
     @OneToMany(mappedBy = "profile", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Portfolio> portfolios = new ArrayList<>();
+
+    // ── Convenience accessors expected by ProfileCompletenessService / AiCoverLetterController.
+    // Source of truth lives on the linked User (until full migration to V54's Account fields).
+    public String getFullName() {
+        return user != null ? user.getFullName() : null;
+    }
+
+    public String getAvatarUrl() {
+        return user != null ? user.getAvatarUrl() : null;
+    }
+
+    public String getPhoneNumber() {
+        return user != null ? user.getPhoneNum() : null;
+    }
+
+    public String getBio() {
+        return shortBio;
+    }
 }

@@ -1,108 +1,158 @@
-import React, { useState, useEffect } from 'react';
-import { NavLink } from 'react-router-dom';
-import { ChevronLeft, ChevronRight, BarChart3, Bell, BookOpen, Building2, CheckCircle, FileText, HelpCircle, LayoutDashboard, Layers, Image, Settings, Shield, Users } from "lucide-react";
+import React, { useState, useCallback } from 'react';
+import { NavLink, useLocation } from 'react-router-dom';
+import {
+  ChevronLeft, ChevronRight, ChevronDown,
+  BarChart3, Bell, BookOpen, Building2,
+  FileText, HelpCircle, LayoutDashboard,
+  Layers, Image, Settings, Shield, Users
+} from 'lucide-react';
+import './AdminSidebar.css';
 
+/* ─── Menu data ─────────────────────────────────────────────────────────── */
 const SIDEBAR_SECTIONS = [
   {
-    title: "TỔNG QUAN",
+    id: 'overview',
+    title: 'TỔNG QUAN',
     items: [
-      { path: "/admin/dashboard", label: "Bảng điều khiển", icon: LayoutDashboard },
-      { path: "/admin/notifications", label: "Thông báo", icon: Bell },
+      { path: '/admin/dashboard', label: 'Bảng điều khiển', icon: LayoutDashboard },
+      { path: '/admin/notifications', label: 'Thông báo', icon: Bell },
     ],
   },
   {
-    title: "QUẢN LÝ",
+    id: 'management',
+    title: 'QUẢN LÝ',
     items: [
-      { path: "/admin/jobs", label: "Quản lý công việc", icon: BookOpen },
-      { path: "/admin/companies", label: "Quản lý công ty", icon: Building2 },
-      { path: "/admin/users", label: "Người dùng", icon: Users },
-      { path: "/admin/reports", label: "Báo cáo", icon: FileText },
+      { path: '/admin/jobs', label: 'Quản lý công việc', icon: BookOpen },
+      { path: '/admin/companies', label: 'Quản lý công ty', icon: Building2 },
+      { path: '/admin/users', label: 'Người dùng', icon: Users },
+      { path: '/admin/reports', label: 'Báo cáo', icon: FileText },
     ],
   },
   {
-    title: "CMS",
+    id: 'cms',
+    title: 'CMS',
     items: [
-      { path: "/admin/blog", label: "Blog", icon: BookOpen },
-      { path: "/admin/faq", label: "FAQ", icon: HelpCircle },
-      { path: "/admin/pages", label: "Trang tĩnh", icon: FileText },
-      { path: "/admin/categories", label: "Danh mục", icon: Layers },
-      { path: "/admin/banner", label: "Banner", icon: Image },
+      { path: '/admin/blog', label: 'Blog', icon: BookOpen },
+      { path: '/admin/faq', label: 'FAQ', icon: HelpCircle },
+      { path: '/admin/pages', label: 'Trang tĩnh', icon: FileText },
+      { path: '/admin/categories', label: 'Danh mục', icon: Layers },
+      { path: '/admin/banner', label: 'Banner', icon: Image },
     ],
   },
   {
-    title: "HỆ THỐNG",
+    id: 'system',
+    title: 'HỆ THỐNG',
     items: [
-      { path: "/admin/roles", label: "Phân quyền", icon: Shield },
-      { path: "/admin/audit", label: "Nhật ký kiểm tra", icon: FileText },
-      { path: "/admin/stats", label: "Thống kê", icon: BarChart3 },
-      { path: "/admin/config", label: "Cấu hình", icon: Settings },
+      { path: '/admin/roles', label: 'Phân quyền', icon: Shield },
+      { path: '/admin/audit', label: 'Nhật ký kiểm tra', icon: FileText },
+      { path: '/admin/stats', label: 'Thống kê', icon: BarChart3 },
+      { path: '/admin/config', label: 'Cấu hình', icon: Settings },
     ],
   },
 ];
 
-const AdminSidebar = () => {
-  const [isOpen, setIsOpen] = useState(true);
-
-  // Đồng bộ margin của layout chính khi đóng/mở sidebar
-  useEffect(() => {
-    const mainEls = document.querySelectorAll('main');
-    mainEls.forEach(main => {
-      if (isOpen) {
-        main.classList.remove('ml-16', 'md:ml-16');
-        if (main.classList.contains('min-w-0')) {
-          main.classList.add('ml-52');
-        }
-      } else {
-        main.classList.remove('ml-52', 'md:ml-52');
-        if (main.classList.contains('min-w-0')) {
-          main.classList.add('ml-16');
-        }
-      }
-    });
-  }, [isOpen]);
+/* ─── Collapsible section ───────────────────────────────────────────────── */
+const SidebarSection = ({ section, isExpanded, isCollapsed, onToggle }) => {
+  const location = useLocation();
+  const hasActiveChild = section.items.some(i => location.pathname.startsWith(i.path));
 
   return (
-    <aside className={`fixed left-0 top-14 bottom-0 ${isOpen ? 'w-52' : 'w-16'} bg-white border-r border-gray-200 overflow-y-auto custom-scrollbar z-40 transition-all duration-300`}>
-      {/* Nút Toggle Sidebar */}
-      <div className="flex items-center justify-end p-2 border-b border-gray-100 h-10 sticky top-0 bg-white z-10 hidden md:flex">
-        <button 
-          onClick={() => setIsOpen(!isOpen)}
-          className="p-1 hover:bg-gray-100 rounded-lg text-gray-500 transition-colors"
-          title={isOpen ? "Thu gọn" : "Mở rộng"}
+    <div className="adm-sb__section">
+      {/* Section header — clickable to expand/collapse items */}
+      {!isCollapsed && (
+        <button
+          type="button"
+          className={`adm-sb__section-header ${hasActiveChild ? 'adm-sb__section-header--active' : ''}`}
+          onClick={onToggle}
+          aria-expanded={isExpanded}
         >
-          {isOpen ? <ChevronLeft size={18} /> : <ChevronRight size={18} />}
+          <span className="adm-sb__section-title">{section.title}</span>
+          <ChevronDown
+            size={14}
+            className={`adm-sb__section-chevron ${isExpanded ? '' : 'adm-sb__section-chevron--closed'}`}
+          />
+        </button>
+      )}
+
+      {/* Collapsed mode: separator */}
+      {isCollapsed && <div className="adm-sb__collapsed-sep" />}
+
+      {/* Items container — animated height */}
+      <div
+        className={`adm-sb__items ${isExpanded || isCollapsed ? 'adm-sb__items--open' : 'adm-sb__items--closed'}`}
+      >
+        {section.items.map((item) => {
+          const Icon = item.icon;
+          return (
+            <NavLink
+              key={item.path}
+              to={item.path}
+              title={isCollapsed ? item.label : ''}
+              className={({ isActive }) =>
+                `adm-sb__link ${isCollapsed ? 'adm-sb__link--icon-only' : ''} ${isActive ? 'adm-sb__link--active' : ''}`
+              }
+            >
+              <Icon className="adm-sb__icon" />
+              {!isCollapsed && <span className="adm-sb__label">{item.label}</span>}
+            </NavLink>
+          );
+        })}
+      </div>
+    </div>
+  );
+};
+
+/* ─── Main sidebar ──────────────────────────────────────────────────────── */
+const AdminSidebar = ({ isCollapsed, onToggle }) => {
+  // Track which sections are expanded (all open by default)
+  const [expandedSections, setExpandedSections] = useState(() =>
+    SIDEBAR_SECTIONS.reduce((acc, s) => ({ ...acc, [s.id]: true }), {})
+  );
+
+  const toggleSection = useCallback((id) => {
+    setExpandedSections(prev => ({ ...prev, [id]: !prev[id] }));
+  }, []);
+
+  return (
+    <aside className={`adm-sb ${isCollapsed ? 'adm-sb--collapsed' : ''}`}>
+      {/* Toggle button */}
+      <div className="adm-sb__toggle-bar">
+        <button
+          type="button"
+          className="adm-sb__toggle-btn"
+          onClick={onToggle}
+          title={isCollapsed ? 'Mở rộng' : 'Thu gọn'}
+        >
+          {isCollapsed ? <ChevronRight size={18} /> : <ChevronLeft size={18} />}
         </button>
       </div>
 
-      <nav className="py-2">
-        {SIDEBAR_SECTIONS.map((section, idx) => (
-          <div key={idx} className="mb-4">
-            {isOpen && <p className="px-4 text-[10px] font-bold text-gray-500 tracking-wider mb-2 mt-2">{section.title}</p>}
-            {!isOpen && <div className="h-4 mt-2 border-b border-gray-100 w-6 mx-auto mb-2"></div>}
-            <div className="flex flex-col gap-1">
-              {section.items.map((item) => {
-                const Icon = item.icon;
-                return (
-                  <NavLink
-                    key={item.path}
-                    to={item.path}
-                    title={!isOpen ? item.label : ""}
-                    className={({ isActive }) =>
-                      `w-full flex items-center ${isOpen ? 'gap-2.5 px-4' : 'justify-center px-0'} py-2.5 text-sm transition-colors ${isActive
-                        ? "bg-[#3AB4E6]/10 text-[#3AB4E6] font-bold border-r-4 border-[#3AB4E6]"
-                        : "text-gray-600 hover:text-gray-900 hover:bg-gray-50 border-r-4 border-transparent"
-                      }`
-                    }
-                  >
-                    <Icon className="w-[18px] h-[18px] shrink-0" />
-                    {isOpen && <span className="truncate">{item.label}</span>}
-                  </NavLink>
-                );
-              })}
-            </div>
-          </div>
+      {/* Brand mark (collapsed only) */}
+      {isCollapsed && (
+        <div className="adm-sb__brand-mark">
+          <LayoutDashboard size={22} />
+        </div>
+      )}
+
+      {/* Navigation sections */}
+      <nav className="adm-sb__nav">
+        {SIDEBAR_SECTIONS.map((section) => (
+          <SidebarSection
+            key={section.id}
+            section={section}
+            isExpanded={expandedSections[section.id]}
+            isCollapsed={isCollapsed}
+            onToggle={() => toggleSection(section.id)}
+          />
         ))}
       </nav>
+
+      {/* Footer */}
+      <div className="adm-sb__footer">
+        {!isCollapsed && (
+          <span className="adm-sb__version">ITing Admin v2.0</span>
+        )}
+      </div>
     </aside>
   );
 };

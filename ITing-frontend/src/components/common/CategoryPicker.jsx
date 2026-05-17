@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { FaBars, FaSearch, FaChevronRight, FaTimes, FaCheck, FaQuestionCircle } from 'react-icons/fa';
 
 const categoriesData = [
@@ -113,7 +114,14 @@ const CategoryPicker = ({ value, onChange }) => {
             </div>
 
             {/* Dropdown Modal */}
-            {isOpen && (
+            {isOpen && createPortal(
+              <>
+                {/* Transparent backdrop — closes on click, no blur/dim */}
+                <div 
+                    className="fixed inset-0"
+                    style={{ zIndex: 9999 }}
+                    onClick={() => setIsOpen(false)}
+                />
                 <div
                     ref={modalRef}
                     style={{
@@ -213,7 +221,8 @@ const CategoryPicker = ({ value, onChange }) => {
                         </div>
                     </div>
                 </div>
-            )}
+              </>
+            , document.body)}
         </div>
     );
 };

@@ -27,7 +27,6 @@ public class DeprecatedPathInterceptor implements HandlerInterceptor {
 
     static {
         DEPRECATIONS.put("/api/employer/jobs",         "/api/hr/jobs");
-        DEPRECATIONS.put("/api/employer/applications", "/api/hr/applications");
         DEPRECATIONS.put("/api/employers/candidates",  "/api/hr/candidates");
         // /api/companies/me/* — không alias 1-1 (HR side đã đổi semantics qua affiliation)
         // nhưng vẫn log để biết FE còn dùng.

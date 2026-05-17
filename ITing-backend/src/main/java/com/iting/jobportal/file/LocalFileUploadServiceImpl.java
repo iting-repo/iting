@@ -69,6 +69,21 @@ public class LocalFileUploadServiceImpl implements FileUploadService {
         return fileUrl;
     }
 
+    @Override
+    public String uploadBytes(byte[] bytes, String key, String contentType) {
+        try {
+            Path filePath = Paths.get(UPLOAD_DIR + key);
+            Path parent = filePath.getParent();
+            if (parent != null && !Files.exists(parent)) {
+                Files.createDirectories(parent);
+            }
+            Files.write(filePath, bytes);
+            return "/" + UPLOAD_DIR + key;
+        } catch (IOException e) {
+            throw new RuntimeException("Cannot write bytes to " + key, e);
+        }
+    }
+
     private String saveFile(MultipartFile file, String folder) {
         try {
             Path uploadPath = Paths.get(UPLOAD_DIR + folder);

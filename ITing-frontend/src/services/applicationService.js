@@ -55,6 +55,30 @@ const applicationService = {
     updateStatus: async (id, data) => {
         const response = await axiosInstance.put(`/employer/applications/${id}/status`, data);
         return response;
+    },
+
+    // 8. Candidate kiểm tra đã ứng tuyển job chưa
+    checkApplied: async (jobId) => {
+        const response = await axiosInstance.get(`/candidates/applications/check/${jobId}`);
+        return response;
+    },
+
+    // 9. Candidate xem danh sách đơn đã nộp
+    getMyApplications: async (params) => {
+        const response = await axiosInstance.get('/candidates/applications/my-applications', { params });
+        return response;
+    },
+
+    // 10. Employer hoàn tác từ chối (undo reject) — đưa về PENDING
+    undoReject: async (id) => {
+        const response = await axiosInstance.post(`/employer/applications/${id}/undo-reject`);
+        return response;
+    },
+
+    // 11. Employer hoàn tác hàng loạt (bulk undo)
+    bulkUndoReject: async (ids) => {
+        const response = await axiosInstance.post('/employer/applications/bulk-undo-reject', { ids });
+        return response;
     }
 };
 

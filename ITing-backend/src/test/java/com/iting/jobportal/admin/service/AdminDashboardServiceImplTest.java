@@ -2,7 +2,7 @@ package com.iting.jobportal.admin.service;
 
 import com.iting.jobportal.admin.dto.DashboardStats;
 import com.iting.jobportal.admin.service.impl.AdminDashboardServiceImpl;
-import com.iting.jobportal.application.repository.JobApplicationRepository;
+import com.iting.jobportal.application.repository.AdminApplicationRepository;
 import com.iting.jobportal.auth.repository.AccountRepository;
 import com.iting.jobportal.job.repository.JobRepository;
 import org.junit.jupiter.api.Test;
@@ -23,7 +23,7 @@ class AdminDashboardServiceImplTest {
     private JobRepository jobRepository;
 
     @Mock
-    private JobApplicationRepository jobApplicationRepository;
+    private AdminApplicationRepository adminApplicationRepository;
 
     @InjectMocks
     private AdminDashboardServiceImpl service;

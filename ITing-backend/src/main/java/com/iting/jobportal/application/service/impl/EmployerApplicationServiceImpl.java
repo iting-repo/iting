@@ -163,6 +163,9 @@ public class EmployerApplicationServiceImpl implements EmployerApplicationServic
 
         ApplicationStatus oldStatus = sent.getStatus();
         sent.setStatus(request.getStatus());
+        if (request.getNote() != null && !request.getNote().isBlank()) {
+            sent.setEmployerNote(request.getNote());
+        }
         employerApplicationRepository.save(sent);
 
         // Notify candidate if status changed to ACCEPTED or REJECTED
@@ -222,6 +225,7 @@ public class EmployerApplicationServiceImpl implements EmployerApplicationServic
     public ApplicationResponse acceptApplication(Long employerId, Long applicationId, String note) {
         UpdateApplicationStatusRequest request = new UpdateApplicationStatusRequest();
         request.setStatus(ApplicationStatus.ACCEPTED);
+        request.setNote(note);
         return updateApplicationStatus(employerId, applicationId, request);
     }
 
@@ -230,6 +234,7 @@ public class EmployerApplicationServiceImpl implements EmployerApplicationServic
     public ApplicationResponse rejectApplication(Long employerId, Long applicationId, String note) {
         UpdateApplicationStatusRequest request = new UpdateApplicationStatusRequest();
         request.setStatus(ApplicationStatus.REJECTED);
+        request.setNote(note);
         return updateApplicationStatus(employerId, applicationId, request);
     }
 
