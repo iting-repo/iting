@@ -35,10 +35,10 @@ public class AdminUserServiceImpl implements AdminUserService {
     @Override
     public Page<UserListResponse> getAllUsers(String keyword, Role role, AccountStatus status, int page, int size) {
         Pageable pageable = PageRequest.of(page, size, Sort.by("id").descending());
-        
+
         Specification<Account> spec = (root, query, cb) -> {
             List<Predicate> predicates = new ArrayList<>();
-            
+
             if (keyword != null && !keyword.trim().isEmpty()) {
                 String pattern = "%" + keyword.trim().toLowerCase() + "%";
 
@@ -47,19 +47,18 @@ public class AdminUserServiceImpl implements AdminUserService {
                 var userJoin = root.join("user", jakarta.persistence.criteria.JoinType.LEFT);
 
                 predicates.add(cb.or(
-                    cb.like(cb.lower(root.get("email")), pattern),
-                    cb.like(cb.lower(userJoin.get("fullName")), pattern)
-                ));
+                        cb.like(cb.lower(root.get("email")), pattern),
+                        cb.like(cb.lower(userJoin.get("fullName")), pattern)));
             }
-            
+
             if (role != null) {
                 predicates.add(cb.equal(root.get("role"), role));
             }
-            
+
             if (status != null) {
                 predicates.add(cb.equal(root.get("status"), status));
             }
-            
+
             return cb.and(predicates.toArray(new Predicate[0]));
         };
 
@@ -78,14 +77,14 @@ public class AdminUserServiceImpl implements AdminUserService {
     public UserListResponse updateUser(Long adminId, Long userId, UpdateUserRequest request) {
         Account account = accountRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found"));
-        
+
         if (request.getRole() != null) {
             account.setRole(request.getRole());
         }
         if (request.getStatus() != null) {
             account.setStatus(request.getStatus());
         }
-        
+
         account = accountRepository.save(account);
         return mapToResponse(account);
     }
@@ -137,18 +136,18 @@ public class AdminUserServiceImpl implements AdminUserService {
     @Override
     public java.io.ByteArrayInputStream exportUsersToExcel() {
         List<Account> accounts = accountRepository.findAll();
-        String[] headers = {"ID", "Email", "Role", "Status", "Full Name", "Company Name", "Created At"};
-        
+        String[] headers = { "ID", "Email", "Role", "Status", "Full Name", "Company Name", "Created At" };
+
         return com.iting.jobportal.common.excel.ExcelHelper.dataToExcel(
-                accounts, 
-                headers, 
+                accounts,
+                headers,
                 "Users",
                 (account, row) -> {
                     row.createCell(0).setCellValue(account.getId());
                     row.createCell(1).setCellValue(account.getEmail());
                     row.createCell(2).setCellValue(account.getRole().toString());
                     row.createCell(3).setCellValue(account.getStatus().toString());
-                    
+
                     String fullName = "";
                     if (account.getUser() != null) {
                         fullName = account.getUser().getFullName();
@@ -162,10 +161,10 @@ public class AdminUserServiceImpl implements AdminUserService {
                             .map(a -> a.getCompany() != null ? a.getCompany().getName() : "")
                             .orElse("");
                     row.createCell(5).setCellValue(companyName);
-                    
-                    row.createCell(6).setCellValue(account.getCreatedAt() != null ? account.getCreatedAt().toString() : "");
-                }
-        );
+
+                    row.createCell(6)
+                            .setCellValue(account.getCreatedAt() != null ? account.getCreatedAt().toString() : "");
+                });
     }
 
     @Override
@@ -180,8 +179,7 @@ public class AdminUserServiceImpl implements AdminUserService {
                         account.setRole(Role.valueOf(row.getCell(1).getStringCellValue()));
                         account.setStatus(AccountStatus.ACTIVE);
                         return account;
-                    }
-            );
+                    });
             accountRepository.saveAll(accounts);
         } catch (java.io.IOException e) {
             throw new RuntimeException("fail to store excel data: " + e.getMessage());
@@ -190,7 +188,7 @@ public class AdminUserServiceImpl implements AdminUserService {
 
     @Override
     public java.io.ByteArrayInputStream getImportTemplate() {
-        String[] headers = {"Email", "Role (CANDIDATE/EMPLOYER/ADMIN)"};
+        String[] headers = { "Email", "Role (CANDIDATE/EMPLOYER/ADMIN)" };
         return com.iting.jobportal.common.excel.ExcelHelper.createTemplate(headers, "User Import Template");
     }
 
@@ -203,7 +201,7 @@ public class AdminUserServiceImpl implements AdminUserService {
                 .createdAt(account.getCreatedAt())
                 .lastLoginAt(account.getLastLoginAt())
                 .build();
-                
+
         if (account.getUser() != null) {
             response.setFullName(account.getUser().getFullName());
             response.setAvatarUrl(account.getUser().getAvatarUrl());

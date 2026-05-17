@@ -1093,9 +1093,9 @@ const HomePage = () => {
                             <p className="text-gray-500 text-sm">Cập nhật tin tức mới nhất về công nghệ và thị trường tuyển dụng</p>
                         </div>
                         {/* FIX: Thay BsArrowRight bằng FaArrowRight */}
-                        <a href="#" className="text-[#3AB4E6] font-medium hover:underline flex items-center gap-1">
+                        <Link to="/blogs" className="text-[#3AB4E6] font-medium hover:underline flex items-center gap-1">
                             View all <FaArrowRight />
-                        </a>
+                        </Link>
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8">

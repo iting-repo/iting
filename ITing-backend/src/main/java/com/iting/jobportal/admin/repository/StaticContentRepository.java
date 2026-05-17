@@ -24,4 +24,3 @@ public interface StaticContentRepository extends JpaRepository<StaticContent, Lo
 
     boolean existsBySlug(String slug);
 }
-
