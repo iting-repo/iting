@@ -49,6 +49,8 @@ const NotificationManagement = lazy(() => import('../pages/admin/notifications/N
 const CategoryManagement = lazy(() => import('../pages/admin/categories/CategoryManagement'));
 const BannerManagement = lazy(() => import('../pages/admin/banner/BannerManagement'));
 const BlogManagement = lazy(() => import('../pages/admin/blog/BlogManagement'));
+const FaqManagement = lazy(() => import('../pages/admin/faq/FaqManagement'));
+const RoleManagement = lazy(() => import('../pages/admin/roles/RoleManagement'));
 const CompaniesPage = lazy(() => import('../pages/public/CompaniesPage'));
 const CompanyDetailPage = lazy(() => import('../pages/public/CompanyDetailPage'));
 const SalaryLookupPage = lazy(() => import('../pages/public/SalaryLookupPage'));
@@ -93,6 +95,8 @@ const AppRoutes = () => {
             <Route path="categories" element={<CategoryManagement />} />
             <Route path="banner" element={<BannerManagement />} />
             <Route path="blog" element={<BlogManagement />} />
+            <Route path="faq" element={<FaqManagement />} />
+            <Route path="roles" element={<RoleManagement />} />
           </Route>
         </Route>
 

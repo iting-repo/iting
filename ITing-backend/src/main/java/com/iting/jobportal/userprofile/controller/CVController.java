@@ -1,5 +1,7 @@
 package com.iting.jobportal.userprofile.controller;
 
+import com.iting.jobportal.common.ratelimit.RateLimitPolicy;
+import com.iting.jobportal.common.ratelimit.RateLimited;
 import com.iting.jobportal.job.controller.CurrentUser;
 import com.iting.jobportal.userprofile.dto.response.CVResponse;
 import com.iting.jobportal.userprofile.service.CVService;
@@ -27,7 +29,8 @@ public class CVController {
     private final GeminiCVParserService geminiCVParserService;
 
     @GetMapping("/recent")
-    @Operation(summary = "Lấy 3 CV mới nhất của người dùng", description = "Endpoint này được gọi khi người dùng bấm nút Apply để hiển thị danh sách CV đã upload")
+    @Operation(summary = "Lấy 3 CV mới nhất của người dùng", 
+               description = "Endpoint này được gọi khi người dùng bấm nút Apply để hiển thị danh sách CV đã upload")
     public ResponseEntity<List<CVResponse>> getRecentCVs(
             @Parameter(hidden = true) @CurrentUser Long userId) {
         List<CVResponse> cvs = cvService.getRecentCVs(userId);
@@ -35,7 +38,9 @@ public class CVController {
     }
 
     @PostMapping(value = "/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    @Operation(summary = "Upload CV mới", description = "Upload CV mới cho người dùng. Tự động xóa CV cũ nhất nếu vượt quá 3 CVs")
+    @Operation(summary = "Upload CV mới",
+               description = "Upload CV mới cho người dùng. Tự động xóa CV cũ nhất nếu vượt quá 3 CVs")
+    @RateLimited(policy = RateLimitPolicy.FILE_UPLOAD, subject = "user")
     public ResponseEntity<CVResponse> uploadCV(
             @Parameter(hidden = true) @CurrentUser Long userId,
             @RequestParam("file") MultipartFile file,
@@ -56,11 +61,13 @@ public class CVController {
         return ResponseEntity.ok(Map.of(
                 "count", cvs.size(),
                 "maxAllowed", 3,
-                "hasReachedLimit", cvs.size() >= 3));
+                "hasReachedLimit", cvs.size() >= 3
+        ));
     }
 
     @PostMapping(value = "/parse", consumes = MediaType.MULTIPART_FORM_DATA_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
-    @Operation(summary = "Phân tích CV bằng AI (Gemini)", description = "Đọc file PDF/Image CV và trích xuất thông tin kỹ năng, học vấn, kinh nghiệm thành JSON")
+    @Operation(summary = "Phân tích CV bằng AI (Gemini)", 
+               description = "Đọc file PDF/Image CV và trích xuất thông tin kỹ năng, học vấn, kinh nghiệm thành JSON")
     public ResponseEntity<?> parseCV(
             @Parameter(hidden = true) @CurrentUser Long userId,
             @RequestParam("file") MultipartFile file) {

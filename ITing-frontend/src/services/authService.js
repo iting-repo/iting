@@ -54,4 +54,8 @@ authService.resendOtp = async (data) => {
     return axiosInstance.post('/auth/resend-otp', data);
 }
 
+authService.changePassword = async (oldPassword, newPassword) => {
+    return axiosInstance.post('/auth/change-password', { oldPassword, newPassword });
+}
+
 export default authService;

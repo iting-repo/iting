@@ -7,12 +7,14 @@ import com.iting.jobportal.auth.entity.Account;
 import com.iting.jobportal.auth.entity.Enum.AccountStatus;
 import com.iting.jobportal.auth.entity.Enum.Role;
 import com.iting.jobportal.auth.repository.AccountRepository;
+import com.iting.jobportal.company.repository.CompanyHrAffiliationRepository;
 import com.iting.jobportal.user.entity.User;
 import com.iting.jobportal.user.repository.UserRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
@@ -36,6 +38,9 @@ class AdminUserServiceImplTest {
     @Mock
     private UserRepository userRepository;
 
+    @Mock
+    private CompanyHrAffiliationRepository affiliationRepository;
+
     @InjectMocks
     private AdminUserServiceImpl service;
 
@@ -45,10 +50,15 @@ class AdminUserServiceImplTest {
         user.setId(1L);
         user.setFullName("Test User");
         user.setAvatarUrl("/a.png");
+
+        // Account.getUser() is a JPA @OneToOne — mapToResponse reads it directly,
+        // it does NOT go through userRepository.findById.
         Account account = Account.builder().id(1L).email("u@test.com").role(Role.CANDIDATE).status(AccountStatus.ACTIVE).user(user).build();
 
         when(accountRepository.findAll(any(Specification.class), any(Pageable.class)))
                 .thenReturn(new PageImpl<>(List.of(account)));
+        Mockito.lenient().when(affiliationRepository.findActiveByHrAccountId(1L))
+                .thenReturn(Optional.empty());
 
         Page<UserListResponse> result = service.getAllUsers(null, null, null, 0, 10);
 
@@ -66,6 +76,9 @@ class AdminUserServiceImplTest {
 
         when(accountRepository.findById(2L)).thenReturn(Optional.of(account));
         when(accountRepository.save(account)).thenReturn(account);
+        Mockito.lenient().when(affiliationRepository.findActiveByHrAccountId(2L))
+                .thenReturn(Optional.empty());
+
         UserListResponse result = service.updateUser(1L, 2L, request);
 
         assertEquals(Role.EMPLOYER, account.getRole());

@@ -17,7 +17,12 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import java.util.List;
 
-@Tag(name = "08.2 Application Employer", description = "APIs for employer to manage candidates")
+/**
+ * @deprecated Phase 4 dual-mount. Dùng {@link HrApplicationController} ở
+ *             {@code /api/hr/applications/**}. Sẽ remove sau 2 sprint.
+ */
+@Deprecated(since = "Phase 4")
+@Tag(name = "08.2 Application Employer (DEPRECATED)", description = "DEPRECATED — dùng /api/hr/applications/**")
 @RestController
 @RequestMapping("/api/employer/applications")
 @RequiredArgsConstructor

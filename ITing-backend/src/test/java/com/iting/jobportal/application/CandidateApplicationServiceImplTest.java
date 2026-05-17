@@ -16,6 +16,7 @@ import com.iting.jobportal.user.repository.UserRepository;
 import com.iting.jobportal.userprofile.entity.CV;
 import com.iting.jobportal.userprofile.entity.UserProfile;
 import com.iting.jobportal.userprofile.repository.CVRepository;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -28,6 +29,7 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
+import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDateTime;
@@ -51,6 +53,12 @@ class CandidateApplicationServiceImplTest {
 
     @InjectMocks
     private CandidateApplicationServiceImpl service;
+
+    @BeforeEach
+    void setUp() {
+        // Optional<OutboxAppender> is left null by @InjectMocks; default to empty.
+        ReflectionTestUtils.setField(service, "outboxAppender", Optional.empty());
+    }
 
     @Test
     void applyJob_withoutCv_shouldCreateApplyFormAndJoinRecord() {

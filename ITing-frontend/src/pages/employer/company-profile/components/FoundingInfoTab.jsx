@@ -15,6 +15,7 @@ import {
 } from "react-icons/fa";
 import { AVAILABLE_INDUSTRIES } from "../../../../constants/industries";
 import companyService from "../../../../services/companyService";
+import affiliationService from "../../../../services/affiliationService";
 import { toast } from "sonner";
 import AppModal from "../../../../components/common/AppModal";
 import axiosInstance from "../../../../utils/axiosInstance";
@@ -121,6 +122,16 @@ const FoundingInfoTab = ({ onTabChange }) => {
   const [company, setCompany] = useState(null);
   const [verificationLevel, setVerificationLevel] = useState("UNVERIFIED");
 
+  // Phase 5: snapshot affiliation của HR đang login
+  // {affiliationId, companyId, status, submissionStatus, isInfoSource, submittedName, ...}
+  // null = HR chưa init affiliation (chưa nhập taxCode lần đầu)
+  const [affiliation, setAffiliation] = useState(null);
+
+  // Phase 5: modal "init" lần đầu — HR nhập taxCode
+  const [showInitModal, setShowInitModal] = useState(false);
+  const [initTaxCode, setInitTaxCode] = useState("");
+  const [initSubmitting, setInitSubmitting] = useState(false);
+
   const [loading, setLoading] = useState(true);
   const [showRequestModal, setShowRequestModal] = useState(false);
   const [submittingRequest, setSubmittingRequest] = useState(false);
@@ -138,6 +149,16 @@ const FoundingInfoTab = ({ onTabChange }) => {
   const fetchData = async () => {
     try {
       setLoading(true);
+
+      // Phase 5: lấy affiliation trước. Nếu null → HR chưa init → mở modal init.
+      const aff = await affiliationService.getMe().catch(() => null);
+      setAffiliation(aff);
+
+      if (!aff) {
+        setShowInitModal(true);
+        setLoading(false);
+        return;
+      }
 
       const [companyData, industriesRes] = await Promise.all([
         companyService.getMyCompany(),
@@ -162,17 +183,19 @@ const FoundingInfoTab = ({ onTabChange }) => {
         setCompany(companyData);
         setVerificationLevel(companyData.verificationLevel || "UNVERIFIED");
 
+        // Phase 5: ưu tiên dùng snapshot affiliation (HR đã sửa nhưng chưa apply lên Company)
+        // fallback về Company info nếu snapshot trống.
         setRequestForm({
-          companyName: companyData.name || "",
-          taxCode: companyData.taxCode || "",
-          industries: companyData.industries || [],
-          companySize: companyData.companySize || "",
-          phone: companyData.phone || "",
-          email: companyData.companyEmail || "",
-          address: companyData.address || "",
-          website: companyData.website || companyData.webLink || "",
-          description: companyData.description || "",
-          logoUrl: companyData.logoUrl || companyData.logo || "",
+          companyName: aff.submittedName || companyData.name || "",
+          taxCode: aff.companyTaxCode || companyData.taxCode || "",
+          industries: aff.submittedIndustries?.length ? aff.submittedIndustries : (companyData.industries || []),
+          companySize: aff.submittedCompanySize || companyData.companySize || "",
+          phone: aff.submittedPhone || companyData.phone || "",
+          email: aff.submittedCompanyEmail || companyData.companyEmail || "",
+          address: aff.submittedAddress || companyData.address || "",
+          website: aff.submittedWebsite || companyData.website || companyData.webLink || "",
+          description: aff.submittedDescription || companyData.description || "",
+          logoUrl: aff.submittedLogoUrl || companyData.logoUrl || companyData.logo || "",
         });
       }
 
@@ -181,6 +204,43 @@ const FoundingInfoTab = ({ onTabChange }) => {
       toast.error("Không thể tải thông tin công ty.");
     } finally {
       setLoading(false);
+    }
+  };
+
+  /**
+   * Phase 5: HR submit taxCode lần đầu để khởi tạo affiliation.
+   * Nếu taxCode chưa tồn tại → backend tạo Company DRAFT mới (isFirstHr=true).
+   * Nếu đã tồn tại → join Company existing (isFirstHr=false, snapshot HR riêng để admin verify).
+   */
+  const handleInitAffiliation = async () => {
+    const trimmed = (initTaxCode || "").trim();
+    if (!trimmed) {
+      toast.error("Vui lòng nhập mã số thuế");
+      return;
+    }
+    try {
+      setInitSubmitting(true);
+      const resp = await affiliationService.init(trimmed);
+      if (resp?.isFirstHr) {
+        toast.success("Đã khởi tạo công ty mới. Vui lòng điền đầy đủ thông tin và gửi duyệt.");
+      } else {
+        toast.success(
+          `Bạn đang xác thực thuộc công ty "${resp?.companyName || ""}". Vui lòng nộp giấy phép kinh doanh để admin đối chiếu.`,
+        );
+      }
+      setShowInitModal(false);
+      setInitTaxCode("");
+      await fetchData();
+    } catch (error) {
+      console.error("Lỗi khi init affiliation:", error);
+      const msg =
+        error?.response?.data?.message ||
+        error?.response?.data?.error ||
+        error?.message ||
+        "Không thể khởi tạo. Vui lòng thử lại.";
+      toast.error(msg);
+    } finally {
+      setInitSubmitting(false);
     }
   };
 
@@ -367,9 +427,11 @@ const FoundingInfoTab = ({ onTabChange }) => {
     try {
       setSubmittingRequest(true);
 
+      // Phase 5: ghi vào snapshot affiliation, KHÔNG ghi vào Company.
+      // Backend xử lý tiếp: chỉ admin approve mới apply snapshot lên Company hiển thị.
+      // Lưu ý: taxCode KHÔNG nằm trong basic-info (đã được xác định lúc init).
       const payload = {
         name: requestForm.companyName,
-        taxCode: requestForm.taxCode,
         industries: requestForm.industries,
         companySize: requestForm.companySize,
         phone: requestForm.phone,
@@ -380,9 +442,17 @@ const FoundingInfoTab = ({ onTabChange }) => {
         logoUrl: requestForm.logoUrl,
       };
 
-      await companyService.createCompanyUpdateRequest(payload);
+      await affiliationService.updateBasicInfo(payload);
 
-      toast.success("Đã gửi yêu cầu cập nhật thông tin tới admin.");
+      // Sau khi cập nhật snapshot xong, gửi luôn cho admin duyệt.
+      // Backend validate đủ name/email/phone/address/license trước khi accept submit.
+      await affiliationService.submitReview();
+
+      toast.success(
+        affiliation?.isInfoSource
+          ? "Đã gửi yêu cầu cập nhật. Vui lòng gọi tổng đài để admin duyệt thay đổi info hiển thị."
+          : "Đã gửi yêu cầu xác thực tới admin.",
+      );
       setShowRequestModal(false);
       await fetchData();
     } catch (error) {
@@ -489,6 +559,67 @@ const FoundingInfoTab = ({ onTabChange }) => {
     );
   }
 
+  // Phase 5: HR chưa init affiliation → chỉ render init modal (full-screen prompt taxCode).
+  if (!affiliation) {
+    return (
+      <>
+        <div className="rounded-2xl border border-blue-100 bg-blue-50 p-8 text-center">
+          <FaExclamationTriangle className="mx-auto mb-3 text-3xl text-blue-600" />
+          <h3 className="text-lg font-bold text-gray-800">Bắt đầu khởi tạo công ty</h3>
+          <p className="mt-2 text-sm text-gray-600">
+            Vui lòng nhập <b>mã số thuế</b> để hệ thống xác định bạn đang tạo công ty mới
+            hay xác thực thuộc một công ty đã có.
+          </p>
+          <button
+            type="button"
+            onClick={() => setShowInitModal(true)}
+            className="mt-4 inline-flex items-center gap-2 rounded-lg bg-[#3AB4E6] px-5 py-2.5 text-sm font-semibold text-white hover:opacity-90"
+          >
+            <FaPlus /> Nhập mã số thuế
+          </button>
+        </div>
+
+        <AppModal
+          isOpen={showInitModal}
+          onClose={() => !initSubmitting && setShowInitModal(false)}
+          title="Nhập mã số thuế công ty"
+          subtitle="Nếu mã đã tồn tại, bạn sẽ được join công ty hiện có. Nếu chưa, hệ thống tạo công ty mới ở trạng thái nháp."
+          size="sm"
+          footer={
+            <div className="flex justify-end gap-3">
+              <button
+                onClick={() => setShowInitModal(false)}
+                disabled={initSubmitting}
+                className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+              >
+                Hủy
+              </button>
+              <button
+                onClick={handleInitAffiliation}
+                disabled={initSubmitting || !initTaxCode.trim()}
+                className="inline-flex items-center gap-2 rounded-lg bg-[#3AB4E6] px-5 py-2 text-sm font-bold text-white hover:opacity-90 disabled:opacity-50"
+              >
+                {initSubmitting ? <FaSpinner className="animate-spin" /> : null}
+                Tiếp tục
+              </button>
+            </div>
+          }
+        >
+          <label className="mb-2 block text-sm font-medium text-gray-700">Mã số thuế</label>
+          <input
+            type="text"
+            autoFocus
+            value={initTaxCode}
+            onChange={(e) => setInitTaxCode(e.target.value)}
+            placeholder="Ví dụ: 0312345678"
+            disabled={initSubmitting}
+            className="w-full rounded-lg border border-gray-300 px-4 py-3 text-sm focus:border-[#3AB4E6] disabled:bg-gray-100"
+          />
+        </AppModal>
+      </>
+    );
+  }
+
   return (
     <div className="space-y-6">
       <input
@@ -505,6 +636,37 @@ const FoundingInfoTab = ({ onTabChange }) => {
         onClose={() => setShowReasonModal(false)}
         status={company?.companyInfoUpdateStatus}
       />
+
+      {/* Phase 5: banner cảnh báo cho HR đến sau (không phải info source) */}
+      {affiliation && !affiliation.isInfoSource && affiliation.status === 'APPROVED' && (
+        <div className="rounded-xl border border-blue-200 bg-blue-50 p-4">
+          <div className="flex items-start gap-3">
+            <FaExclamationTriangle className="mt-0.5 text-blue-600" />
+            <div className="text-sm">
+              <p className="font-semibold text-blue-800">
+                Bạn đã được xác thực thuộc công ty {company?.name || ''}.
+              </p>
+              <p className="mt-1 text-blue-700">
+                Thông tin hiển thị (logo, mô tả, website…) lấy từ HR đầu tiên đã được duyệt.
+                Để thay đổi info hiển thị, vui lòng <b>gọi tổng đài 1900-XXX</b> để admin
+                duyệt thay đổi của bạn (sau khi submit).
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {affiliation && affiliation.submissionStatus === 'PENDING_REVIEW' && (
+        <div className="rounded-xl border border-amber-200 bg-amber-50 p-4">
+          <div className="flex items-start gap-3">
+            <FaClock className="mt-0.5 text-amber-600" />
+            <p className="text-sm font-medium text-amber-800">
+              Yêu cầu của bạn đang chờ admin duyệt. Bạn vẫn có thể chỉnh sửa snapshot
+              trước khi admin xem.
+            </p>
+          </div>
+        </div>
+      )}
 
       <div className="rounded-2xl border border-green-100 bg-[#F4FBF4] p-8 shadow-sm">
         <div className="mb-4">

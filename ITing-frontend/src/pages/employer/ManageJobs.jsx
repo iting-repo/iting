@@ -8,6 +8,8 @@ import {
   FaBan,
   FaChevronLeft,
   FaChevronRight,
+  FaAngleDoubleLeft,
+  FaAngleDoubleRight,
   FaPlus,
   FaClock,
   FaPauseCircle,
@@ -21,7 +23,27 @@ import PostJob from "./PostJob";
 import companyService from "../../services/companyService";
 import { Breadcrumb } from "../../components/common";
 
-const ITEMS_PER_PAGE = 5;
+const PAGE_SIZE_OPTIONS = [5, 10, 20, 50];
+
+/**
+ * Sinh dãy số trang hiển thị, dùng dấu `...` khi danh sách dài.
+ * Ví dụ: total=10, current=5 → [1, '...', 4, 5, 6, '...', 10]
+ */
+const buildPageList = (current, total) => {
+  if (total <= 7) {
+    return Array.from({ length: total }, (_, i) => i + 1);
+  }
+  const pages = new Set([1, total, current - 1, current, current + 1]);
+  const sorted = [...pages].filter((p) => p >= 1 && p <= total).sort((a, b) => a - b);
+  const result = [];
+  let prev = 0;
+  sorted.forEach((p) => {
+    if (prev && p - prev > 1) result.push("...");
+    result.push(p);
+    prev = p;
+  });
+  return result;
+};
 
 const formatJobType = (jobType) => {
   const map = {
@@ -76,6 +98,7 @@ const ManageJobs = () => {
   const [jobs, setJobs] = useState([]);
   const [filterStatus, setFilterStatus] = useState("All");
   const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(PAGE_SIZE_OPTIONS[0]);
   const [activeMenu, setActiveMenu] = useState(null);
   const [isPostJobOpen, setIsPostJobOpen] = useState(false);
   const [loadingJobs, setLoadingJobs] = useState(true);
@@ -84,7 +107,7 @@ const ManageJobs = () => {
   const fetchJobs = async () => {
     try {
       setLoadingJobs(true);
-      const data = await companyService.getMyJobs(0, 50);
+      const data = await companyService.getMyJobs(0, 200);
       const content = Array.isArray(data?.content) ? data.content : [];
       setJobs(content.map(mapJobToTableRow));
     } catch (err) {
@@ -101,7 +124,7 @@ const ManageJobs = () => {
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [filterStatus]);
+  }, [filterStatus, pageSize]);
 
   const filteredJobs = useMemo(() => {
     return jobs.filter((job) => {
@@ -110,10 +133,18 @@ const ManageJobs = () => {
     });
   }, [jobs, filterStatus]);
 
-  const indexOfLastItem = currentPage * ITEMS_PER_PAGE;
-  const indexOfFirstItem = indexOfLastItem - ITEMS_PER_PAGE;
+  const totalItems = filteredJobs.length;
+  const totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
+
+  // Clamp khi data co lại (vd. xoá job ở trang cuối)
+  useEffect(() => {
+    if (currentPage > totalPages) setCurrentPage(totalPages);
+  }, [currentPage, totalPages]);
+
+  const indexOfFirstItem = (currentPage - 1) * pageSize;
+  const indexOfLastItem = Math.min(indexOfFirstItem + pageSize, totalItems);
   const currentJobs = filteredJobs.slice(indexOfFirstItem, indexOfLastItem);
-  const totalPages = Math.ceil(filteredJobs.length / ITEMS_PER_PAGE);
+  const pageList = buildPageList(currentPage, totalPages);
 
   const toggleMenu = (id) => {
     setActiveMenu((prev) => (prev === id ? null : id));
@@ -423,44 +454,116 @@ const ManageJobs = () => {
           </table>
         </div>
 
-        {!loadingJobs && totalPages > 1 && (
-          <div className="flex justify-center items-center gap-2 mt-8">
-            <button
-              onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
-              disabled={currentPage === 1}
-              className={`w-10 h-10 rounded-full flex items-center justify-center transition-colors ${currentPage === 1
-                  ? "text-gray-300 cursor-not-allowed"
-                  : "text-[#3AB4E6] hover:bg-blue-50 bg-white shadow-sm border border-gray-100"
-                }`}
-            >
-              <FaChevronLeft size={12} />
-            </button>
+        {!loadingJobs && totalItems > 0 && (
+          <div className="flex flex-col md:flex-row justify-between items-center gap-4 mt-8 px-2">
+            {/* Counter + page size */}
+            <div className="flex items-center gap-4 text-sm text-gray-500">
+              <span>
+                Hiển thị{" "}
+                <span className="font-semibold text-gray-700">
+                  {indexOfFirstItem + 1}-{indexOfLastItem}
+                </span>{" "}
+                trên <span className="font-semibold text-gray-700">{totalItems}</span> tin
+              </span>
 
-            {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+              <div className="flex items-center gap-2">
+                <label htmlFor="page-size" className="text-gray-400">
+                  Hiển thị:
+                </label>
+                <select
+                  id="page-size"
+                  value={pageSize}
+                  onChange={(e) => setPageSize(Number(e.target.value))}
+                  className="bg-white border border-gray-200 text-gray-700 py-1.5 pl-2 pr-7 rounded-lg focus:outline-none focus:border-[#3AB4E6] text-sm font-medium"
+                >
+                  {PAGE_SIZE_OPTIONS.map((opt) => (
+                    <option key={opt} value={opt}>
+                      {opt}/trang
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            {/* Page navigation */}
+            <div className="flex items-center gap-1.5">
               <button
-                key={page}
-                onClick={() => setCurrentPage(page)}
-                className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm transition-all ${currentPage === page
-                    ? "bg-[#1967D2] text-white shadow-md"
-                    : "text-gray-500 hover:bg-gray-50"
-                  }`}
-              >
-                {page < 10 ? `0${page}` : page}
-              </button>
-            ))}
-
-            <button
-              onClick={() =>
-                setCurrentPage((prev) => Math.min(prev + 1, totalPages))
-              }
-              disabled={currentPage === totalPages}
-              className={`w-10 h-10 rounded-full flex items-center justify-center transition-colors ${currentPage === totalPages
-                  ? "text-gray-300 cursor-not-allowed"
-                  : "text-[#3AB4E6] hover:bg-blue-50 bg-white shadow-sm border border-gray-100"
+                onClick={() => setCurrentPage(1)}
+                disabled={currentPage === 1}
+                title="Trang đầu"
+                className={`w-10 h-10 rounded-full flex items-center justify-center transition-colors ${
+                  currentPage === 1
+                    ? "text-gray-300 cursor-not-allowed"
+                    : "text-[#3AB4E6] hover:bg-blue-50 bg-white shadow-sm border border-gray-100"
                 }`}
-            >
-              <FaChevronRight size={12} />
-            </button>
+              >
+                <FaAngleDoubleLeft size={12} />
+              </button>
+
+              <button
+                onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+                disabled={currentPage === 1}
+                title="Trang trước"
+                className={`w-10 h-10 rounded-full flex items-center justify-center transition-colors ${
+                  currentPage === 1
+                    ? "text-gray-300 cursor-not-allowed"
+                    : "text-[#3AB4E6] hover:bg-blue-50 bg-white shadow-sm border border-gray-100"
+                }`}
+              >
+                <FaChevronLeft size={12} />
+              </button>
+
+              {pageList.map((p, idx) =>
+                p === "..." ? (
+                  <span
+                    key={`ellipsis-${idx}`}
+                    className="w-10 h-10 flex items-center justify-center text-gray-400 select-none"
+                  >
+                    …
+                  </span>
+                ) : (
+                  <button
+                    key={p}
+                    onClick={() => setCurrentPage(p)}
+                    className={`min-w-[40px] h-10 px-2 rounded-full flex items-center justify-center font-bold text-sm transition-all ${
+                      currentPage === p
+                        ? "bg-[#1967D2] text-white shadow-md"
+                        : "text-gray-500 hover:bg-gray-50"
+                    }`}
+                  >
+                    {p < 10 ? `0${p}` : p}
+                  </button>
+                ),
+              )}
+
+              <button
+                onClick={() =>
+                  setCurrentPage((prev) => Math.min(prev + 1, totalPages))
+                }
+                disabled={currentPage === totalPages}
+                title="Trang sau"
+                className={`w-10 h-10 rounded-full flex items-center justify-center transition-colors ${
+                  currentPage === totalPages
+                    ? "text-gray-300 cursor-not-allowed"
+                    : "text-[#3AB4E6] hover:bg-blue-50 bg-white shadow-sm border border-gray-100"
+                }`}
+              >
+                <FaChevronRight size={12} />
+              </button>
+
+              <button
+                onClick={() => setCurrentPage(totalPages)}
+                disabled={currentPage === totalPages}
+                title="Trang cuối"
+                className={`w-10 h-10 rounded-full flex items-center justify-center transition-colors ${
+                  currentPage === totalPages
+                    ? "text-gray-300 cursor-not-allowed"
+                    : "text-[#3AB4E6] hover:bg-blue-50 bg-white shadow-sm border border-gray-100"
+                }`}
+              >
+                <FaAngleDoubleRight size={12} />
+              </button>
+            </div>
           </div>
         )}
 

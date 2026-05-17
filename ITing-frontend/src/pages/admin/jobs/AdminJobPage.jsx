@@ -22,6 +22,7 @@ import { JobTable } from "./components/JobTable";
 import { JobPreviewDialog } from "./components/JobPreviewDialog";
 import { JobDetailDialog } from "../../../components/admin/JobDetailDialog";
 import { ActionDialog } from "../../../components/admin/ActionDialog";
+import { JobApplicantsDialog } from "../../../components/admin/JobApplicantsDialog";
 
 import { useAdminJobs } from "../../../hooks/useAdminJobs";
 
@@ -45,6 +46,7 @@ const AdminJobPage = () => {
 
   const [previewJob, setPreviewJob] = useState(null);
   const [detailJob, setDetailJob] = useState(null);
+  const [applicantsJob, setApplicantsJob] = useState(null);
   const [actionDialog, setActionDialog] = useState(null);
   const [actionNote, setActionNote] = useState("");
   const [openMenuId, setOpenMenuId] = useState(null);
@@ -219,6 +221,7 @@ const AdminJobPage = () => {
         onPreview={setPreviewJob}
         onDetail={setDetailJob}
         onAction={handleAction}
+        onViewApplicants={setApplicantsJob}
         openMenuId={openMenuId}
         setOpenMenuId={setOpenMenuId}
         selectedIds={selectedIds}
@@ -228,7 +231,7 @@ const AdminJobPage = () => {
       />
 
       <Pagination
-        page={page}
+        currentPage={page}
         totalPages={totalPages}
         onPageChange={setPage}
       />
@@ -247,6 +250,12 @@ const AdminJobPage = () => {
         open={!!detailJob}
         onClose={() => setDetailJob(null)}
         onAction={handleAction}
+      />
+
+      <JobApplicantsDialog
+        job={applicantsJob}
+        open={!!applicantsJob}
+        onClose={() => setApplicantsJob(null)}
       />
 
       <ActionDialog

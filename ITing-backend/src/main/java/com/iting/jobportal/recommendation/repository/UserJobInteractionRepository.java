@@ -54,4 +54,13 @@ public interface UserJobInteractionRepository extends JpaRepository<UserJobInter
             "ORDER BY i.weight DESC, i.createdAt DESC")
     List<UserJobInteraction> findRecentInteractionsWithJobs(
             @Param("accountId") Long accountId, Pageable pageable);
+
+    /**
+     * Lấy id các job mà user đã ứng tuyển (interactionType=APPLY).
+     * Dùng để loại các job này khỏi danh sách đề xuất — recommend job đã apply là vô nghĩa.
+     */
+    @Query("SELECT DISTINCT i.job.id FROM UserJobInteraction i " +
+           "WHERE i.account.id = :accountId AND i.interactionType = " +
+           "com.iting.jobportal.recommendation.entity.enums.InteractionType.APPLY")
+    java.util.Set<Long> findAppliedJobIds(@Param("accountId") Long accountId);
 }

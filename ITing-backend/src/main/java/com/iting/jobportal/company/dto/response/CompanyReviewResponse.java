@@ -22,10 +22,11 @@ public class CompanyReviewResponse {
         if (review.getAccount().getUser() != null) {
             name = review.getAccount().getUser().getFullName();
             avatar = review.getAccount().getUser().getAvatarUrl();
-        } else if (review.getAccount().getCompany() != null) {
-            name = review.getAccount().getCompany().getName();
-            avatar = review.getAccount().getCompany().getLogoUrl();
         }
+        // NOTE: Sau Phase 2, Account không còn @OneToOne với Company. EMPLOYER account
+        // resolve company qua company_hr_affiliations. Reviewer thường là CANDIDATE
+        // nên User branch ở trên đã đủ; nếu cần hiển thị reviewer là HR, lookup qua
+        // affiliation ở service layer thay vì DTO.
 
         return CompanyReviewResponse.builder()
                 .id(review.getId())

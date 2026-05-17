@@ -9,14 +9,11 @@ import com.iting.jobportal.auth.entity.Enum.Role;
 import com.iting.jobportal.auth.repository.AccountRepository;
 import com.iting.jobportal.auth.repository.OtpCodeRepository;
 import com.iting.jobportal.auth.security.JwtTokenUtil;
-import com.iting.jobportal.auth.service.GoogleAuthService;
 import com.iting.jobportal.auth.service.RefreshTokenService;
 import com.iting.jobportal.auth.service.impl.AuthServiceImpl;
-import com.iting.jobportal.company.repository.CompanyRepository;
-import com.iting.jobportal.user.repository.UserRepository;
 import com.iting.jobportal.common.service.EmailService;
 import com.iting.jobportal.common.service.EmailTemplateService;
-import com.iting.jobportal.admin.service.AdminNotificationService;
+import com.iting.jobportal.user.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -50,12 +47,6 @@ class AuthServiceTest {
     private RefreshTokenService refreshTokenService;
 
     @Mock
-    private CompanyRepository companyRepository;
-
-    @Mock
-    private GoogleAuthService googleAuthService;
-
-    @Mock
     private OtpCodeRepository otpCodeRepository;
 
     @Mock
@@ -63,9 +54,6 @@ class AuthServiceTest {
 
     @Mock
     private EmailTemplateService emailTemplateService;
-
-    @Mock
-    private AdminNotificationService adminNotificationService;
 
     @InjectMocks
     private AuthServiceImpl authService;
@@ -91,7 +79,8 @@ class AuthServiceTest {
 
     @Test
     void register_shouldCreateAccountAndUser() {
-        lenient().when(accountRepository.existsByEmail(anyString())).thenReturn(false);
+        // Impl uses findByEmail() (not existsByEmail) to detect duplicates.
+        when(accountRepository.findByEmail(anyString())).thenReturn(Optional.empty());
         when(passwordEncoder.encode(anyString())).thenReturn("hashedPassword");
         when(accountRepository.save(any(Account.class))).thenReturn(testAccount);
 
@@ -104,7 +93,16 @@ class AuthServiceTest {
 
     @Test
     void register_withDuplicateEmail_shouldThrowException() {
-        lenient().when(accountRepository.existsByEmail(anyString())).thenReturn(true);
+        // Duplicate = existing account that is already activated (not PENDING + has lastLoginAt)
+        Account existing = Account.builder()
+                .id(99L)
+                .email("test@example.com")
+                .passwordHash("hashed")
+                .role(Role.CANDIDATE)
+                .status(AccountStatus.ACTIVE)
+                .lastLoginAt(java.time.LocalDateTime.now())
+                .build();
+        when(accountRepository.findByEmail(anyString())).thenReturn(Optional.of(existing));
 
         assertThrows(RuntimeException.class, () -> authService.register(registerRequest));
     }

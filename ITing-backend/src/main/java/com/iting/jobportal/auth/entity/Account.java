@@ -48,6 +48,7 @@ public class Account extends AuditEntity {
     @OneToOne(mappedBy = "account", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private User user;
 
-    @OneToOne(mappedBy = "account", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    private com.iting.jobportal.company.entity.Company company;
+    // NOTE: relation @OneToOne tới Company đã bị bỏ.
+    // Sau Phase 2, 1 Account (HR) liên kết tới Company qua bảng company_hr_affiliations
+    // (N HR có thể cùng thuộc 1 Company). Resolve company qua AuthorizationService.
 }

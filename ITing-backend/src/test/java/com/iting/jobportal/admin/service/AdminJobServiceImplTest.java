@@ -6,11 +6,13 @@ import com.iting.jobportal.job.entity.Job;
 import com.iting.jobportal.job.entity.enums.JobStatus;
 import com.iting.jobportal.job.repository.JobRepository;
 import com.iting.jobportal.job.repository.JobReviewHistoryRepository;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.List;
 import java.util.Optional;
@@ -27,6 +29,12 @@ class AdminJobServiceImplTest {
 
     @InjectMocks
     private AdminJobServiceImpl service;
+
+    @BeforeEach
+    void setUp() {
+        // Optional<DistributedLockService> is left null by @InjectMocks; default to empty.
+        ReflectionTestUtils.setField(service, "lockService", Optional.empty());
+    }
 
     @Test
     void approveJob_shouldActivatePendingJob_clearReason_setAuditAndSave() {

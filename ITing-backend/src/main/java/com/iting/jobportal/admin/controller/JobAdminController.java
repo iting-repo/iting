@@ -23,7 +23,7 @@ import org.springframework.web.multipart.MultipartFile;
 @RestController
 @RequestMapping("/api/admin/jobs")
 @RequiredArgsConstructor
-@Tag(name = "13. Admin Job Management", description = "Admin quản lý việc làm")
+@Tag(name = "13F. Admin Job Management", description = "Admin quản lý việc làm")
 public class JobAdminController {
 
     private final AdminJobService adminJobService;

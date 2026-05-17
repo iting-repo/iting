@@ -1,6 +1,5 @@
 package com.iting.jobportal.company.entity;
 
-import com.iting.jobportal.auth.entity.Account;
 import com.iting.jobportal.company.entity.enums.BusinessDocumentType;
 import com.iting.jobportal.company.entity.enums.CompanyReviewStatus;
 import com.iting.jobportal.company.entity.enums.DocumentReviewStatus;
@@ -21,18 +20,26 @@ import lombok.Setter;
 public class Company {
 
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "company_id")
     private Long id;
-
-    @OneToOne
-    @MapsId
-    @JoinColumn(name = "company_id")
-    private Account account;
 
     @OneToMany(mappedBy = "company", fetch = FetchType.LAZY)
     private List<Job> jobs;
 
     @OneToMany(mappedBy = "company", fetch = FetchType.LAZY)
     private List<CompanyAuditLog> auditLogs;
+
+    @OneToMany(mappedBy = "company", fetch = FetchType.LAZY)
+    private List<CompanyHrAffiliation> hrAffiliations;
+
+    /**
+     * Affiliation đang là "nguồn" của info hiển thị hiện tại của Company.
+     * Set khi affiliation đầu tiên APPROVED (auto-apply) hoặc admin gọi
+     * /api/admin/affiliations/{id}/apply-to-company sau hotline call.
+     */
+    @Column(name = "info_source_affiliation_id")
+    private Long infoSourceAffiliationId;
 
     // ===== Thông tin cơ bản =====
     @Column(name = "Name", nullable = false, length = 255)
@@ -97,7 +104,7 @@ public class Company {
     private String accountEmail;
 
     // ===== Thông tin pháp lý =====
-    @Column(name = "Tax_code", length = 50)
+    @Column(name = "Tax_code", length = 50, nullable = false, unique = true)
     private String taxCode;
 
     @Column(name = "Business_license_file_url", columnDefinition = "TEXT")
@@ -154,6 +161,15 @@ public class Company {
 
     @Column(name = "Profile_setup")
     private Boolean profileSetup = false;
+
+    /**
+     * JSON serialize của danh sách mạng xã hội: [{"platform":"FACEBOOK","url":"..."}].
+     * Dùng JSON 1 cột thay vì bảng riêng vì dữ liệu nhỏ và frontend luôn replace-all.
+     * Đọc/ghi qua CompanyService.getMySocialLinks / updateMySocialLinks (đã parse).
+     */
+    @com.fasterxml.jackson.annotation.JsonIgnore
+    @Column(name = "social_links", columnDefinition = "TEXT")
+    private String socialLinksJson;
 
     public Company() {
     }

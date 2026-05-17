@@ -73,4 +73,15 @@ public interface JobRepository extends JpaRepository<Job, Long>, JpaSpecificatio
     /** Tìm tất cả job ACTIVE có embedding (để vector search in-memory) */
     @Query("SELECT j FROM Job j WHERE j.status = 'ACTIVE' AND j.jobEmbedding IS NOT NULL")
     List<Job> findAllActiveWithEmbedding();
+
+    /**
+     * Pool ứng viên cho recommendation: ACTIVE + công ty active + chưa hết hạn,
+     * sắp theo (createdAt DESC). Pool rộng hơn `findTop50ByStatusOrderByCreatedAtDesc`
+     * để bao quát cả job cũ phù hợp với hồ sơ user.
+     */
+    @Query("SELECT j FROM Job j JOIN FETCH j.company c " +
+           "WHERE j.status = 'ACTIVE' AND c.active = true " +
+           "AND (j.dueDate IS NULL OR j.dueDate >= CURRENT_DATE) " +
+           "ORDER BY j.createdAt DESC")
+    List<Job> findActiveCandidatesForRecommendation(Pageable pageable);
 }

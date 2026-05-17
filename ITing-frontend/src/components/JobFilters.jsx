@@ -221,7 +221,7 @@ const JobFilters = ({
                     <div className="relative bg-white border border-transparent focus-within:border-[#00B4D8] rounded-lg shadow-sm">
                         <FaMapMarkerAlt className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs z-10" />
                         <div className="pl-9 pr-3 py-2.5">
-                            <LocationPicker 
+                            <LocationPicker
                                 value={filters.location}
                                 onChange={(val) => onFieldChange('location', val)}
                                 provinces={provinces}

@@ -131,6 +131,35 @@ public class CompanyController {
         return ResponseEntity.ok("Phone verified successfully");
     }
 
+    @PostMapping("/me/send-phone-otp")
+    @Operation(summary = "Gửi mã OTP về số điện thoại để xác thực")
+    public ResponseEntity<Map<String, Object>> sendPhoneOtp(
+            @Parameter(hidden = true) @CurrentUser Long userId,
+            @Valid @RequestBody com.iting.jobportal.company.dto.request.SendPhoneOtpRequest request) {
+        companyService.sendPhoneOtpByAccountId(userId, request.getPhone());
+        return ResponseEntity.ok(Map.of(
+                "message", "Đã gửi mã OTP. Vui lòng kiểm tra điện thoại.",
+                "expiresInSeconds", 300
+        ));
+    }
+
+    @GetMapping("/me/social-links")
+    @Operation(summary = "Lấy danh sách mạng xã hội của công ty của tôi")
+    public ResponseEntity<java.util.List<com.iting.jobportal.company.dto.request.CompanySocialLinkDto>>
+            getMySocialLinks(@Parameter(hidden = true) @CurrentUser Long userId) {
+        return ResponseEntity.ok(companyService.getMySocialLinks(userId));
+    }
+
+    @PutMapping("/me/social-links")
+    @Operation(summary = "Cập nhật toàn bộ danh sách mạng xã hội (replace-all)")
+    public ResponseEntity<java.util.List<com.iting.jobportal.company.dto.request.CompanySocialLinkDto>>
+            updateMySocialLinks(
+                    @Parameter(hidden = true) @CurrentUser Long userId,
+                    @Valid @RequestBody java.util.List<
+                            com.iting.jobportal.company.dto.request.CompanySocialLinkDto> links) {
+        return ResponseEntity.ok(companyService.updateMySocialLinks(userId, links));
+    }
+
     @PostMapping("/me/verify-license")
     @Operation(summary = "Xác thực giấy tờ công ty của tôi")
     public ResponseEntity<CompanyResponse> verifyLicense(

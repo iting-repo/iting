@@ -13,6 +13,12 @@ const applicationService = {
         return response;
     },
 
+    // 2.5 Employer tìm kiếm & lọc đơn
+    searchApplications: async (params) => {
+        const response = await axiosInstance.get('/employer/applications/search', { params });
+        return response;
+    },
+
     // 3. Employer chấp nhận ứng viên
     acceptApplication: async (id, note = "") => {
         const response = await axiosInstance.post(`/employer/applications/${id}/accept`, null, {
@@ -24,13 +30,31 @@ const applicationService = {
     // 4. Lấy thống kê đơn ứng tuyển
     getEmployerStats: async () => {
         try {
-            // Placeholder: chờ backend triển khai endpoint thực tế
-            // const response = await axiosInstance.get('/employer/applications/stats');
-            // return response;
-            return { total: 0 };
+            const response = await axiosInstance.get('/employer/applications/stats');
+            return response;
         } catch (error) {
             return { total: 0 };
         }
+    },
+
+    // 5. Đánh dấu đã xem hồ sơ
+    markViewed: async (applicationId) => {
+        const response = await axiosInstance.post(`/employer/applications/${applicationId}/view`);
+        return response;
+    },
+
+    // 6. Từ chối ứng viên
+    rejectApplication: async (id, note = "") => {
+        const response = await axiosInstance.post(`/employer/applications/${id}/reject`, null, {
+            params: { note }
+        });
+        return response;
+    },
+
+    // 7. Cập nhật trạng thái đơn
+    updateStatus: async (id, data) => {
+        const response = await axiosInstance.put(`/employer/applications/${id}/status`, data);
+        return response;
     }
 };
 

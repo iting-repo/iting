@@ -1,5 +1,6 @@
 package com.iting.jobportal.notification.service;
 
+import com.iting.jobportal.messaging.relay.ClusterMessagingTemplate;
 import com.iting.jobportal.notification.dto.response.NotificationResponse;
 import com.iting.jobportal.notification.enums.NotificationType;
 import com.iting.jobportal.notification.enums.RecipientType;
@@ -13,7 +14,6 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.messaging.simp.SimpMessagingTemplate;
 
 import java.time.LocalDateTime;
 import java.util.Map;
@@ -27,7 +27,7 @@ import static org.mockito.Mockito.verify;
 class WebSocketNotificationServiceImplTest {
 
     @Mock
-    private SimpMessagingTemplate messagingTemplate;
+    private ClusterMessagingTemplate messagingTemplate;
 
     @InjectMocks
     private WebSocketNotificationServiceImpl wsNotificationService;

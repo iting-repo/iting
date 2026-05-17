@@ -78,9 +78,19 @@ dependencies {
     // Testing
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
 
-    // Redis
+    // 🛡️ Rate Limiting
+    implementation 'com.bucket4j:bucket4j-core:8.1.0'
+    implementation 'com.bucket4j:bucket4j-redis:8.1.0'
+
+    // 🪡 AOP (rate-limit / lock aspects)
+    implementation 'org.springframework.boot:spring-boot-starter-aop'
+
+    // 🔴 Redis (cache + lock + rate-limit + pubsub)
     implementation 'org.springframework.boot:spring-boot-starter-data-redis'
-    implementation 'org.springframework.data:spring-data-redis'
+    implementation 'org.apache.commons:commons-pool2'
+    implementation 'org.springframework.boot:spring-boot-starter-cache'
+    implementation 'com.github.ben-manes.caffeine:caffeine'
+    implementation 'org.redisson:redisson:3.27.2'
 
     // Database Migration 
     implementation 'org.flywaydb:flyway-core'
@@ -94,9 +104,6 @@ dependencies {
     // Excel (Apache POI)
     implementation 'org.apache.poi:poi:5.2.3'
     implementation 'org.apache.poi:poi-ooxml:5.2.3'
-
-    // PDF (Apache PDFBox)
-    implementation 'org.apache.pdfbox:pdfbox:2.0.31'
 }
 
 tasks.named('test') {

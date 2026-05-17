@@ -1,18 +1,21 @@
 package com.iting.jobportal.company.service.impl;
 
-import com.iting.jobportal.auth.entity.Account;
-import com.iting.jobportal.auth.entity.Enum.Role;
+import com.iting.jobportal.auth.entity.OtpCode;
 import com.iting.jobportal.auth.repository.AccountRepository;
+import com.iting.jobportal.auth.repository.OtpCodeRepository;
 import com.iting.jobportal.company.dto.request.*;
 import com.iting.jobportal.company.dto.response.BusinessLicenseFormResponse;
 import com.iting.jobportal.company.dto.response.CompanyResponse;
 import com.iting.jobportal.company.entity.Company;
 import com.iting.jobportal.company.entity.enums.CompanyReviewStatus;
 import com.iting.jobportal.company.entity.enums.DocumentReviewStatus;
-import com.iting.jobportal.company.entity.enums.VerificationLevel;
 import com.iting.jobportal.company.repository.CompanyRepository;
+import com.iting.jobportal.common.cache.CacheNames;
+import com.iting.jobportal.company.service.AuthorizationService;
 import com.iting.jobportal.company.service.CompanyFollowService;
 import com.iting.jobportal.company.service.CompanyService;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -39,6 +42,9 @@ import java.time.LocalDateTime;
 @Transactional
 public class CompanyServiceImpl implements CompanyService {
 
+    private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(CompanyServiceImpl.class);
+    private static final String PHONE_OTP_KEY_PREFIX = "phone:";
+
     private final CompanyRepository companyRepository;
     private final CompanyFollowService companyFollowService;
     private final FileUploadService fileUploadService;
@@ -46,16 +52,20 @@ public class CompanyServiceImpl implements CompanyService {
     private final JobRepository jobRepository;
     private final ApplicationEventPublisher eventPublisher;
     private final CompanyMapper companyMapper;
+    private final AuthorizationService authz;
     private final com.iting.jobportal.company.repository.CompanyReviewRepository companyReviewRepository;
+    private final OtpCodeRepository otpCodeRepository;
 
     public CompanyServiceImpl(CompanyRepository companyRepository,
-            CompanyFollowService companyFollowService,
-            FileUploadService fileUploadService,
-            AccountRepository accountRepository,
-            JobRepository jobRepository,
-            ApplicationEventPublisher eventPublisher,
-            CompanyMapper companyMapper,
-            com.iting.jobportal.company.repository.CompanyReviewRepository companyReviewRepository) {
+                              CompanyFollowService companyFollowService,
+                              FileUploadService fileUploadService,
+                              AccountRepository accountRepository,
+                              JobRepository jobRepository,
+                              ApplicationEventPublisher eventPublisher,
+                              CompanyMapper companyMapper,
+                              AuthorizationService authz,
+                              com.iting.jobportal.company.repository.CompanyReviewRepository companyReviewRepository,
+                              OtpCodeRepository otpCodeRepository) {
         this.companyRepository = companyRepository;
         this.companyFollowService = companyFollowService;
         this.fileUploadService = fileUploadService;
@@ -63,35 +73,20 @@ public class CompanyServiceImpl implements CompanyService {
         this.jobRepository = jobRepository;
         this.eventPublisher = eventPublisher;
         this.companyMapper = companyMapper;
+        this.authz = authz;
         this.companyReviewRepository = companyReviewRepository;
+        this.otpCodeRepository = otpCodeRepository;
     }
-
     @Override
     @Transactional
     public CompanyResponse getMyCompany(Long accountId) {
-        Company company = companyRepository.findById(accountId).orElseGet(() -> {
-            Account account = accountRepository.findById(accountId)
-                    .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy tài khoản"));
-
-            if (account.getRole() == null || account.getRole().normalize() != Role.EMPLOYER) {
-                throw new IllegalArgumentException("Tài khoản này không phải nhà tuyển dụng");
-            }
-
-            Company c = new Company();
-            c.setAccount(account);
-            c.setName("Chưa cập nhật");
-            c.setAccountEmail(account.getEmail());
-            c.setCompanyEmail(account.getEmail());
-            c.setVerificationLevel(VerificationLevel.UNVERIFIED);
-            c.setCompanyInfoUpdateStatus(CompanyReviewStatus.DRAFT);
-            c.setDocumentReviewStatus(DocumentReviewStatus.MISSING);
-            c.setActive(true);
-            c.setFollowerCount(0L);
-            c.setProfileSetup(false);
-            c.setLastUpdate(LocalDateTime.now());
-            return companyRepository.save(c);
-        });
-
+        // Sau Phase 2: resolve company qua affiliation thay vì giả định accountId == companyId.
+        // Auto-create cho HR mới đã được dời sang endpoint POST /api/hr/affiliations/me/init (Phase 3);
+        // tại đây nếu HR chưa khởi tạo affiliation → trả 403.
+        Long companyId = authz.requireCompanyOf(accountId);
+        Company company = companyRepository.findById(companyId)
+                .orElseThrow(() -> new IllegalArgumentException(
+                        "Không tìm thấy công ty của tài khoản này"));
         return mapToResponse(company);
     }
 
@@ -100,6 +95,7 @@ public class CompanyServiceImpl implements CompanyService {
     // ==========================
     @Override
     @Transactional(readOnly = true)
+    @Cacheable(value = CacheNames.COMPANY_DETAIL, key = "#id", unless = "#result == null")
     public CompanyResponse getCompanyById(Long id) {
         Company company = companyRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Company not found with id: " + id));
@@ -111,6 +107,7 @@ public class CompanyServiceImpl implements CompanyService {
     // 2. Cập nhật thông tin cơ bản
     // ====================================
     @Override
+    @CacheEvict(value = CacheNames.COMPANY_DETAIL, key = "#id")
     public CompanyResponse updateBasicInfo(Long id, CompanyBasicInfoRequest request) {
         return updateBasicInfoByAccountId(id, request);
     }
@@ -131,8 +128,7 @@ public class CompanyServiceImpl implements CompanyService {
         company.setTaxCode(request.getTaxCode());
         company.setLastUpdate(LocalDateTime.now());
 
-        // Chuyển trạng thái sang DRAFT khi cập nhật thông tin. Cần bấm "Gửi duyệt" để
-        // sang PENDING_REVIEW.
+        // Chuyển trạng thái sang DRAFT khi cập nhật thông tin. Cần bấm "Gửi duyệt" để sang PENDING_REVIEW.
         if (company.getCompanyInfoUpdateStatus() != CompanyReviewStatus.PENDING_REVIEW) {
             company.setCompanyInfoUpdateStatus(CompanyReviewStatus.DRAFT);
         }
@@ -189,9 +185,9 @@ public class CompanyServiceImpl implements CompanyService {
         }
 
         boolean isValidType = contentType.equalsIgnoreCase("application/pdf") ||
-                contentType.equalsIgnoreCase("image/jpeg") ||
-                contentType.equalsIgnoreCase("image/jpg") ||
-                contentType.equalsIgnoreCase("image/png");
+                             contentType.equalsIgnoreCase("image/jpeg") ||
+                             contentType.equalsIgnoreCase("image/jpg") ||
+                             contentType.equalsIgnoreCase("image/png");
 
         if (!isValidType) {
             throw new IllegalArgumentException("Chỉ chấp nhận file PDF hoặc hình ảnh (JPEG, PNG)");
@@ -199,15 +195,15 @@ public class CompanyServiceImpl implements CompanyService {
 
         String originalFilename = file.getOriginalFilename();
         if (originalFilename == null) {
-            throw new IllegalArgumentException("Tên file không hợp lệ");
+             throw new IllegalArgumentException("Tên file không hợp lệ");
         }
-
+        
         String lowerName = originalFilename.toLowerCase();
-        boolean isValidExt = lowerName.endsWith(".pdf") ||
-                lowerName.endsWith(".jpg") ||
-                lowerName.endsWith(".jpeg") ||
-                lowerName.endsWith(".png");
-
+        boolean isValidExt = lowerName.endsWith(".pdf") || 
+                            lowerName.endsWith(".jpg") || 
+                            lowerName.endsWith(".jpeg") || 
+                            lowerName.endsWith(".png");
+                            
         if (!isValidExt) {
             throw new IllegalArgumentException("Phần mở rộng file không hợp lệ. Chỉ chấp nhận .pdf, .jpg, .jpeg, .png");
         }
@@ -259,7 +255,8 @@ public class CompanyServiceImpl implements CompanyService {
                 company.getBusinessLicenseDocumentType(),
                 company.getBusinessLicenseFileUrl(),
                 company.getBusinessLicensePreviewUrl(),
-                company.getCompanyInfoUpdateStatus());
+                company.getCompanyInfoUpdateStatus()
+        );
     }
 
     // ====================================================
@@ -307,7 +304,8 @@ public class CompanyServiceImpl implements CompanyService {
         company.setConsentDocumentVersion(
                 request.getVersion() == null || request.getVersion().isBlank()
                         ? "v1.0"
-                        : request.getVersion());
+                        : request.getVersion()
+        );
 
         company.setLastUpdateRequestDate(LocalDateTime.now());
         company.setLastUpdate(LocalDateTime.now());
@@ -328,19 +326,122 @@ public class CompanyServiceImpl implements CompanyService {
     public void verifyPhoneByAccountId(Long accountId, VerifyPhoneRequest request) {
         Company company = getCompanyByAccountId(accountId);
 
-        if (request.getPhone() == null || request.getPhone().isBlank()) {
-            throw new IllegalArgumentException("Phone must not be blank");
+        String phone = request.getPhone() == null ? "" : request.getPhone().trim();
+        String code = request.getOtpCode() == null ? "" : request.getOtpCode().trim();
+
+        if (phone.isBlank()) throw new IllegalArgumentException("Số điện thoại không được để trống");
+        if (code.isBlank()) throw new IllegalArgumentException("Mã OTP không được để trống");
+
+        String key = PHONE_OTP_KEY_PREFIX + accountId;
+        OtpCode otp = otpCodeRepository
+                .findTopByEmailAndIsVerificationOrderByExpiryTimeDesc(key, true)
+                .orElseThrow(() -> new IllegalArgumentException(
+                        "Không tìm thấy mã OTP. Vui lòng yêu cầu gửi lại."));
+
+        if (!otp.getCode().equals(code)) {
+            throw new IllegalArgumentException("Mã OTP không chính xác");
+        }
+        if (otp.getExpiryTime().isBefore(LocalDateTime.now())) {
+            throw new IllegalArgumentException("Mã OTP đã hết hạn. Vui lòng yêu cầu gửi lại.");
         }
 
-        if (request.getOtpCode() == null || request.getOtpCode().isBlank()) {
-            throw new IllegalArgumentException("OTP code must not be blank");
-        }
-
-        // TODO: Thực hiện logic verify OTP thực tế ở đây
-        // otpService.verify(company.getId(), request.getPhone(), request.getOtpCode());
-
+        company.setPhone(phone);
         company.setLastUpdate(LocalDateTime.now());
         companyRepository.save(company);
+
+        otpCodeRepository.deleteByEmail(key);
+        log.info("Phone verified for accountId={}, phone={}", accountId, phone);
+    }
+
+    // ==========================================
+    // Social Links — lưu dạng JSON 1 cột
+    // ==========================================
+    private static final com.fasterxml.jackson.databind.ObjectMapper SOCIAL_MAPPER =
+            new com.fasterxml.jackson.databind.ObjectMapper();
+    private static final int MAX_SOCIAL_LINKS = 10;
+
+    @Override
+    @Transactional(readOnly = true)
+    public java.util.List<com.iting.jobportal.company.dto.request.CompanySocialLinkDto>
+            getMySocialLinks(Long accountId) {
+        Company company = getCompanyByAccountId(accountId);
+        return parseSocialLinks(company.getSocialLinksJson());
+    }
+
+    @Override
+    public java.util.List<com.iting.jobportal.company.dto.request.CompanySocialLinkDto>
+            updateMySocialLinks(Long accountId,
+                                java.util.List<com.iting.jobportal.company.dto.request.CompanySocialLinkDto> links) {
+        Company company = getCompanyByAccountId(accountId);
+
+        java.util.List<com.iting.jobportal.company.dto.request.CompanySocialLinkDto> sanitized =
+                new java.util.ArrayList<>();
+        if (links != null) {
+            if (links.size() > MAX_SOCIAL_LINKS) {
+                throw new IllegalArgumentException(
+                        "Tối đa " + MAX_SOCIAL_LINKS + " liên kết mạng xã hội");
+            }
+            // Loại bỏ entry rỗng (cho phép user xoá bớt mà không cần delete riêng)
+            for (var link : links) {
+                if (link == null) continue;
+                String platform = link.getPlatform() == null ? "" : link.getPlatform().trim().toUpperCase();
+                String url = link.getUrl() == null ? "" : link.getUrl().trim();
+                if (platform.isBlank() || url.isBlank()) continue;
+                sanitized.add(new com.iting.jobportal.company.dto.request.CompanySocialLinkDto(platform, url));
+            }
+        }
+
+        try {
+            company.setSocialLinksJson(
+                    sanitized.isEmpty() ? null : SOCIAL_MAPPER.writeValueAsString(sanitized));
+        } catch (com.fasterxml.jackson.core.JsonProcessingException e) {
+            throw new IllegalStateException("Không serialize được social links", e);
+        }
+        company.setLastUpdate(LocalDateTime.now());
+        companyRepository.save(company);
+        log.info("Updated social links for accountId={}, count={}", accountId, sanitized.size());
+
+        return sanitized;
+    }
+
+    private java.util.List<com.iting.jobportal.company.dto.request.CompanySocialLinkDto>
+            parseSocialLinks(String json) {
+        if (json == null || json.isBlank()) return new java.util.ArrayList<>();
+        try {
+            return SOCIAL_MAPPER.readValue(json,
+                    new com.fasterxml.jackson.core.type.TypeReference<>() {});
+        } catch (Exception e) {
+            log.warn("Cannot parse social_links JSON: {}", e.getMessage());
+            return new java.util.ArrayList<>();
+        }
+    }
+
+    @Override
+    public void sendPhoneOtpByAccountId(Long accountId, String phone) {
+        // Đảm bảo HR có affiliation tới company (sẽ throw 403 nếu chưa)
+        getCompanyByAccountId(accountId);
+
+        if (phone == null || phone.isBlank()) {
+            throw new IllegalArgumentException("Số điện thoại không được để trống");
+        }
+        String trimmed = phone.trim();
+
+        String code = String.format("%06d", (int) (Math.random() * 1_000_000));
+        String key = PHONE_OTP_KEY_PREFIX + accountId;
+
+        otpCodeRepository.deleteByEmail(key);
+        OtpCode otp = OtpCode.builder()
+                .email(key)
+                .code(code)
+                .expiryTime(LocalDateTime.now().plusMinutes(5))
+                .isVerification(true)
+                .build();
+        otpCodeRepository.save(otp);
+
+        // TODO: Tích hợp SMS gateway (Twilio/eSMS/Speedsms…). Hiện log ra console
+        // để dev/test có thể đọc được mã trong môi trường local.
+        log.info("[PHONE OTP] accountId={}, phone={}, code={} (expires in 5m)",
+                accountId, trimmed, code);
     }
 
     // ==========================================
@@ -392,21 +493,15 @@ public class CompanyServiceImpl implements CompanyService {
         if (company.getTaxCode() == null || company.getTaxCode().isBlank()) {
             throw new IllegalArgumentException("Mã số thuế không được để trống");
         }
-        if (company.getConsentDocumentVersion() == null || company.getConsentDocumentVersion().isBlank()) {
-            throw new IllegalArgumentException("Phiên bản văn bản thỏa thuận không được để trống");
-        }
 
         company.setCompanyInfoUpdateStatus(CompanyReviewStatus.PENDING_REVIEW);
         company.setLastUpdateRequestDate(LocalDateTime.now());
         company.setLastUpdate(LocalDateTime.now());
 
         Company saved = companyRepository.save(company);
-        if (saved == null) {
-            throw new RuntimeException("Luu thong tin cong ty that bai");
-        }
-
+        
         eventPublisher.publishEvent(new CompanyInfoSubmittedEvent(this, saved.getId(), saved.getName()));
-
+        
         return mapToResponse(saved);
     }
 
@@ -480,7 +575,8 @@ public class CompanyServiceImpl implements CompanyService {
     // Helper
     // ==========================================
     private Company getCompanyByAccountId(Long accountId) {
-        return companyRepository.findById(accountId)
+        Long companyId = authz.requireCompanyOf(accountId);
+        return companyRepository.findById(companyId)
                 .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy công ty của tài khoản này"));
     }
 
@@ -489,9 +585,6 @@ public class CompanyServiceImpl implements CompanyService {
     // ==========================================
     private CompanyResponse mapToResponse(Company company) {
         CompanyResponse response = companyMapper.toResponse(company);
-        if (response == null) {
-            response = new CompanyResponse();
-        }
         response.setActiveJobCount((int) jobRepository.countActiveAndNotExpiredByCompanyId(company.getId()));
         response.setFollowerCount(companyFollowService.getFollowerCount(company.getId()));
         // Set average rating & review count
@@ -502,8 +595,7 @@ public class CompanyServiceImpl implements CompanyService {
     }
 
     @Override
-    public Page<CompanyResponse> searchCompanies(String keyword, String location, String industry, String size,
-            int page, int sizePage) {
+    public Page<CompanyResponse> searchCompanies(String keyword, String location, String industry, String size, int page, int sizePage) {
         Pageable pageable = PageRequest.of(page, sizePage, Sort.by("lastUpdate").descending());
 
         Specification<Company> spec = (root, query, cb) -> {
@@ -513,7 +605,8 @@ public class CompanyServiceImpl implements CompanyService {
                 String kw = "%" + keyword.toLowerCase() + "%";
                 predicates.add(cb.or(
                         cb.like(cb.lower(root.get("name")), kw),
-                        cb.like(cb.lower(root.get("description")), kw)));
+                        cb.like(cb.lower(root.get("description")), kw)
+                ));
             }
 
             if (location != null && !location.isBlank() && !location.equalsIgnoreCase("all")) {
@@ -528,14 +621,14 @@ public class CompanyServiceImpl implements CompanyService {
                     // Ignore invalid enum values
                 }
             }
-
+            
             if (size != null && !size.isBlank() && !size.equalsIgnoreCase("all")) {
                 predicates.add(cb.equal(root.get("companySize"), size));
             }
-
+            
             // Only show setup profiles
             predicates.add(cb.equal(root.get("profileSetup"), true));
-
+            
             // Only show active companies (exclude suspended)
             predicates.add(cb.equal(root.get("active"), true));
 

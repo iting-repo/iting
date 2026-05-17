@@ -17,6 +17,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -27,6 +28,7 @@ public class RefreshTokenServiceImpl implements RefreshTokenService {
     private final RefreshTokenUtil refreshTokenUtil;
     private final JwtTokenUtil jwtTokenUtil;
     private final AccountRepository accountRepository;
+    private final Optional<RefreshTokenCacheService> tokenCache;
 
     @Value("${jwt.refresh.max-tokens-per-user:5}")
     private int maxTokensPerUser;
@@ -63,6 +65,7 @@ public class RefreshTokenServiceImpl implements RefreshTokenService {
                 .build();
 
         RefreshToken savedToken = refreshTokenRepository.save(refreshToken);
+        tokenCache.ifPresent(c -> c.put(savedToken));
         log.info("Created refresh token for user: {}, tokenId: {}", userId, tokenId);
 
         return savedToken;
@@ -105,6 +108,7 @@ public class RefreshTokenServiceImpl implements RefreshTokenService {
         // Mark current refresh token as used
         storedToken.markAsUsed();
         refreshTokenRepository.save(storedToken);
+        tokenCache.ifPresent(c -> c.evict(storedToken.getTokenId()));
 
         // Create new refresh token
         RefreshToken newRefreshToken = createRefreshToken(
@@ -128,6 +132,7 @@ public class RefreshTokenServiceImpl implements RefreshTokenService {
         if (refreshToken != null) {
             refreshToken.revoke();
             refreshTokenRepository.save(refreshToken);
+            tokenCache.ifPresent(c -> c.evict(tokenId));
             log.info("Revoked refresh token: {}", tokenId);
         }
     }
@@ -136,6 +141,7 @@ public class RefreshTokenServiceImpl implements RefreshTokenService {
     @Transactional
     public void revokeAllUserTokens(Long userId) {
         refreshTokenRepository.revokeAllUserTokens(userId);
+        tokenCache.ifPresent(c -> c.evictAllForUser(userId));
         log.info("Revoked all refresh tokens for user: {}", userId);
     }
 
@@ -159,7 +165,11 @@ public class RefreshTokenServiceImpl implements RefreshTokenService {
 
     @Override
     public RefreshToken getRefreshTokenByTokenId(String tokenId) {
-        return refreshTokenRepository.findByTokenId(tokenId).orElse(null);
+        RefreshToken cached = tokenCache.map(c -> c.get(tokenId)).orElse(null);
+        if (cached != null) return cached;
+        RefreshToken fromDb = refreshTokenRepository.findByTokenId(tokenId).orElse(null);
+        if (fromDb != null) tokenCache.ifPresent(c -> c.put(fromDb));
+        return fromDb;
     }
 
     @Override

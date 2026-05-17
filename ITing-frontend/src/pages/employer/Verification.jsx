@@ -2,16 +2,23 @@ import React, { useState, useEffect } from "react";
 import { Upload, AlertTriangle, FileText, CheckCircle } from "lucide-react";
 import { Button } from "../../components/common";
 import companyService from "../../services/companyService";
+import affiliationService from "../../services/affiliationService";
 import { toast } from "sonner";
 
+/**
+ * Phase 5 (HR ↔ Company refactor):
+ *   * Bỏ radio "Giấy ủy quyền và Giấy tờ định danh" (identity flow đã bỏ ở backend).
+ *   * Status hiển thị giờ đọc từ `affiliation.submissionStatus` (thay vì `company.documentReviewStatus`).
+ *   * Upload license + submit review đi qua affiliationService (companyService cũng đã redirect nội bộ).
+ */
 const Verification = () => {
-  const [selectedType, setSelectedType] = useState("business");
   const [file, setFile] = useState(null);
   const [filePreviewUrl, setFilePreviewUrl] = useState(null); // local blob preview
   const [serverPreviewUrl, setServerPreviewUrl] = useState(null); // presigned S3 URL
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [company, setCompany] = useState(null);
+  const [affiliation, setAffiliation] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -21,12 +28,22 @@ const Verification = () => {
   const fetchCompany = async () => {
     try {
       setLoading(true);
-      const data = await companyService.getMyCompany();
+
+      // Phase 5: ưu tiên đọc affiliation để biết submission status + snapshot license URL.
+      const aff = await affiliationService.getMe().catch(() => null);
+      setAffiliation(aff);
+
+      const data = await companyService.getMyCompany().catch(() => null);
       setCompany(data);
-      // Nếu đã có file trên server, lấy presigned URL để preview
-      if (data?.businessLicenseFileUrl) {
+
+      // Preview: ưu tiên license HR đã submit ở snapshot affiliation; fallback Company license.
+      const licenseUrl = aff?.submittedLicenseUrl || data?.businessLicenseFileUrl;
+      if (licenseUrl) {
         try {
-          const res = await companyService.getBusinessLicensePresignedUrl();
+          // affiliationService.getLicensePresignedUrl trả {url} cho license snapshot HR
+          const res = aff?.submittedLicenseUrl
+            ? await affiliationService.getLicensePresignedUrl()
+            : await companyService.getBusinessLicensePresignedUrl();
           setServerPreviewUrl(res?.url || null);
         } catch (_) {
           // ignore - chỉ ảnh hưởng preview
@@ -40,6 +57,8 @@ const Verification = () => {
   };
 
   const statusMap = {
+    NONE: { label: "Chưa bắt đầu", color: "bg-gray-100 text-gray-500" },
+    DRAFT: { label: "Đang soạn", color: "bg-gray-100 text-gray-500" },
     MISSING: { label: "Chưa cập nhật", color: "bg-gray-100 text-gray-500" },
     UPLOADED: { label: "Đã tải lên", color: "bg-blue-100 text-blue-600" },
     PENDING_REVIEW: { label: "Đang chờ duyệt", color: "bg-amber-100 text-amber-600" },
@@ -47,7 +66,9 @@ const Verification = () => {
     REJECTED: { label: "Bị từ chối", color: "bg-red-100 text-red-600" },
   };
 
-  const currentStatus = statusMap[company?.documentReviewStatus] || statusMap.MISSING;
+  // Ưu tiên submission status của affiliation (mới); fallback document status cũ của Company.
+  const submissionState = affiliation?.submissionStatus || company?.documentReviewStatus;
+  const currentStatus = statusMap[submissionState] || statusMap.MISSING;
 
   const handleFileChange = (e) => {
     const f = e.target.files?.[0];
@@ -158,19 +179,14 @@ const Verification = () => {
         </div>
 
         <div className="space-y-6">
-          <label className="flex items-center gap-4 cursor-pointer group">
-            <div className="relative flex items-center justify-center">
-              <input
-                type="radio"
-                checked={selectedType === "business"}
-                onChange={() => setSelectedType("business")}
-                className="w-5 h-5 border-2 border-gray-300 text-[#3AB4E6] focus:ring-[#3AB4E6] cursor-pointer"
-              />
-            </div>
-            <span className="text-gray-700 font-medium group-hover:text-gray-900 transition-colors">
+          {/* Phase 5: bỏ radio chọn loại tài liệu — chỉ còn 1 loại (Giấy đăng ký doanh nghiệp).
+              Radio "Giấy ủy quyền và Giấy tờ định danh" đã bỏ hoàn toàn ở backend. */}
+          <div className="flex items-center gap-4">
+            <FileText className="w-5 h-5 text-[#3AB4E6]" />
+            <span className="text-gray-700 font-medium">
               Giấy đăng ký doanh nghiệp hoặc Giấy tờ tương đương khác
             </span>
-          </label>
+          </div>
 
           <div className="border border-gray-100 bg-gray-50/50 rounded-2xl p-8">
             <label className="block text-sm font-bold text-gray-700 mb-4 uppercase tracking-wider">
@@ -277,19 +293,8 @@ const Verification = () => {
             </div>
           </div>
 
-          <label className="flex items-center gap-4 cursor-pointer group">
-            <div className="relative flex items-center justify-center">
-              <input
-                type="radio"
-                checked={selectedType === "identity"}
-                onChange={() => setSelectedType("identity")}
-                className="w-5 h-5 border-2 border-gray-300 text-[#3AB4E6] focus:ring-[#3AB4E6] cursor-pointer"
-              />
-            </div>
-            <span className="text-gray-700 font-medium group-hover:text-gray-900 transition-colors">
-              Giấy ủy quyền và Giấy tờ định danh
-            </span>
-          </label>
+          {/* Phase 5: radio "Giấy ủy quyền và Giấy tờ định danh" đã bỏ —
+              identity flow đã được loại khỏi spec ở Phase 4 redesign (xem REFACTOR_HR_COMPANY_SPEC.md). */}
         </div>
 
         <div className="flex justify-end mt-10 pt-6 border-t border-gray-100 gap-4">
@@ -306,12 +311,16 @@ const Verification = () => {
 
           <Button
             onClick={handleSubmitReview}
-            disabled={submitting || company?.documentReviewStatus === 'PENDING_REVIEW' || (!file && !company?.businessLicenseFileUrl)}
+            disabled={
+              submitting ||
+              submissionState === 'PENDING_REVIEW' ||
+              (!file && !affiliation?.submittedLicenseUrl && !company?.businessLicenseFileUrl)
+            }
             className="px-10 py-6 min-w-[200px] text-base font-bold shadow-lg shadow-blue-500/20"
           >
             {submitting
               ? "Đang xử lý..."
-              : company?.documentReviewStatus === 'PENDING_REVIEW'
+              : submissionState === 'PENDING_REVIEW'
                 ? "Đang chờ duyệt"
                 : file
                   ? "Tải lên & Gửi xét duyệt"

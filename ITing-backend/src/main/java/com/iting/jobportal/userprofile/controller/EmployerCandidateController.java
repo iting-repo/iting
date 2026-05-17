@@ -12,10 +12,15 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+/**
+ * @deprecated Phase 4 dual-mount. Dùng {@link HrCandidateController} ở
+ *             {@code /api/hr/candidates/**}. Sẽ remove sau 2 sprint.
+ */
+@Deprecated(since = "Phase 4")
 @RestController
 @RequestMapping("/api/employers/candidates")
 @RequiredArgsConstructor
-@Tag(name = "08. Candidates - Employer", description = "APIs tìm kiếm ứng viên cho nhà tuyển dụng (AI similarity search)")
+@Tag(name = "08. Candidates - Employer (DEPRECATED)", description = "DEPRECATED — dùng /api/hr/candidates/**")
 public class EmployerCandidateController {
 
     private final EmployerCandidateSearchService employerCandidateSearchService;

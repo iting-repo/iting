@@ -15,6 +15,8 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
+import com.iting.jobportal.admin.repository.UserReportSpecification;
+import org.springframework.data.jpa.domain.Specification;
 
 @Slf4j
 @Service
@@ -29,8 +31,8 @@ public class AdminReportServiceImpl implements AdminReportService {
     public Page<UserReport> getReports(String status, String type, String targetType, String priority, String search,
             int page, int size) {
         Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
-        // For now, simple return all. In real app, use Specification or QueryDSL
-        return reportRepository.findAll(pageable);
+        Specification<UserReport> spec = UserReportSpecification.getReportsSpec(status, type, targetType, priority, search);
+        return reportRepository.findAll(spec, pageable);
     }
 
     @Override

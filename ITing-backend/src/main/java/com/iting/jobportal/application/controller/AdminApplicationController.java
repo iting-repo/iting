@@ -32,4 +32,20 @@ public class AdminApplicationController {
         adminApplicationService.deleteApplication(id);
         return ResponseEntity.ok(Map.of("message", "Deleted application"));
     }
+
+    @GetMapping("/by-job/{jobId}")
+    @Operation(summary = "Danh sách ứng viên đã ứng tuyển 1 job (admin)")
+    public ResponseEntity<Page<ApplicationResponse>> getByJob(
+            @PathVariable Long jobId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size) {
+        return ResponseEntity.ok(adminApplicationService.getApplicationsByJob(jobId, page, size));
+    }
+
+    @GetMapping("/by-job/{jobId}/stats")
+    @Operation(summary = "Thống kê ứng tuyển của 1 job (tỉ lệ thành công/từ chối/phản hồi)")
+    public ResponseEntity<com.iting.jobportal.application.dto.response.JobApplicationStatsResponse>
+            getStatsByJob(@PathVariable Long jobId) {
+        return ResponseEntity.ok(adminApplicationService.getApplicationStatsByJob(jobId));
+    }
 }

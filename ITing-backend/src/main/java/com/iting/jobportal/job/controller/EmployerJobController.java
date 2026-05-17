@@ -17,10 +17,15 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.util.Map;
 
+/**
+ * @deprecated Phase 4 dual-mount. Dùng {@link HrJobController} ở {@code /api/hr/jobs/**}.
+ *             Sẽ remove sau 2 sprint.
+ */
+@Deprecated(since = "Phase 4")
 @RestController
 @RequestMapping("/api/employer/jobs")
 @RequiredArgsConstructor
-@Tag(name = "04. Jobs - Employer", description = "APIs quản lý việc làm cho nhà tuyển dụng")
+@Tag(name = "04. Jobs - Employer (DEPRECATED)", description = "DEPRECATED — dùng /api/hr/jobs/**")
 public class EmployerJobController {
 
     private final JobService jobService;

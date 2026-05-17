@@ -30,6 +30,7 @@ import JobApplyModal from '../../components/JobApplyModal';
 import companyService from '../../services/companyService';
 import messageService from '../../services/messageService';
 import applicationService from '../../services/applicationService';
+import reportService from '../../services/reportService';
 import axiosInstance from '../../utils/axiosInstance';
 import { storage } from '../../utils/storage';
 import { Breadcrumb, CompanyLogo } from '../../components/common';
@@ -38,6 +39,17 @@ import {
     getJobTitle,
     normalizeJobKey,
 } from '../../utils/jobUrl';
+import { lookupMergedWards } from '../../utils/districtWardMapping';
+
+const JOB_REPORT_REASONS = [
+    { value: 'MISLEADING_INFO', label: 'Thông tin sai lệch / Không chính xác', priority: 'MEDIUM' },
+    { value: 'SCAM', label: 'Lừa đảo / Dấu hiệu lừa đảo', priority: 'CRITICAL' },
+    { value: 'EXPIRED_JOB', label: 'Tin tuyển dụng đã hết hạn', priority: 'LOW' },
+    { value: 'DISCRIMINATION', label: 'Phân biệt đối xử', priority: 'HIGH' },
+    { value: 'SPAM', label: 'Spam / Tin tuyển dụng rác', priority: 'LOW' },
+    { value: 'INAPPROPRIATE', label: 'Nội dung không phù hợp', priority: 'MEDIUM' },
+    { value: 'OTHER', label: 'Lý do khác...', priority: 'LOW' },
+];
 
 const normalizeList = (value, delimiter = /\n|\.|;/) => {
     if (!value) return [];
@@ -130,6 +142,14 @@ const JobDetailPage = () => {
     const [relatedLoading, setRelatedLoading] = useState(false);
     const [contactMessage, setContactMessage] = useState('');
     const [sendingContact, setSendingContact] = useState(false);
+    const [showReportModal, setShowReportModal] = useState(false);
+    const [reportData, setReportData] = useState({ type: 'MISLEADING_INFO', description: '' });
+    const [isReporting, setIsReporting] = useState(false);
+    const [showSimilarModal, setShowSimilarModal] = useState(false);
+    const [isFollowingCompany, setIsFollowingCompany] = useState(false);
+    const [isAlreadyFollowing, setIsAlreadyFollowing] = useState(false);
+    const [mergedLocation, setMergedLocation] = useState(null);
+    const [loadingMerged, setLoadingMerged] = useState(false);
 
     const normalizedJobId = useMemo(() => (id ? normalizeJobKey(id) : null), [id]);
 
@@ -194,6 +214,23 @@ const JobDetailPage = () => {
 
         fetchCompany();
     }, [currentJob?.companyId]);
+
+    // Kiểm tra trạng thái follow company
+    useEffect(() => {
+        const checkFollow = async () => {
+            if (!currentJob?.companyId || !storage.getToken() || currentUser?.role !== 'CANDIDATE') {
+                setIsAlreadyFollowing(false);
+                return;
+            }
+            try {
+                const res = await companyService.checkFollowing(currentJob.companyId);
+                setIsAlreadyFollowing(Boolean(res?.isFollowing ?? res?.data?.isFollowing));
+            } catch {
+                setIsAlreadyFollowing(false);
+            }
+        };
+        checkFollow();
+    }, [currentJob?.companyId, currentUser?.role]);
 
     useEffect(() => {
         const loadRelatedJobs = async () => {
@@ -326,6 +363,146 @@ const JobDetailPage = () => {
             })
             : 'Mới đăng',
     });
+
+    useEffect(() => {
+        const province = (currentJob?.province || '').trim();
+        const ward = (currentJob?.ward || '').trim();
+        if (!currentJob?.id || (!province && !ward)) {
+            setMergedLocation(null);
+            return;
+        }
+        fetchMergedLocation();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [currentJob?.id, currentJob?.ward, currentJob?.province]);
+
+    const fetchMergedLocation = async () => {
+        setLoadingMerged(true);
+        try {
+            const province = (currentJob?.province || '').trim();
+            const ward = (currentJob?.ward || '').trim();
+
+            if (!province && !ward) {
+                setMergedLocation({ error: 'Tin tuyển dụng chưa có thông tin tỉnh/phường để tra cứu.' });
+                return;
+            }
+
+            const stripPrefix = (s = '') => s
+                .replace(/^(Tỉnh|Thành phố|TP\.?|Thành Phố)\s+/i, '')
+                .replace(/^(Phường|Xã|Thị trấn|Quận|Huyện)\s+/i, '')
+                .trim()
+                .toLowerCase();
+
+            const normalizedProvince = stripPrefix(province);
+
+            // Tải danh sách 34 tỉnh sau sáp nhập (v2)
+            let provinceList = [];
+            try {
+                const res = await fetch('https://provinces.open-api.vn/api/v2/p/');
+                provinceList = await res.json();
+                if (!Array.isArray(provinceList)) provinceList = [];
+            } catch {
+                provinceList = [];
+            }
+
+            const matchedProvince = provinceList.find((p) => {
+                const pName = stripPrefix(p.name || '');
+                return pName === normalizedProvince
+                    || pName.includes(normalizedProvince)
+                    || (normalizedProvince && normalizedProvince.includes(pName));
+            });
+
+            // Trường hợp 1: province lưu trong DB đã là tỉnh sau sáp nhập (v2)
+            if (matchedProvince) {
+                if (!ward) {
+                    setMergedLocation({
+                        ward: null,
+                        province: matchedProvince.name,
+                        source: 'province',
+                    });
+                    return;
+                }
+
+                // Verify ward có thuộc tỉnh này trong v2 không
+                // - Nếu match → đó là phường/xã mới hợp lệ
+                // - Nếu không match → ward cũ (quận/huyện cũ) → KHÔNG hiển thị ward nữa
+                let verifiedWard = null;
+                try {
+                    const wardRes = await fetch(
+                        `https://provinces.open-api.vn/api/v2/p/${matchedProvince.code}?depth=2`,
+                    );
+                    const wardData = await wardRes.json();
+                    const wards = Array.isArray(wardData?.wards) ? wardData.wards : [];
+                    const normWardInput = stripPrefix(ward);
+                    const wardMatch = wards.find((w) => {
+                        const wName = stripPrefix(w.name || '');
+                        return wName === normWardInput
+                            || wName.includes(normWardInput)
+                            || normWardInput.includes(wName);
+                    });
+                    if (wardMatch) verifiedWard = wardMatch.name;
+                } catch {
+                    // ignore
+                }
+
+                if (verifiedWard) {
+                    setMergedLocation({
+                        ward: verifiedWard,
+                        province: matchedProvince.name,
+                        source: 'verified',
+                    });
+                } else {
+                    // Ward cũ (quận/huyện trước sáp nhập) — tra mapping tĩnh để gợi ý phường mới
+                    const mapping = lookupMergedWards(ward, province);
+                    if (mapping && Array.isArray(mapping.wards) && mapping.wards.length > 0) {
+                        setMergedLocation({
+                            ward: null,
+                            province: matchedProvince.name,
+                            candidateWards: mapping.wards,
+                            source: 'mapping',
+                            oldWard: ward,
+                        });
+                    } else {
+                        setMergedLocation({
+                            ward: null,
+                            province: matchedProvince.name,
+                            source: 'stale-ward',
+                            oldWard: ward,
+                        });
+                    }
+                }
+                return;
+            }
+
+            // Trường hợp 2: province cũ (job đăng trước sáp nhập) → tra theo ward để tìm tỉnh mới
+            if (ward) {
+                try {
+                    const res = await fetch(
+                        `https://provinces.open-api.vn/api/v2/w/search/?q=${encodeURIComponent(ward)}`,
+                    );
+                    const data = await res.json();
+                    if (Array.isArray(data) && data.length > 0) {
+                        const match = data[0];
+                        setMergedLocation({
+                            ward: match.name,
+                            province: match.province_name,
+                            source: 'ward',
+                        });
+                        return;
+                    }
+                } catch {
+                    // ignore
+                }
+            }
+
+            setMergedLocation({
+                error: 'Không tìm thấy địa giới mới tương ứng. Tỉnh/Phường có thể đã được sáp nhập với tên khác — vui lòng tra cứu thủ công.',
+            });
+        } catch {
+            setMergedLocation({ error: 'Không tải được dữ liệu địa giới mới. Vui lòng thử lại.' });
+        } finally {
+            setLoadingMerged(false);
+        }
+    };
 
     const handleToggleSave = async () => {
         if (!storage.getToken()) {
@@ -506,7 +683,17 @@ const JobDetailPage = () => {
 
                                 <span className="flex-1" />
 
-                                <button className="flex items-center gap-2 text-[#00B4D8] text-sm font-bold border border-[#00B4D8] px-4 py-2 rounded-lg hover:bg-[#E6F6FD] transition-colors">
+                                <button
+                                    onClick={() => {
+                                        if (!storage.getToken()) {
+                                            toast.error('Vui lòng đăng nhập để sử dụng tính năng này.');
+                                            navigate('/login');
+                                            return;
+                                        }
+                                        setShowSimilarModal(true);
+                                    }}
+                                    className="flex items-center gap-2 text-[#00B4D8] text-sm font-bold border border-[#00B4D8] px-4 py-2 rounded-lg hover:bg-[#E6F6FD] transition-colors"
+                                >
                                     <FaBell /> Gửi tôi việc làm tương tự
                                 </button>
                             </div>
@@ -692,9 +879,12 @@ const JobDetailPage = () => {
                                 <FaExclamationTriangle className="text-yellow-500 mt-1 flex-shrink-0" />
                                 <p className="text-xs text-gray-500">
                                     <strong>Báo cáo tin tuyển dụng:</strong> Nếu bạn thấy rằng tin tuyển dụng này không đúng hoặc có dấu hiệu lừa đảo,{' '}
-                                    <a href="#" className="text-[#00B4D8] underline">
+                                    <button
+                                        onClick={() => setShowReportModal(true)}
+                                        className="text-[#00B4D8] underline hover:text-[#0096B4] transition-colors"
+                                    >
                                         hãy phản ánh với chúng tôi.
-                                    </a>
+                                    </button>
                                 </p>
                             </div>
 
@@ -917,9 +1107,62 @@ const JobDetailPage = () => {
                                     <div className="mt-1 text-[#00B4D8]">
                                         <FaMapMarkerAlt />
                                     </div>
-                                    <div>
+                                    <div className="flex-1 min-w-0">
                                         <p className="font-bold text-gray-800 text-sm">Địa điểm</p>
                                         <p className="text-gray-500 text-sm">{jobDetail.location}</p>
+
+                                        <div className="mt-2 p-3 bg-white border border-[#00B4D8]/30 rounded-lg">
+                                            <p className="text-[10px] uppercase tracking-wider font-bold text-[#0096B4] mb-1">
+                                                Sau sáp nhập (1/7/2025)
+                                            </p>
+                                            {loadingMerged ? (
+                                                <p className="text-xs text-gray-400 italic">Đang tra cứu...</p>
+                                            ) : mergedLocation?.error ? (
+                                                <p className="text-xs text-amber-700">{mergedLocation.error}</p>
+                                            ) : mergedLocation ? (
+                                                <>
+                                                    <p className="text-sm text-gray-800 font-semibold break-words">
+                                                        {[mergedLocation.ward, mergedLocation.province].filter(Boolean).join(', ')}
+                                                    </p>
+
+                                                    {mergedLocation.source === 'mapping' && Array.isArray(mergedLocation.candidateWards) && (
+                                                        <div className="mt-2">
+                                                            <p className="text-[10px] uppercase font-bold text-[#0096B4] mb-1">
+                                                                Có thể thuộc một trong các phường mới:
+                                                            </p>
+                                                            <div className="flex flex-wrap gap-1">
+                                                                {mergedLocation.candidateWards.map((w) => (
+                                                                    <span
+                                                                        key={w}
+                                                                        className="px-2 py-0.5 bg-[#E6F6FD] text-[#00B4D8] text-[11px] font-medium rounded"
+                                                                    >
+                                                                        {w}
+                                                                    </span>
+                                                                ))}
+                                                            </div>
+                                                        </div>
+                                                    )}
+
+                                                    <p className="text-[10px] text-gray-400 mt-1">
+                                                        {mergedLocation.source === 'verified' && 'Đối chiếu theo phường/xã hiện hành'}
+                                                        {mergedLocation.source === 'ward' && 'Đối chiếu theo phường/xã hiện hành'}
+                                                        {mergedLocation.source === 'province' && 'Đối chiếu theo tỉnh/thành hiện hành'}
+                                                        {mergedLocation.source === 'mapping' && (
+                                                            <span className="text-amber-700">
+                                                                Quận cũ (&quot;{mergedLocation.oldWard}&quot;) đã chia thành nhiều phường mới. Theo Nghị quyết 1685/NQ-UBTVQH15.
+                                                            </span>
+                                                        )}
+                                                        {mergedLocation.source === 'stale-ward' && (
+                                                            <span className="text-amber-700">
+                                                                Phường/xã cũ (&quot;{mergedLocation.oldWard}&quot;) đã đổi sau sáp nhập — chỉ hiển thị tỉnh/thành.
+                                                            </span>
+                                                        )}
+                                                    </p>
+                                                </>
+                                            ) : (
+                                                <p className="text-xs text-gray-400 italic">Không có dữ liệu phường/tỉnh để tra cứu.</p>
+                                            )}
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -939,6 +1182,207 @@ const JobDetailPage = () => {
                     </div>
                 </div>
             </div>
+
+            {/* MODAL GỬI VIỆC LÀM TƯƠNG TỰ */}
+            {showSimilarModal && (
+                <div
+                    className="fixed inset-0 z-[9999] bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-300"
+                    onClick={(e) => { if (e.target === e.currentTarget) setShowSimilarModal(false); }}
+                >
+                    <div className="bg-white w-full max-w-md rounded-3xl shadow-2xl p-8 animate-in zoom-in-95 duration-200">
+                        <h3 className="text-2xl font-black text-slate-800 mb-2 flex items-center gap-3">
+                            <div className="p-3 bg-blue-100 text-[#00B4D8] rounded-2xl">
+                                <FaBell size={24} />
+                            </div>
+                            Nhận việc làm tương tự
+                        </h3>
+                        <p className="text-slate-500 text-sm mb-8 font-medium">
+                            Chọn cách bạn muốn nhận thông tin về các công việc tương tự <span className="text-slate-800 font-bold">{jobDetail?.title}</span>
+                        </p>
+
+                        <div className="space-y-4">
+                            {/* Option 1: Follow công ty */}
+                            <button
+                                onClick={async () => {
+                                    if (!currentJob?.companyId) return;
+                                    try {
+                                        setIsFollowingCompany(true);
+                                        if (isAlreadyFollowing) {
+                                            await companyService.unfollowCompany(currentJob.companyId);
+                                            setIsAlreadyFollowing(false);
+                                            toast.success(`Đã bỏ theo dõi ${jobDetail?.company}`);
+                                        } else {
+                                            await companyService.followCompany(currentJob.companyId);
+                                            setIsAlreadyFollowing(true);
+                                            toast.success(`Đã theo dõi ${jobDetail?.company}! Bạn sẽ nhận thông báo khi có việc làm mới.`);
+                                        }
+                                    } catch (error) {
+                                        toast.error(error?.message || 'Không thể thực hiện. Vui lòng thử lại.');
+                                    } finally {
+                                        setIsFollowingCompany(false);
+                                    }
+                                }}
+                                disabled={isFollowingCompany}
+                                className={`w-full p-5 rounded-2xl border-2 text-left transition-all group ${
+                                    isAlreadyFollowing
+                                        ? 'border-green-200 bg-green-50 hover:border-green-300'
+                                        : 'border-slate-100 bg-slate-50 hover:border-[#00B4D8] hover:bg-[#E6F6FD]'
+                                } disabled:opacity-50`}
+                            >
+                                <div className="flex items-center gap-4">
+                                    <div className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 ${
+                                        isAlreadyFollowing ? 'bg-green-100 text-green-600' : 'bg-white text-[#00B4D8] shadow-sm'
+                                    }`}>
+                                        <FaUsers size={20} />
+                                    </div>
+                                    <div className="flex-1 min-w-0">
+                                        <p className="font-bold text-slate-800 text-sm">
+                                            {isFollowingCompany ? 'Đang xử lý...' : isAlreadyFollowing ? `Đang theo dõi ${jobDetail?.company}` : `Theo dõi ${jobDetail?.company}`}
+                                        </p>
+                                        <p className="text-xs text-slate-400 mt-0.5">
+                                            {isAlreadyFollowing
+                                                ? 'Nhấn để bỏ theo dõi'
+                                                : 'Nhận thông báo khi công ty đăng việc mới'
+                                            }
+                                        </p>
+                                    </div>
+                                    {isAlreadyFollowing && (
+                                        <span className="text-green-500 shrink-0">✓</span>
+                                    )}
+                                </div>
+                            </button>
+
+                            {/* Option 2: Tìm việc tương tự */}
+                            <button
+                                onClick={() => {
+                                    const keyword = currentJob?.position || currentJob?.title || '';
+                                    const location = currentJob?.province || '';
+                                    const params = new URLSearchParams();
+                                    if (keyword) params.set('keyword', keyword);
+                                    if (location) params.set('location', location);
+                                    setShowSimilarModal(false);
+                                    navigate(`/jobs?${params.toString()}`);
+                                }}
+                                className="w-full p-5 rounded-2xl border-2 border-slate-100 bg-slate-50 hover:border-[#00B4D8] hover:bg-[#E6F6FD] text-left transition-all group"
+                            >
+                                <div className="flex items-center gap-4">
+                                    <div className="w-12 h-12 rounded-xl bg-white text-[#00B4D8] flex items-center justify-center shrink-0 shadow-sm">
+                                        <FaExternalLinkAlt size={18} />
+                                    </div>
+                                    <div className="flex-1 min-w-0">
+                                        <p className="font-bold text-slate-800 text-sm">Xem việc làm tương tự ngay</p>
+                                        <p className="text-xs text-slate-400 mt-0.5">
+                                            Tìm kiếm công việc với từ khóa "{currentJob?.position || currentJob?.title || 'tương tự'}"
+                                        </p>
+                                    </div>
+                                    <FaExternalLinkAlt className="text-slate-300 group-hover:text-[#00B4D8] transition-colors shrink-0" size={14} />
+                                </div>
+                            </button>
+                        </div>
+
+                        <button
+                            onClick={() => setShowSimilarModal(false)}
+                            className="w-full mt-6 py-3.5 bg-slate-100 text-slate-500 font-bold rounded-2xl hover:bg-slate-200 transition-all text-sm"
+                        >
+                            Đóng
+                        </button>
+                    </div>
+                </div>
+            )}
+
+            {/* MODAL BÁO CÁO TIN TUYỂN DỤNG */}
+            {showReportModal && (
+                <div
+                    className="fixed inset-0 z-[9999] bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-300"
+                    onClick={(e) => { if (e.target === e.currentTarget) setShowReportModal(false); }}
+                >
+                    <div className="bg-white w-full max-w-md rounded-3xl shadow-2xl p-8 animate-in zoom-in-95 duration-200">
+                        <h3 className="text-2xl font-black text-slate-800 mb-2 flex items-center gap-3">
+                            <div className="p-3 bg-red-100 text-red-600 rounded-2xl">
+                                <FaExclamationTriangle size={24} />
+                            </div>
+                            Báo cáo tin tuyển dụng
+                        </h3>
+                        <p className="text-slate-500 text-sm mb-8 font-medium">
+                            Bạn đang báo cáo tin tuyển dụng <span className="text-slate-800 font-bold">{jobDetail?.title}</span> của <span className="text-slate-800 font-bold">{jobDetail?.company}</span>. Vui lòng chọn lý do chính xác.
+                        </p>
+
+                        <div className="space-y-5">
+                            <div>
+                                <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2.5 ml-1">Lý do chính</label>
+                                <div className="relative">
+                                    <select
+                                        value={reportData.type}
+                                        onChange={(e) => setReportData({ ...reportData, type: e.target.value })}
+                                        className="w-full h-14 px-4 pr-10 bg-slate-50 border-2 border-slate-100 rounded-2xl text-slate-700 font-bold focus:border-blue-400 outline-none transition-all cursor-pointer appearance-none"
+                                    >
+                                        {JOB_REPORT_REASONS.map(r => (
+                                            <option key={r.value} value={r.value}>{r.label}</option>
+                                        ))}
+                                    </select>
+                                    <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-4 text-slate-400">
+                                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div>
+                                <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2.5 ml-1">Mô tả chi tiết</label>
+                                <textarea
+                                    rows="4"
+                                    placeholder="Vui lòng cung cấp thêm thông tin để bộ phận hỗ trợ xử lý nhanh hơn..."
+                                    value={reportData.description}
+                                    onChange={(e) => setReportData({ ...reportData, description: e.target.value })}
+                                    className="w-full p-4 bg-slate-50 border-2 border-slate-100 rounded-2xl text-slate-700 font-medium focus:border-blue-400 outline-none transition-all resize-none"
+                                />
+                            </div>
+
+                            <div className="flex gap-3 pt-4">
+                                <button
+                                    onClick={() => { setShowReportModal(false); setReportData({ type: 'MISLEADING_INFO', description: '' }); }}
+                                    className="flex-1 py-4 bg-slate-100 text-slate-600 font-bold rounded-2xl hover:bg-slate-200 transition-all"
+                                >
+                                    Hủy bỏ
+                                </button>
+                                <button
+                                    onClick={async () => {
+                                        if (!reportData.description.trim()) {
+                                            toast.error('Vui lòng nhập mô tả chi tiết lý do báo cáo.');
+                                            return;
+                                        }
+                                        try {
+                                            setIsReporting(true);
+                                            const selectedReason = JOB_REPORT_REASONS.find(r => r.value === reportData.type);
+                                            await reportService.createReport({
+                                                targetId: currentJob.id,
+                                                targetType: 'JOB',
+                                                targetName: jobDetail?.title || 'Tin tuyển dụng',
+                                                type: reportData.type,
+                                                reason: selectedReason.label,
+                                                description: reportData.description,
+                                                priority: selectedReason.priority,
+                                                status: 'PENDING'
+                                            });
+                                            toast.success('Cảm ơn bạn đã báo cáo. Chúng tôi sẽ xem xét sớm nhất!');
+                                            setShowReportModal(false);
+                                            setReportData({ type: 'MISLEADING_INFO', description: '' });
+                                        } catch (error) {
+                                            console.error('Lỗi khi báo cáo:', error);
+                                            toast.error(error?.message || 'Gửi báo cáo thất bại. Vui lòng thử lại.');
+                                        } finally {
+                                            setIsReporting(false);
+                                        }
+                                    }}
+                                    disabled={isReporting}
+                                    className="flex-[1.5] py-4 bg-red-500 text-white font-bold rounded-2xl hover:bg-red-600 shadow-lg shadow-red-100 transition-all disabled:opacity-50"
+                                >
+                                    {isReporting ? 'Đang gửi...' : 'Gửi báo cáo'}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

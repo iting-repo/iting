@@ -31,7 +31,7 @@ export const useAdminJobs = () => {
         status: filters.status !== "all" ? filters.status : undefined,
       };
 
-      const res = await adminJobService.fetchJobs(params);
+      const res = await adminJobService.filterJobs(params);
 
       setJobs(res.content);
       setTotalPages(res.totalPages);
