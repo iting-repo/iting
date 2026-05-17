@@ -1,0 +1,101 @@
+@startuml 06 - HR đăng tin tuyển dụng & Admin duyệt
+
+skinparam sequenceArrowThickness 2
+skinparam roundcorner 10
+skinparam sequenceParticipantBackgroundColor #EEF2FF
+
+title Sequence Diagram: HR đăng tin tuyển dụng → Admin duyệt → Publish
+
+actor "HR" as hr
+actor "Admin" as admin
+participant "JobController\n/api/job" as ctrl
+participant "JobServiceImpl" as svc
+participant "CompanyHrAffiliationRepo" as hrRepo
+participant "JobRepository" as jobRepo
+participant "GeminiService\n(AI Review)" as ai
+participant "AdminNotificationService" as adminNotif
+participant "AdminJobController\n/api/admin/jobs" as adminCtrl
+participant "AdminJobServiceImpl" as adminSvc
+participant "NotificationService" as notif
+
+== Bước 1: HR đăng tin ==
+
+hr -> ctrl : POST /api/job\n{\n  title, description, requirements,\n  minSalary, maxSalary, jobType,\n  experienceLevel, dueDate, ...\n}
+activate ctrl
+ctrl -> svc : createJob(hrAccountId, CreateJobRequest)
+activate svc
+
+svc -> hrRepo : findApprovedByAccountId(hrAccountId)
+hrRepo --> svc : CompanyHrAffiliation (company)
+
+alt HR chưa liên kết công ty
+    svc --> ctrl : throw NotAffiliatedWithCompanyException
+    ctrl --> hr : 403 Forbidden
+end
+
+svc -> jobRepo : save(Job {\n  company, title, description,\n  status=PENDING,\n  postedByHrId=hrAccountId,\n  aiReviewStatus=PENDING\n})
+jobRepo --> svc : savedJob
+
+note right of svc : Gửi AI review bất đồng bộ
+
+svc -> ai : reviewJobContent(job) [async]
+activate ai
+
+svc -> adminNotif : notifyAdminForJobReview(job)
+svc --> ctrl : JobResponse { id, status=PENDING }
+deactivate svc
+ctrl --> hr : 201 Created\n"Tin đã gửi, chờ duyệt"
+deactivate ctrl
+
+== Bước 2: AI review (bất đồng bộ) ==
+
+ai --> jobRepo : save(job {\n  aiReviewStatus=PASSED/FLAGGED,\n  aiReviewReason=...\n})
+deactivate ai
+
+== Bước 3: Admin duyệt ==
+
+admin -> adminCtrl : GET /api/admin/jobs?status=PENDING
+activate adminCtrl
+adminCtrl -> adminSvc : getPendingJobs(page, size)
+activate adminSvc
+adminSvc -> jobRepo : findByStatus(PENDING, Pageable)
+adminSvc --> adminCtrl : Page<JobResponse>
+deactivate adminSvc
+adminCtrl --> admin : 200 OK { danh sách tin chờ duyệt }
+deactivate adminCtrl
+
+admin -> adminCtrl : POST /api/admin/jobs/{id}/approve\n{ note: "Nội dung hợp lệ" }
+activate adminCtrl
+adminCtrl -> adminSvc : approveJob(adminId, jobId, note)
+activate adminSvc
+
+adminSvc -> jobRepo : findById(jobId)
+adminSvc -> jobRepo : save(job {\n  status=ACTIVE,\n  reviewedBy=adminId,\n  reviewedAt=now\n})
+
+adminSvc -> jobRepo : save(JobReviewHistory {\n  action=APPROVED, actor=admin,\n  timestamp=now, note\n})
+
+note right of adminSvc : Thông báo cho HR và followers
+
+adminSvc -> notif : notifyHrJobApproved(job.postedByHrId, job)
+adminSvc -> notif : notifyFollowers(job.company.id, job) [async]
+
+adminSvc --> adminCtrl : JobResponse { status=ACTIVE }
+deactivate adminSvc
+adminCtrl --> admin : 200 OK
+deactivate adminCtrl
+
+== Bước 4: Admin từ chối ==
+
+admin -> adminCtrl : POST /api/admin/jobs/{id}/reject\n{ reason: "Nội dung vi phạm" }
+activate adminCtrl
+adminCtrl -> adminSvc : rejectJob(adminId, jobId, reason)
+activate adminSvc
+adminSvc -> jobRepo : save(job {\n  status=REJECTED,\n  reviewReason=reason\n})
+adminSvc -> jobRepo : save(JobReviewHistory { action=REJECTED })
+adminSvc -> notif : notifyHrJobRejected(hr, reason)
+adminSvc --> adminCtrl : void
+deactivate adminSvc
+adminCtrl --> admin : 200 OK
+deactivate adminCtrl
+
+@enduml

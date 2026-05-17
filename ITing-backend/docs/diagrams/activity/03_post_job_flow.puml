@@ -1,0 +1,78 @@
+@startuml 03 - Activity: HR đăng tin & Admin duyệt
+
+skinparam activityBackgroundColor #EEF2FF
+skinparam activityBorderColor #6366F1
+skinparam activityDiamondBackgroundColor #FEF9C3
+skinparam activityArrowColor #374151
+skinparam roundcorner 10
+
+title Activity Diagram: HR đăng tin tuyển dụng → Admin duyệt → Publish
+
+|HR|
+start
+if (HR đã liên kết công ty\n(AffiliationStatus = APPROVED)?) then (Chưa)
+  :Gửi yêu cầu liên kết công ty;
+  stop
+else (Rồi)
+endif
+
+:Tạo tin tuyển dụng mới\n(tiêu đề, mô tả, yêu cầu,\nmức lương, loại công việc...);
+
+if (Validate dữ liệu\n(title, description >= 100 chars)?) then (Không hợp lệ)
+  :Hiển thị lỗi validation;
+  stop
+else (Hợp lệ)
+endif
+
+:Lưu Job\n(status = PENDING,\naiReviewStatus = PENDING);
+
+:Nhận thông báo\n"Tin đã gửi, chờ Admin duyệt";
+
+|Hệ thống (AI)|
+:Gemini AI review nội dung\n(bất đồng bộ);
+
+if (Nội dung vi phạm?) then (Có)
+  :Đánh dấu aiReviewStatus = FLAGGED;
+  :Gắn cờ cho Admin chú ý;
+else (Không)
+  :Đánh dấu aiReviewStatus = PASSED;
+endif
+
+|Admin|
+:Nhận thông báo\ntin tuyển dụng mới cần duyệt;
+
+:Xem chi tiết tin;
+:Xem kết quả AI review;
+
+if (Nội dung hợp lệ?) then (Có)
+  :Phê duyệt tin (APPROVE);
+
+  |Hệ thống|
+  :Cập nhật Job.status = ACTIVE;
+  :Lưu JobReviewHistory (APPROVED);
+  :Gửi thông báo cho HR;
+  :Gửi thông báo cho\nngười theo dõi công ty;
+  :Cập nhật job embeddings\n(cho AI recommendation);
+
+  |HR|
+  :Nhận thông báo\n"Tin đã được duyệt & đăng tải";
+  stop
+else (Không hợp lệ)
+  :Từ chối với lý do;
+
+  |Hệ thống|
+  :Cập nhật Job.status = REJECTED;
+  :Lưu JobReviewHistory (REJECTED);
+  :Gửi thông báo cho HR với lý do;
+
+  |HR|
+  :Nhận thông báo\n"Tin bị từ chối: {lý do}";
+  if (Muốn chỉnh sửa & gửi lại?) then (Có)
+    :Sửa nội dung tin;
+    :Gửi lại (status = PENDING);
+  else (Không)
+    stop
+  endif
+endif
+
+@enduml

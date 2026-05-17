@@ -1,0 +1,162 @@
+@startuml 03 - Class Diagram: Company Module
+
+skinparam classBackgroundColor #EEF2FF
+skinparam classBorderColor #6366F1
+skinparam classArrowColor #374151
+skinparam roundcorner 10
+skinparam classFontSize 11
+
+title Class Diagram: Company Module
+
+package "com.iting.jobportal.company" {
+
+  enum VerificationLevel {
+    UNVERIFIED
+    PENDING
+    VERIFIED
+    REJECTED
+  }
+
+  enum CompanyReviewStatus {
+    DRAFT
+    SUBMITTED
+    APPROVED
+    REJECTED
+  }
+
+  enum DocumentReviewStatus {
+    MISSING
+    PENDING
+    APPROVED
+    REJECTED
+  }
+
+  enum AffiliationStatus {
+    INCOMPLETE
+    PENDING
+    APPROVED
+    REJECTED
+  }
+
+  enum SubmissionStatus {
+    DRAFT
+    PENDING
+    APPROVED
+    REJECTED
+  }
+
+  enum CompanyAuditAction {
+    CREATED
+    UPDATED
+    ACTIVATED
+    DEACTIVATED
+    VERIFIED
+    REJECTED
+    INFO_UPDATED
+  }
+
+  class Company {
+    - id: Long
+    - name: String
+    - website: String
+    - address: String
+    - logoUrl: String
+    - description: String
+    - companyEmail: String
+    - industries: List<Industry>
+    - companySize: String
+    - phone: String
+    - foundedYear: Integer
+    - techStack: List<String>
+    - benefits: List<String>
+    - taxCode: String <<unique>>
+    - businessLicenseFileUrl: String
+    - businessLicenseDocumentType: BusinessDocumentType
+    - consentDocumentConfirmed: Boolean
+    - verificationLevel: VerificationLevel
+    - companyInfoUpdateStatus: CompanyReviewStatus
+    - documentReviewStatus: DocumentReviewStatus
+    - active: Boolean
+    - followerCount: Long
+    - infoSourceAffiliationId: Long
+    - lastUpdate: LocalDateTime
+  }
+
+  class CompanyHrAffiliation {
+    - id: Long
+    - status: AffiliationStatus
+    - rejectedReason: String
+    - requestedAt: LocalDateTime
+    - reviewedAt: LocalDateTime
+    - reviewedBy: Long
+    - submittedName: String
+    - submittedLogoUrl: String
+    - submittedDescription: String
+    - submittedWebsite: String
+    - submittedAddress: String
+    - submittedIndustriesJson: String
+    - submittedCompanySize: String
+    - submittedLicenseUrl: String
+    - submissionStatus: SubmissionStatus
+    - submissionSubmittedAt: LocalDateTime
+    - submissionReviewedAt: LocalDateTime
+    - createdAt: LocalDateTime
+    - updatedAt: LocalDateTime
+  }
+
+  class CompanyReview {
+    - id: Long
+    - rating: Integer
+    - content: String
+    - createdAt: LocalDateTime
+  }
+
+  class UserFollowCompany {
+    - userId: Long <<PK>>
+    - companyId: Long <<PK>>
+    - followDate: LocalDateTime
+  }
+
+  class CompanyKybNote {
+    - id: Long
+    - adminId: Long
+    - noteContent: String
+    - createdAt: LocalDateTime
+  }
+
+  class CompanyAuditLog {
+    - id: Long
+    - action: CompanyAuditAction
+    - fromStatus: String
+    - toStatus: String
+    - reason: String
+    - note: String
+    - actor: String
+    - actorId: Long
+    - createdAt: LocalDateTime
+  }
+}
+
+' Relationships
+Company "1" *-- "many" CompanyHrAffiliation : affiliations >
+Company "1" *-- "many" CompanyReview : reviews >
+Company "1" *-- "many" CompanyKybNote : kybNotes >
+Company "1" *-- "many" CompanyAuditLog : auditLogs >
+CompanyHrAffiliation "many" --> "1" Account : hrAccount >
+
+note right of Company
+  @OneToMany với Job
+  (cascade = ALL)
+end note
+
+note right of CompanyHrAffiliation
+  Snapshot thông tin tại thời điểm\nHR gửi hồ sơ (submitted* fields)
+  Khi APPROVED → áp dụng vào Company
+end note
+
+note right of UserFollowCompany
+  Composite PK:
+  (userId, companyId)
+end note
+
+@enduml

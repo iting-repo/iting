@@ -46,18 +46,17 @@ class AdminUserServiceImplTest {
 
     @Test
     void getAllUsers_shouldMapSupplementalUserFields() {
-        Account account = Account.builder().id(1L).email("u@test.com").role(Role.CANDIDATE).status(AccountStatus.ACTIVE).build();
         User user = new User();
         user.setId(1L);
         user.setFullName("Test User");
         user.setAvatarUrl("/a.png");
 
-        // Sau Phase 2: getAllUsers dùng Specification (filter động). Mock cả 2 overload
-        // để bắt được call thực tế trong impl, và mock affiliationRepository (để mapToResponse
-        // resolve company name an toàn).
+        // Account.getUser() is a JPA @OneToOne — mapToResponse reads it directly,
+        // it does NOT go through userRepository.findById.
+        Account account = Account.builder().id(1L).email("u@test.com").role(Role.CANDIDATE).status(AccountStatus.ACTIVE).user(user).build();
+
         when(accountRepository.findAll(any(Specification.class), any(Pageable.class)))
                 .thenReturn(new PageImpl<>(List.of(account)));
-        when(userRepository.findById(1L)).thenReturn(Optional.of(user));
         Mockito.lenient().when(affiliationRepository.findActiveByHrAccountId(1L))
                 .thenReturn(Optional.empty());
 
@@ -77,7 +76,6 @@ class AdminUserServiceImplTest {
 
         when(accountRepository.findById(2L)).thenReturn(Optional.of(account));
         when(accountRepository.save(account)).thenReturn(account);
-        when(userRepository.findById(2L)).thenReturn(Optional.empty());
         Mockito.lenient().when(affiliationRepository.findActiveByHrAccountId(2L))
                 .thenReturn(Optional.empty());
 

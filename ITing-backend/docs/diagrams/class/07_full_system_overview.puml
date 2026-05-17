@@ -1,0 +1,213 @@
+@startuml 07 - Class Diagram: Full System Overview (Entity Relations)
+
+skinparam classBackgroundColor #EEF2FF
+skinparam classBorderColor #6366F1
+skinparam classArrowColor #374151
+skinparam roundcorner 10
+skinparam classFontSize 10
+skinparam packageBackgroundColor #F8F9FF
+skinparam packageBorderColor #A5B4FC
+
+title Class Diagram: Toàn bộ hệ thống - Quan hệ giữa các Entity
+
+package "Auth" #FFE4E6 {
+  class Account {
+    - id: Long
+    - email: String
+    - passwordHash: String
+    - role: Role
+    - status: AccountStatus
+  }
+  class RefreshToken {
+    - userId: Long
+    - token: String
+    - isUsed: Boolean
+  }
+  class OtpCode {
+    - email: String
+    - code: String
+    - expiryTime: LocalDateTime
+  }
+}
+
+package "User Profile" #EEF2FF {
+  class User {
+    - id: Long
+    - fullName: String
+    - avatarUrl: String
+  }
+  class UserProfile {
+    - id: Long
+    - headline: String
+    - openToWork: Boolean
+    - employmentStatus: EmploymentStatus
+  }
+  class CV {
+    - id: Long
+    - title: String
+    - fileUrl: String
+    - isDefault: Boolean
+    - cvStatus: CvStatus
+  }
+  class Experience {
+    - companyName: String
+    - position: String
+    - isCurrent: Boolean
+  }
+  class Education {
+    - schoolName: String
+    - degree: String
+  }
+  class Skill {
+    - name: String
+  }
+  class Certificate {
+    - title: String
+    - issuingOrganization: String
+  }
+  class ContactInfo {
+    - phone: String
+    - email: String
+  }
+}
+
+package "Company" #ECFDF5 {
+  class Company {
+    - id: Long
+    - name: String
+    - taxCode: String
+    - verificationLevel: VerificationLevel
+    - active: Boolean
+    - followerCount: Long
+  }
+  class CompanyHrAffiliation {
+    - status: AffiliationStatus
+    - submittedName: String
+  }
+  class CompanyReview {
+    - rating: Integer
+    - content: String
+  }
+  class UserFollowCompany {
+    - userId: Long
+    - companyId: Long
+    - followDate: LocalDateTime
+  }
+}
+
+package "Job" #FFF7ED {
+  class Job {
+    - id: Long
+    - title: String
+    - status: JobStatus
+    - minSalary: BigDecimal
+    - maxSalary: BigDecimal
+    - dueDate: LocalDate
+    - jobEmbedding: String
+    - applicationCount: Integer
+  }
+  class JobReviewHistory {
+    - action: JobReviewAction
+    - actor: String
+    - timestamp: LocalDateTime
+  }
+  class UserSaveJob {
+    - userId: Long
+    - jobId: Long
+  }
+}
+
+package "Application" #FDF4FF {
+  class ApplyForm {
+    - id: Long
+    - userId: Long
+    - applicantName: String
+    - introduction: String
+  }
+  class ApplyFormSentToJob {
+    - jobId: Long
+    - applyFormId: Long
+    - userId: Long
+    - status: ApplicationStatus
+    - hrNote: String
+    - timeSent: LocalDateTime
+  }
+}
+
+package "Messaging" #F0FDF4 {
+  class Conversation {
+    - id: Long
+    - type: ConversationType
+    - participant1Id: Long
+    - participant2Id: Long
+    - lastMessageContent: String
+  }
+  class Message {
+    - id: Long
+    - senderId: Long
+    - receiverId: Long
+    - content: String
+    - isRead: Boolean
+  }
+}
+
+package "Notification" #FFFBEB {
+  class Notification {
+    - id: Integer
+    - recipientId: Long
+    - type: NotificationType
+    - content: String
+    - isRead: Boolean
+  }
+}
+
+package "Recommendation" #F1F5F9 {
+  class UserJobInteraction {
+    - interactionType: InteractionType
+    - weight: Integer
+  }
+  class UserSearchHistory {
+    - keyword: String
+    - location: String
+    - jobType: JobType
+  }
+}
+
+' ─── Auth → User ─────────────────────────────────────
+Account "1" *-right- "1" User : owns (MapsId) >
+Account "1" *-- "0..*" RefreshToken : has >
+
+' ─── User → Profile ──────────────────────────────────
+User "1" *-down- "1" UserProfile : has (MapsId) >
+User "1" *-- "1" ContactInfo : has >
+UserProfile "1" *-- "0..*" CV
+UserProfile "1" *-- "0..*" Experience
+UserProfile "1" *-- "0..*" Education
+UserProfile "1" *-- "0..*" Skill
+UserProfile "1" *-- "0..*" Certificate
+
+' ─── Company ─────────────────────────────────────────
+Company "1" *-down- "0..*" Job : posts >
+Company "1" *-- "0..*" CompanyHrAffiliation
+Company "1" *-- "0..*" CompanyReview
+CompanyHrAffiliation "0..*" -left-> "1" Account : hrAccount >
+
+' ─── Job ─────────────────────────────────────────────
+Job "1" *-- "0..*" JobReviewHistory
+UserSaveJob "0..*" -up-> "1" Job
+UserSaveJob "0..*" --> "1" Account
+
+' ─── Application ─────────────────────────────────────
+ApplyFormSentToJob "0..*" --> "1" Job : appliesTo >
+ApplyFormSentToJob "1" *-right- "1" ApplyForm : contains >
+ApplyForm "0..*" --> "1" CV : attaches (optional) >
+
+' ─── Messaging ───────────────────────────────────────
+Conversation "1" *-- "0..*" Message : contains >
+
+' ─── Recommendation ──────────────────────────────────
+UserJobInteraction "0..*" --> "1" Account
+UserJobInteraction "0..*" --> "1" Job
+UserSearchHistory "0..*" --> "1" Account
+
+@enduml

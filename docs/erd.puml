@@ -1,0 +1,182 @@
+@startuml ITing_Job_Portal_ERD
+!theme plain
+top to bottom direction
+skinparam linetype ortho
+skinparam nodesep 40
+skinparam ranksep 30
+skinparam entity {
+  BackgroundColor #F8F9FA
+  BorderColor #495057
+  FontSize 11
+}
+skinparam package {
+  BackgroundColor #E9ECEF
+  BorderColor #6C757D
+  FontSize 12
+  FontStyle bold
+}
+hide circle
+
+' ============================================================
+' PACKAGE: AUTH
+' ============================================================
+package "AUTH" #DBEAFE {
+  entity "Account" as account {}
+  entity "OtpCode" as otp {}
+  entity "PasswordResetToken" as prt {}
+  entity "RefreshToken" as rt {}
+  entity "BanHistory" as ban {}
+}
+
+' ============================================================
+' PACKAGE: CANDIDATE
+' ============================================================
+package "CANDIDATE" #D1FAE5 {
+  entity "CandidateProfile" as cand_profile {}
+  entity "UserProfile" as profile {}
+  entity "ContactInfo" as contact {}
+  entity "Skill" as skill {}
+  entity "Experience" as exp {}
+  entity "Education" as edu {}
+  entity "Certificate" as cert {}
+  entity "SocialLink" as slink {}
+  entity "CV" as cv {}
+  entity "Portfolio" as portfolio {}
+}
+
+' ============================================================
+' PACKAGE: COMPANY
+' ============================================================
+package "COMPANY" #FEF3C7 {
+  entity "Company" as company {}
+  entity "CompanyHrAffiliation" as hr_aff {}
+  entity "CompanyAuditLog" as comp_audit {}
+  entity "UserFollowCompany" as follow {}
+}
+
+' ============================================================
+' PACKAGE: JOB
+' ============================================================
+package "JOB" #FCE7F3 {
+  entity "Job" as job {}
+  entity "JobReviewHistory" as job_review {}
+  entity "UserSaveJob" as save_job {}
+  entity "CompanyUploadJob" as upload_job {}
+}
+
+' ============================================================
+' PACKAGE: APPLICATION
+' ============================================================
+package "APPLICATION" #EDE9FE {
+  entity "ApplyForm" as apply_form {}
+  entity "ApplyFormSentToJob" as apply_job {}
+}
+
+' ============================================================
+' PACKAGE: MESSAGING
+' ============================================================
+package "MESSAGING" #E0F2FE {
+  entity "Conversation" as conv {}
+  entity "Message" as msg {}
+}
+
+' ============================================================
+' PACKAGE: NOTIFICATION
+' ============================================================
+package "NOTIFICATION" #FFF7ED {
+  entity "Notification" as notif {}
+}
+
+' ============================================================
+' PACKAGE: RECOMMENDATION
+' ============================================================
+package "RECOMMENDATION" #F0FDF4 {
+  entity "UserJobInteraction" as interaction {}
+  entity "UserSearchHistory" as search_hist {}
+}
+
+' ============================================================
+' PACKAGE: ADMIN
+' ============================================================
+package "ADMIN" #FEE2E2 {
+  entity "Admin" as admin {}
+  entity "ActivityLog" as act_log {}
+  entity "ReportAccount" as report_acc {}
+  entity "UserReport" as user_report {}
+  entity "Blog" as blog {}
+  entity "Category" as category {}
+  entity "Banner" as banner {}
+  entity "StaticContent" as static_cont {}
+  entity "SystemConfig" as sys_conf {}
+}
+
+' ============================================================
+' RELATIONSHIPS
+' ============================================================
+
+' --- AUTH ---
+account ||--o{ prt              : "has"
+account ||--o{ rt               : "has"
+account ||--o{ ban              : "targetAccount"
+account ||--o{ ban              : "adminAccount"
+account ||--o{ hr_aff           : "hrAccount"
+account ||--o{ interaction      : "user"
+account ||--o{ search_hist      : "user"
+account ||--o{ save_job         : "user"
+account ||--o{ follow           : "user"
+
+' --- ACCOUNT → role-specific profile (shared PK / MapsId) ---
+account ||--o| cand_profile     : "1:1"
+account ||--o| admin            : "1:1"
+
+' --- CANDIDATE chain ---
+cand_profile ||--|| profile     : "1:1"
+profile      ||--|| contact     : "1:1"
+
+' --- UserProfile children ---
+profile ||--o{ skill            : "profile"
+profile ||--o{ exp              : "profile"
+profile ||--o{ edu              : "profile"
+profile ||--o{ cert             : "profile"
+profile ||--o{ slink            : "profile"
+profile ||--o{ cv               : "profile"
+profile ||--o{ portfolio        : "profile"
+
+' --- CV → ApplyForm ---
+cv      ||--o{ apply_form       : "cv"
+
+' --- COMPANY ---
+company ||--o{ hr_aff           : "company"
+company ||--o{ comp_audit       : "company"
+company ||--o{ job              : "company"
+company ||--o{ follow           : "company"
+company ||--o{ upload_job       : "company"
+
+' --- JOB ---
+job     ||--o{ job_review       : "job"
+job     ||--o{ save_job         : "job"
+job     ||--o{ upload_job       : "job"
+job     ||--o{ apply_job        : "job"
+job     ||--o{ interaction      : "job"
+
+' --- APPLICATION ---
+account    ||--o{ apply_form    : "user"
+apply_form ||--o{ apply_job     : "applyForm"
+account    ||--o{ apply_job     : "user"
+
+' --- MESSAGING ---
+conv    ||--o{ msg              : "conversation"
+account ||--o{ notif            : "recipient"
+
+' --- ADMIN entities ---
+admin   ||--o{ upload_job       : "approvedBy"
+admin   ||--o{ report_acc       : "handledBy"
+account ||--o{ report_acc       : "reportedUser"
+account ||--o{ act_log          : "user"
+account ||--o{ user_report      : "reporter"
+admin   ||--o{ user_report      : "handledBy"
+admin   ||--o{ sys_conf         : "lastUpdatedBy"
+category ||--o| category        : "parentId"
+account ||--o{ static_cont      : "author"
+
+@enduml

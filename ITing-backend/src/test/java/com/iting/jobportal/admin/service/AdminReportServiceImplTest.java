@@ -12,6 +12,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 
 import java.util.List;
 import java.util.Optional;
@@ -38,12 +39,12 @@ class AdminReportServiceImplTest {
         Page<UserReport> page = new PageImpl<>(List.of(new UserReport()));
         ArgumentCaptor<Pageable> pageableCaptor = ArgumentCaptor.forClass(Pageable.class);
 
-        when(reportRepository.findAll(any(Pageable.class))).thenReturn(page);
+        when(reportRepository.findAll(any(Specification.class), any(Pageable.class))).thenReturn(page);
 
         Page<UserReport> result = service.getReports("OPEN", null, null, null, null, 0, 10);
 
         assertSame(page, result);
-        verify(reportRepository).findAll(pageableCaptor.capture());
+        verify(reportRepository).findAll(any(Specification.class), pageableCaptor.capture());
         assertEquals(0, pageableCaptor.getValue().getPageNumber());
         assertEquals(10, pageableCaptor.getValue().getPageSize());
     }
@@ -51,12 +52,12 @@ class AdminReportServiceImplTest {
     @Test
     void getReports_shouldIgnoreStatusInCurrentImplementation() {
         Page<UserReport> page = new PageImpl<>(List.of(new UserReport()));
-        when(reportRepository.findAll(any(Pageable.class))).thenReturn(page);
+        when(reportRepository.findAll(any(Specification.class), any(Pageable.class))).thenReturn(page);
 
         Page<UserReport> result = service.getReports("RESOLVED", null, null, null, null, 1, 5);
 
         assertSame(page, result);
-        verify(reportRepository).findAll(any(Pageable.class));
+        verify(reportRepository).findAll(any(Specification.class), any(Pageable.class));
     }
 
     @Test

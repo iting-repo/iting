@@ -506,27 +506,27 @@ const HomePage = () => {
                     <div className="md:w-1/2 flex justify-center order-2 md:order-1 relative group">
                         {/* Glow effect behind fox */}
                         <div className="absolute inset-0 bg-[#3AB4E6] blur-[60px] opacity-30 rounded-full w-64 h-64 top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 group-hover:opacity-50 transition-opacity duration-500"></div>
-                        
+
                         {/* Yêu cầu người dùng lưu ảnh với tên tech-fox.png trong thư mục public */}
-                        <img 
-                            src="/tech-fox.png" 
-                            alt="Cáo Công Nghệ AI" 
-                            className="relative z-10 w-full max-w-[320px] object-contain drop-shadow-[0_0_25px_rgba(58,180,230,0.4)] animate-[bounce_4s_ease-in-out_infinite] hover:scale-105 transition-transform duration-500" 
+                        <img
+                            src="/tech-fox.png"
+                            alt="Cáo Công Nghệ AI"
+                            className="relative z-10 w-full max-w-[320px] object-contain drop-shadow-[0_0_25px_rgba(58,180,230,0.4)] animate-[bounce_4s_ease-in-out_infinite] hover:scale-105 transition-transform duration-500"
                         />
                     </div>
-                    
+
                     <div className="md:w-1/2 text-white order-1 md:order-2">
                         <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-blue-500/20 border border-blue-400/30 text-blue-300 text-sm font-bold mb-6 backdrop-blur-sm">
                             <FaMagic className="animate-pulse" /> Trợ lý AI ITing
                         </div>
                         <h2 className="text-3xl md:text-5xl font-bold mb-6 leading-tight">
-                            Khó tìm việc chuẩn gu?<br/> <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#3AB4E6] to-cyan-300">Đã có Cáo Công Nghệ!</span>
+                            Khó tìm việc chuẩn gu?<br /> <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#3AB4E6] to-cyan-300">Đã có Cáo Công Nghệ!</span>
                         </h2>
                         <p className="text-gray-300 mb-8 max-w-lg text-lg leading-relaxed">
                             Cáo Công Nghệ sử dụng AI tiên tiến để đọc hiểu CV của bạn. Không cần điền form dài dòng, chỉ một chạm là ra ngay danh sách việc làm "đo ni đóng giày" cho riêng bạn!
                         </p>
-                        <button 
-                            onClick={handleAiSearch} 
+                        <button
+                            onClick={handleAiSearch}
                             className="bg-gradient-to-r from-[#3AB4E6] to-blue-600 hover:from-blue-500 hover:to-blue-700 text-white px-8 py-4 rounded-2xl font-bold shadow-[0_0_20px_rgba(58,180,230,0.4)] transition-all flex items-center justify-center gap-3 hover:-translate-y-1.5 text-lg"
                         >
                             <FaMagic /> Quét CV ngay với Cáo
@@ -575,13 +575,9 @@ const HomePage = () => {
                                 return (
                                     <div
                                         key={job.id}
-<<<<<<< HEAD
                                         onClick={() => handleJobClick(job)}
                                         onMouseEnter={(e) => handleCardEnter(job, e.currentTarget)}
                                         onMouseLeave={handleCardLeave}
-=======
-                                        onClick={() => handleJobClick(job.id)}
->>>>>>> origin/main
                                         className="group bg-white rounded-2xl p-6 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 border border-gray-100 relative cursor-pointer"
                                     >
                                         <div className="flex justify-between items-start mb-4">
@@ -746,27 +742,19 @@ const HomePage = () => {
                         )}
                         {(jobs ?? []).length === 0 && !isLoading ? (
                             <div className="text-center py-20 text-gray-500">Không tìm thấy công việc nào.</div>
-<<<<<<< HEAD
                         ) : (jobs ?? []).map((job) => {
                             const isSaved = savedJobIds.includes(job.id);
                             const isHovered = hoveredJob?.id === job.id;
                             return (
-=======
-                        ) : (
-                            (jobs ?? []).map((job) => {
-                                const isSaved = savedJobIds.includes(job.id);
-                                return (
->>>>>>> origin/main
                                 <div
                                     key={job.id}
                                     onClick={() => handleJobClick(job)}
                                     onMouseEnter={(e) => handleCardEnter(job, e.currentTarget)}
                                     onMouseLeave={handleCardLeave}
-                                    className={`group relative border rounded-2xl p-6 transition-all duration-300 bg-white overflow-hidden cursor-pointer ${
-                                        isHovered
-                                            ? 'border-[#3AB4E6] shadow-lg ring-2 ring-[#3AB4E6]/20'
-                                            : 'border-gray-100 hover:shadow-xl hover:shadow-blue-500/5'
-                                    }`}>
+                                    className={`group relative border rounded-2xl p-6 transition-all duration-300 bg-white overflow-hidden cursor-pointer ${isHovered
+                                        ? 'border-[#3AB4E6] shadow-lg ring-2 ring-[#3AB4E6]/20'
+                                        : 'border-gray-100 hover:shadow-xl hover:shadow-blue-500/5'
+                                        }`}>
 
                                     {/* Hiệu ứng: Thanh màu xanh trượt ra khi hover */}
                                     <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-[#3AB4E6] transform -translate-x-full group-hover:translate-x-0 transition-transform duration-300"></div>
@@ -831,14 +819,8 @@ const HomePage = () => {
                                         </div>
                                     </div>
                                 </div>
-<<<<<<< HEAD
                             );
                         })}
-=======
-                                );
-                            })
-                        )}
->>>>>>> origin/main
                     </div>
 
                     {/* 5. PAGINATION: Bỏ nút đen, dùng style Clean */}
@@ -975,7 +957,7 @@ const HomePage = () => {
                                         className={`rounded-2xl p-5 border ${s.accent
                                             ? 'bg-gradient-to-br from-[#3AB4E6]/20 to-blue-800/10 border-[#3AB4E6]/40'
                                             : 'bg-[#112240]/80 border-blue-800/60'
-                                        }`}
+                                            }`}
                                     >
                                         <div className={`text-3xl md:text-4xl font-black mb-1 ${s.accent ? 'text-[#3AB4E6]' : 'text-white'}`}>
                                             {s.value}
@@ -1014,13 +996,13 @@ const HomePage = () => {
                                             <path d="M0,70 C30,65 50,55 80,50 C110,45 130,60 160,55 C190,50 210,35 240,30 C265,26 280,35 300,28"
                                                 fill="none" stroke="#3AB4E6" strokeWidth="2.5" strokeLinecap="round" />
                                             {/* Data points */}
-                                            {[[0,70],[80,50],[160,55],[240,30],[300,28]].map(([x,y],i)=>(
-                                                <circle key={i} cx={x} cy={y} r="3.5" fill="#3AB4E6" stroke="#0a192f" strokeWidth="2"/>
+                                            {[[0, 70], [80, 50], [160, 55], [240, 30], [300, 28]].map(([x, y], i) => (
+                                                <circle key={i} cx={x} cy={y} r="3.5" fill="#3AB4E6" stroke="#0a192f" strokeWidth="2" />
                                             ))}
                                         </svg>
                                         {/* X axis labels */}
                                         <div className="flex justify-between mt-1">
-                                            {['02/04','09/04','16/04','23/04','30/04', new Date().toLocaleDateString('vi-VN',{day:'2-digit',month:'2-digit'})].map((d,i)=>(
+                                            {['02/04', '09/04', '16/04', '23/04', '30/04', new Date().toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' })].map((d, i) => (
                                                 <span key={i} className="text-[9px] text-blue-500/50">{d}</span>
                                             ))}
                                         </div>
@@ -1061,10 +1043,10 @@ const HomePage = () => {
                                     </div>
                                     {/* Legend */}
                                     <div className="flex flex-wrap gap-3 mt-3 pt-3 border-t border-blue-800/40">
-                                        {['#3AB4E6','#60A5FA','#FBBF24','#34D399','#A78BFA'].map((c, i) => (
+                                        {['#3AB4E6', '#60A5FA', '#FBBF24', '#34D399', '#A78BFA'].map((c, i) => (
                                             <span key={i} className="flex items-center gap-1 text-[9px] text-blue-400/60">
                                                 <span className="w-2 h-2 rounded-full inline-block" style={{ backgroundColor: c }}></span>
-                                                {['Phần mềm','Dữ liệu','UI/UX','DevOps','Bảo mật'][i]}
+                                                {['Phần mềm', 'Dữ liệu', 'UI/UX', 'DevOps', 'Bảo mật'][i]}
                                             </span>
                                         ))}
                                     </div>
@@ -1086,8 +1068,8 @@ const HomePage = () => {
 
                     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-6">
                         {categories.map((cat) => (
-                            <div 
-                                key={cat.id} 
+                            <div
+                                key={cat.id}
                                 onClick={() => navigate(`/jobs?keyword=${encodeURIComponent(cat.name)}`)}
                                 className="bg-white p-8 rounded-xl shadow-sm hover:shadow-lg transition-all duration-300 cursor-pointer group flex flex-col items-center text-center border border-transparent hover:border-blue-200"
                             >

@@ -59,6 +59,7 @@ class JobEnumCombinationTest {
     void setUp() {
         MockitoAnnotations.openMocks(this);
         ReflectionTestUtils.setField(jobService, "entityManager", entityManager);
+        ReflectionTestUtils.setField(jobService, "outboxAppender", Optional.empty());
     }
 
     static Stream<Arguments> provideEnumCombinations() {

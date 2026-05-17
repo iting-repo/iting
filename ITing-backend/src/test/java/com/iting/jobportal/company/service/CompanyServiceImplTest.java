@@ -142,8 +142,10 @@ class CompanyServiceImplTest {
     }
 
     @Test
-    void submitForReviewByAccountId_withMissingConsentVersion_shouldThrow() {
-        company.setConsentDocumentVersion(" ");
+    void submitForReviewByAccountId_withMissingRequiredField_shouldThrow() {
+        // submitInfoReviewByAccountId now validates: name, companyEmail, phone, representativeName, taxCode.
+        // Consent-version is no longer required for info review.
+        company.setName(" ");
         when(companyRepository.findById(1L)).thenReturn(Optional.of(company));
 
         IllegalArgumentException exception = assertThrows(
@@ -151,7 +153,7 @@ class CompanyServiceImplTest {
                 () -> companyService.submitInfoReviewByAccountId(1L)
         );
 
-        assertTrue(exception.getMessage().contains("Phi"));
+        assertTrue(exception.getMessage().contains("Tên công ty"));
         verify(companyRepository, never()).save(any());
     }
 

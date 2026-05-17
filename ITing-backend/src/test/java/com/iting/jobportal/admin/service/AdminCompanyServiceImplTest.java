@@ -11,12 +11,14 @@ import com.iting.jobportal.company.repository.CompanyAuditLogRepository;
 import com.iting.jobportal.company.repository.CompanyRepository;
 import com.iting.jobportal.company.service.CompanyAuditService;
 import com.iting.jobportal.file.FileUploadService;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InOrder;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.List;
 import java.util.Optional;
@@ -43,6 +45,13 @@ class AdminCompanyServiceImplTest {
 
     @InjectMocks
     private AdminCompanyServiceImpl service;
+
+    @BeforeEach
+    void setUp() {
+        // Optional<...> fields are left null by @InjectMocks; default to empty.
+        ReflectionTestUtils.setField(service, "lockService", Optional.empty());
+        ReflectionTestUtils.setField(service, "outboxAppender", Optional.empty());
+    }
 
     @Test
     void approveCompany_shouldApprovePersistAndWriteAuditWithOldAndNewStatus() {
