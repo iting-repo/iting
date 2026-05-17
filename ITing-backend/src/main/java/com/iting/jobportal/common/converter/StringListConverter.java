@@ -30,7 +30,8 @@ public class StringListConverter implements AttributeConverter<List<String>, Str
             if (dbData == null || dbData.isBlank()) {
                 return List.of();
             }
-            return mapper.readValue(dbData, new TypeReference<List<String>>() {});
+            return mapper.readValue(dbData, new TypeReference<List<String>>() {
+            });
         } catch (Exception e) {
             throw new RuntimeException("Error converting JSON to List", e);
         }

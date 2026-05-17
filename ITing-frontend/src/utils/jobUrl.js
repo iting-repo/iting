@@ -93,27 +93,34 @@ export const buildEmployerJobApplicationsPath = (job = {}) => {
 };
 
 export const getCompanyLogoUrl = (logoPath, companyName = "") => {
-  const DEFAULT_LOGO = "/assets/default-company.png";
-  
   // Use UI Avatars as a clean, dynamic fallback for missing logos
-  const UI_AVATAR = companyName 
-    ? `https://ui-avatars.com/api/?name=${encodeURIComponent(companyName)}&background=3AB4E6&color=fff&bold=true` 
-    : DEFAULT_LOGO;
+  const UI_AVATAR = companyName
+    ? `https://ui-avatars.com/api/?name=${encodeURIComponent(companyName)}&background=3AB4E6&color=fff&bold=true`
+    : `https://ui-avatars.com/api/?name=Company&background=3AB4E6&color=fff&bold=true`;
 
+  // Check for placeholder/default images - treat them as missing
   if (!logoPath || logoPath === 'null' || logoPath === 'undefined' || logoPath === '') {
     return UI_AVATAR;
   }
+
+  const normalizedLogoPath = String(logoPath);
+
+  // Check for known placeholder/default paths - these should use UI_AVATAR instead
+  if (normalizedLogoPath.includes('default-company') || normalizedLogoPath.includes('placeholder')) {
+    return UI_AVATAR;
+  }
   
-  if (logoPath.startsWith("http")) {
+  if (normalizedLogoPath.startsWith("http")) {
     // Basic validation for common placeholders if they are considered "bad" now
-    if (logoPath.includes("via.placeholder.com") && companyName) {
+    if (normalizedLogoPath.includes("via.placeholder.com") && companyName) {
         return UI_AVATAR;
     }
-    return logoPath;
+    return normalizedLogoPath;
   }
   
   // Handle relative paths
   const baseUrl = API_BASE_URL.replace("/api", "");
-  return `${baseUrl}${logoPath.startsWith("/") ? "" : "/"}${logoPath}`;
+  const result = `${baseUrl}${normalizedLogoPath.startsWith("/") ? "" : "/"}${normalizedLogoPath}`;
+  return result;
 };
 

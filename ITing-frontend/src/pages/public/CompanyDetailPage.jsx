@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { 
-  Building2, MapPin, Users, Globe, Star, 
-  ExternalLink, BadgeCheck, Briefcase, 
+import {
+  Building2, MapPin, Users, Globe, Star,
+  ExternalLink, BadgeCheck, Briefcase,
   Calendar, CheckCircle2, ChevronRight,
   ArrowLeft, Heart
 } from "lucide-react";
@@ -25,7 +25,7 @@ const CompanyDetailPage = () => {
   const { currentUser } = useSelector((state) => state.auth);
   const isAuthenticated = !!currentUser;
   const user = currentUser;
-  
+
   const [company, setCompany] = useState(null);
   const [jobs, setJobs] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -52,7 +52,7 @@ const CompanyDetailPage = () => {
           companyService.getCompanyRatingStats(id),
           companyService.getCompanyReviews(id)
         ]);
-        
+
         setCompany(compRes.data || compRes); // Handle possible data wrapper variations
         setRatingStats(statsRes.data || statsRes);
         setReviews(reviewsRes.data || reviewsRes);
@@ -178,7 +178,7 @@ const CompanyDetailPage = () => {
           </div>
           <h2 className="text-2xl font-bold text-gray-800 mb-4">Công ty hiện không khả dụng</h2>
           <p className="text-gray-500 leading-relaxed mb-8">
-            Trang công ty này đang tạm ngừng hoạt động. 
+            Trang công ty này đang tạm ngừng hoạt động.
             Các tin tuyển dụng liên quan cũng không khả dụng vào lúc này.
           </p>
           <button
@@ -201,13 +201,13 @@ const CompanyDetailPage = () => {
           <div className="absolute bottom-0 right-0 w-96 h-96 bg-[#3AB4E6] rounded-full blur-3xl translate-x-1/3 translate-y-1/3"></div>
         </div>
         <div className="max-w-7xl mx-auto px-4 h-full flex items-end pb-12 relative z-10">
-           <button 
-              onClick={() => navigate(-1)}
-              className="absolute top-8 left-4 flex items-center gap-2 text-white/80 hover:text-white transition-colors group px-4 py-2 bg-black/10 backdrop-blur-md rounded-full text-sm font-bold"
-            >
-              <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
-              Quay lại
-            </button>
+          <button
+            onClick={() => navigate(-1)}
+            className="absolute top-8 left-4 flex items-center gap-2 text-white/80 hover:text-white transition-colors group px-4 py-2 bg-black/10 backdrop-blur-md rounded-full text-sm font-bold"
+          >
+            <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
+            Quay lại
+          </button>
         </div>
       </div>
 
@@ -217,9 +217,9 @@ const CompanyDetailPage = () => {
           <div className="flex flex-col md:flex-row gap-8 items-start md:items-center">
             {/* Logo with sophisticated styling */}
             <div className="w-32 h-32 md:w-40 md:h-40 rounded-[2rem] bg-white p-6 shadow-2xl shadow-blue-500/10 border border-gray-50 flex items-center justify-center shrink-0 -mt-16 md:-mt-24 ring-8 ring-white">
-              <CompanyLogo 
-                logoUrl={company.logoUrl} 
-                companyName={company.name} 
+              <CompanyLogo
+                logoUrl={company.logoUrl}
+                companyName={company.name}
                 className="w-full h-full object-contain"
               />
             </div>
@@ -234,8 +234,8 @@ const CompanyDetailPage = () => {
                   <BadgeCheck className="w-7 h-7 text-[#3AB4E6] fill-blue-50" />
                 </div>
                 <div className="flex items-center gap-1.5 px-3 py-1 bg-green-50 text-green-700 rounded-full text-[10px] font-black border border-green-100 tracking-wider">
-                   <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></div>
-                   ĐANG TUYỂN DỤNG
+                  <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></div>
+                  ĐANG TUYỂN DỤNG
                 </div>
               </div>
 
@@ -258,32 +258,31 @@ const CompanyDetailPage = () => {
               </div>
 
               <div className="flex items-center gap-5 pt-3">
-                 <div className="flex items-center gap-1.5 bg-yellow-50 px-3 py-1 rounded-full border border-yellow-100">
-                    <Star className="w-4 h-4 text-yellow-500 fill-current" />
-                    <span className="text-sm font-black text-yellow-700">
-                      {ratingStats.averageRating?.toFixed(1) || "0.0"}
-                    </span>
-                    <span className="text-[10px] text-yellow-600 font-bold ml-1">
-                      ({ratingStats.reviewCount || 0} đánh giá)
-                    </span>
-                 </div>
-                 <div className="h-4 w-px bg-gray-200"></div>
-                 <div className="text-sm font-bold text-gray-900 bg-blue-50/50 px-3 py-1 rounded-full border border-blue-100/50">
-                    {company.followerCount || 0} <span className="font-medium text-[#3AB4E6]">người theo dõi</span>
-                 </div>
+                <div className="flex items-center gap-1.5 bg-yellow-50 px-3 py-1 rounded-full border border-yellow-100">
+                  <Star className="w-4 h-4 text-yellow-500 fill-current" />
+                  <span className="text-sm font-black text-yellow-700">
+                    {ratingStats.averageRating?.toFixed(1) || "0.0"}
+                  </span>
+                  <span className="text-[10px] text-yellow-600 font-bold ml-1">
+                    ({ratingStats.reviewCount || 0} đánh giá)
+                  </span>
+                </div>
+                <div className="h-4 w-px bg-gray-200"></div>
+                <div className="text-sm font-bold text-gray-900 bg-blue-50/50 px-3 py-1 rounded-full border border-blue-100/50">
+                  {company.followerCount || 0} <span className="font-medium text-[#3AB4E6]">người theo dõi</span>
+                </div>
               </div>
             </div>
 
             {/* Premium Action Buttons */}
             <div className="flex flex-row md:flex-col lg:flex-row gap-3 w-full md:w-auto shrink-0 self-stretch md:self-center">
-              <button 
+              <button
                 onClick={handleFollowToggle}
                 disabled={isProcessingFollow}
-                className={`flex-1 md:flex-none flex items-center justify-center gap-2 h-14 px-8 rounded-2xl font-black text-sm transition-all duration-300 ${
-                  isFollowing 
-                  ? "bg-[#2fa0cf] text-white shadow-xl shadow-blue-100" 
+                className={`flex-1 md:flex-none flex items-center justify-center gap-2 h-14 px-8 rounded-2xl font-black text-sm transition-all duration-300 ${isFollowing
+                  ? "bg-[#2fa0cf] text-white shadow-xl shadow-blue-100"
                   : "bg-[#3AB4E6] text-white hover:bg-[#2A9DCB] shadow-xl shadow-blue-200 hover:-translate-y-1 active:scale-95"
-                }`}
+                  }`}
               >
                 {isFollowing ? (
                   <>
@@ -297,14 +296,13 @@ const CompanyDetailPage = () => {
                   </>
                 )}
               </button>
-              <button 
+              <button
                 onClick={handleFollowToggle}
                 disabled={isProcessingFollow}
-                className={`w-14 h-14 flex items-center justify-center rounded-2xl transition-all duration-300 border-2 ${
-                  isFollowing 
-                  ? "border-red-100 bg-red-50 text-red-500 shadow-inner" 
+                className={`w-14 h-14 flex items-center justify-center rounded-2xl transition-all duration-300 border-2 ${isFollowing
+                  ? "border-red-100 bg-red-50 text-red-500 shadow-inner"
                   : "border-gray-100 bg-white text-gray-400 hover:border-[#3AB4E6] hover:text-[#3AB4E6] hover:-translate-y-1"
-                }`}
+                  }`}
               >
                 <Heart className={`w-6 h-6 ${isFollowing ? "fill-current" : ""}`} />
               </button>
@@ -316,10 +314,10 @@ const CompanyDetailPage = () => {
       {/* Main Content Layout */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 animate-fade-in">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
-          
+
           {/* Main Info Column */}
           <div className="lg:col-span-8 space-y-10">
-            
+
             {/* About Section */}
             <article className="bg-white rounded-[2.5rem] p-8 md:p-12 shadow-sm border border-gray-100/50 relative overflow-hidden group">
               <div className="absolute top-0 left-0 w-2 h-20 bg-[#3AB4E6] rounded-full translate-y-12"></div>
@@ -381,22 +379,22 @@ const CompanyDetailPage = () => {
             {/* Jobs Listing Section */}
             <div className="bg-white rounded-[2.5rem] p-8 md:p-12 shadow-sm border border-gray-100/50">
               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6 mb-10">
-                 <h2 className="text-2xl font-black text-gray-900 flex items-center gap-4">
-                    <div className="w-12 h-12 rounded-2xl bg-blue-50 flex items-center justify-center">
-                      <Briefcase className="w-7 h-7 text-[#3AB4E6]" />
-                    </div>
-                    Tuyển dụng ({isLoadingJobs ? (company.activeJobCount || '...') : jobs.length})
-                 </h2>
-                 {(company.activeJobCount > jobs.length || jobs.length > 5) && (
-                   <button 
-                     onClick={() => navigate(`/jobs?companyId=${id}`)}
-                     className="px-6 py-2.5 bg-gray-50 text-[#3AB4E6] rounded-full font-black text-xs hover:bg-[#3AB4E6] hover:text-white transition-all flex items-center gap-2 group"
-                   >
-                      Xem tất cả <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-                   </button>
-                 )}
+                <h2 className="text-2xl font-black text-gray-900 flex items-center gap-4">
+                  <div className="w-12 h-12 rounded-2xl bg-blue-50 flex items-center justify-center">
+                    <Briefcase className="w-7 h-7 text-[#3AB4E6]" />
+                  </div>
+                  Tuyển dụng ({isLoadingJobs ? (company.activeJobCount || '...') : jobs.length})
+                </h2>
+                {(company.activeJobCount > jobs.length || jobs.length > 5) && (
+                  <button
+                    onClick={() => navigate(`/jobs?companyId=${id}`)}
+                    className="px-6 py-2.5 bg-gray-50 text-[#3AB4E6] rounded-full font-black text-xs hover:bg-[#3AB4E6] hover:text-white transition-all flex items-center gap-2 group"
+                  >
+                    Xem tất cả <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                  </button>
+                )}
               </div>
-              
+
               <div className="grid grid-cols-1 gap-4">
                 {isLoadingJobs ? (
                   <div className="flex justify-center py-20">
@@ -404,8 +402,8 @@ const CompanyDetailPage = () => {
                   </div>
                 ) : jobs.length > 0 ? (
                   jobs.map((job) => (
-                    <div 
-                      key={job.id} 
+                    <div
+                      key={job.id}
                       onClick={() => navigate(buildJobDetailPath(job))}
                       className="group p-6 rounded-3xl border border-gray-50 hover:border-[#3AB4E6]/20 hover:bg-blue-50/10 hover:shadow-xl hover:shadow-[#3AB4E6]/5 transition-all cursor-pointer flex flex-col sm:flex-row items-start sm:items-center gap-6"
                     >
@@ -418,7 +416,7 @@ const CompanyDetailPage = () => {
                             <MapPin className="w-3.5 h-3.5 text-[#3AB4E6]" /> {job.location}
                           </span>
                           <span className="flex items-center gap-2 text-xs text-[#3AB4E6] font-black bg-blue-50 px-2 py-0.5 rounded-lg border border-blue-100">
-                             {(job.minSalary && job.maxSalary) ? `${(job.minSalary/1000000).toFixed(0)}-${(job.maxSalary/1000000).toFixed(0)}Tr` : "Thỏa thuận"}
+                            {(job.minSalary && job.maxSalary) ? `${(job.minSalary / 1000000).toFixed(0)}-${(job.maxSalary / 1000000).toFixed(0)}Tr` : "Thỏa thuận"}
                           </span>
                           <span className="flex items-center gap-2 text-xs text-gray-400 font-bold">
                             <Calendar className="w-3.5 h-3.5" /> {formatDistanceToNowStrict(parseISO(job.createdAt), { addSuffix: true, locale: vi })}
@@ -436,19 +434,19 @@ const CompanyDetailPage = () => {
                     </div>
                   ))
                 ) : (
-                   <div className="text-center py-20 bg-gray-50/50 rounded-[2rem] border-2 border-dashed border-gray-100">
-                      <div className="w-20 h-20 bg-white rounded-3xl shadow-sm flex items-center justify-center mx-auto mb-6">
-                        <Briefcase className="w-10 h-10 text-gray-200" />
-                      </div>
-                      <p className="text-gray-400 font-bold text-lg mb-2">Chưa có vị trí trống</p>
-                      <p className="text-gray-400 text-sm max-w-xs mx-auto mb-6">Theo dõi công ty để nhận thông báo ngay khi có tin tuyển dụng mới.</p>
-                      <button 
-                        onClick={() => navigate(`/jobs`)}
-                        className="text-[#3AB4E6] font-black text-sm hover:underline"
-                      >
-                        Khám phá công việc khác
-                      </button>
-                   </div>
+                  <div className="text-center py-20 bg-gray-50/50 rounded-[2rem] border-2 border-dashed border-gray-100">
+                    <div className="w-20 h-20 bg-white rounded-3xl shadow-sm flex items-center justify-center mx-auto mb-6">
+                      <Briefcase className="w-10 h-10 text-gray-200" />
+                    </div>
+                    <p className="text-gray-400 font-bold text-lg mb-2">Chưa có vị trí trống</p>
+                    <p className="text-gray-400 text-sm max-w-xs mx-auto mb-6">Theo dõi công ty để nhận thông báo ngay khi có tin tuyển dụng mới.</p>
+                    <button
+                      onClick={() => navigate(`/jobs`)}
+                      className="text-[#3AB4E6] font-black text-sm hover:underline"
+                    >
+                      Khám phá công việc khác
+                    </button>
+                  </div>
                 )}
               </div>
             </div>
@@ -463,7 +461,7 @@ const CompanyDetailPage = () => {
                   Đánh giá từ cộng đồng
                 </h2>
                 {isAuthenticated && user?.role === 'CANDIDATE' && (
-                  <button 
+                  <button
                     onClick={() => setShowReviewModal(true)}
                     className="px-6 py-2.5 bg-[#3AB4E6] text-white rounded-full font-black text-xs hover:bg-[#2A9DCB] transition-all shadow-lg shadow-blue-200"
                   >
@@ -474,35 +472,35 @@ const CompanyDetailPage = () => {
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
                 <div className="bg-gray-50 rounded-3xl p-8 text-center flex flex-col justify-center border border-gray-100">
-                   <div className="text-5xl font-black text-gray-900 mb-2">
-                     {ratingStats.averageRating?.toFixed(1) || "0.0"}
-                   </div>
-                   <div className="flex justify-center gap-1 mb-3">
-                     {[1, 2, 3, 4, 5].map((s) => (
-                       <Star 
-                         key={s} 
-                         className={`w-5 h-5 ${s <= Math.round(ratingStats.averageRating || 0) ? 'text-yellow-400 fill-current' : 'text-gray-200'}`} 
-                       />
-                     ))}
-                   </div>
-                   <div className="text-sm font-bold text-gray-400">
-                     Dựa trên {ratingStats.reviewCount || 0} đánh giá
-                   </div>
+                  <div className="text-5xl font-black text-gray-900 mb-2">
+                    {ratingStats.averageRating?.toFixed(1) || "0.0"}
+                  </div>
+                  <div className="flex justify-center gap-1 mb-3">
+                    {[1, 2, 3, 4, 5].map((s) => (
+                      <Star
+                        key={s}
+                        className={`w-5 h-5 ${s <= Math.round(ratingStats.averageRating || 0) ? 'text-yellow-400 fill-current' : 'text-gray-200'}`}
+                      />
+                    ))}
+                  </div>
+                  <div className="text-sm font-bold text-gray-400">
+                    Dựa trên {ratingStats.reviewCount || 0} đánh giá
+                  </div>
                 </div>
                 <div className="md:col-span-2 space-y-3">
-                   {[5, 4, 3, 2, 1].map((star) => {
-                     const count = reviews.filter(r => r.rating === star).length;
-                     const percentage = ratingStats.reviewCount > 0 ? (count / ratingStats.reviewCount) * 100 : 0;
-                     return (
-                       <div key={star} className="flex items-center gap-4">
-                          <span className="text-sm font-black text-gray-600 w-4">{star}</span>
-                          <div className="flex-1 h-2 bg-gray-100 rounded-full overflow-hidden">
-                             <div className="h-full bg-yellow-400 rounded-full" style={{ width: `${percentage}%` }}></div>
-                          </div>
-                          <span className="text-xs font-bold text-gray-400 w-8">{percentage.toFixed(0)}%</span>
-                       </div>
-                     );
-                   })}
+                  {[5, 4, 3, 2, 1].map((star) => {
+                    const count = reviews.filter(r => r.rating === star).length;
+                    const percentage = ratingStats.reviewCount > 0 ? (count / ratingStats.reviewCount) * 100 : 0;
+                    return (
+                      <div key={star} className="flex items-center gap-4">
+                        <span className="text-sm font-black text-gray-600 w-4">{star}</span>
+                        <div className="flex-1 h-2 bg-gray-100 rounded-full overflow-hidden">
+                          <div className="h-full bg-yellow-400 rounded-full" style={{ width: `${percentage}%` }}></div>
+                        </div>
+                        <span className="text-xs font-bold text-gray-400 w-8">{percentage.toFixed(0)}%</span>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
 
@@ -553,7 +551,7 @@ const CompanyDetailPage = () => {
             {/* General Info Box */}
             <div className="bg-white rounded-[2rem] p-10 shadow-sm border border-gray-100/50 sticky top-24">
               <h3 className="text-xl font-black text-gray-900 mb-8 border-b border-gray-50 pb-4">Thông tin doanh nghiệp</h3>
-              
+
               <div className="space-y-8">
                 <div className="flex items-start gap-5">
                   <div className="w-12 h-12 rounded-2xl bg-blue-50 flex items-center justify-center shrink-0 border border-blue-100">
@@ -594,22 +592,21 @@ const CompanyDetailPage = () => {
 
               {/* Call to Action Sidebar Card */}
               <div className="mt-12 p-8 bg-gradient-to-br from-[#3AB4E6] to-[#1E3A8A] rounded-[2rem] text-white text-center shadow-2xl shadow-blue-500/20 relative overflow-hidden group">
-                 <div className="absolute top-0 right-0 w-24 h-24 bg-white/10 rounded-full -translate-x-1/2 -translate-y-1/2 group-hover:scale-150 transition-transform duration-700"></div>
-                 <h4 className="font-black text-xl mb-3 relative z-10">Bật thông báo?</h4>
-                 <p className="text-white/80 text-sm mb-8 relative z-10 leading-relaxed">
-                   Chúng tôi sẽ báo cho bạn ngay khi {company.name} có tin mới.
-                 </p>
-                 <button 
-                   onClick={handleFollowToggle}
-                   disabled={isProcessingFollow}
-                   className={`w-full h-14 rounded-2xl font-black transition-all relative z-10 shadow-xl ${
-                     isFollowing
-                     ? "bg-white/20 text-white hover:bg-white/30 border border-white/30 backdrop-blur-md"
-                     : "bg-white !text-[#3AB4E6] !opacity-100 hover:bg-gray-50 hover:shadow-2xl hover:-translate-y-1 active:scale-95"
-                   }`}
-                 >
-                   {isFollowing ? "Đang nhận tin" : "Theo dõi ngay"}
-                 </button>
+                <div className="absolute top-0 right-0 w-24 h-24 bg-white/10 rounded-full -translate-x-1/2 -translate-y-1/2 group-hover:scale-150 transition-transform duration-700"></div>
+                <h4 className="font-black text-xl mb-3 relative z-10">Bật thông báo?</h4>
+                <p className="text-white/80 text-sm mb-8 relative z-10 leading-relaxed">
+                  Chúng tôi sẽ báo cho bạn ngay khi {company.name} có tin mới.
+                </p>
+                <button
+                  onClick={handleFollowToggle}
+                  disabled={isProcessingFollow}
+                  className={`w-full h-14 rounded-2xl font-black transition-all relative z-10 shadow-xl ${isFollowing
+                    ? "bg-white/20 text-white hover:bg-white/30 border border-white/30 backdrop-blur-md"
+                    : "bg-white !text-[#3AB4E6] !opacity-100 hover:bg-gray-50 hover:shadow-2xl hover:-translate-y-1 active:scale-95"
+                    }`}
+                >
+                  {isFollowing ? "Đang nhận tin" : "Theo dõi ngay"}
+                </button>
               </div>
             </div>
           </div>
@@ -620,8 +617,8 @@ const CompanyDetailPage = () => {
       {/* Review Modal */}
       {showReviewModal && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-          <div 
-            className="absolute inset-0 bg-black/40 backdrop-blur-sm" 
+          <div
+            className="absolute inset-0 bg-black/40 backdrop-blur-sm"
             onClick={() => setShowReviewModal(false)}
           ></div>
           <div className="bg-white rounded-[2.5rem] w-full max-w-lg relative z-10 shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-300">
@@ -640,8 +637,8 @@ const CompanyDetailPage = () => {
                         onClick={() => setReviewRating(star)}
                         className="transition-transform active:scale-90 hover:scale-110"
                       >
-                        <Star 
-                          className={`w-10 h-10 ${star <= reviewRating ? "text-yellow-400 fill-current" : "text-gray-100"}`} 
+                        <Star
+                          className={`w-10 h-10 ${star <= reviewRating ? "text-yellow-400 fill-current" : "text-gray-100"}`}
                         />
                       </button>
                     ))}

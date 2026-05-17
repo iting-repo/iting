@@ -29,28 +29,27 @@ public class ApplicationResponse {
     private String companyLogo;
     private Boolean companyActive;
     private String introduction;
-    
+
     // CV Info
     private String cvFileName;
     private String cvFileType;
     private String cvUrl;
-    
+
     // Contact Info
     private String phoneNumber;
     private String email;
-    
+
     // Professional Profile
     private Integer yearsExperience;
     private String education;
-    
+
     private LocalDateTime timeSent;
     private ApplicationStatus status;
 
     public static ApplicationResponse fromEntities(
             ApplyForm form,
             ApplyFormSentToJob sent,
-            CV cv
-    ) {
+            CV cv) {
         String fileName = null;
         String fileType = null;
         String fileUrl = null;

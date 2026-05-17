@@ -121,7 +121,8 @@ public class ConversationServiceImpl implements ConversationService {
     }
 
     private ConversationResponse convertToConversationResponse(Conversation conversation, Long currentUserId) {
-        Long unreadCount = messageRepository.countUnreadByConversationIdAndReceiverId(conversation.getId(), currentUserId);
+        Long unreadCount = messageRepository.countUnreadByConversationIdAndReceiverId(conversation.getId(),
+                currentUserId);
 
         ConversationResponse response = ConversationResponse.builder()
                 .id(conversation.getId())

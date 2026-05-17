@@ -92,6 +92,8 @@ dependencies {
     implementation 'com.github.ben-manes.caffeine:caffeine'
     implementation 'org.redisson:redisson:3.27.2'
 
+    implementation 'org.springframework.data:spring-data-redis'
+
     // Database Migration 
     implementation 'org.flywaydb:flyway-core'
 
@@ -104,6 +106,9 @@ dependencies {
     // Excel (Apache POI)
     implementation 'org.apache.poi:poi:5.2.3'
     implementation 'org.apache.poi:poi-ooxml:5.2.3'
+
+    // PDF (Apache PDFBox)
+    implementation 'org.apache.pdfbox:pdfbox:2.0.31'
 }
 
 tasks.named('test') {

@@ -91,7 +91,6 @@ public class CompanyResponse {
                 0L, // reviewCount - set later
                 company.getStatusReason(),
                 company.getActive(),
-                company.getProfileSetup()
-        );
+                company.getProfileSetup());
     }
 }

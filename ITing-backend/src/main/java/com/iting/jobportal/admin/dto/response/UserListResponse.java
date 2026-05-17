@@ -15,10 +15,9 @@ public class UserListResponse {
     private AccountStatus status;
     private LocalDateTime createdAt;
     private LocalDateTime lastLoginAt;
-    
+
     // Thông tin thêm tùy role
     private String fullName;
     private String avatarUrl;
     private String companyName;
 }
-

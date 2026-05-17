@@ -28,7 +28,8 @@ public class AdminReportServiceImpl implements AdminReportService {
     private final AdminNotificationService adminNotificationService;
 
     @Override
-    public Page<UserReport> getReports(String status, String type, String targetType, String priority, String search, int page, int size) {
+    public Page<UserReport> getReports(String status, String type, String targetType, String priority, String search,
+            int page, int size) {
         Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
         Specification<UserReport> spec = UserReportSpecification.getReportsSpec(status, type, targetType, priority, search);
         return reportRepository.findAll(spec, pageable);
@@ -74,7 +75,7 @@ public class AdminReportServiceImpl implements AdminReportService {
         long total = reportRepository.count();
         long pending = reportRepository.countByStatus("PENDING");
         long critical = reportRepository.countByPriority("CRITICAL");
-        
+
         Map<String, Long> byStatus = new HashMap<>();
         byStatus.put("PENDING", pending);
         byStatus.put("REVIEWING", reportRepository.countByStatus("REVIEWING"));

@@ -44,4 +44,3 @@ public class CV {
     @Column(name = "Upload_time")
     private LocalDateTime uploadedAt;
 }
-

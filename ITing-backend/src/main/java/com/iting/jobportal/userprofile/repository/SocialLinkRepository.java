@@ -11,5 +11,6 @@ import java.util.Optional;
 @Repository
 public interface SocialLinkRepository extends JpaRepository<SocialLink, Long> {
     List<SocialLink> findByProfile_Id(Long profileId);
+
     Optional<SocialLink> findByProfileIdAndPlatform(Long profileId, SocialPlatform platform);
 }

@@ -10,5 +10,3 @@ import java.util.List;
 public interface EducationRepository extends JpaRepository<Education, Long> {
     List<Education> findByProfile_Id(Long profileId);
 }
-
-

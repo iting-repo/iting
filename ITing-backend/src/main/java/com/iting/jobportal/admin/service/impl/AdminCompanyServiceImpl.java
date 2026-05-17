@@ -39,6 +39,7 @@ import java.util.Optional;
 @RequiredArgsConstructor
 public class AdminCompanyServiceImpl implements AdminCompanyService {
 
+<<<<<<< HEAD
     private final CompanyRepository companyRepository;
     private final CompanyMapper companyMapper;
     private final FileUploadService fileUploadService;
@@ -182,51 +183,62 @@ public class AdminCompanyServiceImpl implements AdminCompanyService {
         // Cập nhật mức xác thực lên BASIC nếu đang là UNVERIFIED
         if (company.getVerificationLevel() == VerificationLevel.UNVERIFIED) {
             company.setVerificationLevel(VerificationLevel.BASIC);
+=======
+        private final CompanyRepository companyRepository;
+        private final CompanyMapper companyMapper;
+        private final FileUploadService fileUploadService;
+        private final CompanyAuditService companyAuditService;
+        private final CompanyAuditLogRepository companyAuditLogRepository;
+        private final CompanyKybNoteRepository companyKybNoteRepository;
+        private final NotificationService notificationService;
+
+        @Override
+        public Page<CompanyResponse> getAllCompanies(int page, int size) {
+                Pageable pageable = PageRequest.of(page, size);
+                return companyRepository.findAll(pageable)
+                                .map(companyMapper::toResponse);
         }
 
-        companyRepository.save(company);
-
-        companyAuditService.log(
-                company,
-                CompanyAuditAction.APPROVE,
-                oldStatus,
-                CompanyReviewStatus.APPROVED.name(),
-                request != null ? request.getNote() : null,
-                "Thông tin cơ bản công ty được duyệt",
-                "admin#" + adminId,
-                adminId);
-    }
-
-    @Override
-    @Transactional
-    public void approveCompanyDocuments(Long adminId, Long companyId, CompanyApprovalRequest request) {
-        Company company = companyRepository.findById(companyId)
-                .orElseThrow(() -> new RuntimeException("Company not found"));
-
-        String oldStatus = company.getDocumentReviewStatus() != null
-                ? company.getDocumentReviewStatus().name()
-                : null;
-
-        company.setDocumentReviewStatus(DocumentReviewStatus.APPROVED);
-
-        // Nếu thông tin cơ bản đã duyệt thì lên ADVANCED
-        if (company.getCompanyInfoUpdateStatus() == CompanyReviewStatus.APPROVED) {
-            company.setVerificationLevel(VerificationLevel.ADVANCED);
+        @Override
+        public CompanyResponse getCompanyDetail(Long companyId) {
+                Company company = companyRepository.findById(companyId)
+                                .orElseThrow(() -> new RuntimeException("Company not found"));
+                return companyMapper.toResponse(company);
+>>>>>>> b0482a2a10970508963820b95c22492a2f9db0f8
         }
 
-        companyRepository.save(company);
+        @Override
+        public Page<CompanyResponse> filterCompanies(CompanyReviewStatus status, VerificationLevel verificationLevel,
+                        Boolean active, String keyword, int page, int size) {
+                Pageable pageable = PageRequest.of(page, size);
+                return companyRepository.findAll(pageable)
+                                .map(companyMapper::toResponse);
+        }
 
-        companyAuditService.log(
-                company,
-                CompanyAuditAction.APPROVE,
-                oldStatus,
-                DocumentReviewStatus.APPROVED.name(),
-                request != null ? request.getNote() : null,
-                "Giấy tờ pháp lý công ty được duyệt",
-                "admin#" + adminId,
-                adminId);
-    }
+        @Override
+        public Page<CompanyResponse> getPendingReviewCompanies(int page, int size) {
+                Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.ASC, "lastUpdateRequestDate"));
+                return companyRepository
+                                .findByCompanyInfoUpdateStatusOrDocumentReviewStatus(CompanyReviewStatus.PENDING_REVIEW,
+                                                DocumentReviewStatus.PENDING_REVIEW, pageable)
+                                .map(companyMapper::toResponse);
+        }
 
+        @Override
+        public List<com.iting.jobportal.admin.dto.response.KybNoteResponse> getCompanyKybNotes(Long companyId) {
+                return companyKybNoteRepository.findByCompanyIdOrderByCreatedAtDesc(companyId)
+                                .stream()
+                                .map(note -> com.iting.jobportal.admin.dto.response.KybNoteResponse.builder()
+                                                .id(note.getId())
+                                                .companyId(note.getCompany().getId())
+                                                .adminId(note.getAdminId())
+                                                .noteContent(note.getNoteContent())
+                                                .createdAt(note.getCreatedAt())
+                                                .build())
+                                .toList();
+        }
+
+<<<<<<< HEAD
     @Override
     @Transactional
     @CacheEvict(value = CacheNames.COMPANY_DETAIL, key = "#companyId")
@@ -237,15 +249,35 @@ public class AdminCompanyServiceImpl implements AdminCompanyService {
     private void doRejectCompany(Long adminId, Long companyId, ReviewRejectRequest request) {
         Company company = companyRepository.findById(companyId)
                 .orElseThrow(() -> new RuntimeException("Company not found"));
+=======
+        @Override
+        public com.iting.jobportal.admin.dto.response.KybNoteResponse addCompanyKybNote(Long adminId, Long companyId,
+                        com.iting.jobportal.admin.dto.request.CreateKybNoteRequest request) {
+                Company company = companyRepository.findById(companyId)
+                                .orElseThrow(() -> new RuntimeException("Company not found"));
+                com.iting.jobportal.company.entity.CompanyKybNote note = new com.iting.jobportal.company.entity.CompanyKybNote();
+                note.setCompany(company);
+                note.setAdminId(adminId);
+                note.setNoteContent(request.getContent());
+                note = companyKybNoteRepository.save(note);
+>>>>>>> b0482a2a10970508963820b95c22492a2f9db0f8
 
-        String oldStatus = company.getCompanyInfoUpdateStatus() != null
-                ? company.getCompanyInfoUpdateStatus().name()
-                : null;
+                return com.iting.jobportal.admin.dto.response.KybNoteResponse.builder()
+                                .id(note.getId())
+                                .companyId(note.getCompany().getId())
+                                .adminId(note.getAdminId())
+                                .noteContent(note.getNoteContent())
+                                .createdAt(note.getCreatedAt())
+                                .build();
+        }
 
-        company.setCompanyInfoUpdateStatus(CompanyReviewStatus.REJECTED);
-        company.setStatusReason(request != null ? request.getReason() : null);
-        companyRepository.save(company);
+        @Override
+        @Transactional
+        public void approveCompany(Long adminId, Long companyId, CompanyApprovalRequest request) {
+                Company company = companyRepository.findById(companyId)
+                                .orElseThrow(() -> new RuntimeException("Company not found"));
 
+<<<<<<< HEAD
         companyAuditService.log(
                 company,
                 CompanyAuditAction.REJECT,
@@ -265,202 +297,314 @@ public class AdminCompanyServiceImpl implements AdminCompanyService {
                         request != null ? request.getReason() : null,
                         adminId)));
     }
+=======
+                String oldStatus = company.getCompanyInfoUpdateStatus() != null
+                                ? company.getCompanyInfoUpdateStatus().name()
+                                : null;
+>>>>>>> b0482a2a10970508963820b95c22492a2f9db0f8
 
-    @Override
-    @Transactional
-    public void rejectCompanyInfo(Long adminId, Long companyId, ReviewRejectRequest request) {
-        Company company = companyRepository.findById(companyId)
-                .orElseThrow(() -> new RuntimeException("Company not found"));
+                company.setCompanyInfoUpdateStatus(CompanyReviewStatus.APPROVED);
+                company.setStatusReason(request != null ? request.getNote() : null);
 
-        String oldStatus = company.getCompanyInfoUpdateStatus() != null
-                ? company.getCompanyInfoUpdateStatus().name()
-                : null;
-
-        company.setCompanyInfoUpdateStatus(CompanyReviewStatus.REJECTED);
-        company.setStatusReason(request != null ? request.getReason() : null);
-        companyRepository.save(company);
-
-        companyAuditService.log(
-                company,
-                CompanyAuditAction.REJECT,
-                oldStatus,
-                CompanyReviewStatus.REJECTED.name(),
-                request != null ? request.getReason() : null,
-                "Từ chối thông tin cơ bản công ty",
-                "admin#" + adminId,
-                adminId);
-    }
-
-    @Override
-    @Transactional
-    public void rejectCompanyDocuments(Long adminId, Long companyId, ReviewRejectRequest request) {
-        Company company = companyRepository.findById(companyId)
-                .orElseThrow(() -> new RuntimeException("Company not found"));
-
-        String oldStatus = company.getDocumentReviewStatus() != null
-                ? company.getDocumentReviewStatus().name()
-                : null;
-
-        company.setDocumentReviewStatus(DocumentReviewStatus.REJECTED);
-        company.setStatusReason(request != null ? request.getReason() : null);
-        companyRepository.save(company);
-
-        companyAuditService.log(
-                company,
-                CompanyAuditAction.REJECT,
-                oldStatus,
-                DocumentReviewStatus.REJECTED.name(),
-                request != null ? request.getReason() : null,
-                "Từ chối giấy tờ pháp lý công ty",
-                "admin#" + adminId,
-                adminId);
-    }
-
-    @Override
-    @Transactional
-    public void requestCompanyResubmission(Long adminId, Long companyId, ReviewRejectRequest request) {
-        Company company = companyRepository.findById(companyId)
-                .orElseThrow(() -> new RuntimeException("Company not found"));
-
-        String oldStatus = company.getCompanyInfoUpdateStatus() != null
-                ? company.getCompanyInfoUpdateStatus().name()
-                : null;
-
-        company.setCompanyInfoUpdateStatus(CompanyReviewStatus.NEEDS_RESUBMISSION);
-        company.setStatusReason(request != null ? request.getReason() : null);
-        companyRepository.save(company);
-
-        companyAuditService.log(
-                company,
-                CompanyAuditAction.REQUEST_RESUBMISSION,
-                oldStatus,
-                CompanyReviewStatus.NEEDS_RESUBMISSION.name(),
-                request != null ? request.getReason() : null,
-                "Yêu cầu công ty bổ sung hồ sơ",
-                "admin#" + adminId,
-                adminId);
-    }
-
-    @Override
-    @Transactional
-    public void suspendCompany(Long adminId, Long companyId, ReviewRejectRequest request) {
-        Company company = companyRepository.findById(companyId)
-                .orElseThrow(() -> new RuntimeException("Company not found"));
-
-        String oldStatus = company.getCompanyInfoUpdateStatus() != null
-                ? company.getCompanyInfoUpdateStatus().name()
-                : null;
-
-        company.setCompanyInfoUpdateStatus(CompanyReviewStatus.SUSPENDED);
-        company.setActive(false);
-        company.setStatusReason(request != null ? request.getReason() : null);
-        companyRepository.save(company);
-
-        // Đình chỉ tất cả job ACTIVE của công ty
-        if (company.getJobs() != null) {
-            for (var job : company.getJobs()) {
-                if (job.getStatus() == com.iting.jobportal.job.entity.enums.JobStatus.ACTIVE) {
-                    job.setStatus(com.iting.jobportal.job.entity.enums.JobStatus.SUSPENDED);
-                    job.setReviewReason("Công ty bị đình chỉ bởi quản trị viên");
+                // Update verificationLevel if provided
+                if (request != null && request.getVerificationLevel() != null) {
+                        company.setVerificationLevel(request.getVerificationLevel());
                 }
-            }
+
+                companyRepository.save(company);
+
+                companyAuditService.log(
+                                company,
+                                CompanyAuditAction.APPROVE,
+                                oldStatus,
+                                CompanyReviewStatus.APPROVED.name(),
+                                request != null ? request.getNote() : null,
+                                "Công ty được duyệt",
+                                "admin#" + adminId,
+                                adminId);
         }
 
-        companyAuditService.log(
-                company,
-                CompanyAuditAction.SUSPEND,
-                oldStatus,
-                CompanyReviewStatus.SUSPENDED.name(),
-                request != null ? request.getReason() : null,
-                "Đình chỉ công ty",
-                "admin#" + adminId,
-                adminId);
+        @Override
+        @Transactional
+        public void approveCompanyInfo(Long adminId, Long companyId, CompanyApprovalRequest request) {
+                Company company = companyRepository.findById(companyId)
+                                .orElseThrow(() -> new RuntimeException("Company not found"));
 
-        // Gửi thông báo đình chỉ cho công ty
-        String reason = request != null && request.getReason() != null ? request.getReason() : "Không có lý do cụ thể";
-        try {
-            notificationService.createNotification(CreateNotificationRequest.builder()
-                    .recipientId(companyId)
-                    .recipientType(RecipientType.COMPANY)
-                    .type(NotificationType.COMPANY_SUSPENDED)
-                    .content("Công ty của bạn đã bị đình chỉ hoạt động. Lý do: " + reason
-                            + ". Tất cả tin tuyển dụng đã bị tạm ẩn.")
-                    .entityType("COMPANY")
-                    .entityId(companyId)
-                    .actionUrl("/employer/dashboard")
-                    .build());
-        } catch (Exception e) {
-            // Log but don't fail the suspend action if notification fails
-            System.err.println("Failed to send suspend notification: " + e.getMessage());
+                String oldStatus = company.getCompanyInfoUpdateStatus() != null
+                                ? company.getCompanyInfoUpdateStatus().name()
+                                : null;
+
+                company.setCompanyInfoUpdateStatus(CompanyReviewStatus.APPROVED);
+
+                // Cập nhật mức xác thực lên BASIC nếu đang là UNVERIFIED
+                if (company.getVerificationLevel() == VerificationLevel.UNVERIFIED) {
+                        company.setVerificationLevel(VerificationLevel.BASIC);
+                }
+
+                companyRepository.save(company);
+
+                companyAuditService.log(
+                                company,
+                                CompanyAuditAction.APPROVE,
+                                oldStatus,
+                                CompanyReviewStatus.APPROVED.name(),
+                                request != null ? request.getNote() : null,
+                                "Thông tin cơ bản công ty được duyệt",
+                                "admin#" + adminId,
+                                adminId);
         }
-    }
 
-    @Override
-    @Transactional
-    public void unsuspendCompany(Long adminId, Long companyId) {
-        Company company = companyRepository.findById(companyId)
-                .orElseThrow(() -> new RuntimeException("Company not found"));
+        @Override
+        @Transactional
+        public void approveCompanyDocuments(Long adminId, Long companyId, CompanyApprovalRequest request) {
+                Company company = companyRepository.findById(companyId)
+                                .orElseThrow(() -> new RuntimeException("Company not found"));
 
-        String oldStatus = company.getCompanyInfoUpdateStatus() != null
-                ? company.getCompanyInfoUpdateStatus().name()
-                : null;
+                String oldStatus = company.getDocumentReviewStatus() != null
+                                ? company.getDocumentReviewStatus().name()
+                                : null;
 
-        // Khôi phục trạng thái cũ trước khi bị đình chỉ từ audit log
-        CompanyReviewStatus restoredStatus = CompanyReviewStatus.APPROVED; // default fallback
-        List<CompanyAuditLog> suspendLogs = companyAuditLogRepository
-                .findTopByCompanyIdAndActionOrderByCreatedAtDesc(companyId, CompanyAuditAction.SUSPEND);
-        if (!suspendLogs.isEmpty()) {
-            String previousStatus = suspendLogs.get(0).getFromStatus();
-            if (previousStatus != null) {
+                company.setDocumentReviewStatus(DocumentReviewStatus.APPROVED);
+
+                // Nếu thông tin cơ bản đã duyệt thì lên ADVANCED
+                if (company.getCompanyInfoUpdateStatus() == CompanyReviewStatus.APPROVED) {
+                        company.setVerificationLevel(VerificationLevel.ADVANCED);
+                }
+
+                companyRepository.save(company);
+
+                companyAuditService.log(
+                                company,
+                                CompanyAuditAction.APPROVE,
+                                oldStatus,
+                                DocumentReviewStatus.APPROVED.name(),
+                                request != null ? request.getNote() : null,
+                                "Giấy tờ pháp lý công ty được duyệt",
+                                "admin#" + adminId,
+                                adminId);
+        }
+
+        @Override
+        @Transactional
+        public void rejectCompany(Long adminId, Long companyId, ReviewRejectRequest request) {
+                Company company = companyRepository.findById(companyId)
+                                .orElseThrow(() -> new RuntimeException("Company not found"));
+
+                String oldStatus = company.getCompanyInfoUpdateStatus() != null
+                                ? company.getCompanyInfoUpdateStatus().name()
+                                : null;
+
+                company.setCompanyInfoUpdateStatus(CompanyReviewStatus.REJECTED);
+                company.setStatusReason(request != null ? request.getReason() : null);
+                companyRepository.save(company);
+
+                companyAuditService.log(
+                                company,
+                                CompanyAuditAction.REJECT,
+                                oldStatus,
+                                CompanyReviewStatus.REJECTED.name(),
+                                request != null ? request.getReason() : null,
+                                "Từ chối công ty",
+                                "admin#" + adminId,
+                                adminId);
+        }
+
+        @Override
+        @Transactional
+        public void rejectCompanyInfo(Long adminId, Long companyId, ReviewRejectRequest request) {
+                Company company = companyRepository.findById(companyId)
+                                .orElseThrow(() -> new RuntimeException("Company not found"));
+
+                String oldStatus = company.getCompanyInfoUpdateStatus() != null
+                                ? company.getCompanyInfoUpdateStatus().name()
+                                : null;
+
+                company.setCompanyInfoUpdateStatus(CompanyReviewStatus.REJECTED);
+                company.setStatusReason(request != null ? request.getReason() : null);
+                companyRepository.save(company);
+
+                companyAuditService.log(
+                                company,
+                                CompanyAuditAction.REJECT,
+                                oldStatus,
+                                CompanyReviewStatus.REJECTED.name(),
+                                request != null ? request.getReason() : null,
+                                "Từ chối thông tin cơ bản công ty",
+                                "admin#" + adminId,
+                                adminId);
+        }
+
+        @Override
+        @Transactional
+        public void rejectCompanyDocuments(Long adminId, Long companyId, ReviewRejectRequest request) {
+                Company company = companyRepository.findById(companyId)
+                                .orElseThrow(() -> new RuntimeException("Company not found"));
+
+                String oldStatus = company.getDocumentReviewStatus() != null
+                                ? company.getDocumentReviewStatus().name()
+                                : null;
+
+                company.setDocumentReviewStatus(DocumentReviewStatus.REJECTED);
+                company.setStatusReason(request != null ? request.getReason() : null);
+                companyRepository.save(company);
+
+                companyAuditService.log(
+                                company,
+                                CompanyAuditAction.REJECT,
+                                oldStatus,
+                                DocumentReviewStatus.REJECTED.name(),
+                                request != null ? request.getReason() : null,
+                                "Từ chối giấy tờ pháp lý công ty",
+                                "admin#" + adminId,
+                                adminId);
+        }
+
+        @Override
+        @Transactional
+        public void requestCompanyResubmission(Long adminId, Long companyId, ReviewRejectRequest request) {
+                Company company = companyRepository.findById(companyId)
+                                .orElseThrow(() -> new RuntimeException("Company not found"));
+
+                String oldStatus = company.getCompanyInfoUpdateStatus() != null
+                                ? company.getCompanyInfoUpdateStatus().name()
+                                : null;
+
+                company.setCompanyInfoUpdateStatus(CompanyReviewStatus.NEEDS_RESUBMISSION);
+                company.setStatusReason(request != null ? request.getReason() : null);
+                companyRepository.save(company);
+
+                companyAuditService.log(
+                                company,
+                                CompanyAuditAction.REQUEST_RESUBMISSION,
+                                oldStatus,
+                                CompanyReviewStatus.NEEDS_RESUBMISSION.name(),
+                                request != null ? request.getReason() : null,
+                                "Yêu cầu công ty bổ sung hồ sơ",
+                                "admin#" + adminId,
+                                adminId);
+        }
+
+        @Override
+        @Transactional
+        public void suspendCompany(Long adminId, Long companyId, ReviewRejectRequest request) {
+                Company company = companyRepository.findById(companyId)
+                                .orElseThrow(() -> new RuntimeException("Company not found"));
+
+                String oldStatus = company.getCompanyInfoUpdateStatus() != null
+                                ? company.getCompanyInfoUpdateStatus().name()
+                                : null;
+
+                company.setCompanyInfoUpdateStatus(CompanyReviewStatus.SUSPENDED);
+                company.setActive(false);
+                company.setStatusReason(request != null ? request.getReason() : null);
+                companyRepository.save(company);
+
+                // Đình chỉ tất cả job ACTIVE của công ty
+                if (company.getJobs() != null) {
+                        for (var job : company.getJobs()) {
+                                if (job.getStatus() == com.iting.jobportal.job.entity.enums.JobStatus.ACTIVE) {
+                                        job.setStatus(com.iting.jobportal.job.entity.enums.JobStatus.SUSPENDED);
+                                        job.setReviewReason("Công ty bị đình chỉ bởi quản trị viên");
+                                }
+                        }
+                }
+
+                companyAuditService.log(
+                                company,
+                                CompanyAuditAction.SUSPEND,
+                                oldStatus,
+                                CompanyReviewStatus.SUSPENDED.name(),
+                                request != null ? request.getReason() : null,
+                                "Đình chỉ công ty",
+                                "admin#" + adminId,
+                                adminId);
+
+                // Gửi thông báo đình chỉ cho công ty
+                String reason = request != null && request.getReason() != null ? request.getReason()
+                                : "Không có lý do cụ thể";
                 try {
-                    restoredStatus = CompanyReviewStatus.valueOf(previousStatus);
-                } catch (IllegalArgumentException ignored) {
-                    // Fallback to APPROVED if the saved status is invalid
+                        notificationService.createNotification(CreateNotificationRequest.builder()
+                                        .recipientId(companyId)
+                                        .recipientType(RecipientType.COMPANY)
+                                        .type(NotificationType.COMPANY_SUSPENDED)
+                                        .content("Công ty của bạn đã bị đình chỉ hoạt động. Lý do: " + reason
+                                                        + ". Tất cả tin tuyển dụng đã bị tạm ẩn.")
+                                        .entityType("COMPANY")
+                                        .entityId(companyId)
+                                        .actionUrl("/employer/dashboard")
+                                        .build());
+                } catch (Exception e) {
+                        // Log but don't fail the suspend action if notification fails
+                        System.err.println("Failed to send suspend notification: " + e.getMessage());
                 }
-            }
         }
 
-        company.setCompanyInfoUpdateStatus(restoredStatus);
-        company.setActive(true);
-        company.setStatusReason(null); // Clear reason when unsuspending
-        companyRepository.save(company);
+        @Override
+        @Transactional
+        public void unsuspendCompany(Long adminId, Long companyId) {
+                Company company = companyRepository.findById(companyId)
+                                .orElseThrow(() -> new RuntimeException("Company not found"));
 
-        // Khôi phục tất cả job SUSPENDED của công ty về ACTIVE
-        if (company.getJobs() != null) {
-            for (var job : company.getJobs()) {
-                if (job.getStatus() == com.iting.jobportal.job.entity.enums.JobStatus.SUSPENDED) {
-                    job.setStatus(com.iting.jobportal.job.entity.enums.JobStatus.ACTIVE);
-                    job.setReviewReason(null);
+                String oldStatus = company.getCompanyInfoUpdateStatus() != null
+                                ? company.getCompanyInfoUpdateStatus().name()
+                                : null;
+
+                // Khôi phục trạng thái cũ trước khi bị đình chỉ từ audit log
+                CompanyReviewStatus restoredStatus = CompanyReviewStatus.APPROVED; // default fallback
+                List<CompanyAuditLog> suspendLogs = companyAuditLogRepository
+                                .findTopByCompanyIdAndActionOrderByCreatedAtDesc(companyId, CompanyAuditAction.SUSPEND);
+                if (!suspendLogs.isEmpty()) {
+                        String previousStatus = suspendLogs.get(0).getFromStatus();
+                        if (previousStatus != null) {
+                                try {
+                                        restoredStatus = CompanyReviewStatus.valueOf(previousStatus);
+                                } catch (IllegalArgumentException ignored) {
+                                        // Fallback to APPROVED if the saved status is invalid
+                                }
+                        }
                 }
-            }
-        }
 
-        companyAuditService.log(
-                company,
-                CompanyAuditAction.UNSUSPEND,
-                oldStatus,
-                restoredStatus.name(),
-                null,
-                "Kích hoạt lại công ty",
-                "admin#" + adminId,
-                adminId);
+                company.setCompanyInfoUpdateStatus(restoredStatus);
+                company.setActive(true);
+                company.setStatusReason(null); // Clear reason when unsuspending
+                companyRepository.save(company);
 
-        // Gửi thông báo gỡ đình chỉ cho công ty
-        try {
-            notificationService.createNotification(CreateNotificationRequest.builder()
-                    .recipientId(companyId)
-                    .recipientType(RecipientType.COMPANY)
-                    .type(NotificationType.COMPANY_UNSUSPENDED)
-                    .content("Công ty của bạn đã được gỡ đình chỉ và hoạt động trở lại bình thường. "
-                            + "Các tin tuyển dụng đã được khôi phục.")
-                    .entityType("COMPANY")
-                    .entityId(companyId)
-                    .actionUrl("/employer/dashboard")
-                    .build());
-        } catch (Exception e) {
-            System.err.println("Failed to send unsuspend notification: " + e.getMessage());
+                // Khôi phục tất cả job SUSPENDED của công ty về ACTIVE
+                if (company.getJobs() != null) {
+                        for (var job : company.getJobs()) {
+                                if (job.getStatus() == com.iting.jobportal.job.entity.enums.JobStatus.SUSPENDED) {
+                                        job.setStatus(com.iting.jobportal.job.entity.enums.JobStatus.ACTIVE);
+                                        job.setReviewReason(null);
+                                }
+                        }
+                }
+
+                companyAuditService.log(
+                                company,
+                                CompanyAuditAction.UNSUSPEND,
+                                oldStatus,
+                                restoredStatus.name(),
+                                null,
+                                "Kích hoạt lại công ty",
+                                "admin#" + adminId,
+                                adminId);
+
+                // Gửi thông báo gỡ đình chỉ cho công ty
+                try {
+                        notificationService.createNotification(CreateNotificationRequest.builder()
+                                        .recipientId(companyId)
+                                        .recipientType(RecipientType.COMPANY)
+                                        .type(NotificationType.COMPANY_UNSUSPENDED)
+                                        .content("Công ty của bạn đã được gỡ đình chỉ và hoạt động trở lại bình thường. "
+                                                        + "Các tin tuyển dụng đã được khôi phục.")
+                                        .entityType("COMPANY")
+                                        .entityId(companyId)
+                                        .actionUrl("/employer/dashboard")
+                                        .build());
+                } catch (Exception e) {
+                        System.err.println("Failed to send unsuspend notification: " + e.getMessage());
+                }
         }
-    }
 
     @Override
     public String getCompanyBusinessLicenseViewUrl(Long adminId, Long companyId, int minutes) {
@@ -518,8 +662,8 @@ public class AdminCompanyServiceImpl implements AdminCompanyService {
     }
 
     @Override
-    @org.springframework.transaction.annotation.Transactional
-    public void bulkRejectCompanies(Long adminId, java.util.List<Long> companyIds, ReviewRejectRequest request) {
+    @Transactional
+    public void bulkRejectCompanies(Long adminId, List<Long> companyIds, ReviewRejectRequest request) {
         if (companyIds != null) {
             for (Long id : companyIds) {
                 rejectCompany(adminId, id, request);
@@ -528,8 +672,8 @@ public class AdminCompanyServiceImpl implements AdminCompanyService {
     }
 
     @Override
-    @org.springframework.transaction.annotation.Transactional
-    public void bulkSuspendCompanies(Long adminId, java.util.List<Long> companyIds, ReviewRejectRequest request) {
+    @Transactional
+    public void bulkSuspendCompanies(Long adminId, List<Long> companyIds, ReviewRejectRequest request) {
         if (companyIds != null) {
             for (Long id : companyIds) {
                 suspendCompany(adminId, id, request);
@@ -538,8 +682,8 @@ public class AdminCompanyServiceImpl implements AdminCompanyService {
     }
 
     @Override
-    @org.springframework.transaction.annotation.Transactional
-    public void bulkDeleteCompanies(Long adminId, java.util.List<Long> companyIds) {
+    @Transactional
+    public void bulkDeleteCompanies(Long adminId, List<Long> companyIds) {
         if (companyIds != null) {
             for (Long id : companyIds) {
                 deleteCompany(adminId, id);
@@ -596,11 +740,8 @@ public class AdminCompanyServiceImpl implements AdminCompanyService {
                 ? toDate.atTime(23, 59, 59)
                 : java.time.LocalDateTime.of(2999, 12, 31, 23, 59, 59);
 
-        return companyAuditLogRepository.findAllWithCompanyFiltered(
-                action,
-                companyId,
-                fromDateTime,
-                toDateTime).stream()
+        return companyAuditLogRepository.findAllWithCompanyFiltered(action, companyId, fromDateTime, toDateTime)
+                .stream()
                 .map(this::mapToResponse)
                 .toList();
     }
@@ -618,10 +759,8 @@ public class AdminCompanyServiceImpl implements AdminCompanyService {
                     row.createCell(0).setCellValue(company.getId());
                     row.createCell(1).setCellValue(company.getName());
                     row.createCell(2).setCellValue(company.getTaxCode());
-                    row.createCell(3)
-                            .setCellValue(company.getCompanyInfoUpdateStatus() != null
-                                    ? company.getCompanyInfoUpdateStatus().name()
-                                    : "");
+                    row.createCell(3).setCellValue(
+                            company.getCompanyInfoUpdateStatus() != null ? company.getCompanyInfoUpdateStatus().name() : "");
                     row.createCell(4).setCellValue(
                             company.getVerificationLevel() != null ? company.getVerificationLevel().name() : "");
                     row.createCell(5).setCellValue(company.getCompanyEmail());
@@ -630,7 +769,7 @@ public class AdminCompanyServiceImpl implements AdminCompanyService {
     }
 
     @Override
-    @jakarta.transaction.Transactional
+    @Transactional
     public void importCompaniesFromExcel(org.springframework.web.multipart.MultipartFile file) {
         try {
             List<Company> companies = com.iting.jobportal.common.excel.ExcelHelper.excelToData(

@@ -21,7 +21,8 @@ public class User {
     @JoinColumn(name = "Id")
     private Account account;
 
-    // cân nhắc để ra Account luôn vì Admin và HR đều có trường phone_num, giữ lại vì trường này phục vụ để khi quên mật khẩu (quan trọng)
+    // cân nhắc để ra Account luôn vì Admin và HR đều có trường phone_num, giữ lại
+    // vì trường này phục vụ để khi quên mật khẩu (quan trọng)
     @Column(name = "Phone_num", length = 20)
     private String phoneNum;
 

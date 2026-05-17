@@ -42,7 +42,8 @@ public class NotificationController {
             @RequestParam(defaultValue = "20") int size,
             @RequestParam(required = false) NotificationType type) {
         if (type != null) {
-            return ResponseEntity.ok(notificationService.getNotificationsByType(userId, recipientType, type, page, size));
+            return ResponseEntity
+                    .ok(notificationService.getNotificationsByType(userId, recipientType, type, page, size));
         }
         return ResponseEntity.ok(notificationService.getNotifications(userId, recipientType, page, size));
     }

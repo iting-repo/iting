@@ -12,8 +12,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.util.Map;
 
-
-@Tag(name ="06. User Profile")
+@Tag(name = "06. User Profile")
 @RestController
 @RequestMapping("/api/user/profile")
 @RequiredArgsConstructor
@@ -30,7 +29,7 @@ public class UserController {
     // ✅ Cập nhật thông tin cơ bản bằng Long ID
     @PutMapping("/basic")
     public ResponseEntity<?> updateBasic(@CurrentUser Long userId,
-                                         @RequestBody UpdateUserRequest req) {
+            @RequestBody UpdateUserRequest req) {
         userService.updateBasic(userId, req);
         return ResponseEntity.ok(Map.of("message", "Updated"));
     }
@@ -38,14 +37,14 @@ public class UserController {
     // ✅ Cập nhật Avatar bằng Long ID
     @PutMapping("/avatar")
     public ResponseEntity<?> updateAvatar(@CurrentUser Long userId,
-                                          @RequestBody UpdateAvatarRequest req) {
+            @RequestBody UpdateAvatarRequest req) {
         userService.updateAvatar(userId, req.getAvatarUrl());
         return ResponseEntity.ok(Map.of("message", "Avatar updated"));
     }
 
     @PostMapping("/avatar/upload")
     public ResponseEntity<?> uploadAvatar(@CurrentUser Long userId,
-                                          @RequestParam("file") MultipartFile file) {
+            @RequestParam("file") MultipartFile file) {
         String url = userService.uploadAvatar(userId, file);
         return ResponseEntity.ok(Map.of("avatarUrl", url));
     }
@@ -60,9 +59,8 @@ public class UserController {
     // ✅ Cập nhật thông tin cá nhân (không cho nhà tuyển dụng xem)
     @PutMapping("/personal")
     public ResponseEntity<?> updatePersonal(@CurrentUser Long userId,
-                                            @Valid @RequestBody PersonalUpdateDto dto) {
+            @Valid @RequestBody PersonalUpdateDto dto) {
         userService.updatePersonal(userId, dto);
         return ResponseEntity.ok(Map.of("message", "Personal information updated"));
     }
 }
-

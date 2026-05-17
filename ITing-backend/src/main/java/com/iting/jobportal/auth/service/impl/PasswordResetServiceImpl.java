@@ -37,7 +37,7 @@ public class PasswordResetServiceImpl implements PasswordResetService {
         accountRepository.findByEmail(normalizedEmail).ifPresent(account -> {
             try {
                 String otp = String.format("%06d", (int) (Math.random() * 1000000));
-                
+
                 // Clear old OTPs for reset
                 otpCodeRepository.deleteByEmail(normalizedEmail);
 
@@ -65,7 +65,8 @@ public class PasswordResetServiceImpl implements PasswordResetService {
     @Transactional
     public void resetPassword(String email, String otpCode, String newPassword) {
         String normalizedEmail = email.trim().toLowerCase();
-        OtpCode storedOtp = otpCodeRepository.findTopByEmailAndIsVerificationOrderByExpiryTimeDesc(normalizedEmail, false)
+        OtpCode storedOtp = otpCodeRepository
+                .findTopByEmailAndIsVerificationOrderByExpiryTimeDesc(normalizedEmail, false)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy mã xác thực cho email: " + normalizedEmail));
 
         if (!storedOtp.getCode().equals(otpCode.trim())) {
@@ -85,7 +86,7 @@ public class PasswordResetServiceImpl implements PasswordResetService {
 
         // Clear OTP after success
         otpCodeRepository.deleteByEmail(normalizedEmail);
-        
+
         log.info("Password reset successful via OTP for account {}", normalizedEmail);
     }
 }

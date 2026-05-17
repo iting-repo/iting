@@ -14,11 +14,10 @@ public interface AdminJobService {
             String keyword,
             String location,
             int page,
-            int size
-    );
+            int size);
 
     JobResponse getJobById(Long jobId);
-    
+
     void deleteJob(Long jobId);
 
     void approveJob(Long adminId, Long jobId);

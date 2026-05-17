@@ -1,0 +1,80 @@
+# ==========================================
+# ITing Backend - Production Dockerfile
+# Spring Boot + OpenTelemetry Java Agent
+# ==========================================
+
+# Stage 1: Build stage
+FROM gradle:8.5-jdk17-alpine AS build
+
+WORKDIR /app
+
+# Copy build configuration first (better layer caching)
+COPY build.gradle settings.gradle* ./
+
+# Create empty src to prevent build failures if missing
+RUN mkdir -p src/main/java src/main/resources
+
+# Pre-download dependencies (cache layer)
+RUN gradle dependencies --no-daemon || true
+
+# Copy source code
+COPY src ./src
+
+# Build with layered JARs for faster container startup
+RUN gradle clean bootJar --no-daemon \
+    --no-build-cache \
+    -Porg.gradle.parallel=true \
+    -Dorg.gradle.jvmargs="-Xmx512m"
+
+# Stage 2: Runtime stage
+FROM eclipse-temurin:17-jre-alpine
+
+# Install curl for health checks and download OTel agent
+RUN apk add --no-cache curl && \
+    curl -L -o /opt/opentelemetry-javaagent.jar \
+    https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/latest/download/opentelemetry-javaagent.jar
+
+WORKDIR /app
+
+# Create non-root user for security
+RUN addgroup -g 1000 appgroup && \
+    adduser -u 1000 -G appgroup -s /bin/sh -D appuser
+
+# Copy JAR from build stage
+COPY --from=build /app/build/libs/*.jar app.jar
+
+# Create layered jar extraction directory
+RUN mkdir -p /app/loader && \
+    unzip -q -o /app/app.jar -d /app/loader && \
+    rm /app/app.jar && \
+    chown -R appuser:appgroup /app
+
+USER appuser
+
+# Expose port
+EXPOSE 8080
+
+# Safer defaults for a small EC2 instance.
+# Avoid pinning Xmx to the full container limit because Spring, metaspace,
+# native memory, and any agent overhead still need headroom.
+ENV JAVA_OPTS="-XX:InitialRAMPercentage=20.0 -XX:MaxRAMPercentage=60.0"
+
+# OpenTelemetry configuration (set via environment variables in docker-compose)
+ENV OTEL_JAVAAGENT_ENABLED=true
+ENV OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4317
+ENV OTEL_SERVICE_NAME=iting-backend
+ENV OTEL_RESOURCE_ATTRIBUTES=service.name=iting-backend,service.namespace=iting,deployment.environment=production
+ENV OTEL_TRACES_EXPORTER=otlp
+ENV OTEL_METRICS_EXPORTER=otlp
+ENV OTEL_LOGS_EXPORTER=none
+ENV OTEL_INSTRUMENTATION_SPRING-MVC_ENABLED=true
+ENV OTEL_INSTRUMENTATION_JDBC_ENABLED=true
+ENV OTEL_INSTRUMENTATION_REDIS_ENABLED=true
+ENV OTEL_INSTRUMENTATION_KAFKA_ENABLED=true
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=5s --start-period=60s --retries=3 \
+    CMD curl -f http://localhost:8080/actuator/health || exit 1
+
+# Run with production profile. Only attach the OTel agent when explicitly enabled.
+ENTRYPOINT ["sh", "-c", "if [ \"${OTEL_JAVAAGENT_ENABLED}\" = \"true\" ]; then JAVA_AGENT_OPTS='-javaagent:/opt/opentelemetry-javaagent.jar'; else JAVA_AGENT_OPTS=''; fi; exec java ${JAVA_AGENT_OPTS} -Dspring.profiles.active=prod ${JAVA_OPTS} -cp /app/loader org.springframework.boot.loader.launch.JarLauncher"]

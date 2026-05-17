@@ -1,7 +1,6 @@
 package com.iting.jobportal.common.security;
 
-import io.github.bucket4j.Bucket;
-import io.github.bucket4j.ConsumptionProbe;
+import com.iting.service.RedisRateLimitingService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
@@ -15,37 +14,46 @@ import org.springframework.web.servlet.HandlerInterceptor;
 @Slf4j
 public class RateLimitInterceptor implements HandlerInterceptor {
 
-    private final RateLimitService rateLimitService;
+    private final RedisRateLimitingService redisRateLimitingService;
 
     @Override
-    public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
+    public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler)
+            throws Exception {
         String ip = getRemoteAddr(request);
         String uri = request.getRequestURI();
-        
-        Bucket bucket = null;
-        
+
+        String endpoint = null;
+        int maxRequests = 0;
+        int windowSeconds = 60; // default 1 minute
+
         if (uri.endsWith("/api/auth/login")) {
-            bucket = rateLimitService.resolveLoginBucket(ip);
+            endpoint = "login";
+            maxRequests = 20;
         } else if (uri.endsWith("/api/auth/register")) {
-            bucket = rateLimitService.resolveRegisterBucket(ip);
+            endpoint = "register";
+            maxRequests = 10;
         } else if (uri.endsWith("/api/auth/refresh")) {
-            bucket = rateLimitService.resolveRefreshBucket(ip);
+            endpoint = "refresh";
+            maxRequests = 10;
         } else if (uri.contains("/api/jobs/search")) {
-            bucket = rateLimitService.resolveSearchBucket(ip);
+            endpoint = "search";
+            maxRequests = 30;
         } else if (uri.contains("/api/admin/")) {
-            bucket = rateLimitService.resolveAdminBucket(ip);
+            endpoint = "admin";
+            maxRequests = 20;
         }
 
-        if (bucket != null) {
-            ConsumptionProbe probe = bucket.tryConsumeAndReturnRemaining(1);
-            if (probe.isConsumed()) {
-                response.addHeader("X-Rate-Limit-Remaining", String.valueOf(probe.getRemainingTokens()));
+        if (endpoint != null) {
+            boolean allowed = redisRateLimitingService.isAllowed(ip, endpoint, maxRequests, windowSeconds);
+            if (allowed) {
+                long remaining = maxRequests - redisRateLimitingService.getRemainingRequests(ip, endpoint);
+                response.addHeader("X-Rate-Limit-Remaining", String.valueOf(Math.max(0, remaining)));
                 return true;
             } else {
-                long waitForRefill = probe.getNanosToWaitForRefill() / 1_000_000_000;
+                long waitForRefill = redisRateLimitingService.getTTL(ip, endpoint);
                 response.addHeader("X-Rate-Limit-Retry-After-Seconds", String.valueOf(waitForRefill));
-                response.sendError(HttpStatus.TOO_MANY_REQUESTS.value(), 
-                    "Bạn đã gửi quá nhiều yêu cầu. Vui lòng thử lại sau " + waitForRefill + " giây.");
+                response.sendError(HttpStatus.TOO_MANY_REQUESTS.value(),
+                        "Bạn đã gửi quá nhiều yêu cầu. Vui lòng thử lại sau " + waitForRefill + " giây.");
                 log.warn("Rate limit exceeded for IP: {} on URI: {}", ip, uri);
                 return false;
             }

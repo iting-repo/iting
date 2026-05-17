@@ -24,9 +24,9 @@ public class RefreshTokenController {
     @Operation(summary = "Refresh access token", description = "Generate new access token using refresh token")
     public ResponseEntity<TokenResponse> refreshToken(@Valid @RequestBody RefreshTokenRequest request) {
         log.info("Refresh token request for device: {}", request.getDeviceInfo());
-        
+
         TokenResponse response = refreshTokenService.refreshToken(request);
-        
+
         return ResponseEntity.ok(response);
     }
 
@@ -37,7 +37,7 @@ public class RefreshTokenController {
         // Note: This would require the refresh token to be passed separately
         // For now, we'll implement a simple logout that clears all user tokens
         log.info("Logout request received");
-        
+
         return ResponseEntity.ok().build();
     }
 
@@ -45,9 +45,9 @@ public class RefreshTokenController {
     @Operation(summary = "Logout from all devices", description = "Revoke all refresh tokens for user")
     public ResponseEntity<Void> logoutAll(@RequestHeader("X-User-Id") Long userId) {
         log.info("Logout all devices request for user: {}", userId);
-        
+
         refreshTokenService.revokeAllUserTokens(userId);
-        
+
         return ResponseEntity.ok().build();
     }
 }

@@ -25,7 +25,7 @@ public class AdminConfigServiceImpl implements AdminConfigService {
     @Transactional
     public SystemConfig updateConfig(SystemConfig config, Long adminId) {
         SystemConfig current = getConfig();
-        
+
         // Update all fields (excluding ID)
         current.setSiteName(config.getSiteName());
         current.setSiteUrl(config.getSiteUrl());
@@ -54,7 +54,7 @@ public class AdminConfigServiceImpl implements AdminConfigService {
         current.setBackupFrequency(config.getBackupFrequency());
         current.setBackupRetention(config.getBackupRetention());
         current.setLastUpdatedBy(adminId);
-        
+
         return systemConfigRepository.save(current);
     }
 

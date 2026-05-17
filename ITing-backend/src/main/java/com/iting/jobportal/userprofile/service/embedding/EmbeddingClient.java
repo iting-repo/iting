@@ -5,4 +5,3 @@ import java.util.Optional;
 public interface EmbeddingClient {
     Optional<double[]> embed(String input);
 }
-

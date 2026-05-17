@@ -39,9 +39,9 @@ public class AdminJobServiceImpl implements AdminJobService {
     private final Optional<DistributedLockService> lockService;
 
     /*
-    =========================
-    GET ALL JOBS
-    =========================
+     * =========================
+     * GET ALL JOBS
+     * =========================
      */
 
     @Override
@@ -54,9 +54,9 @@ public class AdminJobServiceImpl implements AdminJobService {
     }
 
     /*
-    =========================
-    FILTER JOB
-    =========================
+     * =========================
+     * FILTER JOB
+     * =========================
      */
 
     @Override
@@ -66,14 +66,12 @@ public class AdminJobServiceImpl implements AdminJobService {
             String keyword,
             String location,
             int page,
-            int size
-    ) {
+            int size) {
 
         Pageable pageable = PageRequest.of(
                 page,
                 size,
-                Sort.by("lastUpdate").descending()
-        );
+                Sort.by("lastUpdate").descending());
 
         return jobRepository
                 .findAll(
@@ -81,17 +79,15 @@ public class AdminJobServiceImpl implements AdminJobService {
                                 status,
                                 companyId,
                                 keyword,
-                                location
-                        ),
-                        pageable
-                )
+                                location),
+                        pageable)
                 .map(this::enrichWithCompany);
     }
 
     /*
-    =========================
-    JOB DETAIL
-    =========================
+     * =========================
+     * JOB DETAIL
+     * =========================
      */
 
     private JobResponse enrichWithCompany(Job job) {
@@ -100,8 +96,7 @@ public class AdminJobServiceImpl implements AdminJobService {
         return JobResponse.fromEntityWithCompany(
                 job,
                 c != null ? c.getName() : null,
-                c != null ? c.getLogoUrl() : null
-        );
+                c != null ? c.getLogoUrl() : null);
     }
 
     @Override
@@ -118,13 +113,10 @@ public class AdminJobServiceImpl implements AdminJobService {
         jobRepository.deleteById(jobId);
     }
 
-
-
-
     /*
-    =========================
-    APPROVE JOB
-    =========================
+     * =========================
+     * APPROVE JOB
+     * =========================
      */
 
     @Override
@@ -142,8 +134,9 @@ public class AdminJobServiceImpl implements AdminJobService {
             job.setStatus(JobStatus.EXPIRED);
             job.setReviewReason("Job đã quá hạn nộp hồ sơ (" + job.getDueDate() + ") trước khi được duyệt.");
             jobRepository.save(job);
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, 
-                "Không thể duyệt Job này vì đã quá hạn nộp hồ sơ (" + job.getDueDate() + "). Hệ thống đã tự chuyển sang trạng thái Hết hạn.");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "Không thể duyệt Job này vì đã quá hạn nộp hồ sơ (" + job.getDueDate()
+                            + "). Hệ thống đã tự chuyển sang trạng thái Hết hạn.");
         }
 
         job.setStatus(JobStatus.ACTIVE);
@@ -159,7 +152,8 @@ public class AdminJobServiceImpl implements AdminJobService {
                     .recipientId(job.getCompany().getId())
                     .recipientType(RecipientType.COMPANY)
                     .type(NotificationType.SYSTEM)
-                    .content("Tin tuyển dụng '" + (job.getTitle() != null ? job.getTitle() : job.getPosition()) + "' của bạn đã được PHÊ DUYỆT và đang hiển thị.")
+                    .content("Tin tuyển dụng '" + (job.getTitle() != null ? job.getTitle() : job.getPosition())
+                            + "' của bạn đã được PHÊ DUYỆT và đang hiển thị.")
                     .actionUrl("/employer/manage-jobs")
                     .build();
             notificationService.createNotification(notifRequest);
@@ -169,9 +163,9 @@ public class AdminJobServiceImpl implements AdminJobService {
     }
 
     /*
-    =========================
-    REJECT JOB
-    =========================
+     * =========================
+     * REJECT JOB
+     * =========================
      */
 
     @Override
@@ -200,7 +194,8 @@ public class AdminJobServiceImpl implements AdminJobService {
                     .recipientId(job.getCompany().getId())
                     .recipientType(RecipientType.COMPANY)
                     .type(NotificationType.SYSTEM)
-                    .content("Tin tuyển dụng '" + (job.getTitle() != null ? job.getTitle() : job.getPosition()) + "' của bạn đã bị TỪ CHỐI. Lý do: " + reason)
+                    .content("Tin tuyển dụng '" + (job.getTitle() != null ? job.getTitle() : job.getPosition())
+                            + "' của bạn đã bị TỪ CHỐI. Lý do: " + reason)
                     .actionUrl("/employer/manage-jobs")
                     .build();
             notificationService.createNotification(notifRequest);
@@ -210,17 +205,15 @@ public class AdminJobServiceImpl implements AdminJobService {
     }
 
     /*
-    =========================
-    REQUEST REVISION
-    =========================
+     * =========================
+     * REQUEST REVISION
+     * =========================
      */
 
-
-
     /*
-    =========================
-    FEATURE JOB
-    =========================
+     * =========================
+     * FEATURE JOB
+     * =========================
      */
 
     @Override
@@ -248,9 +241,9 @@ public class AdminJobServiceImpl implements AdminJobService {
     }
 
     /*
-    =========================
-    SUSPEND JOB
-    =========================
+     * =========================
+     * SUSPEND JOB
+     * =========================
      */
 
     @Override
@@ -284,9 +277,9 @@ public class AdminJobServiceImpl implements AdminJobService {
     }
 
     /*
-    =========================
-    UNSUSPEND JOB
-    =========================
+     * =========================
+     * UNSUSPEND JOB
+     * =========================
      */
 
     @Override
@@ -306,9 +299,9 @@ public class AdminJobServiceImpl implements AdminJobService {
     }
 
     /*
-    =========================
-    CLOSE JOB
-    =========================
+     * =========================
+     * CLOSE JOB
+     * =========================
      */
 
     @Override
@@ -328,9 +321,9 @@ public class AdminJobServiceImpl implements AdminJobService {
     }
 
     /*
-    =========================
-    BULK ACTIONS
-    =========================
+     * =========================
+     * BULK ACTIONS
+     * =========================
      */
 
     @Override
@@ -381,9 +374,9 @@ public class AdminJobServiceImpl implements AdminJobService {
     }
 
     /*
-    =========================
-    PRIVATE
-    =========================
+     * =========================
+     * PRIVATE
+     * =========================
      */
 
     private JobResponse enrichDetailWithCompanyAndHistory(Job job) {
@@ -422,8 +415,7 @@ public class AdminJobServiceImpl implements AdminJobService {
                 .reviewReason(
                         job.getStatus() == JobStatus.REJECTED || job.getStatus() == JobStatus.SUSPENDED
                                 ? job.getReviewReason()
-                                : null
-                )
+                                : null)
                 .reviewedBy(job.getReviewedBy())
                 .reviewedAt(job.getReviewedAt())
                 .createdAt(job.getCreatedAt())
@@ -432,8 +424,7 @@ public class AdminJobServiceImpl implements AdminJobService {
                         jobReviewHistoryRepository.findByJobIdOrderByTimestampAsc(job.getId())
                                 .stream()
                                 .map(JobReviewHistoryResponse::fromEntity)
-                                .collect(Collectors.toList())
-                )
+                                .collect(Collectors.toList()))
                 .build();
     }
 
@@ -455,11 +446,11 @@ public class AdminJobServiceImpl implements AdminJobService {
     @Override
     public java.io.ByteArrayInputStream exportJobsToExcel() {
         java.util.List<Job> jobs = jobRepository.findAll();
-        String[] headers = {"ID", "Title", "Company", "Status", "Province", "Work Type"};
-        
+        String[] headers = { "ID", "Title", "Company", "Status", "Province", "Work Type" };
+
         return com.iting.jobportal.common.excel.ExcelHelper.dataToExcel(
-                jobs, 
-                headers, 
+                jobs,
+                headers,
                 "Jobs",
                 (job, row) -> {
                     row.createCell(0).setCellValue(job.getId());
@@ -468,8 +459,7 @@ public class AdminJobServiceImpl implements AdminJobService {
                     row.createCell(3).setCellValue(job.getStatus().toString());
                     row.createCell(4).setCellValue(job.getProvince());
                     row.createCell(5).setCellValue(job.getJobType() != null ? job.getJobType().toString() : "");
-                }
-        );
+                });
     }
 
     @Override
@@ -483,8 +473,7 @@ public class AdminJobServiceImpl implements AdminJobService {
                         job.setTitle(row.getCell(0).getStringCellValue());
                         job.setStatus(JobStatus.PENDING);
                         return job;
-                    }
-            );
+                    });
             jobRepository.saveAll(jobs);
         } catch (java.io.IOException e) {
             throw new RuntimeException("fail to store excel data: " + e.getMessage());
@@ -493,7 +482,7 @@ public class AdminJobServiceImpl implements AdminJobService {
 
     @Override
     public java.io.ByteArrayInputStream getImportTemplate() {
-        String[] headers = {"Job Title"};
+        String[] headers = { "Job Title" };
         return com.iting.jobportal.common.excel.ExcelHelper.createTemplate(headers, "Job Import Template");
     }
 
@@ -504,10 +493,10 @@ public class AdminJobServiceImpl implements AdminJobService {
                 .orElseThrow(() -> new RuntimeException("Job not found"));
 
         String reviewResult = geminiService.reviewJob(job);
-        
+
         // Luôn luôn lưu kết quả AI vào các field mới để frontend hiển thị
         job.setAiReviewReason(reviewResult);
-        
+
         // Tự động xử lý trạng thái nếu AI đưa ra quyết định dứt khoát
         boolean autoRejected = false;
         boolean autoApproved = false;
@@ -533,13 +522,12 @@ public class AdminJobServiceImpl implements AdminJobService {
         jobRepository.save(job);
 
         return java.util.Map.of(
-            "id", jobId,
-            "reviewResult", reviewResult,
-            "autoRejected", autoRejected,
-            "autoApproved", autoApproved,
-            "status", job.getStatus(),
-            "aiReviewStatus", job.getAiReviewStatus(),
-            "aiReviewReason", job.getAiReviewReason()
-        );
+                "id", jobId,
+                "reviewResult", reviewResult,
+                "autoRejected", autoRejected,
+                "autoApproved", autoApproved,
+                "status", job.getStatus(),
+                "aiReviewStatus", job.getAiReviewStatus(),
+                "aiReviewReason", job.getAiReviewReason());
     }
 }

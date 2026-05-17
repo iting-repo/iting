@@ -34,8 +34,7 @@ public class WebSocketMessageHandler {
 
         messagingTemplate.convertAndSend(
                 "/topic/conversation/" + response.getConversationId(),
-                response
-        );
+                response);
 
         return response;
     }
@@ -55,7 +54,6 @@ public class WebSocketMessageHandler {
 
         messagingTemplate.convertAndSend(
                 "/topic/conversation/" + request.getConversationId() + "/typing",
-                response
-        );
+                response);
     }
 }

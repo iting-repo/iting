@@ -42,4 +42,4 @@ public class Certificate {
 
     @Column(name = "Does_not_expire")
     private Boolean doesNotExpire;
-}
+}

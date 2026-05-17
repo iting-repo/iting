@@ -36,8 +36,7 @@ public class AiController {
                 "original", keyword,
                 "normalizedId", normalized != null ? normalized : "UNKNOWN",
                 "expanded", expanded,
-                "relatedSkills", related
-        ));
+                "relatedSkills", related));
     }
 
     // ===== Phase 5: Explainability =====
@@ -52,8 +51,7 @@ public class AiController {
                 "cvSkills", cvSkills,
                 "jdSkills", jdSkills,
                 "explanations", explanations,
-                "matchCount", explanations.size()
-        ));
+                "matchCount", explanations.size()));
     }
 
     // ===== Phase 2: Embedding =====
@@ -65,8 +63,7 @@ public class AiController {
         int count = jobEmbeddingService.embedMissingJobs(batchSize);
         return ResponseEntity.ok(Map.of(
                 "processedCount", count,
-                "batchSize", batchSize
-        ));
+                "batchSize", batchSize));
     }
 
     // ===== Phase 3: ML Service Health =====
@@ -77,8 +74,7 @@ public class AiController {
         boolean available = mlServiceClient.isAvailable();
         return ResponseEntity.ok(Map.of(
                 "mlServiceAvailable", available,
-                "status", available ? "CONNECTED" : "UNAVAILABLE"
-        ));
+                "status", available ? "CONNECTED" : "UNAVAILABLE"));
     }
 
     // ===== Phase 4: Skill NER =====
@@ -95,7 +91,6 @@ public class AiController {
         return ResponseEntity.ok(Map.of(
                 "skills", skills,
                 "count", skills.size(),
-                "source", mlServiceClient.isAvailable() ? "ML_SERVICE" : "UNAVAILABLE"
-        ));
+                "source", mlServiceClient.isAvailable() ? "ML_SERVICE" : "UNAVAILABLE"));
     }
 }

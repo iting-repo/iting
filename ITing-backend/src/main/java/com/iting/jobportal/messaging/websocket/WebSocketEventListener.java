@@ -55,8 +55,7 @@ public class WebSocketEventListener {
         if (next == 1) {
             messagingTemplate.convertAndSend(
                     "/topic/presence",
-                    PresenceEventResponse.builder().userId(userId).online(true).build()
-            );
+                    PresenceEventResponse.builder().userId(userId).online(true).build());
         }
     }
 
@@ -76,8 +75,7 @@ public class WebSocketEventListener {
             if (next <= 0) {
                 messagingTemplate.convertAndSend(
                         "/topic/presence",
-                        PresenceEventResponse.builder().userId(userId).online(false).build()
-                );
+                        PresenceEventResponse.builder().userId(userId).online(false).build());
                 return null;
             }
             return next;

@@ -45,7 +45,7 @@ public class GeminiCVParserService {
         if (mimeType != null && mimeType.equals("application/pdf")) {
             // Extract text using PDFBox
             try (InputStream is = file.getInputStream();
-                 PDDocument document = PDDocument.load(is)) {
+                    PDDocument document = PDDocument.load(is)) {
                 PDFTextStripper stripper = new PDFTextStripper();
                 cvText = stripper.getText(document);
             } catch (Exception e) {
@@ -53,15 +53,20 @@ public class GeminiCVParserService {
             }
         }
 
-        String prompt = "Bạn là một chuyên gia nhân sự. Hãy đọc nội dung file CV sau đây và trích xuất các thông tin chuyên môn.\n" +
+        String prompt = "Bạn là một chuyên gia nhân sự. Hãy đọc nội dung file CV sau đây và trích xuất các thông tin chuyên môn.\n"
+                +
                 "Nội dung CV:\n" +
                 (cvText.isEmpty() ? "(File đính kèm)" : cvText) + "\n\n" +
-                "Hãy trả về MỘT CHUỖI JSON DUY NHẤT (không bọc trong markdown ```json ... ```, chỉ bắt đầu bằng { và kết thúc bằng }) theo định dạng sau: \n" +
+                "Hãy trả về MỘT CHUỖI JSON DUY NHẤT (không bọc trong markdown ```json ... ```, chỉ bắt đầu bằng { và kết thúc bằng }) theo định dạng sau: \n"
+                +
                 "{ \n" +
                 "\"skills\": [\"kỹ năng 1\", \"kỹ năng 2\"], \n" +
-                "\"experiences\": [ { \"companyName\": \"Tên công ty\", \"position\": \"Vị trí\", \"startDate\": \"YYYY-MM\", \"endDate\": \"YYYY-MM\", \"description\": \"Mô tả ngắn\" } ], \n" +
-                "\"educations\": [ { \"schoolName\": \"Tên trường\", \"degree\": \"Bằng cấp/Chuyên ngành\", \"startDate\": \"YYYY-MM\", \"endDate\": \"YYYY-MM\" } ], \n" +
-                "\"certificates\": [ { \"name\": \"Tên chứng chỉ\", \"organization\": \"Tổ chức cấp\", \"issueDate\": \"YYYY-MM\" } ] \n" +
+                "\"experiences\": [ { \"companyName\": \"Tên công ty\", \"position\": \"Vị trí\", \"startDate\": \"YYYY-MM\", \"endDate\": \"YYYY-MM\", \"description\": \"Mô tả ngắn\" } ], \n"
+                +
+                "\"educations\": [ { \"schoolName\": \"Tên trường\", \"degree\": \"Bằng cấp/Chuyên ngành\", \"startDate\": \"YYYY-MM\", \"endDate\": \"YYYY-MM\" } ], \n"
+                +
+                "\"certificates\": [ { \"name\": \"Tên chứng chỉ\", \"organization\": \"Tổ chức cấp\", \"issueDate\": \"YYYY-MM\" } ] \n"
+                +
                 "}. Nếu không tìm thấy thông tin nào, hãy để mảng rỗng [].";
 
         // Build the payload
@@ -69,7 +74,7 @@ public class GeminiCVParserService {
         textPart.put("text", prompt);
 
         Map<String, Object> content = new HashMap<>();
-        
+
         if (cvText.isEmpty()) {
             // Fallback: send as inline base64 if not PDF or PDFBox failed
             if (mimeType == null || (!mimeType.equals("application/pdf") && !mimeType.startsWith("image/"))) {
@@ -82,7 +87,7 @@ public class GeminiCVParserService {
 
             Map<String, Object> inlineDataPart = new HashMap<>();
             inlineDataPart.put("inline_data", inlineData);
-            
+
             content.put("parts", List.of(textPart, inlineDataPart));
         } else {
             content.put("parts", List.of(textPart));
@@ -102,7 +107,7 @@ public class GeminiCVParserService {
         try {
             String responseStr = restTemplate.postForObject(url, requestEntity, String.class);
             JsonNode rootNode = objectMapper.readTree(responseStr);
-            
+
             // Extract the generated text
             JsonNode candidates = rootNode.path("candidates");
             if (candidates.isArray() && candidates.size() > 0) {

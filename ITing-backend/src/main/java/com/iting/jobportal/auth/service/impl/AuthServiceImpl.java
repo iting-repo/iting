@@ -83,13 +83,12 @@ public class AuthServiceImpl implements AuthService {
 
             String primaryRole = account.getRole().normalizedName();
             String jwtToken = jwtTokenUtil.generateToken(account.getId(), account.getEmail(), primaryRole);
-            
+
             var refreshToken = refreshTokenService.createRefreshToken(
-                    account.getId(), 
-                    account.getEmail(), 
-                    "Google Social Login", 
-                    "Unknown"
-            );
+                    account.getId(),
+                    account.getEmail(),
+                    "Google Social Login",
+                    "Unknown");
 
             return LoginResponse.builder()
                     .userId(account.getId())
@@ -127,22 +126,23 @@ public class AuthServiceImpl implements AuthService {
 
         String normalizedEmail = request.getEmail().trim().toLowerCase();
         Account account = accountRepository.findByEmail(normalizedEmail).orElse(null);
-        
+
         if (account != null) {
             boolean isPending = account.getStatus() == AccountStatus.PENDING;
             boolean neverLoggedIn = account.getLastLoginAt() == null;
-            
+
             if (!isPending && !neverLoggedIn) {
                 Role requestedRole = request.getRole().normalize();
                 Role existingRoleNormalized = account.getRole().normalize();
-                
+
                 if (existingRoleNormalized != requestedRole) {
                     String roleName = existingRoleNormalized == Role.CANDIDATE ? "Ứng viên" : "Nhà tuyển dụng";
-                    throw new RuntimeException("Email này đã được đăng ký với vai trò " + roleName + ". Vui lòng sử dụng email khác hoặc đăng nhập.");
+                    throw new RuntimeException("Email này đã được đăng ký với vai trò " + roleName
+                            + ". Vui lòng sử dụng email khác hoặc đăng nhập.");
                 }
                 throw new RuntimeException("Email này đã được sử dụng. Vui lòng sử dụng email khác.");
             }
-            
+
             // Cập nhật thông tin mới cho tài khoản cũ
             account.setPasswordHash(passwordEncoder.encode(request.getPassword()));
             account.setRole(request.getRole().normalize());
@@ -163,8 +163,15 @@ public class AuthServiceImpl implements AuthService {
         // Sau Phase 2: EMPLOYER cũng có entity User (như CANDIDATE) — Company KHÔNG còn
         // được tạo tự động lúc đăng ký, mà phải qua POST /api/hr/affiliations/me/init (Phase 3).
         switch (savedAccount.getRole()) {
+<<<<<<< HEAD
             case CANDIDATE, EMPLOYER -> createUserIfNeeded(savedAccount, request);
             default -> {}
+=======
+            case CANDIDATE -> createUserIfNeeded(savedAccount, request);
+            case EMPLOYER -> createCompanyIfNeeded(savedAccount, request);
+            default -> {
+            }
+>>>>>>> b0482a2a10970508963820b95c22492a2f9db0f8
         }
 
         // Gửi OTP mới
@@ -174,7 +181,7 @@ public class AuthServiceImpl implements AuthService {
 
     private void sendVerificationOtp(String email) {
         String otp = String.format("%06d", (int) (Math.random() * 1000000));
-        
+
         // Save to DB
         otpCodeRepository.deleteByEmail(email);
         OtpCode otpCode = OtpCode.builder()
@@ -212,7 +219,7 @@ public class AuthServiceImpl implements AuthService {
 
         account.setStatus(AccountStatus.ACTIVE);
         accountRepository.save(account);
-        
+
         // Sử dụng normalizedEmail để xóa sạch mã OTP
         otpCodeRepository.deleteByEmail(normalizedEmail);
 
@@ -224,7 +231,7 @@ public class AuthServiceImpl implements AuthService {
         String normalizedEmail = email != null ? email.trim().toLowerCase() : "";
         Account account = accountRepository.findByEmail(normalizedEmail)
                 .orElseThrow(() -> new RuntimeException("Tài khoản không tồn tại: " + normalizedEmail));
-        
+
         if (account.getStatus() == AccountStatus.ACTIVE) {
             throw new RuntimeException("Tài khoản đã được kích hoạt");
         }
@@ -243,19 +250,56 @@ public class AuthServiceImpl implements AuthService {
         user.setFullName(
                 request.getFullName() != null && !request.getFullName().isBlank()
                         ? request.getFullName().trim()
-                        : account.getEmail()
-        );
+                        : account.getEmail());
         user.setLastUpdate(LocalDateTime.now());
 
         userRepository.save(user);
     }
 
+<<<<<<< HEAD
     // NOTE: createCompanyIfNeeded() đã bị bỏ. Trước đây mỗi Account COMPANY/EMPLOYER
     // được auto-create 1 Company shared-PK lúc đăng ký. Sau Phase 2, Company được
     // tạo lazy qua endpoint POST /api/hr/affiliations/me/init (Phase 3) khi HR điền
     // taxCode lần đầu trong FoundingInfoTab.
     //
     // adminNotificationService.notifyNewCompany() sẽ được gọi ở init service mới.
+=======
+    private void createCompanyIfNeeded(Account account, RegisterRequest request) {
+        boolean companyExists = companyRepository.existsById(account.getId());
+        if (companyExists) {
+            return;
+        }
+
+        Company company = new Company();
+
+        // quan trọng với shared primary key: Hibernate tự lấy ID từ account nhờ @MapsId
+        company.setAccount(account);
+
+        String defaultName = request.getFullName() != null && !request.getFullName().isBlank()
+                ? request.getFullName().trim()
+                : "Chưa cập nhật";
+
+        company.setName(defaultName);
+        company.setAccountEmail(account.getEmail());
+        company.setCompanyEmail(account.getEmail());
+
+        company.setVerificationLevel(VerificationLevel.UNVERIFIED);
+        company.setCompanyInfoUpdateStatus(CompanyReviewStatus.DRAFT);
+        company.setActive(true);
+        company.setFollowerCount(0L);
+        company.setProfileSetup(false);
+        company.setLastUpdate(LocalDateTime.now());
+
+        companyRepository.save(company);
+        
+        // Gửi thông báo cho Admin
+        try {
+            adminNotificationService.notifyNewCompany(company);
+        } catch (Exception e) {
+            log.error("Lỗi khi gửi thông báo cho admin về công ty mới đăng ký", e);
+        }
+    }
+>>>>>>> b0482a2a10970508963820b95c22492a2f9db0f8
 
     @Transactional
     @Override
@@ -291,8 +335,7 @@ public class AuthServiceImpl implements AuthService {
                 account.getId(),
                 account.getEmail(),
                 request.getDeviceInfo() != null ? request.getDeviceInfo() : "Unknown",
-                request.getIpAddress() != null ? request.getIpAddress() : "Unknown"
-        );
+                request.getIpAddress() != null ? request.getIpAddress() : "Unknown");
 
         return LoginResponse.builder()
                 .userId(account.getId())

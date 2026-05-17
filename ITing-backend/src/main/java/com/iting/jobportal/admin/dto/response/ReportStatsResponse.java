@@ -13,7 +13,7 @@ public class ReportStatsResponse {
     private long pendingReports;
     private long criticalReports;
     private long resolvedThisWeek;
-    
+
     private Map<String, Long> reportsByCategory;
     private Map<String, Long> reportsByTargetType;
     private Map<String, Long> reportsByStatus;

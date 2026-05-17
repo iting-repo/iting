@@ -70,10 +70,12 @@ public class EmployerApplicationServiceImpl implements EmployerApplicationServic
 
     @Override
     public Page<ApplicationResponse> getAllApplicationsForEmployer(Long employerId, int page, int size) {
-        if (employerId == null) throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Yêu cầu đăng nhập");
+        if (employerId == null)
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Yêu cầu đăng nhập");
         var jobs = jobRepository.findByCompany_Id(employerId, PageRequest.of(0, 1000));
-        if (jobs.isEmpty()) return Page.empty();
-        
+        if (jobs.isEmpty())
+            return Page.empty();
+
         var jobIds = jobs.stream().map(Job::getId).toList();
         Pageable pageable = PageRequest.of(Math.max(page, 0), Math.max(1, size), Sort.by("timeSent").descending());
         return employerApplicationRepository.findByIdJobIdIn(jobIds, pageable).map(this::toResponse);
@@ -81,11 +83,12 @@ public class EmployerApplicationServiceImpl implements EmployerApplicationServic
 
     @Override
     public Page<ApplicationResponse> searchApplications(Long employerId, ApplicationSearchRequest request) {
-        if (employerId == null) throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Yêu cầu đăng nhập");
-        
-        Pageable pageable = PageRequest.of(request.getPage(), request.getSize(), 
-                Sort.by(request.getSortOrder().equalsIgnoreCase("asc") ? Sort.Direction.ASC : Sort.Direction.DESC, 
-                request.getSortBy()));
+        if (employerId == null)
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Yêu cầu đăng nhập");
+
+        Pageable pageable = PageRequest.of(request.getPage(), request.getSize(),
+                Sort.by(request.getSortOrder().equalsIgnoreCase("asc") ? Sort.Direction.ASC : Sort.Direction.DESC,
+                        request.getSortBy()));
 
         String normalizedKeyword = null;
         if (request.getKeyword() != null && !request.getKeyword().isBlank()) {
@@ -94,15 +97,17 @@ public class EmployerApplicationServiceImpl implements EmployerApplicationServic
 
         if (request.getJobId() != null) {
             verifyJobOwnership(employerId, request.getJobId());
-            return employerApplicationRepository.searchByJob(request.getJobId(), request.getStatus(), normalizedKeyword, pageable)
+            return employerApplicationRepository
+                    .searchByJob(request.getJobId(), request.getStatus(), normalizedKeyword, pageable)
                     .map(this::toResponse);
         }
-        
+
         // Search across all jobs of the employer
         var jobs = jobRepository.findByCompany_Id(employerId, PageRequest.of(0, 1000));
-        if (jobs.isEmpty()) return Page.empty();
+        if (jobs.isEmpty())
+            return Page.empty();
         var jobIds = jobs.stream().map(Job::getId).toList();
-        
+
         return employerApplicationRepository.searchAll(jobIds, request.getStatus(), normalizedKeyword, pageable)
                 .map(this::toResponse);
     }
@@ -110,9 +115,10 @@ public class EmployerApplicationServiceImpl implements EmployerApplicationServic
     @Override
     @Transactional
     public ApplicationResponse viewApplication(Long employerId, Long applicationId) {
-        // We reuse the markApplicationAsViewed logic here so viewing the details 
-        // automatically triggers the "VIEWED" status and sends notification to candidate.
-        return markApplicationAsViewed(employerId, applicationId);
+        ApplyFormSentToJob sent = employerApplicationRepository.findByIdApplyFormId(applicationId)
+                .orElseThrow(() -> new RuntimeException("Application job mapping not found: " + applicationId));
+        verifyJobOwnership(employerId, sent.getId().getJobId());
+        return toResponse(sent);
     }
 
     @Override
@@ -136,7 +142,8 @@ public class EmployerApplicationServiceImpl implements EmployerApplicationServic
                     .recipientId(form.getUserId())
                     .recipientType(RecipientType.USER)
                     .type(NotificationType.APPLICATION_VIEWED)
-                    .content("Nhà tuyển dụng " + job.getCompany().getName() + " đã xem hồ sơ của bạn cho vị trí " + job.getTitle())
+                    .content("Nhà tuyển dụng " + job.getCompany().getName() + " đã xem hồ sơ của bạn cho vị trí "
+                            + job.getTitle())
                     .entityType("APPLICATION")
                     .entityId(applicationId)
                     .actionUrl("/applications/" + applicationId)
@@ -148,11 +155,12 @@ public class EmployerApplicationServiceImpl implements EmployerApplicationServic
 
     @Override
     @Transactional
-    public ApplicationResponse updateApplicationStatus(Long employerId, Long applicationId, UpdateApplicationStatusRequest request) {
+    public ApplicationResponse updateApplicationStatus(Long employerId, Long applicationId,
+            UpdateApplicationStatusRequest request) {
         ApplyFormSentToJob sent = employerApplicationRepository.findByIdApplyFormId(applicationId)
                 .orElseThrow(() -> new RuntimeException("Application job mapping not found"));
         verifyJobOwnership(employerId, sent.getId().getJobId());
-        
+
         ApplicationStatus oldStatus = sent.getStatus();
         sent.setStatus(request.getStatus());
         employerApplicationRepository.save(sent);
@@ -161,7 +169,7 @@ public class EmployerApplicationServiceImpl implements EmployerApplicationServic
         if (oldStatus != request.getStatus()) {
             NotificationType type = null;
             String content = "";
-            
+
             ApplyForm form = applyFormRepository.findById(applicationId)
                     .orElseThrow(() -> new RuntimeException("ApplyForm not found"));
             Job job = jobRepository.findById(sent.getId().getJobId())
@@ -169,10 +177,12 @@ public class EmployerApplicationServiceImpl implements EmployerApplicationServic
 
             if (request.getStatus() == ApplicationStatus.ACCEPTED) {
                 type = NotificationType.APPLICATION_ACCEPTED;
-                content = "Chúc mừng! Hồ sơ của bạn đã được " + job.getCompany().getName() + " chấp nhận cho vị trí " + job.getTitle();
+                content = "Chúc mừng! Hồ sơ của bạn đã được " + job.getCompany().getName() + " chấp nhận cho vị trí "
+                        + job.getTitle();
             } else if (request.getStatus() == ApplicationStatus.REJECTED) {
                 type = NotificationType.APPLICATION_REJECTED;
-                content = "Rất tiếc, hồ sơ của bạn cho vị trí " + job.getTitle() + " tại " + job.getCompany().getName() + " chưa phù hợp lúc này.";
+                content = "Rất tiếc, hồ sơ của bạn cho vị trí " + job.getTitle() + " tại " + job.getCompany().getName()
+                        + " chưa phù hợp lúc này.";
             }
 
             if (type != null) {
@@ -194,14 +204,16 @@ public class EmployerApplicationServiceImpl implements EmployerApplicationServic
                     msgReq.setReceiverId(form.getUserId());
                     msgReq.setReceiverType(ReceiverType.USER);
                     msgReq.setSenderType(SenderType.COMPANY);
-                    msgReq.setContent(String.format("Chào bạn, hồ sơ ứng tuyển của bạn cho vị trí %s đã được chúng tôi chấp nhận. Vui lòng phản hồi tin nhắn này để trao đổi thêm về lịch phỏng vấn nhé!", job.getTitle()));
+                    msgReq.setContent(String.format(
+                            "Chào bạn, hồ sơ ứng tuyển của bạn cho vị trí %s đã được chúng tôi chấp nhận. Vui lòng phản hồi tin nhắn này để trao đổi thêm về lịch phỏng vấn nhé!",
+                            job.getTitle()));
                     messageService.sendMessage(msgReq, employerId);
                 } catch (Exception e) {
                     // Ignore message creation error if any
                 }
             }
         }
-        
+
         return toResponse(sent);
     }
 
@@ -236,10 +248,10 @@ public class EmployerApplicationServiceImpl implements EmployerApplicationServic
         if (jobs.isEmpty()) {
             return ApplicationStats.builder().total(0L).build();
         }
-        
+
         List<Long> jobIds = jobs.stream().map(Job::getId).toList();
         long total = employerApplicationRepository.countByIdJobIdIn(jobIds);
-        
+
         // You could add count by status here if needed in the future
         return ApplicationStats.builder()
                 .total(total)

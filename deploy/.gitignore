@@ -1,0 +1,14 @@
+# Ignore secrets
+.env
+.env.*
+!.env.example
+!.env.local.example
+!.env.prod
+
+# Local RDS tunnel secrets / keys (see scripts/rds-tunnel.env.example)
+scripts/rds-tunnel.env
+scripts/*.pem
+
+# Ignore OS files
+.DS_Store
+Thumbs.db

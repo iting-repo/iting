@@ -42,8 +42,10 @@ public class UserSaveJob {
 
         @Override
         public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
+            if (this == o)
+                return true;
+            if (o == null || getClass() != o.getClass())
+                return false;
             UserSaveJobId that = (UserSaveJobId) o;
             return Objects.equals(userId, that.userId) && Objects.equals(jobId, that.jobId);
         }

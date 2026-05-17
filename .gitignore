@@ -15,6 +15,48 @@ dist/
 .next/
 coverage/
 
+node_modules
+dist
+.env
+
+# Node / frontend
+**/node_modules/
+ITing-frontend/node_modules/
+ITing-frontend/dist/
+
+# IDEs, editors
+.vscode/
+.classpath
+.project
+.settings/
+.DS_Store
+
+# Java artifacts
+*.class
+*.jar
+*.war
+
+# Test / coverage
+coverage/
+.coverage
+test-results/
+playwright-report/
+.pytest_cache/
+
+# Maven
+.mvn/
+
+# Temporary files
+*.tmp
+*.swp
+*~
+
+.opencode/
+.cursor/
+
+iting-key-pair.pem
+
+skills-lock.json
 # Environment files
 .env
 .env.*
@@ -57,3 +99,5 @@ Thumbs.db
 
 # LaTeX source files
 *.tex
+
+client_secret_827083893126-sagt6pmtatd2nkfpkag4t94ajcikbmun.apps.googleusercontent.com.json

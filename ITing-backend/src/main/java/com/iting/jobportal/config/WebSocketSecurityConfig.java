@@ -54,8 +54,7 @@ public class WebSocketSecurityConfig implements WebSocketMessageBrokerConfigurer
                     UsernamePasswordAuthenticationToken auth = new UsernamePasswordAuthenticationToken(
                             userId,
                             null,
-                            List.of(new SimpleGrantedAuthority("ROLE_" + role))
-                    );
+                            List.of(new SimpleGrantedAuthority("ROLE_" + role)));
                     accessor.setUser(auth);
                 }
 

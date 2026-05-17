@@ -1,5 +1,6 @@
 import { Client } from '@stomp/stompjs';
 import SockJS from 'sockjs-client';
+import { API_ORIGIN } from '../config';
 
 class ChatRealtimeService {
   constructor() {
@@ -15,14 +16,13 @@ class ChatRealtimeService {
 
     this.client = new Client({
       webSocketFactory: () => {
-        const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:8080';
-        return new SockJS(`${API_BASE}/ws`);
+        return new SockJS(`${API_ORIGIN}/ws`);
       },
       connectHeaders: token ? { Authorization: `Bearer ${token}` } : {},
       reconnectDelay: 4000,
       heartbeatIncoming: 10000,
       heartbeatOutgoing: 10000,
-      debug: () => {},
+      debug: () => { },
     });
 
     this.client.onConnect = () => {

@@ -17,9 +17,9 @@ public interface AuthService {
     Account getAccountByEmail(String email);
 
     Account register(RegisterRequest request);
-    
+
     void verifyOtp(String email, String code);
-    
+
     void resendOtp(String email);
 
     com.iting.jobportal.auth.dto.response.UserMeResponse getMeResponse(Long accountId);

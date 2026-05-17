@@ -43,12 +43,12 @@ class AdminContentServiceImplTest {
     @Test
     void getCategoriesByType_shouldReturnOrderedCategoriesFromRepository() {
         List<Category> categories = List.of(new Category(), new Category());
-        when(categoryRepository.findByTypeOrderBySortOrderAsc("job")).thenReturn(categories);
+        when(categoryRepository.findByTypeOrderBySortOrderAsc("JOB")).thenReturn(categories);
 
         List<Category> result = service.getCategoriesByType("job");
 
         assertSame(categories, result);
-        verify(categoryRepository).findByTypeOrderBySortOrderAsc("job");
+        verify(categoryRepository).findByTypeOrderBySortOrderAsc("JOB");
         verifyNoInteractions(staticContentRepository);
     }
 
@@ -85,9 +85,12 @@ class AdminContentServiceImplTest {
     }
 
     @Test
-    void deleteCategory_shouldDeleteById() {
+    void deleteCategory_shouldCheckExistenceThenDeleteById() {
+        when(categoryRepository.existsById(5L)).thenReturn(true);
+
         service.deleteCategory(5L);
 
+        verify(categoryRepository).existsById(5L);
         verify(categoryRepository).deleteById(5L);
         verifyNoInteractions(staticContentRepository);
     }

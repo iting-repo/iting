@@ -49,10 +49,9 @@ public class CompanyReviewServiceImpl implements CompanyReviewService {
     public Map<String, Object> getCompanyRatingStats(Long companyId) {
         Double avg = reviewRepository.getAverageRating(companyId);
         long count = reviewRepository.countByCompanyId(companyId);
-        
+
         return Map.of(
-            "averageRating", avg != null ? avg : 0.0,
-            "reviewCount", count
-        );
+                "averageRating", avg != null ? avg : 0.0,
+                "reviewCount", count);
     }
 }

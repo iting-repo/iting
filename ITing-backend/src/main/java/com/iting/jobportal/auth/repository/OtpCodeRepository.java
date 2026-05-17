@@ -6,5 +6,6 @@ import java.util.Optional;
 
 public interface OtpCodeRepository extends JpaRepository<OtpCode, Long> {
     Optional<OtpCode> findTopByEmailAndIsVerificationOrderByExpiryTimeDesc(String email, boolean isVerification);
+
     void deleteByEmail(String email);
 }

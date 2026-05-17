@@ -48,10 +48,11 @@ public class EmployerCandidateSearchServiceImpl implements EmployerCandidateSear
         String degree = normalizeAllValue(request.getDegree());
 
         boolean onlyAvailable = Boolean.TRUE.equals(request.getOnlyAvailable());
-        List<String> skills = request.getSkills() == null ? List.of() : request.getSkills().stream()
-                .filter(s -> s != null && !s.isBlank())
-                .distinct()
-                .toList();
+        List<String> skills = request.getSkills() == null ? List.of()
+                : request.getSkills().stream()
+                        .filter(s -> s != null && !s.isBlank())
+                        .distinct()
+                        .toList();
 
         ExperienceRange expRange = ExperienceRange.fromRaw(normalizeAllValue(request.getExperience()));
         ExperienceRange levelRange = ExperienceRange.fromLevel(level);
@@ -69,8 +70,7 @@ public class EmployerCandidateSearchServiceImpl implements EmployerCandidateSear
                 maxExp,
                 degree,
                 skills.isEmpty(),
-                skills.isEmpty() ? List.of("__EMPTY__") : skills
-        );
+                skills.isEmpty() ? List.of("__EMPTY__") : skills);
 
         // ===== KG Expansion: mở rộng keyword bằng Knowledge Graph =====
         java.util.Set<String> expandedKeywords = new java.util.HashSet<>();
@@ -88,8 +88,10 @@ public class EmployerCandidateSearchServiceImpl implements EmployerCandidateSear
             queryEmbedding = embeddingClient.embed(industryContext);
         }
 
-        // Location weight: location score [0..1] -> contributes up to +2.0 bonus to overall score
-        // This ensures same-city candidates rank significantly higher than those in different regions
+        // Location weight: location score [0..1] -> contributes up to +2.0 bonus to
+        // overall score
+        // This ensures same-city candidates rank significantly higher than those in
+        // different regions
         final double LOCATION_WEIGHT = 2.0;
 
         List<ScoredCandidate> scored = new ArrayList<>(matched.size());
@@ -101,7 +103,8 @@ public class EmployerCandidateSearchServiceImpl implements EmployerCandidateSear
             if (queryEmbedding.isPresent()) {
                 score = cosineSimilarity(queryEmbedding.get(), parseEmbedding(user.getCvEmbedding()).orElse(null));
             } else if (keyword != null && !keyword.isBlank()) {
-                score = heuristicKeywordScore(keyword, user.getFullName(), profile.getHeadline(), profile.getShortBio(), profile.getSkills());
+                score = heuristicKeywordScore(keyword, user.getFullName(), profile.getHeadline(), profile.getShortBio(),
+                        profile.getSkills());
             }
 
             // KG Bonus: tăng điểm cho candidate có skill liên quan qua Knowledge Graph
@@ -124,7 +127,8 @@ public class EmployerCandidateSearchServiceImpl implements EmployerCandidateSear
             scored.add(new ScoredCandidate(profile, score));
         }
 
-        // Sort by score desc when we have any meaningful signal (keyword OR location OR industry).
+        // Sort by score desc when we have any meaningful signal (keyword OR location OR
+        // industry).
         // Fall back to updatedAt desc only when there is no ranking signal at all.
         boolean hasRankingSignal = (keyword != null && !keyword.isBlank())
                 || (employerLocation != null && !employerLocation.isBlank())
@@ -132,8 +136,10 @@ public class EmployerCandidateSearchServiceImpl implements EmployerCandidateSear
 
         Comparator<ScoredCandidate> comparator = hasRankingSignal
                 ? Comparator.comparing(ScoredCandidate::score).reversed()
-                : Comparator.comparing((ScoredCandidate c) -> c.profile().getUpdatedAt(), Comparator.nullsLast(Comparator.naturalOrder()))
-                    .reversed();
+                : Comparator
+                        .comparing((ScoredCandidate c) -> c.profile().getUpdatedAt(),
+                                Comparator.nullsLast(Comparator.naturalOrder()))
+                        .reversed();
 
         scored.sort(comparator.thenComparing(c -> c.profile().getId()));
 
@@ -142,7 +148,8 @@ public class EmployerCandidateSearchServiceImpl implements EmployerCandidateSear
 
         // Phase 5: Explainability - collect search keyword skills for KG explanation
         List<String> searchSkills = new ArrayList<>();
-        if (keyword != null) searchSkills.add(keyword);
+        if (keyword != null)
+            searchSkills.add(keyword);
         searchSkills.addAll(skills);
 
         List<EmployerCandidateSearchResponse> content = scored.subList(fromIndex, toIndex).stream()
@@ -157,15 +164,16 @@ public class EmployerCandidateSearchServiceImpl implements EmployerCandidateSear
     public CandidateFullProfileResponse getCandidateFullProfile(Long candidateId) {
         UserProfile profile = userProfileRepository.findById(candidateId)
                 .orElseThrow(() -> new RuntimeException("Candidate not found"));
-        
-        // Eagerly fetch collections by accessing them to avoid LazyInitializationException
+
+        // Eagerly fetch collections by accessing them to avoid
+        // LazyInitializationException
         profile.getSkills().size();
         profile.getWorkExperiences().size();
         profile.getEducations().size();
         profile.getCertifications().size();
         profile.getExternalLinks().size();
         profile.getPortfolios().size();
-        
+
         return CandidateFullProfileResponse.builder()
                 .profile(profile)
                 .skills(profile.getSkills())
@@ -181,11 +189,12 @@ public class EmployerCandidateSearchServiceImpl implements EmployerCandidateSear
         var user = profile.getUser();
         var account = user.getAccount();
 
-        List<String> skills = profile.getSkills() == null ? List.of() : profile.getSkills().stream()
-                .map(Skill::getName)
-                .filter(s -> s != null && !s.isBlank())
-                .distinct()
-                .toList();
+        List<String> skills = profile.getSkills() == null ? List.of()
+                : profile.getSkills().stream()
+                        .map(Skill::getName)
+                        .filter(s -> s != null && !s.isBlank())
+                        .distinct()
+                        .toList();
 
         String degree = pickDegree(profile.getEducations());
         Integer expYears = profile.getTotalExperienceYears();
@@ -217,7 +226,8 @@ public class EmployerCandidateSearchServiceImpl implements EmployerCandidateSear
     }
 
     private String pickDegree(List<Education> educations) {
-        if (educations == null) return "";
+        if (educations == null)
+            return "";
         return educations.stream()
                 .map(Education::getDegree)
                 .filter(d -> d != null && !d.isBlank())
@@ -226,18 +236,25 @@ public class EmployerCandidateSearchServiceImpl implements EmployerCandidateSear
     }
 
     private static String deriveLevel(Integer expYears) {
-        if (expYears == null) return "N/A";
-        if (expYears <= 0) return "FRESHER";
-        if (expYears <= 2) return "JUNIOR";
-        if (expYears <= 4) return "MIDDLE";
-        if (expYears <= 7) return "SENIOR";
+        if (expYears == null)
+            return "N/A";
+        if (expYears <= 0)
+            return "FRESHER";
+        if (expYears <= 2)
+            return "JUNIOR";
+        if (expYears <= 4)
+            return "MIDDLE";
+        if (expYears <= 7)
+            return "SENIOR";
         return "EXPERT";
     }
 
     private Optional<double[]> parseEmbedding(String raw) {
-        if (raw == null || raw.isBlank()) return Optional.empty();
+        if (raw == null || raw.isBlank())
+            return Optional.empty();
         try {
-            List<Double> values = objectMapper.readValue(raw, new TypeReference<>() {});
+            List<Double> values = objectMapper.readValue(raw, new TypeReference<>() {
+            });
             double[] arr = new double[values.size()];
             for (int i = 0; i < values.size(); i++) {
                 arr[i] = values.get(i) == null ? 0.0 : values.get(i);
@@ -249,9 +266,12 @@ public class EmployerCandidateSearchServiceImpl implements EmployerCandidateSear
     }
 
     private static double cosineSimilarity(double[] a, double[] b) {
-        if (a == null || b == null) return 0.0;
-        if (a.length == 0 || b.length == 0) return 0.0;
-        if (a.length != b.length) return 0.0;
+        if (a == null || b == null)
+            return 0.0;
+        if (a.length == 0 || b.length == 0)
+            return 0.0;
+        if (a.length != b.length)
+            return 0.0;
 
         double dot = 0.0;
         double normA = 0.0;
@@ -261,13 +281,16 @@ public class EmployerCandidateSearchServiceImpl implements EmployerCandidateSear
             normA += a[i] * a[i];
             normB += b[i] * b[i];
         }
-        if (normA == 0.0 || normB == 0.0) return 0.0;
+        if (normA == 0.0 || normB == 0.0)
+            return 0.0;
         return dot / (Math.sqrt(normA) * Math.sqrt(normB));
     }
 
-    private static double heuristicKeywordScore(String keyword, String name, String headline, String bio, List<Skill> skills) {
+    private static double heuristicKeywordScore(String keyword, String name, String headline, String bio,
+            List<Skill> skills) {
         String kw = keyword.toLowerCase(Locale.ROOT).trim();
-        if (kw.isEmpty()) return 0.0;
+        if (kw.isEmpty())
+            return 0.0;
 
         double score = 0.0;
         score += containsBoost(name, kw, 2.0);
@@ -283,14 +306,17 @@ public class EmployerCandidateSearchServiceImpl implements EmployerCandidateSear
     }
 
     private static double containsBoost(String value, String kw, double weight) {
-        if (value == null || value.isBlank()) return 0.0;
+        if (value == null || value.isBlank())
+            return 0.0;
         return value.toLowerCase(Locale.ROOT).contains(kw) ? weight : 0.0;
     }
 
     private static String normalizeAllValue(String value) {
-        if (value == null) return null;
+        if (value == null)
+            return null;
         String v = value.trim();
-        if (v.isEmpty()) return null;
+        if (v.isEmpty())
+            return null;
         return "all".equalsIgnoreCase(v) ? null : v;
     }
 
@@ -298,26 +324,35 @@ public class EmployerCandidateSearchServiceImpl implements EmployerCandidateSear
         return value == null ? "" : value;
     }
 
-    private record ScoredCandidate(UserProfile profile, double score) {}
+    private record ScoredCandidate(UserProfile profile, double score) {
+    }
 
     private static Integer combineMin(Integer a, Integer b) {
-        if (a == null) return b;
-        if (b == null) return a;
+        if (a == null)
+            return b;
+        if (b == null)
+            return a;
         return Math.max(a, b);
     }
 
     private static Integer combineMax(Integer a, Integer b) {
-        if (a == null) return b;
-        if (b == null) return a;
+        if (a == null)
+            return b;
+        if (b == null)
+            return a;
         return Math.min(a, b);
     }
 
     private record ExperienceRange(Integer minYears, Integer maxYears) {
         static ExperienceRange fromRaw(String raw) {
-            if (raw == null || raw.isBlank()) return new ExperienceRange(null, null);
-            if ("0".equals(raw)) return new ExperienceRange(0, 0);
-            if ("10+".equals(raw)) return new ExperienceRange(10, null);
-            if (!raw.contains("-")) return new ExperienceRange(null, null);
+            if (raw == null || raw.isBlank())
+                return new ExperienceRange(null, null);
+            if ("0".equals(raw))
+                return new ExperienceRange(0, 0);
+            if ("10+".equals(raw))
+                return new ExperienceRange(10, null);
+            if (!raw.contains("-"))
+                return new ExperienceRange(null, null);
             try {
                 String[] parts = raw.split("-");
                 Integer min = Integer.parseInt(parts[0].trim());
@@ -329,7 +364,8 @@ public class EmployerCandidateSearchServiceImpl implements EmployerCandidateSear
         }
 
         static ExperienceRange fromLevel(String level) {
-            if (level == null) return new ExperienceRange(null, null);
+            if (level == null)
+                return new ExperienceRange(null, null);
             return switch (level.toUpperCase()) {
                 case "INTERN", "FRESHER" -> new ExperienceRange(0, 0);
                 case "JUNIOR" -> new ExperienceRange(1, 2);

@@ -41,9 +41,8 @@ public class CVServiceImpl implements CVService {
         UserProfile profile = getOrCreateProfile(userId);
 
         List<CV> recentCVs = cvRepository.findTop3ByProfileIdOrderByUploadedAtDesc(
-                profile.getId(), 
-                PageRequest.of(0, MAX_CVS_PER_USER)
-        );
+                profile.getId(),
+                PageRequest.of(0, MAX_CVS_PER_USER));
 
         return recentCVs.stream()
                 .map(this::convertToResponse)
@@ -63,7 +62,7 @@ public class CVServiceImpl implements CVService {
 
         // Upload to S3
         String uploadedS3Key = s3Service.uploadFile(file, "cvs/user_" + userId);
-        
+
         // Get pre-signed URL for accessing the file
         String fileUrl = s3Service.getPreSignedUrl(uploadedS3Key);
 
@@ -90,11 +89,11 @@ public class CVServiceImpl implements CVService {
         UserProfile profile = getOrCreateProfile(userId);
 
         long cvCount = cvRepository.countByProfile_Id(profile.getId());
-        
+
         if (cvCount >= MAX_CVS_PER_USER) {
             // Find the oldest CV
             CV oldestCV = cvRepository.findFirstByProfile_IdOrderByUploadedAtAsc(profile.getId());
-            
+
             if (oldestCV != null) {
                 // Delete from S3 if s3Key exists
                 if (oldestCV.getS3Key() != null && !oldestCV.getS3Key().isEmpty()) {
@@ -105,7 +104,7 @@ public class CVServiceImpl implements CVService {
                         log.error("Failed to delete CV from S3: {}", oldestCV.getS3Key(), e);
                     }
                 }
-                
+
                 // Delete from database
                 cvRepository.delete(oldestCV);
                 log.info("Deleted oldest CV for user {}: {}", userId, oldestCV.getId());

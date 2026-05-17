@@ -23,8 +23,7 @@ public class CompanyAuditService {
             String reason,
             String note,
             String actor,
-            Long actorId
-    ) {
+            Long actorId) {
         CompanyAuditLog log = CompanyAuditLog.builder()
                 .company(company)
                 .action(action)

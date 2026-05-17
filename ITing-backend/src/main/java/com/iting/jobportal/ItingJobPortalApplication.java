@@ -6,7 +6,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
 import org.springframework.scheduling.annotation.EnableScheduling;
 
-@SpringBootApplication
+@SpringBootApplication(scanBasePackages = {"com.iting.jobportal", "com.iting.service"})
 @EnableScheduling
 public class ItingJobPortalApplication {
 
@@ -30,9 +30,7 @@ public class ItingJobPortalApplication {
                     "    / \\     |  _ \\ / _ \\     / \\  | \\ | |\n" +
                     "   / _ \\    | | | | | | |   / _ \\ |  \\| |\n" +
                     "  / ___ \\   | |_| | |_| |  / ___ \\| |\\  |\n" +
-                    " /_/   \\_\\  |____/ \\___/  /_/   \\_\\_| \\_|"
-            );
-
+                    " /_/   \\_\\  |____/ \\___/  /_/   \\_\\_| \\_|");
 
             System.out.println(cyan + "   >>>--- CUÙNG NHAU A ĐỒ ÁN :)" +
                     "! ---<<<" + reset + "\n");

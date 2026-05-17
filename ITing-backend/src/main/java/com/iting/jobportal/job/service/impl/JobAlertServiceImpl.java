@@ -45,13 +45,16 @@ public class JobAlertServiceImpl implements JobAlertService {
 
         List<Job> allJobs = new ArrayList<>();
         for (Long companyId : companyIds) {
-            Page<Job> companyJobs = jobRepository.findByCompany_IdAndStatus(companyId, JobStatus.ACTIVE, Pageable.unpaged());
+            Page<Job> companyJobs = jobRepository.findByCompany_IdAndStatus(companyId, JobStatus.ACTIVE,
+                    Pageable.unpaged());
             allJobs.addAll(companyJobs.getContent());
         }
 
         allJobs.sort((a, b) -> {
-            if (a.getCreatedAt() == null) return 1;
-            if (b.getCreatedAt() == null) return -1;
+            if (a.getCreatedAt() == null)
+                return 1;
+            if (b.getCreatedAt() == null)
+                return -1;
             return b.getCreatedAt().compareTo(a.getCreatedAt());
         });
 

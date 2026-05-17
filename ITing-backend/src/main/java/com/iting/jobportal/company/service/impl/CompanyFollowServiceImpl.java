@@ -7,6 +7,8 @@ import com.iting.jobportal.company.service.CompanyFollowService;
 import com.iting.jobportal.company.entity.UserFollowCompany;
 import com.iting.jobportal.company.repository.UserFollowCompanyRepository;
 import com.iting.jobportal.notification.entity.Notification;
+import com.iting.jobportal.notification.enums.NotificationType;
+import com.iting.jobportal.notification.enums.RecipientType;
 import com.iting.jobportal.notification.repository.NotificationRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -42,6 +44,17 @@ public class CompanyFollowServiceImpl implements CompanyFollowService {
                 .companyId(companyId)
                 .build();
 
+        Notification notification = Notification.builder()
+                .recipientId(userId)
+                .recipientType(RecipientType.USER)
+                .type(NotificationType.SYSTEM)
+                .content("Ban da theo doi cong ty " + company.getName())
+                .entityType("COMPANY")
+                .entityId(companyId)
+                .actionUrl("/companies/" + companyId)
+                .build();
+
+        notificationRepository.save(notification);
         userFollowCompanyRepository.save(follow);
     }
 
@@ -65,8 +78,10 @@ public class CompanyFollowServiceImpl implements CompanyFollowService {
     @Override
     public Page<FollowedCompanyResponse> getFollowedCompanies(Long userId, int page, int size) {
         // Validate pagination
-        if (page < 0) page = 0;
-        if (size <= 0 || size > 100) size = 10;
+        if (page < 0)
+            page = 0;
+        if (size <= 0 || size > 100)
+            size = 10;
 
         Pageable pageable = PageRequest.of(page, size, Sort.by("followDate").descending());
         Page<UserFollowCompany> followPage = userFollowCompanyRepository.findByUserId(userId, pageable);
@@ -85,8 +100,7 @@ public class CompanyFollowServiceImpl implements CompanyFollowService {
                     company.getName(),
                     company.getLogoUrl(),
                     company.getIndustries(),
-                    follow.getFollowDate()
-            );
+                    follow.getFollowDate());
         });
     }
 

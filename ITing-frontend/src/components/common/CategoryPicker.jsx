@@ -22,12 +22,12 @@ const CategoryPicker = ({ value, onChange }) => {
     const [selectedGroup, setSelectedGroup] = useState(null);
     const [selectedSubs, setSelectedSubs] = useState([]);
     const [coords, setCoords] = useState({ top: 0, left: 0, width: 0 });
-    
+
     const triggerRef = useRef(null);
     const modalRef = useRef(null);
 
     const filteredGroups = useMemo(() => {
-        return categoriesData.filter(g => 
+        return categoriesData.filter(g =>
             g.name.toLowerCase().includes(searchTerm.toLowerCase())
         );
     }, [searchTerm]);
@@ -57,7 +57,7 @@ const CategoryPicker = ({ value, onChange }) => {
 
     useEffect(() => {
         const handleClickOutside = (event) => {
-            if (modalRef.current && !modalRef.current.contains(event.target) && 
+            if (modalRef.current && !modalRef.current.contains(event.target) &&
                 triggerRef.current && !triggerRef.current.contains(event.target)) {
                 setIsOpen(false);
             }
@@ -101,7 +101,7 @@ const CategoryPicker = ({ value, onChange }) => {
     return (
         <div className="w-full h-full flex items-center">
             {/* Trigger Button */}
-            <div 
+            <div
                 ref={triggerRef}
                 onClick={() => setIsOpen(!isOpen)}
                 className="flex items-center gap-3 cursor-pointer w-full group py-1 h-full border-r border-gray-100 pr-4"
@@ -114,14 +114,14 @@ const CategoryPicker = ({ value, onChange }) => {
 
             {/* Dropdown Modal */}
             {isOpen && (
-                <div 
+                <div
                     ref={modalRef}
-                    style={{ 
-                        position: 'fixed', 
-                        top: coords.top - window.scrollY + 12, 
+                    style={{
+                        position: 'fixed',
+                        top: coords.top - window.scrollY + 12,
                         left: coords.left,
                         width: coords.width,
-                        zIndex: 10000 
+                        zIndex: 10000
                     }}
                     className="bg-white rounded-2xl shadow-[0_30px_70px_rgba(0,0,0,0.25)] border border-gray-100 overflow-hidden flex flex-col animate-in fade-in slide-in-from-top-4 duration-300"
                 >
@@ -133,7 +133,7 @@ const CategoryPicker = ({ value, onChange }) => {
                         </div>
                         <div className="relative mx-2">
                             <FaSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
-                            <input 
+                            <input
                                 type="text"
                                 placeholder="Nhập từ khóa tìm kiếm"
                                 value={searchTerm}
@@ -151,7 +151,7 @@ const CategoryPicker = ({ value, onChange }) => {
                             </div>
                             <div className="flex-1 overflow-y-auto custom-scrollbar p-1">
                                 {filteredGroups.map(g => (
-                                    <div 
+                                    <div
                                         key={g.id}
                                         onClick={() => handleGroupSelect(g)}
                                         className={`flex items-center justify-between px-4 py-3.5 rounded-xl cursor-pointer mb-1 transition-all ${selectedGroup?.id === g.id ? 'bg-[#EBF8FF] text-[#3AB4E6]' : 'hover:bg-gray-50 text-gray-600'}`}
@@ -183,7 +183,7 @@ const CategoryPicker = ({ value, onChange }) => {
                                 ) : (
                                     <div className="grid grid-cols-2 gap-x-8 gap-y-4">
                                         {selectedGroup.sub.map(sub => (
-                                            <div 
+                                            <div
                                                 key={sub}
                                                 onClick={() => toggleSub(sub)}
                                                 className="flex items-start gap-3 cursor-pointer group"

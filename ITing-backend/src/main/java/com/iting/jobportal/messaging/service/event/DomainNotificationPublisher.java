@@ -13,7 +13,8 @@ public class DomainNotificationPublisher {
 
     private final NotificationService notificationService;
 
-    public void notifyUser(Long userId, NotificationType type, String content, String entityType, Long entityId, String actionUrl) {
+    public void notifyUser(Long userId, NotificationType type, String content, String entityType, Long entityId,
+            String actionUrl) {
         notificationService.createNotification(CreateNotificationRequest.builder()
                 .recipientId(userId)
                 .recipientType(RecipientType.USER)
@@ -25,7 +26,8 @@ public class DomainNotificationPublisher {
                 .build());
     }
 
-    public void notifyCompany(Long companyId, NotificationType type, String content, String entityType, Long entityId, String actionUrl) {
+    public void notifyCompany(Long companyId, NotificationType type, String content, String entityType, Long entityId,
+            String actionUrl) {
         notificationService.createNotification(CreateNotificationRequest.builder()
                 .recipientId(companyId)
                 .recipientType(RecipientType.COMPANY)

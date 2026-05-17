@@ -3,9 +3,11 @@ import { useForm } from "react-hook-form";
 import { Save, User } from "lucide-react";
 import { Button, Input, Card } from "../../../../components/common";
 import axiosInstance from "../../../../utils/axiosInstance";
+import { toast } from "sonner";
 
 export default function BasicInfoSection() {
     const [isSaving, setIsSaving] = useState(false);
+    const [isLoading, setIsLoading] = useState(true);
 
     const {
         register,
@@ -26,36 +28,27 @@ export default function BasicInfoSection() {
     useEffect(() => {
         const fetchBasicInfo = async () => {
             try {
+                setIsLoading(true);
                 const data = await axiosInstance.get('/user/professional-profile');
 
                 if (data) {
-                    const mappedData = {
+                    reset({
                         headline: data.headline || "",
                         experience: data.totalExperienceYears || 0,
                         education: data.educationSummary || "",
                         location: data.location || "",
                         shortBio: data.shortBio || "",
-                    };
-
-                    console.log("🛠 RESET DATA:", mappedData);
-                    reset(mappedData);
-                    console.log("🔁 RESET FORM DONE");
+                    });
                 }
             } catch (error) {
                 console.error("❌ Failed to fetch professional profile", error);
+            } finally {
+                setIsLoading(false);
             }
         };
 
         fetchBasicInfo();
     }, [reset]);
-
-
-    useEffect(() => {
-        const subscription = watch((value) => {
-            console.log("🧠 FORM VALUE:", value);
-        });
-        return () => subscription.unsubscribe();
-    }, [watch]);
 
     const onSubmit = async (data) => {
         setIsSaving(true);
@@ -66,17 +59,28 @@ export default function BasicInfoSection() {
                 totalExperienceYears: parseInt(data.experience, 10),
                 educationSummary: data.education,
                 shortBio: data.shortBio,
-                employmentStatus: "ACTIVELY_LOOKING", // default or maybe add field later
+                employmentStatus: "ACTIVELY_LOOKING",
                 openToWork: true
             });
-            alert("Thông tin cơ bản đã được cập nhật!");
+            toast.success("Thông tin cơ bản đã được cập nhật!");
         } catch (error) {
             console.error("Failed to update professional profile", error);
-            alert("Có lỗi xảy ra khi cập nhật!");
+            toast.error("Có lỗi xảy ra khi cập nhật!");
         } finally {
             setIsSaving(false);
         }
     };
+
+    if (isLoading) {
+        return (
+            <Card className="p-6">
+                <div className="flex flex-col items-center justify-center py-10 gap-3">
+                    <div className="w-10 h-10 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+                    <p className="text-sm text-gray-500">Đang tải thông tin...</p>
+                </div>
+            </Card>
+        );
+    }
 
     return (
         <Card className="p-6">

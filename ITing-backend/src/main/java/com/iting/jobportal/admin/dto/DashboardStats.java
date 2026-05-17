@@ -10,19 +10,19 @@ public class DashboardStats {
     // Tổng quan
     private long totalUsers;
     private double userChange; // % thay đổi so với hôm qua
-    
+
     private long totalJobs;
     private double jobChange; // % thay đổi so với hôm qua
-    
+
     private long totalApplications;
     private double applicationChange; // % thay đổi so với hôm qua
-    
+
     private long pendingApplications;
     private double pendingChange; // % thay đổi so với hôm qua
-    
+
     // Thống kê biểu đồ (7 ngày gần nhất)
     private List<ChartRecord> chartData;
-    
+
     // Hoạt động gần đây
     private List<RecentJobActivity> recentActivities;
 
@@ -44,4 +44,3 @@ public class DashboardStats {
         private String status;
     }
 }
-

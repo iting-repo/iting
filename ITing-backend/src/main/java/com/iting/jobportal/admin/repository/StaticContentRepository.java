@@ -15,6 +15,7 @@ public interface StaticContentRepository extends JpaRepository<StaticContent, Lo
 
     Page<StaticContent> findByType(String type, Pageable pageable);
 
+<<<<<<< HEAD
     Page<StaticContent> findByTypeAndPublished(String type, Boolean published, Pageable pageable);
 
     Page<StaticContent> findByTypeAndTitleContainingIgnoreCase(String type, String title, Pageable pageable);
@@ -22,6 +23,7 @@ public interface StaticContentRepository extends JpaRepository<StaticContent, Lo
     Page<StaticContent> findByTypeAndPublishedAndTitleContainingIgnoreCase(
             String type, Boolean published, String title, Pageable pageable);
 
+=======
+>>>>>>> b0482a2a10970508963820b95c22492a2f9db0f8
     boolean existsBySlug(String slug);
 }
-

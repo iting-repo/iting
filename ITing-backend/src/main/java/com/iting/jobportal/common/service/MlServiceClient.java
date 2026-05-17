@@ -34,10 +34,12 @@ public interface MlServiceClient {
     /**
      * Result of reranking operation.
      */
-    record RankedResult(Long id, double score) {}
+    record RankedResult(Long id, double score) {
+    }
 
     /**
      * Extracted skill with category.
      */
-    record ExtractedSkill(String skill, String category) {}
+    record ExtractedSkill(String skill, String category) {
+    }
 }

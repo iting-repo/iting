@@ -68,7 +68,8 @@ public class AdminContentServiceImpl implements AdminContentService {
 
         // Check duplicate name within the same type
         if (categoryRepository.existsByTypeAndName(normalizedType, request.getName().trim())) {
-            throw new IllegalArgumentException("Danh mục '" + request.getName() + "' đã tồn tại trong loại " + normalizedType);
+            throw new IllegalArgumentException(
+                    "Danh mục '" + request.getName() + "' đã tồn tại trong loại " + normalizedType);
         }
 
         int nextOrder = categoryRepository.findMaxSortOrderByType(normalizedType) + 1;
@@ -103,7 +104,8 @@ public class AdminContentServiceImpl implements AdminContentService {
 
         // Check duplicate name within the same type (excluding itself)
         if (categoryRepository.existsByTypeAndNameAndIdNot(existing.getType(), request.getName().trim(), id)) {
-            throw new IllegalArgumentException("Danh mục '" + request.getName() + "' đã tồn tại trong loại " + existing.getType());
+            throw new IllegalArgumentException(
+                    "Danh mục '" + request.getName() + "' đã tồn tại trong loại " + existing.getType());
         }
 
         existing.setName(request.getName().trim());
@@ -194,8 +196,10 @@ public class AdminContentServiceImpl implements AdminContentService {
     }
 
     @Override
-    public void publishStaticContent(Long id) {}
+    public void publishStaticContent(Long id) {
+    }
 
     @Override
-    public void unpublishStaticContent(Long id) {}
+    public void unpublishStaticContent(Long id) {
+    }
 }

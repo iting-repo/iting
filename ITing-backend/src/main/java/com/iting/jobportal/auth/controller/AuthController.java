@@ -26,7 +26,7 @@ import java.util.Map;
 
 import lombok.extern.slf4j.Slf4j;
 
-@Tag(name ="01. Auth")
+@Tag(name = "01. Auth")
 @RestController
 @RequestMapping("/api/auth")
 @RequiredArgsConstructor
@@ -82,7 +82,7 @@ public class AuthController {
             @Valid @RequestBody ChangePasswordRequest request) {
         authService.changePassword(accountId, request);
     }
-    
+
     @PostMapping("/forgot-password")
     @RateLimited(policy = RateLimitPolicy.OTP)
     public ResponseEntity<?> forgotPassword(@Valid @RequestBody ForgotPasswordRequest request) {
@@ -95,10 +95,9 @@ public class AuthController {
         passwordResetService.resetPassword(request.getEmail(), request.getOtpCode(), request.getNewPassword());
         return ResponseEntity.ok(Map.of("message", "Mật khẩu đã được đặt lại thành công"));
     }
-    
+
     @GetMapping("/me")
     public ResponseEntity<?> getMe(@CurrentUser Long accountId) {
         return ResponseEntity.ok(authService.getMeResponse(accountId));
     }
 }
-    
