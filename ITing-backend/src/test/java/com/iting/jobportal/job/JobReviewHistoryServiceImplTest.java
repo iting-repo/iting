@@ -4,7 +4,7 @@ import com.iting.jobportal.job.entity.Job;
 import com.iting.jobportal.job.entity.JobReviewHistory;
 import com.iting.jobportal.job.entity.enums.JobReviewAction;
 import com.iting.jobportal.job.repository.JobReviewHistoryRepository;
-import com.iting.jobportal.job.service.JobReviewHistoryServiceImpl;
+import com.iting.jobportal.job.service.impl.JobReviewHistoryServiceImpl;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;

@@ -48,4 +48,3 @@ public class JobApplication {
     private LocalDateTime updatedAt;
 
 }
-

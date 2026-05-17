@@ -16,8 +16,8 @@ public class LoginResponse {
     private Long userId;
     private String email;
     private String role;
-    private String accessToken;      // JWT access token
-    private String refreshToken;    // Refresh token
-    private String tokenType;       // "Bearer"
-    private Long expiresIn;         // Access token expiry in seconds
+    private String accessToken; // JWT access token
+    private String refreshToken; // Refresh token
+    private String tokenType; // "Bearer"
+    private Long expiresIn; // Access token expiry in seconds
 }

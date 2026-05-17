@@ -49,7 +49,7 @@ public class S3ServiceImpl implements S3Service {
                     .contentType(file.getContentType())
                     .build();
 
-            s3Client.putObject(putObjectRequest, 
+            s3Client.putObject(putObjectRequest,
                     RequestBody.fromInputStream(file.getInputStream(), file.getSize()));
 
             log.info("Successfully uploaded file to S3: {}", s3Key);

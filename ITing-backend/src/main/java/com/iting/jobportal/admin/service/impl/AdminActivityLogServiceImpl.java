@@ -48,12 +48,14 @@ public class AdminActivityLogServiceImpl implements AdminActivityLogService {
     }
 
     @Override
-    public Page<AuditLogResponse> getAuditLogs(String category, Long performerId, String action, String search, int page, int size) {
+    public Page<AuditLogResponse> getAuditLogs(String category, Long performerId, String action, String search,
+            int page, int size) {
         Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
-        
-        // This is a simplified filtering. In production, use Specification or QueryDSL for multiple filters.
+
+        // This is a simplified filtering. In production, use Specification or QueryDSL
+        // for multiple filters.
         Page<ActivityLog> logs = activityLogRepository.findAll(pageable);
-        
+
         return logs.map(this::mapToAuditResponse);
     }
 
@@ -63,7 +65,8 @@ public class AdminActivityLogServiceImpl implements AdminActivityLogService {
                 .timestamp(log.getCreatedAt())
                 .category(log.getEntityType())
                 .action(log.getAction())
-                .target(log.getTargetName() != null ? log.getTargetName() : (log.getEntityType() + " #" + log.getEntityId()))
+                .target(log.getTargetName() != null ? log.getTargetName()
+                        : (log.getEntityType() + " #" + log.getEntityId()))
                 .detail(log.getDescription())
                 .fromStatus(log.getFromStatus())
                 .toStatus(log.getToStatus())
@@ -75,7 +78,7 @@ public class AdminActivityLogServiceImpl implements AdminActivityLogService {
         if (accountOpt.isPresent()) {
             Account account = accountOpt.get();
             response.setPerformerRole(account.getRole().toString());
-            
+
             // Try to get Admin name
             Optional<Admin> adminOpt = adminRepository.findById(account.getId());
             if (adminOpt.isPresent()) {

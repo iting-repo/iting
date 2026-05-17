@@ -40,7 +40,8 @@ public class UserSavedJobController {
             @PathVariable Long jobId) {
         userSavedJobService.saveJob(userId, jobId);
         if (userId != null) {
-            interactionService.trackInteraction(userId, jobId, com.iting.jobportal.recommendation.entity.enums.InteractionType.SAVE);
+            interactionService.trackInteraction(userId, jobId,
+                    com.iting.jobportal.recommendation.entity.enums.InteractionType.SAVE);
         }
         return ResponseEntity.ok(Map.of("message", "Job saved successfully"));
     }

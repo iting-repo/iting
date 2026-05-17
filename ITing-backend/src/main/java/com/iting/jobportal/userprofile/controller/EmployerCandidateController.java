@@ -28,7 +28,8 @@ public class EmployerCandidateController {
     @PostMapping("/search")
     @PreAuthorize("hasRole('EMPLOYER')")
     @Operation(summary = "Tìm kiếm ứng viên (AI embedding similarity + filters)")
-    public ResponseEntity<Page<EmployerCandidateSearchResponse>> search(@RequestBody EmployerCandidateSearchRequest request) {
+    public ResponseEntity<Page<EmployerCandidateSearchResponse>> search(
+            @RequestBody EmployerCandidateSearchRequest request) {
         return ResponseEntity.ok(employerCandidateSearchService.search(request));
     }
 
@@ -39,4 +40,3 @@ public class EmployerCandidateController {
         return ResponseEntity.ok(employerCandidateSearchService.getCandidateFullProfile(candidateId));
     }
 }
-

@@ -12,4 +12,4 @@ public class SocialLinkRequest {
 
     @NotBlank(message = "URL is required")
     private String url;
-}
+}

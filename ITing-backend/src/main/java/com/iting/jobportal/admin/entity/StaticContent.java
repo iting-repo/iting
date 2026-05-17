@@ -20,10 +20,10 @@ public class StaticContent extends AuditEntity {
     private Long id;
 
     @Column(nullable = false, length = 50, unique = true)
-    private String slug;  // about, faq, terms, privacy, blog-xxx
+    private String slug; // about, faq, terms, privacy, blog-xxx
 
     @Column(nullable = false, length = 50)
-    private String type;  // PAGE, FAQ, BLOG
+    private String type; // PAGE, FAQ, BLOG
 
     private String title;
 
@@ -51,8 +51,11 @@ public class StaticContent extends AuditEntity {
 
     @PrePersist
     protected void onCreate() {
-        if (published == null) published = false;
-        if (viewCount == null) viewCount = 0L;
-        if (sortOrder == null) sortOrder = 0;
+        if (published == null)
+            published = false;
+        if (viewCount == null)
+            viewCount = 0L;
+        if (sortOrder == null)
+            sortOrder = 0;
     }
 }

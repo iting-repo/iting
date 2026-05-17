@@ -25,7 +25,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
-import java.util.concurrent.CompletableFuture;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -62,7 +61,7 @@ public class MessageServiceImpl implements MessageService {
 
         // Get or create conversation
         Conversation conversation;
-        
+
         if (request.getConversationId() != null) {
             // Use existing conversation
             conversation = conversationRepository.findById(request.getConversationId())
@@ -70,19 +69,18 @@ public class MessageServiceImpl implements MessageService {
         } else {
             // Create new conversation
             ConversationType conversationType = determineConversationType(request);
-            
+
             // Check if conversation already exists
             conversation = conversationRepository.findByParticipantsAndType(
-                    senderId, request.getReceiverId(), conversationType
-            ).orElseGet(() -> {
-                // Create new conversation
-                Conversation newConv = Conversation.builder()
-                        .type(conversationType)
-                        .participant1Id(senderId)
-                        .participant2Id(request.getReceiverId())
-                        .build();
-                return conversationRepository.save(newConv);
-            });
+                    senderId, request.getReceiverId(), conversationType).orElseGet(() -> {
+                        // Create new conversation
+                        Conversation newConv = Conversation.builder()
+                                .type(conversationType)
+                                .participant1Id(senderId)
+                                .participant2Id(request.getReceiverId())
+                                .build();
+                        return conversationRepository.save(newConv);
+                    });
         }
 
         // Create message
@@ -118,37 +116,33 @@ public class MessageServiceImpl implements MessageService {
                 .createdAt(savedMessage.getCreatedAt())
                 .build();
 
-        // Fire notification asynchronously — don't block the response
+        // Fire notification (non-blocking errors)
         final Long convId = conversation.getId();
-        CompletableFuture.runAsync(() -> {
-            try {
-                String senderDisplayName = resolveSenderName(savedMessage);
-                String contentPreview = request.getContent();
-                if (contentPreview != null && contentPreview.length() > 120) {
-                    contentPreview = contentPreview.substring(0, 120) + "...";
-                }
-
-                if (request.getReceiverType() == ReceiverType.USER) {
-                    domainNotificationPublisher.notifyUser(
-                            request.getReceiverId(),
-                            NotificationType.MESSAGE_NEW,
-                            "New message from " + senderDisplayName + ": " + contentPreview,
-                            "CONVERSATION", convId,
-                            "/messages?conversationId=" + convId
-                    );
-                } else {
-                    domainNotificationPublisher.notifyCompany(
-                            request.getReceiverId(),
-                            NotificationType.MESSAGE_NEW,
-                            "New message from " + senderDisplayName + ": " + contentPreview,
-                            "CONVERSATION", convId,
-                            "/messages?conversationId=" + convId
-                    );
-                }
-            } catch (Exception e) {
-                // Log but don't fail the send
+        try {
+            String senderDisplayName = resolveSenderName(savedMessage);
+            String contentPreview = request.getContent();
+            if (contentPreview != null && contentPreview.length() > 120) {
+                contentPreview = contentPreview.substring(0, 120) + "...";
             }
-        });
+
+            if (request.getReceiverType() == ReceiverType.USER) {
+                domainNotificationPublisher.notifyUser(
+                        request.getReceiverId(),
+                        NotificationType.MESSAGE_NEW,
+                        "New message from " + senderDisplayName + ": " + contentPreview,
+                        "CONVERSATION", convId,
+                        "/messages?conversationId=" + convId);
+            } else {
+                domainNotificationPublisher.notifyCompany(
+                        request.getReceiverId(),
+                        NotificationType.MESSAGE_NEW,
+                        "New message from " + senderDisplayName + ": " + contentPreview,
+                        "CONVERSATION", convId,
+                        "/messages?conversationId=" + convId);
+            }
+        } catch (Exception e) {
+            // Log but don't fail the send
+        }
 
         return response;
     }
@@ -156,11 +150,14 @@ public class MessageServiceImpl implements MessageService {
     @Override
     public Page<MessageResponse> getMessagesByConversation(Long conversationId, int page, int size) {
         // Validate pagination
-        if (page < 0) page = 0;
-        if (size <= 0 || size > 100) size = 20;
+        if (page < 0)
+            page = 0;
+        if (size <= 0 || size > 100)
+            size = 20;
 
         Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
-        Page<Message> messagePage = messageRepository.findByConversationIdOrderByCreatedAtDesc(conversationId, pageable);
+        Page<Message> messagePage = messageRepository.findByConversationIdOrderByCreatedAtDesc(conversationId,
+                pageable);
 
         return messagePage.map(this::convertToMessageResponse);
     }
@@ -305,7 +302,8 @@ public class MessageServiceImpl implements MessageService {
                     return companyRepository.findById(message.getSenderId())
                             .map(Company::getName).orElse("Someone");
             }
-        } catch (Exception ignored) {}
+        } catch (Exception ignored) {
+        }
         return "Someone";
     }
 }

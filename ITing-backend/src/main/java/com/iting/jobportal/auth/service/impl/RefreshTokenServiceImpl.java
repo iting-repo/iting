@@ -75,7 +75,7 @@ public class RefreshTokenServiceImpl implements RefreshTokenService {
     @Transactional
     public TokenResponse refreshToken(RefreshTokenRequest request) {
         String refreshToken = request.getRefreshToken();
-        
+
         // Validate refresh token
         if (!validateRefreshToken(refreshToken)) {
             throw new RuntimeException("Invalid refresh token");
@@ -84,7 +84,7 @@ public class RefreshTokenServiceImpl implements RefreshTokenService {
         // Get token from database
         String tokenId = refreshTokenUtil.getTokenId(refreshToken);
         RefreshToken storedToken = getRefreshTokenByTokenId(tokenId);
-        
+
         if (storedToken == null || !storedToken.isValid()) {
             throw new RuntimeException("Refresh token is not valid");
         }
@@ -92,7 +92,7 @@ public class RefreshTokenServiceImpl implements RefreshTokenService {
         // Get user information
         Long userId = storedToken.getUserId();
         String email = storedToken.getEmail();
-        
+
         Account account = accountRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
@@ -112,11 +112,10 @@ public class RefreshTokenServiceImpl implements RefreshTokenService {
 
         // Create new refresh token
         RefreshToken newRefreshToken = createRefreshToken(
-                userId, 
-                email, 
-                request.getDeviceInfo(), 
-                request.getIpAddress()
-        );
+                userId,
+                email,
+                request.getDeviceInfo(),
+                request.getIpAddress());
 
         return TokenResponse.builder()
                 .accessToken(newAccessToken)

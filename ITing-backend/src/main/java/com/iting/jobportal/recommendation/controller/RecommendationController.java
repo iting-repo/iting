@@ -36,11 +36,12 @@ public class RecommendationController {
     public ResponseEntity<?> trackInteraction(
             @CurrentUser Long userId,
             @RequestBody Map<String, Object> request) {
-        if (userId == null) return ResponseEntity.ok().build();
+        if (userId == null)
+            return ResponseEntity.ok().build();
 
         Long jobId = Long.valueOf(request.get("jobId").toString());
         InteractionType type = InteractionType.valueOf(request.get("type").toString());
-        
+
         interactionService.trackInteraction(userId, jobId, type);
         return ResponseEntity.ok().build();
     }
@@ -50,11 +51,12 @@ public class RecommendationController {
     public ResponseEntity<?> trackSearch(
             @CurrentUser Long userId,
             @RequestBody Map<String, String> request) {
-        if (userId == null) return ResponseEntity.ok().build();
+        if (userId == null)
+            return ResponseEntity.ok().build();
 
         String keyword = request.get("keyword");
         String location = request.get("location");
-        
+
         interactionService.trackSearch(userId, keyword, location);
         return ResponseEntity.ok().build();
     }

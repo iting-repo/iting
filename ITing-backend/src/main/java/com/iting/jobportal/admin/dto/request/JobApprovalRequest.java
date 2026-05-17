@@ -7,7 +7,6 @@ import jakarta.validation.constraints.NotNull;
 public class JobApprovalRequest {
     @NotNull
     private Boolean approved;
-    
-    private String rejectReason;  // Nếu từ chối
-}
 
+    private String rejectReason; // Nếu từ chối
+}

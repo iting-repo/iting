@@ -7,6 +7,6 @@ import com.iting.jobportal.userprofile.dto.response.CandidateFullProfileResponse
 
 public interface EmployerCandidateSearchService {
     Page<EmployerCandidateSearchResponse> search(EmployerCandidateSearchRequest request);
+
     CandidateFullProfileResponse getCandidateFullProfile(Long candidateId);
 }
-

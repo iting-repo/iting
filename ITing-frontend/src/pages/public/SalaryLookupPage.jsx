@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Breadcrumb } from '../../components/common';
-import { 
+import {
   FaSearch, FaArrowRight, FaChevronDown, FaChevronUp
 } from 'react-icons/fa';
 import { Line, Bar } from 'react-chartjs-2';
@@ -50,10 +50,10 @@ const SalaryLookupPage = () => {
   const fetchReport = async () => {
     setIsLoading(true);
     try {
-      const data = await publicService.getSalaryReport({ 
-        keyword, 
-        location: location || undefined, 
-        experience: experience || undefined 
+      const data = await publicService.getSalaryReport({
+        keyword,
+        location: location || undefined,
+        experience: experience || undefined
       });
       setReport(data);
     } catch (error) {
@@ -189,8 +189,8 @@ const SalaryLookupPage = () => {
   const formatSalary = (min, max) => {
     if (!min && !max) return "Thỏa thuận";
     if (min >= 1000000) {
-        const fmt = (n) => (n / 1000000).toFixed(0);
-        return `${fmt(min)} - ${fmt(max)} triệu`;
+      const fmt = (n) => (n / 1000000).toFixed(0);
+      return `${fmt(min)} - ${fmt(max)} triệu`;
     }
     return `${min} - ${max}`;
   };
@@ -198,11 +198,11 @@ const SalaryLookupPage = () => {
   return (
     <div className="min-h-screen bg-[#F8FAFC] pb-20">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <Breadcrumb 
+        <Breadcrumb
           items={[
             { label: 'Tra cứu mức lương', link: '/salary-lookup' },
             { label: keyword }
-          ]} 
+          ]}
         />
 
         <div className="mt-4 mb-8">
@@ -215,8 +215,8 @@ const SalaryLookupPage = () => {
         <div className="bg-white p-4 rounded-3xl shadow-sm border border-gray-100 flex flex-wrap lg:flex-nowrap items-center gap-4 mb-10">
           <div className="flex-1 min-w-[200px] relative">
             <FaSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
-            <input 
-              type="text" 
+            <input
+              type="text"
               value={keyword}
               onChange={(e) => setKeyword(e.target.value)}
               placeholder="Nhập tên vị trí công việc"
@@ -225,7 +225,7 @@ const SalaryLookupPage = () => {
           </div>
           <div className="hidden lg:block w-px h-8 bg-gray-200"></div>
           <div className="flex-1 min-w-[150px] relative">
-            <select 
+            <select
               value={location}
               onChange={(e) => setLocation(e.target.value)}
               className="w-full appearance-none bg-transparent border-none focus:ring-0 text-gray-600 font-medium py-3 px-4 cursor-pointer"
@@ -239,7 +239,7 @@ const SalaryLookupPage = () => {
           </div>
           <div className="hidden lg:block w-px h-8 bg-gray-200"></div>
           <div className="flex-1 min-w-[150px] relative">
-            <select 
+            <select
               value={experience}
               onChange={(e) => setExperience(e.target.value)}
               className="w-full appearance-none bg-transparent border-none focus:ring-0 text-gray-600 font-medium py-3 px-4 cursor-pointer"
@@ -252,7 +252,7 @@ const SalaryLookupPage = () => {
             </select>
             <FaChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
           </div>
-          <button 
+          <button
             onClick={fetchReport}
             disabled={isLoading}
             className="bg-[#3AB4E6] hover:bg-[#2da0d0] text-white font-bold px-8 py-3 rounded-2xl transition-all shadow-lg shadow-sky-500/20 disabled:opacity-50"
@@ -284,22 +284,22 @@ const SalaryLookupPage = () => {
               <span>{report?.maxSalary || 100}</span>
             </div>
             <div className="h-6 w-full flex rounded-full overflow-hidden">
-               <div className="bg-gray-200 w-[15%]"></div>
-               <div className="bg-[#93D9F8] w-[20%]"></div>
-               <div className="bg-[#3AB4E6] w-[65%]"></div>
+              <div className="bg-gray-200 w-[15%]"></div>
+              <div className="bg-[#93D9F8] w-[20%]"></div>
+              <div className="bg-[#3AB4E6] w-[65%]"></div>
             </div>
             <div className="flex justify-between items-start mt-2">
               <div className="ml-[15%] text-center">
-                 <div className="w-px h-4 bg-gray-300 mx-auto"></div>
-                 <span className="text-xs text-gray-500">{report?.minSalary || 0}</span>
+                <div className="w-px h-4 bg-gray-300 mx-auto"></div>
+                <span className="text-xs text-gray-500">{report?.minSalary || 0}</span>
               </div>
               <div className="absolute left-1/4 mt-8 text-center translate-x-12">
-                 <div className="w-px h-8 border-l border-dashed border-[#3AB4E6] mx-auto"></div>
-                 <span className="text-xs text-[#3AB4E6] font-bold">TB: {report?.averageSalary || 0} Tr/Tháng</span>
+                <div className="w-px h-8 border-l border-dashed border-[#3AB4E6] mx-auto"></div>
+                <span className="text-xs text-[#3AB4E6] font-bold">TB: {report?.averageSalary || 0} Tr/Tháng</span>
               </div>
               <div className="mr-[65%] text-center">
-                 <div className="w-px h-4 bg-gray-300 mx-auto"></div>
-                 <span className="text-xs text-gray-500">{report?.maxSalary || 0}</span>
+                <div className="w-px h-4 bg-gray-300 mx-auto"></div>
+                <span className="text-xs text-gray-500">{report?.maxSalary || 0}</span>
               </div>
             </div>
           </div>
@@ -310,7 +310,7 @@ const SalaryLookupPage = () => {
           <div className="bg-white rounded-3xl p-8 shadow-sm border border-gray-100">
             <h2 className="text-2xl font-bold text-gray-800 mb-1">Theo kinh nghiệm</h2>
             <p className="text-gray-400 text-xs mb-8">Lương trung bình/tháng vị trí <span className="font-bold">{keyword}</span> phân tích theo <span className="font-bold">kinh nghiệm</span></p>
-            
+
             <div className="h-[300px]">
               {report?.experienceStats?.length > 0 ? (
                 <Line data={experienceChartData} options={experienceChartOptions} />
@@ -323,7 +323,7 @@ const SalaryLookupPage = () => {
           <div className="bg-white rounded-3xl p-8 shadow-sm border border-gray-100">
             <h2 className="text-2xl font-bold text-gray-800 mb-1">Theo khu vực</h2>
             <p className="text-gray-400 text-xs mb-8">Lương trung bình/tháng vị trí <span className="font-bold">{keyword}</span> phân tích theo <span className="font-bold">các khu vực</span></p>
-            
+
             <div className="h-[300px]">
               {report?.locationStats?.length > 0 ? (
                 <Bar data={locationChartData} options={locationChartOptions} plugins={[barLabelPlugin]} />
@@ -336,82 +336,82 @@ const SalaryLookupPage = () => {
 
         {/* High Salary Jobs */}
         <div className="bg-white rounded-3xl p-8 shadow-sm border border-gray-100 mb-8">
-           <div className="flex justify-between items-center mb-6">
-              <div>
-                <h2 className="text-2xl font-bold text-gray-800">Việc làm {keyword} lương cao</h2>
-                <p className="text-gray-400 text-xs mt-1">Top việc làm lương cao cho vị trí {keyword}</p>
-              </div>
-           </div>
+          <div className="flex justify-between items-center mb-6">
+            <div>
+              <h2 className="text-2xl font-bold text-gray-800">Việc làm {keyword} lương cao</h2>
+              <p className="text-gray-400 text-xs mt-1">Top việc làm lương cao cho vị trí {keyword}</p>
+            </div>
+          </div>
 
-           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {report?.highSalaryJobs?.map((job, i) => (
-                <div key={i} className="border border-gray-100 rounded-2xl p-6 hover:shadow-lg transition-all group cursor-pointer" onClick={() => navigate(buildJobDetailPath(job))}>
-                   <div className="flex gap-4">
-                      <div className="shrink-0">
-                         <CompanyLogo 
-                            logoUrl={job.companyLogo} 
-                            companyName={job.companyName}
-                            className="w-16 h-16 rounded-xl bg-gray-50 border border-gray-100 p-2 object-contain" 
-                         />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                         <h3 className="font-bold text-gray-800 group-hover:text-[#3AB4E6] transition-colors line-clamp-2">{job.title || job.position}</h3>
-                         <p className="text-xs text-gray-400 mt-1 uppercase truncate">{job.companyName}</p>
-                         <div className="flex flex-wrap gap-2 mt-4">
-                            <span className="px-3 py-1 bg-sky-50 text-[#3AB4E6] text-[10px] font-black rounded-lg border border-sky-100">
-                                {formatSalary(job.minSalary, job.maxSalary)}
-                            </span>
-                            <span className="px-3 py-1 bg-gray-50 text-gray-500 text-[10px] font-bold rounded-lg border border-gray-100">{job.province || job.location}</span>
-                            <span className="px-3 py-1 bg-gray-50 text-gray-500 text-[10px] font-bold rounded-lg border border-gray-100">{job.experienceLevel}</span>
-                         </div>
-                      </div>
-                   </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {report?.highSalaryJobs?.map((job, i) => (
+              <div key={i} className="border border-gray-100 rounded-2xl p-6 hover:shadow-lg transition-all group cursor-pointer" onClick={() => navigate(buildJobDetailPath(job))}>
+                <div className="flex gap-4">
+                  <div className="shrink-0">
+                    <CompanyLogo
+                      logoUrl={job.companyLogo}
+                      companyName={job.companyName}
+                      className="w-16 h-16 rounded-xl bg-gray-50 border border-gray-100 p-2 object-contain"
+                    />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <h3 className="font-bold text-gray-800 group-hover:text-[#3AB4E6] transition-colors line-clamp-2">{job.title || job.position}</h3>
+                    <p className="text-xs text-gray-400 mt-1 uppercase truncate">{job.companyName}</p>
+                    <div className="flex flex-wrap gap-2 mt-4">
+                      <span className="px-3 py-1 bg-sky-50 text-[#3AB4E6] text-[10px] font-black rounded-lg border border-sky-100">
+                        {formatSalary(job.minSalary, job.maxSalary)}
+                      </span>
+                      <span className="px-3 py-1 bg-gray-50 text-gray-500 text-[10px] font-bold rounded-lg border border-gray-100">{job.province || job.location}</span>
+                      <span className="px-3 py-1 bg-gray-50 text-gray-500 text-[10px] font-bold rounded-lg border border-gray-100">{job.experienceLevel}</span>
+                    </div>
+                  </div>
                 </div>
-              ))}
-              {(!report?.highSalaryJobs || report.highSalaryJobs.length === 0) && (
-                <div className="col-span-2 text-center py-10 text-gray-400">Không tìm thấy việc làm liên quan</div>
-              )}
-           </div>
+              </div>
+            ))}
+            {(!report?.highSalaryJobs || report.highSalaryJobs.length === 0) && (
+              <div className="col-span-2 text-center py-10 text-gray-400">Không tìm thấy việc làm liên quan</div>
+            )}
+          </div>
         </div>
 
         {/* Notes / FAQ */}
         <div className="space-y-4 mb-8">
-           <h3 className="font-bold text-gray-800 px-4">Lưu ý</h3>
-           <div className="bg-white rounded-3xl overflow-hidden border border-gray-100 shadow-sm">
-              <div 
-                className="p-6 flex justify-between items-center cursor-pointer hover:bg-gray-50 transition-colors"
-                onClick={() => toggleNote('general')}
-              >
-                <span className="font-bold text-gray-700 uppercase text-xs tracking-wider">Tổng quát</span>
-                <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-400">
-                  {expandedNote === 'general' ? <FaChevronUp /> : <FaChevronDown />}
-                </div>
+          <h3 className="font-bold text-gray-800 px-4">Lưu ý</h3>
+          <div className="bg-white rounded-3xl overflow-hidden border border-gray-100 shadow-sm">
+            <div
+              className="p-6 flex justify-between items-center cursor-pointer hover:bg-gray-50 transition-colors"
+              onClick={() => toggleNote('general')}
+            >
+              <span className="font-bold text-gray-700 uppercase text-xs tracking-wider">Tổng quát</span>
+              <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-400">
+                {expandedNote === 'general' ? <FaChevronUp /> : <FaChevronDown />}
               </div>
-              {expandedNote === 'general' && (
-                <div className="px-6 pb-6 text-sm text-gray-500 leading-relaxed border-t border-gray-50 pt-4">
-                   Dữ liệu được tổng hợp từ các tin tuyển dụng được đăng tải trên nền tảng ITing. Mức lương thực tế phụ thuộc vào kỹ năng, quy mô công ty và địa điểm làm việc cụ thể.
-                </div>
-              )}
-           </div>
+            </div>
+            {expandedNote === 'general' && (
+              <div className="px-6 pb-6 text-sm text-gray-500 leading-relaxed border-t border-gray-50 pt-4">
+                Dữ liệu được tổng hợp từ các tin tuyển dụng được đăng tải trên nền tảng ITing. Mức lương thực tế phụ thuộc vào kỹ năng, quy mô công ty và địa điểm làm việc cụ thể.
+              </div>
+            )}
+          </div>
         </div>
 
         <div className="bg-white rounded-3xl p-8 shadow-sm border border-gray-100">
-           <p className="text-sm font-bold text-gray-800 mb-4">Xem thêm Báo cáo lương của các vị trí liên quan:</p>
-           <div className="flex flex-wrap gap-2">
-              {report?.relatedPositions && report.relatedPositions.length > 0 ? (
-                report.relatedPositions.map(item => (
-                  <span key={item} onClick={() => { setKeyword(item); fetchReport(); }} className="px-4 py-2 bg-gray-100 rounded-full text-xs text-gray-500 font-bold hover:bg-[#E6F6FD] hover:text-[#3AB4E6] cursor-pointer transition-colors">
-                    {item}
-                  </span>
-                ))
-              ) : (
-                ['Tư vấn tài chính', 'Market Research', 'Nhân viên tư vấn'].map(item => (
-                  <span key={item} onClick={() => { setKeyword(item); fetchReport(); }} className="px-4 py-2 bg-gray-100 rounded-full text-xs text-gray-500 font-bold hover:bg-[#E6F6FD] hover:text-[#3AB4E6] cursor-pointer transition-colors">
-                    {item}
-                  </span>
-                ))
-              )}
-           </div>
+          <p className="text-sm font-bold text-gray-800 mb-4">Xem thêm Báo cáo lương của các vị trí liên quan:</p>
+          <div className="flex flex-wrap gap-2">
+            {report?.relatedPositions && report.relatedPositions.length > 0 ? (
+              report.relatedPositions.map(item => (
+                <span key={item} onClick={() => { setKeyword(item); fetchReport(); }} className="px-4 py-2 bg-gray-100 rounded-full text-xs text-gray-500 font-bold hover:bg-[#E6F6FD] hover:text-[#3AB4E6] cursor-pointer transition-colors">
+                  {item}
+                </span>
+              ))
+            ) : (
+              ['Tư vấn tài chính', 'Market Research', 'Nhân viên tư vấn'].map(item => (
+                <span key={item} onClick={() => { setKeyword(item); fetchReport(); }} className="px-4 py-2 bg-gray-100 rounded-full text-xs text-gray-500 font-bold hover:bg-[#E6F6FD] hover:text-[#3AB4E6] cursor-pointer transition-colors">
+                  {item}
+                </span>
+              ))
+            )}
+          </div>
         </div>
       </div>
     </div>

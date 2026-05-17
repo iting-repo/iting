@@ -21,7 +21,8 @@ public interface KnowledgeGraphService {
 
     /**
      * Tìm tất cả skill liên quan trong bán kính depth bước.
-     * Ví dụ: getRelatedSkills("AI", 2) -> ["Machine Learning", "Deep Learning", "NLP", "PyTorch", ...]
+     * Ví dụ: getRelatedSkills("AI", 2) -> ["Machine Learning", "Deep Learning",
+     * "NLP", "PyTorch", ...]
      *
      * @param skill Tên kỹ năng
      * @param depth Độ sâu duyệt (1 = trực tiếp, 2 = qua 1 trung gian)
@@ -33,8 +34,8 @@ public interface KnowledgeGraphService {
      * Giải thích tại sao CV match với JD dựa trên quan hệ trong Knowledge Graph.
      * Ví dụ: "PyTorch (CV) → IS_A → Deep Learning → IS_A → AI (JD)"
      *
-     * @param cvSkills  Danh sách kỹ năng từ CV
-     * @param jdSkills  Danh sách kỹ năng từ JD
+     * @param cvSkills Danh sách kỹ năng từ CV
+     * @param jdSkills Danh sách kỹ năng từ JD
      * @return Danh sách giải thích matching
      */
     List<String> explainMatch(List<String> cvSkills, List<String> jdSkills);

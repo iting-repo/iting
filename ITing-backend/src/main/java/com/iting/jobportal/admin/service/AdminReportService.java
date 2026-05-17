@@ -7,7 +7,8 @@ import org.springframework.data.domain.Page;
 
 public interface AdminReportService {
 
-    Page<UserReport> getReports(String status, String type, String targetType, String priority, String search, int page, int size);
+    Page<UserReport> getReports(String status, String type, String targetType, String priority, String search, int page,
+            int size);
 
     UserReport createReport(Long reporterId, ReportRequest request);
 

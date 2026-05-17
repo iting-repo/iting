@@ -7,7 +7,6 @@ import jakarta.validation.constraints.NotBlank;
 public class BanUserRequest {
     @NotBlank(message = "Lý do không được để trống")
     private String reason;
-    
-    private Integer banDays;  // null = vĩnh viễn
-}
 
+    private Integer banDays; // null = vĩnh viễn
+}

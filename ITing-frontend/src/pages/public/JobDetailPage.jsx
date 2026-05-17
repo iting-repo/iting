@@ -126,7 +126,7 @@ const formatDeadline = (dueDate) => {
 };
 
 const JobDetailPage = () => {
-    const { slug, jobKey: id } = useParams();
+    const { jobKey: id } = useParams();
     const navigate = useNavigate();
     const dispatch = useDispatch();
 
@@ -151,11 +151,13 @@ const JobDetailPage = () => {
     const [mergedLocation, setMergedLocation] = useState(null);
     const [loadingMerged, setLoadingMerged] = useState(false);
 
+    const normalizedJobId = useMemo(() => (id ? normalizeJobKey(id) : null), [id]);
+
     useEffect(() => {
-        if (id) {
-            dispatch(fetchJobDetailRequest(normalizeJobKey(id)));
+        if (normalizedJobId) {
+            dispatch(fetchJobDetailRequest(normalizedJobId));
         }
-    }, [id, dispatch]);
+    }, [dispatch, normalizedJobId]);
 
     useEffect(() => {
         const checkAppStatus = async () => {
@@ -764,8 +766,7 @@ const JobDetailPage = () => {
                                 <button
                                     onClick={() => !hasApplied && !isCompanySuspended && setIsApplyModalOpen(true)}
                                     disabled={hasApplied || isCompanySuspended}
-                                    className={`flex-1 py-3 font-bold rounded-lg shadow-md transition-all transform ${
-                                        isCompanySuspended
+                                    className={`flex-1 py-3 font-bold rounded-lg shadow-md transition-all transform ${isCompanySuspended
                                             ? 'bg-gray-100 text-gray-400 cursor-not-allowed border border-gray-200'
                                             : hasApplied
                                                 ? 'bg-gray-100 text-gray-400 cursor-not-allowed border border-gray-200'
@@ -778,8 +779,7 @@ const JobDetailPage = () => {
                                 <button
                                     onClick={isCompanySuspended ? undefined : handleToggleSave}
                                     disabled={isSaving || isCompanySuspended}
-                                    className={`px-4 py-3 border border-gray-200 rounded-lg transition-colors ${
-                                        isCompanySuspended
+                                    className={`px-4 py-3 border border-gray-200 rounded-lg transition-colors ${isCompanySuspended
                                             ? 'text-gray-300 cursor-not-allowed'
                                             : isSaved ? 'text-blue-500 bg-blue-50 hover:bg-gray-50' : 'text-gray-400 hover:bg-gray-50'
                                         }`}

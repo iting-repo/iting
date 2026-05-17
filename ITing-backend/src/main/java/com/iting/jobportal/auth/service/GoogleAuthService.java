@@ -22,8 +22,7 @@ public class GoogleAuthService {
         });
 
         HttpRequest request = requestFactory.buildGetRequest(
-            new GenericUrl("https://www.googleapis.com/oauth2/v3/userinfo?access_token=" + accessToken)
-        );
+                new GenericUrl("https://www.googleapis.com/oauth2/v3/userinfo?access_token=" + accessToken));
 
         return request.execute().parseAs(Map.class);
     }

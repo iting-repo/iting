@@ -60,8 +60,7 @@ public class AdminCategoryController {
     @Operation(summary = "Lấy chi tiết một danh mục")
     public ResponseEntity<CategoryResponse> getCategoryById(@PathVariable Long id) {
         return ResponseEntity.ok(
-                CategoryResponse.fromEntity(adminContentService.getCategoryById(id))
-        );
+                CategoryResponse.fromEntity(adminContentService.getCategoryById(id)));
     }
 
     @PostMapping
@@ -70,8 +69,7 @@ public class AdminCategoryController {
             @RequestParam String type,
             @Valid @RequestBody CategoryRequest request) {
         CategoryResponse response = CategoryResponse.fromEntity(
-                adminContentService.createCategoryFromRequest(type.toUpperCase(), request)
-        );
+                adminContentService.createCategoryFromRequest(type.toUpperCase(), request));
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
@@ -81,8 +79,7 @@ public class AdminCategoryController {
             @PathVariable Long id,
             @Valid @RequestBody CategoryRequest request) {
         CategoryResponse response = CategoryResponse.fromEntity(
-                adminContentService.updateCategoryFromRequest(id, request)
-        );
+                adminContentService.updateCategoryFromRequest(id, request));
         return ResponseEntity.ok(response);
     }
 
@@ -97,8 +94,7 @@ public class AdminCategoryController {
     @Operation(summary = "Bật/tắt trạng thái active của danh mục")
     public ResponseEntity<CategoryResponse> toggleActive(@PathVariable Long id) {
         CategoryResponse response = CategoryResponse.fromEntity(
-                adminContentService.toggleCategoryActive(id)
-        );
+                adminContentService.toggleCategoryActive(id));
         return ResponseEntity.ok(response);
     }
 

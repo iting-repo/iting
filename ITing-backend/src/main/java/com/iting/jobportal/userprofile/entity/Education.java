@@ -44,4 +44,4 @@ public class Education {
 
     @Column(name = "Description", columnDefinition = "TEXT")
     private String description;
-}
+}

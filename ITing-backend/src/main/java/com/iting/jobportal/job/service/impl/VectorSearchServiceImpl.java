@@ -30,7 +30,8 @@ public class VectorSearchServiceImpl implements VectorSearchService {
 
     @Override
     public List<ScoredJobResult> semanticSearch(String queryText, int topK) {
-        if (queryText == null || queryText.isBlank()) return List.of();
+        if (queryText == null || queryText.isBlank())
+            return List.of();
 
         // Step 1: Embed the query
         Optional<double[]> queryEmbedding = embeddingClient.embed(queryText);
@@ -43,13 +44,15 @@ public class VectorSearchServiceImpl implements VectorSearchService {
 
         // Step 2: Load all job embeddings
         List<Job> jobs = jobRepository.findAllActiveWithEmbedding();
-        if (jobs.isEmpty()) return List.of();
+        if (jobs.isEmpty())
+            return List.of();
 
         // Step 3: Compute cosine similarity for each job
         List<ScoredJobResult> results = new ArrayList<>(jobs.size());
         for (Job job : jobs) {
             double[] jobVec = jobEmbeddingService.parseEmbedding(job.getJobEmbedding());
-            if (jobVec == null) continue;
+            if (jobVec == null)
+                continue;
 
             double similarity = cosineSimilarity(queryVec, jobVec);
             if (similarity > 0.3) { // Threshold: only include reasonably similar jobs
@@ -69,9 +72,12 @@ public class VectorSearchServiceImpl implements VectorSearchService {
      * Compute cosine similarity between two vectors.
      */
     private static double cosineSimilarity(double[] a, double[] b) {
-        if (a == null || b == null) return 0.0;
-        if (a.length == 0 || b.length == 0) return 0.0;
-        if (a.length != b.length) return 0.0;
+        if (a == null || b == null)
+            return 0.0;
+        if (a.length == 0 || b.length == 0)
+            return 0.0;
+        if (a.length != b.length)
+            return 0.0;
 
         double dot = 0.0;
         double normA = 0.0;
@@ -81,7 +87,8 @@ public class VectorSearchServiceImpl implements VectorSearchService {
             normA += a[i] * a[i];
             normB += b[i] * b[i];
         }
-        if (normA == 0.0 || normB == 0.0) return 0.0;
+        if (normA == 0.0 || normB == 0.0)
+            return 0.0;
         return dot / (Math.sqrt(normA) * Math.sqrt(normB));
     }
 }

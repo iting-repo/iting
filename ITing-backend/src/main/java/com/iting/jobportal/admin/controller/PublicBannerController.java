@@ -32,7 +32,7 @@ public class PublicBannerController {
         } else {
             banners = bannerRepository.findByStatusOrderByPriorityDesc("ACTIVE");
         }
-        
+
         // Filter out inactive or expired banners
         LocalDateTime now = LocalDateTime.now();
         List<Banner> activeBanners = banners.stream()

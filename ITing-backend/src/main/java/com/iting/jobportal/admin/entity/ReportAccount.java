@@ -61,6 +61,7 @@ public class ReportAccount {
     @PrePersist
     public void prePersist() {
         createdAt = LocalDateTime.now();
-        if (status == null) status = ReportStatus.PENDING;
+        if (status == null)
+            status = ReportStatus.PENDING;
     }
 }

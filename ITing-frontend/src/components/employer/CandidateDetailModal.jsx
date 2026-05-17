@@ -65,7 +65,6 @@ const CandidateDetailModal = ({ candidate, onClose, onStatusUpdate }) => {
                 })
                 .catch(err => console.error("Could not mark as viewed", err));
         }
-        // Check favorite status
         if (candidate) {
             setIsFavorited(favoriteCandidateService.isFavorite(candidate.id));
             fetchFullProfile();
@@ -103,6 +102,7 @@ const CandidateDetailModal = ({ candidate, onClose, onStatusUpdate }) => {
         try {
             setIsAccepting(true);
             await applicationService.acceptApplication(candidate.id, 'Nhà tuyển dụng đã phản hồi thông qua UI');
+            if (onStatusUpdate) onStatusUpdate(candidate.id, 'ACCEPTED');
             toast.success('Đã chấp nhận tuyển dụng và gửi email thông báo cho ứng viên!');
             onClose();
         } catch (error) {
@@ -254,11 +254,10 @@ const CandidateDetailModal = ({ candidate, onClose, onStatusUpdate }) => {
                             </button>
                             <button
                                 onClick={handleToggleFavorite}
-                                className={`p-2.5 rounded-xl transition-all ${
-                                    isFavorited
-                                        ? 'text-amber-500 bg-amber-50 hover:bg-amber-100'
-                                        : 'text-slate-400 hover:text-amber-500 hover:bg-amber-50'
-                                }`}
+                                className={`p-2.5 rounded-xl transition-all ${isFavorited
+                                    ? 'text-amber-500 bg-amber-50 hover:bg-amber-100'
+                                    : 'text-slate-400 hover:text-amber-500 hover:bg-amber-50'
+                                    }`}
                                 title={isFavorited ? 'Bỏ yêu thích' : 'Thêm yêu thích'}
                             >
                                 {isFavorited ? <FaStar size={18} /> : <FaRegStar size={18} />}
@@ -335,7 +334,6 @@ const CandidateDetailModal = ({ candidate, onClose, onStatusUpdate }) => {
                                     {fullProfile.skills.map((skill, idx) => (
                                         <span key={idx} className="px-3 py-1.5 bg-green-50 text-green-700 font-bold text-xs rounded-lg border border-green-100 flex items-center gap-1.5">
                                             {skill.name}
-                                            
                                         </span>
                                     ))}
                                 </div>
@@ -419,7 +417,7 @@ const CandidateDetailModal = ({ candidate, onClose, onStatusUpdate }) => {
                                             <h5 className="font-bold text-slate-800">{cert.name}</h5>
                                             <p className="text-sm text-slate-600">{cert.organization}</p>
                                             <p className="text-xs text-slate-500 mt-1 font-medium">
-                                                Cấp: {cert.issueDate ? new Date(cert.issueDate).toLocaleDateString('vi-VN') : 'N/A'} 
+                                                Cấp: {cert.issueDate ? new Date(cert.issueDate).toLocaleDateString('vi-VN') : 'N/A'}
                                                 {cert.credentialUrl && (
                                                     <a href={cert.credentialUrl} target="_blank" rel="noopener noreferrer" className="ml-2 text-blue-600 hover:underline">
                                                         Xem chứng chỉ
@@ -501,18 +499,18 @@ const CandidateDetailModal = ({ candidate, onClose, onStatusUpdate }) => {
                                 <div>
                                     <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2.5 ml-1">Lý do chính</label>
                                     <div className="relative">
-                                      <select
-                                          value={reportData.type}
-                                          onChange={(e) => setReportData({ ...reportData, type: e.target.value })}
-                                          className="w-full h-14 px-4 pr-10 bg-slate-50 border-2 border-slate-100 rounded-2xl text-slate-700 font-bold focus:border-blue-400 outline-none transition-all cursor-pointer appearance-none"
-                                      >
-                                          {REPORT_REASONS.map(r => (
-                                              <option key={r.value} value={r.value}>{r.label}</option>
-                                          ))}
-                                      </select>
-                                      <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-4 text-slate-400">
-                                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
-                                      </div>
+                                        <select
+                                            value={reportData.type}
+                                            onChange={(e) => setReportData({ ...reportData, type: e.target.value })}
+                                            className="w-full h-14 px-4 pr-10 bg-slate-50 border-2 border-slate-100 rounded-2xl text-slate-700 font-bold focus:border-blue-400 outline-none transition-all cursor-pointer appearance-none"
+                                        >
+                                            {REPORT_REASONS.map(r => (
+                                                <option key={r.value} value={r.value}>{r.label}</option>
+                                            ))}
+                                        </select>
+                                        <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-4 text-slate-400">
+                                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
+                                        </div>
                                     </div>
                                 </div>
 
@@ -530,7 +528,8 @@ const CandidateDetailModal = ({ candidate, onClose, onStatusUpdate }) => {
                                 <div className="flex gap-3 pt-4">
                                     <button
                                         onClick={() => setShowReportModal(false)}
-                                        className="flex-1 py-4 bg-slate-100 text-slate-600 font-bold rounded-2xl hover:bg-slate-200 transition-all"
+                                        disabled={isReporting}
+                                        className="flex-1 py-4 bg-slate-100 text-slate-600 font-bold rounded-2xl hover:bg-slate-200 transition-all disabled:opacity-50"
                                     >
                                         Hủy bỏ
                                     </button>

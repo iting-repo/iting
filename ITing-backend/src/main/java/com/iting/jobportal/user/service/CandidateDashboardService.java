@@ -95,7 +95,8 @@ public class CandidateDashboardService {
     }
 
     private boolean isProfileCompleted(UserProfile profile) {
-        if (profile == null) return false;
+        if (profile == null)
+            return false;
         return profile.getHeadline() != null && !profile.getHeadline().isEmpty()
                 && profile.getShortBio() != null && !profile.getShortBio().isEmpty()
                 && profile.getTotalExperienceYears() != null
@@ -103,16 +104,23 @@ public class CandidateDashboardService {
     }
 
     private int calculateProfileCompletion(UserProfile profile) {
-        if (profile == null) return 0;
+        if (profile == null)
+            return 0;
         int score = 0;
         int total = 6;
 
-        if (profile.getHeadline() != null && !profile.getHeadline().isEmpty()) score++;
-        if (profile.getLocation() != null && !profile.getLocation().isEmpty()) score++;
-        if (profile.getShortBio() != null && !profile.getShortBio().isEmpty()) score++;
-        if (profile.getTotalExperienceYears() != null) score++;
-        if (profile.getEducationSummary() != null) score++;
-        if (profile.getSkills() != null && !profile.getSkills().isEmpty()) score++;
+        if (profile.getHeadline() != null && !profile.getHeadline().isEmpty())
+            score++;
+        if (profile.getLocation() != null && !profile.getLocation().isEmpty())
+            score++;
+        if (profile.getShortBio() != null && !profile.getShortBio().isEmpty())
+            score++;
+        if (profile.getTotalExperienceYears() != null)
+            score++;
+        if (profile.getEducationSummary() != null)
+            score++;
+        if (profile.getSkills() != null && !profile.getSkills().isEmpty())
+            score++;
 
         return (int) ((score * 100.0) / total);
     }

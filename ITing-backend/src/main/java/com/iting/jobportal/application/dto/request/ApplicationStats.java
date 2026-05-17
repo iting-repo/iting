@@ -16,4 +16,3 @@ public class ApplicationStats {
     private long rejected;
     private long withdrawn;
 }
-

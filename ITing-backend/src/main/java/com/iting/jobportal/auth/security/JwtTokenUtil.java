@@ -49,15 +49,15 @@ public class JwtTokenUtil {
             return false;
         }
     }
-    
+
     public String getEmailFromToken(String token) {
         return getClaims(token).getSubject();
     }
-    
+
     public Long getUserIdFromToken(String token) {
         return ((Number) getClaims(token).get("id")).longValue();
     }
-    
+
     public String getRoleFromToken(String token) {
         return (String) getClaims(token).get("role");
     }

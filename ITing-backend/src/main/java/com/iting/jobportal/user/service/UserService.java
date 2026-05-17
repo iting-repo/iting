@@ -1,4 +1,5 @@
 package com.iting.jobportal.user.service;
+
 import com.iting.jobportal.user.dto.request.PersonalUpdateDto;
 import com.iting.jobportal.user.dto.request.UpdateUserRequest;
 import com.iting.jobportal.user.dto.response.UserProfileResponse;
@@ -18,5 +19,3 @@ public interface UserService {
 
     String uploadAvatar(Long id, MultipartFile file);
 }
-
-

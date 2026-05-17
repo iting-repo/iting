@@ -66,7 +66,8 @@ public class NotificationServiceImpl implements NotificationService {
 
         Long unreadCount = notificationRepository.countUnreadByRecipientIdAndRecipientType(
                 saved.getRecipientId(), saved.getRecipientType());
-        webSocketNotificationService.sendNotificationToRecipient(saved.getRecipientId(), saved.getRecipientType(), response);
+        webSocketNotificationService.sendNotificationToRecipient(saved.getRecipientId(), saved.getRecipientType(),
+                response);
         webSocketNotificationService.sendUnreadCount(saved.getRecipientId(), saved.getRecipientType(), unreadCount);
 
         // Gửi Mail thông báo
@@ -77,31 +78,33 @@ public class NotificationServiceImpl implements NotificationService {
                 String actionUrl = "http://localhost:3000" + (saved.getActionUrl() != null ? saved.getActionUrl() : "");
 
                 // Sử dụng template cụ thể dựa vào loại thông báo
-                if (saved.getType() == NotificationType.APPLICATION_ACCEPTED || saved.getType() == NotificationType.APPLICATION_REJECTED) {
+                if (saved.getType() == NotificationType.APPLICATION_ACCEPTED
+                        || saved.getType() == NotificationType.APPLICATION_REJECTED) {
                     try {
                         ApplyFormSentToJob sent = employerApplicationRepository.findByIdApplyFormId(saved.getEntityId())
                                 .orElseThrow(() -> new RuntimeException("ApplyFormSentToJob not found"));
                         Job job = jobRepository.findById(sent.getId().getJobId())
                                 .orElseThrow(() -> new RuntimeException("Job not found"));
-                                
+
                         ApplyForm form = applyFormRepository.findById(sent.getId().getApplyFormId())
                                 .orElseThrow(() -> new RuntimeException("ApplyForm not found"));
-                        
+
                         User user = userRepository.findById(form.getUserId())
                                 .orElseThrow(() -> new RuntimeException("User profile not found"));
 
                         if (saved.getType() == NotificationType.APPLICATION_ACCEPTED) {
-                                subject = "[ITing] Chúc mừng! Hồ sơ của bạn đã được chấp nhận";
-                                htmlContent = emailTemplateService.getApplicationAcceptedTemplate(
-                                        user.getFullName(), job.getTitle(), job.getCompany().getName(), actionUrl);
-                            } else {
-                                subject = "[ITing] Cập nhật về hồ sơ ứng tuyển của bạn";
-                                htmlContent = emailTemplateService.getApplicationRejectedTemplate(
-                                        user.getFullName(), job.getTitle(), job.getCompany().getName(), null);
-                            }
-                        } catch (Exception e) {
-                            log.warn("Could not load details for application template, falling back to generic: {}", e.getMessage());
+                            subject = "[ITing] Chúc mừng! Hồ sơ của bạn đã được chấp nhận";
+                            htmlContent = emailTemplateService.getApplicationAcceptedTemplate(
+                                    user.getFullName(), job.getTitle(), job.getCompany().getName(), actionUrl);
+                        } else {
+                            subject = "[ITing] Cập nhật về hồ sơ ứng tuyển của bạn";
+                            htmlContent = emailTemplateService.getApplicationRejectedTemplate(
+                                    user.getFullName(), job.getTitle(), job.getCompany().getName(), null);
                         }
+                    } catch (Exception e) {
+                        log.warn("Could not load details for application template, falling back to generic: {}",
+                                e.getMessage());
+                    }
                 }
 
                 if (htmlContent != null) {
@@ -109,15 +112,14 @@ public class NotificationServiceImpl implements NotificationService {
                 } else {
                     // Fallback to generic template/text
                     String body = String.format(
-                        "Chào bạn,\n\n" +
-                        "Bạn có một thông báo mới từ hệ thống ITing Job Portal:\n\n" +
-                        "\"%s\"\n\n" +
-                        "Bạn có thể xem chi tiết tại: %s\n\n" +
-                        "Trân trọng,\n" +
-                        "Đội ngũ ITing.",
-                        saved.getContent(),
-                        actionUrl
-                    );
+                            "Chào bạn,\n\n" +
+                                    "Bạn có một thông báo mới từ hệ thống ITing Job Portal:\n\n" +
+                                    "\"%s\"\n\n" +
+                                    "Bạn có thể xem chi tiết tại: %s\n\n" +
+                                    "Trân trọng,\n" +
+                                    "Đội ngũ ITing.",
+                            saved.getContent(),
+                            actionUrl);
                     emailService.sendEmail(account.getEmail(), subject, body);
                 }
             });
@@ -129,7 +131,8 @@ public class NotificationServiceImpl implements NotificationService {
     }
 
     @Override
-    public Page<NotificationResponse> getNotifications(Long recipientId, RecipientType recipientType, int page, int size) {
+    public Page<NotificationResponse> getNotifications(Long recipientId, RecipientType recipientType, int page,
+            int size) {
         int safePage = Math.max(page, 0);
         int safeSize = (size <= 0 || size > 100) ? 20 : size;
         Pageable pageable = PageRequest.of(safePage, safeSize, Sort.by(Sort.Direction.DESC, "time"));
@@ -152,12 +155,14 @@ public class NotificationServiceImpl implements NotificationService {
     }
 
     @Override
-    public Page<NotificationResponse> getNotificationsByType(Long recipientId, RecipientType recipientType, NotificationType type, int page, int size) {
+    public Page<NotificationResponse> getNotificationsByType(Long recipientId, RecipientType recipientType,
+            NotificationType type, int page, int size) {
         int safePage = Math.max(page, 0);
         int safeSize = (size <= 0 || size > 100) ? 20 : size;
         Pageable pageable = PageRequest.of(safePage, safeSize, Sort.by(Sort.Direction.DESC, "time"));
 
-        return notificationRepository.findByRecipientIdAndRecipientTypeAndType(recipientId, recipientType, type, pageable)
+        return notificationRepository
+                .findByRecipientIdAndRecipientTypeAndType(recipientId, recipientType, type, pageable)
                 .map(this::toResponse);
     }
 
@@ -173,7 +178,8 @@ public class NotificationServiceImpl implements NotificationService {
 
         if (!Boolean.TRUE.equals(notification.getIsRead())) {
             notificationRepository.markAsRead(notificationId, LocalDateTime.now());
-            Long unreadCount = notificationRepository.countUnreadByRecipientIdAndRecipientType(recipientId, recipientType);
+            Long unreadCount = notificationRepository.countUnreadByRecipientIdAndRecipientType(recipientId,
+                    recipientType);
             webSocketNotificationService.sendUnreadCount(recipientId, recipientType, unreadCount);
         }
     }

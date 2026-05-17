@@ -7,9 +7,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 import io.swagger.v3.oas.annotations.Operation;
 
-
-
-@Tag(name ="07. User Basic Profile")
+@Tag(name = "07. User Basic Profile")
 @RestController
 @RequestMapping("/api/candidate/profile")
 @RequiredArgsConstructor

@@ -575,9 +575,13 @@ const HomePage = () => {
                                 return (
                                     <div
                                         key={job.id}
+<<<<<<< HEAD
                                         onClick={() => handleJobClick(job)}
                                         onMouseEnter={(e) => handleCardEnter(job, e.currentTarget)}
                                         onMouseLeave={handleCardLeave}
+=======
+                                        onClick={() => handleJobClick(job.id)}
+>>>>>>> origin/main
                                         className="group bg-white rounded-2xl p-6 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 border border-gray-100 relative cursor-pointer"
                                     >
                                         <div className="flex justify-between items-start mb-4">
@@ -742,10 +746,17 @@ const HomePage = () => {
                         )}
                         {(jobs ?? []).length === 0 && !isLoading ? (
                             <div className="text-center py-20 text-gray-500">Không tìm thấy công việc nào.</div>
+<<<<<<< HEAD
                         ) : (jobs ?? []).map((job) => {
                             const isSaved = savedJobIds.includes(job.id);
                             const isHovered = hoveredJob?.id === job.id;
                             return (
+=======
+                        ) : (
+                            (jobs ?? []).map((job) => {
+                                const isSaved = savedJobIds.includes(job.id);
+                                return (
+>>>>>>> origin/main
                                 <div
                                     key={job.id}
                                     onClick={() => handleJobClick(job)}
@@ -820,8 +831,14 @@ const HomePage = () => {
                                         </div>
                                     </div>
                                 </div>
+<<<<<<< HEAD
                             );
                         })}
+=======
+                                );
+                            })
+                        )}
+>>>>>>> origin/main
                     </div>
 
                     {/* 5. PAGINATION: Bỏ nút đen, dùng style Clean */}

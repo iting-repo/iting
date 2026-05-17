@@ -158,7 +158,8 @@ public class ApplicationMapperUtil {
                 .yearsExperience(yearsExperience)
                 .education(education)
                 .timeSent(sent.getTimeSent())
-                .status(sent.getStatus() != null ? sent.getStatus() : com.iting.jobportal.application.entity.enums.ApplicationStatus.PENDING)
+                .status(sent.getStatus() != null ? sent.getStatus()
+                        : com.iting.jobportal.application.entity.enums.ApplicationStatus.PENDING)
                 .build();
     }
 }

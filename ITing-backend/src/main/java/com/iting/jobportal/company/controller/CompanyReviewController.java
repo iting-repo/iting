@@ -19,10 +19,9 @@ public class CompanyReviewController {
     @GetMapping("/{id}/reviews")
     public ResponseEntity<List<CompanyReviewResponse>> getReviews(@PathVariable Long id) {
         return ResponseEntity.ok(
-            reviewService.getCompanyReviews(id).stream()
-                .map(CompanyReviewResponse::fromEntity)
-                .collect(Collectors.toList())
-        );
+                reviewService.getCompanyReviews(id).stream()
+                        .map(CompanyReviewResponse::fromEntity)
+                        .collect(Collectors.toList()));
     }
 
     @GetMapping("/{id}/rating-stats")

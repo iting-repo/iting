@@ -17,4 +17,4 @@ public class UserProfileResponse {
     private Long locId;
     private String avatarUrl;
     private LocalDateTime lastUpdate;
-}
+}

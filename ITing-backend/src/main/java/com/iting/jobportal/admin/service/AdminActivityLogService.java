@@ -10,6 +10,7 @@ public interface AdminActivityLogService {
 
     Page<ActivityLog> getActivityLogs(Long userId, String action, int page, int size);
 
-    Page<AuditLogResponse> getAuditLogs(String category, Long performerId, String action, String search, int page, int size);
+    Page<AuditLogResponse> getAuditLogs(String category, Long performerId, String action, String search, int page,
+            int size);
 
 }

@@ -38,10 +38,12 @@ public class JobEmbeddingServiceImpl implements JobEmbeddingService {
     public boolean embedJob(Job job) {
         try {
             String textToEmbed = buildEmbeddingText(job);
-            if (textToEmbed.isBlank()) return false;
+            if (textToEmbed.isBlank())
+                return false;
 
             Optional<double[]> embedding = embeddingClient.embed(textToEmbed);
-            if (embedding.isEmpty()) return false;
+            if (embedding.isEmpty())
+                return false;
 
             String embeddingJson = objectMapper.writeValueAsString(embedding.get());
             job.setJobEmbedding(embeddingJson);
@@ -60,8 +62,7 @@ public class JobEmbeddingServiceImpl implements JobEmbeddingService {
     public int embedMissingJobs(int batchSize) {
         List<Job> jobs = jobRepository.findJobsWithoutEmbedding(
                 JobStatus.ACTIVE,
-                PageRequest.of(0, batchSize)
-        );
+                PageRequest.of(0, batchSize));
 
         int count = 0;
         for (Job job : jobs) {
@@ -86,9 +87,11 @@ public class JobEmbeddingServiceImpl implements JobEmbeddingService {
 
     @Override
     public double[] parseEmbedding(String embeddingJson) {
-        if (embeddingJson == null || embeddingJson.isBlank()) return null;
+        if (embeddingJson == null || embeddingJson.isBlank())
+            return null;
         try {
-            List<Double> values = objectMapper.readValue(embeddingJson, new TypeReference<>() {});
+            List<Double> values = objectMapper.readValue(embeddingJson, new TypeReference<>() {
+            });
             double[] arr = new double[values.size()];
             for (int i = 0; i < values.size(); i++) {
                 arr[i] = values.get(i) == null ? 0.0 : values.get(i);

@@ -18,12 +18,13 @@ public class CompanyNotificationKafkaProducer {
 
     @EventListener
     public void produceKybNotificationToKafka(CompanyInfoSubmittedEvent event) {
-        log.info("Sending CompanyInfoSubmittedEvent to Kafka Topic 'kyb-notifications' for Company: {}", event.getCompanyName());
-        
-        // Gửi message nhẹ dạng chuỗi CSV hoặc JSON 
+        log.info("Sending CompanyInfoSubmittedEvent to Kafka Topic 'kyb-notifications' for Company: {}",
+                event.getCompanyName());
+
+        // Gửi message nhẹ dạng chuỗi CSV hoặc JSON
         // Ở đây gửi chuỗi: "companyId,companyName" để Worker xử lý
         String messagePayload = event.getCompanyId() + "|||" + event.getCompanyName();
-        
+
         kafkaTemplate.send("kyb-notifications", event.getCompanyId().toString(), messagePayload);
     }
 }

@@ -173,9 +173,9 @@ const FoundingInfoTab = ({ onTabChange }) => {
       // Merge avoiding duplicates (by value)
       const merged = [...AVAILABLE_INDUSTRIES];
       customIndustries.forEach(c => {
-         if (!merged.find(m => m.value === c.value)) {
-            merged.push(c);
-         }
+        if (!merged.find(m => m.value === c.value)) {
+          merged.push(c);
+        }
       });
       setAvailableIndustries(merged);
 
@@ -539,10 +539,10 @@ const FoundingInfoTab = ({ onTabChange }) => {
     } catch (error) {
       console.error("Lỗi upload license:", error);
       toast.error(
-        error?.error || 
-        error?.message || 
-        error?.response?.data?.error || 
-        error?.response?.data?.message || 
+        error?.error ||
+        error?.message ||
+        error?.response?.data?.error ||
+        error?.response?.data?.message ||
         "Không thể upload giấy phép."
       );
     } finally {
@@ -745,10 +745,10 @@ const FoundingInfoTab = ({ onTabChange }) => {
                     await fetchData();
                   } catch (error) {
                     toast.error(
-                      error?.error || 
-                      error?.message || 
-                      error?.response?.data?.error || 
-                      error?.response?.data?.message || 
+                      error?.error ||
+                      error?.message ||
+                      error?.response?.data?.error ||
+                      error?.response?.data?.message ||
                       "Không thể gửi duyệt"
                     );
                   } finally {
@@ -837,8 +837,8 @@ const FoundingInfoTab = ({ onTabChange }) => {
               onClick={handleSubmitUpdateRequest}
               disabled={submittingRequest || uploadingLogo || !hasChanges}
               className={`flex items-center gap-2 rounded-lg px-8 py-2.5 text-sm font-bold text-white transition disabled:cursor-not-allowed ${hasChanges
-                  ? "bg-[#3AB4E6] hover:opacity-90"
-                  : "bg-gray-300 text-gray-500 opacity-60"
+                ? "bg-[#3AB4E6] hover:opacity-90"
+                : "bg-gray-300 text-gray-500 opacity-60"
                 }`}
             >
               {submittingRequest ? "Đang gửi..." : "Gửi admin duyệt"}

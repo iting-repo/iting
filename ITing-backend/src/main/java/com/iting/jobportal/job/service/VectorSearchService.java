@@ -23,5 +23,6 @@ public interface VectorSearchService {
     /**
      * Kết quả tìm kiếm có điểm similarity.
      */
-    record ScoredJobResult(Long jobId, double score) {}
+    record ScoredJobResult(Long jobId, double score) {
+    }
 }

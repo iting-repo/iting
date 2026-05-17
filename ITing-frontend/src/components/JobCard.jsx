@@ -45,7 +45,8 @@ const JobCard = ({ job, onHoverIn, onHoverOut, isHovered = false }) => {
     }, [canSave, job?.id]);
 
     const handleNavigate = () => {
-        navigate(buildJobDetailPath(job));
+        const path = buildJobDetailPath(job);
+        navigate(path);
     };
 
     const handleToggleSave = async (event) => {

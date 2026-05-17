@@ -18,7 +18,8 @@ public interface NotificationService {
 
     Long getUnreadCount(Long recipientId, RecipientType recipientType);
 
-    Page<NotificationResponse> getNotificationsByType(Long recipientId, RecipientType recipientType, NotificationType type, int page, int size);
+    Page<NotificationResponse> getNotificationsByType(Long recipientId, RecipientType recipientType,
+            NotificationType type, int page, int size);
 
     void markAsRead(Integer notificationId, Long recipientId, RecipientType recipientType);
 

@@ -51,8 +51,7 @@ public class UserJobController {
             @RequestParam(required = false, defaultValue = "desc") String sortOrder,
             @RequestParam(required = false, defaultValue = "false") Boolean isAiSearch,
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size
-    ) {
+            @RequestParam(defaultValue = "10") int size) {
         JobSearchRequest request = new JobSearchRequest();
         request.setKeyword(keyword);
         request.setLocation(location);
@@ -101,7 +100,8 @@ public class UserJobController {
     }
 
     private java.util.List<String> parseCsv(String rawValues) {
-        if (rawValues == null || rawValues.isBlank()) return null;
+        if (rawValues == null || rawValues.isBlank())
+            return null;
         return Arrays.stream(rawValues.split(","))
                 .map(String::trim)
                 .filter(v -> !v.isEmpty())
@@ -120,7 +120,8 @@ public class UserJobController {
     @Operation(summary = "Xem chi tiết việc làm")
     public ResponseEntity<JobResponse> getJob(@CurrentUser Long userId, @PathVariable Long id) {
         if (userId != null) {
-            interactionService.trackInteraction(userId, id, com.iting.jobportal.recommendation.entity.enums.InteractionType.VIEW);
+            interactionService.trackInteraction(userId, id,
+                    com.iting.jobportal.recommendation.entity.enums.InteractionType.VIEW);
         }
         return ResponseEntity.ok(jobService.getJobByIdWithView(id));
     }
@@ -144,8 +145,7 @@ public class UserJobController {
     public ResponseEntity<SalaryReportResponse> getSalaryReport(
             @RequestParam(required = false) String keyword,
             @RequestParam(required = false) String location,
-            @RequestParam(required = false) String experience
-    ) {
+            @RequestParam(required = false) String experience) {
         return ResponseEntity.ok(jobService.getSalaryReport(keyword, location, experience));
     }
 

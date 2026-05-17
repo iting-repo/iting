@@ -8,6 +8,13 @@ import com.iting.jobportal.notification.enums.RecipientType;
 import com.iting.jobportal.notification.repository.NotificationRepository;
 import com.iting.jobportal.notification.service.impl.NotificationServiceImpl;
 import com.iting.jobportal.notification.service.WebSocketNotificationService;
+import com.iting.jobportal.auth.repository.AccountRepository;
+import com.iting.jobportal.common.service.EmailService;
+import com.iting.jobportal.common.service.EmailTemplateService;
+import com.iting.jobportal.application.repository.ApplyFormRepository;
+import com.iting.jobportal.application.repository.EmployerApplicationRepository;
+import com.iting.jobportal.job.repository.JobRepository;
+import com.iting.jobportal.user.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -38,6 +45,27 @@ class NotificationServiceImplTest {
 
     @Mock
     private WebSocketNotificationService webSocketNotificationService;
+
+    @Mock
+    private AccountRepository accountRepository;
+
+    @Mock
+    private EmailService emailService;
+
+    @Mock
+    private EmailTemplateService emailTemplateService;
+
+    @Mock
+    private ApplyFormRepository applyFormRepository;
+
+    @Mock
+    private EmployerApplicationRepository employerApplicationRepository;
+
+    @Mock
+    private JobRepository jobRepository;
+
+    @Mock
+    private UserRepository userRepository;
 
     @InjectMocks
     private NotificationServiceImpl notificationService;
@@ -74,6 +102,11 @@ class NotificationServiceImplTest {
     @Nested
     @DisplayName("createNotification tests")
     class CreateNotificationTests {
+
+        @BeforeEach
+        void setUpCreate() {
+            when(accountRepository.findById(anyLong())).thenReturn(Optional.empty());
+        }
 
         @Test
         @DisplayName("Should create notification and send via WebSocket")

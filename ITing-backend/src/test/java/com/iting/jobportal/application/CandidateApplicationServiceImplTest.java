@@ -333,8 +333,12 @@ class CandidateApplicationServiceImplTest {
     @Test
     void withdrawApplication_shouldDeleteJoinThenDeleteForm_whenOwnerMatches() {
         ApplyForm form = ApplyForm.builder().id(10L).userId(1L).build();
+        ApplyFormSentToJob sent = ApplyFormSentToJob.builder()
+                .id(new ApplyFormSentToJob.ApplyFormSentToJobId(5L, 10L))
+                .build();
 
         when(applyFormRepository.findById(10L)).thenReturn(Optional.of(form));
+        when(candidateApplicationRepository.findByIdApplyFormId(10L)).thenReturn(Optional.of(sent));
 
         service.withdrawApplication(1L, 10L);
 
@@ -375,7 +379,11 @@ class CandidateApplicationServiceImplTest {
     @Test
     void withdrawApplication_whenDeleteJoinFails_shouldNotDeleteForm() {
         ApplyForm form = ApplyForm.builder().id(10L).userId(1L).build();
+        ApplyFormSentToJob sent = ApplyFormSentToJob.builder()
+                .id(new ApplyFormSentToJob.ApplyFormSentToJobId(5L, 10L))
+                .build();
         when(applyFormRepository.findById(10L)).thenReturn(Optional.of(form));
+        when(candidateApplicationRepository.findByIdApplyFormId(10L)).thenReturn(Optional.of(sent));
 
         doThrow(new RuntimeException("delete join failed"))
                 .when(candidateApplicationRepository).deleteByIdApplyFormId(10L);

@@ -1,9 +1,10 @@
-package com.iting.jobportal.job.service;
+package com.iting.jobportal.job.service.impl;
 
 import com.iting.jobportal.job.entity.Job;
 import com.iting.jobportal.job.entity.JobReviewHistory;
 import com.iting.jobportal.job.entity.enums.JobReviewAction;
 import com.iting.jobportal.job.repository.JobReviewHistoryRepository;
+import com.iting.jobportal.job.service.JobReviewHistoryService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 

@@ -20,7 +20,7 @@ public class JobResponse {
     private Long companyId;
     private String companyName;
     private String companyLogo;
-    private String logo;    // Alias for companyLogo
+    private String logo; // Alias for companyLogo
     private String logoUrl; // Alias for companyLogo
     private Boolean companyActive; // Trạng thái hoạt động của công ty
 
@@ -79,12 +79,11 @@ public class JobResponse {
 
     private List<JobReviewHistoryResponse> reviewHistories;
 
-
     public static JobResponse fromEntity(Job job) {
         String companyName = null;
         String companyLogo = null;
         Boolean companyActive = null;
-        
+
         try {
             if (job.getCompany() != null) {
                 companyName = job.getCompany().getName();
@@ -92,7 +91,8 @@ public class JobResponse {
                 companyActive = job.getCompany().getActive();
             }
         } catch (Exception e) {
-            // Handle cases where company proxy exists but the underlying record is missing (e.g., stale data)
+            // Handle cases where company proxy exists but the underlying record is missing
+            // (e.g., stale data)
             // We use the ID if we can't get the name
         }
 
@@ -103,7 +103,8 @@ public class JobResponse {
         return fromEntityWithCompany(job, companyName, companyLogo, null);
     }
 
-    public static JobResponse fromEntityWithCompany(Job job, String companyName, String companyLogo, Boolean companyActive) {
+    public static JobResponse fromEntityWithCompany(Job job, String companyName, String companyLogo,
+            Boolean companyActive) {
         return JobResponse.builder()
                 .id(job.getId())
 
@@ -149,8 +150,7 @@ public class JobResponse {
                 .reviewReason(
                         job.getStatus() == JobStatus.REJECTED || job.getStatus() == JobStatus.SUSPENDED
                                 ? job.getReviewReason()
-                                : null
-                )
+                                : null)
                 .reviewedBy(job.getReviewedBy())
                 .reviewedAt(job.getReviewedAt())
 

@@ -95,7 +95,8 @@ public class S3FileUploadServiceImpl implements FileUploadService {
      * Delete a file from S3 by its full URL.
      */
     public void deleteByUrl(String fileUrl) {
-        if (fileUrl == null || fileUrl.isBlank()) return;
+        if (fileUrl == null || fileUrl.isBlank())
+            return;
         // Extract key from URL: https://<bucket>.s3.<region>.amazonaws.com/<key>
         String prefix = "amazonaws.com/";
         int idx = fileUrl.indexOf(prefix);

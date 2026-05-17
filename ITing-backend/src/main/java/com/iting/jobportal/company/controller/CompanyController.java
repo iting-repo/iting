@@ -16,8 +16,7 @@ import com.iting.jobportal.job.controller.CurrentUser;
 import com.iting.jobportal.user.entity.User;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
-import com.iting.jobportal.common.ratelimit.RateLimitingService;
-import io.github.bucket4j.Bucket;
+import com.iting.service.RedisRateLimitingService;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
@@ -36,12 +35,13 @@ public class CompanyController {
 
     private final CompanyService companyService;
     private final CompanyFollowService companyFollowService;
-    private final RateLimitingService rateLimitingService;
+    private final RedisRateLimitingService redisRateLimitingService;
 
-    public CompanyController(CompanyService companyService, CompanyFollowService companyFollowService, RateLimitingService rateLimitingService) {
+    public CompanyController(CompanyService companyService, CompanyFollowService companyFollowService,
+            RedisRateLimitingService redisRateLimitingService) {
         this.companyService = companyService;
         this.companyFollowService = companyFollowService;
-        this.rateLimitingService = rateLimitingService;
+        this.redisRateLimitingService = redisRateLimitingService;
     }
 
     @GetMapping("/me/business-license/view")
@@ -59,17 +59,11 @@ public class CompanyController {
     public ResponseEntity<CompanyResponse> uploadConsentDocument(
             @Parameter(hidden = true) @CurrentUser Long userId,
 
-            @io.swagger.v3.oas.annotations.Parameter(
-                    description = "File văn bản thỏa thuận dữ liệu cá nhân",
-                    required = true,
-                    schema = @io.swagger.v3.oas.annotations.media.Schema(type = "string", format = "binary")
-            )
-            @RequestPart("file") MultipartFile file,
+            @io.swagger.v3.oas.annotations.Parameter(description = "File văn bản thỏa thuận dữ liệu cá nhân", required = true, schema = @io.swagger.v3.oas.annotations.media.Schema(type = "string", format = "binary")) @RequestPart("file") MultipartFile file,
 
             @RequestPart("confirmed") Boolean confirmed,
 
-            @RequestPart(value = "version", required = false) String version
-    ) {
+            @RequestPart(value = "version", required = false) String version) {
         ConsentDocumentUploadRequest request = new ConsentDocumentUploadRequest();
         request.setFile(file);
         request.setConfirmed(confirmed);
@@ -112,12 +106,7 @@ public class CompanyController {
     @Operation(summary = "Upload giấy đăng ký doanh nghiệp của tôi")
     public ResponseEntity<CompanyResponse> updateBusinessLicense(
             @Parameter(hidden = true) @CurrentUser Long userId,
-            @io.swagger.v3.oas.annotations.Parameter(
-                    description = "File PDF giấy phép kinh doanh",
-                    required = true,
-                    schema = @io.swagger.v3.oas.annotations.media.Schema(type = "string", format = "binary")
-            )
-            @RequestPart("file") MultipartFile file) {
+            @io.swagger.v3.oas.annotations.Parameter(description = "File PDF giấy phép kinh doanh", required = true, schema = @io.swagger.v3.oas.annotations.media.Schema(type = "string", format = "binary")) @RequestPart("file") MultipartFile file) {
 
         BusinessLicenseUploadRequest request = new BusinessLicenseUploadRequest();
         request.setFile(file);
@@ -195,8 +184,7 @@ public class CompanyController {
     public ResponseEntity<?> submitInfoReview(
             @Parameter(hidden = true) @CurrentUser Long userId) {
 
-        Bucket bucket = rateLimitingService.resolveBucket("submit_info_" + userId);
-        if (!bucket.tryConsume(1)) {
+        if (!redisRateLimitingService.isAllowed(String.valueOf(userId), "submit_info", 1, 300)) {
             return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
                     .body(Map.of("message", "Bạn thao tác quá nhanh. Vui lòng thử lại sau 5 phút."));
         }

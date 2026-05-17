@@ -25,5 +25,3 @@ public class Portfolio {
     private String url;
     private String description;
 }
-
-

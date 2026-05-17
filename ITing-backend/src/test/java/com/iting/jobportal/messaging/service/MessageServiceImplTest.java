@@ -117,7 +117,6 @@ class MessageServiceImplTest {
 
             when(conversationRepository.findById(1L)).thenReturn(Optional.of(testConversation));
             when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
-            when(userRepository.findById(2L)).thenReturn(Optional.of(testUser));
             when(messageRepository.save(any(Message.class))).thenAnswer(inv -> {
                 Message m = inv.getArgument(0);
                 m.setId(1L);
@@ -149,7 +148,6 @@ class MessageServiceImplTest {
                 return c;
             });
             when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
-            when(userRepository.findById(2L)).thenReturn(Optional.of(testUser));
             when(messageRepository.save(any(Message.class))).thenAnswer(inv -> {
                 Message m = inv.getArgument(0);
                 m.setId(1L);
@@ -238,7 +236,7 @@ class MessageServiceImplTest {
         void sendMessage_existingConversationFound_reusesConversation() {
             when(conversationRepository.findByParticipantsAndType(1L, 2L, ConversationType.USER_USER))
                     .thenReturn(Optional.of(testConversation));
-            when(userRepository.findById(anyLong())).thenReturn(Optional.of(testUser));
+            when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
             when(messageRepository.save(any(Message.class))).thenAnswer(inv -> {
                 Message m = inv.getArgument(0);
                 m.setId(1L);

@@ -26,12 +26,13 @@ public class InteractionServiceImpl implements InteractionService {
     @Override
     @Transactional
     public void trackInteraction(Long userId, Long jobId, InteractionType type) {
-        if (userId == null) return;
-        
+        if (userId == null)
+            return;
+
         try {
             var account = accountRepository.findById(userId).orElse(null);
             var job = jobRepository.findById(jobId).orElse(null);
-            
+
             if (account != null && job != null) {
                 UserJobInteraction interaction = UserJobInteraction.builder()
                         .account(account)
@@ -49,7 +50,8 @@ public class InteractionServiceImpl implements InteractionService {
     @Override
     @Transactional
     public void trackSearch(Long userId, String keyword, String location) {
-        if (userId == null) return;
+        if (userId == null)
+            return;
 
         try {
             var account = accountRepository.findById(userId).orElse(null);
@@ -68,13 +70,14 @@ public class InteractionServiceImpl implements InteractionService {
 
     @Override
     public boolean hasEnoughBehavior(Long userId) {
-        if (userId == null) return false;
-        
+        if (userId == null)
+            return false;
+
         long totalViews = interactionRepository.countByAccountIdAndType(userId, InteractionType.VIEW);
         long totalApplies = interactionRepository.countByAccountIdAndType(userId, InteractionType.APPLY);
         long totalSaves = interactionRepository.countByAccountIdAndType(userId, InteractionType.SAVE);
         long totalSearches = searchHistoryRepository.countByAccountId(userId);
-        
+
         return totalViews >= 5 || totalSearches >= 3 || totalApplies >= 1 || totalSaves >= 2;
     }
 }
