@@ -8,22 +8,31 @@ import java.time.Duration;
 
 public enum RateLimitPolicy {
 
-    LOGIN(20, Duration.ofMinutes(1)),
-    OTP(5, Duration.ofMinutes(5)),
-    REGISTER(10, Duration.ofMinutes(1)),
-    REFRESH(10, Duration.ofMinutes(1)),
-    APPLY_JOB(30, Duration.ofMinutes(10)),
-    AI_REVIEW(15, Duration.ofMinutes(10)),
-    FILE_UPLOAD(20, Duration.ofMinutes(10)),
-    PUBLIC_SEARCH(60, Duration.ofMinutes(1)),
-    ADMIN(60, Duration.ofMinutes(1));
+    LOGIN        (20, Duration.ofMinutes(1),  FailMode.FAIL_CLOSED),
+    OTP          (5,  Duration.ofMinutes(5),  FailMode.FAIL_CLOSED),
+    REGISTER     (10, Duration.ofMinutes(1),  FailMode.FAIL_CLOSED),
+    REFRESH      (10, Duration.ofMinutes(1),  FailMode.FAIL_OPEN),
+    APPLY_JOB    (30, Duration.ofMinutes(10), FailMode.FAIL_OPEN),
+    AI_REVIEW    (15, Duration.ofMinutes(10), FailMode.FAIL_CLOSED),
+    FILE_UPLOAD  (20, Duration.ofMinutes(10), FailMode.FAIL_OPEN),
+    PUBLIC_SEARCH(60, Duration.ofMinutes(1),  FailMode.FAIL_OPEN),
+    ADMIN        (60, Duration.ofMinutes(1),  FailMode.FAIL_OPEN);
+
+    public enum FailMode {
+        /** Khi Redis + local fallback đều fail: chặn request (an toàn cho endpoint nhạy cảm). */
+        FAIL_CLOSED,
+        /** Khi Redis + local fallback đều fail: cho qua (tránh chặn oan endpoint ít nguy hiểm). */
+        FAIL_OPEN
+    }
 
     private final long capacity;
     private final Duration refillPeriod;
+    private final FailMode failMode;
 
-    RateLimitPolicy(long capacity, Duration refillPeriod) {
+    RateLimitPolicy(long capacity, Duration refillPeriod, FailMode failMode) {
         this.capacity = capacity;
         this.refillPeriod = refillPeriod;
+        this.failMode = failMode;
     }
 
     public BucketConfiguration toConfig() {
@@ -33,5 +42,9 @@ public enum RateLimitPolicy {
 
     public String key(String subject) {
         return "rl:" + name().toLowerCase() + ":" + subject;
+    }
+
+    public FailMode failMode() {
+        return failMode;
     }
 }

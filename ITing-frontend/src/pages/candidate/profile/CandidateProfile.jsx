@@ -1,17 +1,32 @@
 import React, { useState, useEffect } from 'react';
+import { useSearchParams, useLocation } from 'react-router-dom';
 import { FaUser, FaBriefcase, FaShareAlt, FaShieldAlt } from 'react-icons/fa';
 import PersonalInfoTab from './components/PersonalInfoTab';
 import ProfessionalInfoTab from './components/ProfessionalInfoTab';
 import SocialLinksTab from './components/SocialLinksTab';
 import AccountTab from './components/AccountTab';
 
-const CandidateProfile = ({ defaultTab = 'personal' }) => {
-  const [activeTab, setActiveTab] = useState(defaultTab); // 'personal' | 'professional' | 'social' | 'account'
+const VALID_TABS = ['personal', 'professional', 'social', 'account'];
 
-  // Cập nhật tab khi defaultTab thay đổi (ví dụ: chuyển đổi giữa route Profile và Settings)
+const CandidateProfile = ({ defaultTab = 'personal' }) => {
+  const [searchParams] = useSearchParams();
+  const location = useLocation();
+
+  // Ưu tiên: query param ?tab= > location.state.tab > defaultTab prop
+  const resolveInitialTab = () => {
+    const queryTab = searchParams.get('tab');
+    if (queryTab && VALID_TABS.includes(queryTab)) return queryTab;
+    const stateTab = location.state?.tab;
+    if (stateTab && VALID_TABS.includes(stateTab)) return stateTab;
+    return defaultTab;
+  };
+
+  const [activeTab, setActiveTab] = useState(resolveInitialTab);
+
+  // Cập nhật tab khi defaultTab, query param, hoặc state thay đổi
   useEffect(() => {
-    setActiveTab(defaultTab);
-  }, [defaultTab]);
+    setActiveTab(resolveInitialTab());
+  }, [defaultTab, searchParams, location.state]);
 
   const renderContent = () => {
     switch(activeTab) {
@@ -57,6 +72,11 @@ const CandidateProfile = ({ defaultTab = 'personal' }) => {
         </button>
       </div>
 
+      {/* Required field legend */}
+      <p className="text-xs text-gray-500 mb-4">
+        <span className="text-red-500 font-semibold">*</span> Trường bắt buộc
+      </p>
+
       {/* CONTENT AREA */}
       <div className="animate-fade-in">
          {renderContent()}
@@ -66,4 +86,4 @@ const CandidateProfile = ({ defaultTab = 'personal' }) => {
   );
 };
 
-export default CandidateProfile;
+export default CandidateProfile;

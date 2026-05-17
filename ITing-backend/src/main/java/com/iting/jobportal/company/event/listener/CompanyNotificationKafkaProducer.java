@@ -14,7 +14,7 @@ import org.springframework.stereotype.Component;
 @ConditionalOnProperty(name = "spring.kafka.enabled", havingValue = "true")
 public class CompanyNotificationKafkaProducer {
 
-    private final KafkaTemplate<String, String> kafkaTemplate;
+    private final KafkaTemplate<String, Object> kafkaTemplate;
 
     @EventListener
     public void produceKybNotificationToKafka(CompanyInfoSubmittedEvent event) {

@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { FaSearch, FaChevronRight, FaCheck, FaMapMarkerAlt } from 'react-icons/fa';
 
 /**
@@ -325,7 +326,14 @@ const LocationPicker = ({ value, onChange }) => {
             </div>
 
             {/* Dropdown Menu (Fixed Positioning to avoid clipping) */}
-            {isOpen && (
+            {isOpen && createPortal(
+              <>
+                {/* Transparent backdrop — closes on click, no blur/dim */}
+                <div 
+                    className="fixed inset-0"
+                    style={{ zIndex: 9999 }}
+                    onClick={() => setIsOpen(false)}
+                />
                 <div 
                     ref={dropdownRef}
                     style={{ 
@@ -333,7 +341,7 @@ const LocationPicker = ({ value, onChange }) => {
                         top: coords.top - window.scrollY + 12, 
                         left: Math.min(coords.left, window.innerWidth - coords.width - 20),
                         width: coords.width,
-                        zIndex: 9999 
+                        zIndex: 10050
                     }}
                     className="bg-white rounded-2xl shadow-[0_20px_60px_rgba(0,0,0,0.2)] border border-gray-100 overflow-hidden flex flex-col animate-in fade-in slide-in-from-top-2 duration-200"
                 >
@@ -476,7 +484,8 @@ const LocationPicker = ({ value, onChange }) => {
                         </button>
                     </div>
                 </div>
-            )}
+              </>
+            , document.body)}
         </div>
     );
 };

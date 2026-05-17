@@ -38,6 +38,23 @@ public class ApplyFormSentToJob {
     @Column(name = "Status")
     private ApplicationStatus status;
 
+    @Column(name = "Employer_note", columnDefinition = "TEXT")
+    private String employerNote;
+
+    // Denormalized userId (V53 added user_id column with FK to users, NOT NULL after backfill)
+    @Column(name = "user_id")
+    private Long userId;
+
+    // HR pipeline (V79). Default 'SCREENING' on insert if not set.
+    @Column(name = "pipeline_stage", length = 30)
+    private String pipelineStage;
+
+    @Column(name = "stage_updated_at")
+    private LocalDateTime stageUpdatedAt;
+
+    @Column(name = "stage_updated_by")
+    private Long stageUpdatedBy;
+
     @PrePersist
     protected void onCreate() {
         if (timeSent == null) {

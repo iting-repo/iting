@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { FaSearch, FaFilter, FaFileDownload, FaEye, FaArrowLeft, FaSort, FaTimesCircle, FaUserFriends } from 'react-icons/fa';
 import CandidateDetailModal from '../../components/employer/CandidateDetailModal';
 import applicationService from '../../services/applicationService';
-import { Table, Td, Pagination } from '../../components/common';
+import { Table, Td, Pagination, Breadcrumb } from '../../components/common';
 
 const ManageApplications = () => {
     const navigate = useNavigate();
@@ -91,22 +91,22 @@ const ManageApplications = () => {
 
     return (
         <div className="bg-white rounded-xl p-8 min-h-screen border border-gray-100">
+            <Breadcrumb
+              rootLabel="Tổng quan"
+              rootLink="/employer/dashboard"
+              items={[{ label: 'Quản lý ứng viên' }]}
+            />
             <div className="flex items-center justify-between mb-8">
-                <div className="flex items-center gap-4">
-                    <button onClick={() => navigate(-1)} className="p-2 hover:bg-gray-100 rounded-full transition-colors text-gray-500">
-                        <FaArrowLeft />
-                    </button>
-                    <div>
-                        <h2 className="text-3xl font-extrabold text-gray-900 tracking-tight flex items-center gap-3">
-                            Tất cả ứng viên 
-                            {pagination.totalItems > 0 && (
-                                <span className="text-[#3AB4E6] bg-[#EAF6FF] px-3 py-1 rounded-2xl text-xl">
-                                    {pagination.totalItems}
-                                </span>
-                            )}
-                        </h2>
-                        <p className="text-gray-500 font-medium mt-1">Lịch sử ứng tuyển toàn bộ từ trước đến nay</p>
-                    </div>
+                <div>
+                    <h2 className="text-2xl font-bold text-gray-800 tracking-tight flex items-center gap-3">
+                        Tất cả ứng viên 
+                        {pagination.totalItems > 0 && (
+                            <span className="text-[#3AB4E6] bg-[#EAF6FF] px-3 py-1 rounded-2xl text-xl">
+                                {pagination.totalItems}
+                            </span>
+                        )}
+                    </h2>
+                    <p className="text-gray-500 font-medium mt-1">Lịch sử ứng tuyển toàn bộ từ trước đến nay</p>
                 </div>
             </div>
 

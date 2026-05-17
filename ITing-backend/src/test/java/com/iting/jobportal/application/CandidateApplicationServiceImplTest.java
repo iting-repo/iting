@@ -20,7 +20,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
-import org.mockito.InOrder;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -339,10 +338,11 @@ class CandidateApplicationServiceImplTest {
     }
 
     @Test
-    void withdrawApplication_shouldDeleteJoinThenDeleteForm_whenOwnerMatches() {
+    void withdrawApplication_shouldSetStatusToWithdrawn_whenOwnerMatches() {
         ApplyForm form = ApplyForm.builder().id(10L).userId(1L).build();
         ApplyFormSentToJob sent = ApplyFormSentToJob.builder()
                 .id(new ApplyFormSentToJob.ApplyFormSentToJobId(5L, 10L))
+                .status(com.iting.jobportal.application.entity.enums.ApplicationStatus.PENDING)
                 .build();
 
         when(applyFormRepository.findById(10L)).thenReturn(Optional.of(form));
@@ -350,9 +350,13 @@ class CandidateApplicationServiceImplTest {
 
         service.withdrawApplication(1L, 10L);
 
-        InOrder inOrder = inOrder(candidateApplicationRepository, applyFormRepository);
-        inOrder.verify(candidateApplicationRepository).deleteByIdApplyFormId(10L);
-        inOrder.verify(applyFormRepository).deleteById(10L);
+        ArgumentCaptor<ApplyFormSentToJob> sentCaptor = ArgumentCaptor.forClass(ApplyFormSentToJob.class);
+        verify(candidateApplicationRepository).save(sentCaptor.capture());
+        assertEquals(com.iting.jobportal.application.entity.enums.ApplicationStatus.WITHDRAWN,
+                sentCaptor.getValue().getStatus());
+        verify(jobRepository).decrementApplicationCount(5L);
+        verify(candidateApplicationRepository, never()).deleteByIdApplyFormId(any());
+        verify(applyFormRepository, never()).deleteById(any());
     }
 
     @Test
@@ -365,7 +369,7 @@ class CandidateApplicationServiceImplTest {
         assertEquals(HttpStatus.NOT_FOUND, ex.getStatusCode());
         assertEquals("404 NOT_FOUND \"Không tìm thấy đơn ứng tuyển\"", ex.getMessage());
 
-        verify(candidateApplicationRepository, never()).deleteByIdApplyFormId(any());
+        verify(candidateApplicationRepository, never()).save(any());
         verify(applyFormRepository, never()).deleteById(any());
     }
 
@@ -380,27 +384,26 @@ class CandidateApplicationServiceImplTest {
         assertEquals(HttpStatus.FORBIDDEN, ex.getStatusCode());
         assertEquals("403 FORBIDDEN \"Bạn không có quyền rút đơn này\"", ex.getMessage());
 
-        verify(candidateApplicationRepository, never()).deleteByIdApplyFormId(any());
+        verify(candidateApplicationRepository, never()).save(any());
         verify(applyFormRepository, never()).deleteById(any());
     }
 
     @Test
-    void withdrawApplication_whenDeleteJoinFails_shouldNotDeleteForm() {
+    void withdrawApplication_whenAlreadyWithdrawn_shouldThrowConflict() {
         ApplyForm form = ApplyForm.builder().id(10L).userId(1L).build();
         ApplyFormSentToJob sent = ApplyFormSentToJob.builder()
                 .id(new ApplyFormSentToJob.ApplyFormSentToJobId(5L, 10L))
+                .status(com.iting.jobportal.application.entity.enums.ApplicationStatus.WITHDRAWN)
                 .build();
         when(applyFormRepository.findById(10L)).thenReturn(Optional.of(form));
         when(candidateApplicationRepository.findByIdApplyFormId(10L)).thenReturn(Optional.of(sent));
 
-        doThrow(new RuntimeException("delete join failed"))
-                .when(candidateApplicationRepository).deleteByIdApplyFormId(10L);
-
-        RuntimeException ex = assertThrows(RuntimeException.class,
+        ResponseStatusException ex = assertThrows(ResponseStatusException.class,
                 () -> service.withdrawApplication(1L, 10L));
 
-        assertEquals("delete join failed", ex.getMessage());
-        verify(applyFormRepository, never()).deleteById(any());
+        assertEquals(HttpStatus.CONFLICT, ex.getStatusCode());
+        verify(candidateApplicationRepository, never()).save(any());
+        verify(jobRepository, never()).decrementApplicationCount(any());
     }
 
     @Test
@@ -654,7 +657,7 @@ class CandidateApplicationServiceImplTest {
         assertThrows(NullPointerException.class,
                 () -> service.withdrawApplication(1L, 10L));
 
-        verify(candidateApplicationRepository, never()).deleteByIdApplyFormId(any());
+        verify(candidateApplicationRepository, never()).save(any());
         verify(applyFormRepository, never()).deleteById(any());
     }
 
@@ -667,7 +670,7 @@ class CandidateApplicationServiceImplTest {
                         () -> service.withdrawApplication(1L, null));
 
         assertEquals(org.springframework.http.HttpStatus.NOT_FOUND, ex.getStatusCode());
-        verify(candidateApplicationRepository, never()).deleteByIdApplyFormId(any());
+        verify(candidateApplicationRepository, never()).save(any());
         verify(applyFormRepository, never()).deleteById(any());
     }
 

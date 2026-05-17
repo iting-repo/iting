@@ -21,4 +21,18 @@ public interface GeminiService {
      * Duyệt tự động job bằng AI, trả về kết quả review.
      */
     String reviewJob(Job job);
+
+    /**
+     * Sinh cover letter cá nhân hóa cho một ứng viên ứng tuyển job cụ thể.
+     * @param candidateName Tên ứng viên
+     * @param skills        Danh sách kỹ năng nổi bật
+     * @param bio           Giới thiệu bản thân (có thể null)
+     * @param yearsExperience Số năm kinh nghiệm (có thể 0)
+     * @param job           Job đang ứng tuyển (làm context: title/company/description)
+     */
+    String generateCoverLetter(String candidateName,
+                               List<String> skills,
+                               String bio,
+                               int yearsExperience,
+                               Job job);
 }

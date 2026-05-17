@@ -6,7 +6,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
 import org.springframework.scheduling.annotation.EnableScheduling;
 
-@SpringBootApplication(scanBasePackages = {"com.iting.jobportal", "com.iting.service"})
+@SpringBootApplication
 @EnableScheduling
 public class ItingJobPortalApplication {
 

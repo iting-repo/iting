@@ -16,7 +16,8 @@ import com.iting.jobportal.job.controller.CurrentUser;
 import com.iting.jobportal.user.entity.User;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
-import com.iting.service.RedisRateLimitingService;
+import com.iting.jobportal.common.ratelimit.RateLimitPolicy;
+import com.iting.jobportal.common.ratelimit.RedisRateLimitingService;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
@@ -38,10 +39,10 @@ public class CompanyController {
     private final RedisRateLimitingService redisRateLimitingService;
 
     public CompanyController(CompanyService companyService, CompanyFollowService companyFollowService,
-            RedisRateLimitingService redisRateLimitingService) {
+            org.springframework.beans.factory.ObjectProvider<RedisRateLimitingService> rateLimitProvider) {
         this.companyService = companyService;
         this.companyFollowService = companyFollowService;
-        this.redisRateLimitingService = redisRateLimitingService;
+        this.redisRateLimitingService = rateLimitProvider.getIfAvailable();
     }
 
     @GetMapping("/me/business-license/view")
@@ -184,9 +185,10 @@ public class CompanyController {
     public ResponseEntity<?> submitInfoReview(
             @Parameter(hidden = true) @CurrentUser Long userId) {
 
-        if (!redisRateLimitingService.isAllowed(String.valueOf(userId), "submit_info", 1, 300)) {
+        if (redisRateLimitingService != null
+                && !redisRateLimitingService.tryConsume(RateLimitPolicy.AI_REVIEW, String.valueOf(userId))) {
             return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
-                    .body(Map.of("message", "Bạn thao tác quá nhanh. Vui lòng thử lại sau 5 phút."));
+                    .body(Map.of("message", "Bạn thao tác quá nhanh. Vui lòng thử lại sau."));
         }
 
         return ResponseEntity.ok(companyService.submitInfoReviewByAccountId(userId));

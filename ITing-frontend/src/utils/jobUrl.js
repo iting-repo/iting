@@ -115,6 +115,19 @@ export const getCompanyLogoUrl = (logoPath, companyName = "") => {
     if (normalizedLogoPath.includes("via.placeholder.com") && companyName) {
         return UI_AVATAR;
     }
+
+    // --- LOCAL LOGO MAP: Override broken/CORS-blocked external URLs ---
+    const LOCAL_LOGO_MAP = {
+      'https://fpt-software.com/logo.png': '/fsft.png',
+      'https://vng.com.vn/logo.png': '/vng.png',
+      'https://grab.com/logo.png': '/grab.jpg',
+      'https://vinai.io/logo.png': '/vin-ai.jpg',
+      'https://viettel.com.vn/logo.png': '/viettle.jpg',
+    };
+
+    const localOverride = LOCAL_LOGO_MAP[normalizedLogoPath];
+    if (localOverride) return localOverride;
+
     return normalizedLogoPath;
   }
   

@@ -20,6 +20,7 @@ import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 import java.util.List;
+import jakarta.servlet.http.HttpServletResponse;
 
 @Configuration
 @EnableWebSecurity
@@ -117,6 +118,15 @@ public class SecurityConfig {
 
                 // ── Các request còn lại: phải đăng nhập ──────────────────
                 .anyRequest().authenticated()
+            )
+
+            // ── Trả 401 thay vì 403 khi chưa đăng nhập ──────────────
+            .exceptionHandling(ex -> ex
+                .authenticationEntryPoint((request, response, authException) -> {
+                    response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                    response.setContentType("application/json;charset=UTF-8");
+                    response.getWriter().write("{\"error\":\"Unauthorized\",\"message\":\"Token hết hạn hoặc chưa đăng nhập\"}");
+                })
             )
 
             .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);

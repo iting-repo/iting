@@ -7,9 +7,19 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface UserProfileRepository extends JpaRepository<UserProfile, Long> {
+
+    // Resolve UserProfile by linked Account.id (user.account.id).
+    @Query("SELECT p FROM UserProfile p WHERE p.user.account.id = :accountId")
+    Optional<UserProfile> findByAccount_Id(@Param("accountId") Long accountId);
+
+    // Alias used by AiCoverLetterController.
+    default Optional<UserProfile> findByAccountId(Long accountId) {
+        return findByAccount_Id(accountId);
+    }
 
     @Query("""
             select distinct p from UserProfile p

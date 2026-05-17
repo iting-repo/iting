@@ -49,11 +49,11 @@ async function mockEmployerApis(page) {
     await fulfillJson(route, employerJobsPage);
   });
 
-  await page.route('**/api/employer/applications/job/2099682**', async (route) => {
+  await page.route('**/api/hr/applications/job/2099682**', async (route) => {
     await fulfillJson(route, employerApplicationsPage);
   });
 
-  await page.route('**/api/employer/applications/job/1**', async (route) => {
+  await page.route('**/api/hr/applications/job/1**', async (route) => {
     await fulfillJson(route, employerApplicationsPage);
   });
 }

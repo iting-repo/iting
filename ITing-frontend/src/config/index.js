@@ -1,4 +1,4 @@
-const FALLBACK_LOCAL_API_ORIGIN = 'http://localhost:8081';
+const FALLBACK_LOCAL_API_ORIGIN = 'http://localhost:8080';
 
 const normalizeApiOrigin = (value) => {
     if (!value) {

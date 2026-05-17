@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Upload, AlertTriangle, FileText, CheckCircle } from "lucide-react";
-import { Button } from "../../components/common";
+import { Button, Breadcrumb } from "../../components/common";
 import companyService from "../../services/companyService";
 import affiliationService from "../../services/affiliationService";
 import { toast } from "sonner";
@@ -158,6 +158,11 @@ const Verification = () => {
   return (
     <div className="space-y-6 animate-fade-in">
       {/* Header */}
+      <Breadcrumb
+        rootLabel="Tổng quan"
+        rootLink="/employer/dashboard"
+        items={[{ label: 'Xác thực tài khoản' }]}
+      />
       <div className="flex flex-col gap-2">
         <h1 className="text-2xl font-bold text-gray-900">Xác thực tài khoản</h1>
         <p className="text-gray-500">Nâng cao độ tin cậy và mở khóa đầy đủ tính năng bằng cách xác thực doanh nghiệp của bạn.</p>
