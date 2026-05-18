@@ -80,15 +80,7 @@ public class Company {
     @Column(name = "founded_year")
     private Integer foundedYear;
 
-    @ElementCollection
-    @CollectionTable(name = "company_tech_stack", joinColumns = @JoinColumn(name = "company_id"))
-    @Column(name = "tech")
-    private List<String> techStack;
 
-    @ElementCollection
-    @CollectionTable(name = "company_benefits", joinColumns = @JoinColumn(name = "company_id"))
-    @Column(name = "benefit")
-    private List<String> benefits;
 
     // ===== Thông tin người đại diện =====
     @Column(name = "Representative_name", length = 255)
@@ -100,8 +92,7 @@ public class Company {
     @Column(name = "Representative_phone", length = 20)
     private String representativePhone;
 
-    @Column(name = "Account_email", length = 255)
-    private String accountEmail;
+
 
     // ===== Thông tin pháp lý =====
     @Column(name = "Tax_code", length = 50, nullable = false, unique = true)
@@ -120,15 +111,12 @@ public class Company {
     @Column(name = "Consent_document_file_url", columnDefinition = "TEXT")
     private String consentDocumentFileUrl;
 
-    // ===== Consent document xác nhận =====
-    @Column(name = "Consent_document_confirmed")
-    private Boolean consentDocumentConfirmed = false;
+    @Enumerated(EnumType.STRING)
+    @Column(name = "Consent_document_type", length = 100)
+    private BusinessDocumentType consentDocumentType;
 
-    @Column(name = "Consent_confirmed_at")
-    private LocalDateTime consentConfirmedAt;
-
-    @Column(name = "Consent_document_version")
-    private String consentDocumentVersion;
+    @Column(name = "Consent_document_preview_url", columnDefinition = "TEXT")
+    private String consentDocumentPreviewUrl;
 
     // ===== Xác thực =====
     @Enumerated(EnumType.STRING)
@@ -136,8 +124,8 @@ public class Company {
     private VerificationLevel verificationLevel = VerificationLevel.UNVERIFIED;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "Company_info_update_status", length = 50)
-    private CompanyReviewStatus companyInfoUpdateStatus = CompanyReviewStatus.DRAFT;
+    @Column(name = "company_info_update_status", length = 50)
+    private CompanyReviewStatus companyReviewStatus = CompanyReviewStatus.DRAFT;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "Document_review_status", length = 50)

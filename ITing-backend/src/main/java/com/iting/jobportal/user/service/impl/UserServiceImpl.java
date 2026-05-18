@@ -31,14 +31,15 @@ public class UserServiceImpl implements UserService {
     @Override
     public UserProfileResponse getProfile(Long id) {
         User user = getUserEntity(id);
+        var account = user.getAccount();
 
         return UserProfileResponse.builder()
                 .userId(user.getId())
-                .fullName(user.getFullName())
-                .email(user.getAccount() != null ? user.getAccount().getEmail() : null)
-                .phoneNum(user.getPhoneNum())
+                .fullName(account != null ? account.getFullName() : null)
+                .email(account != null ? account.getEmail() : null)
+                .phoneNum(account != null ? account.getPhone() : null)
                 .locId(user.getLocId())
-                .avatarUrl(user.getAvatarUrl())
+                .avatarUrl(account != null ? account.getAvatarUrl() : null)
                 .lastUpdate(user.getLastUpdate())
                 .build();
     }
@@ -46,31 +47,34 @@ public class UserServiceImpl implements UserService {
     @Override
     public void updateBasic(Long id, UpdateUserRequest req) {
         User user = getUserEntity(id);
+        var account = user.getAccount();
 
-        user.setFullName(req.getFullName());
-        user.setPhoneNum(req.getPhoneNum());
-        user.setAvatarUrl(req.getAvatarUrl());
-        user.setLastUpdate(LocalDateTime.now());
-
-        if (user.getAccount() != null && req.getEmail() != null) {
-            user.getAccount().setEmail(req.getEmail());
+        if (account != null) {
+            account.setFullName(req.getFullName());
+            account.setPhone(req.getPhoneNum());
+            account.setAvatarUrl(req.getAvatarUrl());
+            if (req.getEmail() != null) {
+                account.setEmail(req.getEmail());
+            }
         }
+        user.setLastUpdate(LocalDateTime.now());
     }
 
     @Override
     public void updatePersonal(Long id, PersonalUpdateDto dto) {
         User user = getUserEntity(id);
+        var account = user.getAccount();
 
-        if (dto.getFullName() != null) {
-            user.setFullName(dto.getFullName());
-        }
-
-        if (dto.getPhoneNum() != null) {
-            user.setPhoneNum(dto.getPhoneNum());
-        }
-
-        if (dto.getAvatarUrl() != null) {
-            user.setAvatarUrl(dto.getAvatarUrl());
+        if (account != null) {
+            if (dto.getFullName() != null) {
+                account.setFullName(dto.getFullName());
+            }
+            if (dto.getPhoneNum() != null) {
+                account.setPhone(dto.getPhoneNum());
+            }
+            if (dto.getAvatarUrl() != null) {
+                account.setAvatarUrl(dto.getAvatarUrl());
+            }
         }
 
         user.setLastUpdate(LocalDateTime.now());
@@ -79,14 +83,18 @@ public class UserServiceImpl implements UserService {
     @Override
     public void updateAvatar(Long id, String url) {
         User user = getUserEntity(id);
-        user.setAvatarUrl(url);
+        if (user.getAccount() != null) {
+            user.getAccount().setAvatarUrl(url);
+        }
         user.setLastUpdate(LocalDateTime.now());
     }
 
     @Override
     public void deleteAvatar(Long id) {
         User user = getUserEntity(id);
-        user.setAvatarUrl(null);
+        if (user.getAccount() != null) {
+            user.getAccount().setAvatarUrl(null);
+        }
         user.setLastUpdate(LocalDateTime.now());
     }
 
@@ -95,7 +103,9 @@ public class UserServiceImpl implements UserService {
         String avatarUrl = fileUploadService.uploadAvatar(file);
 
         User user = getUserEntity(id);
-        user.setAvatarUrl(avatarUrl);
+        if (user.getAccount() != null) {
+            user.getAccount().setAvatarUrl(avatarUrl);
+        }
         user.setLastUpdate(LocalDateTime.now());
 
         return avatarUrl;

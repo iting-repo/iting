@@ -138,7 +138,7 @@ public class AdminAffiliationServiceImpl implements AdminAffiliationService {
             applySnapshotToCompany(aff, company);
             aff.setAppliedToCompanyAt(LocalDateTime.now());
             company.setInfoSourceAffiliationId(aff.getId());
-            company.setCompanyInfoUpdateStatus(CompanyReviewStatus.APPROVED);
+            company.setCompanyReviewStatus(CompanyReviewStatus.APPROVED);
             company.setDocumentReviewStatus(DocumentReviewStatus.APPROVED);
             companyRepo.save(company);
 
@@ -312,7 +312,7 @@ public class AdminAffiliationServiceImpl implements AdminAffiliationService {
                 .id(aff.getId())
                 .hrAccountId(hr.getId())
                 .hrEmail(hr.getEmail())
-                .hrFullName(hr.getUser() != null ? hr.getUser().getFullName() : null)
+                .hrFullName(hr.getFullName())
                 .companyId(c.getId())
                 .companyName(c.getName())
                 .companyTaxCode(c.getTaxCode())

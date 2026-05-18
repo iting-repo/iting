@@ -21,6 +21,15 @@ public interface VectorSearchService {
     List<ScoredJobResult> semanticSearch(String queryText, int topK);
 
     /**
+     * Gợi ý job phù hợp cho ứng viên dựa trên CV embedding.
+     *
+     * @param userId ID ứng viên (lấy cvEmbedding từ User entity)
+     * @param topK   Số lượng kết quả tối đa
+     * @return Danh sách job xếp hạng theo similarity score
+     */
+    List<ScoredJobResult> recommendJobsForCandidate(Long userId, int topK);
+
+    /**
      * Kết quả tìm kiếm có điểm similarity.
      */
     record ScoredJobResult(Long jobId, double score) {

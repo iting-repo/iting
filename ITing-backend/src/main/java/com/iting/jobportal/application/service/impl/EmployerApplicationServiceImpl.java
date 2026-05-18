@@ -279,4 +279,16 @@ public class EmployerApplicationServiceImpl implements EmployerApplicationServic
     public List<ApplicationResponse> searchCandidatesByCvFile(Long employerId, MultipartFile cvFile) {
         return new ArrayList<>();
     }
+
+    @Override
+    public Page<ApplicationResponse> getApplicationsRankedByMatch(Long employerId, Long jobId, int page, int size) {
+        verifyJobOwnership(employerId, jobId);
+
+        // Sort by match_score DESC NULLS LAST, sau đó timeSent DESC
+        Pageable pageable = PageRequest.of(page, size,
+                Sort.by(Sort.Order.desc("matchScore").nullsLast(),
+                        Sort.Order.desc("timeSent")));
+
+        return employerApplicationRepository.findByJobId(jobId, pageable).map(this::toResponse);
+    }
 }

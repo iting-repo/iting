@@ -6,6 +6,8 @@ import com.iting.jobportal.job.controller.CurrentUser;
 import com.iting.jobportal.userprofile.dto.response.CVResponse;
 import com.iting.jobportal.userprofile.service.CVService;
 import com.iting.jobportal.userprofile.service.GeminiCVParserService;
+import com.iting.jobportal.userprofile.service.embedding.HuggingFaceCvExtractionClient;
+import com.iting.jobportal.userprofile.service.embedding.HuggingFaceCvExtractionClient.CvExtractionResult;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -27,6 +29,7 @@ public class CVController {
 
     private final CVService cvService;
     private final GeminiCVParserService geminiCVParserService;
+    private final HuggingFaceCvExtractionClient hfCvExtractionClient;
 
     @GetMapping("/recent")
     @Operation(summary = "Lấy 3 CV mới nhất của người dùng", 
@@ -66,7 +69,7 @@ public class CVController {
     }
 
     @PostMapping(value = "/parse", consumes = MediaType.MULTIPART_FORM_DATA_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
-    @Operation(summary = "Phân tích CV bằng AI (Gemini)", 
+    @Operation(summary = "Phân tích CV bằng AI (Gemini)",
                description = "Đọc file PDF/Image CV và trích xuất thông tin kỹ năng, học vấn, kinh nghiệm thành JSON")
     public ResponseEntity<?> parseCV(
             @Parameter(hidden = true) @CurrentUser Long userId,
@@ -77,5 +80,25 @@ public class CVController {
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         }
+    }
+
+    @PostMapping(value = "/extract-ai", consumes = MediaType.MULTIPART_FORM_DATA_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+    @Operation(summary = "Trích xuất CV bằng HF AI Matching API",
+               description = "Gọi HF /extract-cv: parse PDF/Image thành JSON cấu trúc kèm embedding vector (Gemma 768d)")
+    @RateLimited(policy = RateLimitPolicy.FILE_UPLOAD, subject = "user")
+    public ResponseEntity<?> extractWithHfAi(
+            @Parameter(hidden = true) @CurrentUser Long userId,
+            @RequestParam("file") MultipartFile file) {
+        return hfCvExtractionClient.extract(file)
+                .<ResponseEntity<?>>map(result -> result.isSuccess()
+                        ? ResponseEntity.ok(Map.of(
+                                "status", result.status(),
+                                "extractedData", result.extractedData(),
+                                "dimension", result.embedding() != null ? result.embedding().length : 0,
+                                "embedding", result.embedding()))
+                        : ResponseEntity.badRequest().body(Map.of(
+                                "status", result.status() != null ? result.status() : "error",
+                                "error", result.error() != null ? result.error() : "extraction failed")))
+                .orElseGet(() -> ResponseEntity.status(502).body(Map.of("error", "HF AI service unavailable")));
     }
 }

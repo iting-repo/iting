@@ -103,7 +103,9 @@ public class EmployerCandidateSearchServiceImpl implements EmployerCandidateSear
             if (queryEmbedding.isPresent()) {
                 score = cosineSimilarity(queryEmbedding.get(), parseEmbedding(user.getCvEmbedding()).orElse(null));
             } else if (keyword != null && !keyword.isBlank()) {
-                score = heuristicKeywordScore(keyword, user.getFullName(), profile.getHeadline(), profile.getShortBio(),
+                score = heuristicKeywordScore(keyword,
+                        account != null ? account.getFullName() : null,
+                        profile.getHeadline(), profile.getShortBio(),
                         profile.getSkills());
             }
 
@@ -207,7 +209,7 @@ public class EmployerCandidateSearchServiceImpl implements EmployerCandidateSear
 
         return EmployerCandidateSearchResponse.builder()
                 .id(profile.getId())
-                .name(user.getFullName())
+                .name(account != null ? account.getFullName() : null)
                 .email(account.getEmail())
                 .title(nullToEmpty(profile.getHeadline()))
                 .level(deriveLevel(expYears))

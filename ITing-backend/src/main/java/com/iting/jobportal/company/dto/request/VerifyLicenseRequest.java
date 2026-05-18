@@ -9,7 +9,7 @@ public class VerifyLicenseRequest {
     private VerificationLevel verificationLevel;
 
     @Size(max = 255, message = "Update status must be at most 255 characters")
-    private CompanyReviewStatus companyInfoUpdateStatus;
+    private CompanyReviewStatus companyReviewStatus;
 
     public VerifyLicenseRequest() {
     }
@@ -22,11 +22,11 @@ public class VerifyLicenseRequest {
         this.verificationLevel = verificationLevel;
     }
 
-    public CompanyReviewStatus getCompanyInfoUpdateStatus() {
-        return companyInfoUpdateStatus;
+    public CompanyReviewStatus getCompanyReviewStatus() {
+        return companyReviewStatus;
     }
 
-    public void setCompanyInfoUpdateStatus(CompanyReviewStatus companyInfoUpdateStatus) {
-        this.companyInfoUpdateStatus = companyInfoUpdateStatus;
+    public void setCompanyReviewStatus(CompanyReviewStatus companyReviewStatus) {
+        this.companyReviewStatus = companyReviewStatus;
     }
 }

@@ -48,12 +48,16 @@ class AdminUserServiceImplTest {
     void getAllUsers_shouldMapSupplementalUserFields() {
         User user = new User();
         user.setId(1L);
-        user.setFullName("Test User");
-        user.setAvatarUrl("/a.png");
 
-        // Account.getUser() is a JPA @OneToOne — mapToResponse reads it directly,
-        // it does NOT go through userRepository.findById.
-        Account account = Account.builder().id(1L).email("u@test.com").role(Role.CANDIDATE).status(AccountStatus.ACTIVE).user(user).build();
+        // fullName + avatar đã được hợp nhất về Account sau V83.
+        Account account = Account.builder()
+                .id(1L).email("u@test.com")
+                .role(Role.CANDIDATE).status(AccountStatus.ACTIVE)
+                .fullName("Test User")
+                .avatarUrl("/a.png")
+                .user(user)
+                .build();
+        user.setAccount(account);
 
         when(accountRepository.findAll(any(Specification.class), any(Pageable.class)))
                 .thenReturn(new PageImpl<>(List.of(account)));

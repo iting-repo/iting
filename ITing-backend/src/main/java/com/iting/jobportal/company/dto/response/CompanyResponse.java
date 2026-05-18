@@ -30,11 +30,10 @@ public class CompanyResponse {
     private String representativeName;
     private String representativeGender;
     private String representativePhone;
-    private String accountEmail;
+
 
     private Integer foundedYear;
-    private List<String> techStack;
-    private List<String> benefits;
+
 
     private String taxCode;
     private String businessLicenseFileUrl;
@@ -43,7 +42,7 @@ public class CompanyResponse {
     private String consentDocumentFileUrl;
 
     private VerificationLevel verificationLevel;
-    private CompanyReviewStatus companyInfoUpdateStatus;
+    private CompanyReviewStatus companyReviewStatus;
     private DocumentReviewStatus documentReviewStatus;
     private LocalDateTime lastUpdateRequestDate;
 
@@ -71,17 +70,16 @@ public class CompanyResponse {
                 company.getRepresentativeName(),
                 company.getRepresentativeGender(),
                 company.getRepresentativePhone(),
-                company.getAccountEmail(),
+
                 company.getFoundedYear(),
-                company.getTechStack(),
-                company.getBenefits(),
+
                 company.getTaxCode(),
                 company.getBusinessLicenseFileUrl(),
                 company.getBusinessLicenseDocumentType(),
                 company.getBusinessLicensePreviewUrl(),
                 company.getConsentDocumentFileUrl(),
                 company.getVerificationLevel(),
-                company.getCompanyInfoUpdateStatus(),
+                company.getCompanyReviewStatus(),
                 company.getDocumentReviewStatus(),
                 company.getLastUpdateRequestDate(),
                 company.getLastUpdate(),

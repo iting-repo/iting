@@ -83,18 +83,18 @@ public class UserProfile {
     @OneToMany(mappedBy = "profile", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Portfolio> portfolios = new ArrayList<>();
 
-    // ── Convenience accessors expected by ProfileCompletenessService / AiCoverLetterController.
-    // Source of truth lives on the linked User (until full migration to V54's Account fields).
+    // Convenience accessors — source of truth is Account (login + contact identity).
+    // Trả về null nếu user hoặc account chưa được fetch (lazy proxy chưa init / DTO chỉ-profile).
     public String getFullName() {
-        return user != null ? user.getFullName() : null;
+        return user != null && user.getAccount() != null ? user.getAccount().getFullName() : null;
     }
 
     public String getAvatarUrl() {
-        return user != null ? user.getAvatarUrl() : null;
+        return user != null && user.getAccount() != null ? user.getAccount().getAvatarUrl() : null;
     }
 
     public String getPhoneNumber() {
-        return user != null ? user.getPhoneNum() : null;
+        return user != null && user.getAccount() != null ? user.getAccount().getPhone() : null;
     }
 
     public String getBio() {

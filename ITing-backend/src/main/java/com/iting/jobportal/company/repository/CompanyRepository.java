@@ -13,12 +13,12 @@ import org.springframework.data.repository.query.Param;
 import java.util.Optional;
 
 public interface CompanyRepository extends JpaRepository<Company, Long>, JpaSpecificationExecutor<Company> {
-    Page<Company> findByCompanyInfoUpdateStatus(CompanyReviewStatus status, Pageable pageable);
+    Page<Company> findByCompanyReviewStatus(CompanyReviewStatus status, Pageable pageable);
 
     Optional<Company> findByTaxCode(String taxCode);
 
-    @Query("SELECT c FROM Company c WHERE c.companyInfoUpdateStatus = :infoStatus OR c.documentReviewStatus = :docStatus")
-    Page<Company> findByCompanyInfoUpdateStatusOrDocumentReviewStatus(
+    @Query("SELECT c FROM Company c WHERE c.companyReviewStatus = :infoStatus OR c.documentReviewStatus = :docStatus")
+    Page<Company> findByCompanyReviewStatusOrDocumentReviewStatus(
             @Param("infoStatus") CompanyReviewStatus infoStatus,
             @Param("docStatus") DocumentReviewStatus docStatus,
             Pageable pageable);

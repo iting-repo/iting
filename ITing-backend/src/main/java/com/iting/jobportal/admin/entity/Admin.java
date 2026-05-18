@@ -1,12 +1,16 @@
 package com.iting.jobportal.admin.entity;
 
+import com.iting.jobportal.admin.entity.enums.AdminLevel;
+import com.iting.jobportal.auth.entity.Account;
 import jakarta.persistence.*;
 import lombok.*;
-import java.time.LocalDateTime;
 
 /**
- * Entity đại diện cho tài khoản Admin
- * Khớp với tham chiếu Admin trong CompanyUploadJob và FollowCompany
+ * Admin-specific extension of {@link Account} (1-1 via @MapsId).
+ *
+ * <p>Login + contact (email, password, full_name, phone, avatar_url, last_login_*, login_count)
+ * lives on Account. This entity only holds admin-specific fields: staff code, admin level,
+ * activation flag (semantic riêng — không trùng Account.status), free-form notes.
  */
 @Entity
 @Table(name = "admin_accounts")
@@ -15,53 +19,27 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class Admin { // Đổi tên từ AdminAccount thành Admin
+public class Admin {
 
     @Id
-    @Column(name = "id")
-    private Long id; // ID này sẽ trùng với Account ID
+    private Long id;
 
-    @Column(name = "full_name", nullable = false, length = 100)
-    private String fullName;
+    @OneToOne(fetch = FetchType.LAZY)
+    @MapsId
+    @JoinColumn(name = "id")
+    private Account account;
 
-    @Column(length = 20)
-    private String phone;
+    @Column(name = "staff_code", length = 50, unique = true)
+    private String staffCode;
 
-    @Column(name = "avatar_url", length = 500)
-    private String avatarUrl;
-
-    @Column(name = "last_login")
-    private LocalDateTime lastLogin;
-
-    @Column(name = "login_count")
-    private Integer loginCount = 0;
-
-    @Column(name = "last_login_ip", length = 50)
-    private String lastLoginIp;
+    @Enumerated(EnumType.STRING)
+    @Column(name = "admin_level", length = 20)
+    private AdminLevel adminLevel;
 
     @Column(nullable = false)
+    @Builder.Default
     private Boolean active = true;
-
-    @Column(name = "created_at")
-    private LocalDateTime createdAt;
-
-    @Column(name = "updated_at")
-    private LocalDateTime updatedAt;
 
     @Column(length = 500)
     private String notes;
-
-    @PrePersist
-    protected void onCreate() {
-        createdAt = LocalDateTime.now();
-        if (active == null)
-            active = true;
-        if (loginCount == null)
-            loginCount = 0;
-    }
-
-    @PreUpdate
-    protected void onUpdate() {
-        updatedAt = LocalDateTime.now();
-    }
 }

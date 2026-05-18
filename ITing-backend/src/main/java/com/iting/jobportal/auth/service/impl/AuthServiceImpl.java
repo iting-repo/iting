@@ -238,13 +238,18 @@ public class AuthServiceImpl implements AuthService {
             return;
         }
 
+        // Ghi fullName lên Account (source of truth) thay vì User
+        if (request.getFullName() != null && !request.getFullName().isBlank()
+                && (account.getFullName() == null || account.getFullName().isBlank())) {
+            account.setFullName(request.getFullName().trim());
+            accountRepository.save(account);
+        } else if (account.getFullName() == null || account.getFullName().isBlank()) {
+            account.setFullName(account.getEmail());
+            accountRepository.save(account);
+        }
+
         User user = new User();
         user.setAccount(account);
-        user.setFullName(
-                request.getFullName() != null && !request.getFullName().isBlank()
-                        ? request.getFullName().trim()
-                        : account.getEmail()
-        );
         user.setLastUpdate(LocalDateTime.now());
 
         userRepository.save(user);
@@ -329,18 +334,14 @@ public class AuthServiceImpl implements AuthService {
         Account account = accountRepository.findById(accountId)
                 .orElseThrow(() -> new RuntimeException("Account not found"));
 
-        String fullName = account.getEmail();
-        String avatarUrl = null;
+        // Identity (fullName + avatarUrl) đã được hợp nhất về Account sau V83.
+        // Với EMPLOYER vẫn fallback sang company logo/name nếu Account chưa set.
+        String fullName = account.getFullName() != null ? account.getFullName() : account.getEmail();
+        String avatarUrl = account.getAvatarUrl();
 
         Role role = account.getRole().normalize();
 
-        if (role == Role.CANDIDATE) {
-            User user = userRepository.findById(accountId).orElse(null);
-            if (user != null) {
-                fullName = user.getFullName();
-                avatarUrl = user.getAvatarUrl();
-            }
-        } else if (role == Role.EMPLOYER) {
+        if (role == Role.EMPLOYER) {
             Company company = companyRepository.findById(accountId).orElse(null);
             if (company != null) {
                 fullName = company.getName();

@@ -38,7 +38,7 @@ public class ApplyFormSentToJob {
     @Column(name = "Status")
     private ApplicationStatus status;
 
-    @Column(name = "Employer_note", columnDefinition = "TEXT")
+    @Column(name = "hr_note", columnDefinition = "TEXT")
     private String employerNote;
 
     // Denormalized userId (V53 added user_id column with FK to users, NOT NULL after backfill)
@@ -54,6 +54,10 @@ public class ApplyFormSentToJob {
 
     @Column(name = "stage_updated_by")
     private Long stageUpdatedBy;
+
+    /** Điểm phù hợp CV ↔ Job (0–100%). Tính tự động bằng AI cosine similarity khi ứng tuyển. */
+    @Column(name = "match_score")
+    private Double matchScore;
 
     @PrePersist
     protected void onCreate() {

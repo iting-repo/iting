@@ -1,5 +1,6 @@
 package com.iting.jobportal.messaging.service;
 
+import com.iting.jobportal.auth.entity.Account;
 import com.iting.jobportal.company.entity.Company;
 import com.iting.jobportal.company.repository.CompanyRepository;
 import com.iting.jobportal.messaging.dto.request.SendMessageRequest;
@@ -69,8 +70,11 @@ class MessageServiceImplTest {
     void setUp() {
         testUser = new User();
         testUser.setId(1L);
-        testUser.setFullName("Nguyen Van A");
-        testUser.setAvatarUrl("https://avatar.com/1.png");
+        testUser.setAccount(Account.builder()
+                .id(1L)
+                .fullName("Nguyen Van A")
+                .avatarUrl("https://avatar.com/1.png")
+                .build());
 
         testCompany = new Company();
         testCompany.setId(2L);

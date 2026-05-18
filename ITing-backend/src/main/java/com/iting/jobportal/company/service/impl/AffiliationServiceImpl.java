@@ -81,7 +81,7 @@ public class AffiliationServiceImpl implements AffiliationService {
             company.setTaxCode(taxCode);
             company.setName("Chưa cập nhật");                       // placeholder
             company.setVerificationLevel(VerificationLevel.UNVERIFIED);
-            company.setCompanyInfoUpdateStatus(CompanyReviewStatus.DRAFT);
+            company.setCompanyReviewStatus(CompanyReviewStatus.DRAFT);
             company.setDocumentReviewStatus(DocumentReviewStatus.MISSING);
             company.setActive(true);
             company.setFollowerCount(0L);

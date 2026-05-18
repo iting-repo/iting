@@ -2,14 +2,10 @@ package com.iting.jobportal.admin.service.impl;
 
 import com.iting.jobportal.admin.dto.response.AuditLogResponse;
 import com.iting.jobportal.admin.entity.ActivityLog;
-import com.iting.jobportal.admin.entity.Admin;
 import com.iting.jobportal.admin.repository.ActivityLogRepository;
-import com.iting.jobportal.admin.repository.AdminRepository;
 import com.iting.jobportal.admin.service.AdminActivityLogService;
 import com.iting.jobportal.auth.entity.Account;
 import com.iting.jobportal.auth.repository.AccountRepository;
-import com.iting.jobportal.user.entity.User;
-import com.iting.jobportal.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.*;
 import org.springframework.stereotype.Service;
@@ -22,8 +18,6 @@ public class AdminActivityLogServiceImpl implements AdminActivityLogService {
 
     private final ActivityLogRepository activityLogRepository;
     private final AccountRepository accountRepository;
-    private final AdminRepository adminRepository;
-    private final UserRepository userRepository;
 
     @Override
     public void logActivity(Long userId, String action, String entityType, Long entityId, String description) {
@@ -73,21 +67,13 @@ public class AdminActivityLogServiceImpl implements AdminActivityLogService {
                 .ip(log.getIpAddress())
                 .build();
 
-        // Resolve Performer Info
+        // Resolve Performer Info — fullName giờ ở Account (sau V83), không còn ở User/Admin.
         Optional<Account> accountOpt = accountRepository.findById(log.getUserId());
         if (accountOpt.isPresent()) {
             Account account = accountOpt.get();
             response.setPerformerRole(account.getRole().toString());
-
-            // Try to get Admin name
-            Optional<Admin> adminOpt = adminRepository.findById(account.getId());
-            if (adminOpt.isPresent()) {
-                response.setPerformer(adminOpt.get().getFullName());
-            } else {
-                // Try to get User name
-                Optional<User> userOpt = userRepository.findById(account.getId());
-                response.setPerformer(userOpt.map(User::getFullName).orElse(account.getEmail()));
-            }
+            response.setPerformer(
+                    account.getFullName() != null ? account.getFullName() : account.getEmail());
         } else {
             response.setPerformer("Hệ thống");
             response.setPerformerRole("SYSTEM");

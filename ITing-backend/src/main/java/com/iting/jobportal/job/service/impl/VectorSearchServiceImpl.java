@@ -4,6 +4,8 @@ import com.iting.jobportal.job.entity.Job;
 import com.iting.jobportal.job.repository.JobRepository;
 import com.iting.jobportal.job.service.JobEmbeddingService;
 import com.iting.jobportal.job.service.VectorSearchService;
+import com.iting.jobportal.user.entity.User;
+import com.iting.jobportal.user.repository.UserRepository;
 import com.iting.jobportal.userprofile.service.embedding.EmbeddingClient;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -27,6 +29,7 @@ public class VectorSearchServiceImpl implements VectorSearchService {
     private final JobRepository jobRepository;
     private final EmbeddingClient embeddingClient;
     private final JobEmbeddingService jobEmbeddingService;
+    private final UserRepository userRepository;
 
     @Override
     public List<ScoredJobResult> semanticSearch(String queryText, int topK) {
@@ -40,27 +43,43 @@ public class VectorSearchServiceImpl implements VectorSearchService {
             return List.of();
         }
 
-        double[] queryVec = queryEmbedding.get();
+        return rankJobsByVector(queryEmbedding.get(), topK);
+    }
 
-        // Step 2: Load all job embeddings
-        List<Job> jobs = jobRepository.findAllActiveWithEmbedding();
-        if (jobs.isEmpty())
+    @Override
+    public List<ScoredJobResult> recommendJobsForCandidate(Long userId, int topK) {
+        Optional<User> userOpt = userRepository.findById(userId);
+        if (userOpt.isEmpty() || userOpt.get().getCvEmbedding() == null) {
+            log.debug("No CV embedding for userId={}, cannot recommend", userId);
             return List.of();
+        }
 
-        // Step 3: Compute cosine similarity for each job
+        double[] cvVec = jobEmbeddingService.parseEmbedding(userOpt.get().getCvEmbedding());
+        if (cvVec == null || cvVec.length == 0) return List.of();
+
+        log.info("🤖 Recommending jobs for userId={} (cvVec={}d)", userId, cvVec.length);
+        return rankJobsByVector(cvVec, topK);
+    }
+
+    /**
+     * Xếp hạng tất cả active jobs theo cosine similarity với query vector.
+     */
+    private List<ScoredJobResult> rankJobsByVector(double[] queryVec, int topK) {
+        List<Job> jobs = jobRepository.findAllActiveWithEmbedding();
+        if (jobs.isEmpty()) return List.of();
+
         List<ScoredJobResult> results = new ArrayList<>(jobs.size());
         for (Job job : jobs) {
             double[] jobVec = jobEmbeddingService.parseEmbedding(job.getJobEmbedding());
-            if (jobVec == null)
-                continue;
+            if (jobVec == null) continue;
+            if (jobVec.length != queryVec.length) continue;
 
             double similarity = cosineSimilarity(queryVec, jobVec);
-            if (similarity > 0.3) { // Threshold: only include reasonably similar jobs
+            if (similarity > 0.3) {
                 results.add(new ScoredJobResult(job.getId(), similarity));
             }
         }
 
-        // Step 4: Sort by similarity descending, take top K
         results.sort(Comparator.comparingDouble(ScoredJobResult::score).reversed());
 
         return results.stream()

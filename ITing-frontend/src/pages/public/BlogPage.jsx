@@ -4,6 +4,12 @@ import publicService from '../../services/publicService';
 import { GlobalLoading } from '../../components/common';
 import { Search, Briefcase, FileText, ArrowRight, Clock, ChevronRight, TrendingUp, BookOpen, Eye } from 'lucide-react';
 
+function formatViews(n) {
+  if (!n) return '0';
+  if (n >= 1000) return (n / 1000).toFixed(1).replace(/\.0$/, '') + 'k';
+  return String(n);
+}
+
 const categories = ["Tất cả", "Tin tức", "Bí quyết viết CV", "Phỏng vấn", "Xu hướng", "Lương thưởng"];
 
 /* ── helper ── */
@@ -37,18 +43,24 @@ export default function BlogPage() {
 
   if (loading) return <GlobalLoading message="Đang tải bài viết..." />;
 
-  // pad data for demo
-  const pool = blogs.length > 0
-    ? Array.from({ length: 20 }, (_, i) => blogs[i % blogs.length])
-    : [];
-  const hero    = pool[0];
-  const sub     = pool.slice(1, 3);
-  const latest  = pool.slice(3, 9);
-  const popular = pool.slice(9, 12);
-  const guide   = pool.slice(12, 16);
-  const trends  = pool.slice(0, 4);
+  // Filter by category
+  const filtered = active === 0
+    ? blogs
+    : blogs.filter(b => b.category === categories[active]);
 
-  const go = (slug) => navigate(`/blog/${slug}`);
+  const hero    = filtered[0];
+  const sub     = filtered.slice(1, 3);
+  const latest  = filtered.slice(3, 9);
+  const popular = [...filtered].sort((a, b) => (b.viewCount || 0) - (a.viewCount || 0)).slice(0, 3);
+  const guide   = filtered.slice(9, 13);
+  const trends  = filtered.slice(0, 4);
+
+  const go = (blog) => {
+    if (!blog) return;
+    // Fire-and-forget view tracking
+    if (blog.id) publicService.trackBlogView(blog.id);
+    navigate(`/blog/${blog.slug}`);
+  };
   const img = (b, sz = 600) => b?.thumbnailUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(b?.category || 'Blog')}&background=3AB4E6&color=fff&size=${sz}`;
 
   return (
@@ -102,7 +114,7 @@ export default function BlogPage() {
             </div>
             <div className="grid grid-cols-1 md:grid-cols-12 gap-4 md:gap-5">
               {/* Main */}
-              <div onClick={() => go(hero.slug)} className="md:col-span-7 group relative rounded-2xl overflow-hidden cursor-pointer shadow-xl min-h-[280px] md:min-h-[420px]">
+              <div onClick={() => go(hero)} className="md:col-span-7 group relative rounded-2xl overflow-hidden cursor-pointer shadow-xl min-h-[280px] md:min-h-[420px]">
                 <img src={img(hero, 900)} alt={hero.title} className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
                 <div className="absolute bottom-0 p-5 md:p-8">
@@ -111,20 +123,23 @@ export default function BlogPage() {
                   <p className="text-white/60 text-xs md:text-sm line-clamp-2 max-w-lg hidden sm:block">{hero.summary}</p>
                   <div className="flex items-center gap-4 mt-3 text-white/50 text-xs">
                     <span className="flex items-center gap-1"><Clock className="h-3 w-3" /> {timeAgo(hero.createdAt)}</span>
-                    <span className="flex items-center gap-1"><Eye className="h-3 w-3" /> 3 phút đọc</span>
+                    <span className="flex items-center gap-1"><Eye className="h-3 w-3" /> {formatViews(hero.viewCount)} lượt xem</span>
                   </div>
                 </div>
               </div>
               {/* Side */}
               <div className="md:col-span-5 grid grid-cols-2 md:grid-cols-1 gap-4 md:gap-5">
                 {sub.map((b, i) => (
-                  <div key={i} onClick={() => go(b.slug)} className="group relative rounded-2xl overflow-hidden cursor-pointer shadow-lg min-h-[180px] md:min-h-[198px]">
+                  <div key={i} onClick={() => go(b)} className="group relative rounded-2xl overflow-hidden cursor-pointer shadow-lg min-h-[180px] md:min-h-[198px]">
                     <img src={img(b)} alt={b.title} className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/20 to-transparent" />
                     <div className="absolute bottom-0 p-4 md:p-5">
                       <span className="inline-block text-[9px] md:text-[10px] font-bold text-white bg-[#3AB4E6]/90 px-2 py-0.5 rounded-full uppercase mb-2">{b.category || 'Tin tức'}</span>
                       <h3 className="text-sm md:text-base font-bold text-white leading-snug line-clamp-2">{b.title}</h3>
-                      <span className="text-white/50 text-[10px] mt-1.5 flex items-center gap-1"><Clock className="h-3 w-3" />{timeAgo(b.createdAt)}</span>
+                      <div className="flex items-center gap-3 mt-1.5 text-white/50 text-[10px]">
+                        <span className="flex items-center gap-1"><Clock className="h-3 w-3" />{timeAgo(b.createdAt)}</span>
+                        <span className="flex items-center gap-1"><Eye className="h-3 w-3" />{formatViews(b.viewCount)}</span>
+                      </div>
                     </div>
                   </div>
                 ))}
@@ -147,7 +162,7 @@ export default function BlogPage() {
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 md:gap-6">
             {latest.map((b, i) => (
-              <div key={i} onClick={() => go(b.slug)} className="group bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 cursor-pointer flex flex-col border border-gray-100 hover:border-[#3AB4E6]/30">
+              <div key={i} onClick={() => go(b)} className="group bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 cursor-pointer flex flex-col border border-gray-100 hover:border-[#3AB4E6]/30">
                 <div className="overflow-hidden relative">
                   <img src={img(b)} alt={b.title} className="w-full h-44 md:h-48 object-cover group-hover:scale-105 transition-transform duration-500" />
                   <span className="absolute top-3 left-3 text-[9px] font-bold text-white bg-[#3AB4E6] px-2.5 py-1 rounded-full uppercase">{b.category || 'Tin tức'}</span>
@@ -156,7 +171,10 @@ export default function BlogPage() {
                   <h3 className="text-sm md:text-[15px] font-bold text-gray-900 leading-snug line-clamp-2 group-hover:text-[#3AB4E6] transition-colors min-h-[2.5rem]">{b.title}</h3>
                   {b.summary && <p className="text-gray-400 text-xs mt-2 line-clamp-2 flex-grow">{b.summary}</p>}
                   <div className="flex items-center justify-between mt-3 pt-3 border-t border-gray-50">
-                    <span className="text-gray-400 text-[11px] flex items-center gap-1"><Clock className="h-3 w-3" />{timeAgo(b.createdAt)}</span>
+                    <div className="flex items-center gap-3 text-gray-400 text-[11px]">
+                      <span className="flex items-center gap-1"><Clock className="h-3 w-3" />{timeAgo(b.createdAt)}</span>
+                      <span className="flex items-center gap-1"><Eye className="h-3 w-3" />{formatViews(b.viewCount)}</span>
+                    </div>
                     <span className="text-[#3AB4E6] text-xs font-semibold flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">Đọc thêm <ArrowRight className="h-3 w-3" /></span>
                   </div>
                 </div>
@@ -173,12 +191,15 @@ export default function BlogPage() {
               <div className="flex items-center gap-2 mb-1"><TrendingUp className="h-5 w-5 text-orange-500" /><h2 className="text-lg md:text-xl font-bold text-gray-900">Bài viết xem nhiều</h2></div>
               <p className="text-gray-400 text-xs mb-4">Được đọc nhiều nhất trong tuần</p>
               {popular.map((b, i) => (
-                <div key={i} onClick={() => go(b.slug)} className="flex gap-4 py-4 items-center group cursor-pointer border-b border-gray-50 last:border-0 hover:bg-blue-50/40 -mx-3 px-3 rounded-xl transition-colors">
+                <div key={i} onClick={() => go(b)} className="flex gap-4 py-4 items-center group cursor-pointer border-b border-gray-50 last:border-0 hover:bg-blue-50/40 -mx-3 px-3 rounded-xl transition-colors">
                   <span className="text-2xl md:text-3xl font-black text-gray-200 group-hover:text-[#3AB4E6]/30 transition-colors w-8 text-center flex-shrink-0">{String(i+1).padStart(2,'0')}</span>
                   <img src={img(b,200)} alt={b.title} className="w-16 h-16 md:w-20 md:h-20 object-cover rounded-xl flex-shrink-0" />
                   <div className="min-w-0 flex-1">
                     <h4 className="text-sm md:text-[15px] font-bold text-gray-900 group-hover:text-[#3AB4E6] transition-colors line-clamp-2 leading-snug">{b.title}</h4>
-                    <span className="text-gray-400 text-[11px] flex items-center gap-1 mt-1"><Clock className="h-3 w-3" />3 phút đọc</span>
+                    <div className="flex items-center gap-3 text-gray-400 text-[11px] mt-1">
+                      <span className="flex items-center gap-1"><Eye className="h-3 w-3" />{formatViews(b.viewCount)} lượt xem</span>
+                      <span className="flex items-center gap-1"><Clock className="h-3 w-3" />{timeAgo(b.createdAt)}</span>
+                    </div>
                   </div>
                   <ChevronRight className="h-4 w-4 text-gray-300 group-hover:text-[#3AB4E6] transition-colors flex-shrink-0" />
                 </div>
@@ -213,7 +234,7 @@ export default function BlogPage() {
           </div>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-5">
             {guide.map((b, i) => (
-              <div key={i} onClick={() => go(b.slug)} className="group bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-lg transition-all cursor-pointer border border-gray-100 hover:border-[#3AB4E6]/30">
+              <div key={i} onClick={() => go(b)} className="group bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-lg transition-all cursor-pointer border border-gray-100 hover:border-[#3AB4E6]/30">
                 <div className="overflow-hidden"><img src={img(b,400)} alt={b.title} className="w-full aspect-[4/3] object-cover group-hover:scale-105 transition-transform duration-500" /></div>
                 <div className="p-3 md:p-4">
                   <span className="text-[9px] font-bold text-[#3AB4E6] uppercase">{b.category || 'Cẩm nang'}</span>
@@ -235,7 +256,7 @@ export default function BlogPage() {
           </div>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-5">
             {trends.map((b, i) => (
-              <div key={i} onClick={() => go(b.slug)} className="group bg-[#112240]/80 rounded-2xl overflow-hidden border border-blue-800/40 hover:border-[#3AB4E6]/50 transition-all cursor-pointer hover:shadow-lg hover:shadow-[#3AB4E6]/10">
+              <div key={i} onClick={() => go(b)} className="group bg-[#112240]/80 rounded-2xl overflow-hidden border border-blue-800/40 hover:border-[#3AB4E6]/50 transition-all cursor-pointer hover:shadow-lg hover:shadow-[#3AB4E6]/10">
                 <div className="overflow-hidden"><img src={img(b,400)} alt={b.title} className="w-full aspect-[4/3] object-cover group-hover:scale-105 transition-transform duration-500 opacity-90" /></div>
                 <div className="p-3 md:p-4">
                   <span className="text-[9px] font-bold text-[#3AB4E6] uppercase">{b.category || 'Xu hướng'}</span>

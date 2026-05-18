@@ -75,10 +75,8 @@ class CompanyServiceImplTest {
         company.setRepresentativeName("Nguyen Van A");
         company.setTaxCode("TAX-001");
         company.setBusinessLicenseFileUrl("https://old-license.pdf");
-        company.setConsentDocumentFileUrl("https://consent.pdf");
-        company.setConsentDocumentConfirmed(true);
-        company.setConsentDocumentVersion("v2.0");
-        company.setCompanyInfoUpdateStatus(CompanyReviewStatus.DRAFT);
+        company.setConsentDocumentFileUrl("http://s3/consent.pdf");
+        company.setCompanyReviewStatus(CompanyReviewStatus.DRAFT);
 
         // Sau Phase 2: getCompanyByAccountId() resolve company qua AuthorizationService.
         // Default mock: HR account id 1L thuộc company id 1L (giữ tương thích với data
@@ -95,7 +93,7 @@ class CompanyServiceImplTest {
                     r.setName(c.getName());
                     r.setBusinessLicenseFileUrl(c.getBusinessLicenseFileUrl());
                     r.setConsentDocumentFileUrl(c.getConsentDocumentFileUrl());
-                    r.setCompanyInfoUpdateStatus(c.getCompanyInfoUpdateStatus());
+                    r.setCompanyReviewStatus(c.getCompanyReviewStatus());
                     return r;
                 });
 
@@ -123,25 +121,6 @@ class CompanyServiceImplTest {
     }
 
     @Test
-    void updateConsentDocumentByAccountId_withoutVersion_shouldUseDefaultVersion() {
-        ConsentDocumentUploadRequest request = new ConsentDocumentUploadRequest();
-        request.setConfirmed(true);
-        request.setFile(new MockMultipartFile("file", "consent.pdf", "application/pdf", "pdf".getBytes()));
-
-        when(companyRepository.findById(1L)).thenReturn(Optional.of(company));
-        when(fileUploadService.uploadConsentDocument(request.getFile())).thenReturn("https://new-consent.pdf");
-        when(companyRepository.save(any(Company.class))).thenAnswer(invocation -> invocation.getArgument(0));
-
-        CompanyResponse response = companyService.updateConsentDocumentByAccountId(1L, request);
-
-        assertNotNull(response);
-        assertEquals("https://new-consent.pdf", response.getConsentDocumentFileUrl());
-        assertEquals("v1.0", company.getConsentDocumentVersion());
-        verify(fileUploadService).deleteByUrl("https://consent.pdf");
-        verify(companyRepository).save(company);
-    }
-
-    @Test
     void submitForReviewByAccountId_withMissingRequiredField_shouldThrow() {
         // submitInfoReviewByAccountId now validates: name, companyEmail, phone, representativeName, taxCode.
         // Consent-version is no longer required for info review.
@@ -165,8 +144,8 @@ class CompanyServiceImplTest {
         CompanyResponse response = companyService.submitInfoReviewByAccountId(1L);
 
         assertNotNull(response);
-        assertEquals(CompanyReviewStatus.PENDING_REVIEW, response.getCompanyInfoUpdateStatus());
-        assertEquals(CompanyReviewStatus.PENDING_REVIEW, company.getCompanyInfoUpdateStatus());
+        assertEquals(CompanyReviewStatus.PENDING_REVIEW, response.getCompanyReviewStatus());
+        assertEquals(CompanyReviewStatus.PENDING_REVIEW, company.getCompanyReviewStatus());
         verify(companyRepository).save(company);
     }
 

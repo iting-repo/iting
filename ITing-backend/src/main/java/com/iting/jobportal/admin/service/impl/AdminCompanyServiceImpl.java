@@ -76,7 +76,7 @@ public class AdminCompanyServiceImpl implements AdminCompanyService {
         public Page<CompanyResponse> getPendingReviewCompanies(int page, int size) {
                 Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.ASC, "lastUpdateRequestDate"));
                 return companyRepository
-                                .findByCompanyInfoUpdateStatusOrDocumentReviewStatus(CompanyReviewStatus.PENDING_REVIEW,
+                                .findByCompanyReviewStatusOrDocumentReviewStatus(CompanyReviewStatus.PENDING_REVIEW,
                                                 DocumentReviewStatus.PENDING_REVIEW, pageable)
                                 .map(companyMapper::toResponse);
         }
@@ -126,11 +126,11 @@ public class AdminCompanyServiceImpl implements AdminCompanyService {
                 Company company = companyRepository.findById(companyId)
                                 .orElseThrow(() -> new RuntimeException("Company not found"));
 
-                String oldStatus = company.getCompanyInfoUpdateStatus() != null
-                                ? company.getCompanyInfoUpdateStatus().name()
+                String oldStatus = company.getCompanyReviewStatus() != null
+                                ? company.getCompanyReviewStatus().name()
                                 : null;
 
-                company.setCompanyInfoUpdateStatus(CompanyReviewStatus.APPROVED);
+                company.setCompanyReviewStatus(CompanyReviewStatus.APPROVED);
                 company.setStatusReason(request != null ? request.getNote() : null);
 
                 if (request != null && request.getVerificationLevel() != null) {
@@ -167,132 +167,17 @@ public class AdminCompanyServiceImpl implements AdminCompanyService {
                 }
         }
 
-    @Override
-    @Transactional
-    public void approveCompanyInfo(Long adminId, Long companyId, CompanyApprovalRequest request) {
-        Company company = companyRepository.findById(companyId)
-                .orElseThrow(() -> new RuntimeException("Company not found"));
-
-        String oldStatus = company.getCompanyInfoUpdateStatus() != null
-                ? company.getCompanyInfoUpdateStatus().name()
-                : null;
-
-        company.setCompanyInfoUpdateStatus(CompanyReviewStatus.APPROVED);
-
-        // Cập nhật mức xác thực lên BASIC nếu đang là UNVERIFIED
-        if (company.getVerificationLevel() == VerificationLevel.UNVERIFIED) {
-            company.setVerificationLevel(VerificationLevel.BASIC);
-        }
-
-        @Override
-        public Page<CompanyResponse> filterCompanies(CompanyReviewStatus status, VerificationLevel verificationLevel,
-                        Boolean active, String keyword, int page, int size) {
-                Pageable pageable = PageRequest.of(page, size);
-                return companyRepository.findAll(pageable)
-                                .map(companyMapper::toResponse);
-        }
-
-        @Override
-        public Page<CompanyResponse> getPendingReviewCompanies(int page, int size) {
-                Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.ASC, "lastUpdateRequestDate"));
-                return companyRepository
-                                .findByCompanyInfoUpdateStatusOrDocumentReviewStatus(CompanyReviewStatus.PENDING_REVIEW,
-                                                DocumentReviewStatus.PENDING_REVIEW, pageable)
-                                .map(companyMapper::toResponse);
-        }
-
-        @Override
-        public List<com.iting.jobportal.admin.dto.response.KybNoteResponse> getCompanyKybNotes(Long companyId) {
-                return companyKybNoteRepository.findByCompanyIdOrderByCreatedAtDesc(companyId)
-                                .stream()
-                                .map(note -> com.iting.jobportal.admin.dto.response.KybNoteResponse.builder()
-                                                .id(note.getId())
-                                                .companyId(note.getCompany().getId())
-                                                .adminId(note.getAdminId())
-                                                .noteContent(note.getNoteContent())
-                                                .createdAt(note.getCreatedAt())
-                                                .build())
-                                .toList();
-        }
-
-    @Override
-    @Transactional
-    @CacheEvict(value = CacheNames.COMPANY_DETAIL, key = "#companyId")
-    public void rejectCompany(Long adminId, Long companyId, ReviewRejectRequest request) {
-        withCompanyLock(companyId, () -> doRejectCompany(adminId, companyId, request));
-    }
-
-    private void doRejectCompany(Long adminId, Long companyId, ReviewRejectRequest request) {
-        Company company = companyRepository.findById(companyId)
-                .orElseThrow(() -> new RuntimeException("Company not found"));
-
-                return com.iting.jobportal.admin.dto.response.KybNoteResponse.builder()
-                                .id(note.getId())
-                                .companyId(note.getCompany().getId())
-                                .adminId(note.getAdminId())
-                                .noteContent(note.getNoteContent())
-                                .createdAt(note.getCreatedAt())
-                                .build();
-        }
-
-        @Override
-        @Transactional
-        public void approveCompany(Long adminId, Long companyId, CompanyApprovalRequest request) {
-                Company company = companyRepository.findById(companyId)
-                                .orElseThrow(() -> new RuntimeException("Company not found"));
-
-        companyAuditService.log(
-                company,
-                CompanyAuditAction.REJECT,
-                oldStatus,
-                CompanyReviewStatus.REJECTED.name(),
-                request != null ? request.getReason() : null,
-                "Từ chối công ty",
-                "admin#" + adminId,
-                adminId);
-
-        outboxAppender.ifPresent(appender -> appender.append(
-                kafkaTopics.getKybReviewCompleted(),
-                "company",
-                KybReviewCompletedEvent.of(
-                        company.getId(),
-                        "REJECTED",
-                        request != null ? request.getReason() : null,
-                        adminId)));
-    }
-
-                company.setCompanyInfoUpdateStatus(CompanyReviewStatus.APPROVED);
-                company.setStatusReason(request != null ? request.getNote() : null);
-
-                // Update verificationLevel if provided
-                if (request != null && request.getVerificationLevel() != null) {
-                        company.setVerificationLevel(request.getVerificationLevel());
-                }
-
-                companyRepository.save(company);
-
-                companyAuditService.log(
-                                company,
-                                CompanyAuditAction.APPROVE,
-                                oldStatus,
-                                CompanyReviewStatus.APPROVED.name(),
-                                request != null ? request.getNote() : null,
-                                "Công ty được duyệt",
-                                "admin#" + adminId,
-                                adminId);
-        }
-
         @Override
         @Transactional
         public void approveCompanyInfo(Long adminId, Long companyId, CompanyApprovalRequest request) {
                 Company company = companyRepository.findById(companyId)
                                 .orElseThrow(() -> new RuntimeException("Company not found"));
 
-                String oldStatus = company.getCompanyInfoUpdateStatus() != null
-                                ? company.getCompanyInfoUpdateStatus().name()
+                String oldStatus = company.getCompanyReviewStatus() != null
+                                ? company.getCompanyReviewStatus().name()
                                 : null;
 
-                company.setCompanyInfoUpdateStatus(CompanyReviewStatus.APPROVED);
+                company.setCompanyReviewStatus(CompanyReviewStatus.APPROVED);
 
                 // Cập nhật mức xác thực lên BASIC nếu đang là UNVERIFIED
                 if (company.getVerificationLevel() == VerificationLevel.UNVERIFIED) {
@@ -325,7 +210,7 @@ public class AdminCompanyServiceImpl implements AdminCompanyService {
                 company.setDocumentReviewStatus(DocumentReviewStatus.APPROVED);
 
                 // Nếu thông tin cơ bản đã duyệt thì lên ADVANCED
-                if (company.getCompanyInfoUpdateStatus() == CompanyReviewStatus.APPROVED) {
+                if (company.getCompanyReviewStatus() == CompanyReviewStatus.APPROVED) {
                         company.setVerificationLevel(VerificationLevel.ADVANCED);
                 }
 
@@ -348,11 +233,11 @@ public class AdminCompanyServiceImpl implements AdminCompanyService {
                 Company company = companyRepository.findById(companyId)
                                 .orElseThrow(() -> new RuntimeException("Company not found"));
 
-                String oldStatus = company.getCompanyInfoUpdateStatus() != null
-                                ? company.getCompanyInfoUpdateStatus().name()
+                String oldStatus = company.getCompanyReviewStatus() != null
+                                ? company.getCompanyReviewStatus().name()
                                 : null;
 
-                company.setCompanyInfoUpdateStatus(CompanyReviewStatus.REJECTED);
+                company.setCompanyReviewStatus(CompanyReviewStatus.REJECTED);
                 company.setStatusReason(request != null ? request.getReason() : null);
                 companyRepository.save(company);
 
@@ -373,11 +258,11 @@ public class AdminCompanyServiceImpl implements AdminCompanyService {
                 Company company = companyRepository.findById(companyId)
                                 .orElseThrow(() -> new RuntimeException("Company not found"));
 
-                String oldStatus = company.getCompanyInfoUpdateStatus() != null
-                                ? company.getCompanyInfoUpdateStatus().name()
+                String oldStatus = company.getCompanyReviewStatus() != null
+                                ? company.getCompanyReviewStatus().name()
                                 : null;
 
-                company.setCompanyInfoUpdateStatus(CompanyReviewStatus.REJECTED);
+                company.setCompanyReviewStatus(CompanyReviewStatus.REJECTED);
                 company.setStatusReason(request != null ? request.getReason() : null);
                 companyRepository.save(company);
 
@@ -423,11 +308,11 @@ public class AdminCompanyServiceImpl implements AdminCompanyService {
                 Company company = companyRepository.findById(companyId)
                                 .orElseThrow(() -> new RuntimeException("Company not found"));
 
-                String oldStatus = company.getCompanyInfoUpdateStatus() != null
-                                ? company.getCompanyInfoUpdateStatus().name()
+                String oldStatus = company.getCompanyReviewStatus() != null
+                                ? company.getCompanyReviewStatus().name()
                                 : null;
 
-                company.setCompanyInfoUpdateStatus(CompanyReviewStatus.NEEDS_RESUBMISSION);
+                company.setCompanyReviewStatus(CompanyReviewStatus.NEEDS_RESUBMISSION);
                 company.setStatusReason(request != null ? request.getReason() : null);
                 companyRepository.save(company);
 
@@ -448,11 +333,11 @@ public class AdminCompanyServiceImpl implements AdminCompanyService {
                 Company company = companyRepository.findById(companyId)
                                 .orElseThrow(() -> new RuntimeException("Company not found"));
 
-                String oldStatus = company.getCompanyInfoUpdateStatus() != null
-                                ? company.getCompanyInfoUpdateStatus().name()
+                String oldStatus = company.getCompanyReviewStatus() != null
+                                ? company.getCompanyReviewStatus().name()
                                 : null;
 
-                company.setCompanyInfoUpdateStatus(CompanyReviewStatus.SUSPENDED);
+                company.setCompanyReviewStatus(CompanyReviewStatus.SUSPENDED);
                 company.setActive(false);
                 company.setStatusReason(request != null ? request.getReason() : null);
                 companyRepository.save(company);
@@ -503,8 +388,8 @@ public class AdminCompanyServiceImpl implements AdminCompanyService {
                 Company company = companyRepository.findById(companyId)
                                 .orElseThrow(() -> new RuntimeException("Company not found"));
 
-                String oldStatus = company.getCompanyInfoUpdateStatus() != null
-                                ? company.getCompanyInfoUpdateStatus().name()
+                String oldStatus = company.getCompanyReviewStatus() != null
+                                ? company.getCompanyReviewStatus().name()
                                 : null;
 
                 // Khôi phục trạng thái cũ trước khi bị đình chỉ từ audit log
@@ -522,7 +407,7 @@ public class AdminCompanyServiceImpl implements AdminCompanyService {
                         }
                 }
 
-                company.setCompanyInfoUpdateStatus(restoredStatus);
+                company.setCompanyReviewStatus(restoredStatus);
                 company.setActive(true);
                 company.setStatusReason(null); // Clear reason when unsuspending
                 companyRepository.save(company);
@@ -599,8 +484,8 @@ public class AdminCompanyServiceImpl implements AdminCompanyService {
                 companyAuditService.log(
                                 company,
                                 CompanyAuditAction.DELETE,
-                                company.getCompanyInfoUpdateStatus() != null
-                                                ? company.getCompanyInfoUpdateStatus().name()
+                                company.getCompanyReviewStatus() != null
+                                                ? company.getCompanyReviewStatus().name()
                                                 : null,
                                 "DELETED",
                                 null,
@@ -720,8 +605,8 @@ public class AdminCompanyServiceImpl implements AdminCompanyService {
                                         row.createCell(1).setCellValue(company.getName());
                                         row.createCell(2).setCellValue(company.getTaxCode());
                                         row.createCell(3).setCellValue(
-                                                        company.getCompanyInfoUpdateStatus() != null
-                                                                        ? company.getCompanyInfoUpdateStatus().name()
+                                                        company.getCompanyReviewStatus() != null
+                                                                        ? company.getCompanyReviewStatus().name()
                                                                         : "");
                                         row.createCell(4).setCellValue(
                                                         company.getVerificationLevel() != null
@@ -742,7 +627,7 @@ public class AdminCompanyServiceImpl implements AdminCompanyService {
                                                 Company company = new Company();
                                                 company.setName(row.getCell(0).getStringCellValue());
                                                 company.setTaxCode(row.getCell(1).getStringCellValue());
-                                                company.setCompanyInfoUpdateStatus(CompanyReviewStatus.PENDING_REVIEW);
+                                                company.setCompanyReviewStatus(CompanyReviewStatus.PENDING_REVIEW);
                                                 company.setVerificationLevel(VerificationLevel.UNVERIFIED);
                                                 return company;
                                         });

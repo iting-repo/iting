@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import publicService from '../../services/publicService';
 import { GlobalLoading } from '../../components/common';
-import { FaArrowLeft, FaCalendarAlt, FaTag } from 'react-icons/fa';
+import { FaArrowLeft, FaCalendarAlt, FaTag, FaEye } from 'react-icons/fa';
 
 const BlogDetailPage = () => {
     const { slug } = useParams();
@@ -15,7 +15,9 @@ const BlogDetailPage = () => {
             try {
                 setLoading(true);
                 const response = await publicService.getBlogBySlug(slug);
-                setBlog(response.data || response);
+                const data = response.data || response;
+                setBlog(data);
+                // View is already incremented by backend on GET /{slug}
             } catch (err) {
                 console.error("Lỗi khi tải chi tiết blog:", err);
                 setError("Không tìm thấy bài viết hoặc bài viết đã bị ẩn.");
@@ -37,8 +39,8 @@ const BlogDetailPage = () => {
         return (
             <div className="container mx-auto px-4 py-16 text-center">
                 <h2 className="text-2xl font-bold text-gray-800 mb-4">{error || "Không tìm thấy bài viết"}</h2>
-                <Link to="/" className="text-[#3AB4E6] hover:underline flex items-center justify-center gap-2">
-                    <FaArrowLeft /> Quay lại trang chủ
+                <Link to="/blogs" className="text-[#3AB4E6] hover:underline flex items-center justify-center gap-2">
+                    <FaArrowLeft /> Quay lại trang blog
                 </Link>
             </div>
         );
@@ -54,8 +56,8 @@ const BlogDetailPage = () => {
         <div className="bg-gray-50 min-h-screen py-10">
             <div className="container mx-auto px-4 max-w-4xl">
                 {/* Back button */}
-                <Link to="/" className="inline-flex items-center gap-2 text-gray-500 hover:text-[#3AB4E6] mb-6 transition-colors">
-                    <FaArrowLeft /> Quay lại
+                <Link to="/blogs" className="inline-flex items-center gap-2 text-gray-500 hover:text-[#3AB4E6] mb-6 transition-colors">
+                    <FaArrowLeft /> Quay lại trang blog
                 </Link>
 
                 {/* Article Card */}
@@ -79,6 +81,9 @@ const BlogDetailPage = () => {
                             </span>
                             <span className="flex items-center gap-1">
                                 <FaCalendarAlt size={12} /> {formattedDate}
+                            </span>
+                            <span className="flex items-center gap-1">
+                                <FaEye size={12} /> {(blog.viewCount || 0).toLocaleString()} lượt xem
                             </span>
                         </div>
 

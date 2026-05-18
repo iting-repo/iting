@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Service;
 
 import java.net.URI;
@@ -15,6 +16,7 @@ import java.util.Map;
 import java.util.Optional;
 
 @Service
+@ConditionalOnProperty(name = "ai.provider", havingValue = "openai", matchIfMissing = true)
 @RequiredArgsConstructor
 public class OpenAiEmbeddingClient implements EmbeddingClient {
 

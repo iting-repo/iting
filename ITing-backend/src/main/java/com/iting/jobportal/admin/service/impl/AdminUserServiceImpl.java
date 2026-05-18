@@ -148,10 +148,7 @@ public class AdminUserServiceImpl implements AdminUserService {
                     row.createCell(2).setCellValue(account.getRole().toString());
                     row.createCell(3).setCellValue(account.getStatus().toString());
 
-                    String fullName = "";
-                    if (account.getUser() != null) {
-                        fullName = account.getUser().getFullName();
-                    }
+                    String fullName = account.getFullName() != null ? account.getFullName() : "";
                     row.createCell(4).setCellValue(fullName);
 
                     // Resolve companyName qua affiliation (lấy company của affiliation
@@ -202,10 +199,8 @@ public class AdminUserServiceImpl implements AdminUserService {
                 .lastLoginAt(account.getLastLoginAt())
                 .build();
 
-        if (account.getUser() != null) {
-            response.setFullName(account.getUser().getFullName());
-            response.setAvatarUrl(account.getUser().getAvatarUrl());
-        }
+        response.setFullName(account.getFullName());
+        response.setAvatarUrl(account.getAvatarUrl());
 
         // Resolve company qua affiliation (active = INCOMPLETE/PENDING/APPROVED).
         affiliationRepository.findActiveByHrAccountId(account.getId())

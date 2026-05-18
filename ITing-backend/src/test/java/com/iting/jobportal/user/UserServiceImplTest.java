@@ -36,13 +36,16 @@ class UserServiceImplTest {
 
     @Test
     void getProfile_shouldMapUserAndAccountEmail() {
-        Account account = Account.builder().id(1L).email("user@test.com").build();
+        Account account = Account.builder()
+                .id(1L)
+                .email("user@test.com")
+                .fullName("Test User")
+                .phone("0909")
+                .avatarUrl("/avatar.png")
+                .build();
         User user = new User();
         user.setId(1L);
         user.setAccount(account);
-        user.setFullName("Test User");
-        user.setPhoneNum("0909");
-        user.setAvatarUrl("/avatar.png");
 
         when(userRepository.findById(1L)).thenReturn(Optional.of(user));
 
@@ -55,7 +58,7 @@ class UserServiceImplTest {
     }
 
     @Test
-    void updateBasic_shouldUpdateUserFieldsAndAccountEmail() {
+    void updateBasic_shouldUpdateAccountFieldsAndEmail() {
         Account account = Account.builder().id(1L).email("old@test.com").build();
         User user = new User();
         user.setId(1L);
@@ -71,19 +74,23 @@ class UserServiceImplTest {
 
         userService.updateBasic(1L, request);
 
-        assertEquals("New Name", user.getFullName());
-        assertEquals("0123", user.getPhoneNum());
-        assertEquals("/new.png", user.getAvatarUrl());
-        assertEquals("new@test.com", user.getAccount().getEmail());
+        assertEquals("New Name", account.getFullName());
+        assertEquals("0123", account.getPhone());
+        assertEquals("/new.png", account.getAvatarUrl());
+        assertEquals("new@test.com", account.getEmail());
     }
 
     @Test
     void updatePersonal_shouldOnlyUpdateProvidedFields() {
+        Account account = Account.builder()
+                .id(1L)
+                .fullName("Old")
+                .phone("0909")
+                .avatarUrl("/old.png")
+                .build();
         User user = new User();
         user.setId(1L);
-        user.setFullName("Old");
-        user.setPhoneNum("0909");
-        user.setAvatarUrl("/old.png");
+        user.setAccount(account);
 
         PersonalUpdateDto dto = new PersonalUpdateDto();
         dto.setFullName("Updated");
@@ -92,15 +99,17 @@ class UserServiceImplTest {
 
         userService.updatePersonal(1L, dto);
 
-        assertEquals("Updated", user.getFullName());
-        assertEquals("0909", user.getPhoneNum());
-        assertEquals("/old.png", user.getAvatarUrl());
+        assertEquals("Updated", account.getFullName());
+        assertEquals("0909", account.getPhone());
+        assertEquals("/old.png", account.getAvatarUrl());
     }
 
     @Test
-    void uploadAvatar_shouldStoreUrlOnUserAndReturnIt() {
+    void uploadAvatar_shouldStoreUrlOnAccountAndReturnIt() {
+        Account account = Account.builder().id(1L).build();
         User user = new User();
         user.setId(1L);
+        user.setAccount(account);
         MockMultipartFile file = new MockMultipartFile("file", "avatar.png", "image/png", "x".getBytes());
 
         when(fileUploadService.uploadAvatar(file)).thenReturn("/uploads/avatar.png");
@@ -109,18 +118,19 @@ class UserServiceImplTest {
         String result = userService.uploadAvatar(1L, file);
 
         assertEquals("/uploads/avatar.png", result);
-        assertEquals("/uploads/avatar.png", user.getAvatarUrl());
+        assertEquals("/uploads/avatar.png", account.getAvatarUrl());
     }
 
     @Test
     void deleteAvatar_shouldClearAvatar() {
+        Account account = Account.builder().id(1L).avatarUrl("/avatar.png").build();
         User user = new User();
         user.setId(1L);
-        user.setAvatarUrl("/avatar.png");
+        user.setAccount(account);
         when(userRepository.findById(1L)).thenReturn(Optional.of(user));
 
         userService.deleteAvatar(1L);
 
-        assertNull(user.getAvatarUrl());
+        assertNull(account.getAvatarUrl());
     }
 }

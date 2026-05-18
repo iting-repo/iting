@@ -69,7 +69,7 @@ class JobServiceTest {
                 testCompany = new Company();
                 testCompany.setId(employerId);
                 testCompany.setName("Test Company");
-                testCompany.setCompanyInfoUpdateStatus(CompanyReviewStatus.APPROVED);
+                testCompany.setCompanyReviewStatus(CompanyReviewStatus.APPROVED);
                 testCompany.setDocumentReviewStatus(DocumentReviewStatus.APPROVED);
                 testCompany.setActive(true);
 
