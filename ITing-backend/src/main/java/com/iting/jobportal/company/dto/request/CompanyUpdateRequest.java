@@ -40,8 +40,7 @@ public class CompanyUpdateRequest {
     @Size(max = 20, message = "Phone number must be at most 20 characters")
     private String representativePhone;
 
-    @Size(max = 255, message = "Email must be at most 255 characters")
-    private String accountEmail;
+
 
     // ===== Pháp lý =====
 
@@ -59,7 +58,7 @@ public class CompanyUpdateRequest {
     private Integer verificationLevel;
 
     @Size(max = 255, message = "Update status must be at most 255 characters")
-    private String companyInfoUpdateStatus;
+    private String companyReviewStatus;
 
     private Boolean active;
 
@@ -110,9 +109,7 @@ public class CompanyUpdateRequest {
         return representativePhone;
     }
 
-    public String getAccountEmail() {
-        return accountEmail;
-    }
+
 
     public String getTaxCode() {
         return taxCode;
@@ -130,8 +127,8 @@ public class CompanyUpdateRequest {
         return verificationLevel;
     }
 
-    public String getCompanyInfoUpdateStatus() {
-        return companyInfoUpdateStatus;
+    public String getCompanyReviewStatus() {
+        return companyReviewStatus;
     }
 
     public Boolean getActive() {
@@ -182,9 +179,7 @@ public class CompanyUpdateRequest {
         this.representativePhone = representativePhone;
     }
 
-    public void setAccountEmail(String accountEmail) {
-        this.accountEmail = accountEmail;
-    }
+
 
     public void setTaxCode(String taxCode) {
         this.taxCode = taxCode;
@@ -202,8 +197,8 @@ public class CompanyUpdateRequest {
         this.verificationLevel = verificationLevel;
     }
 
-    public void setCompanyInfoUpdateStatus(String companyInfoUpdateStatus) {
-        this.companyInfoUpdateStatus = companyInfoUpdateStatus;
+    public void setCompanyReviewStatus(String companyReviewStatus) {
+        this.companyReviewStatus = companyReviewStatus;
     }
 
     public void setActive(Boolean active) {

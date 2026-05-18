@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(java -version)",
+      "Bash(mvn -version)",
+      "Bash(mvn -q -DskipTests=true test-compile)",
+      "Bash(sed -E 's/[[:space:]]+/ /g; s/^ //' /tmp/old.java)",
+      "Bash(sed -E 's/[[:space:]]+/ /g; s/^ //' /tmp/new.java)",
+      "Bash(echo \"---exit=$?---\")",
+      "Bash(git update-index *)",
+      "Bash(git reflog *)"
+    ]
+  }
+}

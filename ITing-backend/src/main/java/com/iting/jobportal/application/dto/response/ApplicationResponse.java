@@ -47,6 +47,9 @@ public class ApplicationResponse {
     private ApplicationStatus status;
     private String employerNote;
 
+    /** Điểm phù hợp CV ↔ Job (0–100%). Null nếu chưa tính. */
+    private Double matchScore;
+
     public static ApplicationResponse fromEntities(
             ApplyForm form,
             ApplyFormSentToJob sent,
@@ -89,6 +92,7 @@ public class ApplicationResponse {
                 .timeSent(sent.getTimeSent())
                 .status(sent.getStatus() != null ? sent.getStatus() : ApplicationStatus.PENDING)
                 .employerNote(sent.getEmployerNote())
+                .matchScore(sent.getMatchScore())
                 .build();
     }
 }

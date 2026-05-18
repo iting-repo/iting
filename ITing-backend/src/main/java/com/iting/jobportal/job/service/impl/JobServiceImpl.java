@@ -782,7 +782,7 @@ public class JobServiceImpl implements JobService {
 //
 //        Company company = findCompanyOrThrow(employerId);
 //
-//        if (company.getCompanyInfoUpdateStatus() != CompanyReviewStatus.APPROVED) {
+//        if (company.getCompanyReviewStatus() != CompanyReviewStatus.APPROVED) {
 //            throw new ResponseStatusException(
 //                    HttpStatus.BAD_REQUEST,
 //                    "Công ty của bạn chưa được phê duyệt. Vui lòng hoàn tất hồ sơ công ty trước."
@@ -944,7 +944,7 @@ public class JobServiceImpl implements JobService {
             }
         }
 
-        if (company.getCompanyInfoUpdateStatus() != CompanyReviewStatus.APPROVED) {
+        if (company.getCompanyReviewStatus() != CompanyReviewStatus.APPROVED) {
             throw new ResponseStatusException(
                     HttpStatus.BAD_REQUEST,
                     "Công ty của bạn chưa được phê duyệt. Vui lòng hoàn tất hồ sơ công ty trước."

@@ -13,8 +13,7 @@ public class CompanyRepresentativeRequest {
     @Size(max = 20, message = "Phone number must be at most 20 characters")
     private String representativePhone;
 
-    @Size(max = 255, message = "Email must be at most 255 characters")
-    private String accountEmail;
+
 
     public CompanyRepresentativeRequest() {
     }
@@ -43,11 +42,7 @@ public class CompanyRepresentativeRequest {
         this.representativePhone = representativePhone;
     }
 
-    public String getAccountEmail() {
-        return accountEmail;
-    }
 
-    public void setAccountEmail(String accountEmail) {
-        this.accountEmail = accountEmail;
-    }
+
+
 }

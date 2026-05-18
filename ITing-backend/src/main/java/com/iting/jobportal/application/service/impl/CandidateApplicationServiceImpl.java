@@ -16,6 +16,7 @@ import com.iting.jobportal.common.event.outbox.OutboxAppender;
 import com.iting.jobportal.common.event.payload.ApplicationCreatedEvent;
 import com.iting.jobportal.user.repository.UserRepository;
 import com.iting.jobportal.application.service.CandidateApplicationService;
+import com.iting.jobportal.application.service.MatchScoreService;
 import com.iting.jobportal.application.util.ApplicationMapperUtil;
 import com.iting.jobportal.userprofile.entity.CV;
 import com.iting.jobportal.userprofile.repository.CVRepository;
@@ -43,6 +44,7 @@ public class CandidateApplicationServiceImpl implements CandidateApplicationServ
     private final CVRepository cvRepository;
     private final Optional<OutboxAppender> outboxAppender;
     private final KafkaTopics kafkaTopics;
+    private final MatchScoreService matchScoreService;
 
     @Override
     @Transactional
@@ -75,7 +77,7 @@ public class CandidateApplicationServiceImpl implements CandidateApplicationServ
                 .userId(userId)
                 .cv(cv) // ✅ chuẩn
                 .cvTitle(cv != null ? cv.getTitle() : null) // optional
-                .applicantName(user.getFullName())
+                .applicantName(user.getAccount() != null ? user.getAccount().getFullName() : null)
                 .introduction(request.getCoverLetter())
                 .build();
 
@@ -90,6 +92,9 @@ public class CandidateApplicationServiceImpl implements CandidateApplicationServ
 
         // ✅ Increment application count on the job
         jobRepository.incrementApplicationCount(request.getJobId());
+
+        // 🤖 Tính match score CV ↔ Job (async, không block luồng apply)
+        matchScoreService.computeAndSaveAsync(savedSent.getId(), userId, job);
 
         // Outbox: phát event cho recommendation/notification/audit consume async
         outboxAppender.ifPresent(appender -> appender.append(

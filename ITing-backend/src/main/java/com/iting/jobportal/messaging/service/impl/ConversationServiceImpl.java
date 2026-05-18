@@ -158,12 +158,15 @@ public class ConversationServiceImpl implements ConversationService {
     private void fillParticipantProfile(ConversationResponse response, Long participantId, boolean firstParticipant, Long currentUserId) {
         User user = userRepository.findById(participantId).orElse(null);
         if (user != null) {
+            var account = user.getAccount();
+            String name = account != null ? account.getFullName() : null;
+            String avatar = account != null ? account.getAvatarUrl() : null;
             if (firstParticipant) {
-                response.setParticipant1Name(user.getFullName());
-                response.setParticipant1Avatar(user.getAvatarUrl());
+                response.setParticipant1Name(name);
+                response.setParticipant1Avatar(avatar);
             } else {
-                response.setParticipant2Name(user.getFullName());
-                response.setParticipant2Avatar(user.getAvatarUrl());
+                response.setParticipant2Name(name);
+                response.setParticipant2Avatar(avatar);
             }
             if (!participantId.equals(currentUserId)) {
                 response.setOtherParticipantActive(true); // User accounts are currently assumed active

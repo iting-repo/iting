@@ -23,7 +23,7 @@ import JobCard from '../../components/JobCard';
 import JobPreviewPane from '../../components/JobPreviewModal';
 
 // Import hình nền
-import heroBg from '../../assets/bg_login.jpg';
+const heroBg = '/homepage-page.png';
 
 const HomePage = () => {
     const dispatch = useDispatch();
@@ -1093,9 +1093,9 @@ const HomePage = () => {
                             <p className="text-gray-500 text-sm">Cập nhật tin tức mới nhất về công nghệ và thị trường tuyển dụng</p>
                         </div>
                         {/* FIX: Thay BsArrowRight bằng FaArrowRight */}
-                        <a href="#" className="text-[#3AB4E6] font-medium hover:underline flex items-center gap-1">
+                        <Link to="/blogs" className="text-[#3AB4E6] font-medium hover:underline flex items-center gap-1">
                             View all <FaArrowRight />
-                        </a>
+                        </Link>
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8">

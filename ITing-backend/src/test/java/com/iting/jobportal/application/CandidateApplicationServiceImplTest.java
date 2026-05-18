@@ -9,6 +9,7 @@ import com.iting.jobportal.application.repository.ApplyFormRepository;
 import com.iting.jobportal.application.repository.CandidateApplicationRepository;
 import com.iting.jobportal.application.service.impl.CandidateApplicationServiceImpl;
 import com.iting.jobportal.application.util.ApplicationMapperUtil;
+import com.iting.jobportal.auth.entity.Account;
 import com.iting.jobportal.job.entity.Job;
 import com.iting.jobportal.job.repository.JobRepository;
 import com.iting.jobportal.user.entity.User;
@@ -49,6 +50,7 @@ class CandidateApplicationServiceImplTest {
     @Mock private UserRepository userRepository;
     @Mock private ApplicationMapperUtil applicationMapperUtil;
     @Mock private CVRepository cvRepository;
+    @Mock private com.iting.jobportal.application.service.MatchScoreService matchScoreService;
 
     @InjectMocks
     private CandidateApplicationServiceImpl service;
@@ -70,7 +72,7 @@ class CandidateApplicationServiceImplTest {
 
         User user = new User();
         user.setId(1L);
-        user.setFullName("Candidate");
+        user.setAccount(Account.builder().id(user.getId()).fullName("Candidate").build());
 
         ApplyForm savedForm = ApplyForm.builder()
                 .id(11L)
@@ -125,7 +127,7 @@ class CandidateApplicationServiceImplTest {
 
         User user = new User();
         user.setId(1L);
-        user.setFullName("Candidate");
+        user.setAccount(Account.builder().id(user.getId()).fullName("Candidate").build());
 
         UserProfile profile = new UserProfile();
         profile.setId(1L);
@@ -296,7 +298,7 @@ class CandidateApplicationServiceImplTest {
 
         User user = new User();
         user.setId(1L);
-        user.setFullName("Candidate");
+        user.setAccount(Account.builder().id(user.getId()).fullName("Candidate").build());
 
         when(jobRepository.findById(5L)).thenReturn(Optional.of(job));
         when(candidateApplicationRepository.existsByUserIdAndJobId(1L, 5L)).thenReturn(false);
@@ -320,7 +322,7 @@ class CandidateApplicationServiceImplTest {
 
         User user = new User();
         user.setId(1L);
-        user.setFullName("Candidate");
+        user.setAccount(Account.builder().id(user.getId()).fullName("Candidate").build());
 
         ApplyForm savedForm = ApplyForm.builder().id(11L).build();
 
@@ -548,7 +550,7 @@ class CandidateApplicationServiceImplTest {
 
         User user = new User();
         user.setId(1L);
-        user.setFullName("Candidate");
+        user.setAccount(Account.builder().id(user.getId()).fullName("Candidate").build());
 
         CV cv = new CV();
         cv.setId(3L);
@@ -578,7 +580,7 @@ class CandidateApplicationServiceImplTest {
 
         User user = new User();
         user.setId(1L);
-        user.setFullName("Candidate");
+        user.setAccount(Account.builder().id(user.getId()).fullName("Candidate").build());
 
         ApplyForm savedForm = ApplyForm.builder()
                 .id(null)
@@ -620,7 +622,7 @@ class CandidateApplicationServiceImplTest {
 
         User user = new User();
         user.setId(1L);
-        user.setFullName("Candidate");
+        user.setAccount(Account.builder().id(user.getId()).fullName("Candidate").build());
 
         ApplyForm savedForm = ApplyForm.builder()
                 .id(11L)

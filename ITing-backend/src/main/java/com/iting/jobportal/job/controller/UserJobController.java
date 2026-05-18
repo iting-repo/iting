@@ -28,6 +28,7 @@ public class UserJobController {
 
     private final JobService jobService;
     private final InteractionService interactionService;
+    private final com.iting.jobportal.job.service.VectorSearchService vectorSearchService;
 
     @GetMapping("/search")
     @Operation(summary = "Tìm kiếm và lọc việc làm")
@@ -152,5 +153,28 @@ public class UserJobController {
     @PostMapping("/analyze-cv")
     public com.iting.jobportal.job.dto.request.JobSearchRequest analyzeCv(@RequestBody String cvText) {
         return jobService.analyzeCvForSearch(cvText);
+    }
+
+    @GetMapping("/recommended")
+    @Operation(summary = "🤖 AI Gợi ý: Việc làm phù hợp với CV của bạn",
+               description = "Dựa trên CV embedding của ứng viên, trả về top N jobs có cosine similarity cao nhất")
+    public ResponseEntity<List<JobResponse>> getRecommendedJobs(
+            @CurrentUser Long userId,
+            @RequestParam(defaultValue = "10") int limit) {
+        if (userId == null) {
+            return ResponseEntity.ok(jobService.getLatestJobs(limit));
+        }
+        var scored = vectorSearchService.recommendJobsForCandidate(userId, limit);
+        if (scored.isEmpty()) {
+            return ResponseEntity.ok(jobService.getLatestJobs(limit));
+        }
+        List<JobResponse> jobs = scored.stream()
+                .map(s -> {
+                    JobResponse job = jobService.getJobById(s.jobId());
+                    job.setMatchScore(Math.round(Math.max(0, s.score()) * 10000.0) / 100.0);
+                    return job;
+                })
+                .collect(Collectors.toList());
+        return ResponseEntity.ok(jobs);
     }
 }

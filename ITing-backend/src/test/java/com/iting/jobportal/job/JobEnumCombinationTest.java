@@ -80,7 +80,7 @@ class JobEnumCombinationTest {
         Long employerId = 1L;
         Company company = new Company();
         company.setId(employerId);
-        company.setCompanyInfoUpdateStatus(CompanyReviewStatus.APPROVED);
+        company.setCompanyReviewStatus(CompanyReviewStatus.APPROVED);
         company.setActive(true);
 
         CreateJobRequest request = new CreateJobRequest();

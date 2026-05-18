@@ -34,7 +34,7 @@ public interface UserProfileRepository extends JpaRepository<UserProfile, Long> 
                 and (:maxExp is null or p.totalExperienceYears <= :maxExp)
                 and (
                     :keyword is null or :keyword = ''
-                    or lower(u.fullName) like lower(concat('%', :keyword, '%'))
+                    or lower(a.fullName) like lower(concat('%', :keyword, '%'))
                     or lower(a.email) like lower(concat('%', :keyword, '%'))
                     or lower(coalesce(p.headline, '')) like lower(concat('%', :keyword, '%'))
                     or lower(coalesce(p.shortBio, '')) like lower(concat('%', :keyword, '%'))

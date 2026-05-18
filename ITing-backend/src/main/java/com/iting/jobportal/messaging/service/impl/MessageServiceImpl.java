@@ -254,9 +254,9 @@ public class MessageServiceImpl implements MessageService {
             switch (message.getSenderType()) {
                 case USER:
                     User sender = userRepository.findById(message.getSenderId()).orElse(null);
-                    if (sender != null) {
-                        response.setSenderName(sender.getFullName());
-                        response.setSenderAvatar(sender.getAvatarUrl());
+                    if (sender != null && sender.getAccount() != null) {
+                        response.setSenderName(sender.getAccount().getFullName());
+                        response.setSenderAvatar(sender.getAccount().getAvatarUrl());
                     }
                     break;
                 case COMPANY:
@@ -272,9 +272,9 @@ public class MessageServiceImpl implements MessageService {
             switch (message.getReceiverType()) {
                 case USER:
                     User receiver = userRepository.findById(message.getReceiverId()).orElse(null);
-                    if (receiver != null) {
-                        response.setReceiverName(receiver.getFullName());
-                        response.setReceiverAvatar(receiver.getAvatarUrl());
+                    if (receiver != null && receiver.getAccount() != null) {
+                        response.setReceiverName(receiver.getAccount().getFullName());
+                        response.setReceiverAvatar(receiver.getAccount().getAvatarUrl());
                     }
                     break;
                 case COMPANY:
@@ -297,7 +297,9 @@ public class MessageServiceImpl implements MessageService {
             switch (message.getSenderType()) {
                 case USER:
                     return userRepository.findById(message.getSenderId())
-                            .map(User::getFullName).orElse("Someone");
+                            .map(User::getAccount)
+                            .map(com.iting.jobportal.auth.entity.Account::getFullName)
+                            .orElse("Someone");
                 case COMPANY:
                     return companyRepository.findById(message.getSenderId())
                             .map(Company::getName).orElse("Someone");

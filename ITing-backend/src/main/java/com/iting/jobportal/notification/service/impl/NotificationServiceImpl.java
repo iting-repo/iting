@@ -95,11 +95,11 @@ public class NotificationServiceImpl implements NotificationService {
                         if (saved.getType() == NotificationType.APPLICATION_ACCEPTED) {
                             subject = "[ITing] Chúc mừng! Hồ sơ của bạn đã được chấp nhận";
                             htmlContent = emailTemplateService.getApplicationAcceptedTemplate(
-                                    user.getFullName(), job.getTitle(), job.getCompany().getName(), actionUrl);
+                                    (user.getAccount() != null ? user.getAccount().getFullName() : null), job.getTitle(), job.getCompany().getName(), actionUrl);
                         } else {
                             subject = "[ITing] Cập nhật về hồ sơ ứng tuyển của bạn";
                             htmlContent = emailTemplateService.getApplicationRejectedTemplate(
-                                    user.getFullName(), job.getTitle(), job.getCompany().getName(), null);
+                                    (user.getAccount() != null ? user.getAccount().getFullName() : null), job.getTitle(), job.getCompany().getName(), null);
                         }
                     } catch (Exception e) {
                         log.warn("Could not load details for application template, falling back to generic: {}",

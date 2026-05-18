@@ -36,4 +36,9 @@ public interface EmployerApplicationService {
     List<ApplicationResponse> searchCandidatesByCvKeyword(Long employerId, String keyword);
 
     List<ApplicationResponse> searchCandidatesByCvFile(Long employerId, MultipartFile cvFile);
+
+    /**
+     * Lấy danh sách ứng viên đã apply cho 1 job, xếp hạng theo AI match score giảm dần.
+     */
+    Page<ApplicationResponse> getApplicationsRankedByMatch(Long employerId, Long jobId, int page, int size);
 }

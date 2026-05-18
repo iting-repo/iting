@@ -1,5 +1,6 @@
 package com.iting.jobportal.messaging.service;
 
+import com.iting.jobportal.auth.entity.Account;
 import com.iting.jobportal.company.entity.Company;
 import com.iting.jobportal.company.repository.CompanyRepository;
 import com.iting.jobportal.messaging.dto.response.ConversationListResponse;
@@ -57,8 +58,11 @@ class ConversationServiceImplTest {
     void setUp() {
         testUser = new User();
         testUser.setId(1L);
-        testUser.setFullName("Nguyen Van A");
-        testUser.setAvatarUrl("https://avatar.com/1.png");
+        testUser.setAccount(Account.builder()
+                .id(1L)
+                .fullName("Nguyen Van A")
+                .avatarUrl("https://avatar.com/1.png")
+                .build());
 
         testConversation = Conversation.builder()
                 .id(1L)
@@ -285,8 +289,11 @@ class ConversationServiceImplTest {
         void getConversationById_populatesParticipantNames() {
             User participant2 = new User();
             participant2.setId(2L);
-            participant2.setFullName("Tran Thi B");
-            participant2.setAvatarUrl("https://avatar.com/2.png");
+            participant2.setAccount(Account.builder()
+                    .id(2L)
+                    .fullName("Tran Thi B")
+                    .avatarUrl("https://avatar.com/2.png")
+                    .build());
             when(conversationRepository.findById(1L)).thenReturn(Optional.of(testConversation));
             when(messageRepository.countUnreadByConversationIdAndReceiverId(1L, 1L)).thenReturn(3L);
             when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));

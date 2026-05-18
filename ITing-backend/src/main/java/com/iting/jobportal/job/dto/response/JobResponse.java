@@ -65,6 +65,9 @@ public class JobResponse {
     private JobStatus status;
     private Boolean isAiSuggested;
 
+    /** AI match score (0–100%) — chỉ có khi trả từ /recommended endpoint. */
+    private Double matchScore;
+
     // Review
     private String reviewReason;
     private Long reviewedBy;

@@ -46,7 +46,7 @@ public class CompanyMapper {
         res.setRepresentativeName(company.getRepresentativeName());
         res.setRepresentativeGender(company.getRepresentativeGender());
         res.setRepresentativePhone(company.getRepresentativePhone());
-        res.setAccountEmail(company.getAccountEmail());
+
         res.setTaxCode(company.getTaxCode());
 
         res.setBusinessLicenseFileUrl(company.getBusinessLicenseFileUrl());
@@ -65,7 +65,7 @@ public class CompanyMapper {
         res.setConsentDocumentFileUrl(company.getConsentDocumentFileUrl());
 
         res.setVerificationLevel(company.getVerificationLevel());
-        res.setCompanyInfoUpdateStatus(company.getCompanyInfoUpdateStatus());
+        res.setCompanyReviewStatus(company.getCompanyReviewStatus());
         res.setDocumentReviewStatus(company.getDocumentReviewStatus());
         res.setLastUpdateRequestDate(company.getLastUpdateRequestDate());
         res.setLastUpdate(company.getLastUpdate());

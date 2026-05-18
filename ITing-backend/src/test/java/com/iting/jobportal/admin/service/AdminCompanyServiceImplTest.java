@@ -57,7 +57,7 @@ class AdminCompanyServiceImplTest {
     void approveCompany_shouldApprovePersistAndWriteAuditWithOldAndNewStatus() {
         Company company = new Company();
         company.setId(1L);
-        company.setCompanyInfoUpdateStatus(CompanyReviewStatus.PENDING_REVIEW);
+        company.setCompanyReviewStatus(CompanyReviewStatus.PENDING_REVIEW);
 
         CompanyApprovalRequest request = new CompanyApprovalRequest();
         request.setNote("ok");
@@ -66,7 +66,7 @@ class AdminCompanyServiceImplTest {
 
         service.approveCompany(99L, 1L, request);
 
-        assertEquals(CompanyReviewStatus.APPROVED, company.getCompanyInfoUpdateStatus());
+        assertEquals(CompanyReviewStatus.APPROVED, company.getCompanyReviewStatus());
         verify(companyRepository).save(company);
         verify(companyAuditService).log(
                 eq(company),
@@ -84,13 +84,13 @@ class AdminCompanyServiceImplTest {
     void approveCompany_whenRequestIsNull_shouldStillApproveAndLogNullNote() {
         Company company = new Company();
         company.setId(1L);
-        company.setCompanyInfoUpdateStatus(CompanyReviewStatus.PENDING_REVIEW);
+        company.setCompanyReviewStatus(CompanyReviewStatus.PENDING_REVIEW);
 
         when(companyRepository.findById(1L)).thenReturn(Optional.of(company));
 
         service.approveCompany(99L, 1L, null);
 
-        assertEquals(CompanyReviewStatus.APPROVED, company.getCompanyInfoUpdateStatus());
+        assertEquals(CompanyReviewStatus.APPROVED, company.getCompanyReviewStatus());
         verify(companyRepository).save(company);
         verify(companyAuditService).log(
                 eq(company),
@@ -108,7 +108,7 @@ class AdminCompanyServiceImplTest {
     void approveCompany_whenCurrentStatusIsNull_shouldLogOldStatusAsNull() {
         Company company = new Company();
         company.setId(1L);
-        company.setCompanyInfoUpdateStatus(null);
+        company.setCompanyReviewStatus(null);
 
         CompanyApprovalRequest request = new CompanyApprovalRequest();
         request.setNote("ok");
@@ -117,7 +117,7 @@ class AdminCompanyServiceImplTest {
 
         service.approveCompany(99L, 1L, request);
 
-        assertEquals(CompanyReviewStatus.APPROVED, company.getCompanyInfoUpdateStatus());
+        assertEquals(CompanyReviewStatus.APPROVED, company.getCompanyReviewStatus());
         verify(companyAuditService).log(
                 eq(company),
                 eq(CompanyAuditAction.APPROVE),
@@ -146,7 +146,7 @@ class AdminCompanyServiceImplTest {
     void rejectCompany_shouldRejectPersistAndWriteAuditReason() {
         Company company = new Company();
         company.setId(1L);
-        company.setCompanyInfoUpdateStatus(CompanyReviewStatus.PENDING_REVIEW);
+        company.setCompanyReviewStatus(CompanyReviewStatus.PENDING_REVIEW);
 
         ReviewRejectRequest request = new ReviewRejectRequest();
         request.setReason("invalid docs");
@@ -155,7 +155,7 @@ class AdminCompanyServiceImplTest {
 
         service.rejectCompany(7L, 1L, request);
 
-        assertEquals(CompanyReviewStatus.REJECTED, company.getCompanyInfoUpdateStatus());
+        assertEquals(CompanyReviewStatus.REJECTED, company.getCompanyReviewStatus());
         verify(companyRepository).save(company);
         verify(companyAuditService).log(
                 eq(company),
@@ -173,7 +173,7 @@ class AdminCompanyServiceImplTest {
     void requestCompanyResubmission_shouldSetNeedsResubmissionAndWriteAudit() {
         Company company = new Company();
         company.setId(1L);
-        company.setCompanyInfoUpdateStatus(CompanyReviewStatus.PENDING_REVIEW);
+        company.setCompanyReviewStatus(CompanyReviewStatus.PENDING_REVIEW);
 
         ReviewRejectRequest request = new ReviewRejectRequest();
         request.setReason("missing file");
@@ -182,7 +182,7 @@ class AdminCompanyServiceImplTest {
 
         service.requestCompanyResubmission(8L, 1L, request);
 
-        assertEquals(CompanyReviewStatus.NEEDS_RESUBMISSION, company.getCompanyInfoUpdateStatus());
+        assertEquals(CompanyReviewStatus.NEEDS_RESUBMISSION, company.getCompanyReviewStatus());
         verify(companyRepository).save(company);
         verify(companyAuditService).log(
                 eq(company),
@@ -200,7 +200,7 @@ class AdminCompanyServiceImplTest {
     void suspendCompany_shouldSetSuspendedInactivePersistAndWriteAudit() {
         Company company = new Company();
         company.setId(1L);
-        company.setCompanyInfoUpdateStatus(CompanyReviewStatus.APPROVED);
+        company.setCompanyReviewStatus(CompanyReviewStatus.APPROVED);
         company.setActive(true);
 
         ReviewRejectRequest request = new ReviewRejectRequest();
@@ -210,7 +210,7 @@ class AdminCompanyServiceImplTest {
 
         service.suspendCompany(7L, 1L, request);
 
-        assertEquals(CompanyReviewStatus.SUSPENDED, company.getCompanyInfoUpdateStatus());
+        assertEquals(CompanyReviewStatus.SUSPENDED, company.getCompanyReviewStatus());
         assertEquals(false, company.getActive());
 
         verify(companyRepository).save(company);
@@ -230,14 +230,14 @@ class AdminCompanyServiceImplTest {
     void unsuspendCompany_shouldSetApprovedActivePersistAndWriteAudit() {
         Company company = new Company();
         company.setId(1L);
-        company.setCompanyInfoUpdateStatus(CompanyReviewStatus.SUSPENDED);
+        company.setCompanyReviewStatus(CompanyReviewStatus.SUSPENDED);
         company.setActive(false);
 
         when(companyRepository.findById(1L)).thenReturn(Optional.of(company));
 
         service.unsuspendCompany(10L, 1L);
 
-        assertEquals(CompanyReviewStatus.APPROVED, company.getCompanyInfoUpdateStatus());
+        assertEquals(CompanyReviewStatus.APPROVED, company.getCompanyReviewStatus());
         assertEquals(true, company.getActive());
 
         verify(companyRepository).save(company);
@@ -288,7 +288,7 @@ class AdminCompanyServiceImplTest {
     void deleteCompany_shouldLogBeforeDelete() {
         Company company = new Company();
         company.setId(1L);
-        company.setCompanyInfoUpdateStatus(CompanyReviewStatus.SUSPENDED);
+        company.setCompanyReviewStatus(CompanyReviewStatus.SUSPENDED);
 
         when(companyRepository.findById(1L)).thenReturn(Optional.of(company));
 
@@ -312,11 +312,11 @@ class AdminCompanyServiceImplTest {
     void bulkApproveCompanies_shouldProcessEachCompanyId() {
         Company c1 = new Company();
         c1.setId(1L);
-        c1.setCompanyInfoUpdateStatus(CompanyReviewStatus.PENDING_REVIEW);
+        c1.setCompanyReviewStatus(CompanyReviewStatus.PENDING_REVIEW);
 
         Company c2 = new Company();
         c2.setId(2L);
-        c2.setCompanyInfoUpdateStatus(CompanyReviewStatus.PENDING_REVIEW);
+        c2.setCompanyReviewStatus(CompanyReviewStatus.PENDING_REVIEW);
 
         CompanyApprovalRequest request = new CompanyApprovalRequest();
         request.setNote("bulk ok");
@@ -326,8 +326,8 @@ class AdminCompanyServiceImplTest {
 
         service.bulkApproveCompanies(20L, List.of(1L, 2L), request);
 
-        assertEquals(CompanyReviewStatus.APPROVED, c1.getCompanyInfoUpdateStatus());
-        assertEquals(CompanyReviewStatus.APPROVED, c2.getCompanyInfoUpdateStatus());
+        assertEquals(CompanyReviewStatus.APPROVED, c1.getCompanyReviewStatus());
+        assertEquals(CompanyReviewStatus.APPROVED, c2.getCompanyReviewStatus());
         verify(companyRepository).save(c1);
         verify(companyRepository).save(c2);
         verify(companyAuditService).log(
@@ -364,11 +364,11 @@ class AdminCompanyServiceImplTest {
     void bulkDeleteCompanies_shouldDeleteEachCompany() {
         Company c1 = new Company();
         c1.setId(1L);
-        c1.setCompanyInfoUpdateStatus(CompanyReviewStatus.APPROVED);
+        c1.setCompanyReviewStatus(CompanyReviewStatus.APPROVED);
 
         Company c2 = new Company();
         c2.setId(2L);
-        c2.setCompanyInfoUpdateStatus(CompanyReviewStatus.SUSPENDED);
+        c2.setCompanyReviewStatus(CompanyReviewStatus.SUSPENDED);
 
         when(companyRepository.findById(1L)).thenReturn(Optional.of(c1));
         when(companyRepository.findById(2L)).thenReturn(Optional.of(c2));

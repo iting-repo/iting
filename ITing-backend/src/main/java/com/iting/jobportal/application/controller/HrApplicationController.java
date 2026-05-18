@@ -136,4 +136,16 @@ public class HrApplicationController {
             @RequestParam("keyword") String keyword) {
         return ResponseEntity.ok(employerApplicationService.searchCandidatesByCvKeyword(employerId, keyword));
     }
+
+    @GetMapping("/job/{jobId}/ranked")
+    @Operation(summary = "🤖 AI Ranking: Xếp hạng ứng viên theo điểm phù hợp CV ↔ JD",
+               description = "Trả về danh sách ứng viên đã apply, sắp xếp theo AI match score giảm dần")
+    public ResponseEntity<Page<ApplicationResponse>> getApplicationsRankedByMatch(
+            @CurrentUser Long employerId,
+            @PathVariable Long jobId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size) {
+        return ResponseEntity.ok(
+                employerApplicationService.getApplicationsRankedByMatch(employerId, jobId, page, size));
+    }
 }

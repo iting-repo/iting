@@ -38,8 +38,9 @@ public class CandidateDashboardService {
 
     public CandidateDashboardStats getDashboardStats(Long userId) {
         User user = userRepository.findById(userId).orElse(null);
-        String fullName = user != null ? user.getFullName() : "";
-        String avatarUrl = user != null ? user.getAvatarUrl() : null;
+        var account = user != null ? user.getAccount() : null;
+        String fullName = account != null && account.getFullName() != null ? account.getFullName() : "";
+        String avatarUrl = account != null ? account.getAvatarUrl() : null;
 
         UserProfile profile = userProfileRepository.findById(userId).orElse(null);
         boolean profileCompleted = isProfileCompleted(profile);

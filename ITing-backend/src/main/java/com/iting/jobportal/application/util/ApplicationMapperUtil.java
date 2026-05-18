@@ -57,7 +57,10 @@ public class ApplicationMapperUtil {
                 companyActive = company.getActive();
             }
         }
-        String avatarUrl = userRepository.findById(userId).map(User::getAvatarUrl).orElse(null);
+        String avatarUrl = userRepository.findById(userId)
+                .map(User::getAccount)
+                .map(com.iting.jobportal.auth.entity.Account::getAvatarUrl)
+                .orElse(null);
 
         String cvFileName = null;
         String cvFileType = null;

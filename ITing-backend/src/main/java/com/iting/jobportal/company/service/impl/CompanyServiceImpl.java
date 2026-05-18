@@ -129,8 +129,8 @@ public class CompanyServiceImpl implements CompanyService {
         company.setLastUpdate(LocalDateTime.now());
 
         // Chuyển trạng thái sang DRAFT khi cập nhật thông tin. Cần bấm "Gửi duyệt" để sang PENDING_REVIEW.
-        if (company.getCompanyInfoUpdateStatus() != CompanyReviewStatus.PENDING_REVIEW) {
-            company.setCompanyInfoUpdateStatus(CompanyReviewStatus.DRAFT);
+        if (company.getCompanyReviewStatus() != CompanyReviewStatus.PENDING_REVIEW) {
+            company.setCompanyReviewStatus(CompanyReviewStatus.DRAFT);
         }
         company.setLastUpdate(LocalDateTime.now());
         company.setProfileSetup(true);
@@ -154,7 +154,7 @@ public class CompanyServiceImpl implements CompanyService {
         company.setRepresentativeName(request.getRepresentativeName());
         company.setRepresentativeGender(request.getRepresentativeGender());
         company.setRepresentativePhone(request.getRepresentativePhone());
-        company.setAccountEmail(request.getAccountEmail());
+
         company.setLastUpdate(LocalDateTime.now());
 
         Company saved = companyRepository.save(company);
@@ -255,7 +255,7 @@ public class CompanyServiceImpl implements CompanyService {
                 company.getBusinessLicenseDocumentType(),
                 company.getBusinessLicenseFileUrl(),
                 company.getBusinessLicensePreviewUrl(),
-                company.getCompanyInfoUpdateStatus()
+                company.getCompanyReviewStatus()
         );
     }
 
@@ -299,13 +299,6 @@ public class CompanyServiceImpl implements CompanyService {
         String fileUrl = fileUploadService.uploadConsentDocument(file);
 
         company.setConsentDocumentFileUrl(fileUrl);
-        company.setConsentDocumentConfirmed(true);
-        company.setConsentConfirmedAt(LocalDateTime.now());
-        company.setConsentDocumentVersion(
-                request.getVersion() == null || request.getVersion().isBlank()
-                        ? "v1.0"
-                        : request.getVersion()
-        );
 
         company.setLastUpdateRequestDate(LocalDateTime.now());
         company.setLastUpdate(LocalDateTime.now());
@@ -494,7 +487,7 @@ public class CompanyServiceImpl implements CompanyService {
             throw new IllegalArgumentException("Mã số thuế không được để trống");
         }
 
-        company.setCompanyInfoUpdateStatus(CompanyReviewStatus.PENDING_REVIEW);
+        company.setCompanyReviewStatus(CompanyReviewStatus.PENDING_REVIEW);
         company.setLastUpdateRequestDate(LocalDateTime.now());
         company.setLastUpdate(LocalDateTime.now());
 
@@ -520,12 +513,6 @@ public class CompanyServiceImpl implements CompanyService {
 
         if (company.getConsentDocumentFileUrl() == null || company.getConsentDocumentFileUrl().isBlank()) {
             throw new IllegalArgumentException("Văn bản thỏa thuận dữ liệu cá nhân không được để trống");
-        }
-        if (Boolean.FALSE.equals(company.getConsentDocumentConfirmed())) {
-            throw new IllegalArgumentException("Bạn chưa xác nhận cam kết cho văn bản thỏa thuận");
-        }
-        if (company.getConsentDocumentVersion() == null || company.getConsentDocumentVersion().isBlank()) {
-            throw new IllegalArgumentException("Phiên bản văn bản thỏa thuận không được để trống");
         }
 
         company.setDocumentReviewStatus(DocumentReviewStatus.PENDING_REVIEW);
@@ -558,9 +545,6 @@ public class CompanyServiceImpl implements CompanyService {
 
         if (company.getConsentDocumentFileUrl() == null || company.getConsentDocumentFileUrl().isBlank()) {
             throw new IllegalArgumentException("Bạn chưa tải lên Văn bản thỏa thuận dữ liệu cá nhân");
-        }
-        if (Boolean.FALSE.equals(company.getConsentDocumentConfirmed())) {
-            throw new IllegalArgumentException("Bạn chưa xác nhận cam kết cho văn bản thỏa thuận");
         }
 
         company.setDocumentReviewStatus(DocumentReviewStatus.PENDING_REVIEW);

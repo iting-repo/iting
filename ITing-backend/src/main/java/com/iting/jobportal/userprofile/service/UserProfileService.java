@@ -11,6 +11,8 @@ public interface UserProfileService {
 
     void updateProfile(Long userId, UserProfileUpdateDto dto);
 
+    void updateOpenToWork(Long userId, boolean status);
+
     // Education
     List<Education> getEducations(Long profileId);
 

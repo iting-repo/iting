@@ -149,7 +149,7 @@ const CompaniesPage = () => {
       <div className="relative overflow-hidden border-b border-gray-200">
         {/* Background Image */}
         <div className="absolute inset-0 z-0">
-          <img src="/background.png" alt="" className="w-full h-full object-cover" />
+          <img src="/company-page.png" alt="" className="w-full h-full object-cover" />
           <div className="absolute inset-0 bg-gradient-to-b from-gray-900/80 via-gray-900/70 to-gray-900/90"></div>
         </div>
 

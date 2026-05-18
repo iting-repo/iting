@@ -10,7 +10,7 @@ import {
   BsGlobe,
   BsTelephone,
 } from "react-icons/bs";
-import bgImage from "../../assets/bg_login.jpg";
+const bgImage = "/homepage-page.png";
 import { useModalEscape } from "../../hooks/useModalEscape";
 
 const GoogleIcon = () => (
@@ -102,7 +102,7 @@ const RegisterPage = () => {
     <div className="h-screen flex bg-white font-sans">
       <div className="w-full lg:w-[50%] flex flex-col px-8 md:px-20 xl:px-32 relative z-10 h-full overflow-y-auto no-scrollbar py-12">
         <Link to="/" className="flex items-center gap-2 mb-6 w-fit hover:opacity-80 transition-opacity">
-          <img src="/assets/logo_white.png" alt="ITing Logo" className="h-20 w-auto object-contain drop-shadow-sm" />
+          <img src="/logo-iting.png" alt="ITing Logo" className="h-20 w-auto object-contain drop-shadow-sm" />
         </Link>
         <div>
           <h1 className="text-[32px] font-semibold text-[#1F2937] mb-2 leading-tight">Tạo tài khoản mới</h1>
