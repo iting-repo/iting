@@ -145,12 +145,14 @@ public class AuthServiceImpl implements AuthService {
             
             // Cập nhật thông tin mới cho tài khoản cũ
             account.setPasswordHash(passwordEncoder.encode(request.getPassword()));
+            account.setFullName(request.getFullName());
             account.setRole(request.getRole().normalize());
             account.setStatus(AccountStatus.PENDING);
         } else {
             // Tạo tài khoản mới
             account = Account.builder()
                     .email(normalizedEmail)
+                    .fullName(request.getFullName())
                     .passwordHash(passwordEncoder.encode(request.getPassword()))
                     .role(request.getRole().normalize())
                     .status(AccountStatus.PENDING)
