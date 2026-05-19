@@ -8,14 +8,15 @@ import lombok.Setter;
 import java.time.LocalDateTime;
 
 /**
- * Candidate-specific extension of {@link Account} (1-1 via @MapsId).
+ * Candidate/Employer-specific extension of {@link Account} (1-1 via @MapsId).
  *
- * <p>Login + contact identity (email, password, full_name, phone, avatar_url) lives on Account.
- * This entity only holds fields meaningful for CANDIDATE role: home location, AI CV embedding,
- * and profile-snapshot timestamp.
+ * <p>Identity fields (full_name, phone, avatar_url) live on Account (source of truth since V54).
+ * This entity only holds CANDIDATE-specific fields: home location, AI CV embedding.
+ *
+ * <p>Table was renamed from "users" → "candidate_info" by V54.
  */
 @Entity
-@Table(name = "Users")
+@Table(name = "candidate_info")
 @Getter
 @Setter
 public class User {

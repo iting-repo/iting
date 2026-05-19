@@ -66,6 +66,7 @@ public class AuthServiceImpl implements AuthService {
                 Account newAccount = Account.builder()
                         .email(email)
                         .passwordHash(passwordEncoder.encode("SOCIAL_LOGIN_" + System.currentTimeMillis()))
+                        .fullName(name != null && !name.isBlank() ? name.trim() : email)
                         .role(Role.CANDIDATE)
                         .status(AccountStatus.ACTIVE)
                         .build();
@@ -148,12 +149,23 @@ public class AuthServiceImpl implements AuthService {
             account.setFullName(request.getFullName());
             account.setRole(request.getRole().normalize());
             account.setStatus(AccountStatus.PENDING);
+            if (request.getFullName() != null && !request.getFullName().isBlank()
+                    && (account.getFullName() == null || account.getFullName().isBlank())) {
+                account.setFullName(request.getFullName().trim());
+            }
+            if (account.getFullName() == null || account.getFullName().isBlank()) {
+                account.setFullName(normalizedEmail);
+            }
         } else {
             // Tạo tài khoản mới
+            String name = (request.getFullName() != null && !request.getFullName().isBlank())
+                    ? request.getFullName().trim()
+                    : normalizedEmail; // fallback: dùng email nếu thiếu tên
             account = Account.builder()
                     .email(normalizedEmail)
                     .fullName(request.getFullName())
                     .passwordHash(passwordEncoder.encode(request.getPassword()))
+                    .fullName(name)
                     .role(request.getRole().normalize())
                     .status(AccountStatus.PENDING)
                     .build();
@@ -240,13 +252,19 @@ public class AuthServiceImpl implements AuthService {
             return;
         }
 
-        // Ghi fullName lên Account (source of truth) thay vì User
-        if (request.getFullName() != null && !request.getFullName().isBlank()
-                && (account.getFullName() == null || account.getFullName().isBlank())) {
-            account.setFullName(request.getFullName().trim());
-            accountRepository.save(account);
-        } else if (account.getFullName() == null || account.getFullName().isBlank()) {
-            account.setFullName(account.getEmail());
+        // Resolve fullName: request → account → email fallback
+        String resolvedName = null;
+        if (request.getFullName() != null && !request.getFullName().isBlank()) {
+            resolvedName = request.getFullName().trim();
+        } else if (account.getFullName() != null && !account.getFullName().isBlank()) {
+            resolvedName = account.getFullName();
+        } else {
+            resolvedName = account.getEmail();
+        }
+
+        // Ghi fullName lên Account (source of truth)
+        if (account.getFullName() == null || account.getFullName().isBlank()) {
+            account.setFullName(resolvedName);
             accountRepository.save(account);
         }
 
