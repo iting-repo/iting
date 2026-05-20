@@ -16,7 +16,6 @@
 -- Drop tables in reverse dependency order
 DROP TABLE IF EXISTS Portfolio CASCADE;
 DROP TABLE IF EXISTS Social_link CASCADE;
-DROP TABLE IF EXISTS contact_info CASCADE;
 DROP TABLE IF EXISTS user_reports CASCADE;
 DROP TABLE IF EXISTS activity_logs CASCADE;
 DROP TABLE IF EXISTS report_accounts CASCADE;
@@ -479,19 +478,6 @@ CREATE TABLE Portfolio (
     CONSTRAINT fk_portfolio_profile FOREIGN KEY (profile_id) REFERENCES candidate_profiles(id) ON DELETE CASCADE
 );
 
-DROP TABLE IF EXISTS contact_info;
-
-CREATE TABLE contact_info (
-    id BIGINT PRIMARY KEY,
-    phone VARCHAR(20),
-    email VARCHAR(255),
-    show_phone_to_recruiter BOOLEAN DEFAULT FALSE,
-    show_email_to_recruiter BOOLEAN DEFAULT FALSE,
-    CONSTRAINT fk_contact_profile
-    FOREIGN KEY (id) REFERENCES candidate_profiles(id)
-    ON DELETE CASCADE
-);
-
 -- ============================================================================
 -- V3: Conversations Table
 -- ============================================================================
@@ -672,8 +658,6 @@ CREATE INDEX IF NOT EXISTS idx_static_contents_author_id ON static_contents(auth
 CREATE INDEX IF NOT EXISTS idx_static_contents_published_at ON static_contents(published_at);
 CREATE INDEX IF NOT EXISTS idx_social_network_web_info_id ON Social_network(Web_infor_id);
 CREATE INDEX IF NOT EXISTS idx_vn_location_region ON VN_location(Region);
-CREATE INDEX IF NOT EXISTS idx_contact_info_email ON contact_info(email);
-CREATE INDEX IF NOT EXISTS idx_contact_info_phone ON contact_info(phone);
 
 -- ============================================================================
 -- SAMPLE DATA

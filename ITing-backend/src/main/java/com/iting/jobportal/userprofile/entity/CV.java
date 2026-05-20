@@ -43,4 +43,23 @@ public class CV {
 
     @Column(name = "Upload_time")
     private LocalDateTime uploadedAt;
+
+    /**
+     * Vector embedding (vd 768-d) sinh từ nội dung CV (parse PDF/DOCX → text → HF/OpenAI).
+     * Dùng cho candidate ↔ job similarity matching. NULL khi chưa parse xong.
+     * Lưu dạng JSON array: "[0.0123, -0.0456, ...]".
+     */
+    @Column(name = "Cv_embedding", columnDefinition = "TEXT")
+    private String cvEmbedding;
+
+    @Column(name = "embedding_updated_at")
+    private LocalDateTime embeddingUpdatedAt;
+
+    /**
+     * JSON output của HF /extract-cv: skills, experience, education,
+     * personal info đã được AI parse từ file CV. Dùng để pre-fill
+     * UserProfile form hoặc hiển thị tóm tắt. NULL nếu chưa parse.
+     */
+    @Column(name = "extracted_data_json", columnDefinition = "TEXT")
+    private String extractedDataJson;
 }

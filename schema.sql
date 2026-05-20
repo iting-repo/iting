@@ -10,7 +10,6 @@
 -- Drop tables in reverse dependency order
 DROP TABLE IF EXISTS Portfolio CASCADE;
 DROP TABLE IF EXISTS SocialLink CASCADE;
-DROP TABLE IF EXISTS contact_info CASCADE;
 DROP TABLE IF EXISTS user_reports CASCADE;
 DROP TABLE IF EXISTS activity_logs CASCADE;
 DROP TABLE IF EXISTS report_accounts CASCADE;
@@ -436,13 +435,6 @@ CREATE TABLE Portfolio (
     url TEXT,
     description TEXT,
     CONSTRAINT fk_portfolio_profile FOREIGN KEY (profile_id) REFERENCES candidate_profiles(id) ON DELETE CASCADE
-);
-
--- Table: contact_info
-CREATE TABLE contact_info (
-    userId VARCHAR(255) PRIMARY KEY,
-    phone VARCHAR(20),
-    email VARCHAR(255)
 );
 
 -- ============================================================================

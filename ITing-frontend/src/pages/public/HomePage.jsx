@@ -14,7 +14,7 @@ import {
     FaSearch, FaMapMarkerAlt, FaBriefcase, FaBuilding, FaUserFriends,
     FaCode, FaCloud, FaShieldAlt, FaDatabase, FaMobileAlt, FaPencilRuler, FaBug,
     FaArrowRight, FaRegBookmark, FaBookmark, FaClock, FaFilter, FaArrowLeft, FaMagic, FaChevronRight,
-    FaCubes, FaGamepad, FaLaptopCode
+    FaCubes, FaGamepad, FaLaptopCode, FaCloudUploadAlt, FaFilePdf, FaKeyboard
 } from 'react-icons/fa';
 import { toast } from 'sonner';
 import jobService from '../../services/jobService';
@@ -35,11 +35,15 @@ const HomePage = () => {
     const [savedJobIds, setSavedJobIds] = useState([]);
     const [provinces, setProvinces] = useState([]);
     const [selectedLocationFilter, setSelectedLocationFilter] = useState(searchParams.get('location') || '');
+    const [filterMode, setFilterMode] = useState('location'); // 'location' | 'category'
+    const [selectedCategoryFilter, setSelectedCategoryFilter] = useState('');
     const [stats, setStats] = useState({ totalJobs: 0, totalCandidates: 0, totalCompanies: 0 });
     const [recommendedJobs, setRecommendedJobs] = useState([]);
     const [isRecommending, setIsRecommending] = useState(false);
     const [isAiModalOpen, setIsAiModalOpen] = useState(false);
     const [cvText, setCvText] = useState("");
+    const [cvFile, setCvFile] = useState(null);
+    const [aiMode, setAiMode] = useState("text"); // 'text' | 'file'
     const [isAnalyzing, setIsAnalyzing] = useState(false);
     const [blogs, setBlogs] = useState([]);
     const [hoveredJob, setHoveredJob] = useState(null);
@@ -47,6 +51,8 @@ const HomePage = () => {
     const enterTimerRef = useRef(null);
     const leaveTimerRef = useRef(null);
     const pendingRef = useRef(null);
+    const provinceScrollRef = useRef(null);
+    const categoryScrollRef = useRef(null);
 
     const handleCardEnter = (job, el) => {
         if (leaveTimerRef.current) clearTimeout(leaveTimerRef.current);
@@ -275,16 +281,42 @@ const HomePage = () => {
         setIsAiModalOpen(true);
     };
 
+    const handleAiFileChange = (e) => {
+        const file = e.target.files?.[0] || null;
+        if (!file) return;
+        if (file.type !== 'application/pdf' && !file.type.startsWith('image/')) {
+            toast.error('Chỉ chấp nhận file PDF hoặc ảnh');
+            return;
+        }
+        if (file.size > 5 * 1024 * 1024) {
+            toast.error('Kích thước file tối đa 5MB');
+            return;
+        }
+        setCvFile(file);
+    };
+
     const handleConfirmAiSearch = async () => {
-        if (!cvText.trim()) {
+        if (aiMode === 'text' && !cvText.trim()) {
             toast.error("Vui lòng dán nội dung CV để AI phân tích!");
+            return;
+        }
+        if (aiMode === 'file' && !cvFile) {
+            toast.error("Vui lòng chọn file CV để AI phân tích!");
             return;
         }
 
         setIsAnalyzing(true);
         try {
-            const response = await jobService.analyzeCv(cvText);
-            const criteria = response.data || response; // handle axios wrap
+            let criteria;
+            if (aiMode === 'file') {
+                const formData = new FormData();
+                formData.append('file', cvFile);
+                const response = await jobService.analyzeCvFile(formData);
+                criteria = response.data || response;
+            } else {
+                const response = await jobService.analyzeCv(cvText);
+                criteria = response.data || response;
+            }
 
             const params = new URLSearchParams();
             if (criteria.keyword) params.append('keyword', criteria.keyword);
@@ -297,10 +329,12 @@ const HomePage = () => {
             navigate(`/jobs?${params.toString()}`);
         } catch (error) {
             console.error("AI Analysis failed:", error);
-            toast.error("Phân tích CV thất bại. Vui lòng thử lại!");
+            const errorMsg = error?.error || error?.message || error?.response?.data?.message || "Phân tích CV thất bại. Vui lòng thử lại!";
+            toast.error(errorMsg);
         } finally {
             setIsAnalyzing(false);
             setIsAiModalOpen(false);
+            setCvFile(null);
         }
     };
 
@@ -392,14 +426,14 @@ const HomePage = () => {
                     {/* Search Box */}
                     <div className="bg-white rounded-lg md:rounded-full p-1.5 flex flex-col md:flex-row items-center max-w-5xl mx-auto shadow-2xl overflow-visible">
                         {/* 1. Category Picker (Far Left) */}
-                        <div className="w-full md:w-[25%] h-12 flex items-center px-4 relative">
+                        <div className="w-full md:w-[25%] h-12 flex items-center px-4 relative border-b md:border-b-0 md:border-r border-gray-200">
                             <CategoryPicker
                                 value={searchForm.category}
                                 onChange={(val) => handleChangeSearchField('category', val)}
                             />
                         </div>
 
-                        <div className="flex-1 w-full md:w-auto px-4 py-3 flex items-center border-b md:border-b-0 md:border-r border-gray-200">
+                        <div className="flex-1 w-full md:w-auto h-12 px-4 flex items-center border-b md:border-b-0 md:border-r border-gray-200">
                             <FaSearch className="text-gray-400 mr-2" />
                             <input
                                 type="text"
@@ -412,7 +446,7 @@ const HomePage = () => {
                                 className="w-full outline-none text-gray-700 text-sm placeholder-gray-400"
                             />
                         </div>
-                        <div className="w-full md:w-[25%] px-4 py-3 flex items-center border-b md:border-b-0 md:border-r border-gray-200 relative">
+                        <div className="w-full md:w-[25%] h-12 px-4 flex items-center border-b md:border-b-0 md:border-r border-gray-200 relative">
                             <FaMapMarkerAlt className="text-gray-400 mr-2 flex-shrink-0" />
                             <LocationPicker
                                 value={searchForm.location}
@@ -436,7 +470,7 @@ const HomePage = () => {
 
                     <div className="mt-6 flex flex-wrap justify-center gap-2 items-center">
                         <span className="text-gray-400 text-sm font-medium">Gợi ý:</span>
-                        {['Intern', 'Thực tập sinh IT', 'Thực tập sinh tiếng Trung', 'Thực tập sinh tư vấn', 'Chuyên viên vận hành'].map((tag, i) => (
+                        {['Intern', 'Thực tập sinh IT', 'Senior Frontend', 'Junior', 'Java Developer'].map((tag, i) => (
                             <span
                                 key={i}
                                 onClick={() => {
@@ -642,12 +676,12 @@ const HomePage = () => {
                     {/* 1. HEADER: Loại bỏ nút đen, dùng nút viền mảnh tinh tế */}
                     <div className="flex flex-col md:flex-row justify-between items-end md:items-center mb-8 gap-4">
                         <div>
-                            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-2">Việc Làm Tốt Nhất</h2>
+                            <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2">Việc Làm Tốt Nhất</h2>
                             <p className="text-gray-500 text-sm">Các cơ hội việc làm hấp dẫn nhất đang chờ đón bạn</p>
                         </div>
 
                         <div className="flex items-center gap-3">
-                            <a href="#" className="text-gray-500 font-medium hover:text-[#3AB4E6] transition-colors text-sm mr-2">Xem tất cả</a>
+                            <Link to="/jobs" className="text-gray-500 font-medium hover:text-[#3AB4E6] transition-colors text-sm mr-2">Xem tất cả</Link>
                             {/* Sửa: Nút điều hướng trắng, viền xám */}
                             <button className="w-9 h-9 rounded-full border border-gray-200 text-gray-400 flex items-center justify-center hover:border-[#3AB4E6] hover:text-[#3AB4E6] transition-all">
                                 <FaArrowLeft size={12} />
@@ -658,61 +692,143 @@ const HomePage = () => {
                         </div>
                     </div>
 
-                    {/* 2. FILTER BAR: Tách biệt nút lọc và danh sách cuộn */}
+                    {/* 2. FILTER BAR: Toggle giữa Địa điểm và Ngành nghề */}
                     <div className="flex flex-col md:flex-row items-center gap-4 mb-8">
 
-                        {/* Nút Lọc cố định */}
-                        <div className="flex items-center gap-2 px-5 py-2.5 rounded-full border border-gray-200 bg-white text-gray-700 font-medium text-sm shadow-sm">
-                            <FaFilter className="text-[#3AB4E6]" />
-                            <span>Lọc theo:</span>
-                            <span className="font-bold text-gray-900">Địa điểm</span>
+                        {/* Nút Lọc: Tabs chuyển đổi */}
+                        <div className="flex items-center gap-1 p-1 rounded-full border border-gray-200 bg-white shadow-sm shrink-0">
+                            <FaFilter className="text-[#3AB4E6] ml-3 mr-1" />
+                            <span className="text-gray-500 text-sm mr-1">Lọc theo:</span>
+                            <button
+                                onClick={() => setFilterMode('location')}
+                                className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all ${
+                                    filterMode === 'location'
+                                        ? 'bg-[#3AB4E6] text-white shadow-sm'
+                                        : 'text-gray-500 hover:bg-gray-50'
+                                }`}
+                            >
+                                <FaMapMarkerAlt className="inline mr-1" size={10} />Địa điểm
+                            </button>
+                            <button
+                                onClick={() => setFilterMode('category')}
+                                className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all ${
+                                    filterMode === 'category'
+                                        ? 'bg-[#3AB4E6] text-white shadow-sm'
+                                        : 'text-gray-500 hover:bg-gray-50'
+                                }`}
+                            >
+                                <FaBriefcase className="inline mr-1" size={10} />Ngành nghề
+                            </button>
                         </div>
 
-                        {/* Danh sách địa điểm (Scroll ngang) */}
+                        {/* Danh sách cuộn ngang */}
                         <div className="flex-1 w-full flex items-center gap-2 overflow-hidden">
-                            {/* Nút scroll trái nhỏ */}
-                            <button className="w-8 h-8 rounded-full bg-gray-50 text-gray-400 flex items-center justify-center hover:bg-gray-200 shrink-0">
+                            {/* Nút scroll trái */}
+                            <button
+                                onClick={() => {
+                                    const ref = filterMode === 'location' ? provinceScrollRef : categoryScrollRef;
+                                    ref.current?.scrollBy({ left: -300, behavior: 'smooth' });
+                                }}
+                                className="w-8 h-8 rounded-full bg-gray-50 text-gray-400 flex items-center justify-center hover:bg-gray-200 hover:text-gray-600 shrink-0 transition-colors"
+                            >
                                 <FaArrowLeft size={10} />
                             </button>
 
-                            <div className="flex gap-3 overflow-x-auto no-scrollbar px-1 py-1 scroll-smooth flex-1">
-                                {provinces.map((province) => (
-                                    <button
-                                        key={province.code}
-                                        onClick={() => {
-                                            const newLocation = selectedLocationFilter === province.name ? '' : province.name;
-                                            setSelectedLocationFilter(newLocation);
-                                            setSearchForm((prev) => ({ ...prev, location: newLocation, page: 0 }));
-                                            setCurrentPage(1);
+                            {/* Danh sách Địa điểm */}
+                            {filterMode === 'location' && (
+                                <div ref={provinceScrollRef} className="flex gap-3 overflow-x-auto no-scrollbar px-1 py-1 scroll-smooth flex-1">
+                                    {provinces.map((province) => {
+                                        const shortName = (province.name || '')
+                                            .replace(/^Tỉnh\s+/i, '')
+                                            .replace(/^Thành phố\s+/i, '');
+                                        return (
+                                            <button
+                                                key={province.code}
+                                                onClick={() => {
+                                                    const isDeselecting = selectedLocationFilter === province.name;
+                                                    const newFilterDisplay = isDeselecting ? '' : province.name;
+                                                    const newLocationForApi = isDeselecting ? '' : shortName;
+                                                    setSelectedLocationFilter(newFilterDisplay);
+                                                    setSearchForm((prev) => ({ ...prev, location: newLocationForApi, page: 0 }));
+                                                    setCurrentPage(1);
 
-                                            const params = {
-                                                ...searchForm,
-                                                location: newLocation || undefined,
-                                                page: 0,
-                                                minSalary: searchForm.minSalary || undefined,
-                                                maxSalary: searchForm.maxSalary || undefined,
-                                                companyId: searchForm.companyId || undefined,
-                                                keyword: searchForm.keyword || undefined,
-                                                jobType: searchForm.jobType || undefined,
-                                                experienceLevel: searchForm.experienceLevel || undefined,
-                                                techRequired: searchForm.skills || undefined,
-                                            };
+                                                    const params = {
+                                                        ...searchForm,
+                                                        location: newLocationForApi || undefined,
+                                                        page: 0,
+                                                        minSalary: searchForm.minSalary || undefined,
+                                                        maxSalary: searchForm.maxSalary || undefined,
+                                                        companyId: searchForm.companyId || undefined,
+                                                        keyword: searchForm.keyword || undefined,
+                                                        jobType: searchForm.jobType || undefined,
+                                                        experienceLevel: searchForm.experienceLevel || undefined,
+                                                        techRequired: searchForm.skills || undefined,
+                                                    };
 
-                                            dispatch(fetchJobsRequest(params));
-                                        }}
-                                        className={`flex-shrink-0 px-5 py-2 rounded-full text-xs font-bold transition-all border
-                      ${selectedLocationFilter === province.name
-                                                ? 'bg-[#3AB4E6] border-[#3AB4E6] text-white shadow-md shadow-blue-200'
-                                                : 'bg-white border-gray-200 text-gray-500 hover:border-gray-300 hover:bg-gray-50'
-                                            }`}
-                                    >
-                                        {province.name}
-                                    </button>
-                                ))}
-                            </div>
+                                                    dispatch(fetchJobsRequest(params));
+                                                }}
+                                                className={`flex-shrink-0 px-5 py-2 rounded-full text-xs font-bold transition-all border
+                                                    ${selectedLocationFilter === province.name
+                                                        ? 'bg-[#3AB4E6] border-[#3AB4E6] text-white shadow-md shadow-blue-200'
+                                                        : 'bg-white border-gray-200 text-gray-500 hover:border-gray-300 hover:bg-gray-50'
+                                                    }`}
+                                            >
+                                                {province.name}
+                                            </button>
+                                        );
+                                    })}
+                                </div>
+                            )}
 
-                            {/* Nút scroll phải nhỏ */}
-                            <button className="w-8 h-8 rounded-full bg-gray-50 text-gray-400 flex items-center justify-center hover:bg-gray-200 shrink-0">
+                            {/* Danh sách Ngành nghề */}
+                            {filterMode === 'category' && (
+                                <div ref={categoryScrollRef} className="flex gap-3 overflow-x-auto no-scrollbar px-1 py-1 scroll-smooth flex-1">
+                                    {categories.map((cat) => (
+                                        <button
+                                            key={cat.id}
+                                            onClick={() => {
+                                                const isDeselecting = selectedCategoryFilter === cat.id;
+                                                const newCatId = isDeselecting ? '' : cat.id;
+                                                const newKeyword = isDeselecting ? '' : cat.name;
+                                                setSelectedCategoryFilter(newCatId);
+                                                setCurrentPage(1);
+
+                                                const params = {
+                                                    ...searchForm,
+                                                    keyword: newKeyword || searchForm.keyword || undefined,
+                                                    location: searchForm.location || undefined,
+                                                    page: 0,
+                                                    minSalary: searchForm.minSalary || undefined,
+                                                    maxSalary: searchForm.maxSalary || undefined,
+                                                    companyId: searchForm.companyId || undefined,
+                                                    jobType: searchForm.jobType || undefined,
+                                                    experienceLevel: searchForm.experienceLevel || undefined,
+                                                    techRequired: searchForm.skills || undefined,
+                                                };
+
+                                                dispatch(fetchJobsRequest(params));
+                                            }}
+                                            className={`flex-shrink-0 px-5 py-2 rounded-full text-xs font-bold transition-all border flex items-center gap-2
+                                                ${selectedCategoryFilter === cat.id
+                                                    ? 'bg-[#3AB4E6] border-[#3AB4E6] text-white shadow-md shadow-blue-200'
+                                                    : 'bg-white border-gray-200 text-gray-500 hover:border-gray-300 hover:bg-gray-50'
+                                                }`}
+                                        >
+                                            <span className="text-sm">{cat.icon}</span>
+                                            {cat.name}
+                                        </button>
+                                    ))}
+                                </div>
+                            )}
+
+                            {/* Nút scroll phải */}
+                            <button
+                                onClick={() => {
+                                    const ref = filterMode === 'location' ? provinceScrollRef : categoryScrollRef;
+                                    ref.current?.scrollBy({ left: 300, behavior: 'smooth' });
+                                }}
+                                className="w-8 h-8 rounded-full bg-gray-50 text-gray-400 flex items-center justify-center hover:bg-gray-200 hover:text-gray-600 shrink-0 transition-colors"
+                            >
                                 <FaArrowRight size={10} />
                             </button>
                         </div>
@@ -880,7 +996,7 @@ const HomePage = () => {
                     {/* HEADER ROW */}
                     <div className="flex items-center justify-between mb-8">
                         <div>
-                            <h2 className="text-2xl md:text-3xl font-extrabold text-white">
+                            <h2 className="text-2xl md:text-3xl font-bold text-white">
                                 Thị trường việc làm hôm nay{' '}
                                 <span className="text-[#3AB4E6]">
                                     {new Date().toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' })}
@@ -948,7 +1064,7 @@ const HomePage = () => {
                             {/* STATS ROW */}
                             <div className="grid grid-cols-3 gap-4">
                                 {[
-                                    { label: 'Việc làm mới 24h gần nhất', value: Math.min(stats.totalJobs ?? 0, 999), accent: true },
+                                    { label: 'Việc làm mới 24h gần nhất', value: (stats.newJobs24h ?? 0).toLocaleString('vi-VN'), accent: true },
                                     { label: 'Việc làm đang tuyển', value: (stats.totalJobs ?? 0).toLocaleString('vi-VN'), accent: false },
                                     { label: 'Công ty đang tuyển', value: (stats.totalCompanies ?? 0).toLocaleString('vi-VN'), accent: false },
                                 ].map((s, i) => (
@@ -1062,7 +1178,7 @@ const HomePage = () => {
             <section className="py-10 px-8 bg-[#F0F5FA]">
                 <div className="container mx-auto px-4">
                     <div className="text-center mb-12">
-                        <h2 className="text-3xl font-bold text-gray-800 mb-3">Tìm việc theo lĩnh vực</h2>
+                        <h2 className="text-2xl md:text-3xl font-bold text-gray-800 mb-3">Tìm việc theo lĩnh vực</h2>
                         <p className="text-gray-500 text-sm">Khám phá các cơ hội nghề nghiệp trong lĩnh vực công nghệ – từ phát triển phần mềm, AI, đến an ninh mạng.</p>
                     </div>
 
@@ -1089,7 +1205,7 @@ const HomePage = () => {
                 <div className="container mx-auto px-4">
                     <div className="flex justify-between items-end mb-8">
                         <div>
-                            <h2 className="text-3xl font-bold text-gray-800 mb-2">Bài viết và blog</h2>
+                            <h2 className="text-2xl md:text-3xl font-bold text-gray-800 mb-2">Bài viết và blog</h2>
                             <p className="text-gray-500 text-sm">Cập nhật tin tức mới nhất về công nghệ và thị trường tuyển dụng</p>
                         </div>
                         {/* FIX: Thay BsArrowRight bằng FaArrowRight */}
@@ -1147,17 +1263,81 @@ const HomePage = () => {
                         </div>
 
                         <div className="p-6 space-y-4">
-                            <div className="relative">
-                                <textarea
-                                    value={cvText}
-                                    onChange={(e) => setCvText(e.target.value)}
-                                    placeholder="Ví dụ: Tôi là lập trình viên Java có 3 năm kinh nghiệm, thành thạo Spring Boot, React và AWS..."
-                                    className="w-full h-64 p-4 bg-gray-50 border-2 border-gray-100 rounded-xl focus:border-[#3AB4E6] focus:ring-0 outline-none transition-all resize-none text-gray-700 placeholder-gray-400"
-                                />
-                                <div className="absolute bottom-3 right-3 text-gray-400 text-xs font-medium">
-                                    {cvText.length} ký tự
-                                </div>
+                            {/* Tab switcher: paste text vs upload file */}
+                            <div className="flex gap-2 bg-gray-100 p-1 rounded-xl">
+                                <button
+                                    type="button"
+                                    onClick={() => setAiMode('text')}
+                                    className={`flex-1 px-4 py-2.5 rounded-lg font-bold text-sm flex items-center justify-center gap-2 transition-all ${aiMode === 'text'
+                                        ? 'bg-white text-[#3AB4E6] shadow-sm'
+                                        : 'text-gray-500 hover:text-gray-700'
+                                        }`}
+                                >
+                                    <FaKeyboard size={14} /> Dán nội dung CV
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => setAiMode('file')}
+                                    className={`flex-1 px-4 py-2.5 rounded-lg font-bold text-sm flex items-center justify-center gap-2 transition-all ${aiMode === 'file'
+                                        ? 'bg-white text-[#3AB4E6] shadow-sm'
+                                        : 'text-gray-500 hover:text-gray-700'
+                                        }`}
+                                >
+                                    <FaCloudUploadAlt size={14} /> Tải lên file CV
+                                </button>
                             </div>
+
+                            {aiMode === 'text' ? (
+                                <div className="relative">
+                                    <textarea
+                                        value={cvText}
+                                        onChange={(e) => setCvText(e.target.value)}
+                                        placeholder="Ví dụ: Tôi là lập trình viên Java có 3 năm kinh nghiệm, thành thạo Spring Boot, React và AWS..."
+                                        className="w-full h-64 p-4 bg-gray-50 border-2 border-gray-100 rounded-xl focus:border-[#3AB4E6] focus:ring-0 outline-none transition-all resize-none text-gray-700 placeholder-gray-400"
+                                    />
+                                    <div className="absolute bottom-3 right-3 text-gray-400 text-xs font-medium">
+                                        {cvText.length} ký tự
+                                    </div>
+                                </div>
+                            ) : (
+                                <div className="border-2 border-dashed border-gray-200 rounded-xl p-6 bg-gray-50 min-h-64 flex flex-col items-center justify-center">
+                                    {!cvFile ? (
+                                        <>
+                                            <FaCloudUploadAlt size={48} className="text-gray-300 mb-3" />
+                                            <p className="text-sm font-bold text-gray-700 mb-1">Chọn file CV để AI phân tích</p>
+                                            <p className="text-xs text-gray-400 mb-4">PDF hoặc ảnh, tối đa 5MB</p>
+                                            <label className="px-5 py-2.5 bg-white border border-gray-300 rounded-lg text-sm font-bold text-gray-700 hover:bg-gray-100 cursor-pointer shadow-sm transition-colors">
+                                                Chọn file
+                                                <input
+                                                    type="file"
+                                                    className="hidden"
+                                                    accept="application/pdf,image/*"
+                                                    onChange={handleAiFileChange}
+                                                />
+                                            </label>
+                                        </>
+                                    ) : (
+                                        <div className="w-full flex items-center justify-between bg-white p-4 rounded-lg border-2 border-[#3AB4E6]">
+                                            <div className="flex items-center gap-3 truncate">
+                                                <FaFilePdf size={28} className="text-red-500 shrink-0" />
+                                                <div className="truncate">
+                                                    <p className="text-sm font-bold text-gray-800 truncate">{cvFile.name}</p>
+                                                    <p className="text-xs text-gray-400">
+                                                        {(cvFile.size / 1024 / 1024).toFixed(2)} MB
+                                                    </p>
+                                                </div>
+                                            </div>
+                                            <button
+                                                type="button"
+                                                onClick={() => setCvFile(null)}
+                                                className="text-gray-400 hover:text-red-500 px-2"
+                                            >
+                                                ✕
+                                            </button>
+                                        </div>
+                                    )}
+                                </div>
+                            )}
 
                             <div className="flex gap-3 pt-2">
                                 <button

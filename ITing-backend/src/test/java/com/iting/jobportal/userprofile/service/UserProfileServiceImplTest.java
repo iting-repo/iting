@@ -1,6 +1,7 @@
 package com.iting.jobportal.userprofile.service;
 
 import com.iting.jobportal.auth.exception.ResourceNotFoundException;
+import com.iting.jobportal.auth.repository.AccountRepository;
 import com.iting.jobportal.user.entity.User;
 import com.iting.jobportal.user.repository.UserRepository;
 import com.iting.jobportal.userprofile.dto.request.CVRequest;
@@ -47,6 +48,7 @@ class UserProfileServiceImplTest {
     @Mock private PortfolioRepository portfolioRepo;
     @Mock private CVRepository cvRepo;
     @Mock private SocialLinkRepository socialRepo;
+    @Mock private AccountRepository accountRepository;
 
     @InjectMocks
     private UserProfileServiceImpl userProfileService;

@@ -6,13 +6,12 @@ import com.iting.jobportal.application.entity.ApplyFormSentToJob;
 import com.iting.jobportal.company.entity.Company;
 import com.iting.jobportal.job.entity.Job;
 import com.iting.jobportal.job.repository.JobRepository;
+import com.iting.jobportal.auth.entity.Account;
 import com.iting.jobportal.user.entity.User;
 import com.iting.jobportal.user.repository.UserRepository;
-import com.iting.jobportal.userprofile.entity.ContactInfo;
 import com.iting.jobportal.userprofile.entity.CV;
 import com.iting.jobportal.userprofile.entity.Education;
 import com.iting.jobportal.userprofile.entity.Experience;
-import com.iting.jobportal.userprofile.repository.ContactInfoRepository;
 import com.iting.jobportal.userprofile.repository.CVRepository;
 import com.iting.jobportal.userprofile.repository.EducationRepository;
 import com.iting.jobportal.userprofile.repository.ExperienceRepository;
@@ -31,7 +30,6 @@ public class ApplicationMapperUtil {
     private final JobRepository jobRepository;
     private final UserRepository userRepository;
     private final CVRepository cvRepository;
-    private final ContactInfoRepository contactInfoRepository;
     private final ExperienceRepository experienceRepository;
     private final EducationRepository educationRepository;
 
@@ -57,10 +55,10 @@ public class ApplicationMapperUtil {
                 companyActive = company.getActive();
             }
         }
-        String avatarUrl = userRepository.findById(userId)
+        Account account = userRepository.findById(userId)
                 .map(User::getAccount)
-                .map(com.iting.jobportal.auth.entity.Account::getAvatarUrl)
                 .orElse(null);
+        String avatarUrl = account != null ? account.getAvatarUrl() : null;
 
         String cvFileName = null;
         String cvFileType = null;
@@ -108,19 +106,10 @@ public class ApplicationMapperUtil {
             cvFileName = applyForm.getCvTitle();
         }
 
-        String phoneNumber = null;
-        String email = null;
-        Optional<ContactInfo> contactOpt = contactInfoRepository.findById(userId);
-        if (contactOpt.isPresent()) {
-            ContactInfo c = contactOpt.get();
-            phoneNumber = c.getPhone();
-            email = c.getEmail();
-        }
-        if (email == null || email.isBlank()) {
-            email = userRepository.findById(userId)
-                    .map(u -> u.getAccount() != null ? u.getAccount().getEmail() : String.valueOf(userId))
-                    .orElse(String.valueOf(userId));
-        }
+        String phoneNumber = account != null ? account.getPhone() : null;
+        String email = account != null && account.getEmail() != null && !account.getEmail().isBlank()
+                ? account.getEmail()
+                : String.valueOf(userId);
 
         List<Experience> experiences = experienceRepository.findByProfile_Id(userId);
         int totalMonths = 0;

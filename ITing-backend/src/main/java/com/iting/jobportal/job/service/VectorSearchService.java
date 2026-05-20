@@ -23,7 +23,7 @@ public interface VectorSearchService {
     /**
      * Gợi ý job phù hợp cho ứng viên dựa trên CV embedding.
      *
-     * @param userId ID ứng viên (lấy cvEmbedding từ User entity)
+     * @param userId ID ứng viên (lấy cvEmbedding từ default CV)
      * @param topK   Số lượng kết quả tối đa
      * @return Danh sách job xếp hạng theo similarity score
      */

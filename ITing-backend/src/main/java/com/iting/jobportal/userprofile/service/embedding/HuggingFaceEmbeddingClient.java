@@ -67,7 +67,7 @@ public class HuggingFaceEmbeddingClient implements EmbeddingClient {
                     .POST(HttpRequest.BodyPublishers.ofString(body));
             if (token != null && !token.isBlank()) {
                 builder.header("Authorization", "Bearer " + token);
-                builder.header("X-API-Key", token);
+                builder.header("X-API-KEY", token);
             }
 
             HttpResponse<String> response = httpClient.send(builder.build(), HttpResponse.BodyHandlers.ofString());

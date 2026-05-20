@@ -30,6 +30,10 @@ const jobService = {
     analyzeCv: (cvText) => axiosInstance.post('/jobs/analyze-cv', cvText, {
         headers: { 'Content-Type': 'text/plain' }
     }),
+
+    analyzeCvFile: (formData) => axiosInstance.post('/jobs/analyze-cv-file', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+    }),
 };
 
 export default jobService;

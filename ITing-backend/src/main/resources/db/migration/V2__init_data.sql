@@ -1001,14 +1001,6 @@ UPDATE Users SET Cv_embedding = '[-0.03413896,0.06033864,0.00613062,0.03996229,-
 
 
 
--- contact_info
-INSERT INTO contact_info (id, phone, email)
-VALUES
-(101, '0901111111', 'nguyenvana@gmail.com'),
-(102, '0902222222', 'tranthib@gmail.com'),
-(103, '0903333333', 'levanc@gmail.com'),
-(104, '0904444444', 'phamthid@gmail.com'),
-(105, '0905555555', 'hoangvane@gmail.com');
 -- ============================================================================
 -- Embedding generation complete!
 -- Total job embeddings:  10

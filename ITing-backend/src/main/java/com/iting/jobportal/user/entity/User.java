@@ -10,9 +10,14 @@ import java.time.LocalDateTime;
 /**
  * Candidate-specific extension of {@link Account} (1-1 via @MapsId).
  *
- * <p>Login + contact identity (email, password, full_name, phone, avatar_url) lives on Account.
- * This entity only holds fields meaningful for CANDIDATE role: home location, AI CV embedding,
- * and profile-snapshot timestamp.
+ * <p>
+ * Identity fields (full_name, phone, avatar_url) live on Account (source of
+ * truth since V54).
+ * AI CV embedding moved to {@link com.iting.jobportal.userprofile.entity.CV}
+ * per-document by V84.
+ *
+ * <p>
+ * Table was renamed from "users" → "candidate_info" by V54.
  */
 @Entity
 @Table(name = "Users")
@@ -30,9 +35,6 @@ public class User {
 
     @Column(name = "Loc_id")
     private Long locId;
-
-    @Column(name = "Cv_embedding", columnDefinition = "TEXT")
-    private String cvEmbedding;
 
     @Column(name = "Last_update")
     private LocalDateTime lastUpdate;

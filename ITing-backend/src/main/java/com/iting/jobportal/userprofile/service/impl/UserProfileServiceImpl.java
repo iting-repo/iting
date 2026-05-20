@@ -1,6 +1,7 @@
 package com.iting.jobportal.userprofile.service.impl;
 
 import com.iting.jobportal.auth.exception.ResourceNotFoundException;
+import com.iting.jobportal.auth.repository.AccountRepository;
 import com.iting.jobportal.file.FileUploadService;
 import com.iting.jobportal.user.entity.User;
 import com.iting.jobportal.user.repository.UserRepository;
@@ -32,6 +33,7 @@ public class UserProfileServiceImpl implements UserProfileService {
     private final CVRepository cvRepo;
     private final SocialLinkRepository socialRepo;
     private final FileUploadService fileUploadService;
+    private final AccountRepository accountRepository;
 
     private UserProfile getProfileOrThrow(Long userId) {
         return userProfileRepo.findById(userId)
@@ -41,8 +43,17 @@ public class UserProfileServiceImpl implements UserProfileService {
     private UserProfile getOrCreateProfile(Long userId) {
         return userProfileRepo.findById(userId)
                 .orElseGet(() -> {
+                    // Đảm bảo User (candidate_info) tồn tại — có thể chưa có nếu register fail giữa chừng
                     User user = userRepository.findById(userId)
-                            .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
+                            .orElseGet(() -> {
+                                com.iting.jobportal.auth.entity.Account account = accountRepository.findById(userId)
+                                        .orElseThrow(() -> new ResourceNotFoundException("Account not found: " + userId));
+                                User newUser = new User();
+                                newUser.setId(userId);
+                                newUser.setAccount(account);
+                                newUser.setLastUpdate(LocalDateTime.now());
+                                return userRepository.save(newUser);
+                            });
                     UserProfile profile = new UserProfile();
                     profile.setId(userId);
                     profile.setUser(user);

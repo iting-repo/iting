@@ -6,6 +6,7 @@ import com.iting.jobportal.job.dto.request.UpdateJobRequest;
 import com.iting.jobportal.job.dto.response.JobResponse;
 import com.iting.jobportal.job.dto.response.SalaryReportResponse;
 import org.springframework.data.domain.Page;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
@@ -63,6 +64,9 @@ public interface JobService {
     void bulkCloseJobs(Long employerId, java.util.List<Long> jobIds);
 
     JobSearchRequest analyzeCvForSearch(String cvText);
+
+    /** Phân tích CV file (PDF/Image) qua HF /extract-cv → derive search criteria. */
+    JobSearchRequest analyzeCvFileForSearch(MultipartFile file);
 
     SalaryReportResponse getSalaryReport(String keyword, String location, String experience);
 }

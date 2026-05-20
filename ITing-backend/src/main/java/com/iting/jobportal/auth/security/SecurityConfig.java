@@ -77,6 +77,9 @@ public class SecurityConfig {
                 // ── Public: Public API endpoints ─────────────────────────
                 .requestMatchers("/api/public/**").permitAll()
 
+                // ── Public: Local file serving (dev fallback khi không có S3)
+                .requestMatchers("/api/files/**").permitAll()
+
                 // ── Public: error endpoint (avoid secondary 403 loop) ──────
                 .requestMatchers("/error").permitAll()
 
@@ -97,6 +100,9 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.GET, "/api/jobs/hot").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/jobs/{id}").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/jobs/salary-report").permitAll()
+                // AI search by CV (text + file upload) — guest cũng dùng được
+                .requestMatchers(HttpMethod.POST, "/api/jobs/analyze-cv").permitAll()
+                .requestMatchers(HttpMethod.POST, "/api/jobs/analyze-cv-file").permitAll()
 
                 // ── Public: AI / Knowledge Graph / Recommendations ──────────
                 .requestMatchers(HttpMethod.GET, "/api/ai/**").permitAll()

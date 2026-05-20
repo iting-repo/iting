@@ -18,9 +18,12 @@ import com.iting.jobportal.job.repository.JobSpecification;
 import com.iting.jobportal.job.service.JobService;
 import com.iting.jobportal.job.service.VectorSearchService;
 import com.iting.jobportal.recommendation.service.RecommendationService;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.iting.jobportal.common.service.GeminiService;
 import com.iting.jobportal.common.service.KnowledgeGraphService;
 import com.iting.jobportal.common.service.MlServiceClient;
+import com.iting.jobportal.userprofile.service.embedding.HuggingFaceCvExtractionClient;
+import org.springframework.web.multipart.MultipartFile;
 import com.iting.jobportal.common.cache.CacheNames;
 import com.iting.jobportal.common.event.KafkaTopics;
 import com.iting.jobportal.common.event.outbox.OutboxAppender;
@@ -74,6 +77,7 @@ public class JobServiceImpl implements JobService {
     private final AdminNotificationService adminNotificationService;
     private final Optional<OutboxAppender> outboxAppender;
     private final KafkaTopics kafkaTopics;
+    private final HuggingFaceCvExtractionClient hfCvExtractionClient;
 
     @PersistenceContext
     private EntityManager entityManager;
@@ -257,6 +261,119 @@ public class JobServiceImpl implements JobService {
     @Override
     public JobSearchRequest analyzeCvForSearch(String cvText) {
         return geminiService.extractSearchCriteriaFromCv(cvText);
+    }
+
+    @Override
+    public JobSearchRequest analyzeCvFileForSearch(MultipartFile file) {
+        if (file == null || file.isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "File CV trống");
+        }
+        try {
+            var extractionResult = hfCvExtractionClient.extract(file);
+            if (extractionResult.isEmpty()) {
+                log.error("HF CV extraction returned empty result — service may be sleeping or unreachable");
+                throw new ResponseStatusException(
+                        HttpStatus.BAD_GATEWAY,
+                        "Dịch vụ AI phân tích CV đang tạm ngưng hoạt động. Vui lòng thử lại sau hoặc dán nội dung CV thủ công.");
+            }
+            var result = extractionResult.get();
+            if (!result.isSuccess()) {
+                log.error("HF CV extraction failed: status={}, error={}", result.status(), result.error());
+                throw new ResponseStatusException(
+                        HttpStatus.BAD_GATEWAY,
+                        "Không thể phân tích file CV: " + (result.error() != null ? result.error() : "Lỗi không xác định"));
+            }
+            String cvText = buildCvTextFromExtracted(result.extractedData());
+            if (cvText == null || cvText.isBlank()) {
+                log.warn("HF CV extraction returned success but extracted text is blank");
+                throw new ResponseStatusException(
+                        HttpStatus.BAD_GATEWAY,
+                        "Không trích xuất được nội dung từ file CV. Vui lòng thử file khác hoặc dán nội dung CV thủ công.");
+            }
+            return geminiService.extractSearchCriteriaFromCv(cvText);
+        } catch (ResponseStatusException e) {
+            throw e; // re-throw our own exceptions
+        } catch (Exception e) {
+            log.error("Unexpected error during CV file analysis: {}", e.getMessage(), e);
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_GATEWAY,
+                    "Không thể phân tích CV qua AI. Vui lòng thử lại sau.");
+        }
+    }
+
+    /** Build plain-text CV summary từ JSON output của HF /extract-cv để feed vào Gemini. */
+    private String buildCvTextFromExtracted(JsonNode data) {
+        if (data == null || data.isMissingNode() || data.isNull()) return "";
+        StringBuilder sb = new StringBuilder();
+
+        appendIfPresent(sb, "Họ tên: ", data.path("full_name").asText(null));
+        appendIfPresent(sb, "Họ tên: ", data.path("name").asText(null));
+        appendIfPresent(sb, "Vị trí hiện tại: ", data.path("position").asText(null));
+        appendIfPresent(sb, "Vị trí hiện tại: ", data.path("title").asText(null));
+        appendIfPresent(sb, "Số năm kinh nghiệm: ", data.path("years_of_experience").asText(null));
+        appendIfPresent(sb, "Tóm tắt: ", data.path("summary").asText(null));
+
+        JsonNode skills = firstArrayNode(data, "skills", "technical_skills", "tech_stack");
+        if (skills != null) {
+            sb.append("Kỹ năng: ");
+            skills.forEach(s -> sb.append(s.asText()).append(", "));
+            sb.append("\n");
+        }
+
+        JsonNode experiences = firstArrayNode(data, "experiences", "experience", "work_experience");
+        if (experiences != null) {
+            sb.append("Kinh nghiệm:\n");
+            experiences.forEach(e -> {
+                String pos = firstNonBlank(e, "position", "title", "role");
+                String company = firstNonBlank(e, "company", "company_name", "employer");
+                String description = firstNonBlank(e, "description", "responsibilities", "summary");
+                if (pos != null || company != null) {
+                    sb.append("- ").append(pos == null ? "" : pos);
+                    if (company != null) sb.append(" tại ").append(company);
+                    sb.append("\n");
+                }
+                if (description != null) sb.append("  ").append(description).append("\n");
+            });
+        }
+
+        JsonNode educations = firstArrayNode(data, "educations", "education");
+        if (educations != null) {
+            sb.append("Học vấn:\n");
+            educations.forEach(ed -> {
+                String school = firstNonBlank(ed, "school", "school_name", "institution");
+                String degree = firstNonBlank(ed, "degree", "major", "field_of_study");
+                if (school != null || degree != null) {
+                    sb.append("- ");
+                    if (degree != null) sb.append(degree);
+                    if (school != null) sb.append(degree != null ? " — " : "").append(school);
+                    sb.append("\n");
+                }
+            });
+        }
+
+        return sb.toString().trim();
+    }
+
+    private static void appendIfPresent(StringBuilder sb, String prefix, String value) {
+        if (value != null && !value.isBlank() && !"null".equalsIgnoreCase(value)) {
+            sb.append(prefix).append(value).append("\n");
+        }
+    }
+
+    private static JsonNode firstArrayNode(JsonNode parent, String... keys) {
+        for (String k : keys) {
+            JsonNode n = parent.path(k);
+            if (n.isArray() && !n.isEmpty()) return n;
+        }
+        return null;
+    }
+
+    private static String firstNonBlank(JsonNode parent, String... keys) {
+        for (String k : keys) {
+            String v = parent.path(k).asText(null);
+            if (v != null && !v.isBlank() && !"null".equalsIgnoreCase(v)) return v;
+        }
+        return null;
     }
 
     @Override

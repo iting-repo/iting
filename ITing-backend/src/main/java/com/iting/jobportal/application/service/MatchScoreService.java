@@ -3,24 +3,25 @@ package com.iting.jobportal.application.service;
 import com.iting.jobportal.application.entity.ApplyFormSentToJob;
 import com.iting.jobportal.job.entity.Job;
 import com.iting.jobportal.job.service.JobEmbeddingService;
-import com.iting.jobportal.user.entity.User;
-import com.iting.jobportal.user.repository.UserRepository;
+import com.iting.jobportal.userprofile.repository.CVRepository;
 import com.iting.jobportal.userprofile.service.embedding.HuggingFaceSimilarityClient;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.iting.jobportal.application.repository.ApplyFormSentToJobRepository;
 
+import java.util.List;
 import java.util.Optional;
 
 /**
  * Service tính điểm phù hợp CV ↔ Job bằng AI cosine similarity.
  *
- * <p>Luồng: lấy cvEmbedding (User) + jobEmbedding (Job) → gọi HF /similarity/vectors
- * → lưu match_score (0–100%) vào ApplyFormSentToJob.
+ * <p>Luồng: lấy cvEmbedding (CV đang dùng của candidate) + jobEmbedding (Job)
+ * → gọi HF /similarity/vectors → lưu match_score (0–100%) vào ApplyFormSentToJob.
  *
  * <p>Chạy async để không block luồng ứng tuyển chính.
  */
@@ -29,7 +30,7 @@ import java.util.Optional;
 @Slf4j
 public class MatchScoreService {
 
-    private final UserRepository userRepository;
+    private final CVRepository cvRepository;
     private final JobEmbeddingService jobEmbeddingService;
     private final HuggingFaceSimilarityClient similarityClient;
     private final ApplyFormSentToJobRepository sentToJobRepository;
@@ -63,14 +64,14 @@ public class MatchScoreService {
      * @return Percentage (0–100) hoặc null nếu thiếu embedding.
      */
     public Double compute(Long userId, Job job) {
-        // 1. Lấy CV embedding
-        Optional<User> userOpt = userRepository.findById(userId);
-        if (userOpt.isEmpty() || userOpt.get().getCvEmbedding() == null) {
+        // 1. Lấy CV embedding (default CV, fallback CV mới nhất có embedding)
+        List<String> embeddings = cvRepository.findActiveCvEmbeddingByProfileId(userId, PageRequest.of(0, 1));
+        if (embeddings.isEmpty()) {
             log.debug("No CV embedding for userId={}", userId);
             return null;
         }
 
-        double[] cvVec = jobEmbeddingService.parseEmbedding(userOpt.get().getCvEmbedding());
+        double[] cvVec = jobEmbeddingService.parseEmbedding(embeddings.get(0));
         if (cvVec == null || cvVec.length == 0) return null;
 
         // 2. Lấy Job embedding

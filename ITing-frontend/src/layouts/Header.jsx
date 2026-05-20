@@ -9,6 +9,7 @@ import ChatDockBox from '../components/chat/ChatDockBox';
 import notificationService from '../services/notificationService';
 import { CompanyLogo } from '../components/common';
 import { formatDistanceToNowStrict, parseISO } from 'date-fns';
+import { vi } from 'date-fns/locale';
 import { toast } from 'sonner';
 import { BsBell, BsEnvelope } from 'react-icons/bs';
 import { FaChevronDown, FaSignOutAlt, FaBuilding, FaLayerGroup, FaFileAlt, FaHistory, FaHeart, FaCog } from 'react-icons/fa';
@@ -185,7 +186,7 @@ const Header = () => {
     try {
       if (!time) return '';
       const d = typeof time === 'string' ? parseISO(time) : time;
-      return formatDistanceToNowStrict(d, { addSuffix: true });
+      return formatDistanceToNowStrict(d, { addSuffix: true, locale: vi });
     } catch {
       return '';
     }

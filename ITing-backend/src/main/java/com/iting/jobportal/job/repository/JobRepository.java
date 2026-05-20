@@ -65,6 +65,8 @@ public interface JobRepository extends JpaRepository<Job, Long>, JpaSpecificatio
 
     long countByCompany_IdAndStatus(Long companyId, JobStatus status);
 
+    long countByStatusAndCreatedAtAfter(JobStatus status, java.time.LocalDateTime dateTime);
+
     // Count truly active jobs: status ACTIVE and not past dueDate
     @Query("SELECT COUNT(j) FROM Job j WHERE j.company.id = :companyId AND j.status = 'ACTIVE' AND (j.dueDate IS NULL OR j.dueDate >= CURRENT_DATE)")
     long countActiveAndNotExpiredByCompanyId(@Param("companyId") Long companyId);

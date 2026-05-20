@@ -13,8 +13,8 @@ import com.iting.jobportal.recommendation.repository.UserJobInteractionRepositor
 import com.iting.jobportal.recommendation.repository.UserSearchHistoryRepository;
 import com.iting.jobportal.recommendation.service.InteractionService;
 import com.iting.jobportal.recommendation.service.RecommendationService;
-import com.iting.jobportal.user.entity.User;
 import com.iting.jobportal.user.repository.UserRepository;
+import com.iting.jobportal.userprofile.repository.CVRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.PageRequest;
@@ -90,6 +90,7 @@ public class RecommendationServiceImpl implements RecommendationService {
     private final JobRepository jobRepository;
     private final InteractionService interactionService;
     private final UserRepository userRepository;
+    private final CVRepository cvRepository;
     private final UserSearchHistoryRepository searchHistoryRepository;
     private final UserJobInteractionRepository interactionRepository;
     private final JobEmbeddingService jobEmbeddingService;
@@ -483,9 +484,9 @@ public class RecommendationServiceImpl implements RecommendationService {
 
     private double[] loadCvEmbedding(Long userId) {
         try {
-            User u = userRepository.findById(userId).orElse(null);
-            if (u == null || u.getCvEmbedding() == null) return null;
-            return jobEmbeddingService.parseEmbedding(u.getCvEmbedding());
+            List<String> embeddings = cvRepository.findActiveCvEmbeddingByProfileId(userId, PageRequest.of(0, 1));
+            if (embeddings.isEmpty()) return null;
+            return jobEmbeddingService.parseEmbedding(embeddings.get(0));
         } catch (Exception e) {
             log.debug("Cannot load CV embedding for user {}: {}", userId, e.getMessage());
             return null;

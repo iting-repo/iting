@@ -7,6 +7,7 @@ import com.iting.jobportal.userprofile.dto.response.EmployerCandidateSearchRespo
 import com.iting.jobportal.userprofile.entity.Education;
 import com.iting.jobportal.userprofile.entity.Skill;
 import com.iting.jobportal.userprofile.entity.UserProfile;
+import com.iting.jobportal.userprofile.repository.CVRepository;
 import com.iting.jobportal.userprofile.repository.UserProfileRepository;
 import com.iting.jobportal.userprofile.service.EmployerCandidateSearchService;
 import com.iting.jobportal.userprofile.service.embedding.EmbeddingClient;
@@ -31,6 +32,7 @@ import java.util.stream.Collectors;
 public class EmployerCandidateSearchServiceImpl implements EmployerCandidateSearchService {
 
     private final UserProfileRepository userProfileRepository;
+    private final CVRepository cvRepository;
     private final EmbeddingClient embeddingClient;
     private final ObjectMapper objectMapper;
     private final KnowledgeGraphService knowledgeGraphService;
@@ -101,7 +103,9 @@ public class EmployerCandidateSearchServiceImpl implements EmployerCandidateSear
 
             double score = 0.0;
             if (queryEmbedding.isPresent()) {
-                score = cosineSimilarity(queryEmbedding.get(), parseEmbedding(user.getCvEmbedding()).orElse(null));
+                List<String> cvEmb = cvRepository.findActiveCvEmbeddingByProfileId(profile.getId(), PageRequest.of(0, 1));
+                String candidateEmbedding = cvEmb.isEmpty() ? null : cvEmb.get(0);
+                score = cosineSimilarity(queryEmbedding.get(), parseEmbedding(candidateEmbedding).orElse(null));
             } else if (keyword != null && !keyword.isBlank()) {
                 score = heuristicKeywordScore(keyword,
                         account != null ? account.getFullName() : null,

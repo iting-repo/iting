@@ -356,13 +356,25 @@ const JobApplyModal = ({ isOpen, onClose, onSuccess, jobTitle, jobId }) => {
               Thư giới thiệu
               <FaPen size={10} className="text-gray-300" />
             </h3>
-            <textarea
-              rows="3"
-              className="w-full border border-gray-200 rounded-lg p-3 text-sm focus:ring-1 focus:ring-[#00B4D8] outline-none resize-none bg-gray-50"
-              placeholder="Giới thiệu nhanh về bản thân..."
-              value={coverLetter}
-              onChange={(e) => setCoverLetter(e.target.value)}
-            ></textarea>
+            <div className="relative">
+              <textarea
+                rows="3"
+                maxLength={500}
+                className={`w-full border rounded-lg p-3 text-sm focus:ring-1 focus:ring-[#00B4D8] outline-none resize-none bg-gray-50 ${
+                  coverLetter.length >= 500 ? 'border-red-400' : 'border-gray-200'
+                }`}
+                placeholder="Giới thiệu nhanh về bản thân..."
+                value={coverLetter}
+                onChange={(e) => setCoverLetter(e.target.value)}
+              ></textarea>
+              <div className={`text-right text-xs mt-1 ${
+                coverLetter.length >= 500 ? 'text-red-500 font-semibold' :
+                coverLetter.length >= 400 ? 'text-orange-500' :
+                'text-gray-400'
+              }`}>
+                {coverLetter.length}/500 ký tự
+              </div>
+            </div>
           </div>
 
           {/* Actions */}
@@ -373,7 +385,11 @@ const JobApplyModal = ({ isOpen, onClose, onSuccess, jobTitle, jobId }) => {
               disabled={isSubmitting}
               className={`flex-1 py-2.5 bg-[#00B4D8] text-white font-bold rounded-lg hover:bg-[#118AB2] transition-colors text-sm shadow-lg ${isSubmitting ? "opacity-50 cursor-not-allowed" : ""}`}
             >
-              {isSubmitting ? "Đang xử lý..." : "Nộp hồ sơ ứng tuyển"}
+              {isSubmitting
+                ? (cvMethod === 'upload'
+                    ? "Đang tải lên & AI phân tích CV…"
+                    : "Đang xử lý…")
+                : "Nộp hồ sơ ứng tuyển"}
             </button>
           </div>
 
