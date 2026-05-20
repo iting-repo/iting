@@ -1,10 +1,14 @@
 import React, { useEffect, useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 import { useModalEscape } from "../hooks/useModalEscape";
 import {
   FaTimes,
   FaCloudUploadAlt,
   FaPen,
-  FaFilePdf
+  FaFilePdf,
+  FaUserEdit,
+  FaCheckCircle,
+  FaExclamationCircle
 } from "react-icons/fa";
 import { toast } from "sonner";
 import applicationService from "../services/applicationService";
@@ -177,7 +181,35 @@ const JobApplyModal = ({ isOpen, onClose, onSuccess, jobTitle, jobId }) => {
         </div>
 
         {/* Body */}
-        <div className="p-6 space-y-6">
+        <div className="p-6 space-y-4">
+          {/* CTA: Thông tin ứng tuyển (compact, trên cùng) */}
+          {user && (
+            <div className="bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 flex items-center justify-between gap-2 flex-wrap">
+              <div className="flex items-center gap-3 text-[11px] text-gray-500 flex-wrap">
+                <span className="flex items-center gap-1">
+                  {user.fullName ? <FaCheckCircle className="text-green-500" size={8} /> : <FaExclamationCircle className="text-orange-400" size={8} />}
+                  {user.fullName || 'Chưa có tên'}
+                </span>
+                <span className="flex items-center gap-1">
+                  {user.email ? <FaCheckCircle className="text-green-500" size={8} /> : <FaExclamationCircle className="text-orange-400" size={8} />}
+                  {user.email || 'Chưa có email'}
+                </span>
+                <span className="flex items-center gap-1">
+                  {user.phone ? <FaCheckCircle className="text-green-500" size={8} /> : <FaExclamationCircle className="text-orange-400" size={8} />}
+                  {user.phone || 'Chưa có SĐT'}
+                </span>
+              </div>
+              <Link
+                to="/candidate/profile"
+                onClick={onClose}
+                className="text-[11px] text-[#00B4D8] font-semibold hover:underline flex items-center gap-1 shrink-0"
+              >
+                <FaUserEdit size={10} />
+                Cập nhật hồ sơ
+              </Link>
+            </div>
+          )}
+
           <h3 className="font-bold text-gray-800 text-sm">Chọn CV để ứng tuyển</h3>
 
           {/* OPTION 1: Recent CV */}
