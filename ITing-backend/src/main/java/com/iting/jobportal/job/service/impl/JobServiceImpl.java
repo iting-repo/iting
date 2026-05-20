@@ -567,6 +567,7 @@ public class JobServiceImpl implements JobService {
     // MY JOBS
     // =========================================================
 
+    @Transactional(readOnly = true)
     @Override
     public Page<JobResponse> getJobsByEmployer(Long employerId, int page, int size) {
         int safePage = Math.max(page, 0);
