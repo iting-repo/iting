@@ -114,7 +114,7 @@ const FavoriteCandidates = () => {
             {/* Header */}
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
                 <div>
-                    <h1 className="text-3xl font-black text-slate-800 flex items-center gap-3">
+                    <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-3">
                         <div className="p-3 bg-amber-50 rounded-2xl text-amber-500">
                             <FaHeart size={24} />
                         </div>

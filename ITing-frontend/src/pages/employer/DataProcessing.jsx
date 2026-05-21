@@ -11,6 +11,8 @@ const DataProcessing = () => {
   const [submitting, setSubmitting] = useState(false);
   const [affiliation, setAffiliation] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [filePreviewUrl, setFilePreviewUrl] = useState(null);
+  const [serverPreviewUrl, setServerPreviewUrl] = useState(null);
 
   React.useEffect(() => {
     fetchAffiliation();
@@ -22,6 +24,12 @@ const DataProcessing = () => {
       const aff = await affiliationService.getMe().catch(() => null);
       setAffiliation(aff);
       if (aff?.submittedConsentConfirmed) setAgreed(true);
+      if (aff?.submittedConsentUrl) {
+        try {
+          const res = await affiliationService.getConsentPresignedUrl();
+          setServerPreviewUrl(res?.url || null);
+        } catch (_) {}
+      }
     } catch (err) {
       console.error("Lỗi lấy thông tin affiliation:", err);
     } finally {
@@ -42,6 +50,11 @@ const DataProcessing = () => {
   const submissionState = affiliation?.submissionStatus;
   const currentStatus = statusMap[submissionState] || statusMap.MISSING;
 
+  // Đã có file thỏa thuận trên server (HR đã upload trước đó)
+  const hasUploadedConsent = Boolean(affiliation?.submittedConsentUrl);
+  // Đầy đủ điều kiện gửi duyệt: có file (mới hoặc cũ) + đã tick cam đoan
+  const canSubmit = (file || hasUploadedConsent) && agreed;
+
   const handleFileChange = (e) => {
     const f = e.target.files?.[0];
     if (f) {
@@ -55,6 +68,7 @@ const DataProcessing = () => {
         return;
       }
       setFile(f);
+      setFilePreviewUrl(URL.createObjectURL(f));
       setErrors({});
     }
   };
@@ -87,6 +101,10 @@ const DataProcessing = () => {
       setSubmitting(false);
     }
   };
+
+  const activePreviewUrl = filePreviewUrl || serverPreviewUrl;
+  const activeFilename = file?.name || affiliation?.submittedConsentUrl?.split('/').pop() || "";
+  const isPdf = activeFilename.toLowerCase().endsWith('.pdf');
 
   if (loading) {
      return (
@@ -150,12 +168,19 @@ const DataProcessing = () => {
                   <input type="file" className="hidden" accept=".docx,.doc,.pdf" onChange={handleFileChange} />
                 </label>
 
-                {file && (
+                {file ? (
                   <div className="mt-4 flex items-center justify-center gap-2 text-green-600 font-bold text-sm bg-green-50 py-2 rounded-lg border border-green-100 animate-scale-up">
                     <CheckCircle className="w-4 h-4" />
                     {file.name}
+                    <span className="text-[10px] uppercase tracking-wide opacity-70 ml-1">• file mới</span>
                   </div>
-                )}
+                ) : hasUploadedConsent ? (
+                  <div className="mt-4 flex items-center justify-center gap-2 text-blue-600 font-bold text-sm bg-blue-50 py-2 rounded-lg border border-blue-100">
+                    <CheckCircle className="w-4 h-4" />
+                    Văn bản thỏa thuận đã tải lên
+                    <span className="text-[10px] uppercase tracking-wide opacity-70 ml-1">• đã lưu trên hệ thống</span>
+                  </div>
+                ) : null}
               </div>
 
               {errors.file && (
@@ -173,16 +198,52 @@ const DataProcessing = () => {
             </div>
 
             <div className="w-64 shrink-0 flex flex-col gap-4">
-              <p className="text-sm font-bold text-gray-700 border-b pb-2 uppercase tracking-tight">Văn bản mẫu</p>
-              <div className="bg-gray-100 rounded-xl p-6 border border-gray-200 flex flex-col items-center justify-center text-center gap-3">
-                 <div className="w-12 h-12 bg-white rounded-lg shadow-sm flex items-center justify-center">
-                    <FileText className="w-6 h-6 text-gray-400" />
-                 </div>
-                 <p className="text-xs text-gray-500 font-medium px-2">Vui lòng tải xuống bản mẫu để điền thông tin doanh nghiệp</p>
-                 <Button variant="outline" className="w-full text-xs py-2 h-auto gap-2">
-                   <Download className="w-3 h-3" /> Tải mẫu văn bản
-                 </Button>
-              </div>
+              <p className="text-sm font-bold text-gray-700 border-b pb-2 uppercase tracking-tight">HƯỚNG DẪN MINH HỌA</p>
+                 <a 
+                   href="/[EXIMBANK] Thoa thuan bao mat và XLDL theo ND13.pdf" 
+                   download 
+                   target="_blank" 
+                   rel="noopener noreferrer"
+                   className="w-full flex items-center justify-center text-xs py-2.5 h-auto gap-2 bg-[#EAF6FF] text-[#3AB4E6] border border-[#3AB4E6]/30 rounded-lg font-bold hover:bg-[#3AB4E6] hover:text-white transition-colors"
+                 >
+                   <Download className="w-3 h-3" /> Xem văn bản mẫu
+                 </a>
+              
+              {activePreviewUrl ? (
+                <div className="rounded-xl overflow-hidden border border-gray-200 bg-gray-50 aspect-[3/4] relative group">
+                  {isPdf ? (
+                    <iframe
+                      src={activePreviewUrl}
+                      className="w-full h-full"
+                      title="Preview"
+                    />
+                  ) : (
+                    <div className="w-full h-full flex flex-col items-center justify-center bg-blue-50 p-4 text-center">
+                      <FileText className="w-12 h-12 text-[#3AB4E6] mb-3" />
+                      <p className="text-xs text-gray-600 font-medium">Tệp định dạng Word. Bấm để tải xuống.</p>
+                    </div>
+                  )}
+                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-all flex items-center justify-center opacity-0 group-hover:opacity-100">
+                    <a
+                      href={activePreviewUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="bg-white rounded-lg px-3 py-1.5 text-xs font-bold text-gray-700 shadow-lg"
+                    >
+                      Xem đầy đủ / Tải về ↗
+                    </a>
+                  </div>
+                </div>
+              ) : (
+                <div className="bg-gray-100 rounded-xl aspect-[3/4] flex flex-col items-center justify-center text-center p-4 border border-gray-200">
+                  <div className="w-16 h-20 border-2 border-gray-300 rounded mb-4 flex items-center justify-center bg-white shadow-sm overflow-hidden">
+                    <div className="w-full h-2 bg-blue-500/20 mb-1"></div>
+                    <div className="w-2/3 h-1 bg-gray-200 mb-1"></div>
+                    <div className="w-1/2 h-1 bg-gray-200"></div>
+                  </div>
+                  <p className="text-xs text-gray-400 font-medium">Tải lên tài liệu để xem trước tại đây</p>
+                </div>
+              )}
             </div>
           </div>
 
@@ -208,18 +269,31 @@ const DataProcessing = () => {
         </div>
 
         <div className="flex justify-end mt-10 pt-6 border-t border-gray-100">
-          <Button 
-            onClick={handleSave} 
-            disabled={submitting || submissionState === 'PENDING_REVIEW'}
+          <Button
+            onClick={handleSave}
+            disabled={submitting || submissionState === 'PENDING_REVIEW' || !canSubmit}
+            title={
+              submissionState === 'PENDING_REVIEW'
+                ? 'Hồ sơ đang chờ admin xét duyệt'
+                : !file && !hasUploadedConsent
+                  ? 'Vui lòng tải lên văn bản thỏa thuận trước khi gửi duyệt'
+                  : !agreed
+                    ? 'Vui lòng tick xác nhận cam đoan'
+                    : ''
+            }
             className="px-10 py-6 min-w-[200px] text-base font-bold shadow-lg shadow-blue-500/20"
           >
             {submitting
               ? "Đang xử lý..."
               : submissionState === 'PENDING_REVIEW'
                 ? "Đang chờ duyệt"
-                : file
-                  ? "Tải lên & Gửi xét duyệt"
-                  : "Gửi xét duyệt"}
+                : !file && !hasUploadedConsent
+                  ? "Vui lòng upload trước"
+                  : !agreed
+                    ? "Tick cam đoan để gửi"
+                    : file
+                      ? "Tải lên & Gửi xét duyệt"
+                      : "Gửi xét duyệt"}
           </Button>
         </div>
       </div>

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { FaCheck, FaClock, FaTimes, FaEye, FaEnvelope, FaBan, FaUndo } from 'react-icons/fa';
+import { FaCheck, FaClock, FaTimes, FaEye, FaEnvelope, FaBan, FaUndo, FaExclamationTriangle } from 'react-icons/fa';
 import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { buildJobDetailPath } from '../../utils/jobUrl';
 import applicationService from '../../services/applicationService';
@@ -32,6 +32,7 @@ const AppliedJobs = () => {
   const [chatLoadingId, setChatLoadingId] = useState(null);
   const [withdrawLoadingId, setWithdrawLoadingId] = useState(null);
   const [lastWithdrawAt, setLastWithdrawAt] = useState(0);
+  const [confirmWithdraw, setConfirmWithdraw] = useState(null); // { id, jobTitle, companyName }
 
   const currentPage = Number(searchParams.get('page')) || 1;
   const statusFilter = searchParams.get('status') || '';
@@ -114,16 +115,14 @@ const AppliedJobs = () => {
       return;
     }
 
-    const ok = window.confirm(
-      `Bạn chắc chắn muốn rút đơn ứng tuyển "${app.jobTitle || ''}" tại ${app.companyName || 'NTD'}? Hành động này không thể hoàn tác.`
-    );
-    if (!ok) return;
+    setConfirmWithdraw(app);
+  };
 
+  const doWithdraw = async (app) => {
     try {
       setWithdrawLoadingId(app.id);
-      setLastWithdrawAt(now);
+      setLastWithdrawAt(Date.now());
       await applicationService.withdrawApplication(app.id);
-      // Cập nhật state tại chỗ thay vì fetch lại (UX mượt hơn)
       setApplications((prev) =>
         prev.map((a) => (a.id === app.id ? { ...a, status: 'WITHDRAWN' } : a))
       );
@@ -142,11 +141,16 @@ const AppliedJobs = () => {
       } else {
         toast.error(msg || 'Rút đơn thất bại, vui lòng thử lại.');
       }
-      // Cho phép thử lại sớm hơn khi gặp lỗi (trừ 429 do BE đã chặn)
       if (status !== 429) setLastWithdrawAt(0);
     } finally {
       setWithdrawLoadingId(null);
+      setConfirmWithdraw(null);
     }
+  };
+
+  const executeWithdraw = async () => {
+    if (!confirmWithdraw) return;
+    await doWithdraw(confirmWithdraw);
   };
 
   const handleStartChatWithEmployer = async (app) => {
@@ -285,6 +289,43 @@ const AppliedJobs = () => {
           itemsPerPage={PAGE_SIZE}
           onPageChange={(p) => updateParam('page', String(p))}
         />
+      )}
+
+      {/* Custom Confirm Modal */}
+      {confirmWithdraw && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4" onClick={() => setConfirmWithdraw(null)}>
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md animate-fade-in" onClick={(e) => e.stopPropagation()}>
+            <div className="p-6 text-center">
+              <div className="w-14 h-14 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <FaExclamationTriangle className="text-red-500 text-2xl" />
+              </div>
+              <h3 className="text-lg font-black text-gray-800 mb-2">Xác nhận rút hồ sơ</h3>
+              <p className="text-sm text-gray-500 leading-relaxed">
+                Bạn chắc chắn muốn rút đơn ứng tuyển vị trí{' '}
+                <span className="font-bold text-gray-800">"{confirmWithdraw.jobTitle || 'Không rõ'}"</span>{' '}
+                tại <span className="font-bold text-[#3AB4E6]">{confirmWithdraw.companyName || 'NTD'}</span>?
+              </p>
+              <div className="mt-3 bg-red-50 border border-red-100 rounded-lg p-3 text-xs text-red-600 font-medium">
+                ⚠️ Hành động này không thể hoàn tác. Nhà tuyển dụng sẽ không còn thấy hồ sơ của bạn.
+              </div>
+            </div>
+            <div className="px-6 py-4 border-t border-gray-100 flex gap-3">
+              <button
+                onClick={() => setConfirmWithdraw(null)}
+                className="flex-1 py-2.5 bg-gray-100 text-gray-700 font-bold rounded-xl hover:bg-gray-200 transition-colors text-sm"
+              >
+                Hủy bỏ
+              </button>
+              <button
+                onClick={executeWithdraw}
+                disabled={withdrawLoadingId === confirmWithdraw.id}
+                className="flex-1 py-2.5 bg-red-500 text-white font-bold rounded-xl hover:bg-red-600 transition-colors text-sm disabled:opacity-60 inline-flex items-center justify-center gap-2"
+              >
+                {withdrawLoadingId === confirmWithdraw.id ? 'Đang xử lý...' : (<><FaUndo size={12} /> Xác nhận rút</>)}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

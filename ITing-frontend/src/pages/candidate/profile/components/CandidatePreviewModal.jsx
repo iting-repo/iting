@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { FaTimes, FaEnvelope, FaPhone, FaDownload, FaStar, FaRegStar, FaUserTie, FaExternalLinkAlt, FaSpinner } from 'react-icons/fa';
 import { toast } from 'sonner';
 import axiosInstance from '../../../../utils/axiosInstance';
+import cvService from '../../../../services/cvService';
 
 const CandidatePreviewModal = ({ onClose }) => {
     const [isLoading, setIsLoading] = useState(true);
@@ -19,13 +20,18 @@ const CandidatePreviewModal = ({ onClose }) => {
                     axiosInstance.get('/user/professional-profile/experience')
                 ]);
 
-                // Find default CV or just use the first one
+                // Find default CV và xin presigned URL TƯƠI từ BE (URL S3 cũ valid 1h, hết hạn 403).
                 let cvUrl = null;
                 let cvFileName = null;
                 if (cvs && cvs.length > 0) {
                     const defaultCv = cvs.find(cv => cv.isDefault) || cvs[0];
-                    cvUrl = defaultCv.fileUrl || defaultCv.filePath; 
                     cvFileName = defaultCv.title;
+                    try {
+                        cvUrl = await cvService.getViewUrl(defaultCv.id);
+                    } catch (e) {
+                        console.warn('Không lấy được presigned URL, fallback URL cũ:', e?.message);
+                        cvUrl = defaultCv.fileUrl || defaultCv.filePath;
+                    }
                 }
 
                 setCandidateData({

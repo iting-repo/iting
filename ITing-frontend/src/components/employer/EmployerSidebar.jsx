@@ -10,6 +10,7 @@ import {
   FaHeart,
   FaShieldAlt,
   FaFileContract,
+  FaCog,
 } from "react-icons/fa";
 import { useDispatch, useSelector } from "react-redux";
 import { logout } from "../../store/auth/authSlice";
@@ -142,6 +143,20 @@ const EmployerSidebar = () => {
           ))}
 
           <li className="mt-8 pt-8 border-t border-gray-100">
+            <NavLink
+              to="/employer/company-profile?tab=settings"
+              className={({ isActive }) =>
+                `flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-colors ${isActive && window.location.search.includes('tab=settings')
+                  ? "bg-blue-50 text-[#3AB4E6] border-l-4 border-[#3AB4E6]"
+                  : "text-gray-500 hover:bg-gray-50 hover:text-gray-900"
+                }`
+              }
+            >
+              <span className="text-lg"><FaCog /></span>
+              <span className="flex-1">Thiết lập</span>
+            </NavLink>
+          </li>
+          <li>
             <button
               onClick={handleLogout}
               className="flex items-center gap-3 px-4 py-3 rounded-lg font-medium text-gray-500 hover:bg-red-50 hover:text-red-600 w-full transition-colors"

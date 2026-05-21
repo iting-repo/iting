@@ -97,11 +97,11 @@ const AdminHeader = () => {
   };
 
   return (
-    <div className="fixed top-0 left-0 right-0 h-14 bg-[#3AB4E6] flex items-center justify-between px-6 z-50">
+    <div className="fixed top-0 left-0 right-0 h-14 bg-[#1A8FBF] flex items-center justify-between px-6 z-50">
       <div className="flex items-center gap-4">
         <div className="flex items-center gap-2">
           <div className="w-7 h-7 rounded-lg bg-white flex items-center justify-center">
-            <span className="text-[#3AB4E6] font-bold text-sm">IT</span>
+            <span className="text-[#1A8FBF] font-bold text-sm">IT</span>
           </div>
           <span className="text-white font-bold text-lg font-display">Quản trị ITing</span>
         </div>

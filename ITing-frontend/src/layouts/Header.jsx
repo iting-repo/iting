@@ -210,7 +210,13 @@ const Header = () => {
   useEffect(() => {
     fetchUnreadCount();
     const iv = setInterval(fetchUnreadCount, 30000);
-    return () => clearInterval(iv);
+    // Listen for manual refresh events (e.g. after applying to a job)
+    const handleRefresh = () => fetchUnreadCount();
+    window.addEventListener('notification-refresh', handleRefresh);
+    return () => {
+      clearInterval(iv);
+      window.removeEventListener('notification-refresh', handleRefresh);
+    };
   }, [role, user?.userId]);
 
   const formatTime = (time) => {

@@ -2,7 +2,9 @@ import React, { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { FaBell, FaBellSlash, FaTrash, FaSearch, FaPlus, FaTimes } from 'react-icons/fa';
 import SEO from '../../components/common/SEO';
+import { ConfirmModal } from '../../components/common';
 import savedSearchService from '../../services/savedSearchService';
+import useConfirm from '../../hooks/useConfirm';
 
 /**
  * Saved searches manager — list + create + edit + delete + toggle email alerts.
@@ -13,7 +15,8 @@ import savedSearchService from '../../services/savedSearchService';
 const SavedSearchesPage = () => {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [editing, setEditing] = useState(null);    // null | {id?, ...form}
+  const [editing, setEditing] = useState(null);
+  const [confirm, askConfirm, resetConfirm] = useConfirm();
 
   const load = () => {
     setLoading(true);
@@ -25,13 +28,20 @@ const SavedSearchesPage = () => {
 
   useEffect(() => { load(); }, []);
 
-  const handleDelete = async (id) => {
-    if (!window.confirm('Xóa saved search này?')) return;
-    try {
-      await savedSearchService.remove(id);
-      toast.success('Đã xóa');
-      load();
-    } catch { toast.error('Lỗi xóa'); }
+  const handleDelete = (id) => {
+    askConfirm({
+      title: "Xóa tìm kiếm đã lưu",
+      message: "Bạn có chắc chắn muốn xóa tìm kiếm này?",
+      confirmText: "Xóa",
+      onConfirm: async () => {
+        resetConfirm();
+        try {
+          await savedSearchService.remove(id);
+          toast.success('Đã xóa');
+          load();
+        } catch { toast.error('Lỗi xóa'); }
+      }
+    });
   };
 
   const handleToggleAlert = async (item) => {
@@ -133,6 +143,8 @@ const SavedSearchesPage = () => {
           onSaved={() => { setEditing(null); load(); }}
         />
       )}
+
+      <ConfirmModal isOpen={confirm.isOpen} onClose={resetConfirm} onConfirm={confirm.onConfirm} title={confirm.title} message={confirm.message} warning={confirm.warning} confirmText={confirm.confirmText} variant={confirm.variant} />
     </>
   );
 };

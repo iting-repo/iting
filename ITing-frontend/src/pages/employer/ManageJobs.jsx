@@ -21,7 +21,7 @@ import { toast } from "sonner";
 
 import PostJob from "./PostJob";
 import companyService from "../../services/companyService";
-import { Breadcrumb } from "../../components/common";
+import { Breadcrumb, ConfirmModal } from "../../components/common";
 
 const PAGE_SIZE_OPTIONS = [5, 10, 20, 50];
 
@@ -103,6 +103,7 @@ const ManageJobs = () => {
   const [isPostJobOpen, setIsPostJobOpen] = useState(false);
   const [loadingJobs, setLoadingJobs] = useState(true);
   const [editingJob, setEditingJob] = useState(null);
+  const [confirmAction, setConfirmAction] = useState(null); // { type, jobId, title }
 
   const fetchJobs = async () => {
     try {
@@ -151,9 +152,6 @@ const ManageJobs = () => {
   };
 
   const handleReopenJob = async (jobId) => {
-    const confirmed = window.confirm("Bạn có muốn mở lại tin tuyển dụng này?");
-    if (!confirmed) return;
-
     try {
       await companyService.reopenEmployerJob(jobId);
       toast.success("Mở lại tin tuyển dụng thành công");
@@ -168,9 +166,6 @@ const ManageJobs = () => {
   };
 
   const handleDeleteJob = async (jobId) => {
-    const confirmed = window.confirm("Bạn có chắc chắn muốn xóa?");
-    if (!confirmed) return;
-
     try {
       await companyService.deleteEmployerJob(jobId);
       toast.success("Xóa tin tuyển dụng thành công");
@@ -187,9 +182,6 @@ const ManageJobs = () => {
   };
 
   const handleCloseJob = async (jobId) => {
-    const confirmed = window.confirm("Bạn có chắc muốn đóng tin tuyển dụng này?");
-    if (!confirmed) return;
-
     try {
       await companyService.closeEmployerJob(jobId);
       toast.success("Đóng tin tuyển dụng thành công");
@@ -201,6 +193,15 @@ const ManageJobs = () => {
         err?.response?.data?.message || "Đóng tin tuyển dụng thất bại",
       );
     }
+  };
+
+  const handleConfirmAction = async () => {
+    if (!confirmAction) return;
+    const { type, jobId } = confirmAction;
+    setConfirmAction(null);
+    if (type === 'reopen') await handleReopenJob(jobId);
+    else if (type === 'delete') await handleDeleteJob(jobId);
+    else if (type === 'close') await handleCloseJob(jobId);
   };
 
   const STATUS_FILTER_OPTIONS = [
@@ -269,7 +270,7 @@ const ManageJobs = () => {
 
         <div className="flex flex-col md:flex-row justify-between items-end md:items-center mb-8 gap-4">
           <div>
-            <h2 className="text-2xl font-bold text-gray-800">
+            <h2 className="text-2xl font-bold text-gray-900">
               Tất cả công việc ({filteredJobs.length})
             </h2>
             <p className="text-gray-500 text-sm mt-1">
@@ -416,7 +417,7 @@ const ManageJobs = () => {
                             {job.status === "ACTIVE" && (
                               <button
                                 className="w-full text-left px-4 py-3 text-sm text-gray-600 hover:bg-red-50 hover:text-red-500 flex items-center gap-2 border-b border-gray-50"
-                                onClick={() => handleCloseJob(job.id)}
+                                onClick={() => { setActiveMenu(null); setConfirmAction({ type: 'close', jobId: job.id, title: job.title }); }}
                               >
                                 <FaBan /> Dừng đăng bài
                               </button>
@@ -425,14 +426,14 @@ const ManageJobs = () => {
                             {job.status === "CLOSED" && (
                               <button
                                 className="w-full text-left px-4 py-3 text-sm text-green-600 hover:bg-green-50 flex items-center gap-2 border-b border-gray-50"
-                                onClick={() => handleReopenJob(job.id)}
+                                onClick={() => { setActiveMenu(null); setConfirmAction({ type: 'reopen', jobId: job.id, title: job.title }); }}
                               >
                                 <FaCheckCircle /> Mở lại tin
                               </button>
                             )}
 
                             <button
-                              onClick={() => handleDeleteJob(job.id)}
+                              onClick={() => { setActiveMenu(null); setConfirmAction({ type: 'delete', jobId: job.id, title: job.title }); }}
                               className="w-full text-left px-4 py-3 text-sm text-red-600 hover:bg-red-50 flex items-center gap-2"
                             >
                               <FaTrash /> Xóa tin tuyển dụng
@@ -596,6 +597,39 @@ const ManageJobs = () => {
           }}
         />
       )}
+
+      <ConfirmModal
+        isOpen={!!confirmAction}
+        onClose={() => setConfirmAction(null)}
+        onConfirm={handleConfirmAction}
+        title={
+          confirmAction?.type === 'delete' ? 'Xóa tin tuyển dụng'
+          : confirmAction?.type === 'close' ? 'Đóng tin tuyển dụng'
+          : 'Mở lại tin tuyển dụng'
+        }
+        message={
+          <p>
+            Bạn có chắc chắn muốn{' '}
+            {confirmAction?.type === 'delete' ? <span className="font-bold text-red-500">xóa</span>
+              : confirmAction?.type === 'close' ? <span className="font-bold text-amber-600">đóng</span>
+              : <span className="font-bold text-green-600">mở lại</span>}{' '}
+            tin tuyển dụng <span className="font-bold text-gray-800">"{confirmAction?.title}"</span>?
+          </p>
+        }
+        warning={
+          confirmAction?.type === 'delete'
+            ? 'Hành động này không thể hoàn tác. Tất cả hồ sơ ứng tuyển liên quan cũng sẽ bị ảnh hưởng.'
+            : confirmAction?.type === 'close'
+            ? 'Ứng viên sẽ không thể ứng tuyển vị trí này nữa.'
+            : undefined
+        }
+        variant={confirmAction?.type === 'delete' ? 'danger' : confirmAction?.type === 'close' ? 'warning' : 'info'}
+        confirmText={
+          confirmAction?.type === 'delete' ? 'Xóa'
+          : confirmAction?.type === 'close' ? 'Đóng tin'
+          : 'Mở lại'
+        }
+      />
     </>
   );
 };

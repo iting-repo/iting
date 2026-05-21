@@ -319,6 +319,15 @@ public class AdminAffiliationServiceImpl implements AdminAffiliationService {
         boolean isInfoSource = c.getInfoSourceAffiliationId() != null
                 && c.getInfoSourceAffiliationId().equals(aff.getId());
 
+        // Generate fresh presigned URLs (best-effort — không fail toàn response nếu S3 error)
+        String licensePreview = safePreview(aff.getSubmittedLicenseUrl());
+        String consentPreview = safePreview(aff.getSubmittedConsentUrl());
+        String logoPreview = safePreview(aff.getSubmittedLogoUrl());
+
+        boolean hasLicense = aff.getSubmittedLicenseUrl() != null && !aff.getSubmittedLicenseUrl().isBlank();
+        boolean hasConsent = aff.getSubmittedConsentUrl() != null && !aff.getSubmittedConsentUrl().isBlank();
+        boolean docsComplete = hasLicense && hasConsent && Boolean.TRUE.equals(aff.getSubmittedConsentConfirmed());
+
         return AdminAffiliationResponse.builder()
                 .id(aff.getId())
                 .hrAccountId(hr.getId())
@@ -352,6 +361,22 @@ public class AdminAffiliationServiceImpl implements AdminAffiliationService {
                 .submittedLicenseUrl(aff.getSubmittedLicenseUrl())
                 .submittedConsentUrl(aff.getSubmittedConsentUrl())
                 .submittedConsentConfirmed(aff.getSubmittedConsentConfirmed())
+                .licensePreviewUrl(licensePreview)
+                .consentPreviewUrl(consentPreview)
+                .logoPreviewUrl(logoPreview)
+                .hasLicense(hasLicense)
+                .hasConsent(hasConsent)
+                .documentsComplete(docsComplete)
                 .build();
+    }
+
+    /** Generate presigned URL an toàn — return null nếu input blank hoặc S3 lỗi. */
+    private String safePreview(String s3KeyOrUrl) {
+        if (s3KeyOrUrl == null || s3KeyOrUrl.isBlank()) return null;
+        try {
+            return fileUploadService.generatePresignedUrl(s3KeyOrUrl, 15);
+        } catch (Exception e) {
+            return null;
+        }
     }
 }

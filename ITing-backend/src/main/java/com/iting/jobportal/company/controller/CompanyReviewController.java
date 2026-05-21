@@ -2,6 +2,7 @@ package com.iting.jobportal.company.controller;
 
 import com.iting.jobportal.company.dto.response.CompanyReviewResponse;
 import com.iting.jobportal.company.service.CompanyReviewService;
+import com.iting.jobportal.file.FileUploadService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -15,12 +16,13 @@ import java.util.stream.Collectors;
 public class CompanyReviewController {
 
     private final CompanyReviewService reviewService;
+    private final FileUploadService fileUploadService;
 
     @GetMapping("/{id}/reviews")
     public ResponseEntity<List<CompanyReviewResponse>> getReviews(@PathVariable Long id) {
         return ResponseEntity.ok(
                 reviewService.getCompanyReviews(id).stream()
-                        .map(CompanyReviewResponse::fromEntity)
+                        .map(r -> CompanyReviewResponse.fromEntity(r, fileUploadService))
                         .collect(Collectors.toList()));
     }
 

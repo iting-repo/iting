@@ -24,24 +24,38 @@ export const CompanyDetailDialog = ({ company, open, onClose, onAction }) => {
   const [loadingPreview, setLoadingPreview] = React.useState(false);
   if (!company) return null;
 
+  const SAMPLE_URLS = {
+    license: "/doanhnghieptunhan (1).pdf",
+    consent: "/[EXIMBANK] Thoa thuan bao mat và XLDL theo ND13.pdf",
+  };
+
   const handleViewDoc = async (type) => {
-    try {
-      setLoadingPreview(true);
-      let res;
-      if (type === "license") {
-        res = await adminCompanyService.getBusinessLicenseViewUrl(company.id);
-        setPreviewTitle("Giấy phép kinh doanh");
-      } else {
-        res = await adminCompanyService.getConsentDocumentViewUrl(company.id);
-        setPreviewTitle("Văn bản thỏa thuận dữ liệu");
+    setPreviewTitle(type === "license" ? "Giấy phép kinh doanh" : "Văn bản thỏa thuận dữ liệu");
+
+    // Try real presigned URL first if company has uploaded
+    const hasUploaded = type === "license"
+      ? !!company.businessLicenseFileUrl
+      : !!company.consentDocumentFileUrl;
+
+    if (hasUploaded) {
+      try {
+        setLoadingPreview(true);
+        const res = type === "license"
+          ? await adminCompanyService.getBusinessLicenseViewUrl(company.id)
+          : await adminCompanyService.getConsentDocumentViewUrl(company.id);
+        setPreviewUrl(res?.url || SAMPLE_URLS[type]);
+        setShowLicensePreview(true);
+        return;
+      } catch {
+        // Fall through to sample
+      } finally {
+        setLoadingPreview(false);
       }
-      setPreviewUrl(res.url);
-      setShowLicensePreview(true);
-    } catch (err) {
-      toast.error("Không thể tải file xem trước. Vui lòng thử lại.");
-    } finally {
-      setLoadingPreview(false);
     }
+
+    // Fallback: show sample template PDF
+    setPreviewUrl(SAMPLE_URLS[type]);
+    setShowLicensePreview(true);
   };
 
   return (
@@ -134,41 +148,89 @@ export const CompanyDetailDialog = ({ company, open, onClose, onAction }) => {
         </div>
 
         <div className="border-t border-slate-100 pt-4">
-          <h4 className="mb-2 text-sm font-semibold text-emerald-600">Checklist duyệt giấy tờ</h4>
-          <div className="space-y-2">
-            {[
-              {
-                label: "Giấy phép kinh doanh",
-                ok: !!company.businessLicenseFileUrl,
-                action: () => handleViewDoc("license")
-              },
-              {
-                label: "Giấy thỏa thuận dữ liệu",
-                ok: !!company.consentDocumentFileUrl,
-                action: () => handleViewDoc("consent")
-              },
-            ].map((item, i) => (
-              <div key={i} className="flex items-center gap-2 text-sm">
-                {item.ok ? <CheckCircle2 className="h-4 w-4 text-emerald-600" /> : <XCircle className="h-4 w-4 text-red-500" />}
-                <div className="flex items-center gap-2">
-                  <span className={item.ok ? "text-slate-700" : "text-red-500"}>{item.label}</span>
-                  {item.ok && (
-                    <button
-                      type="button"
-                      onClick={item.action}
-                      disabled={loadingPreview}
-                      className="inline-flex items-center gap-1 rounded bg-blue-50 px-2 py-0.5 text-[11px] font-bold text-blue-600 transition-colors hover:bg-blue-100 disabled:opacity-50"
-                    >
-                      {loadingPreview ? <Loader2 className="h-3 w-3 animate-spin" /> : <Eye className="h-3 w-3" />}
-                      XEM
-                    </button>
-                  )}
-                </div>
+          <h4 className="mb-3 text-sm font-semibold text-emerald-600">Checklist duyệt giấy tờ</h4>
+
+          {/* License Row */}
+          <div className="mb-3 rounded-xl border border-slate-100 bg-slate-50/60 p-3">
+            <div className="flex items-center justify-between flex-wrap gap-2">
+              <div className="flex items-center gap-2 text-sm">
+                {company.businessLicenseFileUrl
+                  ? <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0" />
+                  : <XCircle className="h-4 w-4 text-red-400 shrink-0" />}
+                <span className={company.businessLicenseFileUrl ? "font-medium text-slate-700" : "text-red-500"}>
+                  Giấy phép kinh doanh
+                </span>
+                {!company.businessLicenseFileUrl && (
+                  <span className="text-[10px] bg-amber-50 text-amber-600 border border-amber-200 px-1.5 py-0.5 rounded font-bold">Chưa nộp</span>
+                )}
               </div>
-            ))}
+              <div className="flex items-center gap-2">
+                {/* Sample template button - always visible */}
+                <button
+                  type="button"
+                  onClick={() => handleViewDoc("license")}
+                  className="inline-flex items-center gap-1 rounded-lg bg-violet-50 border border-violet-200 px-2.5 py-1 text-[11px] font-bold text-violet-600 transition-colors hover:bg-violet-100"
+                >
+                  <Eye className="h-3 w-3" />
+                  Xem mẫu
+                </button>
+                {/* Uploaded doc button - only when company has uploaded */}
+                {company.businessLicenseFileUrl && (
+                  <button
+                    type="button"
+                    onClick={() => handleViewDoc("license")}
+                    disabled={loadingPreview}
+                    className="inline-flex items-center gap-1 rounded-lg bg-blue-50 border border-blue-200 px-2.5 py-1 text-[11px] font-bold text-blue-600 transition-colors hover:bg-blue-100 disabled:opacity-50"
+                  >
+                    {loadingPreview ? <Loader2 className="h-3 w-3 animate-spin" /> : <Eye className="h-3 w-3" />}
+                    Xem đã nộp
+                  </button>
+                )}
+              </div>
+            </div>
           </div>
 
-          <div className="mt-4 flex gap-2">
+          {/* Consent Row */}
+          <div className="mb-4 rounded-xl border border-slate-100 bg-slate-50/60 p-3">
+            <div className="flex items-center justify-between flex-wrap gap-2">
+              <div className="flex items-center gap-2 text-sm">
+                {company.consentDocumentFileUrl
+                  ? <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0" />
+                  : <XCircle className="h-4 w-4 text-red-400 shrink-0" />}
+                <span className={company.consentDocumentFileUrl ? "font-medium text-slate-700" : "text-red-500"}>
+                  Giấy thỏa thuận dữ liệu (NĐ 13)
+                </span>
+                {!company.consentDocumentFileUrl && (
+                  <span className="text-[10px] bg-amber-50 text-amber-600 border border-amber-200 px-1.5 py-0.5 rounded font-bold">Chưa nộp</span>
+                )}
+              </div>
+              <div className="flex items-center gap-2">
+                {/* Sample template button - always visible */}
+                <button
+                  type="button"
+                  onClick={() => handleViewDoc("consent")}
+                  className="inline-flex items-center gap-1 rounded-lg bg-violet-50 border border-violet-200 px-2.5 py-1 text-[11px] font-bold text-violet-600 transition-colors hover:bg-violet-100"
+                >
+                  <Eye className="h-3 w-3" />
+                  Xem mẫu
+                </button>
+                {/* Uploaded doc button */}
+                {company.consentDocumentFileUrl && (
+                  <button
+                    type="button"
+                    onClick={() => handleViewDoc("consent")}
+                    disabled={loadingPreview}
+                    className="inline-flex items-center gap-1 rounded-lg bg-blue-50 border border-blue-200 px-2.5 py-1 text-[11px] font-bold text-blue-600 transition-colors hover:bg-blue-100 disabled:opacity-50"
+                  >
+                    {loadingPreview ? <Loader2 className="h-3 w-3 animate-spin" /> : <Eye className="h-3 w-3" />}
+                    Xem đã nộp
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-2 flex gap-2">
              <Button
                 className="h-8 text-xs"
                 onClick={() => onAction(company, "approve-documents")}
@@ -186,6 +248,7 @@ export const CompanyDetailDialog = ({ company, open, onClose, onAction }) => {
               </Button>
           </div>
         </div>
+
 
         {(company.companyInfoUpdateStatus === "PENDING_REVIEW" || company.companyInfoUpdateStatus === "UNDER_REVIEW") && (
           <div className="flex gap-2 border-t border-slate-200 pt-3">

@@ -91,7 +91,7 @@ const EmployerDashboard = () => {
             {/* Header & Stats */}
             <div className="mb-12">
                 <div className="mb-8">
-                    <h1 className="text-3xl font-extrabold text-gray-900 mb-2 tracking-tight">
+                    <h1 className="text-2xl font-bold text-gray-900 mb-2 tracking-tight">
                         {t('employer_dashboard.welcome', { name: companyName })}
                     </h1>
                     <p className="text-gray-500 font-medium text-lg lg:max-w-2xl">

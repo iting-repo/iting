@@ -169,7 +169,7 @@ const FoundingInfoTab = ({ onTabChange }) => {
       setAffiliation(aff);
 
       if (!aff) {
-        setShowInitModal(true);
+        // HR chưa init affiliation → hiển thị form trống, không block
         setLoading(false);
         return;
       }
@@ -416,20 +416,18 @@ const FoundingInfoTab = ({ onTabChange }) => {
   };
 
   const openCreateRequestModal = () => {
-    if (!company) return;
-
     setRequestErrors({});
     setRequestForm({
-      companyName: company.name || "",
-      taxCode: company.taxCode || "",
-      industries: company.industries || [],
-      companySize: company.companySize || "",
-      phone: company.phone || "",
-      email: company.companyEmail || "",
-      address: company.address || "",
-      website: company.website || company.webLink || "",
-      description: company.description || "",
-      logoUrl: company.logoUrl || company.logo || "",
+      companyName: company?.name || "",
+      taxCode: company?.taxCode || "",
+      industries: company?.industries || [],
+      companySize: company?.companySize || "",
+      phone: company?.phone || "",
+      email: company?.companyEmail || "",
+      address: company?.address || "",
+      website: company?.website || company?.webLink || "",
+      description: company?.description || "",
+      logoUrl: company?.logoUrl || company?.logo || "",
     });
     setLogoPreview(null);
     setImageError(false);
@@ -452,9 +450,18 @@ const FoundingInfoTab = ({ onTabChange }) => {
     try {
       setSubmittingRequest(true);
 
+      // Nếu chưa có affiliation → gọi init trước với taxCode
+      if (!affiliation) {
+        if (!requestForm.taxCode.trim()) {
+          toast.error("Vui lòng nhập mã số thuế để tạo công ty.");
+          setSubmittingRequest(false);
+          return;
+        }
+        await affiliationService.init(requestForm.taxCode.trim());
+      }
+
       // Phase 5: ghi vào snapshot affiliation, KHÔNG ghi vào Company.
       // Backend xử lý tiếp: chỉ admin approve mới apply snapshot lên Company hiển thị.
-      // Lưu ý: taxCode KHÔNG nằm trong basic-info (đã được xác định lúc init).
       const payload = {
         name: requestForm.companyName,
         industries: requestForm.industries,
@@ -470,7 +477,6 @@ const FoundingInfoTab = ({ onTabChange }) => {
       await affiliationService.updateBasicInfo(payload);
 
       // Sau khi cập nhật snapshot xong, gửi luôn cho admin duyệt.
-      // Backend validate đủ name/email/phone/address/license trước khi accept submit.
       await affiliationService.submitReview();
 
       toast.success(
@@ -677,64 +683,178 @@ const FoundingInfoTab = ({ onTabChange }) => {
     );
   }
 
-  // Phase 5: HR chưa init affiliation → chỉ render init modal (full-screen prompt taxCode).
-  if (!affiliation) {
-    return (
-      <>
-        <div className="rounded-2xl border border-blue-100 bg-blue-50 p-8 text-center">
-          <FaExclamationTriangle className="mx-auto mb-3 text-3xl text-blue-600" />
-          <h3 className="text-lg font-bold text-gray-800">Bắt đầu khởi tạo công ty</h3>
-          <p className="mt-2 text-sm text-gray-600">
-            Vui lòng nhập <b>mã số thuế</b> để hệ thống xác định bạn đang tạo công ty mới
-            hay xác thực thuộc một công ty đã có.
-          </p>
+  // Helper: render request modal (reusable)
+  const renderRequestModal = () => (
+    <AppModal
+      isOpen={showRequestModal}
+      onClose={() => setShowRequestModal(false)}
+      title={!affiliation ? "Tạo yêu cầu đăng ký công ty" : "Tạo yêu cầu cập nhật thông tin"}
+      subtitle="Thông tin sẽ được admin duyệt trước khi cập nhật chính thức."
+      size="lg"
+      footer={
+        <div className="flex justify-end gap-3">
+          <button onClick={() => setShowRequestModal(false)} className="rounded-lg border border-gray-300 bg-white px-6 py-2.5 text-sm font-medium text-gray-700 transition hover:bg-gray-50">Hủy</button>
           <button
-            type="button"
-            onClick={() => setShowInitModal(true)}
-            className="mt-4 inline-flex items-center gap-2 rounded-lg bg-[#3AB4E6] px-5 py-2.5 text-sm font-semibold text-white hover:opacity-90"
+            onClick={handleSubmitUpdateRequest}
+            disabled={submittingRequest || uploadingLogo || (!affiliation ? false : !hasChanges)}
+            className={`flex items-center gap-2 rounded-lg px-8 py-2.5 text-sm font-bold text-white transition disabled:cursor-not-allowed ${
+              (!affiliation || hasChanges)
+                ? "bg-[#3AB4E6] hover:opacity-90"
+                : "bg-gray-300 text-gray-500 opacity-60"
+            }`}
           >
-            <FaPlus /> Nhập mã số thuế
+            {submittingRequest ? "Đang gửi..." : "Gửi admin duyệt"}
           </button>
         </div>
-
-        <AppModal
-          isOpen={showInitModal}
-          onClose={() => !initSubmitting && setShowInitModal(false)}
-          title="Nhập mã số thuế công ty"
-          subtitle="Nếu mã đã tồn tại, bạn sẽ được join công ty hiện có. Nếu chưa, hệ thống tạo công ty mới ở trạng thái nháp."
-          size="sm"
-          footer={
-            <div className="flex justify-end gap-3">
-              <button
-                onClick={() => setShowInitModal(false)}
-                disabled={initSubmitting}
-                className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
-              >
-                Hủy
-              </button>
-              <button
-                onClick={handleInitAffiliation}
-                disabled={initSubmitting || !initTaxCode.trim()}
-                className="inline-flex items-center gap-2 rounded-lg bg-[#3AB4E6] px-5 py-2 text-sm font-bold text-white hover:opacity-90 disabled:opacity-50"
-              >
-                {initSubmitting ? <FaSpinner className="animate-spin" /> : null}
-                Tiếp tục
-              </button>
+      }
+    >
+      <div className="space-y-6">
+        <div className="flex flex-col items-center justify-center border-b border-gray-100 pb-6">
+          <p className="mb-4 text-sm font-semibold text-gray-700">Logo công ty</p>
+          <div className="group relative">
+            <div className="flex h-32 w-32 items-center justify-center overflow-hidden rounded-full border-4 border-white bg-gray-100 shadow-md ring-1 ring-gray-200">
+              {(logoPreview || requestForm.logoUrl) && !imageError ? (
+                <img src={logoPreview || requestForm.logoUrl} alt="" className="h-full w-full object-cover" onError={() => setImageError(true)} />
+              ) : (
+                <span className="text-4xl font-bold text-gray-300 uppercase">{requestForm.companyName?.charAt(0) || "C"}</span>
+              )}
+              {uploadingLogo && (
+                <div className="absolute inset-0 flex items-center justify-center bg-black/20 backdrop-blur-[1px]">
+                  <FaSpinner className="animate-spin text-white text-2xl" />
+                </div>
+              )}
             </div>
-          }
-        >
-          <label className="mb-2 block text-sm font-medium text-gray-700">Mã số thuế</label>
-          <input
-            type="text"
-            autoFocus
-            value={initTaxCode}
-            onChange={(e) => setInitTaxCode(e.target.value)}
-            placeholder="Ví dụ: 0312345678"
-            disabled={initSubmitting}
-            className="w-full rounded-lg border border-gray-300 px-4 py-3 text-sm focus:border-[#3AB4E6] disabled:bg-gray-100"
-          />
-        </AppModal>
-      </>
+            <label htmlFor="logo-upload-modal" className="absolute bottom-1 right-1 flex h-9 w-9 cursor-pointer items-center justify-center rounded-full bg-white text-sky-600 shadow-lg border border-gray-100 transition hover:scale-110">
+              <FaCamera className="text-sm" />
+              <input type="file" id="logo-upload-modal" className="hidden" accept="image/*" onChange={(e) => handleLogoUpload(e.target.files[0])} />
+            </label>
+          </div>
+          <p className="mt-2 text-[11px] text-gray-400 italic">Khuyên dùng ảnh vuông, tối thiểu 200x200px</p>
+        </div>
+        <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
+          <div>
+            <label className="mb-2 block text-sm font-medium text-gray-700">Tên công ty</label>
+            <input type="text" value={requestForm.companyName} onChange={(e) => handleRequestFieldChange("companyName", e.target.value)} className="w-full rounded-lg border border-gray-300 px-4 py-3 text-sm focus:border-[#3AB4E6]" />
+            {requestErrors.companyName && <p className="mt-1 text-xs text-red-500">{requestErrors.companyName}</p>}
+          </div>
+          <div>
+            <label className="mb-2 block text-sm font-medium text-gray-700">Mã số thuế</label>
+            <input type="text" value={requestForm.taxCode} onChange={(e) => handleRequestFieldChange("taxCode", e.target.value)} className="w-full rounded-lg border border-gray-300 px-4 py-3 text-sm focus:border-[#3AB4E6]" />
+            {requestErrors.taxCode && <p className="mt-1 text-xs text-red-500">{requestErrors.taxCode}</p>}
+          </div>
+          <div className="md:col-span-2">
+            <label className="mb-2 block text-sm font-medium text-gray-700">Lĩnh vực</label>
+            <div className="group relative min-h-[52px] w-full rounded-lg border border-gray-300 bg-white p-2 transition focus-within:border-[#3AB4E6]">
+              <div className="flex flex-wrap items-center gap-2">
+                {requestForm.industries.map((industry, index) => (
+                  <div key={index} className="flex items-center gap-2 rounded-md border border-sky-200 bg-sky-50 px-2.5 py-1.5 text-xs font-semibold text-sky-700">
+                    <span>{availableIndustries.find(i => i.value === industry)?.label || industry}</span>
+                    <button type="button" onClick={(e) => { e.stopPropagation(); handleRequestFieldChange("industries", requestForm.industries.filter((_, i) => i !== index)); }} className="text-sky-400 hover:text-red-500"><FaTimes size={10} /></button>
+                  </div>
+                ))}
+                <select value="" onChange={(e) => { const val = e.target.value; if (val && !requestForm.industries.includes(val)) { handleRequestFieldChange("industries", [...requestForm.industries, val]); } }} className="min-w-[140px] flex-1 border-none bg-transparent text-sm outline-none focus:ring-0">
+                  <option value="">+ Thêm lĩnh vực...</option>
+                  {availableIndustries.filter(ind => !requestForm.industries.includes(ind.value)).map(ind => (<option key={ind.value} value={ind.value}>{ind.label}</option>))}
+                </select>
+              </div>
+            </div>
+          </div>
+          <div>
+            <label className="mb-2 block text-sm font-medium text-gray-700">Quy mô công ty</label>
+            <select value={requestForm.companySize} onChange={(e) => handleRequestFieldChange("companySize", e.target.value)} className="w-full rounded-lg border border-gray-300 px-4 py-3 text-sm focus:border-[#3AB4E6]">
+              <option value="">Chọn quy mô</option>
+              <option value="1-10">1-10 nhân viên</option>
+              <option value="11-50">11-50</option>
+              <option value="51-200">51-200</option>
+              <option value="201-500">201-500</option>
+              <option value="501-1000">501-1000</option>
+              <option value="1001-5000">1001-5000</option>
+              <option value="5001-10000">5001-10000</option>
+              <option value="10000+">10000+</option>
+            </select>
+          </div>
+          <div>
+            <label className="mb-2 block text-sm font-medium text-gray-700">Số điện thoại</label>
+            <input type="text" value={requestForm.phone} onChange={(e) => handleRequestFieldChange("phone", e.target.value)} className="w-full rounded-lg border border-gray-300 px-4 py-3 text-sm focus:border-[#3AB4E6]" />
+            {requestErrors.phone && <p className="mt-1 text-xs text-red-500">{requestErrors.phone}</p>}
+          </div>
+          <div>
+            <label className="mb-2 block text-sm font-medium text-gray-700">Email công ty</label>
+            <input type="text" value={requestForm.email} onChange={(e) => handleRequestFieldChange("email", e.target.value)} className="w-full rounded-lg border border-gray-300 px-4 py-3 text-sm focus:border-[#3AB4E6]" />
+            {requestErrors.email && <p className="mt-1 text-xs text-red-500">{requestErrors.email}</p>}
+          </div>
+          <div>
+            <label className="mb-2 block text-sm font-medium text-gray-700">Website</label>
+            <input type="text" value={requestForm.website} onChange={(e) => handleRequestFieldChange("website", e.target.value)} className="w-full rounded-lg border border-gray-300 px-4 py-3 text-sm focus:border-[#3AB4E6]" />
+            {requestErrors.website && <p className="mt-1 text-xs text-red-500">{requestErrors.website}</p>}
+          </div>
+          <div className="md:col-span-2">
+            <div className="flex items-center justify-between mb-2">
+              <label className="block text-sm font-medium text-gray-700">Địa chỉ công ty</label>
+              {requestForm.address && (
+                <a href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(requestForm.address)}`} target="_blank" rel="noopener noreferrer" className="text-[10px] uppercase tracking-tighter font-bold text-gray-500 hover:text-blue-600 flex items-center gap-1 transition-colors">
+                  <FaMapMarkerAlt /> Xem trên Map
+                </a>
+              )}
+            </div>
+            <input type="text" value={requestForm.address} onChange={(e) => handleRequestFieldChange("address", e.target.value)} placeholder="Nhập địa chỉ chính xác của công ty" className="w-full rounded-lg border border-gray-300 px-4 py-3 text-sm focus:border-[#3AB4E6]" />
+            {requestErrors.address && <p className="mt-1 text-xs text-red-500">{requestErrors.address}</p>}
+          </div>
+          <div className="md:col-span-2">
+            <label className="mb-2 block text-sm font-medium text-gray-700">Giới thiệu công ty</label>
+            <textarea rows="4" value={requestForm.description} onChange={(e) => handleRequestFieldChange("description", e.target.value)} className="w-full rounded-lg border border-gray-300 px-4 py-3 text-sm focus:border-[#3AB4E6]" />
+          </div>
+        </div>
+      </div>
+    </AppModal>
+  );
+
+  // Phase 5: nếu chưa có affiliation → hiển thị form trống với nút tạo yêu cầu
+  if (!affiliation) {
+    return (
+      <div className="space-y-6">
+        <div className="rounded-2xl border border-blue-100 bg-blue-50 p-6">
+          <div className="flex items-start gap-3">
+            <FaExclamationTriangle className="text-blue-600 text-xl shrink-0 mt-0.5" />
+            <div>
+              <h3 className="text-base font-bold text-gray-800">Chưa có thông tin công ty</h3>
+              <p className="mt-1 text-sm text-gray-600">
+                Bạn chưa thiết lập thông tin công ty. Hãy bấm nút bên dưới để điền thông tin và gửi yêu cầu xác thực tới admin.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Empty read-only fields */}
+        <div className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
+          <div className="flex items-center justify-between mb-6">
+            <h3 className="text-lg font-bold text-gray-800">Thông tin cơ bản</h3>
+            <button
+              type="button"
+              onClick={openCreateRequestModal}
+              className="inline-flex items-center gap-2 rounded-lg bg-[#3AB4E6] px-5 py-2.5 text-sm font-bold text-white hover:opacity-90 shadow-md"
+            >
+              <FaPlus /> Tạo yêu cầu
+            </button>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <ReadOnlyField label="Tên công ty" value="" />
+            <ReadOnlyField label="Mã số thuế" value="" />
+            <ReadOnlyField label="Số điện thoại" value="" />
+            <ReadOnlyField label="Email công ty" value="" />
+            <ReadOnlyField label="Quy mô" value="" />
+            <ReadOnlyField label="Website" value="" />
+            <div className="md:col-span-2">
+              <ReadOnlyField label="Địa chỉ" value="" />
+            </div>
+            <div className="md:col-span-2">
+              <ReadOnlyField label="Mô tả công ty" value="" multiline />
+            </div>
+          </div>
+        </div>
+
+        {renderRequestModal()}
+      </div>
     );
   }
 
@@ -942,202 +1062,10 @@ const FoundingInfoTab = ({ onTabChange }) => {
         </div>
       </div>
 
-      <AppModal
-        isOpen={showRequestModal}
-        onClose={() => setShowRequestModal(false)}
-        title="Tạo yêu cầu cập nhật thông tin"
-        subtitle="Thông tin sẽ được admin duyệt trước khi cập nhật chính thức."
-        size="lg"
-        footer={
-          <div className="flex justify-end gap-3">
-            <button onClick={() => setShowRequestModal(false)} className="rounded-lg border border-gray-300 bg-white px-6 py-2.5 text-sm font-medium text-gray-700 transition hover:bg-gray-50">Hủy</button>
-            <button
-              onClick={handleSubmitUpdateRequest}
-              disabled={submittingRequest || uploadingLogo || !hasChanges}
-              className={`flex items-center gap-2 rounded-lg px-8 py-2.5 text-sm font-bold text-white transition disabled:cursor-not-allowed ${hasChanges
-                ? "bg-[#3AB4E6] hover:opacity-90"
-                : "bg-gray-300 text-gray-500 opacity-60"
-                }`}
-            >
-              {submittingRequest ? "Đang gửi..." : "Gửi admin duyệt"}
-            </button>
-          </div>
-        }
-      >
-        <div className="space-y-6">
-          <div className="flex flex-col items-center justify-center border-b border-gray-100 pb-6">
-            <p className="mb-4 text-sm font-semibold text-gray-700">Logo công ty</p>
-            <div className="group relative">
-              <div className="flex h-32 w-32 items-center justify-center overflow-hidden rounded-full border-4 border-white bg-gray-100 shadow-md ring-1 ring-gray-200">
-                {(logoPreview || requestForm.logoUrl) && !imageError ? (
-                  <img
-                    src={logoPreview || requestForm.logoUrl}
-                    alt=""
-                    className="h-full w-full object-cover"
-                    onError={() => setImageError(true)}
-                  />
-                ) : (
-                  <span className="text-4xl font-bold text-gray-300 uppercase">
-                    {requestForm.companyName?.charAt(0) || "C"}
-                  </span>
-                )}
-                {uploadingLogo && (
-                  <div className="absolute inset-0 flex items-center justify-center bg-black/20 backdrop-blur-[1px]">
-                    <FaSpinner className="animate-spin text-white text-2xl" />
-                  </div>
-                )}
-              </div>
-              <label htmlFor="logo-upload-modal" className="absolute bottom-1 right-1 flex h-9 w-9 cursor-pointer items-center justify-center rounded-full bg-white text-sky-600 shadow-lg border border-gray-100 transition hover:scale-110">
-                <FaCamera className="text-sm" />
-                <input type="file" id="logo-upload-modal" className="hidden" accept="image/*" onChange={(e) => handleLogoUpload(e.target.files[0])} />
-              </label>
-            </div>
-            <p className="mt-2 text-[11px] text-gray-400 italic">Khuyên dùng ảnh vuông, tối thiểu 200x200px</p>
-          </div>
-
-          <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
-            <div>
-              <label className="mb-2 block text-sm font-medium text-gray-700">Tên công ty</label>
-              <input type="text" value={requestForm.companyName} onChange={(e) => handleRequestFieldChange("companyName", e.target.value)} className="w-full rounded-lg border border-gray-300 px-4 py-3 text-sm focus:border-[#3AB4E6]" />
-            </div>
-            <div>
-              <label className="mb-2 block text-sm font-medium text-gray-700">Mã số thuế</label>
-              <input type="text" value={requestForm.taxCode} onChange={(e) => handleRequestFieldChange("taxCode", e.target.value)} className="w-full rounded-lg border border-gray-300 px-4 py-3 text-sm focus:border-[#3AB4E6]" />
-            </div>
-            <div className="md:col-span-2">
-              <label className="mb-2 block text-sm font-medium text-gray-700">
-                Lĩnh vực
-              </label>
-              <div className="group relative min-h-[52px] w-full rounded-lg border border-gray-300 bg-white p-2 transition focus-within:border-[#3AB4E6]">
-                <div className="flex flex-wrap items-center gap-2">
-                  {requestForm.industries.map((industry, index) => (
-                    <div
-                      key={index}
-                      className="flex items-center gap-2 rounded-md border border-sky-200 bg-sky-50 px-2.5 py-1.5 text-xs font-semibold text-sky-700"
-                    >
-                      <span>
-                        {availableIndustries.find(
-                          (i) => i.value === industry,
-                        )?.label || industry}
-                      </span>
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleRequestFieldChange(
-                            "industries",
-                            requestForm.industries.filter(
-                              (_, i) => i !== index,
-                            ),
-                          );
-                        }}
-                        className="transition-colors hover:text-red-500"
-                      >
-                        <FaTimes className="text-[10px]" />
-                      </button>
-                    </div>
-                  ))}
-
-                  <div className="relative min-w-[120px] flex-1">
-                    <select
-                      value=""
-                      onChange={(e) => {
-                        const value = e.target.value;
-                        if (
-                          value &&
-                          !requestForm.industries.includes(value)
-                        ) {
-                          handleRequestFieldChange("industries", [
-                            ...requestForm.industries,
-                            value,
-                          ]);
-                        }
-                      }}
-                      className="absolute inset-0 z-10 h-full w-full cursor-pointer opacity-0"
-                    >
-                      <option value="" disabled>
-                        Thêm lĩnh vực...
-                      </option>
-                      {availableIndustries.filter(
-                        (item) =>
-                          !requestForm.industries.includes(item.value),
-                      ).map((item) => (
-                        <option key={item.value} value={item.value}>
-                          {item.label}
-                        </option>
-                      ))}
-                    </select>
-
-                    <div className="pointer-events-none flex items-center justify-between px-2 text-gray-400 group-focus-within:text-[#3AB4E6]">
-                      <span className="truncate text-sm">
-                        {requestForm.industries.length === 0
-                          ? "Chọn lĩnh vực từ danh sách..."
-                          : "Thêm mới..."}
-                      </span>
-                      <FaPlus className="text-xs" />
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-            <div>
-              <label className="mb-2 block text-sm font-medium text-gray-700">Quy mô công ty</label>
-              <select value={requestForm.companySize} onChange={(e) => handleRequestFieldChange("companySize", e.target.value)} className="w-full rounded-lg border border-gray-300 px-4 py-3 text-sm focus:border-[#3AB4E6]">
-                <option value="">Chọn quy mô</option>
-                <option value="1-10">1-10 nhân sự</option>
-                <option value="11-50">11-50 nhân sự</option>
-                <option value="51-100">51-100 nhân sự</option>
-                <option value="100-500">100-500 nhân sự</option>
-                <option value="500-1000">500-1000 nhân sự</option>
-                <option value="1000+">1,000+ nhân sự</option>
-                <option value="5,000+">5,000+ nhân sự</option>
-              </select>
-            </div>
-            <div>
-              <label className="mb-2 block text-sm font-medium text-gray-700">Số điện thoại</label>
-              <input type="text" value={requestForm.phone} onChange={(e) => handleRequestFieldChange("phone", e.target.value)} className="w-full rounded-lg border border-gray-300 px-4 py-3 text-sm focus:border-[#3AB4E6]" />
-            </div>
-            <div>
-              <label className="mb-2 block text-sm font-medium text-gray-700">Email công ty</label>
-              <input type="text" value={requestForm.email} onChange={(e) => handleRequestFieldChange("email", e.target.value)} className="w-full rounded-lg border border-gray-300 px-4 py-3 text-sm focus:border-[#3AB4E6]" />
-            </div>
-            <div>
-              <label className="mb-2 block text-sm font-medium text-gray-700">Website</label>
-              <input type="text" value={requestForm.website} onChange={(e) => handleRequestFieldChange("website", e.target.value)} className="w-full rounded-lg border border-gray-300 px-4 py-3 text-sm focus:border-[#3AB4E6]" />
-            </div>
-            <div className="md:col-span-2">
-              <div className="flex items-center justify-between mb-2">
-                <label className="block text-sm font-medium text-gray-700">
-                  Địa chỉ công ty
-                </label>
-                {requestForm.address && (
-                  <a
-                    href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(requestForm.address)}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-[10px] uppercase tracking-tighter font-bold text-gray-500 hover:text-blue-600 flex items-center gap-1 transition-colors"
-                  >
-                    <FaMapMarkerAlt /> Xem trên Map
-                  </a>
-                )}
-              </div>
-              <input
-                type="text"
-                value={requestForm.address}
-                onChange={(e) => handleRequestFieldChange("address", e.target.value)}
-                placeholder="Nhập địa chỉ chính xác của công ty"
-                className="w-full rounded-lg border border-gray-300 px-4 py-3 text-sm focus:border-[#3AB4E6]"
-              />
-            </div>
-            <div className="md:col-span-2">
-              <label className="mb-2 block text-sm font-medium text-gray-700">Giới thiệu công ty</label>
-              <textarea rows="4" value={requestForm.description} onChange={(e) => handleRequestFieldChange("description", e.target.value)} className="w-full rounded-lg border border-gray-300 px-4 py-3 text-sm focus:border-[#3AB4E6]" />
-            </div>
-          </div>
-        </div>
-      </AppModal>
+      {renderRequestModal()}
     </div>
   );
 };
 
 export default FoundingInfoTab;
+

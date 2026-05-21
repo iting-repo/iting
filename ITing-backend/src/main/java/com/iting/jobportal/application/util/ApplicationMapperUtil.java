@@ -7,6 +7,7 @@ import com.iting.jobportal.company.entity.Company;
 import com.iting.jobportal.job.entity.Job;
 import com.iting.jobportal.job.repository.JobRepository;
 import com.iting.jobportal.auth.entity.Account;
+import com.iting.jobportal.common.service.S3Service;
 import com.iting.jobportal.user.entity.User;
 import com.iting.jobportal.user.repository.UserRepository;
 import com.iting.jobportal.userprofile.entity.CV;
@@ -16,6 +17,7 @@ import com.iting.jobportal.userprofile.repository.CVRepository;
 import com.iting.jobportal.userprofile.repository.EducationRepository;
 import com.iting.jobportal.userprofile.repository.ExperienceRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDate;
@@ -26,12 +28,14 @@ import java.util.Optional;
 
 @Component
 @RequiredArgsConstructor
+@Slf4j
 public class ApplicationMapperUtil {
     private final JobRepository jobRepository;
     private final UserRepository userRepository;
     private final CVRepository cvRepository;
     private final ExperienceRepository experienceRepository;
     private final EducationRepository educationRepository;
+    private final S3Service s3Service;
 
     public ApplicationResponse buildFullResponse(ApplyForm applyForm, ApplyFormSentToJob sent) {
         Long jobId = sent.getId().getJobId();
@@ -65,9 +69,12 @@ public class ApplicationMapperUtil {
         String cvUrl = null;
         if (applyForm.getCv() != null) {
             CV cv = applyForm.getCv();
-            cvUrl = cv.getFileUrl();
-            if (cvUrl != null) {
-                String path = cvUrl.contains("/") ? cvUrl.substring(cvUrl.lastIndexOf('/') + 1) : cvUrl;
+            cvUrl = freshCvUrl(cv); // re-presign, tránh 403 hết hạn
+            String original = cv.getFileUrl();
+            if (original != null) {
+                String path = original.contains("/") ? original.substring(original.lastIndexOf('/') + 1) : original;
+                int qIdx = path.indexOf('?');
+                if (qIdx > 0) path = path.substring(0, qIdx); // bỏ query của presigned URL
                 int dotIdx = path.lastIndexOf('.');
                 if (dotIdx > 0) {
                     cvFileName = path.substring(0, dotIdx);
@@ -86,9 +93,12 @@ public class ApplicationMapperUtil {
                 Optional<CV> cvOpt = cvRepository.findById(cvId);
                 if (cvOpt.isPresent()) {
                     CV cv = cvOpt.get();
-                    cvUrl = cv.getFileUrl();
-                    if (cvUrl != null) {
-                        String path = cvUrl.contains("/") ? cvUrl.substring(cvUrl.lastIndexOf('/') + 1) : cvUrl;
+                    cvUrl = freshCvUrl(cv);
+                    String original = cv.getFileUrl();
+                    if (original != null) {
+                        String path = original.contains("/") ? original.substring(original.lastIndexOf('/') + 1) : original;
+                        int qIdx = path.indexOf('?');
+                        if (qIdx > 0) path = path.substring(0, qIdx);
                         int dotIdx = path.lastIndexOf('.');
                         if (dotIdx > 0) {
                             cvFileName = path.substring(0, dotIdx);
@@ -123,11 +133,23 @@ public class ApplicationMapperUtil {
         }
         Integer yearsExperience = totalMonths > 0 ? Math.max(1, totalMonths / 12) : null;
 
+        // Học vấn: pick bản ghi mới nhất, format = "degree - school" hoặc fallback school/major.
+        // Trước đây filter degree!=null làm rớt cả record có school+major khi CV không ghi học vị.
         List<Education> educations = educationRepository.findByProfile_Id(userId);
         String education = educations.stream()
-                .filter(e -> e.getDegree() != null)
                 .max(Comparator.comparing(e -> e.getEndDate() != null ? e.getEndDate() : LocalDate.MIN))
-                .map(Education::getDegree)
+                .map(e -> {
+                    String degree = e.getDegree();
+                    String school = e.getSchoolName();
+                    String major  = e.getMajor();
+                    if (degree != null && !degree.isBlank() && school != null && !school.isBlank())
+                        return degree + " - " + school;
+                    if (degree != null && !degree.isBlank()) return degree;
+                    if (school != null && !school.isBlank() && major != null && !major.isBlank())
+                        return school + " (" + major + ")";
+                    if (school != null && !school.isBlank()) return school;
+                    return (major != null && !major.isBlank()) ? major : null;
+                })
                 .orElse(null);
 
         return ApplicationResponse.builder()
@@ -154,5 +176,43 @@ public class ApplicationMapperUtil {
                         : com.iting.jobportal.application.entity.enums.ApplicationStatus.PENDING)
                 .employerNote(sent.getEmployerNote())
                 .build();
+    }
+
+    /**
+     * Sinh presigned URL TƯƠI cho CV (1h) — ưu tiên s3Key, fallback parse từ fileUrl.
+     * Trả fileUrl gốc nếu không phải S3 hoặc S3 lỗi.
+     */
+    private String freshCvUrl(CV cv) {
+        if (cv == null) return null;
+        try {
+            String key = (cv.getS3Key() != null && !cv.getS3Key().isBlank())
+                    ? cv.getS3Key()
+                    : extractS3KeyFromUrl(cv.getFileUrl());
+            if (key == null || key.isBlank()) {
+                return cv.getFileUrl(); // local path / non-S3
+            }
+            return s3Service.getPreSignedUrl(key);
+        } catch (Exception e) {
+            log.warn("Re-presign CV {} failed: {}", cv.getId(), e.getMessage());
+            return cv.getFileUrl();
+        }
+    }
+
+    /** Extract S3 object key từ URL S3 (virtual-host hoặc path-style). */
+    private static String extractS3KeyFromUrl(String url) {
+        if (url == null || url.isBlank() || !url.contains("amazonaws.com")) return null;
+        try {
+            String noQuery = url.split("\\?", 2)[0];
+            java.net.URI uri = java.net.URI.create(noQuery);
+            String path = uri.getPath();
+            if (path == null || path.isBlank()) return null;
+            String key = path.startsWith("/") ? path.substring(1) : path;
+            if (uri.getHost() != null && uri.getHost().startsWith("s3.") && key.contains("/")) {
+                key = key.substring(key.indexOf('/') + 1);
+            }
+            return key.isBlank() ? null : key;
+        } catch (Exception e) {
+            return null;
+        }
     }
 }

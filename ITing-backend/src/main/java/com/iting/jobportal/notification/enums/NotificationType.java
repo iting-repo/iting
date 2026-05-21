@@ -46,6 +46,11 @@ public enum NotificationType {
      */
     APPLICATION_STATUS_CHANGED,
 
+    /**
+     * Candidate has submitted an application
+     */
+    APPLICATION_SUBMITTED,
+
     // Company-related notifications
     /**
      * Company profile was updated

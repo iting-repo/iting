@@ -15,10 +15,11 @@ import {
   FaTimes,
   FaPlus,
 } from "react-icons/fa";
-import { CheckCircle2 } from "lucide-react";
+import { CheckCircle2, ShieldCheck, AlertTriangle, XCircle } from "lucide-react";
 import { toast } from "sonner";
 import companyService from "../../services/companyService";
 import axiosInstance from "../../utils/axiosInstance";
+import { moderateJobWithGemini } from "../../services/geminiModerationService";
 
 // const PROVINCE_API_BASE = "https://provinces.open-api.vn/api/v2";
 
@@ -357,6 +358,8 @@ const PostJob = ({
   const [showSuccess, setShowSuccess] = useState(false);
   const [availableTechOptions, setAvailableTechOptions] = useState(DEFAULT_TECH_OPTIONS);
   const [availablePositionOptions, setAvailablePositionOptions] = useState(DEFAULT_POSITION_OPTIONS);
+  const [aiChecking, setAiChecking] = useState(false);
+  const [aiWarning, setAiWarning] = useState(null); // { issues, flaggedTerms, suggestion, summary, riskLevel, payload }
 
   useEffect(() => {
     setFormData(initialFormState);
@@ -474,70 +477,83 @@ const PostJob = ({
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
     if (!validate()) return;
 
+    const selectedProvince = provinces.find((p) => p.name === formData.province);
+    const payload = {
+      title: formData.jobTitle.trim(),
+      position: formData.jobPosition.join(", "),
+      skills: formData.techStack,
+      jobType: formData.workType || null,
+      experienceLevel: formData.experienceLevel || null,
+      workingDays: formData.workingDays || null,
+      minSalary: formData.salaryType === "NEGOTIABLE" || formData.minSalary === "" ? null : Number(formData.minSalary),
+      maxSalary: formData.salaryType === "NEGOTIABLE" || formData.maxSalary === "" ? null : Number(formData.maxSalary),
+      salaryType: formData.salaryType || null,
+      maxAccept: formData.quantity ? Math.max(1, Number(formData.quantity)) : 1,
+      dueDate: formData.deadline || null,
+      province: formData.province || null,
+      ward: formData.ward || null,
+      address: formData.address.trim() || null,
+      locId: selectedProvince ? Number(selectedProvince.code) : null,
+      description: formData.description.trim() || "",
+      responsibilities: formData.responsibilities.trim() || "",
+      requirements: formData.requirements.trim() || "",
+      benefits: formData.benefits.trim() || "",
+    };
+
+    // ── Gemini AI moderation (non-blocking) ────────────────────────────────
     try {
-      const selectedProvince = provinces.find(
-        (p) => p.name === formData.province,
-      );
+      setAiChecking(true);
+      toast.loading("🤖 AI đang kiểm tra nội dung...", { id: "ai-check" });
+      const aiResult = await moderateJobWithGemini(payload);
+      toast.dismiss("ai-check");
+      setAiChecking(false);
 
-      const payload = {
-        title: formData.jobTitle.trim(),
-        position: formData.jobPosition.join(", "),
-        skills: formData.techStack,
-        jobType: formData.workType || null,
-        experienceLevel: formData.experienceLevel || null,
-        workingDays: formData.workingDays || null,
+      // Only show warning modal if AI successfully returned a result with issues
+      if (!aiResult._error) {
+        const isBlocked = !aiResult.passed || aiResult.riskLevel === "HIGH" || aiResult.riskLevel === "CRITICAL";
+        const hasWarning = aiResult.issues && aiResult.issues.length > 0;
+        if (isBlocked || hasWarning) {
+          setAiWarning({ ...aiResult, payload });
+          return; // Wait for user decision
+        }
+      }
+    } catch {
+      // AI failed — proceed silently, never block job submission
+      toast.dismiss("ai-check");
+      setAiChecking(false);
+    }
+    // ─────────────────────────────────────────────────────────────────────
 
-        minSalary:
-          formData.salaryType === "NEGOTIABLE" || formData.minSalary === ""
-            ? null
-            : Number(formData.minSalary),
-        maxSalary:
-          formData.salaryType === "NEGOTIABLE" || formData.maxSalary === ""
-            ? null
-            : Number(formData.maxSalary),
-        salaryType: formData.salaryType || null,
+    await doSubmit(payload);
+  };
 
-        maxAccept: formData.quantity ? Number(formData.quantity) : 0,
-        dueDate: formData.deadline || null,
-
-        province: formData.province || null,
-        ward: formData.ward || null,
-        address: formData.address.trim() || null,
-        locId: selectedProvince ? Number(selectedProvince.code) : null,
-
-        description: formData.description.trim() || "",
-        responsibilities: formData.responsibilities.trim() || "",
-        requirements: formData.requirements.trim() || "",
-        benefits: formData.benefits.trim() || "",
-      };
-
+  const doSubmit = async (payload) => {
+    try {
       let result;
-
       if (isEdit && initialData?.id) {
-        result = await companyService.updateEmployerJob(
-          initialData.id,
-          payload,
-        );
+        result = await companyService.updateEmployerJob(initialData.id, payload);
         toast.success("Cập nhật công việc thành công");
       } else {
         result = await companyService.createEmployerJob(payload);
         toast.success("Đăng bài thành công");
       }
-
-      if (onSubmitSuccess) {
-        onSubmitSuccess(result);
-      }
-
+      if (onSubmitSuccess) onSubmitSuccess(result);
       handleClose();
     } catch (error) {
       console.error("Lỗi lưu công việc:", error);
-      toast.error(
-        error?.response?.data?.message ||
-        "Lưu công việc thất bại, vui lòng thử lại",
-      );
+      // Parse backend validation errors (Spring @Valid returns errors as array)
+      const data = error?.response?.data;
+      let msg = "Lưu công việc thất bại, vui lòng thử lại";
+      if (typeof data?.message === "string") {
+        msg = data.message;
+      } else if (Array.isArray(data?.errors)) {
+        msg = data.errors.map(e => e.defaultMessage || e.message).join("; ");
+      } else if (typeof data === "string") {
+        msg = data;
+      }
+      toast.error(msg);
     }
   };
 
@@ -575,6 +591,103 @@ const PostJob = ({
       px-4 py-6"
       onClick={handleClose}
     >
+      {/* ── AI Warning Modal ──────────────────────────────────────────── */}
+      {aiWarning && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-sm px-4" onClick={() => {}}>
+          <div className="w-full max-w-lg bg-white rounded-2xl shadow-2xl overflow-hidden animate-fade-in">
+            {/* Header */}
+            <div className={`px-6 py-5 flex items-center gap-3 ${
+              aiWarning.riskLevel === 'CRITICAL' || aiWarning.riskLevel === 'HIGH'
+                ? 'bg-red-500' : 'bg-amber-500'
+            }`}>
+              {aiWarning.riskLevel === 'CRITICAL' || aiWarning.riskLevel === 'HIGH'
+                ? <XCircle className="w-6 h-6 text-white shrink-0" />
+                : <AlertTriangle className="w-6 h-6 text-white shrink-0" />
+              }
+              <div>
+                <h3 className="text-white font-black text-lg">
+                  {aiWarning.riskLevel === 'CRITICAL' ? '🚫 AI Chặn Tin Đăng' :
+                   aiWarning.riskLevel === 'HIGH' ? '⛔ Nội Dung Rủi Ro Cao' :
+                   '⚠️ AI Phát Hiện Vấn Đề'}
+                </h3>
+                <p className="text-white/80 text-sm">Mức rủi ro: {aiWarning.riskLevel}</p>
+              </div>
+            </div>
+
+            <div className="p-6 space-y-4">
+              {/* Summary */}
+              {aiWarning.summary && (
+                <div className="bg-slate-50 rounded-xl p-4 border border-slate-100">
+                  <p className="text-sm text-slate-700 leading-relaxed flex items-start gap-2">
+                    <ShieldCheck className="w-4 h-4 text-slate-400 shrink-0 mt-0.5" />
+                    {aiWarning.summary}
+                  </p>
+                </div>
+              )}
+
+              {/* Issues */}
+              {aiWarning.issues.length > 0 && (
+                <div>
+                  <p className="text-xs font-bold uppercase tracking-widest text-slate-500 mb-2">📋 Vấn đề phát hiện</p>
+                  <ul className="space-y-1.5">
+                    {aiWarning.issues.map((issue, i) => (
+                      <li key={i} className="flex items-start gap-2 text-sm text-slate-700">
+                        <span className="text-red-500 font-bold shrink-0">•</span>
+                        {issue}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {/* Flagged Terms */}
+              {aiWarning.flaggedTerms.length > 0 && (
+                <div>
+                  <p className="text-xs font-bold uppercase tracking-widest text-slate-500 mb-2">🔴 Từ/cụm từ bị gắn cờ</p>
+                  <div className="flex flex-wrap gap-2">
+                    {aiWarning.flaggedTerms.map((term, i) => (
+                      <span key={i} className="px-3 py-1 bg-red-100 text-red-700 rounded-full text-xs font-bold border border-red-200">
+                        {term}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Suggestion */}
+              {aiWarning.suggestion && (
+                <div className="bg-blue-50 rounded-xl p-4 border border-blue-100">
+                  <p className="text-xs font-bold uppercase tracking-widest text-blue-500 mb-1">💡 Gợi ý cải thiện</p>
+                  <p className="text-sm text-blue-800 leading-relaxed">{aiWarning.suggestion}</p>
+                </div>
+              )}
+            </div>
+
+            {/* Actions */}
+            <div className="px-6 pb-6 flex gap-3">
+              <button
+                onClick={() => setAiWarning(null)}
+                className="flex-1 py-3 rounded-xl border-2 border-slate-200 text-slate-600 font-bold text-sm hover:bg-slate-50 transition-colors"
+              >
+                ← Chỉnh sửa lại
+              </button>
+              {(aiWarning.riskLevel === 'LOW' || aiWarning.riskLevel === 'MEDIUM') && (
+                <button
+                  onClick={async () => {
+                    const payload = aiWarning.payload;
+                    setAiWarning(null);
+                    await doSubmit(payload);
+                  }}
+                  className="flex-1 py-3 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-black text-sm transition-colors shadow-lg shadow-amber-100"
+                >
+                  Vẫn đăng bài →
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
       <div
         className="w-full max-w-6xl max-h-[92vh] overflow-y-auto bg-white rounded-2xl shadow-2xl border border-gray-100 animate-fade-in"
         onClick={(e) => e.stopPropagation()}

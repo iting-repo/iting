@@ -1,14 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { FileText, Upload, CheckCircle, MoreVertical, Trash2, Star, Plus, Loader2 } from 'lucide-react';
-import { Button, Card, Input } from "../../../../components/common";
+import { Button, Card, Input, ConfirmModal } from "../../../../components/common";
 import axiosInstance from "../../../../utils/axiosInstance";
 import cvService from "../../../../services/cvService";
+import useConfirm from "../../../../hooks/useConfirm";
 import { toast } from "sonner";
 
 const CVSection = () => {
     const [cvs, setCvs] = useState([]);
     const [isAdding, setIsAdding] = useState(false);
     const [isUploading, setIsUploading] = useState(false);
+    const [confirm, askConfirm, resetConfirm] = useConfirm();
     const [selectedFile, setSelectedFile] = useState(null);
     
     const [formData, setFormData] = useState({
@@ -71,15 +73,24 @@ const CVSection = () => {
         }
     };
 
-    const handleDelete = async (id) => {
-        if (!window.confirm("Bạn có chắc chắn muốn xóa CV này?")) return;
-        try {
-            await axiosInstance.delete(`/user/professional-profile/cv/${id}`);
-            fetchCVs();
-        } catch (error) {
-            console.error("Failed to delete CV", error);
-            alert("Có lỗi xảy ra khi xóa CV!");
-        }
+    const handleDelete = (id) => {
+        askConfirm({
+            title: "Xóa CV",
+            message: "Bạn có chắc chắn muốn xóa CV này?",
+            warning: "Hành động này không thể hoàn tác.",
+            confirmText: "Xóa",
+            onConfirm: async () => {
+                resetConfirm();
+                try {
+                    await axiosInstance.delete(`/user/professional-profile/cv/${id}`);
+                    fetchCVs();
+                    toast.success("Đã xóa CV thành công.");
+                } catch (error) {
+                    console.error("Failed to delete CV", error);
+                    toast.error("Có lỗi xảy ra khi xóa CV!");
+                }
+            }
+        });
     };
 
     const handleSetDefault = async (id) => {
@@ -204,6 +215,7 @@ const CVSection = () => {
                     Sử dụng CV mặc định giúp nhà tuyển dụng tìm thấy bạn nhanh hơn trong các bộ lọc tìm kiếm.
                 </p>
             </div>
+            <ConfirmModal isOpen={confirm.isOpen} onClose={resetConfirm} onConfirm={confirm.onConfirm} title={confirm.title} message={confirm.message} warning={confirm.warning} confirmText={confirm.confirmText} variant={confirm.variant} />
         </Card>
     );
 };

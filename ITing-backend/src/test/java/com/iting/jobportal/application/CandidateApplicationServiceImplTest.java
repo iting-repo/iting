@@ -349,6 +349,7 @@ class CandidateApplicationServiceImplTest {
 
         when(applyFormRepository.findById(10L)).thenReturn(Optional.of(form));
         when(candidateApplicationRepository.findByIdApplyFormId(10L)).thenReturn(Optional.of(sent));
+        when(jobRepository.existsById(5L)).thenReturn(true);
 
         service.withdrawApplication(1L, 10L);
 

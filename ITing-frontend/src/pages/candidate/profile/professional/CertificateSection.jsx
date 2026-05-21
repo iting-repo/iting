@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { Award, Plus, Trash2, Calendar, Link as LinkIcon, ExternalLink } from 'lucide-react';
-import { Button, Card, Input } from "../../../../components/common";
+import { Button, Card, Input, ConfirmModal } from "../../../../components/common";
 import axiosInstance from "../../../../utils/axiosInstance";
+import useConfirm from "../../../../hooks/useConfirm";
 
 const CertificateSection = () => {
     const [certificates, setCertificates] = useState([]);
     const [isAdding, setIsAdding] = useState(false);
+    const [confirm, askConfirm, resetConfirm] = useConfirm();
     
     const [formData, setFormData] = useState({
         title: '',
@@ -69,15 +71,22 @@ const CertificateSection = () => {
         }
     };
 
-    const handleDelete = async (id) => {
-        if (!window.confirm("Bạn có chắc chắn muốn xóa chứng chỉ này?")) return;
-        try {
-            await axiosInstance.delete(`/user/professional-profile/certificates/${id}`);
-            fetchCertificates();
-        } catch (error) {
-            console.error("Failed to delete certificate", error);
-            alert("Có lỗi xảy ra khi xóa chứng chỉ!");
-        }
+    const handleDelete = (id) => {
+        askConfirm({
+            title: "Xóa chứng chỉ",
+            message: "Bạn có chắc chắn muốn xóa chứng chỉ này?",
+            warning: "Hành động này không thể hoàn tác.",
+            confirmText: "Xóa",
+            onConfirm: async () => {
+                resetConfirm();
+                try {
+                    await axiosInstance.delete(`/user/professional-profile/certificates/${id}`);
+                    fetchCertificates();
+                } catch (error) {
+                    console.error("Failed to delete certificate", error);
+                }
+            }
+        });
     };
 
     return (
@@ -185,6 +194,7 @@ const CertificateSection = () => {
                     </div>
                 )}
             </div>
+            <ConfirmModal isOpen={confirm.isOpen} onClose={resetConfirm} onConfirm={confirm.onConfirm} title={confirm.title} message={confirm.message} warning={confirm.warning} confirmText={confirm.confirmText} variant={confirm.variant} />
         </Card>
     );
 };

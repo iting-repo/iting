@@ -2,11 +2,14 @@ import React, { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { FaLock, FaUnlock, FaUserShield, FaClock } from 'react-icons/fa';
 import SEO from '../../../components/common/SEO';
+import { ConfirmModal } from '../../../components/common';
+import useConfirm from '../../../hooks/useConfirm';
 import adminLockService from '../../../services/adminLockService';
 
 const AdminLockedAccountsPage = () => {
   const [accounts, setAccounts] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [confirm, askConfirm, resetConfirm] = useConfirm();
 
   const load = () => {
     setLoading(true);
@@ -18,13 +21,21 @@ const AdminLockedAccountsPage = () => {
 
   useEffect(() => { load(); }, []);
 
-  const handleUnlock = async (acc) => {
-    if (!window.confirm(`Unlock account ${acc.email}?`)) return;
-    try {
-      await adminLockService.unlock(acc.id);
-      toast.success('Đã unlock');
-      load();
-    } catch { toast.error('Lỗi unlock'); }
+  const handleUnlock = (acc) => {
+    askConfirm({
+      title: "Mở khóa tài khoản",
+      message: <p>Bạn có chắc chắn muốn mở khóa tài khoản <span className="font-bold">{acc.email}</span>?</p>,
+      confirmText: "Mở khóa",
+      variant: "info",
+      onConfirm: async () => {
+        resetConfirm();
+        try {
+          await adminLockService.unlock(acc.id);
+          toast.success('Đã mở khóa');
+          load();
+        } catch { toast.error('Lỗi mở khóa'); }
+      }
+    });
   };
 
   return (
@@ -87,6 +98,8 @@ const AdminLockedAccountsPage = () => {
           </div>
         )}
       </div>
+
+      <ConfirmModal isOpen={confirm.isOpen} onClose={resetConfirm} onConfirm={confirm.onConfirm} title={confirm.title} message={confirm.message} warning={confirm.warning} confirmText={confirm.confirmText} variant={confirm.variant} />
     </>
   );
 };
