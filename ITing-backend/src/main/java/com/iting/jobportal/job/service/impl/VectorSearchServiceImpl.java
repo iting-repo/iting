@@ -4,11 +4,11 @@ import com.iting.jobportal.job.entity.Job;
 import com.iting.jobportal.job.repository.JobRepository;
 import com.iting.jobportal.job.service.JobEmbeddingService;
 import com.iting.jobportal.job.service.VectorSearchService;
-import com.iting.jobportal.user.entity.User;
-import com.iting.jobportal.user.repository.UserRepository;
+import com.iting.jobportal.userprofile.repository.CVRepository;
 import com.iting.jobportal.userprofile.service.embedding.EmbeddingClient;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
@@ -29,7 +29,7 @@ public class VectorSearchServiceImpl implements VectorSearchService {
     private final JobRepository jobRepository;
     private final EmbeddingClient embeddingClient;
     private final JobEmbeddingService jobEmbeddingService;
-    private final UserRepository userRepository;
+    private final CVRepository cvRepository;
 
     @Override
     public List<ScoredJobResult> semanticSearch(String queryText, int topK) {
@@ -48,13 +48,13 @@ public class VectorSearchServiceImpl implements VectorSearchService {
 
     @Override
     public List<ScoredJobResult> recommendJobsForCandidate(Long userId, int topK) {
-        Optional<User> userOpt = userRepository.findById(userId);
-        if (userOpt.isEmpty() || userOpt.get().getCvEmbedding() == null) {
+        List<String> embeddings = cvRepository.findActiveCvEmbeddingByProfileId(userId, PageRequest.of(0, 1));
+        if (embeddings.isEmpty()) {
             log.debug("No CV embedding for userId={}, cannot recommend", userId);
             return List.of();
         }
 
-        double[] cvVec = jobEmbeddingService.parseEmbedding(userOpt.get().getCvEmbedding());
+        double[] cvVec = jobEmbeddingService.parseEmbedding(embeddings.get(0));
         if (cvVec == null || cvVec.length == 0) return List.of();
 
         log.info("🤖 Recommending jobs for userId={} (cvVec={}d)", userId, cvVec.length);

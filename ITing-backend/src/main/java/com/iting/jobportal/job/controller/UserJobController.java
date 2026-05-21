@@ -155,6 +155,14 @@ public class UserJobController {
         return jobService.analyzeCvForSearch(cvText);
     }
 
+    @PostMapping(value = "/analyze-cv-file", consumes = org.springframework.http.MediaType.MULTIPART_FORM_DATA_VALUE)
+    @Operation(summary = "Phân tích CV file (PDF/Image) qua AI để tìm việc phù hợp",
+               description = "Forward file qua HF /extract-cv → ghép thành text → Gemini → JobSearchRequest")
+    public com.iting.jobportal.job.dto.request.JobSearchRequest analyzeCvFile(
+            @RequestParam("file") org.springframework.web.multipart.MultipartFile file) {
+        return jobService.analyzeCvFileForSearch(file);
+    }
+
     @GetMapping("/recommended")
     @Operation(summary = "🤖 AI Gợi ý: Việc làm phù hợp với CV của bạn",
                description = "Dựa trên CV embedding của ứng viên, trả về top N jobs có cosine similarity cao nhất")

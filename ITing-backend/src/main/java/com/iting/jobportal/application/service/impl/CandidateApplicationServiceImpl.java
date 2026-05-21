@@ -86,6 +86,7 @@ public class CandidateApplicationServiceImpl implements CandidateApplicationServ
         // 🔥 LINK JOB
         ApplyFormSentToJob sent = ApplyFormSentToJob.builder()
                 .id(new ApplyFormSentToJob.ApplyFormSentToJobId(request.getJobId(), savedForm.getId()))
+                .userId(userId)
                 .build();
 
         ApplyFormSentToJob savedSent = candidateApplicationRepository.save(sent);
@@ -127,25 +128,58 @@ public class CandidateApplicationServiceImpl implements CandidateApplicationServ
                 .orElseThrow(
                         () -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Không tìm thấy liên kết ứng tuyển"));
 
+        // Edge case: đã rút trước đó → idempotent 409
         if (sent.getStatus() == ApplicationStatus.WITHDRAWN) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Đơn ứng tuyển đã được rút trước đó");
         }
 
+        // Edge case: HR đã ra quyết định (accept/reject) → không cho rút nữa
+        if (sent.getStatus() == ApplicationStatus.ACCEPTED) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT,
+                    "Đơn đã được nhà tuyển dụng chấp nhận, không thể rút. Vui lòng liên hệ trực tiếp NTD.");
+        }
+        if (sent.getStatus() == ApplicationStatus.REJECTED) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT,
+                    "Đơn đã bị từ chối, không cần rút nữa.");
+        }
+
+        // Job đã đóng/hết hạn vẫn cho rút để dọn dữ liệu ở phía ứng viên,
+        // chỉ giảm applicationCount nếu job vẫn còn tồn tại.
         sent.setStatus(ApplicationStatus.WITHDRAWN);
         candidateApplicationRepository.save(sent);
 
-        jobRepository.decrementApplicationCount(sent.getId().getJobId());
+        Long jobId = sent.getId().getJobId();
+        if (jobRepository.existsById(jobId)) {
+            jobRepository.decrementApplicationCount(jobId);
+        }
     }
 
     @Override
     public Page<ApplicationResponse> getMyApplications(Long userId, int page, int size) {
+        return getMyApplications(userId, null, page, size);
+    }
+
+    @Override
+    public Page<ApplicationResponse> getMyApplications(Long userId, String status, int page, int size) {
         Pageable pageable = PageRequest.of(page, size, Sort.by("timeSent").descending());
-        return candidateApplicationRepository.findByUserId(userId, pageable)
-                .map(sent -> {
-                    ApplyForm form = applyFormRepository.findById(sent.getId().getApplyFormId())
-                            .orElseThrow(() -> new RuntimeException("ApplyForm not found"));
-                    return applicationMapperUtil.buildFullResponse(form, sent);
-                });
+        Page<com.iting.jobportal.application.entity.ApplyFormSentToJob> data;
+        if (status != null && !status.isBlank() && !"ALL".equalsIgnoreCase(status)) {
+            try {
+                var statusEnum = com.iting.jobportal.application.entity.enums.ApplicationStatus
+                        .valueOf(status.trim().toUpperCase());
+                data = candidateApplicationRepository.findByUserIdAndStatus(userId, statusEnum, pageable);
+            } catch (IllegalArgumentException ex) {
+                // unknown status → return empty rather than error
+                data = Page.empty(pageable);
+            }
+        } else {
+            data = candidateApplicationRepository.findByUserId(userId, pageable);
+        }
+        return data.map(sent -> {
+            ApplyForm form = applyFormRepository.findById(sent.getId().getApplyFormId())
+                    .orElseThrow(() -> new RuntimeException("ApplyForm not found"));
+            return applicationMapperUtil.buildFullResponse(form, sent);
+        });
     }
 
     @Override

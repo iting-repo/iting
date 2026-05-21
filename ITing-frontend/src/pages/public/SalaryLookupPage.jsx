@@ -38,7 +38,7 @@ ChartJS.register(
 const SalaryLookupPage = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const initialKeyword = searchParams.get('keyword') || 'Nhân viên tư vấn';
+  const initialKeyword = searchParams.get('keyword') || 'Lập trình viên';
 
   const [keyword, setKeyword] = useState(initialKeyword);
   const [location, setLocation] = useState('');
@@ -405,7 +405,7 @@ const SalaryLookupPage = () => {
                 </span>
               ))
             ) : (
-              ['Tư vấn tài chính', 'Market Research', 'Nhân viên tư vấn'].map(item => (
+              ['Tư vấn tài chính', 'Market Research', 'Lập trình viên'].map(item => (
                 <span key={item} onClick={() => { setKeyword(item); fetchReport(); }} className="px-4 py-2 bg-gray-100 rounded-full text-xs text-gray-500 font-bold hover:bg-[#E6F6FD] hover:text-[#3AB4E6] cursor-pointer transition-colors">
                   {item}
                 </span>

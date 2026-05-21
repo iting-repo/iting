@@ -3,9 +3,11 @@ import { useDispatch, useSelector } from 'react-redux';
 import { useSearchParams, useParams, Link } from 'react-router-dom';
 import { JobFilters, JobCard, JobPromo } from '../../components';
 import JobPreviewPane from '../../components/JobPreviewModal';
-import { FaChevronRight, FaChevronLeft } from 'react-icons/fa';
+import { FaChevronRight, FaChevronLeft, FaMagic } from 'react-icons/fa';
 import { fetchJobsRequest } from '../../store/job/jobSlice';
 import axiosInstance from '../../utils/axiosInstance';
+import jobService from '../../services/jobService';
+import { toast } from 'sonner';
 
 const PAGE_SIZE = 10;
 
@@ -128,6 +130,11 @@ const JobPage = () => {
 
     const [filters, setFilters] = useState(defaultFilters);
     const [provinces, setProvinces] = useState([]);
+    const [isAiModalOpen, setIsAiModalOpen] = useState(false);
+    const [cvText, setCvText] = useState('');
+    const [cvFile, setCvFile] = useState(null);
+    const [aiMode, setAiMode] = useState('text');
+    const [isAnalyzing, setIsAnalyzing] = useState(false);
 
     useEffect(() => {
         fetch('https://provinces.open-api.vn/api/v2/p/')
@@ -282,15 +289,17 @@ const JobPage = () => {
         <div className="bg-[#F5F7FA] min-h-screen py-8">
             <div className="container mx-auto px-4 max-w-7xl">
                 {/* Breadcrumbs */}
-                <nav className="text-sm mb-6 text-gray-500 flex items-center gap-2">
+                <nav className="text-sm mb-6 text-gray-500 flex items-center gap-2 font-medium">
                     <Link to="/" className="hover:text-[#3AB4E6] transition-colors">Trang chủ</Link>
                     <FaChevronRight className="text-xs text-gray-400" />
-                    <Link to="/jobs" className="hover:text-[#3AB4E6] transition-colors">Việc làm</Link>
-                    {filters.keyword && (
+                    {filters.keyword ? (
                         <>
+                            <Link to="/jobs" className="hover:text-[#3AB4E6] transition-colors">Việc làm</Link>
                             <FaChevronRight className="text-xs text-gray-400" />
-                            <span className="text-gray-800 font-semibold">{filters.keyword}</span>
+                            <span className="text-gray-800 font-bold">{filters.keyword}</span>
                         </>
+                    ) : (
+                        <span className="text-gray-800 font-bold">Việc làm</span>
                     )}
                 </nav>
 
@@ -304,6 +313,14 @@ const JobPage = () => {
                             onReset={handleResetFilters}
                         />
                         <JobPromo />
+
+                        {/* AI Search Button */}
+                        <button
+                            onClick={() => setIsAiModalOpen(true)}
+                            className="w-full mt-4 py-3 bg-gradient-to-r from-[#1E3A8A] to-[#3AB4E6] hover:from-[#1E3A8A] hover:to-[#2a9fd4] text-white font-bold text-sm rounded-xl transition-all flex items-center justify-center gap-2 shadow-md hover:shadow-lg"
+                        >
+                            <FaMagic className="text-yellow-300" /> Tìm việc bằng AI
+                        </button>
                     </div>
 
                     <div className="lg:col-span-9 space-y-6">
@@ -410,6 +427,148 @@ const JobPage = () => {
                     </div>
                 );
             })()}
+
+            {/* ── AI Search Modal ── */}
+            {isAiModalOpen && (
+                <div
+                    className="fixed inset-0 z-[9999] bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4"
+                    onClick={(e) => { if (e.target === e.currentTarget) setIsAiModalOpen(false); }}
+                >
+                    <div className="bg-white w-full max-w-lg rounded-3xl shadow-2xl p-8 animate-in zoom-in-95 duration-200">
+                        <h3 className="text-2xl font-black text-slate-800 mb-2 flex items-center gap-3">
+                            <div className="p-3 bg-gradient-to-br from-[#1E3A8A] to-[#3AB4E6] text-white rounded-2xl">
+                                <FaMagic size={22} />
+                            </div>
+                            Tìm việc bằng AI
+                        </h3>
+                        <p className="text-slate-500 text-sm mb-6 font-medium">
+                            Dán nội dung CV hoặc tải file để AI phân tích và gợi ý việc làm phù hợp nhất.
+                        </p>
+
+                        <div className="flex gap-2 mb-4">
+                            <button
+                                onClick={() => setAiMode('text')}
+                                className={`flex-1 py-2.5 rounded-xl text-sm font-bold transition-all ${
+                                    aiMode === 'text'
+                                        ? 'bg-[#3AB4E6] text-white shadow-md'
+                                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                                }`}
+                            >
+                                Dán nội dung CV
+                            </button>
+                            <button
+                                onClick={() => setAiMode('file')}
+                                className={`flex-1 py-2.5 rounded-xl text-sm font-bold transition-all ${
+                                    aiMode === 'file'
+                                        ? 'bg-[#3AB4E6] text-white shadow-md'
+                                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                                }`}
+                            >
+                                Tải file CV
+                            </button>
+                        </div>
+
+                        {aiMode === 'text' ? (
+                            <textarea
+                                rows="6"
+                                placeholder="Dán nội dung CV của bạn vào đây..."
+                                value={cvText}
+                                onChange={(e) => setCvText(e.target.value)}
+                                className="w-full p-4 bg-slate-50 border-2 border-slate-100 rounded-2xl text-slate-700 font-medium focus:border-[#3AB4E6] outline-none transition-all resize-none text-sm"
+                            />
+                        ) : (
+                            <div className="border-2 border-dashed border-slate-200 rounded-2xl p-6 text-center hover:border-[#3AB4E6] transition-colors">
+                                <input
+                                    type="file"
+                                    accept=".pdf,image/*"
+                                    onChange={(e) => {
+                                        const file = e.target.files?.[0];
+                                        if (!file) return;
+                                        if (file.type !== 'application/pdf' && !file.type.startsWith('image/')) {
+                                            toast.error('Chỉ chấp nhận file PDF hoặc ảnh');
+                                            return;
+                                        }
+                                        if (file.size > 5 * 1024 * 1024) {
+                                            toast.error('Kích thước file tối đa 5MB');
+                                            return;
+                                        }
+                                        setCvFile(file);
+                                    }}
+                                    className="hidden"
+                                    id="ai-cv-upload-jobpage"
+                                />
+                                <label htmlFor="ai-cv-upload-jobpage" className="cursor-pointer">
+                                    <div className="text-4xl mb-2">📄</div>
+                                    <p className="text-sm font-bold text-slate-700">
+                                        {cvFile ? cvFile.name : 'Chọn file CV (PDF, ảnh)'}
+                                    </p>
+                                    <p className="text-xs text-slate-400 mt-1">Tối đa 5MB</p>
+                                </label>
+                            </div>
+                        )}
+
+                        <div className="flex gap-3 mt-6">
+                            <button
+                                onClick={() => { setIsAiModalOpen(false); setCvFile(null); setCvText(''); }}
+                                className="flex-1 py-3.5 bg-slate-100 text-slate-600 font-bold rounded-2xl hover:bg-slate-200 transition-all"
+                            >
+                                Hủy
+                            </button>
+                            <button
+                                onClick={async () => {
+                                    if (aiMode === 'text' && !cvText.trim()) {
+                                        toast.error('Vui lòng dán nội dung CV!');
+                                        return;
+                                    }
+                                    if (aiMode === 'file' && !cvFile) {
+                                        toast.error('Vui lòng chọn file CV!');
+                                        return;
+                                    }
+                                    setIsAnalyzing(true);
+                                    try {
+                                        let criteria;
+                                        if (aiMode === 'file') {
+                                            const formData = new FormData();
+                                            formData.append('file', cvFile);
+                                            const response = await jobService.analyzeCvFile(formData);
+                                            criteria = response.data || response;
+                                        } else {
+                                            const response = await jobService.analyzeCv(cvText);
+                                            criteria = response.data || response;
+                                        }
+                                        const next = {
+                                            ...filters,
+                                            keyword: criteria.keyword || '',
+                                            isAiSearch: true,
+                                            page: 0,
+                                        };
+                                        if (criteria.experienceLevel) {
+                                            next.experienceLevels = [criteria.experienceLevel];
+                                        }
+                                        setFilters(next);
+                                        submitFilters(next);
+                                        toast.success('Đã phân tích CV thành công! Đang tìm việc phù hợp...');
+                                    } catch (error) {
+                                        toast.error(error?.message || 'Phân tích CV thất bại. Vui lòng thử lại!');
+                                    } finally {
+                                        setIsAnalyzing(false);
+                                        setIsAiModalOpen(false);
+                                        setCvFile(null);
+                                    }
+                                }}
+                                disabled={isAnalyzing}
+                                className="flex-[1.5] py-3.5 bg-gradient-to-r from-[#1E3A8A] to-[#3AB4E6] text-white font-bold rounded-2xl hover:shadow-lg shadow-blue-100 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+                            >
+                                {isAnalyzing ? (
+                                    <><span className="animate-spin">⏳</span> Đang phân tích...</>
+                                ) : (
+                                    <><FaMagic className="text-yellow-300" /> Phân tích & Tìm việc</>
+                                )}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

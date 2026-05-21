@@ -8,6 +8,8 @@ import {
   FaSignOutAlt,
   FaSearch,
   FaHeart,
+  FaShieldAlt,
+  FaFileContract,
 } from "react-icons/fa";
 import { useDispatch, useSelector } from "react-redux";
 import { logout } from "../../store/auth/authSlice";
@@ -114,7 +116,7 @@ const EmployerSidebar = () => {
       <ScrollToTop />
       <div className="p-6">
         <h3 className="text-xs font-bold text-gray-400 uppercase mb-4 tracking-wider">
-          Employers
+          Nhà tuyển dụng
         </h3>
         <ul className="space-y-2">
           {menuItems.map((item) => (
@@ -122,10 +124,9 @@ const EmployerSidebar = () => {
               <NavLink
                 to={item.path}
                 className={({ isActive }) =>
-                  `flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-colors ${
-                    isActive
-                      ? "bg-blue-50 text-[#3AB4E6] border-l-4 border-[#3AB4E6]"
-                      : "text-gray-500 hover:bg-gray-50 hover:text-gray-900"
+                  `flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-colors ${isActive
+                    ? "bg-blue-50 text-[#3AB4E6] border-l-4 border-[#3AB4E6]"
+                    : "text-gray-500 hover:bg-gray-50 hover:text-gray-900"
                   }`
                 }
               >

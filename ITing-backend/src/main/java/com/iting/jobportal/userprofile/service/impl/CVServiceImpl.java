@@ -1,5 +1,6 @@
 package com.iting.jobportal.userprofile.service.impl;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.iting.jobportal.common.service.S3Service;
 import com.iting.jobportal.user.entity.User;
 import com.iting.jobportal.user.repository.UserRepository;
@@ -10,6 +11,7 @@ import com.iting.jobportal.userprofile.entity.UserProfile;
 import com.iting.jobportal.userprofile.repository.CVRepository;
 import com.iting.jobportal.userprofile.repository.UserProfileRepository;
 import com.iting.jobportal.userprofile.service.CVService;
+import com.iting.jobportal.userprofile.service.embedding.HuggingFaceCvExtractionClient;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.PageRequest;
@@ -32,13 +34,19 @@ public class CVServiceImpl implements CVService {
     private final UserRepository userRepository;
     private final S3Service s3Service;
     private final EntityManager entityManager;
+    private final HuggingFaceCvExtractionClient hfCvExtractionClient;
+    private final ObjectMapper objectMapper;
 
     private static final int MAX_CVS_PER_USER = 3;
 
     @Override
     @Transactional(readOnly = true)
     public List<CVResponse> getRecentCVs(Long userId) {
-        UserProfile profile = getOrCreateProfile(userId);
+        // Trong transaction read-only, không tạo profile mới — chỉ trả list rỗng nếu chưa có
+        UserProfile profile = userProfileRepository.findById(userId).orElse(null);
+        if (profile == null) {
+            return List.of();
+        }
 
         List<CV> recentCVs = cvRepository.findTop3ByProfileIdOrderByUploadedAtDesc(
                 profile.getId(),
@@ -80,7 +88,43 @@ public class CVServiceImpl implements CVService {
         CV savedCV = cvRepository.save(cv);
         log.info("Successfully uploaded CV for user {}: {}", userId, savedCV.getId());
 
+        // Gọi HF /extract-cv để parse + embed CV. Best-effort: nếu HF lỗi,
+        // CV vẫn lưu thành công, embedding sẽ NULL (có thể retry sau).
+        enrichCvWithAiExtraction(savedCV, file);
+
         return convertToResponse(savedCV);
+    }
+
+    /**
+     * Gọi HF /extract-cv, parse extracted_data + embedding rồi lưu vào CV.
+     * Lỗi từ HF được nuốt (log warning) để không ảnh hưởng tới upload chính.
+     */
+    private void enrichCvWithAiExtraction(CV cv, MultipartFile file) {
+        try {
+            hfCvExtractionClient.extract(file).ifPresent(result -> {
+                if (!result.isSuccess()) {
+                    log.warn("HF extract-cv non-success for cvId={}: status={} error={}",
+                            cv.getId(), result.status(), result.error());
+                    return;
+                }
+                try {
+                    if (result.extractedData() != null) {
+                        cv.setExtractedDataJson(objectMapper.writeValueAsString(result.extractedData()));
+                    }
+                    if (result.embedding() != null && result.embedding().length > 0) {
+                        cv.setCvEmbedding(objectMapper.writeValueAsString(result.embedding()));
+                        cv.setEmbeddingUpdatedAt(LocalDateTime.now());
+                    }
+                    cvRepository.save(cv);
+                    log.info("Enriched cvId={} with HF extraction (dim={})",
+                            cv.getId(), result.embedding() != null ? result.embedding().length : 0);
+                } catch (Exception e) {
+                    log.warn("Failed to persist HF extraction for cvId={}: {}", cv.getId(), e.getMessage());
+                }
+            });
+        } catch (Exception e) {
+            log.warn("HF extract-cv call failed for cvId={}: {}", cv.getId(), e.getMessage());
+        }
     }
 
     @Override

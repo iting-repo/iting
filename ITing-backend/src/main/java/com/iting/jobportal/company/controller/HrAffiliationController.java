@@ -81,6 +81,18 @@ public class HrAffiliationController {
         return ResponseEntity.ok(Map.of("url", url));
     }
 
+    @PostMapping(value = "/consent/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @Operation(summary = "Upload văn bản thỏa thuận xử lý DLCN vào snapshot affiliation")
+    @RateLimited(policy = RateLimitPolicy.FILE_UPLOAD, subject = "user")
+    public ResponseEntity<Map<String, String>> uploadConsent(
+            @Parameter(hidden = true) @CurrentUser Long hrAccountId,
+            @RequestPart("file") MultipartFile file,
+            @RequestPart(value = "confirmed", required = false) String confirmed) {
+        boolean isConfirmed = "true".equalsIgnoreCase(confirmed);
+        String url = affiliationService.uploadConsent(hrAccountId, file, isConfirmed);
+        return ResponseEntity.ok(Map.of("url", url));
+    }
+
     @PostMapping("/submit-review")
     @Operation(summary = "Gửi snapshot cho admin duyệt. Set submissionStatus=PENDING_REVIEW.")
     public ResponseEntity<AffiliationMeResponse> submitReview(
@@ -100,5 +112,12 @@ public class HrAffiliationController {
     public ResponseEntity<Map<String, String>> viewLogo(
             @Parameter(hidden = true) @CurrentUser Long hrAccountId) {
         return ResponseEntity.ok(Map.of("url", affiliationService.getLogoPresignedUrl(hrAccountId, 15)));
+    }
+
+    @GetMapping("/consent/view")
+    @Operation(summary = "Presigned URL self-check cho HR xem lại văn bản thỏa thuận đã upload")
+    public ResponseEntity<Map<String, String>> viewConsent(
+            @Parameter(hidden = true) @CurrentUser Long hrAccountId) {
+        return ResponseEntity.ok(Map.of("url", affiliationService.getConsentPresignedUrl(hrAccountId, 15)));
     }
 }

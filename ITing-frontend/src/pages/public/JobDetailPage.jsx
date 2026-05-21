@@ -21,6 +21,7 @@ import {
     FaUsers,
     FaLayerGroup,
 } from 'react-icons/fa';
+import { FaSearch } from 'react-icons/fa';
 import { toast } from 'sonner';
 import { differenceInDays, formatDistanceToNowStrict, parseISO } from 'date-fns';
 import { vi } from 'date-fns/locale';
@@ -33,7 +34,7 @@ import applicationService from '../../services/applicationService';
 import reportService from '../../services/reportService';
 import axiosInstance from '../../utils/axiosInstance';
 import { storage } from '../../utils/storage';
-import { Breadcrumb, CompanyLogo } from '../../components/common';
+import { Breadcrumb, CompanyLogo, LocationPicker, CategoryPicker } from '../../components/common';
 import {
     getCompanyLogoUrl,
     getJobTitle,
@@ -150,6 +151,9 @@ const JobDetailPage = () => {
     const [isAlreadyFollowing, setIsAlreadyFollowing] = useState(false);
     const [mergedLocation, setMergedLocation] = useState(null);
     const [loadingMerged, setLoadingMerged] = useState(false);
+    const [searchLocation, setSearchLocation] = useState('');
+    const [searchCategory, setSearchCategory] = useState('');
+    const [provinces, setProvinces] = useState([]);
 
     const normalizedJobId = useMemo(() => (id ? normalizeJobKey(id) : null), [id]);
 
@@ -158,6 +162,18 @@ const JobDetailPage = () => {
             dispatch(fetchJobDetailRequest(normalizedJobId));
         }
     }, [dispatch, normalizedJobId]);
+
+    // Fetch provinces for LocationPicker
+    useEffect(() => {
+        const fetchProvinces = async () => {
+            try {
+                const res = await fetch('https://provinces.open-api.vn/api/v2/p/');
+                const data = await res.json();
+                if (Array.isArray(data)) setProvinces(data);
+            } catch { /* silent */ }
+        };
+        fetchProvinces();
+    }, []);
 
     useEffect(() => {
         const checkAppStatus = async () => {
@@ -640,7 +656,7 @@ const JobDetailPage = () => {
     const googleMapEmbedUrl = `https://www.google.com/maps?q=${encodeURIComponent(mapQuery)}&output=embed`;
 
     return (
-        <div className="bg-white min-h-screen py-10">
+        <div className="bg-white min-h-screen">
             <JobApplyModal
                 isOpen={isApplyModalOpen}
                 onClose={() => setIsApplyModalOpen(false)}
@@ -652,7 +668,69 @@ const JobDetailPage = () => {
                 jobId={currentJob.id}
             />
 
-            <div className="container mx-auto px-4 max-w-7xl">
+            {/* ── CTA Search Banner (homepage style) ── */}
+            <div className="bg-gradient-to-r from-[#1E3A8A] via-[#2a7cb8] to-[#3AB4E6] relative overflow-hidden">
+                <div className="absolute inset-0 pointer-events-none">
+                    <div className="absolute -top-1/2 -right-1/4 w-[50%] h-[200%] rounded-full bg-white/[0.04] blur-3xl" />
+                    <div className="absolute bottom-0 left-0 w-1/3 h-full rounded-full bg-cyan-300/10 blur-3xl" />
+                </div>
+                <div className="container mx-auto px-4 max-w-7xl py-4 relative z-10">
+                    <div className="bg-white rounded-lg md:rounded-full p-1 flex flex-col md:flex-row items-center max-w-5xl mx-auto shadow-xl overflow-visible">
+                        {/* Category */}
+                        <div className="w-full md:w-[25%] h-11 flex items-center px-4 relative border-b md:border-b-0 md:border-r border-gray-200">
+                            <CategoryPicker
+                                value={searchCategory}
+                                onChange={(val) => setSearchCategory(val)}
+                            />
+                        </div>
+                        {/* Keyword */}
+                        <div className="flex-1 w-full md:w-auto h-11 px-4 flex items-center border-b md:border-b-0 md:border-r border-gray-200">
+                            <FaSearch className="text-gray-400 mr-2 flex-shrink-0 text-sm" />
+                            <input
+                                id="jd-search-keyword"
+                                type="text"
+                                placeholder="Vị trí tuyển dụng, tên công ty"
+                                className="w-full outline-none text-gray-700 text-sm placeholder-gray-400"
+                                onKeyDown={(e) => {
+                                    if (e.key === 'Enter') {
+                                        const params = new URLSearchParams();
+                                        const finalKeyword = [searchCategory, e.target.value.trim()].filter(Boolean).join(' ');
+                                        if (finalKeyword) params.append('keyword', finalKeyword);
+                                        if (searchLocation) params.append('location', searchLocation);
+                                        navigate(`/jobs?${params.toString()}`);
+                                    }
+                                }}
+                            />
+                        </div>
+                        {/* Location */}
+                        <div className="w-full md:w-[30%] h-11 px-4 flex items-center border-b md:border-b-0 md:border-r border-gray-200 relative">
+                            <FaMapMarkerAlt className="text-gray-400 mr-2 flex-shrink-0 text-sm" />
+                            <LocationPicker
+                                value={searchLocation}
+                                onChange={(val) => setSearchLocation(val)}
+                                provinces={provinces}
+                            />
+                        </div>
+                        {/* Button */}
+                        <button
+                            onClick={() => {
+                                const keywordInput = document.querySelector('#jd-search-keyword');
+                                const keyword = keywordInput?.value?.trim() || '';
+                                const finalKeyword = [searchCategory, keyword].filter(Boolean).join(' ');
+                                const params = new URLSearchParams();
+                                if (finalKeyword) params.append('keyword', finalKeyword);
+                                if (searchLocation) params.append('location', searchLocation);
+                                navigate(`/jobs?${params.toString()}`);
+                            }}
+                            className="w-full md:w-auto bg-[#3AB4E6] hover:bg-[#2a9fd4] text-white px-6 py-2.5 rounded-b-lg md:rounded-r-full md:rounded-bl-none font-bold text-sm transition-all flex items-center justify-center gap-2"
+                        >
+                            <FaSearch className="text-xs" /> Tìm kiếm
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div className="container mx-auto px-4 max-w-7xl pt-6 pb-10">
                 <Breadcrumb
                     items={[
                         { label: 'Tìm việc làm', link: '/jobs' },
@@ -767,10 +845,10 @@ const JobDetailPage = () => {
                                     onClick={() => !hasApplied && !isCompanySuspended && setIsApplyModalOpen(true)}
                                     disabled={hasApplied || isCompanySuspended}
                                     className={`flex-1 py-3 font-bold rounded-lg shadow-md transition-all transform ${isCompanySuspended
+                                        ? 'bg-gray-100 text-gray-400 cursor-not-allowed border border-gray-200'
+                                        : hasApplied
                                             ? 'bg-gray-100 text-gray-400 cursor-not-allowed border border-gray-200'
-                                            : hasApplied
-                                                ? 'bg-gray-100 text-gray-400 cursor-not-allowed border border-gray-200'
-                                                : 'bg-[#00B4D8] text-white hover:bg-[#0096B4] hover:-translate-y-0.5'
+                                            : 'bg-[#00B4D8] text-white hover:bg-[#0096B4] hover:-translate-y-0.5'
                                         }`}
                                 >
                                     {isCompanySuspended ? 'Không khả dụng' : hasApplied ? 'Đã Ứng Tuyển' : 'Ứng Tuyển Ngay'}
@@ -780,8 +858,8 @@ const JobDetailPage = () => {
                                     onClick={isCompanySuspended ? undefined : handleToggleSave}
                                     disabled={isSaving || isCompanySuspended}
                                     className={`px-4 py-3 border border-gray-200 rounded-lg transition-colors ${isCompanySuspended
-                                            ? 'text-gray-300 cursor-not-allowed'
-                                            : isSaved ? 'text-blue-500 bg-blue-50 hover:bg-gray-50' : 'text-gray-400 hover:bg-gray-50'
+                                        ? 'text-gray-300 cursor-not-allowed'
+                                        : isSaved ? 'text-blue-500 bg-blue-50 hover:bg-gray-50' : 'text-gray-400 hover:bg-gray-50'
                                         }`}
                                 >
                                     {isSaved ? <FaBookmark size={20} /> : <FaRegBookmark size={20} />}
@@ -1179,6 +1257,19 @@ const JobDetailPage = () => {
                                 />
                             </div>
                         </div>
+
+                        {/* ── CTA Banners ── */}
+                        <div className="space-y-3">
+                            <Link to="/blogs" className="group block rounded-xl overflow-hidden border border-gray-100 hover:shadow-lg hover:border-[#3AB4E6]/30 transition-all bg-white">
+                                <img src="/blog-cta-removebg-preview.png" alt="Blog nghề nghiệp" className="w-full h-auto object-contain group-hover:scale-[1.03] transition-transform duration-300" />
+                            </Link>
+                            <Link to="/salary-lookup" className="group block rounded-xl overflow-hidden border border-gray-100 hover:shadow-lg hover:border-[#3AB4E6]/30 transition-all bg-white">
+                                <img src="/salary-cta-removebg-preview.png" alt="Tra cứu lương" className="w-full h-auto object-contain group-hover:scale-[1.03] transition-transform duration-300" />
+                            </Link>
+                            <Link to="/jobs" className="group block rounded-xl overflow-hidden border border-gray-100 hover:shadow-lg hover:border-[#3AB4E6]/30 transition-all bg-white">
+                                <img src="/cta-ai-removebg-preview.png" alt="AI gợi ý việc làm" className="w-full h-auto object-contain group-hover:scale-[1.03] transition-transform duration-300" />
+                            </Link>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -1223,16 +1314,14 @@ const JobDetailPage = () => {
                                     }
                                 }}
                                 disabled={isFollowingCompany}
-                                className={`w-full p-5 rounded-2xl border-2 text-left transition-all group ${
-                                    isAlreadyFollowing
-                                        ? 'border-green-200 bg-green-50 hover:border-green-300'
-                                        : 'border-slate-100 bg-slate-50 hover:border-[#00B4D8] hover:bg-[#E6F6FD]'
-                                } disabled:opacity-50`}
+                                className={`w-full p-5 rounded-2xl border-2 text-left transition-all group ${isAlreadyFollowing
+                                    ? 'border-green-200 bg-green-50 hover:border-green-300'
+                                    : 'border-slate-100 bg-slate-50 hover:border-[#00B4D8] hover:bg-[#E6F6FD]'
+                                    } disabled:opacity-50`}
                             >
                                 <div className="flex items-center gap-4">
-                                    <div className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 ${
-                                        isAlreadyFollowing ? 'bg-green-100 text-green-600' : 'bg-white text-[#00B4D8] shadow-sm'
-                                    }`}>
+                                    <div className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 ${isAlreadyFollowing ? 'bg-green-100 text-green-600' : 'bg-white text-[#00B4D8] shadow-sm'
+                                        }`}>
                                         <FaUsers size={20} />
                                     </div>
                                     <div className="flex-1 min-w-0">

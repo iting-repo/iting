@@ -29,6 +29,8 @@ public interface AdminAffiliationService {
 
     String getLogoPresignedUrl(Long affiliationId, int expiryMinutes);
 
+    String getConsentPresignedUrl(Long affiliationId, int expiryMinutes);
+
     AdminAffiliationResponse approve(Long affiliationId, Long adminAccountId);
 
     AdminAffiliationResponse reject(Long affiliationId, Long adminAccountId, String reason);

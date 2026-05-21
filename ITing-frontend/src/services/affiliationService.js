@@ -65,6 +65,21 @@ const affiliationService = {
   },
 
   /**
+   * Upload văn bản thỏa thuận xử lý DLCN vào snapshot affiliation.
+   * @param {File} file
+   * @param {boolean} confirmed — HR đã tick cam đoan
+   * @returns {Promise<{ url: string }>}
+   */
+  uploadConsent: async (file, confirmed) => {
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("confirmed", String(Boolean(confirmed)));
+    return await axiosInstance.post("/hr/affiliations/me/consent/upload", formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+  },
+
+  /**
    * Gửi snapshot cho admin duyệt. Set submissionStatus=PENDING_REVIEW.
    * Lần đầu (status=INCOMPLETE/REJECTED) → status=PENDING.
    */
@@ -84,6 +99,13 @@ const affiliationService = {
    */
   getLogoPresignedUrl: async () => {
     return await axiosInstance.get("/hr/affiliations/me/logo/view");
+  },
+
+  /**
+   * Presigned URL self-check cho HR xem lại văn bản thỏa thuận đã upload (15 phút).
+   */
+  getConsentPresignedUrl: async () => {
+    return await axiosInstance.get("/hr/affiliations/me/consent/view");
   },
 };
 

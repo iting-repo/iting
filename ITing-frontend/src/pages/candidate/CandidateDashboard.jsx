@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import axiosInstance from '../../utils/axiosInstance';
-import { FaBookmark, FaBell, FaArrowRight, FaCheck } from 'react-icons/fa';
+import { FaBookmark, FaBell, FaArrowRight, FaCheck, FaCompass } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
+import JobCard from '../../components/JobCard';
+import recommendationService from '../../services/recommendationService';
 
 const CandidateDashboard = () => {
   const navigate = useNavigate();
@@ -14,6 +16,8 @@ const CandidateDashboard = () => {
   const [profileCompleted, setProfileCompleted] = useState(false);
   const [profileCompletionPercent, setProfileCompletionPercent] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [recommendedJobs, setRecommendedJobs] = useState([]);
+  const [recLoading, setRecLoading] = useState(true);
 
   useEffect(() => {
     const fetchDashboardStats = async () => {
@@ -33,7 +37,21 @@ const CandidateDashboard = () => {
       }
     };
 
+    // Gợi ý việc làm — luôn hoạt động bất kể trạng thái openToWork của ứng viên.
+    const fetchRecommendations = async () => {
+      try {
+        const data = await recommendationService.getHomepageRecommendations(6);
+        setRecommendedJobs(Array.isArray(data) ? data : []);
+      } catch (error) {
+        console.error("Failed to fetch job recommendations:", error);
+        setRecommendedJobs([]);
+      } finally {
+        setRecLoading(false);
+      }
+    };
+
     fetchDashboardStats();
+    fetchRecommendations();
   }, []);
 
   return (
@@ -94,6 +112,51 @@ const CandidateDashboard = () => {
         </div>
       )}
 
+      {/* SECTION: Gợi ý việc làm dành cho bạn */}
+      <div className="mb-10">
+        <div className="flex justify-between items-center mb-6">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-[#3AB4E6]/10 flex items-center justify-center text-[#3AB4E6]">
+              <FaCompass className="text-lg" />
+            </div>
+            <div>
+              <h2 className="text-lg font-bold text-gray-800">Gợi ý việc làm dành cho bạn</h2>
+              <p className="text-xs text-gray-500">Phù hợp với hồ sơ và lịch sử tìm kiếm của bạn</p>
+            </div>
+          </div>
+          <button
+            onClick={() => navigate('/jobs')}
+            className="text-gray-500 text-sm hover:text-[#3AB4E6] flex items-center gap-1 transition-colors"
+          >
+            Xem tất cả <FaArrowRight size={12} />
+          </button>
+        </div>
+
+        {recLoading ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {[...Array(4)].map((_, i) => (
+              <div key={i} className="h-40 rounded-xl bg-gray-50 border border-gray-100 animate-pulse" />
+            ))}
+          </div>
+        ) : recommendedJobs.length === 0 ? (
+          <div className="rounded-xl border border-dashed border-gray-200 bg-gray-50/50 p-10 text-center">
+            <p className="text-gray-500 text-sm">Chưa có gợi ý phù hợp. Cập nhật hồ sơ để nhận đề xuất tốt hơn.</p>
+            <button
+              onClick={() => navigate('/jobs')}
+              className="mt-3 inline-flex items-center gap-2 text-[#3AB4E6] hover:text-[#2a8ab3] text-sm font-semibold"
+            >
+              Khám phá tất cả việc làm <FaArrowRight size={12} />
+            </button>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {recommendedJobs.map((job) => (
+              <JobCard key={job.id} job={job} />
+            ))}
+          </div>
+        )}
+      </div>
+
       {/* TABLE: Ứng tuyển gần đây */}
       <div>
          <div className="flex justify-between items-center mb-6">
@@ -139,9 +202,21 @@ const CandidateDashboard = () => {
                         </td>
                         <td className="p-4 text-gray-500">{app.appliedAt ? new Date(app.appliedAt).toLocaleDateString('vi-VN') : ''}</td>
                         <td className="p-4">
-                           <span className="inline-flex items-center gap-1.5 text-green-600 font-medium px-3 py-1 rounded-full bg-green-50 border border-green-100 text-xs">
-                              <FaCheck size={10} /> {app.status}
-                           </span>
+                           {(() => {
+                              const statusMap = {
+                                 PENDING: { label: 'Đang chờ', color: 'text-yellow-700 bg-yellow-50 border-yellow-200' },
+                                 ACCEPTED: { label: 'Đã chấp nhận', color: 'text-green-700 bg-green-50 border-green-200' },
+                                 REJECTED: { label: 'Bị từ chối', color: 'text-red-600 bg-red-50 border-red-200' },
+                                 VIEWED: { label: 'Đã xem', color: 'text-blue-600 bg-blue-50 border-blue-200' },
+                                 WITHDRAWN: { label: 'Đã rút', color: 'text-gray-500 bg-gray-50 border-gray-200' },
+                              };
+                              const s = statusMap[app.status] || { label: app.status, color: 'text-gray-600 bg-gray-50 border-gray-200' };
+                              return (
+                                 <span className={`inline-flex items-center gap-1.5 font-medium px-3 py-1 rounded-full border text-xs ${s.color}`}>
+                                    <FaCheck size={10} /> {s.label}
+                                 </span>
+                              );
+                           })()}
                         </td>
                         <td className="p-4 text-right">
                            <button className="bg-gray-100 hover:bg-[#3AB4E6] hover:text-white text-gray-600 text-xs font-bold px-4 py-2.5 rounded-lg transition-all shadow-sm">

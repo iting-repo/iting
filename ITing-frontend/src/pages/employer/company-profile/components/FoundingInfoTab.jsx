@@ -19,6 +19,7 @@ import affiliationService from "../../../../services/affiliationService";
 import { toast } from "sonner";
 import AppModal from "../../../../components/common/AppModal";
 import axiosInstance from "../../../../utils/axiosInstance";
+import { Upload, AlertTriangle as LuAlertTriangle, FileText, CheckCircle as LuCheckCircle, Download } from "lucide-react";
 
 const STATUS_CONFIG = {
   PENDING_REVIEW: {
@@ -146,6 +147,19 @@ const FoundingInfoTab = ({ onTabChange }) => {
   const [logoPreview, setLogoPreview] = useState(null);
   const [imageError, setImageError] = useState(false);
 
+  // === Verification (GPKD) states ===
+  const [licenseFile, setLicenseFile] = useState(null);
+  const [licensePreviewUrl, setLicensePreviewUrl] = useState(null);
+  const [serverLicenseUrl, setServerLicenseUrl] = useState(null);
+  const [licenseError, setLicenseError] = useState("");
+  const [licenseSubmitting, setLicenseSubmitting] = useState(false);
+
+  // === DataProcessing (Thỏa thuận dữ liệu) states ===
+  const [consentFile, setConsentFile] = useState(null);
+  const [consentAgreed, setConsentAgreed] = useState(false);
+  const [consentErrors, setConsentErrors] = useState({});
+  const [consentSubmitting, setConsentSubmitting] = useState(false);
+
   const fetchData = async () => {
     try {
       setLoading(true);
@@ -182,6 +196,17 @@ const FoundingInfoTab = ({ onTabChange }) => {
       if (companyData) {
         setCompany(companyData);
         setVerificationLevel(companyData.verificationLevel || "UNVERIFIED");
+
+        // Fetch license preview URL
+        const licUrl = aff?.submittedLicenseUrl || companyData?.businessLicenseFileUrl;
+        if (licUrl) {
+          try {
+            const res = aff?.submittedLicenseUrl
+              ? await affiliationService.getLicensePresignedUrl()
+              : await companyService.getBusinessLicensePresignedUrl();
+            setServerLicenseUrl(res?.url || null);
+          } catch (_) { /* ignore */ }
+        }
 
         // Phase 5: ưu tiên dùng snapshot affiliation (HR đã sửa nhưng chưa apply lên Company)
         // fallback về Company info nếu snapshot trống.
@@ -492,6 +517,99 @@ const FoundingInfoTab = ({ onTabChange }) => {
     }
   };
 
+  // === Verification (GPKD) handlers ===
+  const licenseStatusMap = {
+    NONE: { label: "Chưa bắt đầu", color: "bg-gray-100 text-gray-500" },
+    DRAFT: { label: "Đang soạn", color: "bg-gray-100 text-gray-500" },
+    MISSING: { label: "Chưa cập nhật", color: "bg-gray-100 text-gray-500" },
+    UPLOADED: { label: "Đã tải lên", color: "bg-blue-100 text-blue-600" },
+    PENDING_REVIEW: { label: "Đang chờ duyệt", color: "bg-amber-100 text-amber-600" },
+    APPROVED: { label: "Đã xác thực", color: "bg-emerald-100 text-emerald-600" },
+    REJECTED: { label: "Bị từ chối", color: "bg-red-100 text-red-600" },
+  };
+  const licenseSubmissionState = affiliation?.submissionStatus || company?.documentReviewStatus;
+  const currentLicenseStatus = licenseStatusMap[licenseSubmissionState] || licenseStatusMap.MISSING;
+
+  const handleLicenseFileChange = (e) => {
+    const f = e.target.files?.[0];
+    if (!f) return;
+    if (f.size > 5 * 1024 * 1024) { setLicenseError("Dung lượng tối đa 5MB"); return; }
+    const valid = ["image/jpeg", "image/jpg", "image/png", "application/pdf"];
+    if (!valid.includes(f.type)) { setLicenseError("Định dạng cho phép: jpeg, jpg, png, pdf"); return; }
+    setLicenseFile(f);
+    setLicensePreviewUrl(URL.createObjectURL(f));
+    setLicenseError("");
+  };
+
+  const handleLicenseSubmitReview = async () => {
+    try {
+      setLicenseSubmitting(true);
+      if (licenseFile) {
+        await companyService.uploadBusinessLicense(licenseFile);
+        setLicenseFile(null);
+        setLicensePreviewUrl(null);
+      }
+      await companyService.submitBusinessLicenseReview();
+      toast.success("Giấy phép kinh doanh đã được gửi đi xét duyệt!");
+      await fetchData();
+    } catch (err) {
+      toast.error(err?.response?.data?.error || err?.response?.data?.message || "Không thể gửi duyệt.");
+    } finally {
+      setLicenseSubmitting(false);
+    }
+  };
+
+  const activeLicensePreview = licensePreviewUrl || serverLicenseUrl;
+  const activeLicenseFilename = licenseFile?.name || (() => {
+    const url = company?.businessLicenseFileUrl;
+    if (!url) return null;
+    try { return decodeURIComponent(url.split('/').pop().split('?')[0]); } catch { return url; }
+  })();
+  const isLicensePdf = activeLicenseFilename?.toLowerCase().endsWith('.pdf');
+
+  // === DataProcessing (Thỏa thuận dữ liệu) handlers ===
+  const consentStatusMap = {
+    MISSING: { label: "Chưa cập nhật", color: "bg-gray-100 text-gray-500" },
+    UPLOADED: { label: "Đã tải lên", color: "bg-blue-100 text-blue-600" },
+    PENDING_REVIEW: { label: "Đang chờ duyệt", color: "bg-amber-100 text-amber-600" },
+    APPROVED: { label: "Đã duyệt", color: "bg-emerald-100 text-emerald-600" },
+    REJECTED: { label: "Bị từ chối", color: "bg-red-100 text-red-600" },
+  };
+  const currentConsentStatus = consentStatusMap[company?.documentReviewStatus] || consentStatusMap.MISSING;
+
+  const handleConsentFileChange = (e) => {
+    const f = e.target.files?.[0];
+    if (!f) return;
+    if (f.size > 5 * 1024 * 1024) { setConsentErrors({ file: "Dung lượng tối đa 5MB" }); return; }
+    const valid = ["application/vnd.openxmlformats-officedocument.wordprocessingml.document", "application/msword", "application/pdf"];
+    if (!valid.includes(f.type) && !f.name.endsWith('.docx') && !f.name.endsWith('.doc')) {
+      setConsentErrors({ file: "Định dạng cho phép: docx, doc, pdf" }); return;
+    }
+    setConsentFile(f);
+    setConsentErrors({});
+  };
+
+  const handleConsentSave = async () => {
+    const errs = {};
+    if (!consentFile && !company?.consentDocumentFileUrl) errs.file = "Vui lòng chọn file để tải lên";
+    if (!consentAgreed) errs.agreed = "Vui lòng xác nhận cam đoan";
+    setConsentErrors(errs);
+    if (Object.keys(errs).length > 0) return;
+    try {
+      setConsentSubmitting(true);
+      if (consentFile) await companyService.uploadConsentDocument(consentFile, consentAgreed);
+      await companyService.submitConsentDocumentReview();
+      toast.success("Văn bản thỏa thuận đã được gửi đi xét duyệt!");
+      setConsentFile(null);
+      setConsentAgreed(false);
+      await fetchData();
+    } catch (err) {
+      toast.error(err?.response?.data?.message || err?.response?.data?.error || "Gửi duyệt thất bại.");
+    } finally {
+      setConsentSubmitting(false);
+    }
+  };
+
   const renderIndustries = (industries = []) => {
     if (!industries.length) return "Chưa có thông tin";
 
@@ -520,7 +638,7 @@ const FoundingInfoTab = ({ onTabChange }) => {
         openCreateRequestModal();
         break;
       case 2:
-        navigate('/employer/verification');
+        onTabChange?.('verification');
         break;
       default:
         break;

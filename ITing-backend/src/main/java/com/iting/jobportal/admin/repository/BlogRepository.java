@@ -20,8 +20,8 @@ public interface BlogRepository extends JpaRepository<Blog, Long> {
     boolean existsBySlug(String slug);
 
     @Query("SELECT b FROM Blog b WHERE " +
-           "(CAST(:keyword AS text) IS NULL OR LOWER(CAST(b.title AS text)) LIKE LOWER(CONCAT('%', CAST(:keyword AS text), '%'))) AND " +
-           "(CAST(:status AS text) IS NULL OR b.status = :status)")
+           "(:keyword IS NULL OR :keyword = '' OR LOWER(b.title) LIKE LOWER(CONCAT('%', :keyword, '%'))) AND " +
+           "(:status IS NULL OR :status = '' OR b.status = :status)")
     Page<Blog> searchBlogs(
             @Param("keyword") String keyword,
             @Param("status") String status,

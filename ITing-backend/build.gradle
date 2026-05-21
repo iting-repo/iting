@@ -112,3 +112,15 @@ dependencies {
 tasks.named('test') {
 	useJUnitPlatform()
 }
+
+// ═══ UTF-8 Encoding (hỗ trợ tiếng Việt trên Windows) ═══
+compileJava.options.encoding = 'UTF-8'
+compileTestJava.options.encoding = 'UTF-8'
+
+tasks.withType(JavaExec).configureEach {
+	jvmArgs '-Dfile.encoding=UTF-8', '-Dsun.jnu.encoding=UTF-8'
+}
+
+bootRun {
+	jvmArgs '-Dfile.encoding=UTF-8', '-Dsun.jnu.encoding=UTF-8'
+}

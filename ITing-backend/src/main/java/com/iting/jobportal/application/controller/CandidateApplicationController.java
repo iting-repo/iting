@@ -42,6 +42,7 @@ public class CandidateApplicationController {
 
     @PostMapping("/{id}/withdraw")
     @Operation(summary = "Rút đơn ứng tuyển")
+    @RateLimited(policy = RateLimitPolicy.WITHDRAW_APP, subject = "user")
     public ResponseEntity<?> withdrawApplication(
             @CurrentUser Long userId,
             @PathVariable Long id) {
@@ -53,9 +54,10 @@ public class CandidateApplicationController {
     @Operation(summary = "Xem danh sách đơn đã nộp (Ứng viên)")
     public ResponseEntity<Page<ApplicationResponse>> getMyApplications(
             @CurrentUser Long userId,
+            @RequestParam(required = false) String status,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
-        return ResponseEntity.ok(candidateApplicationService.getMyApplications(userId, page, size));
+        return ResponseEntity.ok(candidateApplicationService.getMyApplications(userId, status, page, size));
     }
 
     @GetMapping("/check/{jobId}")

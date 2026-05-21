@@ -1,32 +1,62 @@
-import React, { useState, useEffect } from 'react';
-import { FaCheck, FaArrowLeft, FaArrowRight, FaClock, FaTimes, FaEye, FaEnvelope, FaBan } from 'react-icons/fa';
-import { useNavigate, Link } from 'react-router-dom';
+import React, { useState, useEffect, useCallback } from 'react';
+import { FaCheck, FaClock, FaTimes, FaEye, FaEnvelope, FaBan, FaUndo } from 'react-icons/fa';
+import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { buildJobDetailPath } from '../../utils/jobUrl';
-import axiosInstance from '../../utils/axiosInstance';
+import applicationService from '../../services/applicationService';
 import messageService from '../../services/messageService';
 import { toast } from 'sonner';
+import { Pagination, FilterBar } from '../../components/common';
+
+const PAGE_SIZE = 10;
+
+const STATUS_FILTERS = [
+  { value: '', label: 'Tất cả' },
+  { value: 'PENDING', label: 'Chờ xử lý' },
+  { value: 'VIEWED', label: 'Đã xem' },
+  { value: 'ACCEPTED', label: 'Đã duyệt' },
+  { value: 'REJECTED', label: 'Từ chối' },
+  { value: 'WITHDRAWN', label: 'Đã rút' },
+];
+
+// Cooldown 10s giữa các lần bấm rút (chống misclick) — backend cũng giới hạn 5 req / 5 phút.
+const WITHDRAW_COOLDOWN_MS = 10_000;
 
 const AppliedJobs = () => {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
+
   const [applications, setApplications] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(0);
   const [totalElements, setTotalElements] = useState(0);
   const [chatLoadingId, setChatLoadingId] = useState(null);
-  const itemsPerPage = 5;
+  const [withdrawLoadingId, setWithdrawLoadingId] = useState(null);
+  const [lastWithdrawAt, setLastWithdrawAt] = useState(0);
+
+  const currentPage = Number(searchParams.get('page')) || 1;
+  const statusFilter = searchParams.get('status') || '';
+
+  const updateParam = useCallback((key, value) => {
+    const next = new URLSearchParams(searchParams);
+    if (value && value !== '') next.set(key, value);
+    else next.delete(key);
+    if (key !== 'page') next.delete('page');
+    setSearchParams(next, { replace: true });
+  }, [searchParams, setSearchParams]);
 
   useEffect(() => {
     const fetchApplications = async () => {
       try {
         setLoading(true);
-        const response = await axiosInstance.get('/candidates/applications/my-applications', {
-          params: { page: currentPage - 1, size: itemsPerPage },
+        const response = await applicationService.getMyApplications({
+          page: currentPage - 1,
+          size: PAGE_SIZE,
+          ...(statusFilter ? { status: statusFilter } : {}),
         });
-        const content = response?.content || response?.data?.content || [];
-        setApplications(content);
-        setTotalPages(response?.totalPages || response?.data?.totalPages || 0);
-        setTotalElements(response?.totalElements || response?.data?.totalElements || 0);
+        const payload = response?.data ?? response;
+        setApplications(payload?.content || []);
+        setTotalPages(payload?.totalPages || 0);
+        setTotalElements(payload?.totalElements || 0);
       } catch (error) {
         console.error('Failed to fetch applications:', error);
         setApplications([]);
@@ -36,7 +66,7 @@ const AppliedJobs = () => {
     };
 
     fetchApplications();
-  }, [currentPage]);
+  }, [currentPage, statusFilter]);
 
   const getStatusStyle = (status) => {
     switch (status) {
@@ -44,6 +74,7 @@ const AppliedJobs = () => {
       case 'ACCEPTED': return 'bg-green-50 text-green-600 border-green-100';
       case 'REJECTED': return 'bg-red-50 text-red-600 border-red-100';
       case 'VIEWED': return 'bg-blue-50 text-blue-600 border-blue-100';
+      case 'WITHDRAWN': return 'bg-gray-100 text-gray-500 border-gray-200';
       default: return 'bg-gray-50 text-gray-600 border-gray-100';
     }
   };
@@ -53,6 +84,7 @@ const AppliedJobs = () => {
       case 'ACCEPTED': return <FaCheck size={10} />;
       case 'REJECTED': return <FaTimes size={10} />;
       case 'VIEWED': return <FaEye size={10} />;
+      case 'WITHDRAWN': return <FaUndo size={10} />;
       default: return <FaClock size={10} />;
     }
   };
@@ -63,7 +95,57 @@ const AppliedJobs = () => {
       case 'ACCEPTED': return 'Đã duyệt';
       case 'REJECTED': return 'Từ chối';
       case 'VIEWED': return 'Đã xem';
+      case 'WITHDRAWN': return 'Đã rút';
       default: return status || 'Không rõ';
+    }
+  };
+
+  // Chỉ cho rút khi đơn ở trạng thái PENDING/VIEWED (HR chưa quyết định).
+  const canWithdraw = (status) => status === 'PENDING' || status === 'VIEWED';
+
+  const handleWithdraw = async (app) => {
+    if (!canWithdraw(app.status)) return;
+
+    const now = Date.now();
+    const sinceLast = now - lastWithdrawAt;
+    if (sinceLast < WITHDRAW_COOLDOWN_MS) {
+      const remain = Math.ceil((WITHDRAW_COOLDOWN_MS - sinceLast) / 1000);
+      toast.warning(`Vui lòng đợi ${remain}s trước khi rút đơn tiếp theo.`);
+      return;
+    }
+
+    const ok = window.confirm(
+      `Bạn chắc chắn muốn rút đơn ứng tuyển "${app.jobTitle || ''}" tại ${app.companyName || 'NTD'}? Hành động này không thể hoàn tác.`
+    );
+    if (!ok) return;
+
+    try {
+      setWithdrawLoadingId(app.id);
+      setLastWithdrawAt(now);
+      await applicationService.withdrawApplication(app.id);
+      // Cập nhật state tại chỗ thay vì fetch lại (UX mượt hơn)
+      setApplications((prev) =>
+        prev.map((a) => (a.id === app.id ? { ...a, status: 'WITHDRAWN' } : a))
+      );
+      toast.success('Đã rút đơn ứng tuyển thành công.');
+    } catch (error) {
+      const status = error?.response?.status;
+      const msg = error?.response?.data?.message || error?.message;
+      if (status === 409) {
+        toast.error(msg || 'Không thể rút đơn ở trạng thái hiện tại.');
+      } else if (status === 429) {
+        toast.error('Bạn thao tác quá nhanh, vui lòng thử lại sau ít phút.');
+      } else if (status === 403) {
+        toast.error('Bạn không có quyền rút đơn này.');
+      } else if (status === 404) {
+        toast.error('Đơn ứng tuyển không còn tồn tại.');
+      } else {
+        toast.error(msg || 'Rút đơn thất bại, vui lòng thử lại.');
+      }
+      // Cho phép thử lại sớm hơn khi gặp lỗi (trừ 429 do BE đã chặn)
+      if (status !== 429) setLastWithdrawAt(0);
+    } finally {
+      setWithdrawLoadingId(null);
     }
   };
 
@@ -96,7 +178,14 @@ const AppliedJobs = () => {
         Công việc đã ứng tuyển <span className="text-gray-400 font-normal text-lg">({totalElements})</span>
       </h2>
 
-      <div className="overflow-x-auto rounded-lg border border-gray-100 mb-8">
+      <FilterBar
+        filters={[{ key: 'status', label: 'Trạng thái', options: STATUS_FILTERS }]}
+        values={{ status: statusFilter }}
+        onChange={updateParam}
+        onReset={() => setSearchParams({}, { replace: true })}
+      />
+
+      <div className="overflow-x-auto rounded-lg border border-gray-100 mb-6">
         <table className="w-full text-left border-collapse">
           <thead className="bg-gray-50 text-gray-500 text-xs uppercase font-semibold">
             <tr>
@@ -110,7 +199,9 @@ const AppliedJobs = () => {
             {loading ? (
               <tr><td colSpan="4" className="p-8 text-center text-gray-500">Đang tải...</td></tr>
             ) : applications.length === 0 ? (
-              <tr><td colSpan="4" className="p-8 text-center text-gray-500">Bạn chưa ứng tuyển công việc nào.</td></tr>
+              <tr><td colSpan="4" className="p-8 text-center text-gray-500">
+                {statusFilter ? `Không có đơn ứng tuyển nào ở trạng thái "${getStatusLabel(statusFilter)}".` : 'Bạn chưa ứng tuyển công việc nào.'}
+              </td></tr>
             ) : (
               applications.map((app) => {
                 const isUnavailable = app.companyActive === false;
@@ -153,8 +244,18 @@ const AppliedJobs = () => {
                       >
                         <FaEnvelope size={11} /> {isUnavailable ? 'Không khả dụng' : chatLoadingId === app.id ? 'Đang mở...' : 'Nhắn tin NTD'}
                       </button>
-                        <Link to={buildJobDetailPath({ 
-                          id: app.jobId, 
+                      {canWithdraw(app.status) && (
+                        <button
+                          onClick={() => handleWithdraw(app)}
+                          disabled={withdrawLoadingId === app.id}
+                          title="Rút đơn ứng tuyển (chỉ áp dụng khi NTD chưa duyệt/từ chối)"
+                          className="text-xs font-bold px-4 py-2.5 rounded-lg transition-all shadow-sm inline-flex items-center gap-2 bg-red-50 hover:bg-red-500 hover:text-white text-red-500 border border-red-100 disabled:opacity-60"
+                        >
+                          <FaUndo size={11} /> {withdrawLoadingId === app.id ? 'Đang rút...' : 'Rút hồ sơ'}
+                        </button>
+                      )}
+                      <Link to={buildJobDetailPath({
+                          id: app.jobId,
                           title: app.jobTitle,
                           jobKey: app.jobKey
                         })}
@@ -176,22 +277,14 @@ const AppliedJobs = () => {
         </table>
       </div>
 
-      {totalPages > 1 && (
-        <div className="flex justify-center items-center gap-2">
-          <button onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))} disabled={currentPage === 1} className={`w-9 h-9 rounded-full flex items-center justify-center transition-colors border ${currentPage === 1 ? 'border-gray-100 text-gray-300 cursor-not-allowed' : 'border-gray-200 text-[#3AB4E6] hover:bg-blue-50'}`}>
-            <FaArrowLeft size={10} />
-          </button>
-
-          {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-            <button key={page} onClick={() => setCurrentPage(page)} className={`w-9 h-9 rounded-full flex items-center justify-center font-bold text-sm transition-all ${currentPage === page ? 'bg-[#1967D2] text-white shadow-md' : 'text-gray-500 hover:bg-gray-50'}`}>
-              {page < 10 ? `0${page}` : page}
-            </button>
-          ))}
-
-          <button onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))} disabled={currentPage === totalPages} className={`w-9 h-9 rounded-full flex items-center justify-center transition-colors border ${currentPage === totalPages ? 'border-gray-100 text-gray-300 cursor-not-allowed' : 'border-gray-200 text-[#3AB4E6] hover:bg-blue-50'}`}>
-            <FaArrowRight size={10} />
-          </button>
-        </div>
+      {totalPages > 0 && (
+        <Pagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          totalItems={totalElements}
+          itemsPerPage={PAGE_SIZE}
+          onPageChange={(p) => updateParam('page', String(p))}
+        />
       )}
     </div>
   );

@@ -58,4 +58,6 @@ public class AdminAffiliationResponse {
     private String submittedPhone;
     private String submittedCompanyEmail;
     private String submittedLicenseUrl;
+    private String submittedConsentUrl;
+    private Boolean submittedConsentConfirmed;
 }

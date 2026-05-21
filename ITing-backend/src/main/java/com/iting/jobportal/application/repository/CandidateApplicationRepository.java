@@ -15,6 +15,12 @@ public interface CandidateApplicationRepository extends JpaRepository<ApplyFormS
     @Query("SELECT s FROM ApplyFormSentToJob s JOIN ApplyForm f ON f.id = s.id.applyFormId WHERE f.userId = :userId")
     Page<ApplyFormSentToJob> findByUserId(@Param("userId") Long userId, Pageable pageable);
 
+    @Query("SELECT s FROM ApplyFormSentToJob s JOIN ApplyForm f ON f.id = s.id.applyFormId " +
+            "WHERE f.userId = :userId AND s.status = :status")
+    Page<ApplyFormSentToJob> findByUserIdAndStatus(@Param("userId") Long userId,
+                                                    @Param("status") com.iting.jobportal.application.entity.enums.ApplicationStatus status,
+                                                    Pageable pageable);
+
     @Query("SELECT COUNT(s) > 0 FROM ApplyFormSentToJob s JOIN ApplyForm f ON f.id = s.id.applyFormId " +
             "WHERE f.userId = :userId AND s.id.jobId = :jobId " +
             "AND s.status <> com.iting.jobportal.application.entity.enums.ApplicationStatus.WITHDRAWN")

@@ -39,9 +39,6 @@ const ProfessionalInfoTab = () => {
                 </div>
             </div>
 
-            {isPreviewOpen && (
-                <CandidatePreviewModal onClose={() => setIsPreviewOpen(false)} />
-            )}
 
             {/* Main Content Sections */}
             <div className="grid grid-cols-1 gap-8">

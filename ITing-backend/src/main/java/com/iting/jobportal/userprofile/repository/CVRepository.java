@@ -19,4 +19,14 @@ public interface CVRepository extends JpaRepository<CV, Long> {
     long countByProfile_Id(Long profileId);
 
     CV findFirstByProfile_IdOrderByUploadedAtAsc(Long profileId);
+
+    /**
+     * Lấy embedding của CV "đang dùng" cho 1 candidate: ưu tiên CV `isDefault=true`,
+     * fallback CV upload gần nhất. Bỏ qua CV chưa có embedding.
+     * Caller nên gọi với {@code PageRequest.of(0, 1)} và lấy phần tử đầu (nếu có).
+     */
+    @Query("SELECT c.cvEmbedding FROM CV c " +
+            "WHERE c.profile.id = :profileId AND c.cvEmbedding IS NOT NULL " +
+            "ORDER BY CASE WHEN c.isDefault = TRUE THEN 0 ELSE 1 END, c.uploadedAt DESC")
+    List<String> findActiveCvEmbeddingByProfileId(@Param("profileId") Long profileId, Pageable pageable);
 }

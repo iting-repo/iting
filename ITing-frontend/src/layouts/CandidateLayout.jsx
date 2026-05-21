@@ -18,7 +18,7 @@ const CandidateLayout = () => {
         >
           {/* Ảnh CTA nền — crop nhỏ gọn */}
           <img
-            src="/CTA.png"
+            src="/cta-1.png"
             alt="Hãy chia sẻ nhu cầu công việc để nhận gợi ý việc làm tốt nhất"
             className="w-full h-full object-cover rounded-xl"
           />
@@ -41,7 +41,7 @@ const CandidateLayout = () => {
         {/* Khu vực nội dung bên phải (Thay đổi theo Route con) */}
         <div className="flex-1 p-6 lg:p-10 overflow-x-hidden">
           <div className="max-w-7xl mx-auto">
-               <Outlet />
+            <Outlet />
           </div>
         </div>
       </div>

@@ -14,17 +14,19 @@ import java.util.List;
 
 public interface JobRepository extends JpaRepository<Job, Long>, JpaSpecificationExecutor<Job> {
 
-    // Tìm jobs theo status VÀ công ty đang hoạt động
-    @Query("SELECT j FROM Job j JOIN j.company c WHERE j.status = :status AND c.active = true")
+    // Tìm jobs theo status VÀ công ty đang hoạt động VÀ chưa hết hạn
+    @Query("SELECT j FROM Job j JOIN j.company c WHERE j.status = :status AND c.active = true AND (j.dueDate IS NULL OR j.dueDate >= CURRENT_DATE)")
     Page<Job> findAllByStatus(@Param("status") JobStatus status, Pageable pageable);
 
-    // Lấy jobs hot (sắp xếp theo lượt ứng tuyển + view) VÀ công ty đang hoạt động
-    @Query("SELECT j FROM Job j JOIN j.company c WHERE j.status = :status AND c.active = true ORDER BY j.applicationCount DESC, j.viewCount DESC")
+    // Lấy jobs hot (sắp xếp theo lượt ứng tuyển + view) VÀ công ty đang hoạt động VÀ chưa hết hạn
+    @Query("SELECT j FROM Job j JOIN j.company c WHERE j.status = :status AND c.active = true AND (j.dueDate IS NULL OR j.dueDate >= CURRENT_DATE) ORDER BY j.applicationCount DESC, j.viewCount DESC")
     Page<Job> findHotJobs(@Param("status") JobStatus status, Pageable pageable);
 
-    List<Job> findTop50ByStatusOrderByCreatedAtDesc(JobStatus status);
+    @Query("SELECT j FROM Job j WHERE j.status = :status AND (j.dueDate IS NULL OR j.dueDate >= CURRENT_DATE) ORDER BY j.createdAt DESC")
+    List<Job> findTop50ByStatusOrderByCreatedAtDesc(@Param("status") JobStatus status, Pageable pageable);
 
-    List<Job> findTop50ByStatusOrderByViewCountDesc(JobStatus status);
+    @Query("SELECT j FROM Job j WHERE j.status = :status AND (j.dueDate IS NULL OR j.dueDate >= CURRENT_DATE) ORDER BY j.viewCount DESC")
+    List<Job> findTop50ByStatusOrderByViewCountDesc(@Param("status") JobStatus status, Pageable pageable);
 
     // Saved-search alert digest: newest 5 jobs with id > lastMatchedJobId (used by V70 saved_searches feature).
     List<Job> findTop5ByStatusAndIdGreaterThanOrderByCreatedAtDesc(JobStatus status, long lastJobId);
@@ -62,6 +64,8 @@ public interface JobRepository extends JpaRepository<Job, Long>, JpaSpecificatio
     long countByStatus(JobStatus status);
 
     long countByCompany_IdAndStatus(Long companyId, JobStatus status);
+
+    long countByStatusAndCreatedAtAfter(JobStatus status, java.time.LocalDateTime dateTime);
 
     // Count truly active jobs: status ACTIVE and not past dueDate
     @Query("SELECT COUNT(j) FROM Job j WHERE j.company.id = :companyId AND j.status = 'ACTIVE' AND (j.dueDate IS NULL OR j.dueDate >= CURRENT_DATE)")

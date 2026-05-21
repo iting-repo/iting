@@ -1,34 +1,56 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   FaMapMarkerAlt, FaDollarSign, FaCalendarAlt, FaRegBookmark, FaBookmark,
-  FaArrowRight, FaClock, FaArrowLeft, FaBell
+  FaArrowRight, FaClock, FaBell
 } from 'react-icons/fa';
-import { useNavigate } from 'react-router-dom';
-import axiosInstance from '../../utils/axiosInstance';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import { Pagination, FilterBar } from '../../components/common';
+import jobAlertService from '../../services/jobAlertService';
 import { buildJobDetailPath } from '../../utils/jobUrl';
 
+const PAGE_SIZE = 10;
+
+const TYPE_FILTERS = [
+  { value: '', label: 'Tất cả' },
+  { value: 'FULL_TIME', label: 'Full Time' },
+  { value: 'PART_TIME', label: 'Part Time' },
+  { value: 'REMOTE', label: 'Remote' },
+  { value: 'INTERN', label: 'Internship' },
+  { value: 'CONTRACT', label: 'Contract' },
+];
 
 const JobAlerts = () => {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
 
   const [alerts, setAlerts] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(0);
   const [totalElements, setTotalElements] = useState(0);
-  const itemsPerPage = 5;
+
+  const currentPage = Number(searchParams.get('page')) || 1;
+  const typeFilter = searchParams.get('jobType') || '';
+
+  const updateParam = useCallback((key, value) => {
+    const next = new URLSearchParams(searchParams);
+    if (value && value !== '') next.set(key, value);
+    else next.delete(key);
+    if (key !== 'page') next.delete('page');
+    setSearchParams(next, { replace: true });
+  }, [searchParams, setSearchParams]);
 
   useEffect(() => {
     const fetchJobAlerts = async () => {
       try {
         setLoading(true);
-        const response = await axiosInstance.get('/candidates/job-alerts', {
-          params: { page: currentPage - 1, size: itemsPerPage }
+        const response = await jobAlertService.list({
+          page: currentPage - 1,
+          size: PAGE_SIZE,
         });
-        const content = response?.content || response?.data?.content || [];
-        setAlerts(content);
-        setTotalPages(response?.totalPages || response?.data?.totalPages || 0);
-        setTotalElements(response?.totalElements || response?.data?.totalElements || 0);
+        const payload = response?.data ?? response;
+        setAlerts(payload?.content || []);
+        setTotalPages(payload?.totalPages || 0);
+        setTotalElements(payload?.totalElements || 0);
       } catch (error) {
         console.error("Failed to fetch job alerts:", error);
         setAlerts([]);
@@ -39,6 +61,12 @@ const JobAlerts = () => {
 
     fetchJobAlerts();
   }, [currentPage]);
+
+  // Frontend filter trên page hiện tại (backend chưa support jobType cho job-alerts).
+  const visibleAlerts = useMemo(() => {
+    if (!typeFilter) return alerts;
+    return alerts.filter((a) => a.jobType === typeFilter);
+  }, [alerts, typeFilter]);
 
   const getTypeStyle = (type) => {
     if (type === 'FULL_TIME') return 'bg-blue-50 text-blue-600';
@@ -97,7 +125,7 @@ const JobAlerts = () => {
 
   return (
     <div className="bg-white rounded-xl p-8 min-h-screen shadow-sm border border-gray-100">
-      <div className="flex items-center justify-between mb-8">
+      <div className="flex items-center justify-between mb-6">
         <h2 className="text-2xl font-bold text-gray-800 flex items-center gap-2">
           <FaBell className="text-[#3AB4E6]" />
           Thông báo việc làm
@@ -105,23 +133,34 @@ const JobAlerts = () => {
             <span className="bg-blue-100 text-[#3AB4E6] text-sm px-2 py-1 rounded-full ml-2">{totalElements}</span>
           )}
         </h2>
-        <div className="text-sm text-gray-500">
+        <div className="text-sm text-gray-500 hidden md:block">
           Hiển thị các công việc từ công ty bạn theo dõi
         </div>
       </div>
 
+      <FilterBar
+        filters={[{ key: 'jobType', label: 'Loại công việc', options: TYPE_FILTERS }]}
+        values={{ jobType: typeFilter }}
+        onChange={updateParam}
+        onReset={() => setSearchParams({}, { replace: true })}
+      />
+
       {loading ? (
         <div className="text-center py-12 text-gray-500">Đang tải...</div>
-      ) : alerts.length === 0 ? (
+      ) : visibleAlerts.length === 0 ? (
         <div className="text-center py-12 text-gray-500">
           <FaBell className="text-4xl text-gray-300 mx-auto mb-4" />
-          <p className="text-lg mb-2">Chưa có thông báo việc làm</p>
-          <p className="text-sm">Hãy theo dõi các công ty để nhận thông báo việc làm mới.</p>
+          <p className="text-lg mb-2">
+            {typeFilter ? 'Không có công việc nào ở loại đã chọn (trong trang hiện tại).' : 'Chưa có thông báo việc làm'}
+          </p>
+          {!typeFilter && (
+            <p className="text-sm">Hãy theo dõi các công ty để nhận thông báo việc làm mới.</p>
+          )}
         </div>
       ) : (
         <>
-          <div className="space-y-4 mb-8">
-            {alerts.map((job) => (
+          <div className="space-y-4 mb-6">
+            {visibleAlerts.map((job) => (
               <div
                 key={job.jobId}
                 className="group relative border border-gray-100 rounded-xl p-5 hover:border-[#3AB4E6] hover:shadow-lg transition-all bg-white flex flex-col md:flex-row items-center gap-6"
@@ -174,38 +213,14 @@ const JobAlerts = () => {
             ))}
           </div>
 
-          {totalPages > 1 && (
-            <div className="flex justify-center items-center gap-2">
-              <button
-                onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-                disabled={currentPage === 1}
-                className={`w-9 h-9 rounded-full flex items-center justify-center transition-colors border ${currentPage === 1 ? 'border-gray-100 text-gray-300 cursor-not-allowed' : 'border-gray-200 text-[#3AB4E6] hover:bg-blue-50'}`}
-              >
-                <FaArrowLeft size={10} />
-              </button>
-
-              {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
-                <button
-                  key={page}
-                  onClick={() => setCurrentPage(page)}
-                  className={`w-9 h-9 rounded-full flex items-center justify-center font-bold text-sm transition-all ${
-                    currentPage === page
-                      ? 'bg-[#1967D2] text-white shadow-md'
-                      : 'text-gray-500 hover:bg-gray-50'
-                  }`}
-                >
-                  {page < 10 ? `0${page}` : page}
-                </button>
-              ))}
-
-              <button
-                onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-                disabled={currentPage === totalPages}
-                className={`w-9 h-9 rounded-full flex items-center justify-center transition-colors border ${currentPage === totalPages ? 'border-gray-100 text-gray-300 cursor-not-allowed' : 'border-gray-200 text-[#3AB4E6] hover:bg-blue-50'}`}
-              >
-                <FaArrowRight size={10} />
-              </button>
-            </div>
+          {totalPages > 0 && (
+            <Pagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              totalItems={totalElements}
+              itemsPerPage={PAGE_SIZE}
+              onPageChange={(p) => updateParam('page', String(p))}
+            />
           )}
         </>
       )}

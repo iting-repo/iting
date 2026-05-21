@@ -15,6 +15,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -97,6 +98,8 @@ public class PublicContentController {
     public ResponseEntity<Map<String, Long>> getStats() {
         Map<String, Long> stats = new HashMap<>();
         stats.put("totalJobs", jobRepository.countByStatus(JobStatus.ACTIVE));
+        stats.put("newJobs24h", jobRepository.countByStatusAndCreatedAtAfter(
+                JobStatus.ACTIVE, LocalDateTime.now().minusHours(24)));
         stats.put("totalCandidates",
                 accountRepository.countByRole(Role.CANDIDATE) + accountRepository.countByRole(Role.USER));
         stats.put("totalCompanies", companyRepository.count());

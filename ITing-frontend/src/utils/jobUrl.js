@@ -111,27 +111,19 @@ export const getCompanyLogoUrl = (logoPath, companyName = "") => {
   }
   
   if (normalizedLogoPath.startsWith("http")) {
-    // Basic validation for common placeholders if they are considered "bad" now
+    // Placeholder URLs → dùng avatar thay thế
     if (normalizedLogoPath.includes("via.placeholder.com") && companyName) {
         return UI_AVATAR;
     }
-
-    // --- LOCAL LOGO MAP: Override broken/CORS-blocked external URLs ---
-    const LOCAL_LOGO_MAP = {
-      'https://fpt-software.com/logo.png': '/fsft.png',
-      'https://vng.com.vn/logo.png': '/vng.png',
-      'https://grab.com/logo.png': '/grab.jpg',
-      'https://vinai.io/logo.png': '/vin-ai.jpg',
-      'https://viettel.com.vn/logo.png': '/viettle.jpg',
-    };
-
-    const localOverride = LOCAL_LOGO_MAP[normalizedLogoPath];
-    if (localOverride) return localOverride;
-
     return normalizedLogoPath;
   }
   
-  // Handle relative paths
+  // Path tương đối có đuôi ảnh (từ DB) → file tĩnh trong /public, trả nguyên
+  if (/\.(jpg|jpeg|png|svg|webp|gif)$/i.test(normalizedLogoPath)) {
+    return normalizedLogoPath;
+  }
+
+  // Các path khác → prefix API base URL (ví dụ: /api/files/...)
   const baseUrl = API_BASE_URL.replace("/api", "");
   const result = `${baseUrl}${normalizedLogoPath.startsWith("/") ? "" : "/"}${normalizedLogoPath}`;
   return result;

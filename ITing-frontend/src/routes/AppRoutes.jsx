@@ -31,6 +31,7 @@ const CandidateProfile = lazy(() => import('../pages/candidate/profile/Candidate
 const AppliedJobs = lazy(() => import('../pages/candidate/AppliedJobs'));
 const JobAlerts = lazy(() => import('../pages/candidate/JobAlerts'));
 const FavoriteJobs = lazy(() => import('../pages/candidate/FavoriteJobs'));
+const SettingsPage = lazy(() => import('../pages/candidate/SettingsPage'));
 const AdminDashboard = lazy(() => import('../pages/admin/Dashboard'));
 const UserManagement = lazy(() => import('../pages/admin/users/UserManagement'));
 const CompanyManagement = lazy(() => import('../pages/admin/companies/CompanyManagement'));
@@ -133,7 +134,7 @@ const AppRoutes = () => {
               <Route path="applied-jobs" element={<AppliedJobs />} />
               <Route path="favorite-jobs" element={<FavoriteJobs />} />
               <Route path="job-alerts" element={<JobAlerts />} />
-              <Route path="settings" element={<div>Trang cài đặt (Đang phát triển)</div>} />
+              <Route path="settings" element={<SettingsPage />} />
 
             </Route>
           </Route>

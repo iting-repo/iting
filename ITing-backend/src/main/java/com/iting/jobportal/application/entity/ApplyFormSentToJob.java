@@ -67,6 +67,9 @@ public class ApplyFormSentToJob {
         if (status == null) {
             status = ApplicationStatus.PENDING;
         }
+        if (pipelineStage == null || pipelineStage.isBlank()) {
+            pipelineStage = "SCREENING";
+        }
     }
 
     @Getter

@@ -48,7 +48,7 @@ public class CompanyFollowServiceImpl implements CompanyFollowService {
                 .recipientId(userId)
                 .recipientType(RecipientType.USER)
                 .type(NotificationType.SYSTEM)
-                .content("Ban da theo doi cong ty " + company.getName())
+                .content("Bạn đã theo dõi công ty " + company.getName())
                 .entityType("COMPANY")
                 .entityId(companyId)
                 .actionUrl("/companies/" + companyId)

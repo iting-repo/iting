@@ -100,6 +100,16 @@ public class AdminAffiliationServiceImpl implements AdminAffiliationService {
         return fileUploadService.generatePresignedUrl(url, expiryMinutes);
     }
 
+    @Override
+    @Transactional(readOnly = true)
+    public String getConsentPresignedUrl(Long affiliationId, int expiryMinutes) {
+        CompanyHrAffiliation aff = findOrThrow(affiliationId);
+        String url = aff.getSubmittedConsentUrl();
+        if (url == null || url.isBlank())
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "HR chưa upload văn bản thỏa thuận");
+        return fileUploadService.generatePresignedUrl(url, expiryMinutes);
+    }
+
     // ════════════════════════════════════════════════════════════════
     // APPROVE
     // ════════════════════════════════════════════════════════════════
@@ -255,6 +265,7 @@ public class AdminAffiliationServiceImpl implements AdminAffiliationService {
         if (aff.getSubmittedPhone() != null)           company.setPhone(aff.getSubmittedPhone());
         if (aff.getSubmittedCompanyEmail() != null)    company.setCompanyEmail(aff.getSubmittedCompanyEmail());
         if (aff.getSubmittedLicenseUrl() != null)      company.setBusinessLicenseFileUrl(aff.getSubmittedLicenseUrl());
+        if (aff.getSubmittedConsentUrl() != null)      company.setConsentDocumentFileUrl(aff.getSubmittedConsentUrl());
 
         if (aff.getSubmittedIndustriesJson() != null) {
             List<String> names = parseIndustryNames(aff.getSubmittedIndustriesJson());
@@ -339,6 +350,8 @@ public class AdminAffiliationServiceImpl implements AdminAffiliationService {
                 .submittedPhone(aff.getSubmittedPhone())
                 .submittedCompanyEmail(aff.getSubmittedCompanyEmail())
                 .submittedLicenseUrl(aff.getSubmittedLicenseUrl())
+                .submittedConsentUrl(aff.getSubmittedConsentUrl())
+                .submittedConsentConfirmed(aff.getSubmittedConsentConfirmed())
                 .build();
     }
 }

@@ -1,14 +1,16 @@
 import React, { useState, useEffect } from 'react';
-import { useTranslation } from 'react-i18next'; // 1. Import hook
-import { FaUser, FaGlobe, FaCog, FaPlus, FaRocket, FaSpinner } from 'react-icons/fa';
+import { useTranslation } from 'react-i18next';
+import { FaUser, FaGlobe, FaCog, FaPlus, FaRocket, FaSpinner, FaShieldAlt, FaFileContract } from 'react-icons/fa';
 import FoundingInfoTab from './components/FoundingInfoTab';
 import SocialMediaTab from './components/SocialMediaTab';
 import SettingsTab from './components/SettingsTab';
+import Verification from '../Verification';
+import DataProcessing from '../DataProcessing';
 import companyService from '../../../services/companyService';
 import { Breadcrumb } from '../../../components/common';
 
 const CompanyProfile = () => {
-  const { t } = useTranslation(); // 2. Khởi tạo hàm t
+  const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState('founding');
   const [company, setCompany] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -34,6 +36,8 @@ const CompanyProfile = () => {
       case 'founding': return <FoundingInfoTab onTabChange={setActiveTab} />;
       case 'social': return <SocialMediaTab onTabChange={setActiveTab} />;
       case 'settings': return <SettingsTab onTabChange={setActiveTab} />;
+      case 'verification': return <Verification />;
+      case 'data-processing': return <DataProcessing />;
       default: return <FoundingInfoTab onTabChange={setActiveTab} />;
     }
   };
@@ -64,9 +68,7 @@ const CompanyProfile = () => {
         <div className="flex flex-col sm:flex-row gap-4">
           <button
             onClick={() => {
-              // Chuyển sang tab founding và thông tin ở đó sẽ tự hiển thị nút tạo yêu cầu
-              // Hoặc ta có thể truyền state để mở modal trực tiếp nếu cần
-              setCompany({ ...company, profileSetup: true }); // Giả lập để vào xem giao diện tabs
+              setCompany({ ...company, profileSetup: true });
             }}
             className="flex items-center justify-center gap-2 px-8 py-3.5 bg-[#3AB4E6] text-white font-bold rounded-xl shadow-[0_4px_14px_0_rgba(58,180,230,0.39)] hover:brightness-105 active:scale-95 transition-all"
           >
@@ -109,17 +111,16 @@ const CompanyProfile = () => {
         rootLink="/employer/dashboard"
         items={[{ label: 'Hồ sơ công ty' }]}
       />
-      {/* 3. Dùng t('key') cho tiêu đề */}
       <h2 className="text-2xl font-bold text-gray-800 mb-1">
         {t('company_profile.title')}
       </h2>
       <p className="text-gray-500 text-sm mb-6">Quản lý và cập nhật thông tin doanh nghiệp của bạn</p>
 
       {/* TABS NAVIGATION */}
-      <div className="flex border-b border-gray-200 mb-8">
+      <div className="flex border-b border-gray-200 mb-8 overflow-x-auto">
         <button
           onClick={() => setActiveTab('founding')}
-          className={`flex items-center gap-2 px-6 py-3 font-medium text-sm transition-all border-b-2 ${activeTab === 'founding'
+          className={`flex items-center gap-2 px-6 py-3 font-medium text-sm transition-all border-b-2 whitespace-nowrap ${activeTab === 'founding'
             ? 'border-[#3AB4E6] text-[#3AB4E6]'
             : 'border-transparent text-gray-500 hover:text-gray-700'
             }`}
@@ -129,7 +130,7 @@ const CompanyProfile = () => {
 
         <button
           onClick={() => setActiveTab('social')}
-          className={`flex items-center gap-2 px-6 py-3 font-medium text-sm transition-all border-b-2 ${activeTab === 'social'
+          className={`flex items-center gap-2 px-6 py-3 font-medium text-sm transition-all border-b-2 whitespace-nowrap ${activeTab === 'social'
             ? 'border-[#3AB4E6] text-[#3AB4E6]'
             : 'border-transparent text-gray-500 hover:text-gray-700'
             }`}
@@ -138,8 +139,28 @@ const CompanyProfile = () => {
         </button>
 
         <button
+          onClick={() => setActiveTab('verification')}
+          className={`flex items-center gap-2 px-6 py-3 font-medium text-sm transition-all border-b-2 whitespace-nowrap ${activeTab === 'verification'
+            ? 'border-[#3AB4E6] text-[#3AB4E6]'
+            : 'border-transparent text-gray-500 hover:text-gray-700'
+            }`}
+        >
+          <FaShieldAlt /> Xác thực tài khoản
+        </button>
+
+        <button
+          onClick={() => setActiveTab('data-processing')}
+          className={`flex items-center gap-2 px-6 py-3 font-medium text-sm transition-all border-b-2 whitespace-nowrap ${activeTab === 'data-processing'
+            ? 'border-[#3AB4E6] text-[#3AB4E6]'
+            : 'border-transparent text-gray-500 hover:text-gray-700'
+            }`}
+        >
+          <FaFileContract /> Thỏa thuận dữ liệu
+        </button>
+
+        <button
           onClick={() => setActiveTab('settings')}
-          className={`flex items-center gap-2 px-6 py-3 font-medium text-sm transition-all border-b-2 ${activeTab === 'settings'
+          className={`flex items-center gap-2 px-6 py-3 font-medium text-sm transition-all border-b-2 whitespace-nowrap ${activeTab === 'settings'
             ? 'border-[#3AB4E6] text-[#3AB4E6]'
             : 'border-transparent text-gray-500 hover:text-gray-700'
             }`}

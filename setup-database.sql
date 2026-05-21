@@ -16,7 +16,6 @@
 -- Drop tables in reverse dependency order
 DROP TABLE IF EXISTS Portfolio CASCADE;
 DROP TABLE IF EXISTS Social_link CASCADE;
-DROP TABLE IF EXISTS contact_info CASCADE;
 DROP TABLE IF EXISTS user_reports CASCADE;
 DROP TABLE IF EXISTS activity_logs CASCADE;
 DROP TABLE IF EXISTS report_accounts CASCADE;
@@ -479,19 +478,6 @@ CREATE TABLE Portfolio (
     CONSTRAINT fk_portfolio_profile FOREIGN KEY (profile_id) REFERENCES candidate_profiles(id) ON DELETE CASCADE
 );
 
-DROP TABLE IF EXISTS contact_info;
-
-CREATE TABLE contact_info (
-    id BIGINT PRIMARY KEY,
-    phone VARCHAR(20),
-    email VARCHAR(255),
-    show_phone_to_recruiter BOOLEAN DEFAULT FALSE,
-    show_email_to_recruiter BOOLEAN DEFAULT FALSE,
-    CONSTRAINT fk_contact_profile
-    FOREIGN KEY (id) REFERENCES candidate_profiles(id)
-    ON DELETE CASCADE
-);
-
 -- ============================================================================
 -- V3: Conversations Table
 -- ============================================================================
@@ -672,8 +658,6 @@ CREATE INDEX IF NOT EXISTS idx_static_contents_author_id ON static_contents(auth
 CREATE INDEX IF NOT EXISTS idx_static_contents_published_at ON static_contents(published_at);
 CREATE INDEX IF NOT EXISTS idx_social_network_web_info_id ON Social_network(Web_infor_id);
 CREATE INDEX IF NOT EXISTS idx_vn_location_region ON VN_location(Region);
-CREATE INDEX IF NOT EXISTS idx_contact_info_email ON contact_info(email);
-CREATE INDEX IF NOT EXISTS idx_contact_info_phone ON contact_info(phone);
 
 -- ============================================================================
 -- SAMPLE DATA
@@ -775,14 +759,14 @@ INSERT INTO Job (Id, Company_id, Title, Position, Description, Tech_required, Jo
 (8, 13, 'QA Engineer', 'QA Engineer', 'Automation testing hệ thống.', '["Selenium","Java","Python"]', 'FULL_TIME', 'JUNIOR', 'Thứ 2 - Thứ 6', 12000000, 22000000, 'MONTH', 3, 0, 'ACTIVE', '2026-05-05', 'Cần Thơ', 'Ninh Kiều', 'Vincom Cần Thơ', 'Vincom, Ninh Kiều, Cần Thơ', 5, 'Test automation.', 'Fresher/Jr.', 'Training bài bản.', 60, 30, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
 (9, 14, 'Java Backend Developer', 'Backend Developer', 'Xây dựng hệ thống E-commerce.', '["Java","Spring Boot","MySQL"]', 'FULL_TIME', 'SENIOR', 'Thứ 2 - Thứ 6', 28000000, 48000000, 'MONTH', 2, 1, 'ACTIVE', '2026-05-12', 'Hà Nội', 'Đống Đa', 'Xã Đàn', 'Xã Đàn, Đống Đa, Hà Nội', 1, 'Microservices.', 'Spring Boot.', 'Lương cao.', 180, 14, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
 (10, 15, 'Tech Lead', 'Tech Lead', 'Dẫn dắt team kỹ thuật.', '["System Design","Leadership"]', 'FULL_TIME', 'LEAD', 'Thứ 2 - Thứ 6', 45000000, 80000000, 'MONTH', 1, 0, 'ACTIVE', '2026-05-18', 'TP. Hồ Chí Minh', 'Quận 1', 'Landmark 81', 'Landmark 81, Quận 1, TP. Hồ Chí Minh', 2, 'Quản lý team.', '5+ năm kinh nghiệm.', 'Stock option.', 450, 5, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-(11, 11, 'Test Job DRAFT', 'Backend Developer', 'Test trạng thái DRAFT', '["Java","Spring"]', 'FULL_TIME', 'MIDDLE', 'Thứ 2 - Thứ 6', 20000000, 30000000, 'MONTH', 2, 0, 'DRAFT', '2026-05-30', 'Hà Nội', 'Cầu Giấy', 'Test Address', 'Test Address, Cầu Giấy, Hà Nội', 1, 'Test', 'Test', 'Test', 0, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-(12, 11, 'Test Job PENDING', 'Backend Developer', 'Test trạng thái PENDING', '["Java","Spring"]', 'FULL_TIME', 'MIDDLE', 'Thứ 2 - Thứ 6', 20000000, 30000000, 'MONTH', 2, 0, 'PENDING', '2026-05-30', 'Hà Nội', 'Cầu Giấy', 'Test Address', 'Test Address, Cầu Giấy, Hà Nội', 1, 'Test', 'Test', 'Test', 0, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-(13, 11, 'Test Job ACTIVE', 'Backend Developer', 'Test trạng thái ACTIVE', '["Java","Spring"]', 'FULL_TIME', 'MIDDLE', 'Thứ 2 - Thứ 6', 20000000, 30000000, 'MONTH', 2, 0, 'ACTIVE', '2026-05-30', 'Hà Nội', 'Cầu Giấy', 'Test Address', 'Test Address, Cầu Giấy, Hà Nội', 1, 'Test', 'Test', 'Test', 0, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-(14, 11, 'Test Job EXPIRED', 'Backend Developer', 'Test trạng thái EXPIRED', '["Java","Spring"]', 'FULL_TIME', 'MIDDLE', 'Thứ 2 - Thứ 6', 20000000, 30000000, 'MONTH', 2, 0, 'EXPIRED', '2020-01-01', 'Hà Nội', 'Cầu Giấy', 'Test Address', 'Test Address, Cầu Giấy, Hà Nội', 1, 'Test', 'Test', 'Test', 0, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-(15, 11, 'Test Job CLOSED', 'Backend Developer', 'Test trạng thái CLOSED', '["Java","Spring"]', 'FULL_TIME', 'MIDDLE', 'Thứ 2 - Thứ 6', 20000000, 30000000, 'MONTH', 2, 0, 'CLOSED', '2026-05-30', 'Hà Nội', 'Cầu Giấy', 'Test Address', 'Test Address, Cầu Giấy, Hà Nội', 1, 'Test', 'Test', 'Test', 0, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-(16, 11, 'Test Job REJECTED', 'Backend Developer', 'Test trạng thái REJECTED', '["Java","Spring"]', 'FULL_TIME', 'MIDDLE', 'Thứ 2 - Thứ 6', 20000000, 30000000, 'MONTH', 2, 0, 'REJECTED', '2026-05-30', 'Hà Nội', 'Cầu Giấy', 'Test Address', 'Test Address, Cầu Giấy, Hà Nội', 1, 'Test', 'Test', 'Test', 0, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-(17, 11, 'Test Job REJECTED 2', 'Backend Developer', 'Test trạng thái REJECTED', '["Java","Spring"]', 'FULL_TIME', 'MIDDLE', 'Thứ 2 - Thứ 6', 20000000, 30000000, 'MONTH', 2, 0, 'REJECTED', '2026-05-30', 'Hà Nội', 'Cầu Giấy', 'Test Address', 'Test Address, Cầu Giấy, Hà Nội', 1, 'Test', 'Test', 'Test', 0, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-(18, 11, 'Test Job SUSPENDED', 'Backend Developer', 'Test trạng thái SUSPENDED', '["Java","Spring"]', 'FULL_TIME', 'MIDDLE', 'Thứ 2 - Thứ 6', 20000000, 30000000, 'MONTH', 2, 0, 'SUSPENDED', '2026-05-30', 'Hà Nội', 'Cầu Giấy', 'Test Address', 'Test Address, Cầu Giấy, Hà Nội', 1, 'Test', 'Test', 'Test', 0, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
+(11, 11, 'React Developer (Bản nháp)', 'Frontend Developer', 'Xây dựng giao diện ứng dụng web nội bộ cho hệ thống quản lý nhân sự.', '["React","TypeScript","TailwindCSS"]', 'FULL_TIME', 'MIDDLE', 'Thứ 2 - Thứ 6', 20000000, 30000000, 'MONTH', 2, 0, 'DRAFT', '2026-08-30', 'Hà Nội', 'Cầu Giấy', 'Tòa nhà Mipec, Tây Sơn', 'Tòa nhà Mipec, Tây Sơn, Cầu Giấy, Hà Nội', 1, 'Phát triển component tái sử dụng, tối ưu hiệu năng render, làm việc với UX để hoàn thiện flow.', '2+ năm React/Redux, kinh nghiệm với TypeScript và TailwindCSS, tiếng Anh đọc hiểu tài liệu kỹ thuật.', 'Lương 13 tháng, bảo hiểm sức khoẻ FWD, MacBook làm việc, hybrid 2 ngày/tuần.', 0, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(12, 11, 'Node.js Backend Developer', 'Backend Developer', 'Phát triển hệ thống microservices Node.js phục vụ nền tảng e-learning có 200K user.', '["Node.js","Express","PostgreSQL","Redis"]', 'FULL_TIME', 'MIDDLE', 'Thứ 2 - Thứ 6', 22000000, 35000000, 'MONTH', 3, 0, 'PENDING', '2026-08-30', 'Hà Nội', 'Cầu Giấy', '54 Nguyễn Chí Thanh', '54 Nguyễn Chí Thanh, Cầu Giấy, Hà Nội', 1, 'Thiết kế REST API, tối ưu query PostgreSQL, viết unit test với Jest, code review trong team 5 người.', '2+ năm Node.js, hiểu rõ event loop, có kinh nghiệm với Redis caching và message queue (Kafka/RabbitMQ).', 'Lương net + bonus quý, performance review 2 lần/năm, team building hằng tháng.', 0, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(13, 11, 'Python Data Engineer', 'Data Engineer', 'Xây dựng data pipeline xử lý 50TB log/tháng cho hệ thống recommendation.', '["Python","Apache Spark","Airflow","BigQuery"]', 'FULL_TIME', 'MIDDLE', 'Thứ 2 - Thứ 6', 25000000, 40000000, 'MONTH', 2, 0, 'ACTIVE', '2026-08-30', 'Hà Nội', 'Cầu Giấy', 'Tòa N03T6 Ngoại Giao Đoàn', 'Tòa N03T6 Ngoại Giao Đoàn, Cầu Giấy, Hà Nội', 1, 'Thiết kế ETL pipeline với Airflow, tối ưu Spark job, làm việc cùng team Data Science để chuẩn hoá feature.', '2+ năm Python, thành thạo Spark/Airflow, hiểu về data warehouse và dimensional modeling.', 'Lương lũy tiến theo năng lực, học phí khoá ngắn hạn về Big Data, laptop cấu hình cao.', 0, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(14, 11, 'Senior iOS Developer', 'iOS Developer', 'Phát triển ứng dụng iOS native cho dịch vụ ngân hàng số, đã ra mắt App Store.', '["Swift","SwiftUI","Combine"]', 'FULL_TIME', 'SENIOR', 'Thứ 2 - Thứ 6', 28000000, 50000000, 'MONTH', 2, 0, 'EXPIRED', '2025-12-31', 'Hà Nội', 'Cầu Giấy', 'Indochina Plaza, 241 Xuân Thủy', 'Indochina Plaza, 241 Xuân Thủy, Cầu Giấy, Hà Nội', 1, 'Phát triển feature mới, refactor module Objective-C sang Swift, đảm bảo crash-free rate > 99.5%.', '4+ năm Swift, đã release ít nhất 2 app trên App Store, hiểu về CI/CD với Fastlane.', 'Lương cạnh tranh, ESOP cho senior, 18 ngày phép/năm, du lịch công ty 2 lần/năm.', 0, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(15, 11, 'Cybersecurity Analyst', 'Security Analyst', 'Phân tích bảo mật, vận hành SIEM và phản ứng sự cố cho hệ thống thanh toán điện tử.', '["Splunk","Wireshark","OWASP","Linux"]', 'FULL_TIME', 'MIDDLE', 'Thứ 2 - Thứ 6', 25000000, 42000000, 'MONTH', 1, 1, 'CLOSED', '2026-07-15', 'Hà Nội', 'Cầu Giấy', 'Hà Đô Park View', 'Hà Đô Park View, Cầu Giấy, Hà Nội', 1, 'Vận hành SIEM Splunk, điều tra incident, viết playbook ứng phó sự cố theo NIST framework.', '2+ năm Security Operations, hiểu OWASP Top 10, có chứng chỉ CEH/Security+ là lợi thế.', 'Lương cao, thưởng dự án, tài trợ chứng chỉ bảo mật quốc tế.', 0, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(16, 11, 'Salesforce Developer', 'Salesforce Developer', 'Phát triển và customize Salesforce CRM cho phòng kinh doanh.', '["Salesforce","Apex","Lightning"]', 'FULL_TIME', 'JUNIOR', 'Thứ 2 - Thứ 6', 18000000, 28000000, 'MONTH', 2, 0, 'REJECTED', '2026-08-30', 'Hà Nội', 'Cầu Giấy', 'Discovery Complex', 'Discovery Complex, Cầu Giấy, Hà Nội', 1, 'Phát triển Apex trigger, customize Lightning component, tích hợp Salesforce với hệ thống nội bộ.', '1+ năm Salesforce Developer, có chứng chỉ Platform Developer I là lợi thế, tiếng Anh giao tiếp.', 'Lương theo năng lực, tài trợ thi chứng chỉ Salesforce, môi trường quốc tế.', 0, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(17, 11, 'Blockchain Developer', 'Blockchain Developer', 'Xây dựng smart contract trên Ethereum và Solana cho dự án DeFi.', '["Solidity","Web3.js","Rust","Solana"]', 'FULL_TIME', 'SENIOR', 'Thứ 2 - Thứ 6', 35000000, 70000000, 'MONTH', 1, 0, 'REJECTED', '2026-08-30', 'Hà Nội', 'Cầu Giấy', 'Tràng An Complex', 'Tràng An Complex, Cầu Giấy, Hà Nội', 1, 'Viết smart contract Solidity, audit security, integrate với frontend qua Web3.js/ethers.js.', '2+ năm Solidity, hiểu sâu về EVM, đã deploy ít nhất 1 contract production trên mainnet.', 'Lương USD, token allocation, remote 100% cho ứng viên xuất sắc.', 0, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(18, 11, 'Cloud Solutions Architect', 'Cloud Architect', 'Thiết kế kiến trúc cloud-native trên AWS/GCP cho khách hàng doanh nghiệp.', '["AWS","Terraform","Kubernetes","GCP"]', 'FULL_TIME', 'LEAD', 'Thứ 2 - Thứ 6', 45000000, 80000000, 'MONTH', 1, 0, 'SUSPENDED', '2026-08-30', 'Hà Nội', 'Cầu Giấy', 'Sun Square, Lê Đức Thọ', 'Sun Square, Lê Đức Thọ, Cầu Giấy, Hà Nội', 1, 'Tư vấn giải pháp cloud, thiết kế multi-region HA, viết IaC với Terraform, mentor team Junior DevOps.', '5+ năm AWS, có AWS Solutions Architect Pro hoặc tương đương, tiếng Anh tốt làm việc với client nước ngoài.', 'Lương top-tier, 25 ngày phép, work-from-anywhere, ESOP package hấp dẫn.', 0, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
 
 -- CVs
 INSERT INTO CV (id, profile_id, Title, File_path, Upload_time, Cv_status, Is_default) VALUES

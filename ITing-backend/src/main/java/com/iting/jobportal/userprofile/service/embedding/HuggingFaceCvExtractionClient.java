@@ -48,7 +48,9 @@ public class HuggingFaceCvExtractionClient {
 
     public record CvExtractionResult(String status, JsonNode extractedData, double[] embedding, String error) {
         public boolean isSuccess() {
-            return "success".equalsIgnoreCase(status) && extractedData != null;
+            // HF API trả về status="ok"; giữ "success" cho backward compat.
+            return ("ok".equalsIgnoreCase(status) || "success".equalsIgnoreCase(status))
+                    && extractedData != null;
         }
     }
 
@@ -64,7 +66,7 @@ public class HuggingFaceCvExtractionClient {
                     .POST(HttpRequest.BodyPublishers.ofByteArray(body));
             if (token != null && !token.isBlank()) {
                 builder.header("Authorization", "Bearer " + token);
-                builder.header("X-API-Key", token);
+                builder.header("X-API-KEY", token);
             }
 
             HttpResponse<String> response = httpClient.send(builder.build(), HttpResponse.BodyHandlers.ofString());
