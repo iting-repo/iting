@@ -175,6 +175,8 @@ public class ApplicationMapperUtil {
                 .status(sent.getStatus() != null ? sent.getStatus()
                         : com.iting.jobportal.application.entity.enums.ApplicationStatus.PENDING)
                 .employerNote(sent.getEmployerNote())
+                .pipelineStage(sent.getPipelineStage() != null ? sent.getPipelineStage() : "SCREENING")
+                .stageUpdatedAt(sent.getStageUpdatedAt())
                 .build();
     }
 
