@@ -30,6 +30,9 @@ public class CreateJobRequest {
 
     private WorkingDays workingDays;
 
+    /** Ngôn ngữ CV yêu cầu (VIETNAMESE/ENGLISH/BOTH/ANY). Default ANY nếu null. */
+    private com.iting.jobportal.job.entity.enums.CvLanguage cvLanguage;
+
     // Nullable khi salaryType = NEGOTIABLE
     private BigDecimal minSalary;
 

@@ -79,7 +79,7 @@ const JobPreview = ({ job, onClose }) => {
         {/* Header Sticky */}
         <div className="sticky top-0 z-20 bg-white border-b border-gray-100 px-6 py-4 flex items-center justify-between rounded-t-2xl">
           <div className="flex items-center gap-3">
-            <div className="w-2 h-6 bg-[#00B4D8] rounded-full"></div>
+            <div className="w-2 h-6 bg-[#3AB4E6] rounded-full"></div>
             <h2 className="text-xl font-bold text-gray-800">Xem trước tin tuyển dụng</h2>
           </div>
           <button
@@ -97,11 +97,11 @@ const JobPreview = ({ job, onClose }) => {
               {/* 1. JOB HEADER */}
               <div className="space-y-6">
                 <div className="flex items-center gap-3">
-                  <span className="bg-[#E6F6FD] text-[#00B4D8] text-xs font-bold px-3 py-1 rounded-full">
+                  <span className="bg-[#E6F6FD] text-[#3AB4E6] text-xs font-bold px-3 py-1 rounded-full">
                     Mới đăng
                   </span>
                   <div className="flex-1"></div>
-                  <button className="flex items-center gap-2 text-[#00B4D8] text-sm font-bold border border-[#00B4D8] px-4 py-2 rounded-lg hover:bg-[#E6F6FD] transition-colors">
+                  <button className="flex items-center gap-2 text-[#3AB4E6] text-sm font-bold border border-[#3AB4E6] px-4 py-2 rounded-lg hover:bg-[#E6F6FD] transition-colors">
                     <FaBell /> Gửi tôi việc làm tương tự
                   </button>
                 </div>
@@ -124,19 +124,19 @@ const JobPreview = ({ job, onClose }) => {
                 {/* Meta Data Row */}
                 <div className="flex flex-wrap gap-y-3 gap-x-6 text-sm text-gray-500 bg-[#F5F7FA] p-5 rounded-xl border border-gray-100">
                   <div className="flex items-center gap-2">
-                    <span className="bg-white p-2 rounded-full text-[#00B4D8] shadow-sm"><FaBriefcase /></span>
+                    <span className="bg-white p-2 rounded-full text-[#3AB4E6] shadow-sm"><FaBriefcase /></span>
                     {jobDetail.industry}
                   </div>
                   <div className="flex items-center gap-2">
-                    <span className="bg-white p-2 rounded-full text-[#00B4D8] shadow-sm"><FaClock /></span>
+                    <span className="bg-white p-2 rounded-full text-[#3AB4E6] shadow-sm"><FaClock /></span>
                     {jobDetail.jobType}
                   </div>
                   <div className="flex items-center gap-2">
-                    <span className="bg-white p-2 rounded-full text-[#00B4D8] shadow-sm"><FaDollarSign /></span>
+                    <span className="bg-white p-2 rounded-full text-[#3AB4E6] shadow-sm"><FaDollarSign /></span>
                     {jobDetail.salary}
                   </div>
                   <div className="flex items-center gap-2">
-                    <span className="bg-white p-2 rounded-full text-[#00B4D8] shadow-sm"><FaMapMarkerAlt /></span>
+                    <span className="bg-white p-2 rounded-full text-[#3AB4E6] shadow-sm"><FaMapMarkerAlt /></span>
                     {jobDetail.location}
                   </div>
                   <div className="w-full pt-3 mt-1 border-t border-gray-200 text-gray-400 text-xs">
@@ -148,7 +148,7 @@ const JobPreview = ({ job, onClose }) => {
 
                 {/* Action Buttons Placeholder */}
                 <div className="flex gap-3">
-                  <button className="flex-1 py-3 bg-[#00B4D8] text-white font-bold rounded-lg opacity-80 cursor-not-allowed shadow-md">
+                  <button className="flex-1 py-3 bg-[#3AB4E6] text-white font-bold rounded-lg opacity-80 cursor-not-allowed shadow-md">
                     Ứng Tuyển Ngay (Bản xem trước)
                   </button>
                   <button className="px-4 py-3 border border-gray-200 rounded-lg text-gray-400 cursor-not-allowed">
@@ -160,7 +160,7 @@ const JobPreview = ({ job, onClose }) => {
               {/* 2. JOB DESCRIPTION & DETAILS */}
               <div className="space-y-8 text-gray-700 leading-relaxed">
                 <section>
-                  <h2 className="text-xl font-bold text-gray-800 mb-4 border-l-4 border-[#00B4D8] pl-4">Mô tả công việc</h2>
+                  <h2 className="text-xl font-bold text-gray-800 mb-4 border-l-4 border-[#3AB4E6] pl-4">Mô tả công việc</h2>
                   <ul className="list-disc pl-5 space-y-2 text-sm text-gray-600">
                     {jobDetail.description.map((item, idx) => <li key={idx}>{item}</li>)}
                   </ul>
@@ -168,7 +168,7 @@ const JobPreview = ({ job, onClose }) => {
 
                 {jobDetail.responsibilities.length > 0 && (
                   <section>
-                    <h2 className="text-xl font-bold text-gray-800 mb-4 border-l-4 border-[#00B4D8] pl-4">Trách nhiệm</h2>
+                    <h2 className="text-xl font-bold text-gray-800 mb-4 border-l-4 border-[#3AB4E6] pl-4">Trách nhiệm</h2>
                     <ul className="list-disc pl-5 space-y-2 text-sm text-gray-600">
                       {jobDetail.responsibilities.map((item, idx) => <li key={idx}>{item}</li>)}
                     </ul>
@@ -176,7 +176,7 @@ const JobPreview = ({ job, onClose }) => {
                 )}
 
                 <section>
-                  <h2 className="text-xl font-bold text-gray-800 mb-4 border-l-4 border-[#00B4D8] pl-4">Yêu cầu ứng viên</h2>
+                  <h2 className="text-xl font-bold text-gray-800 mb-4 border-l-4 border-[#3AB4E6] pl-4">Yêu cầu ứng viên</h2>
                   <ul className="list-disc pl-5 space-y-2 text-sm text-gray-600">
                     {jobDetail.requirements.map((item, idx) => <li key={idx}>{item}</li>)}
                   </ul>
@@ -184,7 +184,7 @@ const JobPreview = ({ job, onClose }) => {
 
                 {jobDetail.benefits.length > 0 && (
                   <section>
-                    <h2 className="text-xl font-bold text-gray-800 mb-4 border-l-4 border-[#00B4D8] pl-4">Quyền lợi</h2>
+                    <h2 className="text-xl font-bold text-gray-800 mb-4 border-l-4 border-[#3AB4E6] pl-4">Quyền lợi</h2>
                     <ul className="list-disc pl-5 space-y-2 text-sm text-gray-600">
                       {jobDetail.benefits.map((item, idx) => <li key={idx}>{item}</li>)}
                     </ul>
@@ -194,7 +194,7 @@ const JobPreview = ({ job, onClose }) => {
                 {/* Icons Section */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4">
                   <div className="flex gap-4 p-5 rounded-2xl bg-[#E6F6FD]/50 border border-[#E6F6FD]">
-                    <div className="w-12 h-12 rounded-xl bg-white text-[#00B4D8] flex items-center justify-center flex-shrink-0 shadow-sm">
+                    <div className="w-12 h-12 rounded-xl bg-white text-[#3AB4E6] flex items-center justify-center flex-shrink-0 shadow-sm">
                       <FaLaptop size={22} />
                     </div>
                     <div>
@@ -203,7 +203,7 @@ const JobPreview = ({ job, onClose }) => {
                     </div>
                   </div>
                   <div className="flex gap-4 p-5 rounded-2xl bg-[#E6F6FD]/50 border border-[#E6F6FD]">
-                    <div className="w-12 h-12 rounded-xl bg-white text-[#00B4D8] flex items-center justify-center flex-shrink-0 shadow-sm">
+                    <div className="w-12 h-12 rounded-xl bg-white text-[#3AB4E6] flex items-center justify-center flex-shrink-0 shadow-sm">
                       <FaGift size={22} />
                     </div>
                     <div>
@@ -223,49 +223,49 @@ const JobPreview = ({ job, onClose }) => {
 
                 <div className="space-y-6">
                   <div className="flex gap-4">
-                    <div className="mt-1 text-[#00B4D8] bg-white p-2.5 rounded-xl shadow-sm"><FaUser size={16} /></div>
+                    <div className="mt-1 text-[#3AB4E6] bg-white p-2.5 rounded-xl shadow-sm"><FaUser size={16} /></div>
                     <div>
                       <p className="font-bold text-gray-800 text-sm">Cấp bậc</p>
                       <p className="text-gray-500 text-sm">Nhân viên</p>
                     </div>
                   </div>
                   <div className="flex gap-4">
-                    <div className="mt-1 text-[#00B4D8] bg-white p-2.5 rounded-xl shadow-sm"><FaClock size={16} /></div>
+                    <div className="mt-1 text-[#3AB4E6] bg-white p-2.5 rounded-xl shadow-sm"><FaClock size={16} /></div>
                     <div>
                       <p className="font-bold text-gray-800 text-sm">Hình thức làm việc</p>
                       <p className="text-gray-500 text-sm">{jobDetail.jobType}</p>
                     </div>
                   </div>
                   <div className="flex gap-4">
-                    <div className="mt-1 text-[#00B4D8] bg-white p-2.5 rounded-xl shadow-sm"><FaBriefcase size={16} /></div>
+                    <div className="mt-1 text-[#3AB4E6] bg-white p-2.5 rounded-xl shadow-sm"><FaBriefcase size={16} /></div>
                     <div>
                       <p className="font-bold text-gray-800 text-sm">Lĩnh vực</p>
                       <p className="text-gray-500 text-sm">{jobDetail.industry}</p>
                     </div>
                   </div>
                   <div className="flex gap-4">
-                    <div className="mt-1 text-[#00B4D8] bg-white p-2.5 rounded-xl shadow-sm"><FaAward size={16} /></div>
+                    <div className="mt-1 text-[#3AB4E6] bg-white p-2.5 rounded-xl shadow-sm"><FaAward size={16} /></div>
                     <div>
                       <p className="font-bold text-gray-800 text-sm">Kinh nghiệm</p>
                       <p className="text-gray-500 text-sm">{jobDetail.experience}</p>
                     </div>
                   </div>
                   <div className="flex gap-4">
-                    <div className="mt-1 text-[#00B4D8] bg-white p-2.5 rounded-xl shadow-sm"><FaGraduationCap size={16} /></div>
+                    <div className="mt-1 text-[#3AB4E6] bg-white p-2.5 rounded-xl shadow-sm"><FaGraduationCap size={16} /></div>
                     <div>
                       <p className="font-bold text-gray-800 text-sm">Học vấn</p>
                       <p className="text-gray-500 text-sm">Cao đẳng trở lên</p>
                     </div>
                   </div>
                   <div className="flex gap-4">
-                    <div className="mt-1 text-[#00B4D8] bg-white p-2.5 rounded-xl shadow-sm"><FaWallet size={16} /></div>
+                    <div className="mt-1 text-[#3AB4E6] bg-white p-2.5 rounded-xl shadow-sm"><FaWallet size={16} /></div>
                     <div>
                       <p className="font-bold text-gray-800 text-sm">Lương</p>
                       <p className="text-gray-500 text-sm">{jobDetail.salary}</p>
                     </div>
                   </div>
                   <div className="flex gap-4">
-                    <div className="mt-1 text-[#00B4D8] bg-white p-2.5 rounded-xl shadow-sm"><FaMapMarkerAlt size={16} /></div>
+                    <div className="mt-1 text-[#3AB4E6] bg-white p-2.5 rounded-xl shadow-sm"><FaMapMarkerAlt size={16} /></div>
                     <div>
                       <p className="font-bold text-gray-800 text-sm">Địa điểm</p>
                       <p className="text-gray-500 text-sm">{jobDetail.location}</p>
@@ -293,7 +293,7 @@ const JobPreview = ({ job, onClose }) => {
         <div className="sticky bottom-0 bg-gray-50 border-t border-gray-100 px-8 py-5 flex justify-end gap-3 rounded-b-2xl shadow-[0_-4px_20px_rgba(0,0,0,0.05)]">
           <button
             onClick={onClose}
-            className="px-8 py-3 bg-[#00B4D8] text-white font-bold rounded-xl hover:bg-[#0096B4] transition-all shadow-lg active:scale-95"
+            className="px-8 py-3 bg-[#3AB4E6] text-white font-bold rounded-xl hover:bg-[#2C9ACD] transition-all shadow-lg active:scale-95"
           >
             Đóng xem trước
           </button>

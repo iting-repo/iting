@@ -101,13 +101,13 @@ const JobCard = ({ job, onHoverIn, onHoverOut, isHovered = false }) => {
             onMouseLeave={() => onHoverOut && onHoverOut()}
             className={`bg-white p-4 rounded-xl border transition-all duration-200 relative group cursor-pointer ${
                 isHovered
-                    ? 'border-[#00B4D8] shadow-md ring-2 ring-[#00B4D8]/20'
+                    ? 'border-[#3AB4E6] shadow-md ring-2 ring-[#3AB4E6]/20'
                     : 'border-gray-100 hover:shadow-lg hover:border-gray-200'
             }`}
         >
             <div className="flex justify-between items-start mb-3">
                 <div className="flex gap-2 items-center">
-                    <span className="bg-blue-50 text-[#00B4D8] text-[10px] font-bold px-2 py-1 rounded">
+                    <span className="bg-blue-50 text-[#3AB4E6] text-[10px] font-bold px-2 py-1 rounded">
                         {timeAgo(job.createdAt || job.postedDate || job.createdDate) || job.timePosted || 'Mới đăng'}
                     </span>
                     {job.isAiSuggested && (
@@ -119,7 +119,7 @@ const JobCard = ({ job, onHoverIn, onHoverOut, isHovered = false }) => {
                 <button
                   onClick={handleToggleSave}
                   disabled={isSaving}
-                  className={`transition-colors ${isSaved ? 'text-[#00B4D8]' : 'text-gray-300 hover:text-[#00B4D8]'} ${isSaving ? 'opacity-60 cursor-not-allowed' : ''}`}
+                  className={`transition-colors ${isSaved ? 'text-[#3AB4E6]' : 'text-gray-300 hover:text-[#3AB4E6]'} ${isSaving ? 'opacity-60 cursor-not-allowed' : ''}`}
                 >
                     {isSaved ? <FaBookmark size={16} /> : <FaRegBookmark size={16} />}
                 </button>
@@ -136,7 +136,7 @@ const JobCard = ({ job, onHoverIn, onHoverOut, isHovered = false }) => {
                 </div>
 
                 <div className="flex-1 min-w-0">
-                    <h3 className={`font-bold text-base mb-0.5 transition-colors ${isHovered ? 'text-[#00B4D8]' : 'text-gray-800 group-hover:text-[#00B4D8]'}`}>
+                    <h3 className={`font-bold text-base mb-0.5 transition-colors ${isHovered ? 'text-[#3AB4E6]' : 'text-gray-800 group-hover:text-[#3AB4E6]'}`}>
                         {job.title}
                     </h3>
                     <p className="text-xs text-gray-500 font-medium mb-3">{job.company}</p>
@@ -161,7 +161,7 @@ const JobCard = ({ job, onHoverIn, onHoverOut, isHovered = false }) => {
             <div className="mt-4 md:mt-0 md:absolute md:bottom-4 md:right-4">
                 <button
                     onClick={(e) => { e.stopPropagation(); handleNavigate(); }}
-                    className="w-full md:w-auto px-5 py-1.5 bg-[#E6F6FD] hover:bg-[#00B4D8] text-[#00B4D8] hover:text-white font-bold rounded transition-all text-xs"
+                    className="w-full md:w-auto px-5 py-1.5 bg-[#E6F6FD] hover:bg-[#3AB4E6] text-[#3AB4E6] hover:text-white font-bold rounded transition-all text-xs"
                 >
                     Chi Tiết
                 </button>

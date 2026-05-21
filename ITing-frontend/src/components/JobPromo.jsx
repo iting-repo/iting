@@ -25,7 +25,7 @@ const JobPromo = () => {
                 <p className="text-white/90 text-sm mb-4 line-clamp-3">
                     Tìm kiếm cơ hội nghề nghiệp tốt nhất tại các công ty hàng đầu. Đừng bỏ lỡ!
                 </p>
-                <button className="w-full py-3 bg-white text-[#00B4D8] font-bold rounded-lg hover:bg-gray-100 transition-colors shadow-lg">
+                <button className="w-full py-3 bg-white text-[#3AB4E6] font-bold rounded-lg hover:bg-gray-100 transition-colors shadow-lg">
                     Tham gia ngay
                 </button>
             </div>

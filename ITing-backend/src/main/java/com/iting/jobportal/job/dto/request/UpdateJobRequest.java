@@ -25,6 +25,8 @@ public class UpdateJobRequest {
 
     private WorkingDays workingDays;
 
+    private CvLanguage cvLanguage;
+
     private BigDecimal minSalary;
 
     private BigDecimal maxSalary;

@@ -25,6 +25,9 @@ const Verification = lazy(() => import('../pages/employer/Verification'));
 const DataProcessing = lazy(() => import('../pages/employer/DataProcessing'));
 const FindCandidate = lazy(() => import('../pages/employer/FindCandidate'));
 const FavoriteCandidates = lazy(() => import('../pages/employer/FavoriteCandidates'));
+const EmployerServicesPage = lazy(() => import('../pages/employer/EmployerServicesPage'));
+const SubscriptionPricingPage = lazy(() => import('../pages/employer/subscription/SubscriptionPricingPage'));
+const ManageSubscriptionPage = lazy(() => import('../pages/employer/subscription/ManageSubscriptionPage'));
 const CandidateDashboard = lazy(() => import('../pages/candidate/CandidateDashboard'));
 const CandidateLayout = lazy(() => import('../layouts/CandidateLayout'));
 const CandidateProfile = lazy(() => import('../pages/candidate/profile/CandidateProfile'));
@@ -49,6 +52,7 @@ const SystemConfig = lazy(() => import('../pages/admin/config/SystemConfig'));
 const NotificationManagement = lazy(() => import('../pages/admin/notifications/NotificationManagement'));
 const CategoryManagement = lazy(() => import('../pages/admin/categories/CategoryManagement'));
 const BannerManagement = lazy(() => import('../pages/admin/banner/BannerManagement'));
+const AnnouncementManagement = lazy(() => import('../pages/admin/announcements/AnnouncementManagement'));
 const BlogManagement = lazy(() => import('../pages/admin/blog/BlogManagement'));
 const FaqManagement = lazy(() => import('../pages/admin/faq/FaqManagement'));
 const RoleManagement = lazy(() => import('../pages/admin/roles/RoleManagement'));
@@ -96,6 +100,7 @@ const AppRoutes = () => {
             <Route path="notifications" element={<NotificationManagement />} />
             <Route path="categories" element={<CategoryManagement />} />
             <Route path="banner" element={<BannerManagement />} />
+            <Route path="announcements" element={<AnnouncementManagement />} />
             <Route path="blog" element={<BlogManagement />} />
             <Route path="faq" element={<FaqManagement />} />
             <Route path="roles" element={<RoleManagement />} />
@@ -119,6 +124,9 @@ const AppRoutes = () => {
               <Route path="job/:slug/:jobKey/applications" element={<JobApplications />} />
               <Route path="find-cv" element={<FindCandidate />} />
               <Route path="favorite-candidates" element={<FavoriteCandidates />} />
+              <Route path="services" element={<EmployerServicesPage />} />
+              <Route path="subscriptions" element={<SubscriptionPricingPage />} />
+              <Route path="manage-subscription" element={<ManageSubscriptionPage />} />
             </Route>
           </Route>
         </Route>

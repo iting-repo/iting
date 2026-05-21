@@ -157,7 +157,7 @@ const JobPreviewPane = ({ job, onClose, variant = 'inline' }) => {
           <div className="flex-1 min-w-0 pr-8">
             <h2 className="text-lg font-bold text-gray-900 leading-snug mb-1 line-clamp-2">{title}</h2>
             <p className="text-sm text-gray-600 font-medium mb-2">{company}</p>
-            <p className="text-base font-bold text-[#00B4D8]">{salary}</p>
+            <p className="text-base font-bold text-[#3AB4E6]">{salary}</p>
           </div>
         </div>
 
@@ -178,7 +178,7 @@ const JobPreviewPane = ({ job, onClose, variant = 'inline' }) => {
           <Section title="Kỹ năng">
             <div className="flex flex-wrap gap-2">
               {skills.map((s, i) => (
-                <span key={`${s}-${i}`} className="px-3 py-1 bg-blue-50 text-[#00B4D8] text-xs font-medium rounded-full">{s}</span>
+                <span key={`${s}-${i}`} className="px-3 py-1 bg-blue-50 text-[#3AB4E6] text-xs font-medium rounded-full">{s}</span>
               ))}
             </div>
           </Section>
@@ -208,21 +208,21 @@ const JobPreviewPane = ({ job, onClose, variant = 'inline' }) => {
           title={isSaved ? 'Bỏ lưu' : 'Lưu công việc'}
           className={`w-10 h-10 rounded-xl border flex items-center justify-center transition ${
             isSaved
-              ? 'bg-[#00B4D8] text-white border-[#00B4D8]'
-              : 'bg-white text-gray-500 border-gray-200 hover:border-[#00B4D8] hover:text-[#00B4D8]'
+              ? 'bg-[#3AB4E6] text-white border-[#3AB4E6]'
+              : 'bg-white text-gray-500 border-gray-200 hover:border-[#3AB4E6] hover:text-[#3AB4E6]'
           } ${isSaving ? 'opacity-60 cursor-not-allowed' : ''}`}
         >
           {isSaved ? <FaBookmark size={14} /> : <FaRegBookmark size={14} />}
         </button>
         <button
           onClick={handleApply}
-          className="flex-1 px-4 py-2.5 rounded-xl font-semibold text-sm text-[#00B4D8] bg-white border border-[#00B4D8] hover:bg-[#00B4D8]/5 transition"
+          className="flex-1 px-4 py-2.5 rounded-xl font-semibold text-sm text-[#3AB4E6] bg-white border border-[#3AB4E6] hover:bg-[#3AB4E6]/5 transition"
         >
           Ứng tuyển
         </button>
         <button
           onClick={handleViewFull}
-          className="flex-1 px-4 py-2.5 rounded-xl font-semibold text-sm text-white bg-[#00B4D8] hover:bg-[#0096b8] shadow-md shadow-blue-200 transition"
+          className="flex-1 px-4 py-2.5 rounded-xl font-semibold text-sm text-white bg-[#3AB4E6] hover:bg-[#2C9ACD] shadow-md shadow-blue-200 transition"
         >
           Xem chi tiết
         </button>

@@ -52,6 +52,11 @@ public class Job {
     @Enumerated(EnumType.STRING)
     private WorkingDays workingDays;
 
+    /** Ngôn ngữ CV/Cover letter mà HR yêu cầu — ứng viên cần biết để nộp đúng loại. */
+    @Enumerated(EnumType.STRING)
+    @Column(name = "cv_language", length = 20)
+    private CvLanguage cvLanguage;
+
     // ===== SALARY =====
     private BigDecimal minSalary;
     private BigDecimal maxSalary;
@@ -146,6 +151,8 @@ public class Job {
             maxAccept = 0;
         if (featured == null)
             featured = false;
+        if (cvLanguage == null)
+            cvLanguage = CvLanguage.ANY;
 
         if (location == null) {
             location = buildLocation();

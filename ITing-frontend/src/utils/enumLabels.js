@@ -298,6 +298,15 @@ export const jobTypeLabel = (v) => labelOf(JOB_TYPE_LABELS, v);
 export const experienceLevelLabel = (v) => labelOf(EXPERIENCE_LEVEL_LABELS, v);
 export const salaryTypeLabel = (v) => labelOf(SALARY_TYPE_LABELS, v);
 export const workingDaysLabel = (v) => labelOf(WORKING_DAYS_LABELS, v);
+
+// CV Language (HR yêu cầu ngôn ngữ CV/Cover letter)
+export const CV_LANGUAGE_LABELS = {
+    VIETNAMESE: 'Tiếng Việt',
+    ENGLISH: 'Tiếng Anh',
+    BOTH: 'Song ngữ (Việt + Anh)',
+    ANY: 'Việt hoặc Anh',
+};
+export const cvLanguageLabel = (v) => labelOf(CV_LANGUAGE_LABELS, v, 'Việt hoặc Anh');
 export const applicationStatusLabel = (v) => labelOf(APPLICATION_STATUS_LABELS, v);
 export const accountStatusLabel = (v) => labelOf(ACCOUNT_STATUS_LABELS, v);
 export const roleLabel = (v) => labelOf(ROLE_LABELS, v);

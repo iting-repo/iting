@@ -77,7 +77,7 @@ const AboutPage = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
                     {/* Step 1 */}
                     <div className="p-8 rounded-2xl border border-gray-100 hover:shadow-xl transition-shadow text-center group">
-                        <div className="w-14 h-14 mx-auto bg-blue-50 text-[#00B4D8] rounded-full flex items-center justify-center text-2xl mb-6 group-hover:bg-[#00B4D8] group-hover:text-white transition-colors">
+                        <div className="w-14 h-14 mx-auto bg-blue-50 text-[#3AB4E6] rounded-full flex items-center justify-center text-2xl mb-6 group-hover:bg-[#3AB4E6] group-hover:text-white transition-colors">
                             <FaRegUser />
                         </div>
                         <h3 className="font-bold text-lg text-gray-800 mb-2">Tạo tài khoản</h3>
@@ -86,7 +86,7 @@ const AboutPage = () => {
 
                     {/* Step 2 */}
                     <div className="p-8 rounded-2xl border border-gray-100 hover:shadow-xl transition-shadow text-center group">
-                        <div className="w-14 h-14 mx-auto bg-blue-50 text-[#00B4D8] rounded-full flex items-center justify-center text-2xl mb-6 group-hover:bg-[#00B4D8] group-hover:text-white transition-colors">
+                        <div className="w-14 h-14 mx-auto bg-blue-50 text-[#3AB4E6] rounded-full flex items-center justify-center text-2xl mb-6 group-hover:bg-[#3AB4E6] group-hover:text-white transition-colors">
                             <FaFileAlt />
                         </div>
                         <h3 className="font-bold text-lg text-gray-800 mb-2">Tải lên CV</h3>
@@ -95,7 +95,7 @@ const AboutPage = () => {
 
                     {/* Step 3 */}
                     <div className="p-8 rounded-2xl border border-gray-100 hover:shadow-xl transition-shadow text-center group">
-                        <div className="w-14 h-14 mx-auto bg-blue-50 text-[#00B4D8] rounded-full flex items-center justify-center text-2xl mb-6 group-hover:bg-[#00B4D8] group-hover:text-white transition-colors">
+                        <div className="w-14 h-14 mx-auto bg-blue-50 text-[#3AB4E6] rounded-full flex items-center justify-center text-2xl mb-6 group-hover:bg-[#3AB4E6] group-hover:text-white transition-colors">
                             <FaSearch />
                         </div>
                         <h3 className="font-bold text-lg text-gray-800 mb-2">Tìm việc phù hợp</h3>
@@ -104,7 +104,7 @@ const AboutPage = () => {
 
                     {/* Step 4 */}
                     <div className="p-8 rounded-2xl border border-gray-100 hover:shadow-xl transition-shadow text-center group">
-                        <div className="w-14 h-14 mx-auto bg-blue-50 text-[#00B4D8] rounded-full flex items-center justify-center text-2xl mb-6 group-hover:bg-[#00B4D8] group-hover:text-white transition-colors">
+                        <div className="w-14 h-14 mx-auto bg-blue-50 text-[#3AB4E6] rounded-full flex items-center justify-center text-2xl mb-6 group-hover:bg-[#3AB4E6] group-hover:text-white transition-colors">
                             <FaCheckCircle />
                         </div>
                         <h3 className="font-bold text-lg text-gray-800 mb-2">Ứng tuyển ngay</h3>
@@ -128,7 +128,7 @@ const AboutPage = () => {
 
                 {/* Content */}
                 <div className="relative z-10 text-center px-4">
-                    <button className="w-20 h-20 bg-[#00B4D8] rounded-full flex items-center justify-center text-white text-3xl mb-8 mx-auto hover:scale-110 transition-transform shadow-[0_0_30px_rgba(0,180,216,0.6)]">
+                    <button className="w-20 h-20 bg-[#3AB4E6] rounded-full flex items-center justify-center text-white text-3xl mb-8 mx-auto hover:scale-110 transition-transform shadow-[0_0_30px_rgba(58,180,230,0.6)]">
                         <FaPlay className="pl-1" />
                     </button>
                     <h2 className="text-3xl md:text-5xl font-bold text-white max-w-3xl mx-auto leading-tight mb-12">
@@ -139,24 +139,24 @@ const AboutPage = () => {
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-8 text-left max-w-4xl mx-auto border-t border-white/20 pt-8">
                         <div>
                             <div className="flex items-center gap-3 mb-2">
-                                <span className="bg-[#00B4D8] text-white w-6 h-6 rounded flex items-center justify-center font-bold text-sm">1</span>
+                                <span className="bg-[#3AB4E6] text-white w-6 h-6 rounded flex items-center justify-center font-bold text-sm">1</span>
                                 <h4 className="text-white font-bold">Cơ hội nghề nghiệp đa dạng</h4>
                             </div>
-                            <a href="#" className="text-[#00B4D8] text-xs hover:underline">Learn more</a>
+                            <a href="#" className="text-[#3AB4E6] text-xs hover:underline">Learn more</a>
                         </div>
                         <div>
                             <div className="flex items-center gap-3 mb-2">
-                                <span className="bg-[#00B4D8] text-white w-6 h-6 rounded flex items-center justify-center font-bold text-sm">2</span>
+                                <span className="bg-[#3AB4E6] text-white w-6 h-6 rounded flex items-center justify-center font-bold text-sm">2</span>
                                 <h4 className="text-white font-bold">Kết nối với nhà tuyển dụng uy tín</h4>
                             </div>
-                            <a href="#" className="text-[#00B4D8] text-xs hover:underline">Learn more</a>
+                            <a href="#" className="text-[#3AB4E6] text-xs hover:underline">Learn more</a>
                         </div>
                         <div>
                             <div className="flex items-center gap-3 mb-2">
-                                <span className="bg-[#00B4D8] text-white w-6 h-6 rounded flex items-center justify-center font-bold text-sm">3</span>
+                                <span className="bg-[#3AB4E6] text-white w-6 h-6 rounded flex items-center justify-center font-bold text-sm">3</span>
                                 <h4 className="text-white font-bold">Phát triển sự nghiệp lâu dài</h4>
                             </div>
-                            <a href="#" className="text-[#00B4D8] text-xs hover:underline">Learn more</a>
+                            <a href="#" className="text-[#3AB4E6] text-xs hover:underline">Learn more</a>
                         </div>
                     </div>
                 </div>
@@ -178,11 +178,11 @@ const AboutPage = () => {
                                     }`}
                             >
                                 <span className={`font-bold text-lg ${openFaqIndex === index ? 'text-gray-900' : 'text-gray-600'}`}>
-                                    <span className="mr-4 text-[#00B4D8] opacity-50">0{index + 1}</span>
+                                    <span className="mr-4 text-[#3AB4E6] opacity-50">0{index + 1}</span>
                                     {item.question}
                                 </span>
                                 {openFaqIndex === index ?
-                                    <FaChevronUp className="text-[#00B4D8]" /> :
+                                    <FaChevronUp className="text-[#3AB4E6]" /> :
                                     <FaChevronDown className="text-gray-400" />
                                 }
                             </button>
@@ -227,28 +227,28 @@ const AboutPage = () => {
 
                         <div className="grid grid-cols-2 gap-y-8 gap-x-4">
                             <div className="flex gap-4">
-                                <div className="text-[#00B4D8] text-2xl mt-1"><FaMedal /></div>
+                                <div className="text-[#3AB4E6] text-2xl mt-1"><FaMedal /></div>
                                 <div>
                                     <h4 className="font-bold text-gray-800">Công việc chất lượng</h4>
                                     <p className="text-xs text-gray-500 mt-1">Được kiểm duyệt kỹ càng.</p>
                                 </div>
                             </div>
                             <div className="flex gap-4">
-                                <div className="text-[#00B4D8] text-2xl mt-1"><FaTools /></div>
+                                <div className="text-[#3AB4E6] text-2xl mt-1"><FaTools /></div>
                                 <div>
                                     <h4 className="font-bold text-gray-800">Công cụ tạo CV</h4>
                                     <p className="text-xs text-gray-500 mt-1">Chuyên nghiệp & Hiện đại.</p>
                                 </div>
                             </div>
                             <div className="flex gap-4">
-                                <div className="text-[#00B4D8] text-2xl mt-1"><FaBuilding /></div>
+                                <div className="text-[#3AB4E6] text-2xl mt-1"><FaBuilding /></div>
                                 <div>
                                     <h4 className="font-bold text-gray-800">Công ty hàng đầu</h4>
                                     <p className="text-xs text-gray-500 mt-1">Đối tác uy tín toàn cầu.</p>
                                 </div>
                             </div>
                             <div className="flex gap-4">
-                                <div className="text-[#00B4D8] text-2xl mt-1"><FaUserTie /></div>
+                                <div className="text-[#3AB4E6] text-2xl mt-1"><FaUserTie /></div>
                                 <div>
                                     <h4 className="font-bold text-gray-800">Nhân tài hàng đầu</h4>
                                     <p className="text-xs text-gray-500 mt-1">Kết nối chuyên gia giỏi.</p>
@@ -270,15 +270,15 @@ const AboutPage = () => {
                     {/* Card 1 */}
                     <div className="group cursor-pointer">
                         <div className="rounded-2xl overflow-hidden h-[300px] mb-4 relative">
-                            <span className="absolute top-4 left-4 bg-[#00B4D8] text-white text-xs font-bold px-3 py-1 rounded-full z-10">News</span>
+                            <span className="absolute top-4 left-4 bg-[#3AB4E6] text-white text-xs font-bold px-3 py-1 rounded-full z-10">News</span>
                             <img src="https://images.unsplash.com/photo-1521737604893-d14cc237f11d?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80" alt="Blog 1" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
                         </div>
                         <div className="pr-4">
                             <p className="text-xs text-gray-400 mb-2">30 Tháng 3, 2024</p>
-                            <h3 className="text-xl font-bold text-gray-900 mb-3 group-hover:text-[#00B4D8] transition-colors">
+                            <h3 className="text-xl font-bold text-gray-900 mb-3 group-hover:text-[#3AB4E6] transition-colors">
                                 Khơi Dậy Tinh Thần Làm Việc: Chiến Lược Nâng Cao Sự Gắn Kết Của Nhân Viên Năm 2024
                             </h3>
-                            <button className="text-[#00B4D8] text-sm font-bold flex items-center gap-1 group-hover:gap-2 transition-all">
+                            <button className="text-[#3AB4E6] text-sm font-bold flex items-center gap-1 group-hover:gap-2 transition-all">
                                 Đọc thêm <FaArrowRight size={12} />
                             </button>
                         </div>
@@ -287,15 +287,15 @@ const AboutPage = () => {
                     {/* Card 2 */}
                     <div className="group cursor-pointer">
                         <div className="rounded-2xl overflow-hidden h-[300px] mb-4 relative">
-                            <span className="absolute top-4 left-4 bg-[#00B4D8] text-white text-xs font-bold px-3 py-1 rounded-full z-10">Blog</span>
+                            <span className="absolute top-4 left-4 bg-[#3AB4E6] text-white text-xs font-bold px-3 py-1 rounded-full z-10">Blog</span>
                             <img src="https://images.unsplash.com/photo-1551434678-e076c223a692?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80" alt="Blog 2" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
                         </div>
                         <div className="pr-4">
                             <p className="text-xs text-gray-400 mb-2">30 Tháng 3, 2024</p>
-                            <h3 className="text-xl font-bold text-gray-900 mb-3 group-hover:text-[#00B4D8] transition-colors">
+                            <h3 className="text-xl font-bold text-gray-900 mb-3 group-hover:text-[#3AB4E6] transition-colors">
                                 Cách Tránh 6 Lỗi Phổ Biến Nhất Khi Phỏng Vấn Xin Việc
                             </h3>
-                            <button className="text-[#00B4D8] text-sm font-bold flex items-center gap-1 group-hover:gap-2 transition-all">
+                            <button className="text-[#3AB4E6] text-sm font-bold flex items-center gap-1 group-hover:gap-2 transition-all">
                                 Đọc thêm <FaArrowRight size={12} />
                             </button>
                         </div>

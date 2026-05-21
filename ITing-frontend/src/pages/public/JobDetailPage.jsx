@@ -666,6 +666,7 @@ const JobDetailPage = () => {
                 }}
                 jobTitle={jobDetail.title}
                 jobId={currentJob.id}
+                cvLanguage={currentJob?.cvLanguage}
             />
 
             {/* ── CTA Search Banner (homepage style) ── */}
@@ -755,7 +756,7 @@ const JobDetailPage = () => {
                     <div className="lg:col-span-8 space-y-10">
                         <div className="space-y-6">
                             <div className="flex items-center gap-3">
-                                <span className="bg-[#E6F6FD] text-[#00B4D8] text-xs font-bold px-3 py-1 rounded-full">
+                                <span className="bg-[#E6F6FD] text-[#3AB4E6] text-xs font-bold px-3 py-1 rounded-full">
                                     {jobDetail.postedTime}
                                 </span>
 
@@ -770,7 +771,7 @@ const JobDetailPage = () => {
                                         }
                                         setShowSimilarModal(true);
                                     }}
-                                    className="flex items-center gap-2 text-[#00B4D8] text-sm font-bold border border-[#00B4D8] px-4 py-2 rounded-lg hover:bg-[#E6F6FD] transition-colors"
+                                    className="flex items-center gap-2 text-[#3AB4E6] text-sm font-bold border border-[#3AB4E6] px-4 py-2 rounded-lg hover:bg-[#E6F6FD] transition-colors"
                                 >
                                     <FaBell /> Gửi tôi việc làm tương tự
                                 </button>
@@ -798,28 +799,28 @@ const JobDetailPage = () => {
 
                             <div className="flex flex-wrap gap-y-3 gap-x-6 text-sm text-gray-500 bg-[#F5F7FA] p-4 rounded-xl">
                                 <div className="flex items-center gap-2">
-                                    <span className="bg-white p-2 rounded-full text-[#00B4D8] shadow-sm">
+                                    <span className="bg-white p-2 rounded-full text-[#3AB4E6] shadow-sm">
                                         <FaBriefcase />
                                     </span>
                                     {jobDetail.domain}
                                 </div>
 
                                 <div className="flex items-center gap-2">
-                                    <span className="bg-white p-2 rounded-full text-[#00B4D8] shadow-sm">
+                                    <span className="bg-white p-2 rounded-full text-[#3AB4E6] shadow-sm">
                                         <FaClock />
                                     </span>
                                     {jobDetail.jobType}
                                 </div>
 
                                 <div className="flex items-center gap-2">
-                                    <span className="bg-white p-2 rounded-full text-[#00B4D8] shadow-sm">
+                                    <span className="bg-white p-2 rounded-full text-[#3AB4E6] shadow-sm">
                                         <FaDollarSign />
                                     </span>
                                     {jobDetail.salary}
                                 </div>
 
                                 <div className="flex items-center gap-2">
-                                    <span className="bg-white p-2 rounded-full text-[#00B4D8]">
+                                    <span className="bg-white p-2 rounded-full text-[#3AB4E6]">
                                         <FaMapMarkerAlt />
                                     </span>
                                     {jobDetail.location}
@@ -848,7 +849,7 @@ const JobDetailPage = () => {
                                         ? 'bg-gray-100 text-gray-400 cursor-not-allowed border border-gray-200'
                                         : hasApplied
                                             ? 'bg-gray-100 text-gray-400 cursor-not-allowed border border-gray-200'
-                                            : 'bg-[#00B4D8] text-white hover:bg-[#0096B4] hover:-translate-y-0.5'
+                                            : 'bg-[#3AB4E6] text-white hover:bg-[#2C9ACD] hover:-translate-y-0.5'
                                         }`}
                                 >
                                     {isCompanySuspended ? 'Không khả dụng' : hasApplied ? 'Đã Ứng Tuyển' : 'Ứng Tuyển Ngay'}
@@ -870,7 +871,7 @@ const JobDetailPage = () => {
                         <div className="space-y-8 text-gray-700 leading-relaxed">
                             <section>
                                 <h2 className="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">
-                                    <span className="w-1.5 h-6 bg-[#00B4D8] rounded-full" />
+                                    <span className="w-1.5 h-6 bg-[#3AB4E6] rounded-full" />
                                     Mô tả công việc
                                 </h2>
                                 <ul className="list-disc pl-5 space-y-2 text-sm">
@@ -882,7 +883,7 @@ const JobDetailPage = () => {
 
                             <section>
                                 <h2 className="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">
-                                    <span className="w-1.5 h-6 bg-[#00B4D8] rounded-full" />
+                                    <span className="w-1.5 h-6 bg-[#3AB4E6] rounded-full" />
                                     Trách nhiệm công việc
                                 </h2>
                                 <ul className="list-disc pl-5 space-y-2 text-sm">
@@ -894,7 +895,7 @@ const JobDetailPage = () => {
 
                             <section>
                                 <h2 className="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">
-                                    <span className="w-1.5 h-6 bg-[#00B4D8] rounded-full" />
+                                    <span className="w-1.5 h-6 bg-[#3AB4E6] rounded-full" />
                                     Yêu cầu ứng viên
                                 </h2>
                                 <ul className="list-disc pl-5 space-y-2 text-sm">
@@ -906,7 +907,7 @@ const JobDetailPage = () => {
 
                             <section>
                                 <h2 className="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">
-                                    <span className="w-1.5 h-6 bg-[#00B4D8] rounded-full" />
+                                    <span className="w-1.5 h-6 bg-[#3AB4E6] rounded-full" />
                                     Quyền lợi
                                 </h2>
                                 <ul className="list-disc pl-5 space-y-2 text-sm">
@@ -941,6 +942,34 @@ const JobDetailPage = () => {
 
                                 <div>
                                     <h3 className="font-bold text-gray-800 mb-1">
+                                        Ngôn ngữ CV yêu cầu
+                                    </h3>
+                                    <div className="flex items-center gap-2 mt-1">
+                                        {(() => {
+                                            const lang = currentJob?.cvLanguage || 'ANY';
+                                            const badgeMap = {
+                                                VIETNAMESE: { label: '🇻🇳 Bắt buộc tiếng Việt', cls: 'bg-red-50 text-red-700 border-red-200' },
+                                                ENGLISH:    { label: '🇬🇧 Bắt buộc tiếng Anh',  cls: 'bg-blue-50 text-blue-700 border-blue-200' },
+                                                BOTH:       { label: '🇻🇳 + 🇬🇧 Song ngữ (Việt + Anh)', cls: 'bg-purple-50 text-purple-700 border-purple-200' },
+                                                ANY:        { label: '✓ Việt hoặc Anh đều được', cls: 'bg-gray-50 text-gray-600 border-gray-200' },
+                                            };
+                                            const b = badgeMap[lang] || badgeMap.ANY;
+                                            return (
+                                                <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold border ${b.cls}`}>
+                                                    {b.label}
+                                                </span>
+                                            );
+                                        })()}
+                                    </div>
+                                    {currentJob?.cvLanguage && currentJob.cvLanguage !== 'ANY' && (
+                                        <p className="text-xs text-gray-400 mt-2 italic">
+                                            Vui lòng nộp CV đúng ngôn ngữ yêu cầu để hồ sơ được xét duyệt thuận lợi.
+                                        </p>
+                                    )}
+                                </div>
+
+                                <div>
+                                    <h3 className="font-bold text-gray-800 mb-1">
                                         Cách thức ứng tuyển
                                     </h3>
                                     <p className="text-sm text-gray-500">
@@ -959,7 +988,7 @@ const JobDetailPage = () => {
                                     <strong>Báo cáo tin tuyển dụng:</strong> Nếu bạn thấy rằng tin tuyển dụng này không đúng hoặc có dấu hiệu lừa đảo,{' '}
                                     <button
                                         onClick={() => setShowReportModal(true)}
-                                        className="text-[#00B4D8] underline hover:text-[#0096B4] transition-colors"
+                                        className="text-[#3AB4E6] underline hover:text-[#2C9ACD] transition-colors"
                                     >
                                         hãy phản ánh với chúng tôi.
                                     </button>
@@ -973,7 +1002,7 @@ const JobDetailPage = () => {
                                         jobDetail.techs.map((tag, idx) => (
                                             <span
                                                 key={idx}
-                                                className="px-3 py-1 bg-[#E6F6FD] text-[#00B4D8] text-xs font-medium rounded hover:bg-[#d0f0fd] cursor-pointer"
+                                                className="px-3 py-1 bg-[#E6F6FD] text-[#3AB4E6] text-xs font-medium rounded hover:bg-[#D8F1FB] cursor-pointer"
                                             >
                                                 {tag}
                                             </span>
@@ -990,7 +1019,7 @@ const JobDetailPage = () => {
 
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <div className="flex gap-4">
-                                    <div className="w-10 h-10 rounded bg-[#E6F6FD] text-[#00B4D8] flex items-center justify-center flex-shrink-0 shadow-sm">
+                                    <div className="w-10 h-10 rounded bg-[#E6F6FD] text-[#3AB4E6] flex items-center justify-center flex-shrink-0 shadow-sm">
                                         <FaLaptop size={20} />
                                     </div>
                                     <div>
@@ -1000,7 +1029,7 @@ const JobDetailPage = () => {
                                 </div>
 
                                 <div className="flex gap-4">
-                                    <div className="w-10 h-10 rounded bg-[#E6F6FD] text-[#00B4D8] flex items-center justify-center flex-shrink-0 shadow-sm">
+                                    <div className="w-10 h-10 rounded bg-[#E6F6FD] text-[#3AB4E6] flex items-center justify-center flex-shrink-0 shadow-sm">
                                         <FaGift size={20} />
                                     </div>
                                     <div>
@@ -1099,13 +1128,13 @@ const JobDetailPage = () => {
                                         value={contactMessage}
                                         onChange={(e) => setContactMessage(e.target.value)}
                                         placeholder="Nhập nội dung tin nhắn..."
-                                        className="w-full px-3 py-2 bg-gray-50 border border-transparent rounded-lg text-sm focus:ring-2 focus:ring-[#00B4D8] outline-none resize-none transition-all"
+                                        className="w-full px-3 py-2 bg-gray-50 border border-transparent rounded-lg text-sm focus:ring-2 focus:ring-[#3AB4E6] outline-none resize-none transition-all"
                                     />
 
                                     <button
                                         onClick={handleContactCompany}
                                         disabled={sendingContact}
-                                        className="w-full py-2.5 bg-[#00B4D8] text-white font-bold rounded-lg hover:bg-[#0096B4] transition-colors shadow-sm text-sm disabled:opacity-50"
+                                        className="w-full py-2.5 bg-[#3AB4E6] text-white font-bold rounded-lg hover:bg-[#2C9ACD] transition-colors shadow-sm text-sm disabled:opacity-50"
                                     >
                                         {sendingContact ? 'Đang gửi...' : 'Gửi Tin Nhắn'}
                                     </button>
@@ -1120,7 +1149,7 @@ const JobDetailPage = () => {
 
                             <div className="space-y-5">
                                 <div className="flex gap-3">
-                                    <div className="mt-1 text-[#00B4D8]">
+                                    <div className="mt-1 text-[#3AB4E6]">
                                         <FaUser />
                                     </div>
                                     <div>
@@ -1130,7 +1159,7 @@ const JobDetailPage = () => {
                                 </div>
 
                                 <div className="flex gap-3">
-                                    <div className="mt-1 text-[#00B4D8]">
+                                    <div className="mt-1 text-[#3AB4E6]">
                                         <FaClock />
                                     </div>
                                     <div>
@@ -1142,7 +1171,7 @@ const JobDetailPage = () => {
                                 </div>
 
                                 <div className="flex gap-3">
-                                    <div className="mt-1 text-[#00B4D8]">
+                                    <div className="mt-1 text-[#3AB4E6]">
                                         <FaLayerGroup />
                                     </div>
                                     <div>
@@ -1152,7 +1181,7 @@ const JobDetailPage = () => {
                                 </div>
 
                                 <div className="flex gap-3">
-                                    <div className="mt-1 text-[#00B4D8]">
+                                    <div className="mt-1 text-[#3AB4E6]">
                                         <FaAward />
                                     </div>
                                     <div>
@@ -1162,7 +1191,7 @@ const JobDetailPage = () => {
                                 </div>
 
                                 <div className="flex gap-3">
-                                    <div className="mt-1 text-[#00B4D8]">
+                                    <div className="mt-1 text-[#3AB4E6]">
                                         <FaGraduationCap />
                                     </div>
                                     <div>
@@ -1172,7 +1201,7 @@ const JobDetailPage = () => {
                                 </div>
 
                                 <div className="flex gap-3">
-                                    <div className="mt-1 text-[#00B4D8]">
+                                    <div className="mt-1 text-[#3AB4E6]">
                                         <FaWallet />
                                     </div>
                                     <div>
@@ -1182,15 +1211,15 @@ const JobDetailPage = () => {
                                 </div>
 
                                 <div className="flex gap-3">
-                                    <div className="mt-1 text-[#00B4D8]">
+                                    <div className="mt-1 text-[#3AB4E6]">
                                         <FaMapMarkerAlt />
                                     </div>
                                     <div className="flex-1 min-w-0">
                                         <p className="font-bold text-gray-800 text-sm">Địa điểm</p>
                                         <p className="text-gray-500 text-sm">{jobDetail.location}</p>
 
-                                        <div className="mt-2 p-3 bg-white border border-[#00B4D8]/30 rounded-lg">
-                                            <p className="text-[10px] uppercase tracking-wider font-bold text-[#0096B4] mb-1">
+                                        <div className="mt-2 p-3 bg-white border border-[#3AB4E6]/30 rounded-lg">
+                                            <p className="text-[10px] uppercase tracking-wider font-bold text-[#2C9ACD] mb-1">
                                                 Sau sáp nhập (1/7/2025)
                                             </p>
                                             {loadingMerged ? (
@@ -1205,14 +1234,14 @@ const JobDetailPage = () => {
 
                                                     {mergedLocation.source === 'mapping' && Array.isArray(mergedLocation.candidateWards) && (
                                                         <div className="mt-2">
-                                                            <p className="text-[10px] uppercase font-bold text-[#0096B4] mb-1">
+                                                            <p className="text-[10px] uppercase font-bold text-[#2C9ACD] mb-1">
                                                                 Có thể thuộc một trong các phường mới:
                                                             </p>
                                                             <div className="flex flex-wrap gap-1">
                                                                 {mergedLocation.candidateWards.map((w) => (
                                                                     <span
                                                                         key={w}
-                                                                        className="px-2 py-0.5 bg-[#E6F6FD] text-[#00B4D8] text-[11px] font-medium rounded"
+                                                                        className="px-2 py-0.5 bg-[#E6F6FD] text-[#3AB4E6] text-[11px] font-medium rounded"
                                                                     >
                                                                         {w}
                                                                     </span>
@@ -1282,7 +1311,7 @@ const JobDetailPage = () => {
                 >
                     <div className="bg-white w-full max-w-md rounded-3xl shadow-2xl p-8 animate-in zoom-in-95 duration-200">
                         <h3 className="text-2xl font-black text-slate-800 mb-2 flex items-center gap-3">
-                            <div className="p-3 bg-blue-100 text-[#00B4D8] rounded-2xl">
+                            <div className="p-3 bg-blue-100 text-[#3AB4E6] rounded-2xl">
                                 <FaBell size={24} />
                             </div>
                             Nhận việc làm tương tự
@@ -1316,11 +1345,11 @@ const JobDetailPage = () => {
                                 disabled={isFollowingCompany}
                                 className={`w-full p-5 rounded-2xl border-2 text-left transition-all group ${isAlreadyFollowing
                                     ? 'border-green-200 bg-green-50 hover:border-green-300'
-                                    : 'border-slate-100 bg-slate-50 hover:border-[#00B4D8] hover:bg-[#E6F6FD]'
+                                    : 'border-slate-100 bg-slate-50 hover:border-[#3AB4E6] hover:bg-[#E6F6FD]'
                                     } disabled:opacity-50`}
                             >
                                 <div className="flex items-center gap-4">
-                                    <div className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 ${isAlreadyFollowing ? 'bg-green-100 text-green-600' : 'bg-white text-[#00B4D8] shadow-sm'
+                                    <div className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 ${isAlreadyFollowing ? 'bg-green-100 text-green-600' : 'bg-white text-[#3AB4E6] shadow-sm'
                                         }`}>
                                         <FaUsers size={20} />
                                     </div>
@@ -1352,10 +1381,10 @@ const JobDetailPage = () => {
                                     setShowSimilarModal(false);
                                     navigate(`/jobs?${params.toString()}`);
                                 }}
-                                className="w-full p-5 rounded-2xl border-2 border-slate-100 bg-slate-50 hover:border-[#00B4D8] hover:bg-[#E6F6FD] text-left transition-all group"
+                                className="w-full p-5 rounded-2xl border-2 border-slate-100 bg-slate-50 hover:border-[#3AB4E6] hover:bg-[#E6F6FD] text-left transition-all group"
                             >
                                 <div className="flex items-center gap-4">
-                                    <div className="w-12 h-12 rounded-xl bg-white text-[#00B4D8] flex items-center justify-center shrink-0 shadow-sm">
+                                    <div className="w-12 h-12 rounded-xl bg-white text-[#3AB4E6] flex items-center justify-center shrink-0 shadow-sm">
                                         <FaExternalLinkAlt size={18} />
                                     </div>
                                     <div className="flex-1 min-w-0">
@@ -1364,7 +1393,7 @@ const JobDetailPage = () => {
                                             Tìm kiếm công việc với từ khóa "{currentJob?.position || currentJob?.title || 'tương tự'}"
                                         </p>
                                     </div>
-                                    <FaExternalLinkAlt className="text-slate-300 group-hover:text-[#00B4D8] transition-colors shrink-0" size={14} />
+                                    <FaExternalLinkAlt className="text-slate-300 group-hover:text-[#3AB4E6] transition-colors shrink-0" size={14} />
                                 </div>
                             </button>
                         </div>
