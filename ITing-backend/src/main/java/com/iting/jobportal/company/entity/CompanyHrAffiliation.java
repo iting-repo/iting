@@ -104,6 +104,13 @@ public class CompanyHrAffiliation extends AuditEntity {
     @Column(name = "submitted_license_url", columnDefinition = "TEXT")
     private String submittedLicenseUrl;
 
+    @Column(name = "submitted_consent_url", columnDefinition = "TEXT")
+    private String submittedConsentUrl;
+
+    @lombok.Builder.Default
+    @Column(name = "submitted_consent_confirmed", nullable = false)
+    private Boolean submittedConsentConfirmed = false;
+
     // ──────────────────── Submission review ───────────────────────
 
     @Enumerated(EnumType.STRING)

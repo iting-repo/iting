@@ -8,13 +8,16 @@ const meService = {
 
   /** GDPR data export — triggers JSON download. */
   downloadDataExport: async () => {
-    const res = await axios.get('/me/data-export', { responseType: 'blob' });
-    const blob = new Blob([res.data], { type: 'application/json' });
+    // axiosInstance interceptor đã unwrap `response.data` rồi → trả về Blob trực tiếp.
+    const data = await axios.get('/me/data-export', { responseType: 'blob' });
+    const blob = data instanceof Blob ? data : new Blob([JSON.stringify(data)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
     a.download = `iting-data-export-${Date.now()}.json`;
+    document.body.appendChild(a);
     a.click();
+    document.body.removeChild(a);
     URL.revokeObjectURL(url);
   },
 };

@@ -12,5 +12,8 @@ public interface CandidateApplicationService {
 
     Page<ApplicationResponse> getMyApplications(Long userId, int page, int size);
 
+    /** Filter by status — when status is null returns all. */
+    Page<ApplicationResponse> getMyApplications(Long userId, String status, int page, int size);
+
     boolean hasApplied(Long userId, Long jobId);
 }

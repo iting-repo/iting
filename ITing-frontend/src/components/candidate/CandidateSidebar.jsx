@@ -42,7 +42,7 @@ const CandidateSidebar = () => {
         const res = await axiosInstance.get(
           '/candidate/profile'
         );
-        setOpenToWork(res.data?.openToWork ?? false);
+        setOpenToWork(res?.openToWork ?? false);
       } catch {
         /* silent */
       } finally {

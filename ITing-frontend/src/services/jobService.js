@@ -27,6 +27,9 @@ const jobService = {
     saveJob: (jobId) => axiosInstance.post(`/candidates/saved-jobs/${jobId}`),
     unsaveJob: (jobId) => axiosInstance.delete(`/candidates/saved-jobs/${jobId}`),
     getSavedJobIds: () => axiosInstance.get('/candidates/saved-jobs/ids'),
+
+    /** Paginated list of saved jobs. params: { page, size } (0-indexed). */
+    getSavedJobs: (params) => axiosInstance.get('/candidates/saved-jobs', { params }),
     analyzeCv: (cvText) => axiosInstance.post('/jobs/analyze-cv', cvText, {
         headers: { 'Content-Type': 'text/plain' }
     }),

@@ -5,6 +5,7 @@ export { default as Dialog } from './Dialog';
 export { default as Input } from './Input';
 export { PageHeader } from './PageHeader';
 export { default as Pagination } from './Pagination';
+export { default as FilterBar } from './FilterBar';
 export { default as StatsCard } from './StatsCard';
 export * from './Table';
 export { default as Textarea } from './Textarea';

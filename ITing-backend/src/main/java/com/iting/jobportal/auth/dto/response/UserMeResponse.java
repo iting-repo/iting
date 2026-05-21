@@ -15,4 +15,5 @@ public class UserMeResponse {
     private String role;
     private String fullName;
     private String avatarUrl;
+    private String phone;
 }

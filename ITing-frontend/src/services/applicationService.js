@@ -79,6 +79,12 @@ const applicationService = {
     bulkUndoReject: async (ids) => {
         const response = await axiosInstance.post('/employer/applications/bulk-undo-reject', { ids });
         return response;
+    },
+
+    // 12. Candidate rút đơn ứng tuyển
+    withdrawApplication: async (id) => {
+        const response = await axiosInstance.post(`/candidates/applications/${id}/withdraw`);
+        return response;
     }
 };
 

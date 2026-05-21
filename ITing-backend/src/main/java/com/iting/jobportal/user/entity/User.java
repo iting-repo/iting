@@ -20,7 +20,7 @@ import java.time.LocalDateTime;
  * Table was renamed from "users" → "candidate_info" by V54.
  */
 @Entity
-@Table(name = "Users")
+@Table(name = "candidate_info")
 @Getter
 @Setter
 public class User {

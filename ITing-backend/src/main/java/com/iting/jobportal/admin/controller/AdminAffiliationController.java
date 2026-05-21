@@ -71,6 +71,13 @@ public class AdminAffiliationController {
                 adminAffiliationService.getLogoPresignedUrl(id, 15)));
     }
 
+    @GetMapping("/{id}/consent/view")
+    @Operation(summary = "Presigned URL xem văn bản thỏa thuận DLCN HR đã submit")
+    public ResponseEntity<Map<String, String>> viewConsent(@PathVariable Long id) {
+        return ResponseEntity.ok(Map.of("url",
+                adminAffiliationService.getConsentPresignedUrl(id, 15)));
+    }
+
     @PostMapping("/{id}/approve")
     @Operation(summary = "Duyệt submission. Auto-apply snapshot lên Company nếu là affiliation đầu tiên APPROVED.")
     public ResponseEntity<AdminAffiliationResponse> approve(

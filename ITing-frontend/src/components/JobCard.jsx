@@ -8,6 +8,20 @@ import { CompanyLogo } from './common';
 import axiosInstance from '../utils/axiosInstance';
 import { storage } from '../utils/storage';
 
+function timeAgo(dateStr) {
+    if (!dateStr) return null;
+    const diff = Date.now() - new Date(dateStr).getTime();
+    if (diff < 0) return 'Vừa đăng';
+    const mins = Math.floor(diff / 60000);
+    if (mins < 60) return `${mins} phút trước`;
+    const hours = Math.floor(diff / 3600000);
+    if (hours < 24) return `${hours} giờ trước`;
+    const days = Math.floor(diff / 86400000);
+    if (days < 30) return `${days} ngày trước`;
+    const months = Math.floor(days / 30);
+    return `${months} tháng trước`;
+}
+
 const JobCard = ({ job, onHoverIn, onHoverOut, isHovered = false }) => {
     const navigate = useNavigate();
     const [isSaved, setIsSaved] = useState(false);
@@ -94,7 +108,7 @@ const JobCard = ({ job, onHoverIn, onHoverOut, isHovered = false }) => {
             <div className="flex justify-between items-start mb-3">
                 <div className="flex gap-2 items-center">
                     <span className="bg-blue-50 text-[#00B4D8] text-[10px] font-bold px-2 py-1 rounded">
-                        {job.timePosted}
+                        {timeAgo(job.createdAt || job.postedDate || job.createdDate) || job.timePosted || 'Mới đăng'}
                     </span>
                     {job.isAiSuggested && (
                         <span className="bg-gradient-to-r from-orange-400 to-red-400 text-white text-[10px] font-bold px-2 py-1 rounded shadow-sm flex items-center gap-1">

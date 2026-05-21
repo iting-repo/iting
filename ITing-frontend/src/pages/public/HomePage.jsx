@@ -405,21 +405,27 @@ const HomePage = () => {
 
     // Dynamic blogs fetched from API
 
+    // Section "Dành cho bạn" ưu tiên đề xuất mới — ẩn job đã lưu (đã có ở "Việc làm yêu thích").
+    // Anonymous user (chưa login) không có savedJobIds → hiển thị nguyên list trending.
+    const freshRecommendedJobs = currentUser
+        ? recommendedJobs.filter(j => !savedJobIds.includes(j.id))
+        : recommendedJobs;
+
     return (
         <div className="bg-white font-sans">
 
             {/* PHẦN 1: HERO SEARCH */}
-            <section className="relative z-10 bg-gray-900 pt-24 pb-32 overflow-hidden">
+            <section className="relative z-10 bg-gray-900 pt-6 md:pt-8 pb-32 overflow-hidden">
                 <div className="absolute inset-0 z-0">
                     <img src={heroBg} alt="Background" className="w-full h-full object-cover opacity-20" />
                     <div className="absolute inset-0 bg-gradient-to-b from-gray-900/10 via-gray-900/60 to-gray-900"></div>
                 </div>
 
                 <div className="container mx-auto px-4 relative z-10 text-center">
-                    <h1 className="text-3xl md:text-5xl font-bold text-white mb-4">
+                    <h1 className="text-2xl md:text-4xl font-bold text-white mb-2">
                         Tìm việc làm IT <span className="text-white">chất lượng trên toàn quốc</span>
                     </h1>
-                    <p className="text-gray-400 mb-10 text-sm md:text-base max-w-2xl mx-auto">
+                    <p className="text-gray-400 mb-5 text-xs md:text-sm max-w-2xl mx-auto">
                         Tiếp cận {(stats.totalJobs ?? 0).toLocaleString('vi-VN')}+ tin tuyển dụng việc làm mỗi ngày từ hàng nghìn doanh nghiệp uy tín tại Việt Nam
                     </p>
 
@@ -603,8 +609,8 @@ const HomePage = () => {
                                     </div>
                                 </div>
                             ))
-                        ) : recommendedJobs.length > 0 ? (
-                            recommendedJobs.map((job) => {
+                        ) : freshRecommendedJobs.length > 0 ? (
+                            freshRecommendedJobs.map((job) => {
                                 const isSaved = savedJobIds.includes(job.id);
                                 return (
                                     <div
@@ -676,8 +682,8 @@ const HomePage = () => {
                     {/* 1. HEADER: Loại bỏ nút đen, dùng nút viền mảnh tinh tế */}
                     <div className="flex flex-col md:flex-row justify-between items-end md:items-center mb-8 gap-4">
                         <div>
-                            <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2">Việc Làm Tốt Nhất</h2>
-                            <p className="text-gray-500 text-sm">Các cơ hội việc làm hấp dẫn nhất đang chờ đón bạn</p>
+                            <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2">Việc Làm Mới Nhất</h2>
+                            <p className="text-gray-500 text-sm">Các cơ hội việc làm vừa được cập nhật gần đây</p>
                         </div>
 
                         <div className="flex items-center gap-3">

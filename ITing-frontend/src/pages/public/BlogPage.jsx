@@ -29,17 +29,27 @@ export default function BlogPage() {
   const [blogs, setBlogs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [active, setActive] = useState(0);
+  const [searchQuery, setSearchQuery] = useState('');
   const navigate = useNavigate();
 
-  useEffect(() => {
-    (async () => {
-      try {
-        const res = await publicService.getBlogs({ page: 0, size: 20 });
-        const d = res.data || res;
-        setBlogs(d?.content ?? (Array.isArray(d) ? d : []));
-      } catch { /* ignore */ } finally { setLoading(false); }
-    })();
-  }, []);
+  const fetchBlogs = async (keyword = '') => {
+    try {
+      setLoading(true);
+      const params = { page: 0, size: 20 };
+      if (keyword.trim()) params.keyword = keyword.trim();
+      const res = await publicService.getBlogs(params);
+      const d = res.data || res;
+      setBlogs(d?.content ?? (Array.isArray(d) ? d : []));
+    } catch { /* ignore */ } finally { setLoading(false); }
+  };
+
+  useEffect(() => { fetchBlogs(); }, []);
+
+  const handleSearch = (e) => {
+    if (e.key === 'Enter') {
+      fetchBlogs(searchQuery);
+    }
+  };
 
   if (loading) return <GlobalLoading message="Đang tải bài viết..." />;
 
@@ -75,7 +85,14 @@ export default function BlogPage() {
           </Link>
           <div className="hidden md:flex items-center bg-gray-50 rounded-full px-4 py-2 w-72 border border-gray-200 focus-within:border-[#3AB4E6] focus-within:ring-2 focus-within:ring-[#3AB4E6]/20 transition-all">
             <Search className="h-4 w-4 text-gray-400 mr-2 flex-shrink-0" />
-            <input type="text" placeholder="Tìm kiếm bài viết..." className="bg-transparent text-sm outline-none flex-1 text-gray-700 placeholder-gray-400" />
+            <input
+              type="text"
+              placeholder="Tìm kiếm bài viết..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              onKeyDown={handleSearch}
+              className="bg-transparent text-sm outline-none flex-1 text-gray-700 placeholder-gray-400"
+            />
           </div>
           <button aria-label="Tìm kiếm" className="md:hidden bg-gray-100 p-2 rounded-full hover:bg-gray-200"><Search className="h-4 w-4" /></button>
         </div>
@@ -86,21 +103,22 @@ export default function BlogPage() {
         <div className="absolute inset-0 pointer-events-none">
           <div className="absolute -top-1/3 -right-1/4 w-[60%] h-[120%] rounded-full bg-white/[0.04] blur-3xl" />
           <div className="absolute bottom-0 left-0 w-1/3 h-1/2 rounded-full bg-cyan-400/10 blur-3xl" />
+          <img src="/jobportal.png" alt="" className="absolute inset-0 w-full h-full object-cover opacity-[0.06] blur-[2px] mix-blend-luminosity" />
         </div>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 md:py-14 relative z-10">
-          <h1 className="text-3xl md:text-5xl font-extrabold text-white leading-tight max-w-xl">
-            Bí quyết tìm việc<br/>
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-300 to-white">thành công</span>
-          </h1>
-          <p className="text-blue-200/80 text-sm md:text-base mt-3 max-w-md">Cập nhật xu hướng, kỹ năng và chia sẻ hữu ích cho sự nghiệp của bạn</p>
-          <div className="flex flex-wrap gap-2 mt-6">
-            {categories.map((c, i) => (
-              <button key={c} onClick={() => setActive(i)}
-                className={`px-4 py-2 rounded-full text-xs md:text-sm font-medium transition-all ${active === i ? 'bg-white text-[#1E3A8A] shadow-lg' : 'bg-white/15 text-white hover:bg-white/25 backdrop-blur-sm'}`}>
-                {c}
-              </button>
-            ))}
-          </div>
+            <h1 className="text-3xl md:text-5xl font-extrabold text-white leading-tight max-w-xl">
+              Bí quyết tìm việc<br/>
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-300 to-white">thành công</span>
+            </h1>
+            <p className="text-blue-200/80 text-sm md:text-base mt-3 max-w-md">Cập nhật xu hướng, kỹ năng và chia sẻ hữu ích cho sự nghiệp của bạn</p>
+            <div className="flex flex-wrap gap-2 mt-6">
+              {categories.map((c, i) => (
+                <button key={c} onClick={() => setActive(i)}
+                  className={`px-4 py-2 rounded-full text-xs md:text-sm font-medium transition-all ${active === i ? 'bg-white text-[#1E3A8A] shadow-lg' : 'bg-white/15 text-white hover:bg-white/25 backdrop-blur-sm'}`}>
+                  {c}
+                </button>
+              ))}
+            </div>
         </div>
       </section>
 
@@ -209,12 +227,14 @@ export default function BlogPage() {
             <div className="lg:col-span-2 flex flex-col gap-5">
               <div className="bg-gradient-to-br from-[#1E3A8A] to-[#3AB4E6] rounded-2xl p-6 md:p-8 text-white shadow-lg relative overflow-hidden flex-1">
                 <div className="absolute -top-10 -right-10 w-40 h-40 bg-white/10 rounded-full blur-2xl" />
+                <img src="/lookup-removebg-preview.png" alt="" className="absolute right-0 bottom-0 w-40 h-40 object-contain opacity-[0.12] blur-[1px]" />
                 <h3 className="text-xl md:text-2xl font-extrabold mb-2 relative z-10">Hơn 60.000+<br/>Việc làm</h3>
                 <p className="text-sm text-white/70 mb-5 relative z-10">Đang chờ đợi bạn ứng tuyển.</p>
                 <Link to="/jobs" className="relative z-10 inline-flex items-center gap-2 bg-white text-[#1E3A8A] font-bold py-2.5 px-6 rounded-full hover:shadow-lg transition-all text-sm">Khám phá ngay <ArrowRight className="h-4 w-4" /></Link>
               </div>
               <div className="bg-gradient-to-br from-gray-900 to-gray-800 rounded-2xl p-6 md:p-8 text-white shadow-lg relative overflow-hidden flex-1">
                 <div className="absolute -bottom-10 -left-10 w-40 h-40 bg-white/5 rounded-full blur-2xl" />
+                <img src="/cv-removebg-preview.png" alt="" className="absolute right-0 bottom-0 w-40 h-40 object-contain opacity-[0.12] blur-[1px]" />
                 <h3 className="text-xl md:text-2xl font-extrabold mb-2 relative z-10">Tạo CV<br/>Nổi Bật</h3>
                 <p className="text-sm text-white/60 mb-5 relative z-10">Gây ấn tượng với nhà tuyển dụng.</p>
                 <button className="relative z-10 inline-flex items-center gap-2 bg-white text-gray-900 font-bold py-2.5 px-6 rounded-full hover:shadow-lg transition-all text-sm">Tạo CV Miễn Phí <ArrowRight className="h-4 w-4" /></button>

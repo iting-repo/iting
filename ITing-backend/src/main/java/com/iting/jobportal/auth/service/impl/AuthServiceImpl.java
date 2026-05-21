@@ -355,6 +355,7 @@ public class AuthServiceImpl implements AuthService {
                 .role(account.getRole().normalizedName())
                 .fullName(fullName)
                 .avatarUrl(avatarUrl)
+                .phone(account.getPhone())
                 .build();
     }
 }

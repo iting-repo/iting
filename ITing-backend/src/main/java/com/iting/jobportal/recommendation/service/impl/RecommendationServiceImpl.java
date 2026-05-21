@@ -7,6 +7,7 @@ import com.iting.jobportal.job.entity.enums.JobStatus;
 import com.iting.jobportal.job.entity.enums.JobType;
 import com.iting.jobportal.job.repository.JobRepository;
 import com.iting.jobportal.job.service.JobEmbeddingService;
+import com.iting.jobportal.job.service.UserSavedJobService;
 import com.iting.jobportal.recommendation.entity.UserJobInteraction;
 import com.iting.jobportal.recommendation.entity.UserSearchHistory;
 import com.iting.jobportal.recommendation.repository.UserJobInteractionRepository;
@@ -94,6 +95,7 @@ public class RecommendationServiceImpl implements RecommendationService {
     private final UserSearchHistoryRepository searchHistoryRepository;
     private final UserJobInteractionRepository interactionRepository;
     private final JobEmbeddingService jobEmbeddingService;
+    private final UserSavedJobService userSavedJobService;
 
     @Override
     public List<JobResponse> recommendHomepage(Long userId, int limit) {
@@ -113,14 +115,18 @@ public class RecommendationServiceImpl implements RecommendationService {
             return recommendByContent(userId, limit);
         } else {
             log.info("Falling back to Trending for user {}", userId);
-            return getTrendingJobs(limit);
+            Set<Long> excluded = getExcludedJobIds(userId);
+            return getTrendingJobs(limit * 2).stream()
+                    .filter(r -> !excluded.contains(r.getId()))
+                    .limit(limit)
+                    .collect(Collectors.toList());
         }
     }
 
     @Override
     public List<JobResponse> getTrendingJobs(int limit) {
         // Mix popularity (viewCount) với randomness nhẹ, nhưng vẫn deterministic-ish
-        List<Job> candidates = jobRepository.findTop50ByStatusOrderByViewCountDesc(JobStatus.ACTIVE);
+        List<Job> candidates = jobRepository.findTop50ByStatusOrderByViewCountDesc(JobStatus.ACTIVE, PageRequest.of(0, 50));
         Collections.shuffle(candidates);
         return candidates.stream()
                 .filter(j -> j.getCompany() != null && Boolean.TRUE.equals(j.getCompany().getActive()))
@@ -161,12 +167,12 @@ public class RecommendationServiceImpl implements RecommendationService {
         // 1. Collaborative pool
         List<Long> collabIds = interactionRepository.findSuggestedJobsByUserInterest(
                 userId, PageRequest.of(0, limit * 2));
-        Set<Long> appliedIds = interactionRepository.findAppliedJobIds(userId);
+        Set<Long> excludedIds = getExcludedJobIds(userId);
         List<Job> collabJobs = jobRepository.findAllById(collabIds).stream()
                 .filter(j -> j.getStatus() == JobStatus.ACTIVE)
                 .filter(j -> j.getCompany() != null && Boolean.TRUE.equals(j.getCompany().getActive()))
                 .filter(this::isNotExpired)
-                .filter(j -> !appliedIds.contains(j.getId()))
+                .filter(j -> !excludedIds.contains(j.getId()))
                 .collect(Collectors.toList());
 
         // 2. Content-based scored result (đã filter applied + expired trong candidatePool)
@@ -206,9 +212,10 @@ public class RecommendationServiceImpl implements RecommendationService {
             if (r.getCompanyName() != null && seen.add(r.getId())) result.add(r);
         }
 
-        // Fill trending
+        // Fill trending (vẫn loại trừ saved/applied)
         for (JobResponse r : trending) {
             if (result.size() >= limit) break;
+            if (excludedIds.contains(r.getId())) continue;
             if (r.getCompanyName() != null && seen.add(r.getId())) result.add(r);
         }
 
@@ -220,15 +227,24 @@ public class RecommendationServiceImpl implements RecommendationService {
     // =================================================================
 
     private List<Job> candidatePool(Long userId) {
-        Set<Long> applied = userId == null
-                ? Collections.emptySet()
-                : interactionRepository.findAppliedJobIds(userId);
+        Set<Long> excluded = getExcludedJobIds(userId);
 
         return jobRepository
                 .findActiveCandidatesForRecommendation(PageRequest.of(0, CANDIDATE_POOL_SIZE))
                 .stream()
-                .filter(j -> !applied.contains(j.getId()))
+                .filter(j -> !excluded.contains(j.getId()))
                 .collect(Collectors.toList());
+    }
+
+    /**
+     * Loại trừ khỏi gợi ý: job đã ứng tuyển + job đã lưu (saved/yêu thích).
+     * Saved jobs nằm trong "Việc làm yêu thích" → không cần hiển thị lại ở section gợi ý.
+     */
+    private Set<Long> getExcludedJobIds(Long userId) {
+        if (userId == null) return Collections.emptySet();
+        Set<Long> excluded = new HashSet<>(interactionRepository.findAppliedJobIds(userId));
+        excluded.addAll(userSavedJobService.getSavedJobIds(userId));
+        return excluded;
     }
 
     private boolean isNotExpired(Job j) {

@@ -19,6 +19,91 @@ import { useModalEscape } from "../../hooks/useModalEscape";
 import { buildJobDetailPath, getCompanyLogoUrl } from "../../utils/jobUrl";
 
 
+/**
+ * Render company description with rich structure:
+ *   - Leading paragraphs → <p>
+ *   - Lines ending with ":" → styled section heading
+ *   - Lines starting with "•" or "-" → bullet list with icon
+ */
+const renderCompanyDescription = (raw) => {
+  if (!raw || !raw.trim()) {
+    return <p className="text-gray-400 italic">Công ty chưa cập nhật thông tin giới thiệu chi tiết.</p>;
+  }
+
+  const lines = raw.split(/\r?\n/);
+  const blocks = [];
+  let currentBullets = null;
+
+  const flushBullets = () => {
+    if (currentBullets && currentBullets.length > 0) {
+      blocks.push({ type: 'bullets', items: currentBullets });
+    }
+    currentBullets = null;
+  };
+
+  for (const rawLine of lines) {
+    const line = rawLine.trim();
+    if (!line) {
+      flushBullets();
+      continue;
+    }
+
+    // Bullet line
+    if (line.startsWith('•') || line.startsWith('-')) {
+      if (!currentBullets) currentBullets = [];
+      currentBullets.push(line.replace(/^[•\-]\s*/, ''));
+      continue;
+    }
+
+    // Section heading (line ending with ":")
+    if (line.endsWith(':') && line.length < 80) {
+      flushBullets();
+      blocks.push({ type: 'heading', text: line.slice(0, -1) });
+      continue;
+    }
+
+    // Plain paragraph
+    flushBullets();
+    blocks.push({ type: 'paragraph', text: line });
+  }
+  flushBullets();
+
+  return (
+    <div className="space-y-5">
+      {blocks.map((block, idx) => {
+        if (block.type === 'heading') {
+          return (
+            <h3
+              key={idx}
+              className="text-base md:text-lg font-bold text-[#3AB4E6] uppercase tracking-wide mt-2"
+            >
+              {block.text}
+            </h3>
+          );
+        }
+        if (block.type === 'bullets') {
+          return (
+            <ul key={idx} className="space-y-2.5">
+              {block.items.map((item, i) => (
+                <li key={i} className="flex items-start gap-3 text-gray-700 text-sm md:text-base leading-relaxed">
+                  <span className="mt-2 w-1.5 h-1.5 rounded-full bg-[#3AB4E6] flex-shrink-0" />
+                  <span>{item}</span>
+                </li>
+              ))}
+            </ul>
+          );
+        }
+        return (
+          <p key={idx} className="text-gray-700 text-sm md:text-base leading-relaxed">
+            {block.text}
+          </p>
+        );
+      })}
+    </div>
+  );
+};
+
+
 const CompanyDetailPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -374,56 +459,10 @@ const CompanyDetailPage = () => {
                 <Building2 className="w-7 h-7 text-[#3AB4E6]" />
                 Giới thiệu công ty
               </h2>
-              <div className="text-gray-600 leading-loose text-lg whitespace-pre-line font-medium italic border-l-4 border-gray-50 pl-8 ml-3">
-                {company.description || "Công ty chưa cập nhật thông tin giới thiệu chi tiết."}
+              <div className="border-l-4 border-blue-100 pl-6 md:pl-8 ml-1">
+                {renderCompanyDescription(company.description)}
               </div>
             </article>
-
-            {/* Stats/Highlight Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              {/* Tech Stack Card */}
-              <div className="bg-white rounded-[2rem] p-8 shadow-sm border border-gray-100/50 hover:shadow-xl hover:shadow-[#3AB4E6]/5 transition-all duration-500">
-                <h3 className="text-xl font-black text-gray-900 mb-6 flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-2xl bg-blue-50 flex items-center justify-center">
-                    <CheckCircle2 className="w-6 h-6 text-[#3AB4E6]" />
-                  </div>
-                  Công nghệ sử dụng
-                </h3>
-                <div className="flex flex-wrap gap-2">
-                  {company.techStack && company.techStack.length > 0 ? (
-                    company.techStack.map((tech, idx) => (
-                      <span key={idx} className="px-4 py-2 text-xs font-bold rounded-xl bg-gray-50 text-gray-600 border border-gray-100 hover:border-[#3AB4E6] hover:text-[#3AB4E6] hover:bg-blue-50/30 cursor-default transition-all">
-                        {tech}
-                      </span>
-                    ))
-                  ) : (
-                    <p className="text-gray-400 text-sm font-medium">Chưa có thông tin công nghệ chính.</p>
-                  )}
-                </div>
-              </div>
-
-              {/* Benefits Card */}
-              <div className="bg-white rounded-[2rem] p-8 shadow-sm border border-gray-100/50 hover:shadow-xl hover:shadow-red-500/5 transition-all duration-500">
-                <h3 className="text-xl font-black text-gray-900 mb-6 flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-2xl bg-red-50 flex items-center justify-center">
-                    <Heart className="w-6 h-6 text-red-500" />
-                  </div>
-                  Phúc lợi dành cho bạn
-                </h3>
-                <div className="space-y-4">
-                  {company.benefits && company.benefits.length > 0 ? (
-                    company.benefits.map((benefit, idx) => (
-                      <div key={idx} className="flex items-start gap-4 group">
-                        <div className="mt-1.5 w-2 h-2 rounded-full bg-[#3AB4E6] group-hover:scale-150 transition-transform"></div>
-                        <span className="text-sm text-gray-700 font-bold leading-relaxed">{benefit}</span>
-                      </div>
-                    ))
-                  ) : (
-                    <p className="text-gray-400 text-sm font-medium">Chưa có thông tin phúc lợi công khai.</p>
-                  )}
-                </div>
-              </div>
-            </div>
 
             {/* Jobs Listing Section */}
             <div className="bg-white rounded-[2.5rem] p-8 md:p-12 shadow-sm border border-gray-100/50">

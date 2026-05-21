@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
 import { logout } from '../store/auth/authSlice';
@@ -7,6 +7,8 @@ import chatRealtimeService from '../services/chatRealtimeService';
 import { formatChatTime, sortConversationsForInbox } from '../utils/chatFormat';
 import ChatDockBox from '../components/chat/ChatDockBox';
 import notificationService from '../services/notificationService';
+import axiosInstance from '../utils/axiosInstance';
+import { storage } from '../utils/storage';
 import { CompanyLogo } from '../components/common';
 import { formatDistanceToNowStrict, parseISO } from 'date-fns';
 import { vi } from 'date-fns/locale';
@@ -44,6 +46,35 @@ const Header = () => {
   const [unreadMessageCount, setUnreadMessageCount] = useState(0);
   const [activeQuickConversation, setActiveQuickConversation] = useState(null);
   const messageDropdownRef = useRef(null);
+
+  // ── Open to Work toggle (Candidate only) ──
+  const [openToWork, setOpenToWork] = useState(false);
+  const [isTogglingOTW, setIsTogglingOTW] = useState(false);
+
+  useEffect(() => {
+    if (role !== 'CANDIDATE') return;
+    const fetchOTW = async () => {
+      try {
+        const res = await axiosInstance.get('/candidate/profile');
+        setOpenToWork(res?.openToWork ?? false);
+      } catch { /* silent */ }
+    };
+    fetchOTW();
+  }, [role]);
+
+  const handleToggleOTW = useCallback(async () => {
+    if (isTogglingOTW) return;
+    setIsTogglingOTW(true);
+    const next = !openToWork;
+    setOpenToWork(next);
+    try {
+      await axiosInstance.put('/candidate/profile/open-to-work', null, { params: { status: next } });
+    } catch {
+      setOpenToWork(!next);
+    } finally {
+      setIsTogglingOTW(false);
+    }
+  }, [isTogglingOTW, openToWork]);
 
   const handleLogout = () => {
     navigate('/');
@@ -537,6 +568,20 @@ const Header = () => {
                       <div className="px-4 py-3 border-b border-gray-100 bg-gray-50/50">
                         <p className="text-sm font-bold text-gray-900 truncate">{displayName}</p>
                         <p className="text-xs text-gray-500 truncate mt-0.5">{role === 'CANDIDATE' ? 'Ứng viên' : 'Nhà tuyển dụng'}</p>
+                        {role === 'CANDIDATE' && (
+                          <div className="flex items-center justify-between mt-2">
+                            <span className={`text-[11px] font-semibold ${openToWork ? 'text-[#3AB4E6]' : 'text-gray-400'}`}>
+                              {openToWork ? '🟢 Đang tìm việc' : '⚪ Tắt tìm việc'}
+                            </span>
+                            <button
+                              onClick={(e) => { e.stopPropagation(); handleToggleOTW(); }}
+                              disabled={isTogglingOTW}
+                              className={`relative inline-flex h-5 w-9 items-center rounded-full transition-all duration-300 ${isTogglingOTW ? 'opacity-60 cursor-wait' : 'cursor-pointer'} ${openToWork ? 'bg-[#3AB4E6]' : 'bg-gray-300'}`}
+                            >
+                              <span className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white shadow-sm transition-transform duration-300 ${openToWork ? 'translate-x-[18px]' : 'translate-x-[3px]'}`} />
+                            </button>
+                          </div>
+                        )}
                       </div>
                       {renderDropdownMenu()}
                       <div className="border-t border-gray-100 mt-1 pt-1">

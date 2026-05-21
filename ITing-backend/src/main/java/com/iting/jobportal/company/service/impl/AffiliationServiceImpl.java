@@ -148,6 +148,8 @@ public class AffiliationServiceImpl implements AffiliationService {
                 .submittedPhone(aff.getSubmittedPhone())
                 .submittedCompanyEmail(aff.getSubmittedCompanyEmail())
                 .submittedLicenseUrl(aff.getSubmittedLicenseUrl())
+                .submittedConsentUrl(aff.getSubmittedConsentUrl())
+                .submittedConsentConfirmed(aff.getSubmittedConsentConfirmed())
                 .build();
     }
 
@@ -219,6 +221,26 @@ public class AffiliationServiceImpl implements AffiliationService {
         return newUrl;
     }
 
+    @Override
+    @Transactional
+    public String uploadConsent(Long hrAccountId, MultipartFile file, boolean confirmed) {
+        CompanyHrAffiliation aff = requireActiveAffiliation(hrAccountId);
+        validateDocOrPdf(file);
+
+        String oldUrl = aff.getSubmittedConsentUrl();
+        String newUrl = fileUploadService.uploadConsentDocument(file);
+        aff.setSubmittedConsentUrl(newUrl);
+        aff.setSubmittedConsentConfirmed(confirmed);
+        aff.setSubmissionStatus(SubmissionStatus.DRAFT);
+        affiliationRepo.save(aff);
+
+        if (oldUrl != null && !oldUrl.isBlank()) {
+            try { fileUploadService.deleteByUrl(oldUrl); }
+            catch (Exception e) { log.warn("Không xoá được consent cũ: {}", oldUrl, e); }
+        }
+        return newUrl;
+    }
+
     // ════════════════════════════════════════════════════════════════
     // SUBMIT REVIEW
     // ════════════════════════════════════════════════════════════════
@@ -239,6 +261,10 @@ public class AffiliationServiceImpl implements AffiliationService {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Địa chỉ công ty không được để trống");
         if (isBlank(aff.getSubmittedLicenseUrl()))
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Vui lòng upload giấy phép kinh doanh trước khi gửi duyệt");
+        if (isBlank(aff.getSubmittedConsentUrl()))
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Vui lòng upload văn bản thỏa thuận xử lý DLCN trước khi gửi duyệt");
+        if (!Boolean.TRUE.equals(aff.getSubmittedConsentConfirmed()))
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Vui lòng xác nhận cam đoan đối với văn bản thỏa thuận DLCN");
 
         aff.setSubmissionStatus(SubmissionStatus.PENDING_REVIEW);
         aff.setSubmissionSubmittedAt(LocalDateTime.now());
@@ -287,6 +313,16 @@ public class AffiliationServiceImpl implements AffiliationService {
         return fileUploadService.generatePresignedUrl(url, expiryMinutes);
     }
 
+    @Override
+    @Transactional(readOnly = true)
+    public String getConsentPresignedUrl(Long hrAccountId, int expiryMinutes) {
+        CompanyHrAffiliation aff = requireActiveAffiliation(hrAccountId);
+        String url = aff.getSubmittedConsentUrl();
+        if (isBlank(url))
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Chưa upload văn bản thỏa thuận");
+        return fileUploadService.generatePresignedUrl(url, expiryMinutes);
+    }
+
     // ════════════════════════════════════════════════════════════════
     // INTERNAL HELPERS
     // ════════════════════════════════════════════════════════════════
@@ -315,6 +351,20 @@ public class AffiliationServiceImpl implements AffiliationService {
         String ct = file.getContentType();
         if (ct == null || !(ct.equals("application/pdf") || ct.startsWith("image/")))
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "File phải là PDF hoặc ảnh");
+    }
+
+    private void validateDocOrPdf(MultipartFile file) {
+        if (file == null || file.isEmpty())
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "File không được để trống");
+        String ct = file.getContentType();
+        String name = file.getOriginalFilename() == null ? "" : file.getOriginalFilename().toLowerCase();
+        boolean okMime = ct != null && (
+                ct.equals("application/pdf")
+                || ct.equals("application/msword")
+                || ct.equals("application/vnd.openxmlformats-officedocument.wordprocessingml.document"));
+        boolean okExt = name.endsWith(".pdf") || name.endsWith(".doc") || name.endsWith(".docx");
+        if (!okMime && !okExt)
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "File phải là PDF, DOC hoặc DOCX");
     }
 
     private String serializeIndustries(List<String> industries) {

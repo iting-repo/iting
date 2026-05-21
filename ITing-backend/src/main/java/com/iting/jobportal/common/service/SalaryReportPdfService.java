@@ -18,6 +18,7 @@ import org.apache.pdfbox.pdmodel.font.PDType1Font;
 import org.apache.pdfbox.pdmodel.graphics.color.PDColor;
 import org.apache.pdfbox.pdmodel.graphics.color.PDDeviceRGB;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 
 import java.awt.Color;
@@ -123,7 +124,7 @@ public class SalaryReportPdfService {
 
     private List<Job> collectActiveJobsWithSalary() {
         // Fetch a large pool of recent active jobs. Filter only those with salary disclosed.
-        List<Job> rawJobs = jobRepository.findTop50ByStatusOrderByCreatedAtDesc(JobStatus.ACTIVE);
+        List<Job> rawJobs = jobRepository.findTop50ByStatusOrderByCreatedAtDesc(JobStatus.ACTIVE, PageRequest.of(0, 50));
         // ↑ Note: findTop50 — for production, add a new repo method with a larger limit.
         return rawJobs.stream()
                 .filter(j -> j.getMinSalary() != null && j.getMaxSalary() != null)

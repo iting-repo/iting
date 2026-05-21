@@ -151,7 +151,7 @@ const CategoryPicker = ({ value, onChange }) => {
                             </div>
                         </div>
 
-                        <div className="flex h-[320px]">
+                        <div className="flex h-[280px]">
                             {/* Left Column: Group */}
                             <div className="w-[40%] border-r border-gray-100 flex flex-col">
                                 <div className="p-3 bg-gray-50/50">

@@ -202,9 +202,21 @@ const CandidateDashboard = () => {
                         </td>
                         <td className="p-4 text-gray-500">{app.appliedAt ? new Date(app.appliedAt).toLocaleDateString('vi-VN') : ''}</td>
                         <td className="p-4">
-                           <span className="inline-flex items-center gap-1.5 text-green-600 font-medium px-3 py-1 rounded-full bg-green-50 border border-green-100 text-xs">
-                              <FaCheck size={10} /> {app.status}
-                           </span>
+                           {(() => {
+                              const statusMap = {
+                                 PENDING: { label: 'Đang chờ', color: 'text-yellow-700 bg-yellow-50 border-yellow-200' },
+                                 ACCEPTED: { label: 'Đã chấp nhận', color: 'text-green-700 bg-green-50 border-green-200' },
+                                 REJECTED: { label: 'Bị từ chối', color: 'text-red-600 bg-red-50 border-red-200' },
+                                 VIEWED: { label: 'Đã xem', color: 'text-blue-600 bg-blue-50 border-blue-200' },
+                                 WITHDRAWN: { label: 'Đã rút', color: 'text-gray-500 bg-gray-50 border-gray-200' },
+                              };
+                              const s = statusMap[app.status] || { label: app.status, color: 'text-gray-600 bg-gray-50 border-gray-200' };
+                              return (
+                                 <span className={`inline-flex items-center gap-1.5 font-medium px-3 py-1 rounded-full border text-xs ${s.color}`}>
+                                    <FaCheck size={10} /> {s.label}
+                                 </span>
+                              );
+                           })()}
                         </td>
                         <td className="p-4 text-right">
                            <button className="bg-gray-100 hover:bg-[#3AB4E6] hover:text-white text-gray-600 text-xs font-bold px-4 py-2.5 rounded-lg transition-all shadow-sm">

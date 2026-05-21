@@ -1,36 +1,59 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
-  FaMapMarkerAlt, FaDollarSign, FaTrashAlt,
-  FaArrowRight, FaClock, FaArrowLeft, FaBan, FaExclamationTriangle
+  FaMapMarkerAlt, FaTrashAlt,
+  FaArrowRight, FaClock, FaBan, FaExclamationTriangle
 } from 'react-icons/fa';
-import { useNavigate } from 'react-router-dom';
-import { ConfirmDialog, Table, Td } from "../../components/common";
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import { ConfirmDialog, Table, Td, Pagination, FilterBar } from "../../components/common";
 import { toast } from 'sonner';
 import { buildJobDetailPath } from '../../utils/jobUrl';
-import axiosInstance from '../../utils/axiosInstance';
+import jobService from '../../services/jobService';
+import { jobTypeLabel } from '../../utils/enumLabels';
+
+const PAGE_SIZE = 10;
+
+const TYPE_FILTERS = [
+  { value: '', label: 'Tất cả' },
+  { value: 'FULL_TIME', label: 'Toàn thời gian' },
+  { value: 'PART_TIME', label: 'Bán thời gian' },
+  { value: 'REMOTE', label: 'Làm việc từ xa' },
+  { value: 'INTERN', label: 'Thực tập' },
+  { value: 'CONTRACT', label: 'Hợp đồng' },
+];
 
 const FavoriteJobs = () => {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
 
   const [savedJobs, setSavedJobs] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(0);
   const [totalElements, setTotalElements] = useState(0);
   const [confirmModal, setConfirmModal] = useState({ isOpen: false, id: null });
-  const itemsPerPage = 5;
+
+  const currentPage = Number(searchParams.get('page')) || 1;
+  const typeFilter = searchParams.get('jobType') || '';
+
+  const updateParam = useCallback((key, value) => {
+    const next = new URLSearchParams(searchParams);
+    if (value && value !== '') next.set(key, value);
+    else next.delete(key);
+    if (key !== 'page') next.delete('page');
+    setSearchParams(next, { replace: true });
+  }, [searchParams, setSearchParams]);
 
   useEffect(() => {
     const fetchSavedJobs = async () => {
       try {
         setLoading(true);
-        const response = await axiosInstance.get('/candidates/saved-jobs', {
-          params: { page: currentPage - 1, size: itemsPerPage }
+        const response = await jobService.getSavedJobs({
+          page: currentPage - 1,
+          size: PAGE_SIZE,
         });
-        const content = response?.content || response?.data?.content || [];
-        setSavedJobs(content);
-        setTotalPages(response?.totalPages || response?.data?.totalPages || 0);
-        setTotalElements(response?.totalElements || response?.data?.totalElements || 0);
+        const payload = response?.data ?? response;
+        setSavedJobs(payload?.content || []);
+        setTotalPages(payload?.totalPages || 0);
+        setTotalElements(payload?.totalElements || 0);
       } catch (error) {
         console.error("Failed to fetch saved jobs:", error);
         setSavedJobs([]);
@@ -41,6 +64,12 @@ const FavoriteJobs = () => {
 
     fetchSavedJobs();
   }, [currentPage]);
+
+  // Frontend filter on current page (backend chưa support jobType filter cho saved-jobs).
+  const visibleJobs = useMemo(() => {
+    if (!typeFilter) return savedJobs;
+    return savedJobs.filter((j) => j.jobType === typeFilter);
+  }, [savedJobs, typeFilter]);
 
   const getTypeStyle = (type) => {
     if (type === 'FULL_TIME') return 'bg-blue-50 text-blue-600';
@@ -68,7 +97,7 @@ const FavoriteJobs = () => {
   const confirmRemove = async () => {
     const jobId = confirmModal.id;
     try {
-      await axiosInstance.delete(`/candidates/saved-jobs/${jobId}`);
+      await jobService.unsaveJob(jobId);
       toast.success("Đã bỏ lưu công việc thành công!");
       setSavedJobs(prev => prev.filter(j => j.jobId !== jobId));
       setTotalElements(prev => Math.max(0, prev - 1));
@@ -80,19 +109,27 @@ const FavoriteJobs = () => {
 
   return (
     <div className="bg-white rounded-xl p-8 min-h-screen shadow-sm border border-gray-100">
-      <div className="flex items-center justify-between mb-8">
+      <div className="flex items-center justify-between mb-6">
         <h2 className="text-2xl font-bold text-gray-800">
           Công việc đã lưu <span className="text-gray-400 font-normal text-lg">({totalElements})</span>
         </h2>
       </div>
 
+      <FilterBar
+        filters={[{ key: 'jobType', label: 'Loại công việc', options: TYPE_FILTERS }]}
+        values={{ jobType: typeFilter }}
+        onChange={updateParam}
+        onReset={() => setSearchParams({}, { replace: true })}
+      />
+
       {loading ? (
         <div className="text-center py-12 text-gray-500">Đang tải...</div>
-      ) : savedJobs.length === 0 ? (
-        <div className="text-center py-12 text-gray-500">Bạn chưa lưu công việc nào.</div>
+      ) : visibleJobs.length === 0 ? (
+        <div className="text-center py-12 text-gray-500">
+          {typeFilter ? 'Không có công việc nào ở loại đã chọn (trong trang hiện tại).' : 'Bạn chưa lưu công việc nào.'}
+        </div>
       ) : (
         <>
-          {/* JOB TABLE */}
           <Table
             headers={[
               { label: "Công việc" },
@@ -101,7 +138,7 @@ const FavoriteJobs = () => {
               { label: "Hành động", className: "text-right" }
             ]}
           >
-            {savedJobs.map((job) => {
+            {visibleJobs.map((job) => {
               const isUnavailable = job.companyActive === false;
               return (
               <tr
@@ -128,7 +165,7 @@ const FavoriteJobs = () => {
                         )}
                         {!isUnavailable && job.jobType && (
                           <span className={`text-[10px] px-2 py-0.5 rounded font-bold uppercase ${getTypeStyle(job.jobType)}`}>
-                            {job.jobType === 'FULL_TIME' ? 'Full Time' : job.jobType === 'PART_TIME' ? 'Part Time' : job.jobType === 'REMOTE' ? 'Remote' : job.jobType === 'INTERN' ? 'Internship' : job.jobType}
+                            {jobTypeLabel(job.jobType)}
                           </span>
                         )}
                       </div>
@@ -185,38 +222,14 @@ const FavoriteJobs = () => {
             })}
           </Table>
 
-          {totalPages > 1 && (
-            <div className="flex justify-center items-center gap-2">
-              <button
-                onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-                disabled={currentPage === 1}
-                className={`w-9 h-9 rounded-full flex items-center justify-center transition-colors border ${currentPage === 1 ? 'border-gray-100 text-gray-300 cursor-not-allowed' : 'border-gray-200 text-[#3AB4E6] hover:bg-blue-50'}`}
-              >
-                <FaArrowLeft size={10} />
-              </button>
-
-              {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
-                <button
-                  key={page}
-                  onClick={() => setCurrentPage(page)}
-                  className={`w-9 h-9 rounded-full flex items-center justify-center font-bold text-sm transition-all ${
-                    currentPage === page
-                      ? 'bg-[#1967D2] text-white shadow-md'
-                      : 'text-gray-500 hover:bg-gray-50'
-                  }`}
-                >
-                  {page < 10 ? `0${page}` : page}
-                </button>
-              ))}
-
-              <button
-                onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-                disabled={currentPage === totalPages}
-                className={`w-9 h-9 rounded-full flex items-center justify-center transition-colors border ${currentPage === totalPages ? 'border-gray-100 text-gray-300 cursor-not-allowed' : 'border-gray-200 text-[#3AB4E6] hover:bg-blue-50'}`}
-              >
-                <FaArrowLeft className="rotate-180" size={10} />
-              </button>
-            </div>
+          {totalPages > 0 && (
+            <Pagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              totalItems={totalElements}
+              itemsPerPage={PAGE_SIZE}
+              onPageChange={(p) => updateParam('page', String(p))}
+            />
           )}
         </>
       )}

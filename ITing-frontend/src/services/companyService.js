@@ -83,15 +83,12 @@ const companyService = {
   },
 
   /**
-   * Upload consent document — TODO: chưa có HR-side equivalent. Giữ legacy.
+   * @deprecated Phase 6 (Option B): consent đã gộp vào affiliation snapshot.
+   *             Dùng `affiliationService.uploadConsent(file, confirmed)` thay vì endpoint này.
+   *             Wrapper này forward sang affiliation để code cũ không vỡ.
    */
   uploadConsentDocument: async (file, confirmed) => {
-    const formData = new FormData();
-    formData.append("file", file);
-    formData.append("confirmed", confirmed);
-    return await axiosInstance.post("/companies/me/consent-document", formData, {
-      headers: { "Content-Type": "multipart/form-data" },
-    });
+    return await affiliationService.uploadConsent(file, confirmed);
   },
 
   /**
@@ -121,9 +118,9 @@ const companyService = {
     return await affiliationService.submitReview();
   },
 
-  /** @deprecated Dùng affiliationService.submitReview. Consent doc submit chưa có HR-side equivalent. */
+  /** @deprecated Phase 6: consent gộp vào affiliation, dùng affiliationService.submitReview. */
   submitConsentDocumentReview: async () => {
-    return await axiosInstance.post("/companies/me/submit-consent-document-review");
+    return await affiliationService.submitReview();
   },
 
   /**

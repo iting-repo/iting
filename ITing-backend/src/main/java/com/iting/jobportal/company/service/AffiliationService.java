@@ -35,6 +35,9 @@ public interface AffiliationService {
     /** Upload license lên S3, set submitted_license_url, trả URL. */
     String uploadLicense(Long hrAccountId, MultipartFile file);
 
+    /** Upload consent document (thỏa thuận DLCN) lên S3, set submitted_consent_url + confirmed flag. */
+    String uploadConsent(Long hrAccountId, MultipartFile file, boolean confirmed);
+
     /** Gửi snapshot cho admin duyệt. Set submissionStatus=PENDING_REVIEW + status=PENDING (nếu lần đầu). */
     AffiliationMeResponse submitReview(Long hrAccountId);
 
@@ -43,4 +46,7 @@ public interface AffiliationService {
 
     /** Presigned URL self-check cho HR xem lại logo đã upload. */
     String getLogoPresignedUrl(Long hrAccountId, int expiryMinutes);
+
+    /** Presigned URL self-check cho HR xem lại consent document đã upload. */
+    String getConsentPresignedUrl(Long hrAccountId, int expiryMinutes);
 }

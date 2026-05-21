@@ -5,9 +5,33 @@ import {
   FaBell, FaBriefcase, FaEnvelope, FaCommentDots, FaStar,
   FaCog, FaShieldAlt, FaMobileAlt, FaSms, FaMoon, FaClock,
   FaCheckCircle, FaExclamationTriangle, FaVolumeUp, FaVolumeMute,
-  FaUserCog, FaGlobe, FaSave, FaToggleOn, FaToggleOff
+  FaUserCog, FaGlobe, FaSave
 } from 'react-icons/fa';
 import { toast } from 'sonner';
+import notificationPreferenceService from '../../services/notificationPreferenceService';
+
+const DEFAULT_NOTIFICATIONS = {
+  jobAlerts: true,
+  applicationUpdates: true,
+  newMessages: true,
+  recommendations: true,
+  systemUpdates: false,
+  promotions: false,
+  weeklyDigest: true,
+  followedCompanies: true,
+};
+
+const DEFAULT_DELIVERY = {
+  email: true,
+  push: true,
+  sms: false,
+};
+
+const DEFAULT_QUIET = {
+  enabled: false,
+  from: '22:00',
+  to: '07:00',
+};
 
 /* ── Animated Toggle Switch ─────────────────────────────────────── */
 const ToggleSwitch = ({ enabled, onChange, id }) => (
@@ -113,39 +137,62 @@ const TimePicker = ({ label, value, onChange, id }) => (
    ██  MAIN SETTINGS PAGE
    ═══════════════════════════════════════════════════════════════════ */
 const SettingsPage = () => {
+  const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
 
-  // ── Notification toggles ──
-  const [notifications, setNotifications] = useState({
-    jobAlerts: true,
-    applicationUpdates: true,
-    newMessages: true,
-    recommendations: true,
-    systemUpdates: false,
-    promotions: false,
-    weeklyDigest: true,
-    followedCompanies: true,
-  });
-
-  // ── Delivery methods ──
-  const [deliveryMethods, setDeliveryMethods] = useState({
-    email: true,
-    push: true,
-    sms: false,
-  });
-
-  // ── Quiet hours ──
-  const [quietHours, setQuietHours] = useState({
-    enabled: false,
-    from: '22:00',
-    to: '07:00',
-  });
-
-  // ── Sound & vibration ──
+  const [notifications, setNotifications] = useState(DEFAULT_NOTIFICATIONS);
+  const [deliveryMethods, setDeliveryMethods] = useState(DEFAULT_DELIVERY);
+  const [quietHours, setQuietHours] = useState(DEFAULT_QUIET);
   const [soundEnabled, setSoundEnabled] = useState(true);
 
-  // Track changes
+  // Convert "HH:mm" string ↔ keep as-is (BE đã serialize TIME thành "HH:mm" qua @JsonFormat).
+  const normalizeTime = (t) => {
+    if (!t) return '22:00';
+    // BE có thể trả "22:00" hoặc "22:00:00" — chuẩn hoá về "HH:mm"
+    return typeof t === 'string' && t.length >= 5 ? t.slice(0, 5) : t;
+  };
+
+  // ── Load preferences từ backend ──
+  useEffect(() => {
+    let active = true;
+    (async () => {
+      try {
+        const data = await notificationPreferenceService.get();
+        if (!active || !data) return;
+        setNotifications({
+          jobAlerts: data.jobAlerts ?? true,
+          applicationUpdates: data.applicationUpdates ?? true,
+          newMessages: data.newMessages ?? true,
+          recommendations: data.recommendations ?? true,
+          systemUpdates: data.systemUpdates ?? false,
+          promotions: data.promotions ?? false,
+          weeklyDigest: data.weeklyDigest ?? true,
+          followedCompanies: data.followedCompanies ?? true,
+        });
+        setDeliveryMethods({
+          email: data.emailEnabled ?? true,
+          push: data.pushEnabled ?? true,
+          sms: data.smsEnabled ?? false,
+        });
+        setSoundEnabled(data.soundEnabled ?? true);
+        setQuietHours({
+          enabled: data.quietHoursEnabled ?? false,
+          from: normalizeTime(data.quietHoursFrom) || '22:00',
+          to: normalizeTime(data.quietHoursTo) || '07:00',
+        });
+        setHasChanges(false);
+      } catch (err) {
+        console.error('Failed to load notification preferences', err);
+        toast.error('Không tải được cài đặt thông báo, dùng giá trị mặc định.');
+      } finally {
+        if (active) setLoading(false);
+      }
+    })();
+    return () => { active = false; };
+  }, []);
+
+  // ── Mutators (đánh dấu dirty) ──
   const updateNotification = useCallback((key, value) => {
     setNotifications((prev) => ({ ...prev, [key]: value }));
     setHasChanges(true);
@@ -161,7 +208,6 @@ const SettingsPage = () => {
     setHasChanges(true);
   }, []);
 
-  // ── Toggle all ──
   const allEnabled = Object.values(notifications).every(Boolean);
   const toggleAll = () => {
     const newVal = !allEnabled;
@@ -171,16 +217,32 @@ const SettingsPage = () => {
     setHasChanges(true);
   };
 
-  // ── Save ──
+  // ── Save to backend ──
   const handleSave = async () => {
+    // Edge case: bật quiet hours mà 2 mốc trùng → block ngay tại FE
+    if (quietHours.enabled && quietHours.from === quietHours.to) {
+      toast.error('Giờ bắt đầu và kết thúc của chế độ im lặng không được trùng nhau.');
+      return;
+    }
+
     setSaving(true);
     try {
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 800));
+      const payload = {
+        ...notifications,
+        emailEnabled: deliveryMethods.email,
+        pushEnabled: deliveryMethods.push,
+        smsEnabled: deliveryMethods.sms,
+        soundEnabled,
+        quietHoursEnabled: quietHours.enabled,
+        quietHoursFrom: quietHours.from,
+        quietHoursTo: quietHours.to,
+      };
+      await notificationPreferenceService.update(payload);
       toast.success('Đã lưu cài đặt thông báo thành công!');
       setHasChanges(false);
-    } catch {
-      toast.error('Không thể lưu cài đặt. Vui lòng thử lại.');
+    } catch (error) {
+      const msg = error?.response?.data?.message || error?.message || 'Không thể lưu cài đặt. Vui lòng thử lại.';
+      toast.error(msg);
     } finally {
       setSaving(false);
     }
@@ -227,11 +289,11 @@ const SettingsPage = () => {
             <button
               id="save-notification-settings"
               onClick={handleSave}
-              disabled={!hasChanges || saving}
+              disabled={!hasChanges || saving || loading}
               className={`
                 flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold
                 transition-all duration-200 shadow-sm
-                ${hasChanges
+                ${hasChanges && !loading
                   ? 'bg-[#3AB4E6] text-white hover:bg-[#2da3d5] hover:shadow-md shadow-[#3AB4E6]/20'
                   : 'bg-gray-100 text-gray-300 cursor-not-allowed'
                 }
@@ -243,8 +305,15 @@ const SettingsPage = () => {
           </div>
         </div>
 
-        {/* ── Unsaved indicator ── */}
-        {hasChanges && (
+        {/* ── Loading / Unsaved indicator ── */}
+        {loading ? (
+          <div className="flex items-center gap-2 px-4 py-2.5 mb-6 bg-blue-50 border border-blue-100 rounded-xl animate-pulse">
+            <FaClock className="text-[#3AB4E6] text-sm shrink-0" />
+            <span className="text-xs text-[#2a8ab3] font-medium">
+              Đang tải cài đặt thông báo từ máy chủ...
+            </span>
+          </div>
+        ) : hasChanges && (
           <div className="flex items-center gap-2 px-4 py-2.5 mb-6 bg-amber-50 border border-amber-100 rounded-xl animate-fade-in">
             <FaExclamationTriangle className="text-amber-500 text-sm shrink-0" />
             <span className="text-xs text-amber-600 font-medium">

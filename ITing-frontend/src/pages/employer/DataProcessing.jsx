@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { Upload, AlertTriangle, FileText, CheckCircle, Download } from "lucide-react";
 import { Button, Breadcrumb } from "../../components/common";
-import companyService from "../../services/companyService";
+import affiliationService from "../../services/affiliationService";
 import { toast } from "sonner";
 
 const DataProcessing = () => {
@@ -9,26 +9,29 @@ const DataProcessing = () => {
   const [agreed, setAgreed] = useState(false);
   const [errors, setErrors] = useState({});
   const [submitting, setSubmitting] = useState(false);
-  const [company, setCompany] = useState(null);
+  const [affiliation, setAffiliation] = useState(null);
   const [loading, setLoading] = useState(true);
 
   React.useEffect(() => {
-    fetchCompany();
+    fetchAffiliation();
   }, []);
 
-  const fetchCompany = async () => {
+  const fetchAffiliation = async () => {
     try {
       setLoading(true);
-      const data = await companyService.getMyCompany();
-      setCompany(data);
+      const aff = await affiliationService.getMe().catch(() => null);
+      setAffiliation(aff);
+      if (aff?.submittedConsentConfirmed) setAgreed(true);
     } catch (err) {
-      console.error("Lỗi lấy thông tin công ty:", err);
+      console.error("Lỗi lấy thông tin affiliation:", err);
     } finally {
       setLoading(false);
     }
   };
 
   const statusMap = {
+    NONE: { label: "Chưa bắt đầu", color: "bg-gray-100 text-gray-500" },
+    DRAFT: { label: "Đang soạn", color: "bg-gray-100 text-gray-500" },
     MISSING: { label: "Chưa cập nhật", color: "bg-gray-100 text-gray-500" },
     UPLOADED: { label: "Đã tải lên", color: "bg-blue-100 text-blue-600" },
     PENDING_REVIEW: { label: "Đang chờ duyệt", color: "bg-amber-100 text-amber-600" },
@@ -36,7 +39,8 @@ const DataProcessing = () => {
     REJECTED: { label: "Bị từ chối", color: "bg-red-100 text-red-600" },
   };
 
-  const currentStatus = statusMap[company?.documentReviewStatus] || statusMap.MISSING;
+  const submissionState = affiliation?.submissionStatus;
+  const currentStatus = statusMap[submissionState] || statusMap.MISSING;
 
   const handleFileChange = (e) => {
     const f = e.target.files?.[0];
@@ -57,7 +61,7 @@ const DataProcessing = () => {
 
   const handleSave = async () => {
     const errs = {};
-    if (!file && !company?.consentDocumentFileUrl) errs.file = "Vui lòng chọn file để tải lên";
+    if (!file && !affiliation?.submittedConsentUrl) errs.file = "Vui lòng chọn file để tải lên";
     if (!agreed) errs.agreed = "Vui lòng xác nhận cam đoan";
     setErrors(errs);
 
@@ -66,17 +70,16 @@ const DataProcessing = () => {
     try {
       setSubmitting(true);
 
-      // Nếu có file mới chọn, upload trước
+      // Upload consent vào snapshot affiliation (nếu có file mới)
       if (file) {
-        await companyService.uploadConsentDocument(file, agreed);
+        await affiliationService.uploadConsent(file, agreed);
       }
 
-      // Gửi duyệt Thỏa thuận dữ liệu độc lập
-      await companyService.submitConsentDocumentReview();
-      toast.success("Văn bản thỏa thuận đã được gửi đi xét duyệt!");
+      // Gửi duyệt — cùng 1 endpoint với license + basic info
+      await affiliationService.submitReview();
+      toast.success("Đã gửi hồ sơ (gồm văn bản thỏa thuận) cho admin xét duyệt!");
       setFile(null);
-      setAgreed(false);
-      await fetchCompany();
+      await fetchAffiliation();
     } catch (err) {
       console.error("Lỗi:", err);
       toast.error(err?.response?.data?.message || err?.response?.data?.error || "Gửi duyệt thất bại. Vui lòng thử lại.");
@@ -207,12 +210,12 @@ const DataProcessing = () => {
         <div className="flex justify-end mt-10 pt-6 border-t border-gray-100">
           <Button 
             onClick={handleSave} 
-            disabled={submitting || company?.documentReviewStatus === 'PENDING_REVIEW'} 
+            disabled={submitting || submissionState === 'PENDING_REVIEW'}
             className="px-10 py-6 min-w-[200px] text-base font-bold shadow-lg shadow-blue-500/20"
           >
             {submitting
               ? "Đang xử lý..."
-              : company?.documentReviewStatus === 'PENDING_REVIEW'
+              : submissionState === 'PENDING_REVIEW'
                 ? "Đang chờ duyệt"
                 : file
                   ? "Tải lên & Gửi xét duyệt"
