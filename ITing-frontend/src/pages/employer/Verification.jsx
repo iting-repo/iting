@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Upload, AlertTriangle, FileText, CheckCircle } from "lucide-react";
+import { Upload, AlertTriangle, FileText, CheckCircle, Download } from "lucide-react";
 import { Button, Breadcrumb } from "../../components/common";
 import companyService from "../../services/companyService";
 import affiliationService from "../../services/affiliationService";
@@ -69,6 +69,11 @@ const Verification = () => {
   // Ưu tiên submission status của affiliation (mới); fallback document status cũ của Company.
   const submissionState = affiliation?.submissionStatus || company?.documentReviewStatus;
   const currentStatus = statusMap[submissionState] || statusMap.MISSING;
+
+  // Đã có file giấy phép trên server (HR đã upload trước đó)
+  const hasUploadedLicense = Boolean(
+    affiliation?.submittedLicenseUrl || company?.businessLicenseFileUrl
+  );
 
   const handleFileChange = (e) => {
     const f = e.target.files?.[0];
@@ -218,7 +223,7 @@ const Verification = () => {
                   </label>
 
                   {/* Hiển thị file đang chọn hoặc file đã upload trên server */}
-                  {(file || company?.businessLicenseFileUrl) && (
+                  {(file || hasUploadedLicense) && (
                     <div className="mt-4 flex items-center gap-2 text-sm px-3 py-2.5 rounded-lg border font-medium"
                       style={file
                         ? { background: '#f0fdf4', borderColor: '#bbf7d0', color: '#16a34a' }
@@ -226,10 +231,10 @@ const Verification = () => {
                       }
                     >
                       <CheckCircle className="w-4 h-4 shrink-0" />
-                      <span className="truncate max-w-[200px]">{activeFilename}</span>
-                      {!file && (
-                        <span className="text-[10px] uppercase tracking-wide opacity-60 ml-1">• đã lưu</span>
-                      )}
+                      <span className="truncate max-w-[200px]">{activeFilename || 'Giấy phép đã tải lên'}</span>
+                      <span className="text-[10px] uppercase tracking-wide opacity-70 ml-1">
+                        {file ? '• file mới' : '• đã lưu trên hệ thống'}
+                      </span>
                     </div>
                   )}
                 </div>
@@ -256,8 +261,17 @@ const Verification = () => {
                 </div>
               </div>
 
-              <div className="w-64 shrink-0">
-                <p className="text-sm font-bold text-gray-700 mb-3 border-b pb-2">HƯỚNG DẪN MINH HỌA</p>
+              <div className="w-64 shrink-0 flex flex-col gap-3">
+                <p className="text-sm font-bold text-gray-700 border-b pb-2 uppercase tracking-tight">HƯỚNG DẪN MINH HỌA</p>
+                <a 
+                  href="/doanhnghieptunhan (1).pdf" 
+                  download 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="w-full flex items-center justify-center text-xs py-2 h-auto gap-2 bg-[#EAF6FF] text-[#3AB4E6] border border-[#3AB4E6]/30 rounded-lg font-bold hover:bg-[#3AB4E6] hover:text-white transition-colors"
+                >
+                  <Download className="w-3 h-3" /> Xem văn bản mẫu
+                </a>
                 {activePreviewUrl ? (
                   <div className="rounded-xl overflow-hidden border border-gray-200 bg-gray-50 aspect-[3/4] relative group">
                     {isPdf ? (
@@ -319,7 +333,14 @@ const Verification = () => {
             disabled={
               submitting ||
               submissionState === 'PENDING_REVIEW' ||
-              (!file && !affiliation?.submittedLicenseUrl && !company?.businessLicenseFileUrl)
+              (!file && !hasUploadedLicense)
+            }
+            title={
+              !file && !hasUploadedLicense
+                ? 'Vui lòng tải lên giấy phép kinh doanh trước khi gửi duyệt'
+                : submissionState === 'PENDING_REVIEW'
+                  ? 'Hồ sơ đang chờ admin xét duyệt'
+                  : ''
             }
             className="px-10 py-6 min-w-[200px] text-base font-bold shadow-lg shadow-blue-500/20"
           >
@@ -327,9 +348,11 @@ const Verification = () => {
               ? "Đang xử lý..."
               : submissionState === 'PENDING_REVIEW'
                 ? "Đang chờ duyệt"
-                : file
-                  ? "Tải lên & Gửi xét duyệt"
-                  : "Gửi hồ sơ xét duyệt"}
+                : !file && !hasUploadedLicense
+                  ? "Vui lòng upload trước"
+                  : file
+                    ? "Tải lên & Gửi xét duyệt"
+                    : "Gửi hồ sơ xét duyệt"}
           </Button>
         </div>
       </div>

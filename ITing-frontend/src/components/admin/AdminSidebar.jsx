@@ -2,7 +2,7 @@ import React, { useState, useCallback } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import {
   ChevronLeft, ChevronRight, ChevronDown,
-  BarChart3, Bell, BookOpen, Building2,
+  Bell, BookOpen, Building2,
   FileText, HelpCircle, LayoutDashboard,
   Layers, Image, Settings, Shield, Users
 } from 'lucide-react';
@@ -34,7 +34,6 @@ const SIDEBAR_SECTIONS = [
     items: [
       { path: '/admin/blog', label: 'Blog', icon: BookOpen },
       { path: '/admin/faq', label: 'FAQ', icon: HelpCircle },
-      { path: '/admin/pages', label: 'Trang tĩnh', icon: FileText },
       { path: '/admin/categories', label: 'Danh mục', icon: Layers },
       { path: '/admin/banner', label: 'Banner', icon: Image },
     ],
@@ -45,7 +44,6 @@ const SIDEBAR_SECTIONS = [
     items: [
       { path: '/admin/roles', label: 'Phân quyền', icon: Shield },
       { path: '/admin/audit', label: 'Nhật ký kiểm tra', icon: FileText },
-      { path: '/admin/stats', label: 'Thống kê', icon: BarChart3 },
       { path: '/admin/config', label: 'Cấu hình', icon: Settings },
     ],
   },

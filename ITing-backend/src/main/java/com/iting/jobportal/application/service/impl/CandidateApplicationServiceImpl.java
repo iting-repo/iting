@@ -20,6 +20,10 @@ import com.iting.jobportal.application.service.MatchScoreService;
 import com.iting.jobportal.application.util.ApplicationMapperUtil;
 import com.iting.jobportal.userprofile.entity.CV;
 import com.iting.jobportal.userprofile.repository.CVRepository;
+import com.iting.jobportal.notification.service.NotificationService;
+import com.iting.jobportal.notification.dto.request.CreateNotificationRequest;
+import com.iting.jobportal.notification.enums.NotificationType;
+import com.iting.jobportal.notification.enums.RecipientType;
 import lombok.RequiredArgsConstructor;
 
 import java.util.Optional;
@@ -45,6 +49,7 @@ public class CandidateApplicationServiceImpl implements CandidateApplicationServ
     private final Optional<OutboxAppender> outboxAppender;
     private final KafkaTopics kafkaTopics;
     private final MatchScoreService matchScoreService;
+    private final NotificationService notificationService;
 
     @Override
     @Transactional
@@ -106,6 +111,41 @@ public class CandidateApplicationServiceImpl implements CandidateApplicationServ
                         request.getJobId(),
                         userId,
                         job.getPostedByHrId())));
+
+        // 🔔 Gửi thông báo cho ứng viên
+        try {
+            notificationService.createNotification(
+                    CreateNotificationRequest.builder()
+                            .recipientId(userId)
+                            .recipientType(RecipientType.USER)
+                            .type(NotificationType.APPLICATION_SUBMITTED)
+                            .content("Bạn đã ứng tuyển thành công vị trí \"" + job.getTitle() + "\". Nhà tuyển dụng sẽ xem xét hồ sơ của bạn.")
+                            .entityType("APPLICATION")
+                            .entityId(savedForm.getId())
+                            .actionUrl("/candidate/applied-jobs")
+                            .build());
+        } catch (Exception e) {
+            // Không block luồng apply nếu notification fail
+        }
+
+        // 🔔 Gửi thông báo cho nhà tuyển dụng (HR đăng tin)
+        try {
+            if (job.getPostedByHrId() != null) {
+                String candidateName = user.getAccount() != null ? user.getAccount().getFullName() : "Ứng viên";
+                notificationService.createNotification(
+                        CreateNotificationRequest.builder()
+                                .recipientId(job.getCompany().getId())
+                                .recipientType(RecipientType.COMPANY)
+                                .type(NotificationType.APPLICATION_SUBMITTED)
+                                .content(candidateName + " vừa ứng tuyển vị trí \"" + job.getTitle() + "\".")
+                                .entityType("APPLICATION")
+                                .entityId(savedForm.getId())
+                                .actionUrl("/employer/manage-jobs")
+                                .build());
+            }
+        } catch (Exception e) {
+            // Không block luồng apply nếu notification fail
+        }
 
         return ApplicationSubmitResponse.builder()
                 .id(savedForm.getId())

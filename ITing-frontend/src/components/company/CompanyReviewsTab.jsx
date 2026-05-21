@@ -5,6 +5,8 @@ import {
   FaStar, FaThumbsUp, FaFlag, FaPen, FaUserShield, FaBriefcase
 } from 'react-icons/fa';
 import companyReviewService from '../../services/companyReviewService';
+import { ConfirmModal } from '../../components/common';
+import useConfirm from '../../hooks/useConfirm';
 import WriteReviewModal from './WriteReviewModal';
 
 /**
@@ -17,6 +19,7 @@ const CompanyReviewsTab = ({ companyId, companyName }) => {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [showWriteModal, setShowWriteModal] = useState(false);
+  const [confirm, askConfirm, resetConfirm] = useConfirm();
 
   const load = () => {
     setLoading(true);
@@ -41,13 +44,21 @@ const CompanyReviewsTab = ({ companyId, companyName }) => {
     } catch { toast.error('Lỗi vote'); }
   };
 
-  const handleReport = async (reviewId) => {
+  const handleReport = (reviewId) => {
     if (!currentUser) { toast.info('Đăng nhập để báo cáo'); return; }
-    if (!window.confirm('Bạn chắc chắn muốn báo cáo đánh giá này?')) return;
-    try {
-      await companyReviewService.report(reviewId);
-      toast.success('Cảm ơn bạn đã báo cáo');
-    } catch { toast.error('Lỗi báo cáo'); }
+    askConfirm({
+      title: "Báo cáo đánh giá",
+      message: "Bạn chắc chắn muốn báo cáo đánh giá này là không phù hợp?",
+      confirmText: "Báo cáo",
+      variant: "warning",
+      onConfirm: async () => {
+        resetConfirm();
+        try {
+          await companyReviewService.report(reviewId);
+          toast.success('Cảm ơn bạn đã báo cáo');
+        } catch { toast.error('Lỗi báo cáo'); }
+      }
+    });
   };
 
   if (loading) return <div className="text-center py-10 text-slate-400">Đang tải đánh giá...</div>;
@@ -106,6 +117,8 @@ const CompanyReviewsTab = ({ companyId, companyName }) => {
         onClose={() => setShowWriteModal(false)}
         onSuccess={load}
       />
+
+      <ConfirmModal isOpen={confirm.isOpen} onClose={resetConfirm} onConfirm={confirm.onConfirm} title={confirm.title} message={confirm.message} warning={confirm.warning} confirmText={confirm.confirmText} variant={confirm.variant} />
     </div>
   );
 };

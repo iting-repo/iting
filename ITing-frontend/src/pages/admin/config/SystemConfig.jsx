@@ -26,6 +26,8 @@ import {
   Badge,
   LoadingSpinner
 } from "../../../components";
+import { ConfirmModal } from "../../../components/common";
+import useConfirm from "../../../hooks/useConfirm";
 import { toast } from "sonner";
 import adminConfigService from "../../../services/adminConfigService";
 
@@ -44,6 +46,7 @@ const SystemConfig = () => {
   const [testingEmail, setTestingEmail] = useState(false);
   const [emailTestStatus, setEmailTestStatus] = useState(null);
   const [config, setConfig] = useState(null);
+  const [confirm, askConfirm, resetConfirm] = useConfirm();
 
   useEffect(() => {
     const fetchSettings = async () => {
@@ -76,20 +79,28 @@ const SystemConfig = () => {
     }
   };
 
-  const handleReset = async () => {
-    if (!window.confirm("Bạn có chắc chắn muốn khôi phục cấu hình mặc định?")) return;
-    
-    setLoading(true);
-    try {
-      await adminConfigService.resetToDefault();
-      const data = await adminConfigService.fetchConfig();
-      setConfig(data);
-      toast.info("Đã khôi phục cấu hình mặc định");
-    } catch (error) {
-      toast.error("Không thể khôi phục cấu hình");
-    } finally {
-      setLoading(false);
-    }
+  const handleReset = () => {
+    askConfirm({
+      title: "Khôi phục cấu hình mặc định",
+      message: "Bạn có chắc chắn muốn khôi phục cấu hình mặc định?",
+      warning: "Tất cả các thay đổi tùy chỉnh sẽ bị mất.",
+      confirmText: "Khôi phục",
+      variant: "warning",
+      onConfirm: async () => {
+        resetConfirm();
+        setLoading(true);
+        try {
+          await adminConfigService.resetToDefault();
+          const data = await adminConfigService.fetchConfig();
+          setConfig(data);
+          toast.info("Đã khôi phục cấu hình mặc định");
+        } catch (error) {
+          toast.error("Không thể khôi phục cấu hình");
+        } finally {
+          setLoading(false);
+        }
+      }
+    });
   };
 
   const handleTestEmail = async () => {
@@ -407,6 +418,8 @@ const SystemConfig = () => {
       
       {/* Bottom padding for bulk bar if needed, but not here */}
       <div className="h-20" />
+
+      <ConfirmModal isOpen={confirm.isOpen} onClose={resetConfirm} onConfirm={confirm.onConfirm} title={confirm.title} message={confirm.message} warning={confirm.warning} confirmText={confirm.confirmText} variant={confirm.variant} />
     </div>
   );
 };

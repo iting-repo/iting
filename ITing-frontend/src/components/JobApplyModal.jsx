@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useModalEscape } from "../hooks/useModalEscape";
 import {
   FaTimes,
@@ -8,15 +8,21 @@ import {
   FaFilePdf,
   FaUserEdit,
   FaCheckCircle,
-  FaExclamationCircle
+  FaExclamationCircle,
+  FaBriefcase,
+  FaBuilding,
+  FaMapMarkerAlt,
+  FaArrowRight
 } from "react-icons/fa";
 import { toast } from "sonner";
 import applicationService from "../services/applicationService";
 import cvService from "../services/cvService";
 import authService from "../services/authService";
+import jobService from "../services/jobService";
 import { storage } from "../utils/storage";
 
 const JobApplyModal = ({ isOpen, onClose, onSuccess, jobTitle, jobId }) => {
+  const navigate = useNavigate();
   const [cvMethod, setCvMethod] = useState("recent"); // 'recent', 'library', 'upload'
   const [coverLetter, setCoverLetter] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -29,6 +35,11 @@ const JobApplyModal = ({ isOpen, onClose, onSuccess, jobTitle, jobId }) => {
   const [uploadedFile, setUploadedFile] = useState(null);
   const [uploadTitle, setUploadTitle] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+
+  // Success state
+  const [applySuccess, setApplySuccess] = useState(false);
+  const [similarJobs, setSimilarJobs] = useState([]);
+  const [loadingSimilar, setLoadingSimilar] = useState(false);
 
   useModalEscape(isOpen ? onClose : null);
 
@@ -85,9 +96,49 @@ const JobApplyModal = ({ isOpen, onClose, onSuccess, jobTitle, jobId }) => {
     }
   };
 
-  const previewCV = (url) => {
-    if (!url) return;
-    window.open(url, '_blank');
+  /**
+   * Mở preview CV trong tab mới — luôn xin presigned URL TƯƠI từ BE
+   * (URL S3 lưu sẵn trong DB chỉ valid 1h → 403 sau khi hết hạn).
+   *
+   * @param {object|number|string} cv  CV object {id,fileUrl}, id, hoặc fileUrl string fallback.
+   */
+  const previewCV = async (cv) => {
+    if (typeof cv === 'string') {
+      window.open(cv, '_blank', 'noopener');
+      return;
+    }
+    if (!cv) return;
+
+    const cvId = typeof cv === 'object' ? cv.id : cv;
+    const fallbackUrl = typeof cv === 'object' ? cv.fileUrl : null;
+
+    if (!cvId) {
+      if (fallbackUrl) window.open(fallbackUrl, '_blank', 'noopener');
+      return;
+    }
+
+    // Mở tab trống ngay để tránh popup blocker, set URL sau khi fetch xong.
+    const win = window.open('', '_blank', 'noopener');
+    try {
+      const freshUrl = await cvService.getViewUrl(cvId);
+      const target = freshUrl || fallbackUrl;
+      if (!target) {
+        toast.error('Không lấy được URL xem CV.');
+        if (win) win.close();
+        return;
+      }
+      if (win) win.location.href = target;
+      else window.open(target, '_blank', 'noopener');
+    } catch (err) {
+      console.error('Preview failed:', err);
+      if (fallbackUrl && win) {
+        win.location.href = fallbackUrl;
+        toast.warning('Đang dùng link cũ — có thể đã hết hạn.');
+      } else {
+        toast.error(err?.message || 'Không thể xem CV lúc này.');
+        if (win) win.close();
+      }
+    }
   };
 
   const previewLocalFile = () => {
@@ -148,7 +199,13 @@ const JobApplyModal = ({ isOpen, onClose, onSuccess, jobTitle, jobId }) => {
       await applicationService.applyJob(payload);
       toast.success("Ứng tuyển thành công!");
       if (onSuccess) onSuccess();
-      onClose();
+
+      // Dispatch event to refresh notification bell in Header
+      window.dispatchEvent(new CustomEvent('notification-refresh'));
+
+      // Show success screen with similar jobs
+      setApplySuccess(true);
+      fetchSimilarJobs();
     } catch (error) {
       console.error("Lỗi khi ứng tuyển:", error);
       toast.error(error?.message || "Có lỗi xảy ra khi nộp hồ sơ.");
@@ -157,7 +214,128 @@ const JobApplyModal = ({ isOpen, onClose, onSuccess, jobTitle, jobId }) => {
     }
   };
 
+  const fetchSimilarJobs = async () => {
+    try {
+      setLoadingSimilar(true);
+      // Extract keywords from job title for search
+      const keywords = (jobTitle || '').split(/[\s\-–,/]+/).filter(w => w.length > 2).slice(0, 3).join(' ');
+      const res = await jobService.getJobs({ keyword: keywords, size: 4, page: 0 });
+      const jobs = res?.content || res?.data?.content || res || [];
+      // Filter out the current job
+      const filtered = (Array.isArray(jobs) ? jobs : []).filter(j => j.id !== jobId).slice(0, 3);
+      setSimilarJobs(filtered);
+    } catch (err) {
+      console.error('Failed to load similar jobs:', err);
+    } finally {
+      setLoadingSimilar(false);
+    }
+  };
+
+  const handleCloseSuccess = () => {
+    setApplySuccess(false);
+    setSimilarJobs([]);
+    onClose();
+  };
+
   if (!isOpen) return null;
+
+  // ── Success Screen ──
+  if (applySuccess) {
+    return (
+      <div
+        className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-fade-in"
+        onClick={handleCloseSuccess}
+      >
+        <div
+          className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto relative"
+          onClick={(e) => e.stopPropagation()}
+        >
+          {/* Header */}
+          <div className="px-6 pt-6 pb-4 text-center">
+            <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4 animate-bounce">
+              <FaCheckCircle className="text-green-500 text-3xl" />
+            </div>
+            <h2 className="text-xl font-black text-gray-800 mb-1">Ứng tuyển thành công!</h2>
+            <p className="text-sm text-gray-500">
+              Hồ sơ của bạn đã được gửi đến nhà tuyển dụng cho vị trí <span className="font-bold text-[#00B4D8]">{jobTitle}</span>
+            </p>
+            <div className="mt-3 bg-blue-50 border border-blue-100 rounded-lg p-3 text-xs text-blue-700 font-medium">
+              📬 Thông báo đã được gửi. Theo dõi trạng thái tại mục <Link to="/candidate/applied-jobs" onClick={handleCloseSuccess} className="underline font-bold">"Việc đã ứng tuyển"</Link>
+            </div>
+          </div>
+
+          {/* Similar Jobs */}
+          <div className="px-6 pb-6">
+            <h3 className="font-bold text-gray-800 text-sm mb-3 flex items-center gap-2">
+              <FaBriefcase className="text-[#00B4D8]" />
+              Việc làm tương tự có thể bạn quan tâm
+            </h3>
+
+            {loadingSimilar ? (
+              <div className="text-center py-6 text-gray-400 text-sm">Đang tải...</div>
+            ) : similarJobs.length > 0 ? (
+              <div className="space-y-3">
+                {similarJobs.map((job) => (
+                  <Link
+                    key={job.id}
+                    to={`/jobs/${job.id}`}
+                    onClick={handleCloseSuccess}
+                    className="flex items-start gap-3 p-3 rounded-xl border border-gray-100 hover:border-[#00B4D8]/40 hover:bg-blue-50/30 transition-all group"
+                  >
+                    <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center shrink-0 overflow-hidden">
+                      {job.companyLogo || job.company?.logoUrl ? (
+                        <img src={job.companyLogo || job.company?.logoUrl} alt="" className="w-full h-full object-cover" />
+                      ) : (
+                        <FaBuilding className="text-gray-400" />
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-bold text-gray-800 truncate group-hover:text-[#00B4D8] transition-colors">
+                        {job.title}
+                      </p>
+                      <p className="text-xs text-gray-500 truncate">
+                        {job.companyName || job.company?.name || 'Công ty'}
+                      </p>
+                      <div className="flex items-center gap-3 mt-1 text-[10px] text-gray-400">
+                        {(job.location || job.locationName) && (
+                          <span className="flex items-center gap-1">
+                            <FaMapMarkerAlt /> {job.location || job.locationName}
+                          </span>
+                        )}
+                        {job.salary && <span>{job.salary}</span>}
+                      </div>
+                    </div>
+                    <FaArrowRight className="text-gray-300 group-hover:text-[#00B4D8] transition-colors mt-3 shrink-0" size={12} />
+                  </Link>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-4 text-gray-400 text-sm bg-gray-50 rounded-lg">
+                Không tìm thấy việc làm tương tự
+              </div>
+            )}
+          </div>
+
+          {/* Footer */}
+          <div className="px-6 py-4 border-t border-gray-100 flex gap-3">
+            <button
+              onClick={handleCloseSuccess}
+              className="flex-1 py-2.5 bg-gray-100 text-gray-700 font-bold rounded-xl hover:bg-gray-200 transition-colors text-sm"
+            >
+              Đóng
+            </button>
+            <Link
+              to="/jobs"
+              onClick={handleCloseSuccess}
+              className="flex-1 py-2.5 bg-[#00B4D8] text-white font-bold rounded-xl hover:bg-[#118AB2] transition-colors text-sm text-center"
+            >
+              Xem thêm việc làm
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div 
@@ -232,9 +410,9 @@ const JobApplyModal = ({ isOpen, onClose, onSuccess, jobTitle, jobId }) => {
               <span className="font-bold text-[#00B4D8] text-sm flex-1">
                 CV ứng tuyển gần nhất: {recentCVs[0]?.title || "Chưa có"}
               </span>
-              {recentCVs[0]?.fileUrl && (
-                <button 
-                  onClick={(e) => { e.stopPropagation(); previewCV(recentCVs[0].fileUrl); }}
+              {recentCVs[0]?.id && (
+                <button
+                  onClick={(e) => { e.stopPropagation(); previewCV(recentCVs[0]); }}
                   className="text-xs text-[#00B4D8] hover:underline"
                 >
                   Xem
@@ -278,8 +456,8 @@ const JobApplyModal = ({ isOpen, onClose, onSuccess, jobTitle, jobId }) => {
                         <FaFilePdf className="text-red-500 shrink-0" />
                         <span className="truncate">{cv.title}</span>
                       </div>
-                      <button 
-                        onClick={(e) => { e.stopPropagation(); previewCV(cv.fileUrl); }}
+                      <button
+                        onClick={(e) => { e.stopPropagation(); previewCV(cv); }}
                         className="text-[#00B4D8] text-xs font-bold hover:underline"
                       >
                         Xem

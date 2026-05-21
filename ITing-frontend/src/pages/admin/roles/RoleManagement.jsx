@@ -1,7 +1,8 @@
 import React, { useState, useMemo } from 'react';
 import {
   FaShieldAlt, FaUserShield, FaBriefcase, FaUserTie,
-  FaCheck, FaTimes, FaInfoCircle, FaSearch, FaChevronDown, FaChevronRight
+  FaCheck, FaTimes, FaInfoCircle, FaSearch, FaChevronDown, FaChevronRight,
+  FaEdit, FaSave, FaUndo, FaLock
 } from 'react-icons/fa';
 import { toast } from 'sonner';
 
@@ -13,7 +14,7 @@ const SYSTEM_ROLES = [
     description: 'Toàn quyền quản trị hệ thống, duyệt công ty, quản lý người dùng',
     icon: FaUserShield,
     color: 'amber',
-    userCount: null, // sẽ load từ API
+    locked: true, // ADMIN không thể chỉnh sửa để tránh khóa hệ thống
   },
   {
     key: 'EMPLOYER',
@@ -21,6 +22,7 @@ const SYSTEM_ROLES = [
     description: 'Đăng tin tuyển dụng, quản lý ứng viên, chỉnh sửa hồ sơ công ty',
     icon: FaBriefcase,
     color: 'sky',
+    locked: false,
   },
   {
     key: 'CANDIDATE',
@@ -28,11 +30,12 @@ const SYSTEM_ROLES = [
     description: 'Tìm việc, ứng tuyển, quản lý hồ sơ cá nhân, theo dõi công ty',
     icon: FaUserTie,
     color: 'emerald',
+    locked: false,
   },
 ];
 
 // ── Permission matrix ────────────────────────────────────────────
-const PERMISSION_GROUPS = [
+const INITIAL_PERMISSIONS = [
   {
     group: 'Người dùng',
     permissions: [
@@ -119,33 +122,26 @@ const colorMap = {
   emerald: { bg: 'bg-emerald-50', border: 'border-emerald-200', text: 'text-emerald-700', iconBg: 'bg-emerald-100', badge: 'bg-emerald-500' },
 };
 
-// ── Compact Permission Cell ───────────────────────────────────────
-const PermCell = ({ allowed }) => (
-  <div className={`w-8 h-8 rounded-lg flex items-center justify-center transition-all ${
-    allowed
-      ? 'bg-emerald-100 text-emerald-600'
-      : 'bg-slate-50 text-slate-300'
-  }`}>
-    {allowed ? <FaCheck size={12} /> : <FaTimes size={10} />}
-  </div>
-);
-
 // ── Main Component ────────────────────────────────────────────────
 const RoleManagement = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [expandedGroups, setExpandedGroups] = useState(
-    PERMISSION_GROUPS.reduce((acc, g) => ({ ...acc, [g.group]: true }), {})
+    INITIAL_PERMISSIONS.reduce((acc, g) => ({ ...acc, [g.group]: true }), {})
   );
   const [selectedRole, setSelectedRole] = useState(null);
+  const [editingRole, setEditingRole] = useState(null); // role key being edited
+  const [permissionGroups, setPermissionGroups] = useState(INITIAL_PERMISSIONS);
+  const [originalPermissions, setOriginalPermissions] = useState(null); // snapshot for undo
+  const [changedKeys, setChangedKeys] = useState(new Set()); // track changed cells
 
   const toggleGroup = (group) => {
     setExpandedGroups(prev => ({ ...prev, [group]: !prev[group] }));
   };
 
   const filteredGroups = useMemo(() => {
-    if (!searchTerm.trim()) return PERMISSION_GROUPS;
+    if (!searchTerm.trim()) return permissionGroups;
     const term = searchTerm.toLowerCase();
-    return PERMISSION_GROUPS
+    return permissionGroups
       .map(g => ({
         ...g,
         permissions: g.permissions.filter(p =>
@@ -153,16 +149,60 @@ const RoleManagement = () => {
         ),
       }))
       .filter(g => g.permissions.length > 0);
-  }, [searchTerm]);
+  }, [searchTerm, permissionGroups]);
 
-  // Stats
-  const totalPermissions = PERMISSION_GROUPS.reduce((s, g) => s + g.permissions.length, 0);
+  const totalPermissions = permissionGroups.reduce((s, g) => s + g.permissions.length, 0);
   const roleStats = SYSTEM_ROLES.map(role => ({
     ...role,
-    permCount: PERMISSION_GROUPS.reduce(
+    permCount: permissionGroups.reduce(
       (s, g) => s + g.permissions.filter(p => p[role.key]).length, 0
     ),
   }));
+
+  // ── Edit Mode ─────────────────────────────────────────────────
+  const startEdit = (roleKey) => {
+    setEditingRole(roleKey);
+    setOriginalPermissions(JSON.parse(JSON.stringify(permissionGroups)));
+    setChangedKeys(new Set());
+    toast.info(`Đang chỉnh sửa quyền cho: ${SYSTEM_ROLES.find(r => r.key === roleKey)?.label}`);
+  };
+
+  const cancelEdit = () => {
+    if (originalPermissions) {
+      setPermissionGroups(originalPermissions);
+    }
+    setEditingRole(null);
+    setOriginalPermissions(null);
+    setChangedKeys(new Set());
+    toast.info('Đã hủy thay đổi');
+  };
+
+  const saveEdit = () => {
+    // In a real app: call API to persist permission changes
+    // await axiosInstance.put(`/admin/roles/${editingRole}/permissions`, payload);
+    toast.success(`Đã lưu ${changedKeys.size} thay đổi quyền cho ${SYSTEM_ROLES.find(r => r.key === editingRole)?.label}`);
+    setEditingRole(null);
+    setOriginalPermissions(null);
+    setChangedKeys(new Set());
+  };
+
+  const togglePermission = (permKey, roleKey) => {
+    if (editingRole !== roleKey) return;
+    const trackKey = `${permKey}::${roleKey}`;
+    setPermissionGroups(prev =>
+      prev.map(g => ({
+        ...g,
+        permissions: g.permissions.map(p =>
+          p.key === permKey ? { ...p, [roleKey]: !p[roleKey] } : p
+        ),
+      }))
+    );
+    setChangedKeys(prev => {
+      const next = new Set(prev);
+      if (next.has(trackKey)) next.delete(trackKey); else next.add(trackKey);
+      return next;
+    });
+  };
 
   return (
     <div className="space-y-6 p-6">
@@ -198,45 +238,88 @@ const RoleManagement = () => {
           const c = colorMap[role.color];
           const Icon = role.icon;
           const isSelected = selectedRole === role.key;
+          const isEditing = editingRole === role.key;
           return (
-            <button
+            <div
               key={role.key}
-              onClick={() => setSelectedRole(isSelected ? null : role.key)}
-              className={`relative text-left p-5 rounded-2xl border-2 transition-all hover:shadow-md ${
-                isSelected
-                  ? `${c.border} ${c.bg} shadow-md ring-2 ring-offset-1 ring-${role.color}-300`
-                  : 'border-slate-100 bg-white hover:border-slate-200'
+              className={`relative text-left p-5 rounded-2xl border-2 transition-all ${
+                isEditing
+                  ? `${c.border} ${c.bg} shadow-lg ring-2 ring-offset-1 ring-${role.color}-300`
+                  : isSelected
+                  ? `${c.border} ${c.bg} shadow-md`
+                  : 'border-slate-100 bg-white hover:border-slate-200 hover:shadow-sm'
               }`}
             >
-              <div className="flex items-start gap-4">
-                <div className={`w-12 h-12 rounded-xl ${c.iconBg} ${c.text} flex items-center justify-center shrink-0`}>
-                  <Icon size={22} />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2">
-                    <h3 className="font-bold text-slate-800">{role.label}</h3>
-                    <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold text-white ${c.badge}`}>
-                      {role.key}
-                    </span>
+              <button
+                onClick={() => !isEditing && setSelectedRole(isSelected ? null : role.key)}
+                className="w-full text-left"
+              >
+                <div className="flex items-start gap-4">
+                  <div className={`w-12 h-12 rounded-xl ${c.iconBg} ${c.text} flex items-center justify-center shrink-0`}>
+                    <Icon size={22} />
                   </div>
-                  <p className="text-xs text-slate-500 mt-1 line-clamp-2">{role.description}</p>
-                  <div className="mt-3 flex items-center gap-3">
-                    <span className="text-xs font-bold text-slate-700">
-                      {role.permCount}/{totalPermissions} quyền
-                    </span>
-                    <div className="flex-1 h-1.5 bg-slate-100 rounded-full overflow-hidden">
-                      <div
-                        className={`h-full rounded-full ${c.badge} transition-all`}
-                        style={{ width: `${(role.permCount / totalPermissions) * 100}%` }}
-                      />
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <h3 className="font-bold text-slate-800">{role.label}</h3>
+                      <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold text-white ${c.badge}`}>
+                        {role.key}
+                      </span>
+                      {role.locked && (
+                        <FaLock size={10} className="text-slate-400" title="Không thể chỉnh sửa" />
+                      )}
+                    </div>
+                    <p className="text-xs text-slate-500 mt-1 line-clamp-2">{role.description}</p>
+                    <div className="mt-3 flex items-center gap-3">
+                      <span className="text-xs font-bold text-slate-700">
+                        {role.permCount}/{totalPermissions} quyền
+                      </span>
+                      <div className="flex-1 h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                        <div
+                          className={`h-full rounded-full ${c.badge} transition-all`}
+                          style={{ width: `${(role.permCount / totalPermissions) * 100}%` }}
+                        />
+                      </div>
                     </div>
                   </div>
                 </div>
+              </button>
+
+              {/* Edit / Save / Cancel buttons */}
+              <div className="mt-4 pt-3 border-t border-slate-100 flex items-center gap-2">
+                {isEditing ? (
+                  <>
+                    <button
+                      onClick={saveEdit}
+                      className="flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-bold transition-colors"
+                    >
+                      <FaSave size={11} /> Lưu ({changedKeys.size})
+                    </button>
+                    <button
+                      onClick={cancelEdit}
+                      className="flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg border border-slate-200 text-slate-600 text-xs font-bold hover:bg-slate-50 transition-colors"
+                    >
+                      <FaUndo size={11} /> Hủy
+                    </button>
+                  </>
+                ) : (
+                  <button
+                    onClick={() => !role.locked && (editingRole ? toast.warning('Hãy lưu hoặc hủy chỉnh sửa hiện tại trước.') : startEdit(role.key))}
+                    disabled={role.locked}
+                    className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-xs font-bold transition-colors ${
+                      role.locked
+                        ? 'text-slate-300 cursor-not-allowed bg-slate-50'
+                        : 'border border-slate-200 text-slate-600 hover:bg-slate-50 hover:border-[#3AB4E6] hover:text-[#3AB4E6]'
+                    }`}
+                  >
+                    {role.locked ? <><FaLock size={10} /> Không thể sửa</> : <><FaEdit size={11} /> Chỉnh sửa quyền</>}
+                  </button>
+                )}
               </div>
-              {isSelected && (
+
+              {isEditing && (
                 <div className={`absolute top-2 right-2 w-3 h-3 rounded-full ${c.badge} animate-pulse`} />
               )}
-            </button>
+            </div>
           );
         })}
       </div>
@@ -252,10 +335,15 @@ const RoleManagement = () => {
                 Đang lọc: {SYSTEM_ROLES.find(r => r.key === selectedRole)?.label}
               </span>
             )}
+            {editingRole && (
+              <span className="ml-2 px-2.5 py-0.5 bg-amber-50 text-amber-700 text-xs font-bold rounded-full border border-amber-200 animate-pulse">
+                ✏️ Đang chỉnh sửa: {SYSTEM_ROLES.find(r => r.key === editingRole)?.label}
+              </span>
+            )}
           </div>
           <div className="flex items-center gap-1.5 text-xs text-slate-400">
             <FaInfoCircle size={12} />
-            Quyền hệ thống — chỉ xem
+            {editingRole ? 'Click ô để bật/tắt quyền' : 'Chọn "Chỉnh sửa quyền" để thay đổi'}
           </div>
         </div>
 
@@ -269,15 +357,19 @@ const RoleManagement = () => {
                 {SYSTEM_ROLES.map(role => {
                   const c = colorMap[role.color];
                   const isHighlighted = !selectedRole || selectedRole === role.key;
+                  const isEditingThis = editingRole === role.key;
                   return (
                     <th
                       key={role.key}
                       className={`px-4 py-3 text-center transition-opacity ${isHighlighted ? 'opacity-100' : 'opacity-30'}`}
                     >
                       <div className="flex flex-col items-center gap-1">
-                        <span className={`px-2.5 py-1 rounded-lg text-xs font-bold ${c.bg} ${c.text} ${c.border} border`}>
+                        <span className={`px-2.5 py-1 rounded-lg text-xs font-bold ${c.bg} ${c.text} ${c.border} border ${isEditingThis ? 'ring-2 ring-amber-400' : ''}`}>
                           {role.label}
                         </span>
+                        {isEditingThis && (
+                          <span className="text-[10px] text-amber-600 font-bold">✏️ ĐANG SỬA</span>
+                        )}
                       </div>
                     </th>
                   );
@@ -285,7 +377,7 @@ const RoleManagement = () => {
               </tr>
             </thead>
             <tbody>
-              {filteredGroups.map((group, gIdx) => (
+              {filteredGroups.map((group) => (
                 <React.Fragment key={group.group}>
                   {/* Group Header */}
                   <tr
@@ -324,13 +416,31 @@ const RoleManagement = () => {
                       </td>
                       {SYSTEM_ROLES.map(role => {
                         const isHighlighted = !selectedRole || selectedRole === role.key;
+                        const isEditingThis = editingRole === role.key;
+                        const isChanged = changedKeys.has(`${perm.key}::${role.key}`);
+                        const allowed = perm[role.key];
                         return (
                           <td
                             key={role.key}
                             className={`px-4 py-3 text-center transition-opacity ${isHighlighted ? 'opacity-100' : 'opacity-20'}`}
                           >
                             <div className="flex justify-center">
-                              <PermCell allowed={perm[role.key]} />
+                              <button
+                                onClick={() => togglePermission(perm.key, role.key)}
+                                disabled={!isEditingThis}
+                                title={isEditingThis ? (allowed ? 'Click để tắt quyền' : 'Click để bật quyền') : ''}
+                                className={`w-8 h-8 rounded-lg flex items-center justify-center transition-all ${
+                                  isEditingThis
+                                    ? 'cursor-pointer hover:scale-110 hover:shadow-md'
+                                    : 'cursor-default'
+                                } ${
+                                  allowed
+                                    ? `bg-emerald-100 text-emerald-600 ${isChanged ? 'ring-2 ring-amber-400' : ''}`
+                                    : `bg-slate-50 text-slate-300 ${isChanged ? 'ring-2 ring-amber-400' : ''}`
+                                }`}
+                              >
+                                {allowed ? <FaCheck size={12} /> : <FaTimes size={10} />}
+                              </button>
                             </div>
                           </td>
                         );

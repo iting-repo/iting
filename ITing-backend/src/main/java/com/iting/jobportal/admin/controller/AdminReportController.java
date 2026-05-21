@@ -4,6 +4,8 @@ import com.iting.jobportal.admin.dto.response.ReportStatsResponse;
 import com.iting.jobportal.admin.entity.UserReport;
 import com.iting.jobportal.admin.service.AdminReportService;
 import com.iting.jobportal.common.dto.response.ApiResponse;
+import com.iting.jobportal.job.controller.CurrentUser;
+import io.swagger.v3.oas.annotations.Parameter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
@@ -47,7 +49,7 @@ public class AdminReportController {
             @PathVariable Long id,
             @RequestParam String status,
             @RequestParam String note,
-            @RequestAttribute("userId") Long adminId) {
+            @Parameter(hidden = true) @CurrentUser Long adminId) {
 
         UserReport report = reportService.handleReport(adminId, id, status, note);
         return ResponseEntity.ok(ApiResponse.success(report));

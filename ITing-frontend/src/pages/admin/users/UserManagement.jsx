@@ -25,6 +25,8 @@ import {
     Dialog,
 } from "../../../components";
 import { ActionMenuPortal } from "../../../components/admin/ActionMenuPortal";
+import { ConfirmModal } from "../../../components/common";
+import useConfirm from "../../../hooks/useConfirm";
 import adminUserService from "../../../services/adminUserService";
 import chatRealtimeService from "../../../services/chatRealtimeService";
 
@@ -247,6 +249,7 @@ const UserManagement = () => {
     const [selectedIds, setSelectedIds] = useState([]);
     const [onlineUserIds, setOnlineUserIds] = useState(new Set());
     const onlineRef = useRef(new Set());
+    const [confirmBulk, askBulkConfirm, resetBulkConfirm] = useConfirm();
 
     const isAllSelected = users.length > 0 && selectedIds.length === users.length;
 
@@ -423,26 +426,35 @@ const UserManagement = () => {
         );
     };
 
-    const handleBulkAction = async (action) => {
+    const handleBulkAction = (action) => {
         if (selectedIds.length === 0) return;
-        if (!window.confirm(`Bạn có chắc muốn thực hiện hành động này cho ${selectedIds.length} người dùng đã chọn?`)) return;
-
-        try {
-            if (action === 'ban') {
-                await adminUserService.bulkBan(selectedIds);
-            } else if (action === 'unban') {
-                await adminUserService.bulkUnban(selectedIds);
-            } else if (action === 'delete') {
-                await adminUserService.bulkDelete(selectedIds);
+        const actionLabels = { ban: 'khóa', unban: 'mở khóa', delete: 'xóa' };
+        const actionVariants = { ban: 'warning', unban: 'info', delete: 'danger' };
+        askBulkConfirm({
+            title: `${actionLabels[action]?.charAt(0).toUpperCase() + actionLabels[action]?.slice(1)} hàng loạt`,
+            message: `Bạn có chắc muốn ${actionLabels[action]} ${selectedIds.length} người dùng đã chọn?`,
+            warning: action === 'delete' ? 'Hành động này không thể hoàn tác.' : undefined,
+            confirmText: actionLabels[action]?.charAt(0).toUpperCase() + actionLabels[action]?.slice(1),
+            variant: actionVariants[action],
+            onConfirm: async () => {
+                resetBulkConfirm();
+                try {
+                    if (action === 'ban') {
+                        await adminUserService.bulkBan(selectedIds);
+                    } else if (action === 'unban') {
+                        await adminUserService.bulkUnban(selectedIds);
+                    } else if (action === 'delete') {
+                        await adminUserService.bulkDelete(selectedIds);
+                    }
+                    toast.success(`Thành công cho ${selectedIds.length} mục`);
+                    setSelectedIds([]);
+                    fetchUsers();
+                } catch (error) {
+                    console.error("Bulk action error:", error);
+                    toast.error("Thao tác hàng loạt thất bại");
+                }
             }
-            
-            toast.success(`Thanh công cho ${selectedIds.length} mục`);
-            setSelectedIds([]);
-            fetchUsers();
-        } catch (error) {
-            console.error("Bulk action error:", error);
-            toast.error("Thao tác hàng loạt thất bại");
-        }
+        });
     };
 
     const formatDateTime = (value) => {
@@ -736,6 +748,8 @@ const UserManagement = () => {
                     </div>
                 </div>
             )}
+
+            <ConfirmModal isOpen={confirmBulk.isOpen} onClose={resetBulkConfirm} onConfirm={confirmBulk.onConfirm} title={confirmBulk.title} message={confirmBulk.message} warning={confirmBulk.warning} confirmText={confirmBulk.confirmText} variant={confirmBulk.variant} />
         </div>
     );
 };

@@ -60,4 +60,14 @@ public class AdminAffiliationResponse {
     private String submittedLicenseUrl;
     private String submittedConsentUrl;
     private Boolean submittedConsentConfirmed;
+
+    // ─ Fresh presigned URLs (15 phút) — admin preview ngay trong 1 GET, không gọi 3 endpoint riêng.
+    private String licensePreviewUrl;
+    private String consentPreviewUrl;
+    private String logoPreviewUrl;
+
+    // ─ Tóm tắt độ đầy đủ giấy tờ (để admin biết HR đã upload đủ chưa khi duyệt)
+    private boolean hasLicense;
+    private boolean hasConsent;
+    private boolean documentsComplete; // license + consent + confirmed
 }

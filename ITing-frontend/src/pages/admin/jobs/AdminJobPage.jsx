@@ -11,8 +11,12 @@ import {
   FaBan, 
   FaTrashAlt, 
   FaClock,
+  FaRobot,
+  FaSpinner,
 } from "react-icons/fa";
 import ImportExcelModal from "../../../components/admin/ImportExcelModal";
+import { ConfirmModal } from "../../../components/common";
+import useConfirm from "../../../hooks/useConfirm";
 import adminJobService from "../../../services/adminJobService";
 import { toast } from "sonner";
 
@@ -52,6 +56,9 @@ const AdminJobPage = () => {
   const [openMenuId, setOpenMenuId] = useState(null);
   const [showImportModal, setShowImportModal] = useState(false);
   const [selectedIds, setSelectedIds] = useState([]);
+  const [confirmBulk, askBulkConfirm, resetBulkConfirm] = useConfirm();
+  const [bulkAiRunning, setBulkAiRunning] = useState(false);
+  const [bulkAiProgress, setBulkAiProgress] = useState({ done: 0, total: 0 });
 
   const isAllSelected = jobs.length > 0 && selectedIds.length === jobs.length;
 
@@ -63,6 +70,36 @@ const AdminJobPage = () => {
     document.body.appendChild(link);
     link.click();
     link.parentNode.removeChild(link);
+  };
+
+  const handleRunAiAll = async () => {
+    if (bulkAiRunning) return;
+    const toReview = jobs.filter(j => {
+      const status = j.aiReviewStatus || j.aiReview?.status || j.aiModeration?.status;
+      return !status || status === 'NOT_REVIEWED';
+    });
+    const targets = toReview.length > 0 ? toReview : jobs;
+    setBulkAiRunning(true);
+    setBulkAiProgress({ done: 0, total: targets.length });
+    let successCount = 0;
+    let failCount = 0;
+    for (const job of targets) {
+      try {
+        await adminJobService.runAiReview(job.id);
+        successCount++;
+      } catch {
+        failCount++;
+      }
+      setBulkAiProgress(prev => ({ ...prev, done: prev.done + 1 }));
+    }
+    setBulkAiRunning(false);
+    setBulkAiProgress({ done: 0, total: 0 });
+    if (failCount === 0) {
+      toast.success(`✅ AI đã kiểm tra xong ${successCount} công việc!`);
+    } else {
+      toast.warning(`AI kiểm tra xong ${successCount} thành công, ${failCount} thất bại.`);
+    }
+    window.location.reload();
   };
 
   const handleExportExcel = async () => {
@@ -110,34 +147,43 @@ const AdminJobPage = () => {
     );
   };
 
-  const handleBulkAction = async (action) => {
+  const handleBulkAction = (action) => {
     if (selectedIds.length === 0) return;
-    if (!window.confirm(`Bạn có chắc muốn thực hiện hành động này cho ${selectedIds.length} mục đã chọn?`)) return;
-
-    try {
-      if (action === 'approve') {
-        await adminJobService.bulkApprove(selectedIds);
-      } else if (action === 'reject') {
-        const reason = window.prompt("Nhập lý do từ chối hàng loạt:");
-        if (reason === null) return;
-        await adminJobService.bulkReject(selectedIds, reason || "Không đạt yêu cầu");
-      } else if (action === 'suspend') {
-        const reason = window.prompt("Nhập lý do đình chỉ hàng loạt:");
-        if (reason === null) return;
-        await adminJobService.bulkSuspend(selectedIds, reason || "Vi phạm quy định");
-      } else if (action === 'close') {
-        await adminJobService.bulkClose(selectedIds);
-      } else if (action === 'delete') {
-        await adminJobService.bulkDelete(selectedIds);
+    const actionLabels = { approve: 'duyệt', reject: 'từ chối', suspend: 'đình chỉ', close: 'đóng', delete: 'xóa' };
+    const actionVariants = { approve: 'info', reject: 'warning', suspend: 'warning', close: 'warning', delete: 'danger' };
+    askBulkConfirm({
+      title: `${actionLabels[action]?.charAt(0).toUpperCase() + actionLabels[action]?.slice(1)} hàng loạt`,
+      message: `Bạn có chắc muốn ${actionLabels[action]} ${selectedIds.length} mục đã chọn?`,
+      warning: action === 'delete' ? 'Hành động này không thể hoàn tác.' : undefined,
+      confirmText: actionLabels[action]?.charAt(0).toUpperCase() + actionLabels[action]?.slice(1),
+      variant: actionVariants[action],
+      onConfirm: async () => {
+        resetBulkConfirm();
+        try {
+          if (action === 'approve') {
+            await adminJobService.bulkApprove(selectedIds);
+          } else if (action === 'reject') {
+            const reason = window.prompt("Nhập lý do từ chối hàng loạt:");
+            if (reason === null) return;
+            await adminJobService.bulkReject(selectedIds, reason || "Không đạt yêu cầu");
+          } else if (action === 'suspend') {
+            const reason = window.prompt("Nhập lý do đình chỉ hàng loạt:");
+            if (reason === null) return;
+            await adminJobService.bulkSuspend(selectedIds, reason || "Vi phạm quy định");
+          } else if (action === 'close') {
+            await adminJobService.bulkClose(selectedIds);
+          } else if (action === 'delete') {
+            await adminJobService.bulkDelete(selectedIds);
+          }
+          toast.success(`Thành công cho ${selectedIds.length} mục`);
+          setSelectedIds([]);
+          window.location.reload();
+        } catch (error) {
+          console.error("Bulk action error:", error);
+          toast.error("Thao tác hàng loạt thất bại");
+        }
       }
-      
-      toast.success(`Thành công cho ${selectedIds.length} mục`);
-      setSelectedIds([]);
-      window.location.reload(); // Or use a refresh function from useAdminJobs
-    } catch (error) {
-      console.error("Bulk action error:", error);
-      toast.error("Thao tác hàng loạt thất bại");
-    }
+    });
   };
 
   const confirmAction = async () => {
@@ -182,7 +228,29 @@ const AdminJobPage = () => {
         title="Quản lý Công việc"
         description={`${pendingCount} công việc đang chờ duyệt`}
       >
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-wrap">
+          <Button
+            variant="outline"
+            className={`flex items-center gap-2 border-violet-300 font-bold transition-all ${
+              bulkAiRunning
+                ? 'text-violet-400 cursor-not-allowed'
+                : 'text-violet-600 hover:bg-violet-50'
+            }`}
+            onClick={handleRunAiAll}
+            disabled={bulkAiRunning}
+          >
+            {bulkAiRunning ? (
+              <>
+                <FaSpinner className="h-4 w-4 animate-spin" />
+                Đang kiểm tra ({bulkAiProgress.done}/{bulkAiProgress.total})...
+              </>
+            ) : (
+              <>
+                <FaRobot className="h-4 w-4" />
+                Kiểm tra AI tất cả
+              </>
+            )}
+          </Button>
           <Button 
             variant="outline" 
             className="flex items-center gap-2 border-slate-200 text-slate-600 hover:bg-slate-50"
@@ -336,6 +404,8 @@ const AdminJobPage = () => {
           </div>
         </div>
       )}
+
+      <ConfirmModal isOpen={confirmBulk.isOpen} onClose={resetBulkConfirm} onConfirm={confirmBulk.onConfirm} title={confirmBulk.title} message={confirmBulk.message} warning={confirmBulk.warning} confirmText={confirmBulk.confirmText} variant={confirmBulk.variant} />
     </>
   );
 };

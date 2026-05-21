@@ -23,6 +23,8 @@ import {
   FaCheckCircle
 } from "react-icons/fa";
 import ImportExcelModal from "../../../components/admin/ImportExcelModal";
+import { ConfirmModal } from "../../../components/common";
+import useConfirm from "../../../hooks/useConfirm";
 import { toast } from "sonner";
 
 const CompanyManagement = () => {
@@ -35,6 +37,7 @@ const CompanyManagement = () => {
   const [openMenuId, setOpenMenuId] = useState(null);
   const [showImportModal, setShowImportModal] = useState(false);
   const [selectedIds, setSelectedIds] = useState([]);
+  const [confirmBulk, askBulkConfirm, resetBulkConfirm] = useConfirm();
 
   const isAllSelected = companies.length > 0 && selectedIds.length === companies.length;
 
@@ -228,32 +231,40 @@ const CompanyManagement = () => {
     );
   };
 
-  const handleBulkAction = async (action) => {
+  const handleBulkAction = (action) => {
     if (selectedIds.length === 0) return;
-
-    if (!window.confirm(`Bạn có chắc muốn thực hiện hành động này cho ${selectedIds.length} mục đã chọn?`)) return;
-
-    try {
-      setLoading(true);
-      if (action === 'approve') {
-        await adminCompanyService.bulkApprove(selectedIds, "BASIC", "Duyệt hàng loạt");
-      } else if (action === 'reject') {
-        await adminCompanyService.bulkReject(selectedIds, "Từ chối hàng loạt");
-      } else if (action === 'suspend') {
-        await adminCompanyService.bulkSuspend(selectedIds, "Đình chỉ hàng loạt");
-      } else if (action === 'delete') {
-        await adminCompanyService.bulkDelete(selectedIds);
+    const actionLabels = { approve: 'duyệt', reject: 'từ chối', suspend: 'đình chỉ', delete: 'xóa' };
+    const actionVariants = { approve: 'info', reject: 'warning', suspend: 'warning', delete: 'danger' };
+    askBulkConfirm({
+      title: `${actionLabels[action]?.charAt(0).toUpperCase() + actionLabels[action]?.slice(1)} hàng loạt`,
+      message: `Bạn có chắc muốn ${actionLabels[action]} ${selectedIds.length} công ty đã chọn?`,
+      warning: action === 'delete' ? 'Hành động này không thể hoàn tác.' : undefined,
+      confirmText: actionLabels[action]?.charAt(0).toUpperCase() + actionLabels[action]?.slice(1),
+      variant: actionVariants[action],
+      onConfirm: async () => {
+        resetBulkConfirm();
+        try {
+          setLoading(true);
+          if (action === 'approve') {
+            await adminCompanyService.bulkApprove(selectedIds, "BASIC", "Duyệt hàng loạt");
+          } else if (action === 'reject') {
+            await adminCompanyService.bulkReject(selectedIds, "Từ chối hàng loạt");
+          } else if (action === 'suspend') {
+            await adminCompanyService.bulkSuspend(selectedIds, "Đình chỉ hàng loạt");
+          } else if (action === 'delete') {
+            await adminCompanyService.bulkDelete(selectedIds);
+          }
+          toast.success(`Đã thực hiện ${actionLabels[action]} cho ${selectedIds.length} mục`);
+          setSelectedIds([]);
+          fetchCompanies();
+        } catch (error) {
+          console.error("Bulk action error:", error);
+          toast.error("Thao tác hàng loạt thất bại");
+        } finally {
+          setLoading(false);
+        }
       }
-
-      toast.success(`Đã thực hiện ${action} cho ${selectedIds.length} mục`);
-      setSelectedIds([]);
-      fetchCompanies();
-    } catch (error) {
-      console.error("Bulk action error:", error);
-      toast.error("Thao tác hàng loạt thất bại");
-    } finally {
-      setLoading(false);
-    }
+    });
   };
   return (
     <div className="space-y-6 pb-60">
@@ -547,6 +558,8 @@ const CompanyManagement = () => {
         onDownloadTemplate={handleDownloadTemplate}
         onImport={handleImportExcel}
       />
+
+      <ConfirmModal isOpen={confirmBulk.isOpen} onClose={resetBulkConfirm} onConfirm={confirmBulk.onConfirm} title={confirmBulk.title} message={confirmBulk.message} warning={confirmBulk.warning} confirmText={confirmBulk.confirmText} variant={confirmBulk.variant} />
     </div>
   );
 };

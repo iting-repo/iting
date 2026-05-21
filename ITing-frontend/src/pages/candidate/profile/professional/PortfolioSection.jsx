@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { Layout, Plus, ExternalLink, Trash2 } from 'lucide-react';
-import { Button, Card, Input } from "../../../../components/common";
+import { Button, Card, Input, ConfirmModal } from "../../../../components/common";
 import axiosInstance from "../../../../utils/axiosInstance";
+import useConfirm from "../../../../hooks/useConfirm";
 
 const PortfolioSection = () => {
     const [portfolios, setPortfolios] = useState([]);
     const [isAdding, setIsAdding] = useState(false);
+    const [confirm, askConfirm, resetConfirm] = useConfirm();
     const [formData, setFormData] = useState({
         title: '',
         url: '',
@@ -51,15 +53,22 @@ const PortfolioSection = () => {
         }
     };
 
-    const handleDelete = async (id) => {
-        if (!window.confirm("Bạn có chắc chắn muốn xóa dự án này?")) return;
-        try {
-            await axiosInstance.delete(`/user/professional-profile/portfolio/${id}`);
-            fetchPortfolios();
-        } catch (error) {
-            console.error("Failed to delete portfolio", error);
-            alert("Có lỗi xảy ra khi xóa dự án!");
-        }
+    const handleDelete = (id) => {
+        askConfirm({
+            title: "Xóa dự án",
+            message: "Bạn có chắc chắn muốn xóa dự án này khỏi portfolio?",
+            warning: "Hành động này không thể hoàn tác.",
+            confirmText: "Xóa",
+            onConfirm: async () => {
+                resetConfirm();
+                try {
+                    await axiosInstance.delete(`/user/professional-profile/portfolio/${id}`);
+                    fetchPortfolios();
+                } catch (error) {
+                    console.error("Failed to delete portfolio", error);
+                }
+            }
+        });
     };
 
     return (
@@ -146,6 +155,7 @@ const PortfolioSection = () => {
                     Bạn chưa thêm dự án nào vào Portfolio
                 </div>
             )}
+            <ConfirmModal isOpen={confirm.isOpen} onClose={resetConfirm} onConfirm={confirm.onConfirm} title={confirm.title} message={confirm.message} warning={confirm.warning} confirmText={confirm.confirmText} variant={confirm.variant} />
         </Card>
     );
 };

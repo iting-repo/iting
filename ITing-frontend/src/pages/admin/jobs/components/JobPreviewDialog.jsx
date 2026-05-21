@@ -101,32 +101,52 @@ export const JobPreviewDialog = ({ job, open, onClose, onAction }) => {
           </div>
         </div>
 
-        <div className="rounded-2xl border border-slate-100 bg-slate-50/60 p-4">
-          <div className="mb-2 flex flex-wrap items-center gap-2">
+        <div className="rounded-2xl border bg-slate-50/60 p-4" style={{
+          borderColor: aiReview.status === 'APPROVED' ? '#d1fae5' : aiReview.status === 'REJECTED' ? '#fee2e2' : aiReview.status === 'NEEDS_REVIEW' ? '#fef3c7' : '#e0f2fe'
+        }}>
+          <div className="mb-3 flex flex-wrap items-center gap-2">
             <Badge variant={getAiReviewVariant(aiReview.status)}>
               {getAiReviewLabel(aiReview.status)}
             </Badge>
             {typeof aiReview.score === "number" && (
-              <span className="text-xs font-bold text-slate-500">
+              <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${
+                aiReview.score > 0.7 ? 'bg-red-100 text-red-600' :
+                aiReview.score > 0.4 ? 'bg-amber-100 text-amber-700' :
+                'bg-emerald-100 text-emerald-700'
+              }`}>
                 Điểm rủi ro: {Math.round(aiReview.score * 100)}%
               </span>
             )}
+            {aiReview._isFake && (
+              <span className="text-[10px] font-bold bg-slate-200 text-slate-500 px-2 py-0.5 rounded-full uppercase tracking-wide">
+                Demo — chưa chạy AI thật
+              </span>
+            )}
           </div>
-          <p className="text-sm leading-relaxed text-slate-600">
-            {getAiReviewSummary(job)}
-          </p>
+
+          {/* AI Reason Box */}
+          <div className="rounded-xl bg-white border border-slate-100 p-4 shadow-sm">
+            <p className="text-[11px] font-bold uppercase tracking-widest text-slate-400 mb-2">📋 Lý do AI</p>
+            <p className="text-sm leading-relaxed text-slate-700 whitespace-pre-line">
+              {aiReview.reason || getAiReviewSummary(job)}
+            </p>
+          </div>
+
           {aiReview.sensitiveTerms.length > 0 && (
-            <div className="mt-3 flex flex-wrap gap-2">
-              {aiReview.sensitiveTerms.map((term) => (
-                <Badge key={term} variant="danger" className="rounded-md">
-                  {term}
-                </Badge>
-              ))}
+            <div className="mt-3">
+              <p className="text-[11px] font-bold uppercase tracking-widest text-slate-400 mb-2">🔴 Từ khóa bị gắn cờ</p>
+              <div className="flex flex-wrap gap-2">
+                {aiReview.sensitiveTerms.map((term) => (
+                  <Badge key={term} variant="danger" className="rounded-md">
+                    {term}
+                  </Badge>
+                ))}
+              </div>
             </div>
           )}
           {(aiReview.cleanedTitle || aiReview.cleanedDescription) && (
-            <div className="mt-4 rounded-xl bg-white p-3 text-sm text-slate-600">
-              <p className="mb-1 font-bold text-slate-800">Bản AI đề xuất sau khi làm sạch</p>
+            <div className="mt-4 rounded-xl bg-white p-3 text-sm text-slate-600 border border-emerald-100">
+              <p className="mb-1 font-bold text-emerald-800">🧹 Bản AI đề xuất sau khi làm sạch</p>
               {aiReview.cleanedTitle && <p>{aiReview.cleanedTitle}</p>}
               {aiReview.cleanedDescription && (
                 <p className="mt-2 whitespace-pre-line">{aiReview.cleanedDescription}</p>
@@ -134,6 +154,7 @@ export const JobPreviewDialog = ({ job, open, onClose, onAction }) => {
             </div>
           )}
         </div>
+
 
         {/* Info Grid */}
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">

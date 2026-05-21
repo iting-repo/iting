@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { Plus, Pencil, Trash2, Search, Image as ImageIcon } from "lucide-react";
 import { Button, Badge, Input, Switch, Dialog, Select, Card, CardContent } from "../../../components";
+import { ConfirmModal } from "../../../components/common";
+import useConfirm from "../../../hooks/useConfirm";
 import { toast } from "sonner";
 import axiosInstance from "../../../utils/axiosInstance";
 
@@ -11,6 +13,7 @@ const BannerManagement = () => {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [confirm, askConfirm, resetConfirm] = useConfirm();
   
   const [form, setForm] = useState({
     title: "",
@@ -92,15 +95,23 @@ const BannerManagement = () => {
     }
   };
 
-  const handleDelete = async (id) => { 
-    if (!window.confirm("Bạn có chắc muốn xóa banner này?")) return;
-    try {
-      await axiosInstance.delete(`/admin/banners/${id}`);
-      toast.success("Đã xóa banner");
-      fetchBanners();
-    } catch (error) {
-      toast.error("Lỗi khi xóa");
-    }
+  const handleDelete = (id) => { 
+    askConfirm({
+      title: "Xóa banner",
+      message: "Bạn có chắc muốn xóa banner này?",
+      warning: "Hành động này không thể hoàn tác.",
+      confirmText: "Xóa",
+      onConfirm: async () => {
+        resetConfirm();
+        try {
+          await axiosInstance.delete(`/admin/banners/${id}`);
+          toast.success("Đã xóa banner");
+          fetchBanners();
+        } catch (error) {
+          toast.error("Lỗi khi xóa");
+        }
+      }
+    });
   };
 
   const toggleActive = async (id, currentStatus) => { 
@@ -165,7 +176,7 @@ const BannerManagement = () => {
                 <div className="flex items-center gap-3 shrink-0 mt-4 md:mt-0">
                   <div className="flex items-center gap-2">
                     <span className="text-sm text-gray-500">{item.status === 'ACTIVE' ? 'Đang bật' : 'Đã tắt'}</span>
-                    <Switch checked={item.status === 'ACTIVE'} onChange={() => toggleActive(item.id, item.status)} />
+                    <Switch checked={item.status === 'ACTIVE'} onCheckedChange={() => toggleActive(item.id, item.status)} />
                   </div>
                   <div className="w-px h-6 bg-gray-200 mx-1"></div>
                   <Button variant="ghost" size="sm" onClick={() => openEdit(item)}>
@@ -226,7 +237,7 @@ const BannerManagement = () => {
               <label className="text-base font-medium text-gray-800">Trạng thái Kích hoạt</label>
               <p className="text-sm text-gray-500">Banner sẽ được hiển thị trên hệ thống nếu đang bật</p>
             </div>
-            <Switch checked={form.status === "ACTIVE"} onChange={(c) => setForm({ ...form, status: c ? "ACTIVE" : "INACTIVE" })} />
+            <Switch checked={form.status === "ACTIVE"} onCheckedChange={(c) => setForm({ ...form, status: c ? "ACTIVE" : "INACTIVE" })} />
           </div>
         </div>
         
@@ -235,6 +246,8 @@ const BannerManagement = () => {
           <Button variant="primary" onClick={handleSave}>{editing ? "Cập nhật" : "Tạo mới"}</Button>
         </div>
       </Dialog>
+
+      <ConfirmModal isOpen={confirm.isOpen} onClose={resetConfirm} onConfirm={confirm.onConfirm} title={confirm.title} message={confirm.message} warning={confirm.warning} confirmText={confirm.confirmText} variant={confirm.variant} />
     </div>
   );
 };

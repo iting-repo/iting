@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { Briefcase, Plus, Calendar, MapPin, Building2, Trash2 } from 'lucide-react';
-import { Button, Card, Input } from "../../../../components/common";
+import { Button, Card, Input, ConfirmModal } from "../../../../components/common";
 import axiosInstance from "../../../../utils/axiosInstance";
+import useConfirm from "../../../../hooks/useConfirm";
 
 const ExperienceSection = () => {
     const [experiences, setExperiences] = useState([]);
     const [isAdding, setIsAdding] = useState(false);
+    const [confirm, askConfirm, resetConfirm] = useConfirm();
     
     const [formData, setFormData] = useState({
         companyName: '',
@@ -64,15 +66,23 @@ const ExperienceSection = () => {
         }
     };
 
-    const handleDelete = async (id) => {
-        if (!window.confirm("Bạn có chắc chắn muốn xóa kinh nghiệm này?")) return;
-        try {
-            await axiosInstance.delete(`/user/professional-profile/experience/${id}`);
-            fetchExperiences();
-        } catch (error) {
-            console.error("Failed to delete experience", error);
-            alert("Có lỗi xảy ra khi xóa kinh nghiệm!");
-        }
+    const handleDelete = (id) => {
+        askConfirm({
+            title: "Xóa kinh nghiệm",
+            message: "Bạn có chắc chắn muốn xóa kinh nghiệm này?",
+            warning: "Hành động này không thể hoàn tác.",
+            confirmText: "Xóa",
+            onConfirm: async () => {
+                resetConfirm();
+                try {
+                    await axiosInstance.delete(`/user/professional-profile/experience/${id}`);
+                    fetchExperiences();
+                } catch (error) {
+                    console.error("Failed to delete experience", error);
+                    alert("Có lỗi xảy ra khi xóa kinh nghiệm!");
+                }
+            }
+        });
     };
 
     const formatDate = (dateString) => {
@@ -199,6 +209,7 @@ const ExperienceSection = () => {
                     </div>
                 )}
             </div>
+            <ConfirmModal isOpen={confirm.isOpen} onClose={resetConfirm} onConfirm={confirm.onConfirm} title={confirm.title} message={confirm.message} warning={confirm.warning} confirmText={confirm.confirmText} variant={confirm.variant} />
         </Card>
     );
 };

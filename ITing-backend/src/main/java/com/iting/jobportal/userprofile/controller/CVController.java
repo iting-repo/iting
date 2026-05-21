@@ -2,8 +2,11 @@ package com.iting.jobportal.userprofile.controller;
 
 import com.iting.jobportal.common.ratelimit.RateLimitPolicy;
 import com.iting.jobportal.common.ratelimit.RateLimited;
+import com.iting.jobportal.common.service.S3Service;
 import com.iting.jobportal.job.controller.CurrentUser;
 import com.iting.jobportal.userprofile.dto.response.CVResponse;
+import com.iting.jobportal.userprofile.entity.CV;
+import com.iting.jobportal.userprofile.repository.CVRepository;
 import com.iting.jobportal.userprofile.service.CVService;
 import com.iting.jobportal.userprofile.service.GeminiCVParserService;
 import com.iting.jobportal.userprofile.service.embedding.HuggingFaceCvExtractionClient;
@@ -12,10 +15,12 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.io.IOException;
 import java.util.List;
@@ -30,6 +35,8 @@ public class CVController {
     private final CVService cvService;
     private final GeminiCVParserService geminiCVParserService;
     private final HuggingFaceCvExtractionClient hfCvExtractionClient;
+    private final CVRepository cvRepository;
+    private final S3Service s3Service;
 
     @GetMapping("/recent")
     @Operation(summary = "Lấy 3 CV mới nhất của người dùng", 
@@ -53,6 +60,61 @@ public class CVController {
             return ResponseEntity.ok(response);
         } catch (IOException e) {
             return ResponseEntity.badRequest().build();
+        }
+    }
+
+    @GetMapping("/{id}/view-url")
+    @Operation(summary = "Lấy presigned URL mới để xem CV (tránh URL S3 hết hạn)",
+               description = "Trả về URL có hiệu lực 1 giờ. Chỉ chủ sở hữu CV mới gọi được.")
+    public ResponseEntity<Map<String, String>> getCvViewUrl(
+            @Parameter(hidden = true) @CurrentUser Long userId,
+            @PathVariable Long id) {
+        if (userId == null) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Chưa đăng nhập");
+        }
+        CV cv = cvRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "CV không tồn tại"));
+        if (cv.getProfile() == null || !userId.equals(cv.getProfile().getId())) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "CV không thuộc về bạn");
+        }
+        // Ưu tiên s3Key; nếu null → cố gắng extract key từ fileUrl (CV cũ chưa có s3Key column).
+        String key = (cv.getS3Key() != null && !cv.getS3Key().isBlank())
+                ? cv.getS3Key()
+                : extractS3KeyFromUrl(cv.getFileUrl());
+
+        if (key == null || key.isBlank()) {
+            // Không phải S3 (vd local path) → trả nguyên fileUrl.
+            return ResponseEntity.ok(Map.of("url", cv.getFileUrl() != null ? cv.getFileUrl() : ""));
+        }
+        String fresh = s3Service.getPreSignedUrl(key);
+        return ResponseEntity.ok(Map.of("url", fresh));
+    }
+
+    /**
+     * Extract S3 object key từ URL kiểu:
+     *   https://bucket.s3.region.amazonaws.com/cvs/user_1/abc.pdf?X-Amz-...
+     *   https://s3.amazonaws.com/bucket/cvs/user_1/abc.pdf?...
+     * Trả về null nếu URL không phải S3.
+     */
+    private String extractS3KeyFromUrl(String url) {
+        if (url == null || url.isBlank()) return null;
+        if (!url.contains("amazonaws.com")) return null;
+        try {
+            // Bỏ query string trước
+            String noQuery = url.split("\\?", 2)[0];
+            // Lấy path sau hostname
+            java.net.URI uri = java.net.URI.create(noQuery);
+            String path = uri.getPath(); // /cvs/user_1/abc.pdf  hoặc  /bucket/cvs/user_1/abc.pdf
+            if (path == null || path.isBlank()) return null;
+            // Trim leading slash
+            String key = path.startsWith("/") ? path.substring(1) : path;
+            // Path-style URL "s3.amazonaws.com/bucket/cvs/..." → bỏ bucket name ở đầu
+            if (uri.getHost() != null && uri.getHost().startsWith("s3.") && key.contains("/")) {
+                key = key.substring(key.indexOf('/') + 1);
+            }
+            return key.isBlank() ? null : key;
+        } catch (Exception e) {
+            return null;
         }
     }
 

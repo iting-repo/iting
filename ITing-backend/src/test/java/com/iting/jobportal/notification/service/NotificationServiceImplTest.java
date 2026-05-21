@@ -6,6 +6,7 @@ import com.iting.jobportal.notification.entity.Notification;
 import com.iting.jobportal.notification.enums.NotificationType;
 import com.iting.jobportal.notification.enums.RecipientType;
 import com.iting.jobportal.notification.repository.NotificationRepository;
+import com.iting.jobportal.notification.repository.NotificationPreferenceRepository;
 import com.iting.jobportal.notification.service.impl.NotificationServiceImpl;
 import com.iting.jobportal.notification.service.WebSocketNotificationService;
 import com.iting.jobportal.auth.repository.AccountRepository;
@@ -66,6 +67,9 @@ class NotificationServiceImplTest {
 
     @Mock
     private UserRepository userRepository;
+
+    @Mock
+    private NotificationPreferenceRepository preferenceRepository;
 
     @InjectMocks
     private NotificationServiceImpl notificationService;

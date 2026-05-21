@@ -71,12 +71,12 @@ const JobApplications = () => {
            rootLink="/employer/dashboard"
            items={[
              { label: 'Quản lý công việc', link: '/employer/manage-jobs' },
-             { label: `Công việc #${id}` }
+             { label: 'Hồ sơ ứng viên' }
            ]}
          />
          <div className="mb-6">
             <h2 className="text-2xl font-bold text-gray-800">Danh sách ứng viên</h2>
-            <p className="text-gray-500 text-sm">Công việc ID: #{id}</p>
+            <p className="text-gray-500 text-sm">Quản lý danh sách hồ sơ ứng tuyển cho công việc này</p>
          </div>
 
          <div className="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
