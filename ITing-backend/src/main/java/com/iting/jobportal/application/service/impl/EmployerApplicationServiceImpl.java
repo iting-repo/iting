@@ -82,6 +82,7 @@ public class EmployerApplicationServiceImpl implements EmployerApplicationServic
     }
 
     @Override
+    @Transactional(readOnly = true)
     public Page<ApplicationResponse> searchApplications(Long employerId, ApplicationSearchRequest request) {
         if (employerId == null)
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Yêu cầu đăng nhập");
