@@ -267,13 +267,20 @@ const EmployerServicesPage = () => {
                 <h3 className="text-xl font-bold text-gray-900 mb-1">{t.code}</h3>
 
                 {/* Price */}
-                <div className="mb-6">
+                <div className="mb-4">
                   <span className="text-3xl font-extrabold text-gray-900">
                     {fmtPrice(t.priceVnd)}
                   </span>
                   <span className="text-gray-400 font-medium ml-1">đ</span>
                   <span className="text-gray-400 text-sm font-medium"> / {t.periodDays} ngày</span>
                 </div>
+
+                {/* Credits badge */}
+                {t.credits > 0 && (
+                  <div className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg ${meta.bg} ${meta.text} text-xs font-bold mb-5`}>
+                    💰 +{t.credits} credits/tháng
+                  </div>
+                )}
 
                 {/* Divider */}
                 <div className={`h-0.5 w-full rounded-full bg-gradient-to-r ${meta.gradient} opacity-20 mb-6`} />

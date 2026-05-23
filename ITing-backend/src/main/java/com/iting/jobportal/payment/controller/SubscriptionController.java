@@ -34,6 +34,7 @@ public class SubscriptionController {
             m.put("priceVnd", t.getPriceVnd());
             m.put("periodDays", t.getPeriod().toDays());
             m.put("benefits", t.getBenefits());
+            m.put("credits", t.getCredits());
             return m;
         }).collect(Collectors.toList()));
     }

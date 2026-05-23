@@ -103,6 +103,11 @@ public class Account extends AuditEntity {
     @Column(name = "premium_source", length = 50)
     private String premiumSource;
 
+    // HR credits for premium features (added by V101).
+    @Column(name = "credits", nullable = false)
+    @Builder.Default
+    private Integer credits = 0;
+
     @OneToOne(mappedBy = "account", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private User user;
 

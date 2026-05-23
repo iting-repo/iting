@@ -2,6 +2,7 @@ package com.iting.jobportal.payment.service;
 
 import com.iting.jobportal.auth.entity.Account;
 import com.iting.jobportal.auth.repository.AccountRepository;
+import com.iting.jobportal.common.service.EmailService;
 import com.iting.jobportal.payment.entity.HrSubscription;
 import com.iting.jobportal.payment.entity.PaymentOrder;
 import com.iting.jobportal.payment.entity.PaymentStatus;
@@ -57,6 +58,7 @@ public class SubscriptionService {
     private final HrSubscriptionRepository subscriptionRepository;
     private final PaymentOrderRepository orderRepository;
     private final AccountRepository accountRepository;
+    private final EmailService emailService;
 
     private static final SecureRandom RANDOM = new SecureRandom();
     private static final String CODE_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
@@ -120,7 +122,7 @@ public class SubscriptionService {
 
     /**
      * Called by {@link SepayPaymentService#handleWebhook} when a PREMIUM_SUBSCRIPTION order is PAID.
-     * Creates / extends the HrSubscription record.
+     * Creates / extends the HrSubscription record, adds credits, and sends marketing email.
      */
     @Transactional
     public void activateAfterPayment(PaymentOrder order) {
@@ -160,8 +162,71 @@ public class SubscriptionService {
                     .build();
         }
         subscriptionRepository.save(sub);
-        log.info("[Subscription] Activated: account={} tier={} expires={}",
-                accountId, tier.name(), sub.getExpiresAt());
+
+        // ── Add credits to HR account ──
+        Account account = order.getAccount();
+        int creditsToAdd = tier.getCredits();
+        account.setCredits((account.getCredits() != null ? account.getCredits() : 0) + creditsToAdd);
+        account.setPremiumUntil(sub.getExpiresAt());
+        account.setPremiumSource(tier.name());
+        accountRepository.save(account);
+
+        log.info("[Subscription] Activated: account={} tier={} expires={} credits_added={}",
+                accountId, tier.name(), sub.getExpiresAt(), creditsToAdd);
+
+        // ── Send marketing welcome email (async, non-blocking) ──
+        try {
+            sendSubscriptionWelcomeEmail(account, tier, sub, creditsToAdd);
+        } catch (Exception e) {
+            log.warn("[Subscription] Failed to send welcome email to {}: {}", account.getEmail(), e.getMessage());
+        }
+    }
+
+    /**
+     * Sends a styled HTML welcome email after successful subscription.
+     */
+    private void sendSubscriptionWelcomeEmail(Account account, SubscriptionTier tier,
+                                               HrSubscription sub, int creditsAdded) {
+        String to = account.getEmail();
+        if (to == null || to.isBlank()) return;
+
+        String name = account.getFullName() != null ? account.getFullName() : "Nhà tuyển dụng";
+        String expiryDate = sub.getExpiresAt().toLocalDate().toString();
+
+        String subject = "🎉 Chào mừng bạn đến với ITing " + tier.name() + "!";
+        String html = """
+            <div style="font-family:'Segoe UI',Arial,sans-serif;max-width:600px;margin:0 auto;background:#ffffff;border-radius:12px;overflow:hidden;border:1px solid #e5e7eb">
+              <div style="background:linear-gradient(135deg,#3AB4E6 0%%,#1e40af 100%%);padding:32px;text-align:center">
+                <h1 style="color:#fff;margin:0;font-size:24px">🚀 Chào mừng %s!</h1>
+                <p style="color:rgba(255,255,255,0.9);margin:8px 0 0;font-size:14px">Bạn đã kích hoạt gói <strong>%s</strong> thành công</p>
+              </div>
+              <div style="padding:24px 32px">
+                <table style="width:100%%;border-collapse:collapse;margin-bottom:20px">
+                  <tr><td style="padding:8px 0;color:#6b7280;font-size:14px">Gói đăng ký</td><td style="padding:8px 0;text-align:right;font-weight:bold;color:#1f2937;font-size:14px">%s</td></tr>
+                  <tr><td style="padding:8px 0;color:#6b7280;font-size:14px">Thời hạn</td><td style="padding:8px 0;text-align:right;font-weight:bold;color:#1f2937;font-size:14px">%d ngày</td></tr>
+                  <tr><td style="padding:8px 0;color:#6b7280;font-size:14px">Ngày hết hạn</td><td style="padding:8px 0;text-align:right;font-weight:bold;color:#1f2937;font-size:14px">%s</td></tr>
+                  <tr style="background:#f0fdf4;border-radius:8px">
+                    <td style="padding:12px 8px;color:#059669;font-weight:bold;font-size:14px">💰 Credits được cộng</td>
+                    <td style="padding:12px 8px;text-align:right;font-weight:bold;color:#059669;font-size:18px">+%d credits</td>
+                  </tr>
+                </table>
+                <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;padding:16px;margin-bottom:20px">
+                  <p style="margin:0;color:#1e40af;font-size:13px;font-weight:600">✨ Quyền lợi gói %s:</p>
+                  <p style="margin:8px 0 0;color:#374151;font-size:13px;line-height:1.6">%s</p>
+                </div>
+                <div style="text-align:center;margin:24px 0">
+                  <a href="https://datnhk252iting.dpdns.org/employer/dashboard" style="display:inline-block;background:#3AB4E6;color:#fff;padding:12px 32px;border-radius:8px;font-weight:bold;text-decoration:none;font-size:14px">Bắt đầu tuyển dụng ngay →</a>
+                </div>
+                <p style="color:#9ca3af;font-size:12px;text-align:center;margin-top:24px;border-top:1px solid #f3f4f6;padding-top:16px">
+                  Cảm ơn bạn đã tin tưởng ITing. Nếu cần hỗ trợ, hãy liên hệ <a href="mailto:support@iting.vn" style="color:#3AB4E6">support@iting.vn</a>
+                </p>
+              </div>
+            </div>
+            """.formatted(name, tier.name(), tier.getDisplayName(), tier.getPeriod().toDays(),
+                expiryDate, creditsAdded, tier.name(), tier.getBenefits().replace("·", "<br>·"));
+
+        emailService.sendHtmlEmail(to, subject, html);
+        log.info("[Subscription] Welcome email sent to {}", to);
     }
 
     @Transactional
