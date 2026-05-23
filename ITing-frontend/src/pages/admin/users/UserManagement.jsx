@@ -29,6 +29,7 @@ import { ConfirmModal } from "../../../components/common";
 import useConfirm from "../../../hooks/useConfirm";
 import adminUserService from "../../../services/adminUserService";
 import chatRealtimeService from "../../../services/chatRealtimeService";
+import { UserDetailDialog } from "../../../components/admin/UserDetailDialog";
 
 const PAGE_SIZE = 10;
 
@@ -146,8 +147,6 @@ const UserRowActionMenu = ({
         />
     );
 };
-
-import { UserDetailDialog } from "../../../components/admin/UserDetailDialog";
 
 const UserActionDialog = ({
     actionDialog,

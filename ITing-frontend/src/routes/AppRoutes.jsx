@@ -3,6 +3,7 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import MainLayout from '../layouts/MainLayout';
 import AdminLayout from '../layouts/AdminLayout';
 import PrivateRoute from './PrivateRoute';
+import { GlobalLoading } from '../components/common';
 
 const HomePage = lazy(() => import('../pages/public/HomePage'));
 const Login = lazy(() => import('../pages/public/LoginPage'));
@@ -61,8 +62,6 @@ const CompaniesPage = lazy(() => import('../pages/public/CompaniesPage'));
 const CompanyDetailPage = lazy(() => import('../pages/public/CompanyDetailPage'));
 const SalaryLookupPage = lazy(() => import('../pages/public/SalaryLookupPage'));
 const MessagesPage = lazy(() => import('../pages/messages/MessagesPage'));
-
-import { GlobalLoading } from '../components/common';
 
 const AppRoutes = () => {
   return (
