@@ -145,12 +145,13 @@ class MessageServiceImplTest {
         void sendMessage_newConversation_createsConversation() {
             when(conversationRepository.findByParticipantsAndType(1L, 2L, ConversationType.USER_USER))
                     .thenReturn(Optional.empty());
-            when(conversationRepository.save(any(Conversation.class))).thenAnswer(inv -> {
+            when(conversationRepository.saveAndFlush(any(Conversation.class))).thenAnswer(inv -> {
                 Conversation c = inv.getArgument(0);
                 c.setId(5L);
                 c.setCreatedAt(LocalDateTime.now());
                 return c;
             });
+            when(conversationRepository.save(any(Conversation.class))).thenAnswer(inv -> inv.getArgument(0));
             when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
             when(messageRepository.save(any(Message.class))).thenAnswer(inv -> {
                 Message m = inv.getArgument(0);
@@ -163,7 +164,8 @@ class MessageServiceImplTest {
 
             assertNotNull(response);
             verify(conversationRepository).findByParticipantsAndType(1L, 2L, ConversationType.USER_USER);
-            verify(conversationRepository, times(2)).save(any(Conversation.class));
+            verify(conversationRepository).saveAndFlush(any(Conversation.class));
+            verify(conversationRepository).save(any(Conversation.class));
         }
 
         @Test
@@ -187,12 +189,13 @@ class MessageServiceImplTest {
 
             when(conversationRepository.findByParticipantsAndType(1L, 2L, ConversationType.USER_COMPANY))
                     .thenReturn(Optional.empty());
-            when(conversationRepository.save(any(Conversation.class))).thenAnswer(inv -> {
+            when(conversationRepository.saveAndFlush(any(Conversation.class))).thenAnswer(inv -> {
                 Conversation c = inv.getArgument(0);
                 c.setId(5L);
                 c.setCreatedAt(LocalDateTime.now());
                 return c;
             });
+            when(conversationRepository.save(any(Conversation.class))).thenAnswer(inv -> inv.getArgument(0));
             when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
             when(companyRepository.findById(2L)).thenReturn(Optional.of(testCompany));
             when(messageRepository.save(any(Message.class))).thenAnswer(inv -> {
