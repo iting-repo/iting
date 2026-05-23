@@ -114,3 +114,8 @@ recovered-sql/
 
 # AI matching scripts
 ai-matching/
+
+# DB backups (pg_dump output — plain SQL, custom .dump, directory format)
+backup/
+*.dump
+*.sql.gz
