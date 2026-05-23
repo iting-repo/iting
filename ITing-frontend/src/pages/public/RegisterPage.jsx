@@ -80,7 +80,10 @@ const RegisterPage = () => {
   const { currentUser, isLoading, error } = useSelector((state) => state.auth);
   const navigate = useNavigate();
   const dispatch = useDispatch();
-  const [formData, setFormData] = useState({ fullName: "", email: "", password: "", confirmPassword: "", address: "", website: "", phone: "" });
+  // Employer đăng ký chỉ ở mức account (fullName=tên cty, email, password).
+  // Thông tin doanh nghiệp (taxCode, address, phone, website, industries…) được
+  // xác thực sau khi login qua FoundingInfoTab (affiliation init + admin duyệt).
+  const [formData, setFormData] = useState({ fullName: "", email: "", password: "", confirmPassword: "" });
   const [stats, setStats] = useState({ totalJobs: 0, totalCandidates: 0, totalCompanies: 0 });
 
   useEffect(() => {
@@ -98,22 +101,19 @@ const RegisterPage = () => {
   }, []);
 
   const handleChange = (e) => {
-    if (e.target.name === 'phone') {
-      const cleaned = e.target.value.replace(/[^0-9+]/g, '');
-      setFormData({ ...formData, phone: cleaned });
-      return;
-    }
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
   const handleRegister = (e) => {
     e.preventDefault();
     if (formData.password !== formData.confirmPassword) { alert("Mật khẩu xác nhận không khớp!"); return; }
-    if (isEmployer && formData.phone && !/^(\+84|0)(3|5|7|8|9)[0-9]{8}$/.test(formData.phone)) {
-      alert("Số điện thoại không hợp lệ! Ví dụ: 0912345678");
-      return;
-    }
-    dispatch(registerRequest({ email: formData.email, password: formData.password, fullName: formData.fullName, role, phone: formData.phone, address: formData.address, website: formData.website, navigate }));
+    dispatch(registerRequest({
+      email: formData.email,
+      password: formData.password,
+      fullName: formData.fullName,
+      role,
+      navigate,
+    }));
   };
 
   return (
@@ -149,12 +149,8 @@ const RegisterPage = () => {
               <button type="button" onClick={() => setShowConfirmPassword(!showConfirmPassword)} className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400">{showConfirmPassword ? <FaEyeSlash size={18} /> : <FaEye size={18} />}</button>
             </div>
             {isEmployer && (
-              <div className="space-y-4 p-4 bg-blue-50 rounded-lg border border-blue-100">
-                <input type="text" name="address" value={formData.address} onChange={handleChange} placeholder="Địa chỉ công ty" className="w-full px-5 py-3.5 bg-white border border-blue-200 rounded-lg text-gray-700" />
-                <div className="flex gap-4">
-                  <input type="text" name="website" value={formData.website} onChange={handleChange} placeholder="Website" className="flex-1 px-5 py-3.5 bg-white border border-blue-200 rounded-lg text-gray-700" />
-                  <input type="tel" name="phone" value={formData.phone} onChange={handleChange} placeholder="Số điện thoại (VD: 0912345678)" pattern="(\+84|0)(3|5|7|8|9)[0-9]{8}" title="Nhập số điện thoại hợp lệ (VD: 0912345678)" className="flex-1 px-5 py-3.5 bg-white border border-blue-200 rounded-lg text-gray-700" />
-                </div>
+              <div className="p-4 bg-blue-50 rounded-lg border border-blue-100 text-sm text-blue-700">
+                Sau khi đăng ký xong, bạn sẽ được dẫn đến trang xác thực mã số thuế &amp; thông tin doanh nghiệp (giấy phép kinh doanh, địa chỉ, website, số điện thoại…) để admin duyệt.
               </div>
             )}
             <div className="flex items-start text-sm mt-4">
