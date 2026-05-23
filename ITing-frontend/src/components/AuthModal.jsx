@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { useGoogleLogin } from '@react-oauth/google';
 import { loginRequest, googleLoginRequest } from '../store/auth/authSlice';
 import { FaEye, FaEyeSlash, FaTimes, FaUser, FaBriefcase, FaArrowRight } from 'react-icons/fa';
+import logoIting from '../assets/logo-iting.png';
 
 const GoogleIcon = () => (
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="20px" height="20px">
@@ -86,7 +87,7 @@ const AuthModal = ({ isOpen, onClose, onLoginSuccess, contextTitle, contextDesc 
 
           <div className="mb-3">
             <div className="w-12 h-12 bg-white/20 rounded-2xl flex items-center justify-center mb-3">
-              <img src="/logo-iting.png" alt="ITing" className="h-8 w-auto object-contain" onError={(e) => { e.target.style.display='none'; }} />
+              <img src={logoIting} alt="ITing" className="h-8 w-auto object-contain" onError={(e) => { e.target.style.display='none'; }} />
             </div>
             <h2 className="text-xl font-black">{contextTitle || 'Đăng nhập để tiếp tục'}</h2>
             {contextDesc && <p className="text-sm text-white/80 mt-1">{contextDesc}</p>}
