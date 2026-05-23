@@ -103,84 +103,146 @@ const AutoParseCVModal = ({ isOpen, onClose, onComplete }) => {
         }
         setIsSaving(true);
 
-        const counters = { skills: 0, experiences: 0, educations: 0, certificates: 0, errors: 0 };
+        const counters = { skills: 0, experiences: 0, educations: 0, certificates: 0, skipped: 0, updated: 0, errors: 0 };
+        const norm = (s) => (s || '').toString().trim().toLowerCase();
 
-        // Skills: ["Java", "React"] → POST { name }
+        // Fetch existing để dedup: parse lần 2 sẽ skip/update item đã có thay vì tạo duplicate.
+        let existing = { skills: [], experiences: [], educations: [], certificates: [] };
+        try {
+            const [s, exps, edus, certs] = await Promise.all([
+                axiosInstance.get('/user/professional-profile/skills'),
+                axiosInstance.get('/user/professional-profile/experience'),
+                axiosInstance.get('/user/professional-profile/education'),
+                axiosInstance.get('/user/professional-profile/certificates'),
+            ]);
+            existing = {
+                skills: Array.isArray(s) ? s : (s?.data || []),
+                experiences: Array.isArray(exps) ? exps : (exps?.data || []),
+                educations: Array.isArray(edus) ? edus : (edus?.data || []),
+                certificates: Array.isArray(certs) ? certs : (certs?.data || []),
+            };
+        } catch (e) {
+            console.warn('Could not fetch existing profile for dedup, proceeding anyway:', e);
+        }
+
+        const skillKey = (x) => norm(x?.name);
+        const expKey = (x) => `${norm(x?.companyName)}|${norm(x?.position)}`;
+        const eduKey = (x) => `${norm(x?.schoolName)}|${norm(x?.major || x?.degree)}`;
+        const certKey = (x) => `${norm(x?.title)}|${norm(x?.issuingOrganization)}`;
+
+        const existingSkillKeys = new Set(existing.skills.map(skillKey));
+        const existingExpMap = new Map(existing.experiences.map((x) => [expKey(x), x]));
+        const existingEduMap = new Map(existing.educations.map((x) => [eduKey(x), x]));
+        const existingCertMap = new Map(existing.certificates.map((x) => [certKey(x), x]));
+
+        // Skills: skip nếu name đã tồn tại (case-insensitive)
         for (const skill of (parsedData.skills || [])) {
             const name = typeof skill === 'string' ? skill.trim() : skill?.name?.trim();
             if (!name) continue;
+            if (existingSkillKeys.has(norm(name))) { counters.skipped++; continue; }
             try {
                 await axiosInstance.post('/user/professional-profile/skills', { name });
                 counters.skills++;
+                existingSkillKeys.add(norm(name));
             } catch (e) {
                 counters.errors++;
                 console.error('Add skill failed:', name, e);
             }
         }
 
-        // Experiences: { companyName, position, startDate (YYYY-MM), endDate, description }
+        // Experiences: PUT nếu (companyName, position) đã tồn tại; else POST
         for (const exp of (parsedData.experiences || [])) {
             if (!exp?.companyName || !exp?.position || !exp?.startDate) continue;
+            const body = {
+                companyName: exp.companyName,
+                position: exp.position,
+                startDate: toFullDate(exp.startDate),
+                endDate: toFullDate(exp.endDate),
+                isCurrent: !exp.endDate,
+                description: exp.description || '',
+            };
+            const key = expKey(exp);
+            const dup = existingExpMap.get(key);
             try {
-                await axiosInstance.post('/user/professional-profile/experience', {
-                    companyName: exp.companyName,
-                    position: exp.position,
-                    startDate: toFullDate(exp.startDate),
-                    endDate: toFullDate(exp.endDate),
-                    isCurrent: !exp.endDate,
-                    description: exp.description || '',
-                });
-                counters.experiences++;
+                if (dup) {
+                    await axiosInstance.put(`/user/professional-profile/experience/${dup.id}`, body);
+                    counters.updated++;
+                } else {
+                    await axiosInstance.post('/user/professional-profile/experience', body);
+                    counters.experiences++;
+                }
             } catch (e) {
                 counters.errors++;
-                console.error('Add experience failed:', exp, e);
+                console.error('Add/update experience failed:', exp, e);
             }
         }
 
-        // Educations: { schoolName, degree, startDate, endDate } → backend cần thêm major
+        // Educations: PUT nếu (schoolName, major/degree) đã tồn tại; else POST
         for (const edu of (parsedData.educations || [])) {
             if (!edu?.schoolName || !edu?.startDate) continue;
+            const body = {
+                schoolName: edu.schoolName,
+                major: edu.degree || edu.major || edu.schoolName,
+                degree: edu.degree || '',
+                areaOfStudy: '',
+                startDate: toFullDate(edu.startDate),
+                endDate: toFullDate(edu.endDate),
+            };
+            const key = eduKey({ schoolName: edu.schoolName, major: body.major, degree: body.degree });
+            const dup = existingEduMap.get(key);
             try {
-                await axiosInstance.post('/user/professional-profile/education', {
-                    schoolName: edu.schoolName,
-                    major: edu.degree || edu.major || edu.schoolName, // fallback nếu Gemini chỉ trả degree
-                    degree: edu.degree || '',
-                    areaOfStudy: '',
-                    startDate: toFullDate(edu.startDate),
-                    endDate: toFullDate(edu.endDate),
-                });
-                counters.educations++;
+                if (dup) {
+                    await axiosInstance.put(`/user/professional-profile/education/${dup.id}`, body);
+                    counters.updated++;
+                } else {
+                    await axiosInstance.post('/user/professional-profile/education', body);
+                    counters.educations++;
+                }
             } catch (e) {
                 counters.errors++;
-                console.error('Add education failed:', edu, e);
+                console.error('Add/update education failed:', edu, e);
             }
         }
 
-        // Certificates: { name, organization, issueDate } → { title, issuingOrganization, issueDate }
+        // Certificates: PUT nếu (title, organization) đã tồn tại; else POST
         for (const cert of (parsedData.certificates || [])) {
             if (!cert?.name) continue;
+            const body = {
+                title: cert.name,
+                issuingOrganization: cert.organization?.trim() || null,
+                issueDate: toFullDate(cert.issueDate),
+                expirationDate: null,
+                doesNotExpire: true,
+            };
+            const key = certKey({ title: body.title, issuingOrganization: body.issuingOrganization });
+            const dup = existingCertMap.get(key);
             try {
-                await axiosInstance.post('/user/professional-profile/certificates', {
-                    title: cert.name,
-                    issuingOrganization: cert.organization?.trim() || null,
-                    issueDate: toFullDate(cert.issueDate),
-                    expirationDate: null,
-                    doesNotExpire: true,
-                });
-                counters.certificates++;
+                if (dup) {
+                    await axiosInstance.put(`/user/professional-profile/certificates/${dup.id}`, body);
+                    counters.updated++;
+                } else {
+                    await axiosInstance.post('/user/professional-profile/certificates', body);
+                    counters.certificates++;
+                }
             } catch (e) {
                 counters.errors++;
-                console.error('Add certificate failed:', cert, e);
+                console.error('Add/update certificate failed:', cert, e);
             }
         }
 
         setIsSaving(false);
 
-        const summary = `${counters.skills} kỹ năng, ${counters.experiences} kinh nghiệm, ${counters.educations} học vấn, ${counters.certificates} chứng chỉ`;
+        const added = counters.skills + counters.experiences + counters.educations + counters.certificates;
+        const parts = [];
+        if (added > 0) parts.push(`thêm ${added} mục mới`);
+        if (counters.updated > 0) parts.push(`cập nhật ${counters.updated} mục`);
+        if (counters.skipped > 0) parts.push(`bỏ qua ${counters.skipped} trùng`);
+        const summary = parts.length ? parts.join(', ') : 'không có thay đổi';
+
         if (counters.errors > 0) {
-            toast.warning(`Đã thêm ${summary}. (${counters.errors} lỗi — kiểm tra console)`);
+            toast.warning(`Đã ${summary}. (${counters.errors} lỗi — kiểm tra console)`);
         } else {
-            toast.success(`Đã thêm ${summary} từ CV.`);
+            toast.success(`Đã ${summary} từ CV.`);
         }
 
         onClose();
