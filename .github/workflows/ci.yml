@@ -151,7 +151,9 @@ jobs:
         with:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+          # PAT thay GITHUB_TOKEN vì sau khi transfer repo sang org iting-repo,
+          # default GITHUB_TOKEN bị denied khi push GHCR packages.
+          password: ${{ secrets.GHCR_PAT }}
 
       - name: Download backend JAR
         uses: actions/download-artifact@v4
