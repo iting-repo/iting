@@ -455,6 +455,14 @@ const Header = () => {
         <div className="flex items-center gap-4">
           {role === 'guest' ? (
             <>
+              <Link
+                to="/register?role=employer"
+                className="hidden md:flex flex-col items-end leading-tight group"
+              >
+                <span className="text-[11px] text-gray-400 group-hover:text-gray-300 transition-colors">Bạn là nhà tuyển dụng?</span>
+                <span className="text-sm font-bold text-[#3AB4E6] group-hover:underline">Đăng tuyển ngay »</span>
+              </Link>
+              <div className="hidden md:block w-px h-10 bg-gray-700" aria-hidden />
               <Link to="/login" className="hidden md:block text-white font-medium hover:text-gray-300 transition-colors">
                 Đăng nhập
               </Link>
@@ -470,6 +478,18 @@ const Header = () => {
             </>
           ) : (
             <>
+              {role === 'CANDIDATE' && (
+                <>
+                  <Link
+                    to="/register?role=employer"
+                    className="hidden md:flex flex-col items-end leading-tight group"
+                  >
+                    <span className="text-[11px] text-gray-400 group-hover:text-gray-300 transition-colors">Bạn là nhà tuyển dụng?</span>
+                    <span className="text-sm font-bold text-[#3AB4E6] group-hover:underline">Đăng tuyển ngay »</span>
+                  </Link>
+                  <div className="hidden md:block w-px h-10 bg-gray-700" aria-hidden />
+                </>
+              )}
               <div className="flex items-center gap-3 mr-2">
                 {/* Messages Dropdown */}
                 <div className="relative flex items-center" ref={messageDropdownRef}>

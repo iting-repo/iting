@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import logoIting from '../../assets/logo-iting.png';
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { registerRequest } from "../../store/auth/authSlice";
 import { FaEye, FaEyeSlash, FaArrowRight } from "react-icons/fa";
@@ -76,7 +76,9 @@ const SuccessModal = ({ onClose }) => {
 };
 
 const RegisterPage = () => {
-  const [role, setRole] = useState("CANDIDATE");
+  const [searchParams] = useSearchParams();
+  const initialRole = searchParams.get("role")?.toUpperCase() === "EMPLOYER" ? "EMPLOYER" : "CANDIDATE";
+  const [role, setRole] = useState(initialRole);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const { currentUser, isLoading, error } = useSelector((state) => state.auth);
@@ -92,25 +94,22 @@ const RegisterPage = () => {
     }
   }, [currentUser, navigate]);
 
-  const [stats, setStats] = useState({ totalJobs: 0, totalCandidates: 0, totalCompanies: 0 });
-
-  useEffect(() => {
-    const fetchStats = async () => {
-      try {
-        const data = await publicService.getHomeStats();
-        setStats({ totalJobs: 0, totalCandidates: 0, totalCompanies: 0, ...(data || {}) });
-      } catch (error) {
-        console.error("Failed to fetch stats:", error);
-      }
-    };
-    fetchStats();
-  }, []);
-
-  const handleChange = (e) => { setFormData({ ...formData, [e.target.name]: e.target.value }); };
+  const handleChange = (e) => {
+    if (e.target.name === 'phone') {
+      const cleaned = e.target.value.replace(/[^0-9+]/g, '');
+      setFormData({ ...formData, phone: cleaned });
+      return;
+    }
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
 
   const handleRegister = (e) => {
     e.preventDefault();
     if (formData.password !== formData.confirmPassword) { alert("Mật khẩu xác nhận không khớp!"); return; }
+    if (role === 'EMPLOYER' && formData.phone && !/^(\+84|0)(3|5|7|8|9)[0-9]{8}$/.test(formData.phone)) {
+      alert("Số điện thoại không hợp lệ! Ví dụ: 0912345678");
+      return;
+    }
     dispatch(registerRequest({ email: formData.email, password: formData.password, fullName: formData.fullName, role, phone: formData.phone, address: formData.address, website: formData.website, navigate }));
   };
 
@@ -144,7 +143,7 @@ const RegisterPage = () => {
                 <input type="text" name="address" value={formData.address} onChange={handleChange} placeholder="Địa chỉ công ty" className="w-full px-5 py-3.5 bg-white border border-blue-200 rounded-lg text-gray-700" />
                 <div className="flex gap-4">
                   <input type="text" name="website" value={formData.website} onChange={handleChange} placeholder="Website" className="flex-1 px-5 py-3.5 bg-white border border-blue-200 rounded-lg text-gray-700" />
-                  <input type="text" name="phone" value={formData.phone} onChange={handleChange} placeholder="Số điện thoại" className="flex-1 px-5 py-3.5 bg-white border border-blue-200 rounded-lg text-gray-700" />
+                  <input type="tel" name="phone" value={formData.phone} onChange={handleChange} placeholder="Số điện thoại (VD: 0912345678)" pattern="(\+84|0)(3|5|7|8|9)[0-9]{8}" title="Nhập số điện thoại hợp lệ (VD: 0912345678)" className="flex-1 px-5 py-3.5 bg-white border border-blue-200 rounded-lg text-gray-700" />
                 </div>
               </div>
             )}
