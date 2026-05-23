@@ -95,7 +95,22 @@ jobs:
             # Clean up old images
             docker image prune -f
 
-            # Refresh nginx to ensure upstream DNS is updated
+            # Backend start_period is 240s; wait before recycling nginx or external health checks
+            echo "Waiting for backend container health (up to 10m)..."
+            BACKEND_IMAGE="${{ env.BACKEND_IMAGE }}" FRONTEND_IMAGE="${{ env.FRONTEND_IMAGE }}" docker compose \
+              -f docker-compose.yml \
+              --env-file /opt/iting/.env \
+              --env-file /opt/iting/.env.prod \
+              wait --timeout 600 backend
+
+            echo "Waiting for frontend container health (up to 3m)..."
+            BACKEND_IMAGE="${{ env.BACKEND_IMAGE }}" FRONTEND_IMAGE="${{ env.FRONTEND_IMAGE }}" docker compose \
+              -f docker-compose.yml \
+              --env-file /opt/iting/.env \
+              --env-file /opt/iting/.env.prod \
+              wait --timeout 180 frontend
+
+            # Refresh nginx after upstreams are healthy (avoids 502 during --no-deps recreate)
             BACKEND_IMAGE="${{ env.BACKEND_IMAGE }}" FRONTEND_IMAGE="${{ env.FRONTEND_IMAGE }}" docker compose \
               -f docker-compose.yml \
               --env-file /opt/iting/.env \
@@ -104,8 +119,25 @@ jobs:
 
       - name: Health check
         run: |
-          curl -sf --retry 15 --retry-delay 10 --retry-all-errors https://datnhk252iting.dpdns.org/ >/dev/null
-          curl -sf --retry 15 --retry-delay 10 --retry-all-errors https://api.datnhk252iting.dpdns.org/actuator/health >/dev/null
+          set -euo pipefail
+
+          check_url() {
+            local name="$1"
+            local url="$2"
+            echo "Checking $name: $url"
+            if curl -sf --retry 5 --retry-delay 5 --retry-all-errors "$url" >/dev/null; then
+              echo "$name OK"
+              return 0
+            fi
+            local code
+            code="$(curl -sk -o /dev/null -w '%{http_code}' "$url" || echo '000')"
+            echo "::error::$name failed (HTTP $code): $url"
+            curl -sk "$url" | head -c 500 || true
+            return 1
+          }
+
+          check_url "Frontend" "https://datnhk252iting.dpdns.org/"
+          check_url "API health" "https://api.datnhk252iting.dpdns.org/actuator/health"
 
       - name: Notify Discord - Success
         if: success()

@@ -8,7 +8,7 @@ import lombok.Setter;
 import java.time.LocalDateTime;
 
 /**
- * Candidate-specific extension of {@link Account} (1-1 via @MapsId).
+ * Candidate/Employer-specific extension of {@link Account} (1-1 via @MapsId).
  *
  * <p>
  * Identity fields (full_name, phone, avatar_url) live on Account (source of
