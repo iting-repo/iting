@@ -98,6 +98,7 @@ public class RecommendationServiceImpl implements RecommendationService {
     private final UserSavedJobService userSavedJobService;
 
     @Override
+    @org.springframework.transaction.annotation.Transactional(readOnly = true)
     public List<JobResponse> recommendHomepage(Long userId, int limit) {
         if (userId == null) {
             return getTrendingJobs(limit);
@@ -124,6 +125,7 @@ public class RecommendationServiceImpl implements RecommendationService {
     }
 
     @Override
+    @org.springframework.transaction.annotation.Transactional(readOnly = true)
     public List<JobResponse> getTrendingJobs(int limit) {
         // Mix popularity (viewCount) với randomness nhẹ, nhưng vẫn deterministic-ish
         List<Job> candidates = jobRepository.findTop50ByStatusOrderByViewCountDesc(JobStatus.ACTIVE, PageRequest.of(0, 50));
