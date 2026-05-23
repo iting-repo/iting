@@ -44,6 +44,35 @@ public class CompanyReviewController {
     private final AccountRepository accountRepository;
     private final JwtTokenUtil jwtTokenUtil;
 
+    /** Public: rating stats summary cho company (shape khớp frontend cũ). */
+    @GetMapping("/api/public/companies/{companyId}/rating-stats")
+    @org.springframework.transaction.annotation.Transactional(readOnly = true)
+    public ResponseEntity<Map<String, Object>> ratingStats(@PathVariable Long companyId) {
+        List<CompanyReview> approved = reviewRepository
+                .findByCompanyIdOrderByCreatedAtDesc(companyId).stream()
+                .filter(r -> "APPROVED".equals(r.getModerationStatus()))
+                .collect(Collectors.toList());
+
+        double avg = approved.stream().mapToInt(CompanyReview::getRating).average().orElse(0);
+        long recommendCount = approved.stream()
+                .filter(r -> Boolean.TRUE.equals(r.getWouldRecommend())).count();
+
+        // Histogram theo số sao (1-5)
+        Map<Integer, Long> dist = new LinkedHashMap<>();
+        for (int star = 5; star >= 1; star--) {
+            final int s = star;
+            dist.put(star, approved.stream().filter(r -> r.getRating() != null && r.getRating() == s).count());
+        }
+
+        Map<String, Object> response = new LinkedHashMap<>();
+        response.put("averageRating", Math.round(avg * 10) / 10.0);
+        response.put("reviewCount", approved.size());
+        response.put("recommendPercent", approved.isEmpty() ? 0
+                : Math.round(recommendCount * 100.0 / approved.size()));
+        response.put("ratingDistribution", dist);
+        return ResponseEntity.ok(response);
+    }
+
     /** Public: list approved reviews + aggregate stats for a company. */
     @GetMapping("/api/public/companies/{companyId}/reviews")
     @org.springframework.transaction.annotation.Transactional(readOnly = true)

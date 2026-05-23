@@ -181,21 +181,15 @@ const CompanyDetailPage = () => {
     const fetchData = async () => {
       try {
         setIsLoading(true);
-        // /reviews response đã có averageRating + totalReviews + reviews → 1 call thay vì 2.
-        // (endpoint /rating-stats không tồn tại trên backend.)
-        const [compRes, reviewsRes] = await Promise.all([
+        const [compRes, statsRes, reviewsRes] = await Promise.all([
           companyService.getCompanyDetail(id),
+          companyService.getCompanyRatingStats(id),
           companyService.getCompanyReviews(id)
         ]);
-        const reviewsData = reviewsRes.data || reviewsRes;
 
-        setCompany(compRes.data || compRes);
-        setRatingStats({
-          averageRating: reviewsData?.averageRating || 0,
-          reviewCount: reviewsData?.totalReviews || 0,
-          recommendPercent: reviewsData?.recommendPercent || 0,
-        });
-        setReviews(reviewsData?.reviews || []);
+        setCompany(compRes.data || compRes); // Handle possible data wrapper variations
+        setRatingStats(statsRes.data || statsRes);
+        setReviews(reviewsRes.data || reviewsRes);
 
         if (isAuthenticated && user?.role === 'CANDIDATE') {
           const followRes = await companyService.checkFollowing(id);
@@ -280,15 +274,13 @@ const CompanyDetailPage = () => {
       setReviewContent("");
       setReviewRating(5);
 
-      // Refresh reviews — /reviews response chứa luôn averageRating + totalReviews.
-      const reviewsRes = await companyService.getCompanyReviews(id);
-      const reviewsData = reviewsRes.data || reviewsRes;
-      setRatingStats({
-        averageRating: reviewsData?.averageRating || 0,
-        reviewCount: reviewsData?.totalReviews || 0,
-        recommendPercent: reviewsData?.recommendPercent || 0,
-      });
-      setReviews(reviewsData?.reviews || []);
+      // Refresh reviews and stats
+      const [statsRes, reviewsRes] = await Promise.all([
+        companyService.getCompanyRatingStats(id),
+        companyService.getCompanyReviews(id)
+      ]);
+      setRatingStats(statsRes.data || statsRes);
+      setReviews(reviewsRes.data || reviewsRes);
     } catch (error) {
       console.error("Review submission failed:", error);
       toast.error(error.response?.data?.message || "Không thể gửi đánh giá. Vui lòng thử lại sau.");

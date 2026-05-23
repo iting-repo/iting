@@ -186,18 +186,8 @@ const companyService = {
     return await axiosInstance.get(`/public/companies/${companyId}/reviews`);
   },
 
-  /**
-   * @deprecated Backend chưa expose /rating-stats. Stats đã có sẵn trong response
-   *             của getCompanyReviews (averageRating, totalReviews, recommendPercent).
-   *             Wrapper này extract về shape cũ cho code chưa migrate.
-   */
   getCompanyRatingStats: async (companyId) => {
-    const r = await axiosInstance.get(`/public/companies/${companyId}/reviews`);
-    return {
-      averageRating: r?.averageRating || 0,
-      reviewCount: r?.totalReviews || 0,
-      recommendPercent: r?.recommendPercent || 0,
-    };
+    return await axiosInstance.get(`/public/companies/${companyId}/rating-stats`);
   },
 
   postCompanyReview: async (companyId, reviewData) => {
