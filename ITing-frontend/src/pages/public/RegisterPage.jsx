@@ -4,13 +4,8 @@ import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { registerRequest } from "../../store/auth/authSlice";
 import { FaEye, FaEyeSlash, FaArrowRight } from "react-icons/fa";
-import {
-  BsBriefcaseFill,
-  BsBuilding,
-  BsPeopleFill,
-  BsGlobe,
-  BsTelephone,
-} from "react-icons/bs";
+import { BsBriefcaseFill, BsBuilding, BsPeopleFill } from "react-icons/bs";
+import publicService from "../../services/publicService";
 import { useModalEscape } from "../../hooks/useModalEscape";
 
 const bgImage = "/homepage-page.png";
@@ -77,14 +72,16 @@ const SuccessModal = ({ onClose }) => {
 
 const RegisterPage = () => {
   const [searchParams] = useSearchParams();
-  const initialRole = searchParams.get("role")?.toUpperCase() === "EMPLOYER" ? "EMPLOYER" : "CANDIDATE";
-  const [role, setRole] = useState(initialRole);
+  const isEmployer = searchParams.get("role")?.toUpperCase() === "EMPLOYER";
+  const role = isEmployer ? "EMPLOYER" : "CANDIDATE";
+
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const { currentUser, isLoading, error } = useSelector((state) => state.auth);
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const [formData, setFormData] = useState({ fullName: "", email: "", password: "", confirmPassword: "", address: "", website: "", phone: "" });
+  const [stats, setStats] = useState({ totalJobs: 0, totalCandidates: 0, totalCompanies: 0 });
 
   useEffect(() => {
     if (currentUser && currentUser.token) {
@@ -93,6 +90,12 @@ const RegisterPage = () => {
       else navigate("/");
     }
   }, [currentUser, navigate]);
+
+  useEffect(() => {
+    publicService.getHomeStats()
+      .then((data) => setStats((prev) => ({ ...prev, ...(data || {}) })))
+      .catch(() => { /* silent — UI vẫn render với 0 */ });
+  }, []);
 
   const handleChange = (e) => {
     if (e.target.name === 'phone') {
@@ -106,7 +109,7 @@ const RegisterPage = () => {
   const handleRegister = (e) => {
     e.preventDefault();
     if (formData.password !== formData.confirmPassword) { alert("Mật khẩu xác nhận không khớp!"); return; }
-    if (role === 'EMPLOYER' && formData.phone && !/^(\+84|0)(3|5|7|8|9)[0-9]{8}$/.test(formData.phone)) {
+    if (isEmployer && formData.phone && !/^(\+84|0)(3|5|7|8|9)[0-9]{8}$/.test(formData.phone)) {
       alert("Số điện thoại không hợp lệ! Ví dụ: 0912345678");
       return;
     }
@@ -120,16 +123,23 @@ const RegisterPage = () => {
           <img src={logoIting} alt="ITing Logo" className="h-20 w-auto object-contain drop-shadow-sm" />
         </Link>
         <div>
-          <h1 className="text-[32px] font-semibold text-[#1F2937] mb-2 leading-tight">Tạo tài khoản mới</h1>
-          <p className="text-[#6B7280] text-sm mb-6">Bạn đã có tài khoản? <Link to="/login" className="text-[#3AB4E6] font-medium hover:underline">Đăng nhập ngay</Link></p>
-          <div className="bg-[#F3F4F6] p-1.5 rounded-lg flex mb-6 shadow-inner">
-            <button onClick={() => setRole("CANDIDATE")} className={`flex-1 py-2.5 rounded-md text-sm font-semibold transition-all duration-200 ${role === "CANDIDATE" ? "bg-[#3AB4E6] text-white shadow-sm" : "text-gray-500 hover:text-gray-600"}`}>Ứng viên</button>
-            <button onClick={() => setRole("EMPLOYER")} className={`flex-1 py-2.5 rounded-md text-sm font-semibold transition-all duration-200 ${role === "EMPLOYER" ? "bg-[#3AB4E6] text-white shadow-sm" : "text-gray-500 hover:text-gray-600"}`}>Nhà tuyển dụng</button>
-          </div>
+          <h1 className="text-[32px] font-semibold text-[#1F2937] mb-2 leading-tight">
+            {isEmployer ? "Đăng ký nhà tuyển dụng" : "Tạo tài khoản ứng viên"}
+          </h1>
+          <p className="text-[#6B7280] text-sm mb-2">
+            Bạn đã có tài khoản? <Link to="/login" className="text-[#3AB4E6] font-medium hover:underline">Đăng nhập ngay</Link>
+          </p>
+          <p className="text-[#6B7280] text-sm mb-6">
+            {isEmployer ? (
+              <>Bạn là ứng viên? <Link to="/register" className="text-[#3AB4E6] font-medium hover:underline">Đăng ký ứng viên</Link></>
+            ) : (
+              <>Bạn là nhà tuyển dụng? <Link to="/register?role=employer" className="text-[#3AB4E6] font-medium hover:underline">Đăng ký nhà tuyển dụng</Link></>
+            )}
+          </p>
           <form onSubmit={handleRegister} className="space-y-4">
             {error && <div className="p-3 bg-red-50 border border-red-200 text-red-600 rounded-lg text-sm mb-4">{error}</div>}
-            <input type="text" name="fullName" value={formData.fullName} onChange={handleChange} required placeholder={role === "EMPLOYER" ? "Tên công ty/doanh nghiệp" : "Họ và tên"} className="w-full px-5 py-3.5 bg-[#F0F5FA] border border-transparent rounded-lg text-gray-700 focus:outline-none focus:bg-white focus:border-blue-500 transition-all" />
-            <input type="email" name="email" value={formData.email} onChange={handleChange} required placeholder={role === "EMPLOYER" ? "Email công ty" : "Nhập email"} className="w-full px-5 py-3.5 bg-[#F0F5FA] border border-transparent rounded-lg text-gray-700 focus:outline-none focus:bg-white focus:border-blue-500 transition-all" />
+            <input type="text" name="fullName" value={formData.fullName} onChange={handleChange} required placeholder={isEmployer ? "Tên công ty/doanh nghiệp" : "Họ và tên"} className="w-full px-5 py-3.5 bg-[#F0F5FA] border border-transparent rounded-lg text-gray-700 focus:outline-none focus:bg-white focus:border-blue-500 transition-all" />
+            <input type="email" name="email" value={formData.email} onChange={handleChange} required placeholder={isEmployer ? "Email công ty" : "Nhập email"} className="w-full px-5 py-3.5 bg-[#F0F5FA] border border-transparent rounded-lg text-gray-700 focus:outline-none focus:bg-white focus:border-blue-500 transition-all" />
             <div className="relative">
               <input type={showPassword ? "text" : "password"} name="password" value={formData.password} onChange={handleChange} required placeholder="Nhập mật khẩu" className="w-full px-5 py-3.5 bg-[#F0F5FA] border border-transparent rounded-lg text-gray-700 focus:outline-none focus:bg-white focus:border-blue-500 transition-all" />
               <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400">{showPassword ? <FaEyeSlash size={18} /> : <FaEye size={18} />}</button>
@@ -138,7 +148,7 @@ const RegisterPage = () => {
               <input type={showConfirmPassword ? "text" : "password"} name="confirmPassword" value={formData.confirmPassword} onChange={handleChange} required placeholder="Nhập lại mật khẩu" className="w-full px-5 py-3.5 bg-[#F0F5FA] border border-transparent rounded-lg text-gray-700 focus:outline-none focus:bg-white focus:border-blue-500 transition-all" />
               <button type="button" onClick={() => setShowConfirmPassword(!showConfirmPassword)} className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400">{showConfirmPassword ? <FaEyeSlash size={18} /> : <FaEye size={18} />}</button>
             </div>
-            {role === "EMPLOYER" && (
+            {isEmployer && (
               <div className="space-y-4 p-4 bg-blue-50 rounded-lg border border-blue-100">
                 <input type="text" name="address" value={formData.address} onChange={handleChange} placeholder="Địa chỉ công ty" className="w-full px-5 py-3.5 bg-white border border-blue-200 rounded-lg text-gray-700" />
                 <div className="flex gap-4">
@@ -166,7 +176,13 @@ const RegisterPage = () => {
       <div className="hidden lg:block w-[50%] relative bg-cover bg-center" style={{ backgroundImage: `url(${bgImage})`, clipPath: "polygon(80px 0, 100% 0, 100% 100%, 0 100%)", marginLeft: "-1px" }}>
         <div className="absolute inset-0 bg-[#1e293b]/85 mix-blend-multiply"></div>
         <div className="absolute bottom-0 left-0 right-0 p-12 pl-24 text-white">
-          <h2 className="text-4xl font-bold leading-tight mb-8">Hơn <span className="text-blue-400">{(stats.totalCandidates || 0).toLocaleString('vi-VN')}</span> ứng viên đang tham gia.</h2>
+          <h2 className="text-4xl font-bold leading-tight mb-8">
+            {isEmployer ? (
+              <>Hơn <span className="text-blue-400">{(stats.totalCompanies || 0).toLocaleString('vi-VN')}</span> doanh nghiệp đang tuyển dụng.</>
+            ) : (
+              <>Hơn <span className="text-blue-400">{(stats.totalCandidates || 0).toLocaleString('vi-VN')}</span> ứng viên đang tham gia.</>
+            )}
+          </h2>
           <div className="flex gap-4">
             <div className="bg-white/10 backdrop-blur-md p-4 rounded-xl flex-1 text-center"><BsBriefcaseFill className="mx-auto mb-2" size={20} /><div className="text-xl font-bold">{(stats.totalJobs || 0).toLocaleString('vi-VN')}</div><div className="text-[10px] uppercase text-gray-300">Việc làm</div></div>
             <div className="bg-white/10 backdrop-blur-md p-4 rounded-xl flex-1 text-center"><BsBuilding className="mx-auto mb-2" size={20} /><div className="text-xl font-bold">{(stats.totalCompanies || 0).toLocaleString('vi-VN')}</div><div className="text-[10px] uppercase text-gray-300">Công ty</div></div>
