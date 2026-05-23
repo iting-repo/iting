@@ -34,7 +34,11 @@ module.exports = (env, argv) => {
     entry: './src/index.js',
     output: {
       path: path.resolve(__dirname, 'dist'),
-      filename: 'bundle.js',
+      // Prod: [contenthash] để bypass browser cache khi nội dung đổi.
+      // Dev: tên tĩnh để hot reload + devtools dễ map.
+      filename: isProd ? 'bundle.[contenthash].js' : 'bundle.js',
+      chunkFilename: isProd ? '[name].[contenthash].bundle.js' : '[name].bundle.js',
+      assetModuleFilename: isProd ? 'assets/[name].[contenthash][ext]' : 'assets/[name][ext]',
       publicPath: '/',
       clean: true,
     },
