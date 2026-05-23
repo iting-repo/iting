@@ -3,7 +3,16 @@ import { createPortal } from 'react-dom';
 import { FaTimes, FaMagic, FaFileAlt, FaCheckCircle, FaSpinner } from 'react-icons/fa';
 import { useModalEscape } from '../../../../hooks/useModalEscape';
 import cvService from '../../../../services/cvService';
+import axiosInstance from '../../../../utils/axiosInstance';
 import { toast } from 'sonner';
+
+/** Convert Gemini date "YYYY-MM" → backend "YYYY-MM-DD" (first of month). Null nếu rỗng. */
+const toFullDate = (ym) => {
+    if (!ym || typeof ym !== 'string') return null;
+    if (/^\d{4}-\d{2}$/.test(ym)) return `${ym}-01`;
+    if (/^\d{4}-\d{2}-\d{2}$/.test(ym)) return ym;
+    return null;
+};
 
 const AutoParseCVModal = ({ isOpen, onClose, onComplete }) => {
     const [step, setStep] = useState(0); // 0: Select, 1: Parsing, 2: Success
@@ -86,9 +95,97 @@ const AutoParseCVModal = ({ isOpen, onClose, onComplete }) => {
         }
     };
 
-    const handleFinish = () => {
+    const [isSaving, setIsSaving] = useState(false);
+
+    const handleFinish = async () => {
+        if (!parsedData) {
+            onClose();
+            return;
+        }
+        setIsSaving(true);
+
+        const counters = { skills: 0, experiences: 0, educations: 0, certificates: 0, errors: 0 };
+
+        // Skills: ["Java", "React"] → POST { name }
+        for (const skill of (parsedData.skills || [])) {
+            const name = typeof skill === 'string' ? skill.trim() : skill?.name?.trim();
+            if (!name) continue;
+            try {
+                await axiosInstance.post('/user/professional-profile/skills', { name });
+                counters.skills++;
+            } catch (e) {
+                counters.errors++;
+                console.error('Add skill failed:', name, e);
+            }
+        }
+
+        // Experiences: { companyName, position, startDate (YYYY-MM), endDate, description }
+        for (const exp of (parsedData.experiences || [])) {
+            if (!exp?.companyName || !exp?.position || !exp?.startDate) continue;
+            try {
+                await axiosInstance.post('/user/professional-profile/experience', {
+                    companyName: exp.companyName,
+                    position: exp.position,
+                    startDate: toFullDate(exp.startDate),
+                    endDate: toFullDate(exp.endDate),
+                    isCurrent: !exp.endDate,
+                    description: exp.description || '',
+                });
+                counters.experiences++;
+            } catch (e) {
+                counters.errors++;
+                console.error('Add experience failed:', exp, e);
+            }
+        }
+
+        // Educations: { schoolName, degree, startDate, endDate } → backend cần thêm major
+        for (const edu of (parsedData.educations || [])) {
+            if (!edu?.schoolName || !edu?.startDate) continue;
+            try {
+                await axiosInstance.post('/user/professional-profile/education', {
+                    schoolName: edu.schoolName,
+                    major: edu.degree || edu.major || edu.schoolName, // fallback nếu Gemini chỉ trả degree
+                    degree: edu.degree || '',
+                    areaOfStudy: '',
+                    startDate: toFullDate(edu.startDate),
+                    endDate: toFullDate(edu.endDate),
+                });
+                counters.educations++;
+            } catch (e) {
+                counters.errors++;
+                console.error('Add education failed:', edu, e);
+            }
+        }
+
+        // Certificates: { name, organization, issueDate } → { title, issuingOrganization, issueDate }
+        for (const cert of (parsedData.certificates || [])) {
+            if (!cert?.name) continue;
+            try {
+                await axiosInstance.post('/user/professional-profile/certificates', {
+                    title: cert.name,
+                    issuingOrganization: cert.organization || '',
+                    issueDate: toFullDate(cert.issueDate),
+                    expirationDate: null,
+                    doesNotExpire: true,
+                });
+                counters.certificates++;
+            } catch (e) {
+                counters.errors++;
+                console.error('Add certificate failed:', cert, e);
+            }
+        }
+
+        setIsSaving(false);
+
+        const summary = `${counters.skills} kỹ năng, ${counters.experiences} kinh nghiệm, ${counters.educations} học vấn, ${counters.certificates} chứng chỉ`;
+        if (counters.errors > 0) {
+            toast.warning(`Đã thêm ${summary}. (${counters.errors} lỗi — kiểm tra console)`);
+        } else {
+            toast.success(`Đã thêm ${summary} từ CV.`);
+        }
+
         onClose();
-        if (onComplete) onComplete();
+        if (onComplete) onComplete(parsedData);
     };
 
     return createPortal(
@@ -178,15 +275,39 @@ const AutoParseCVModal = ({ isOpen, onClose, onComplete }) => {
                             <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto text-green-500 mb-4">
                                 <FaCheckCircle size={40} />
                             </div>
-                            <h4 className="text-lg font-bold text-gray-800">Hoàn tất!</h4>
+                            <h4 className="text-lg font-bold text-gray-800">Phân tích thành công!</h4>
                             <p className="text-sm text-gray-500 leading-relaxed">
-                                Các thông tin từ CV đã được trích xuất thành công. Vui lòng kiểm tra lại và chỉnh sửa nếu cần.
+                                AI đã trích xuất các thông tin sau từ CV. Bấm <strong>Áp dụng</strong> để thêm vào hồ sơ.
                             </p>
+
+                            {/* Preview counters */}
+                            <div className="grid grid-cols-2 gap-3 text-sm">
+                                <div className="bg-indigo-50 rounded-lg p-3">
+                                    <div className="text-2xl font-bold text-indigo-600">{(parsedData?.skills || []).length}</div>
+                                    <div className="text-xs text-indigo-700">Kỹ năng</div>
+                                </div>
+                                <div className="bg-purple-50 rounded-lg p-3">
+                                    <div className="text-2xl font-bold text-purple-600">{(parsedData?.experiences || []).length}</div>
+                                    <div className="text-xs text-purple-700">Kinh nghiệm</div>
+                                </div>
+                                <div className="bg-blue-50 rounded-lg p-3">
+                                    <div className="text-2xl font-bold text-blue-600">{(parsedData?.educations || []).length}</div>
+                                    <div className="text-xs text-blue-700">Học vấn</div>
+                                </div>
+                                <div className="bg-amber-50 rounded-lg p-3">
+                                    <div className="text-2xl font-bold text-amber-600">{(parsedData?.certificates || []).length}</div>
+                                    <div className="text-xs text-amber-700">Chứng chỉ</div>
+                                </div>
+                            </div>
+
                             <button
                                 onClick={handleFinish}
-                                className="w-full mt-4 bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-4 rounded-xl shadow-md transition-all"
+                                disabled={isSaving}
+                                className={`w-full mt-4 text-white font-bold py-3 px-4 rounded-xl shadow-md transition-all flex items-center justify-center gap-2 ${
+                                    isSaving ? 'bg-gray-400 cursor-not-allowed' : 'bg-green-600 hover:bg-green-700'
+                                }`}
                             >
-                                Xem hồ sơ của tôi
+                                {isSaving ? <><FaSpinner className="animate-spin" /> Đang áp dụng...</> : 'Áp dụng vào hồ sơ'}
                             </button>
                         </div>
                     )}

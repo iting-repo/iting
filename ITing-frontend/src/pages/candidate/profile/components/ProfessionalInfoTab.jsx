@@ -77,7 +77,10 @@ const ProfessionalInfoTab = () => {
                 isOpen={isParseModalOpen}
                 onClose={() => setIsParseModalOpen(false)}
                 onComplete={() => {
-                    toast.success("Đã áp dụng các trường được trích xuất từ CV bằng AI.");
+                    // Modal đã POST data + show toast chi tiết. Reload sau 600ms để mọi section
+                    // (Skills/Experience/Education/Certificate) load lại data mới — đỡ phải pass
+                    // refresh callback xuống từng section riêng.
+                    setTimeout(() => window.location.reload(), 600);
                 }}
             />
         </div>
