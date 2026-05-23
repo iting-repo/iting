@@ -75,7 +75,11 @@ const JobApplyModal = ({ isOpen, onClose, onSuccess, jobTitle, jobId, cvLanguage
   useEffect(() => {
     if (isOpen) {
       loadInitialData();
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
     }
+    return () => { document.body.style.overflow = ''; };
   }, [isOpen]);
 
   const loadInitialData = async () => {

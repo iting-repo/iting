@@ -176,7 +176,7 @@ const EmployerServicesPage = () => {
         <Breadcrumb
           rootLabel="Tổng quan"
           rootLink="/employer/dashboard"
-          items={[{ label: 'Dịch vụ', link: '/employer/services' }]}
+          items={[{ label: 'Dịch vụ' }]}
         />
 
         {/* ═══ Header ═══ */}
