@@ -86,8 +86,8 @@ const EmployerServicesPage = () => {
       subscriptionService.getMine().catch(() => ({ active: false })),
     ])
       .then(([tList, mine]) => {
-        setTiers(tList);
-        setCurrent(mine);
+        setTiers(Array.isArray(tList) ? tList : []);
+        setCurrent(mine || { active: false });
       })
       .catch(() => toast.error('Không tải được dữ liệu dịch vụ'))
       .finally(() => setLoading(false));
