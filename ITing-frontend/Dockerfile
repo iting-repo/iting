@@ -12,9 +12,11 @@ RUN npm ci
 
 COPY . .
 
-# Inject API base for production bundle
+# Inject env vars for production bundle (baked vào bundle khi build).
 ARG VITE_API_BASE=https://datnhk252iting.dpdns.org
-RUN printf "VITE_API_BASE=%s\n" "$VITE_API_BASE" > .env.production
+ARG REACT_APP_GOOGLE_CLIENT_ID=550717803681-0ngqsvfcosaem1k4k4cvkkgs13cdsbe8.apps.googleusercontent.com
+RUN printf "VITE_API_BASE=%s\nREACT_APP_GOOGLE_CLIENT_ID=%s\n" \
+    "$VITE_API_BASE" "$REACT_APP_GOOGLE_CLIENT_ID" > .env.production
 
 # Build with webpack production mode
 RUN npm run build -- --env APP_ENV=production

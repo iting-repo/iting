@@ -190,5 +190,6 @@ jobs:
             ${{ startsWith(github.ref, 'refs/tags/') && format('{0}/{1}/iting-frontend:{2}', env.REGISTRY, github.repository, github.ref_name) || '' }}
           build-args: |
             VITE_API_BASE=https://datnhk252iting.dpdns.org
+            REACT_APP_GOOGLE_CLIENT_ID=550717803681-0ngqsvfcosaem1k4k4cvkkgs13cdsbe8.apps.googleusercontent.com
           cache-from: type=gha
           cache-to: type=gha,mode=max
