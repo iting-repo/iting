@@ -162,7 +162,7 @@ const AutoParseCVModal = ({ isOpen, onClose, onComplete }) => {
             try {
                 await axiosInstance.post('/user/professional-profile/certificates', {
                     title: cert.name,
-                    issuingOrganization: cert.organization || '',
+                    issuingOrganization: cert.organization?.trim() || null,
                     issueDate: toFullDate(cert.issueDate),
                     expirationDate: null,
                     doesNotExpire: true,

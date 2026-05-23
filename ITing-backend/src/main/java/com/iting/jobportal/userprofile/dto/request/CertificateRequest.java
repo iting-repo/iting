@@ -1,7 +1,6 @@
 package com.iting.jobportal.userprofile.dto.request;
 
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 
 import java.time.LocalDate;
@@ -11,10 +10,10 @@ public class CertificateRequest {
     @NotBlank(message = "Title is required")
     private String title;
 
-    @NotBlank(message = "Issuing organization is required")
+    // Optional: AI auto-fill có thể không trích được. DB cho phép null.
     private String issuingOrganization;
 
-    @NotNull(message = "Issue date is required")
+    // Optional: same lý do — frontend form đã có required check riêng nếu cần.
     private LocalDate issueDate;
 
     private LocalDate expirationDate;
