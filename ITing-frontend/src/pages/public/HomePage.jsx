@@ -53,6 +53,8 @@ const HomePage = () => {
     const pendingRef = useRef(null);
     const provinceScrollRef = useRef(null);
     const categoryScrollRef = useRef(null);
+    const recommendationScrollRef = useRef(null);
+    const featuredCategoryScrollRef = useRef(null);
 
     const handleCardEnter = (job, el) => {
         if (leaveTimerRef.current) clearTimeout(leaveTimerRef.current);
@@ -94,7 +96,7 @@ const HomePage = () => {
         dispatch(fetchJobsRequest({
             location: locationFromUrl || undefined,
             page: 0,
-            size: 10,
+            size: 5,
             sortBy: 'lastUpdate',
             sortOrder: 'desc',
         }));
@@ -220,7 +222,7 @@ const HomePage = () => {
         sortBy: 'lastUpdate',
         sortOrder: 'desc',
         page: 0,
-        size: 10,
+        size: 5,
     });
 
 
@@ -415,67 +417,79 @@ const HomePage = () => {
         <div className="bg-white font-sans">
 
             {/* PHẦN 1: HERO SEARCH */}
-            <section className="relative z-10 bg-gray-900 pt-6 md:pt-8 pb-32 overflow-hidden">
+            <section className="relative z-10 bg-[#0B1B3D] pt-12 md:pt-20 pb-36 overflow-hidden">
                 <div className="absolute inset-0 z-0">
-                    <img src={heroBg} alt="Background" className="w-full h-full object-cover opacity-20" />
-                    <div className="absolute inset-0 bg-gradient-to-b from-gray-900/10 via-gray-900/60 to-gray-900"></div>
+                    <img src={heroBg} alt="Background" className="w-full h-full object-cover opacity-30 mix-blend-overlay" />
+                    <div className="absolute inset-0 bg-gradient-to-b from-[#0B1B3D]/50 via-[#0B1B3D]/80 to-[#0B1B3D]"></div>
+                    {/* Glowing Orbs */}
+                    <div className="absolute top-0 left-1/4 w-96 h-96 bg-[#3AB4E6] rounded-full mix-blend-screen filter blur-[120px] opacity-20"></div>
+                    <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-blue-600 rounded-full mix-blend-screen filter blur-[120px] opacity-20"></div>
                 </div>
 
                 <div className="container mx-auto px-4 relative z-10 text-center">
-                    <h1 className="text-2xl md:text-4xl font-bold text-white mb-2">
-                        Tìm việc làm IT <span className="text-white">chất lượng trên toàn quốc</span>
+                    <h1 className="text-3xl md:text-5xl lg:text-6xl font-black text-white mb-4 tracking-tight leading-tight">
+                        Tìm việc làm IT <span className="text-[#3AB4E6]">chất lượng</span><br className="hidden md:block" /> trên toàn quốc
                     </h1>
-                    <p className="text-gray-400 mb-5 text-xs md:text-sm max-w-2xl mx-auto">
+                    <p className="text-gray-300 mb-8 text-sm md:text-base max-w-2xl mx-auto font-medium">
                         Tiếp cận {(stats.totalJobs ?? 0).toLocaleString('vi-VN')}+ tin tuyển dụng việc làm mỗi ngày từ hàng nghìn doanh nghiệp uy tín tại Việt Nam
                     </p>
 
                     {/* Search Box */}
-                    <div className="bg-white rounded-lg md:rounded-full p-1.5 flex flex-col md:flex-row items-center max-w-5xl mx-auto shadow-2xl overflow-visible">
-                        {/* 1. Category Picker (Far Left) */}
-                        <div className="w-full md:w-[25%] h-12 flex items-center px-4 relative border-b md:border-b-0 md:border-r border-gray-200">
-                            <CategoryPicker
-                                value={searchForm.category}
-                                onChange={(val) => handleChangeSearchField('category', val)}
-                            />
-                        </div>
+                    <div className="bg-white/10 backdrop-blur-md p-3 md:p-2 rounded-3xl md:rounded-full max-w-5xl mx-auto shadow-2xl border border-white/20">
+                        <div className="flex flex-col md:flex-row items-stretch md:items-center gap-3 md:gap-0 md:bg-white md:rounded-full md:overflow-hidden">
+                            {/* 1. Category Picker */}
+                            <div className="w-full md:w-[25%] h-14 md:h-14 flex items-center px-5 relative bg-white rounded-xl md:rounded-none md:border-r border-gray-200 hover:bg-gray-50 transition-colors shadow-sm md:shadow-none">
+                                <CategoryPicker
+                                    value={searchForm.category}
+                                    onChange={(val) => handleChangeSearchField('category', val)}
+                                />
+                            </div>
 
-                        <div className="flex-1 w-full md:w-auto h-12 px-4 flex items-center border-b md:border-b-0 md:border-r border-gray-200">
-                            <FaSearch className="text-gray-400 mr-2" />
-                            <input
-                                type="text"
-                                placeholder="Vị trí tuyển dụng, tên công ty"
-                                value={searchForm.keyword}
-                                onChange={(e) => handleChangeSearchField('keyword', e.target.value)}
-                                onKeyDown={(e) => {
-                                    if (e.key === 'Enter') handleSearch();
-                                }}
-                                className="w-full outline-none text-gray-700 text-sm placeholder-gray-400"
-                            />
+                            {/* 2. Keyword Input */}
+                            <div className="md:flex-1 w-full md:w-auto h-14 md:h-14 px-5 flex items-center bg-white rounded-xl md:rounded-none md:border-r border-gray-200 hover:bg-gray-50 transition-colors shadow-sm md:shadow-none">
+                                <FaSearch className="text-[#3AB4E6] mr-3" size={18} />
+                                <input
+                                    type="text"
+                                    placeholder="Vị trí tuyển dụng, tên công ty"
+                                    value={searchForm.keyword}
+                                    onChange={(e) => handleChangeSearchField('keyword', e.target.value)}
+                                    onKeyDown={(e) => {
+                                        if (e.key === 'Enter') handleSearch();
+                                    }}
+                                    className="w-full h-full bg-transparent outline-none text-gray-800 text-base placeholder-gray-400 font-medium"
+                                />
+                            </div>
+
+                            {/* 3. Location Picker */}
+                            <div className="w-full md:w-[25%] h-14 md:h-14 px-5 flex items-center bg-white rounded-xl md:rounded-none hover:bg-gray-50 transition-colors relative shadow-sm md:shadow-none">
+                                <FaMapMarkerAlt className="text-[#3AB4E6] mr-3 flex-shrink-0" size={18} />
+                                <LocationPicker
+                                    value={searchForm.location}
+                                    onChange={(val) => handleChangeSearchField('location', val)}
+                                    provinces={provinces}
+                                />
+                            </div>
+
+                            {/* 4. Buttons */}
+                            <div className="w-full md:w-auto flex flex-row gap-2 md:gap-0 md:h-14">
+                                <button
+                                    onClick={handleAiSearch}
+                                    className="flex-1 md:flex-none rounded-xl md:rounded-none bg-gradient-to-r from-blue-800 to-blue-600 hover:from-blue-900 hover:to-blue-700 text-white px-4 md:px-6 py-4 md:py-0 font-bold text-sm md:text-base flex items-center justify-center gap-2 transition-all md:border-r border-white/20 shadow-sm md:shadow-none"
+                                >
+                                    <FaMagic className="text-[#3AB4E6]" /> AI Match
+                                </button>
+                                <button
+                                    onClick={handleSearch}
+                                    className="flex-1 md:flex-none rounded-xl md:rounded-none bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 text-white px-4 md:px-8 py-4 md:py-0 font-bold text-sm md:text-base transition-all flex items-center justify-center gap-2 shadow-sm md:shadow-none"
+                                >
+                                    Tìm kiếm
+                                </button>
+                            </div>
                         </div>
-                        <div className="w-full md:w-[25%] h-12 px-4 flex items-center border-b md:border-b-0 md:border-r border-gray-200 relative">
-                            <FaMapMarkerAlt className="text-gray-400 mr-2 flex-shrink-0" />
-                            <LocationPicker
-                                value={searchForm.location}
-                                onChange={(val) => handleChangeSearchField('location', val)}
-                                provinces={provinces}
-                            />
-                        </div>
-                        <button
-                            onClick={handleAiSearch}
-                            className="w-full md:w-auto bg-[#3AB4E6] hover:bg-blue-500 text-white px-5 py-3 font-bold text-sm flex items-center justify-center gap-1 transition-colors border-r border-blue-400/30"
-                        >
-                            <FaMagic className="text-yellow-300" /> AI
-                        </button>
-                        <button
-                            onClick={handleSearch}
-                            className="w-full md:w-auto bg-[#3AB4E6] hover:bg-blue-500 text-white px-8 py-3 rounded-b-lg md:rounded-r-full md:rounded-bl-none font-bold text-sm transition-all flex items-center justify-center gap-2"
-                        >
-                            <FaSearch /> Tìm kiếm
-                        </button>
                     </div>
 
-                    <div className="mt-6 flex flex-wrap justify-center gap-2 items-center">
-                        <span className="text-gray-400 text-sm font-medium">Gợi ý:</span>
+                    <div className="mt-8 flex flex-wrap justify-center gap-3 items-center">
+                        <span className="text-gray-300 text-base font-medium">Gợi ý:</span>
                         {['Intern', 'Thực tập sinh IT', 'Senior Frontend', 'Junior', 'Java Developer'].map((tag, i) => (
                             <span
                                 key={i}
@@ -487,45 +501,45 @@ const HomePage = () => {
                                     if (searchForm.jobType) params.append('jobTypes', searchForm.jobType);
                                     navigate(`/jobs?${params.toString()}`);
                                 }}
-                                className="bg-white/10 hover:bg-white/20 text-white px-3 py-1 rounded-full text-xs cursor-pointer transition-all border border-white/5"
+                                className="bg-white/10 hover:bg-[#3AB4E6] text-white px-4 py-1.5 rounded-full text-sm font-medium cursor-pointer transition-all border border-white/10"
                             >
                                 {tag}
                             </span>
                         ))}
                     </div>
 
-                    <div className="mt-12 flex flex-wrap justify-center gap-8 md:gap-16">
-                        <div className="flex items-center gap-3 text-left">
-                            <div className="w-12 h-12 rounded-full bg-[#3AB4E6] flex items-center justify-center shadow-lg shadow-blue-500/30">
-                                <FaBriefcase className="text-white text-xl" />
+                    <div className="mt-16 flex flex-wrap justify-center gap-10 md:gap-24">
+                        <div className="flex items-center gap-4 text-left group">
+                            <div className="w-14 h-14 md:w-16 md:h-16 rounded-2xl bg-white/10 group-hover:bg-[#3AB4E6] flex items-center justify-center transition-all border border-white/10 group-hover:border-[#3AB4E6] shadow-lg">
+                                <FaBriefcase className="text-[#3AB4E6] group-hover:text-white text-2xl md:text-3xl transition-colors" />
                             </div>
                             <div>
-                                <div className="text-2xl font-bold text-white">
+                                <div className="text-3xl md:text-4xl font-black text-white">
                                     {(stats.totalJobs ?? 0).toLocaleString('vi-VN')}
                                 </div>
-                                <div className="text-gray-400 text-xs">Công việc</div>
+                                <div className="text-gray-400 text-sm md:text-base font-medium">Công việc</div>
                             </div>
                         </div>
-                        <div className="flex items-center gap-3 text-left">
-                            <div className="w-12 h-12 rounded-full bg-[#3AB4E6] flex items-center justify-center shadow-lg shadow-blue-500/30">
-                                <FaUserFriends className="text-white text-xl" />
+                        <div className="flex items-center gap-4 text-left group">
+                            <div className="w-14 h-14 md:w-16 md:h-16 rounded-2xl bg-white/10 group-hover:bg-[#3AB4E6] flex items-center justify-center transition-all border border-white/10 group-hover:border-[#3AB4E6] shadow-lg">
+                                <FaUserFriends className="text-[#3AB4E6] group-hover:text-white text-2xl md:text-3xl transition-colors" />
                             </div>
                             <div>
-                                <div className="text-2xl font-bold text-white">
+                                <div className="text-3xl md:text-4xl font-black text-white">
                                     {(stats.totalCandidates ?? 0).toLocaleString('vi-VN')}
                                 </div>
-                                <div className="text-gray-400 text-xs">Ứng viên</div>
+                                <div className="text-gray-400 text-sm md:text-base font-medium">Ứng viên</div>
                             </div>
                         </div>
-                        <div className="flex items-center gap-3 text-left">
-                            <div className="w-12 h-12 rounded-full bg-[#3AB4E6] flex items-center justify-center shadow-lg shadow-blue-500/30">
-                                <FaBuilding className="text-white text-xl" />
+                        <div className="flex items-center gap-4 text-left group">
+                            <div className="w-14 h-14 md:w-16 md:h-16 rounded-2xl bg-white/10 group-hover:bg-[#3AB4E6] flex items-center justify-center transition-all border border-white/10 group-hover:border-[#3AB4E6] shadow-lg">
+                                <FaBuilding className="text-[#3AB4E6] group-hover:text-white text-2xl md:text-3xl transition-colors" />
                             </div>
                             <div>
-                                <div className="text-2xl font-bold text-white">
+                                <div className="text-3xl md:text-4xl font-black text-white">
                                     {(stats.totalCompanies ?? 0).toLocaleString('vi-VN')}
                                 </div>
-                                <div className="text-gray-400 text-xs">Công ty</div>
+                                <div className="text-gray-400 text-sm md:text-base font-medium">Công ty</div>
                             </div>
                         </div>
                     </div>
@@ -580,99 +594,111 @@ const HomePage = () => {
          ================================================================= */}
             <section className="py-16 px-4 bg-[#F8FAFC]">
                 <div className="container mx-auto">
-                    <div className="flex items-center gap-3 mb-8">
-                        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-white shadow-lg shadow-blue-500/20">
-                            <FaMagic />
-                        </div>
-                        <div>
-                            <h2 className="text-2xl md:text-3xl font-bold text-gray-900">
-                                {currentUser ? "Dành cho bạn" : "Việc làm nổi bật"}
-                            </h2>
-                            <p className="text-gray-500 text-sm">
-                                {currentUser
-                                    ? "Dựa trên hồ sơ và những gì bạn đã xem"
-                                    : "Khám phá các cơ hội việc làm tốt nhất ngay hôm nay"}
-                            </p>
+                    <div className="flex justify-between items-end mb-6 md:mb-8">
+                        <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-white shadow-lg shadow-blue-500/20">
+                                <FaMagic />
+                            </div>
+                            <div>
+                                <h2 className="text-2xl md:text-3xl font-bold text-gray-900">
+                                    {currentUser ? "Dành cho bạn" : "Việc làm nổi bật"}
+                                </h2>
+                                <p className="text-gray-500 text-sm mt-1">
+                                    {currentUser
+                                        ? "Dựa trên hồ sơ và những gì bạn đã xem"
+                                        : "Khám phá các cơ hội việc làm tốt nhất ngay hôm nay"}
+                                </p>
+                            </div>
                         </div>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                        {isRecommending ? (
-                            Array.from({ length: 4 }).map((_, i) => (
-                                <div key={i} className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 animate-pulse">
-                                    <div className="w-12 h-12 bg-gray-100 rounded-xl mb-4"></div>
-                                    <div className="h-4 bg-gray-100 rounded w-3/4 mb-2"></div>
-                                    <div className="h-3 bg-gray-50 rounded w-1/2 mb-4"></div>
-                                    <div className="flex gap-2">
-                                        <div className="h-6 bg-gray-50 rounded w-16"></div>
-                                        <div className="h-6 bg-gray-50 rounded w-16"></div>
+                    <div className="relative group">
+                        {/* Scroll buttons overlay */}
+                        <button onClick={() => recommendationScrollRef.current?.scrollBy({ left: -300, behavior: 'smooth' })} className="absolute left-0 top-1/2 -translate-y-[calc(50%+8px)] -translate-x-2 md:-translate-x-4 w-10 h-10 bg-white/90 backdrop-blur rounded-full shadow-lg text-gray-600 flex items-center justify-center hover:bg-[#3AB4E6] hover:text-white transition-all z-10 opacity-100 md:opacity-0 md:group-hover:opacity-100 border border-gray-200">
+                            <FaArrowLeft size={14} />
+                        </button>
+                        <button onClick={() => recommendationScrollRef.current?.scrollBy({ left: 300, behavior: 'smooth' })} className="absolute right-0 top-1/2 -translate-y-[calc(50%+8px)] translate-x-2 md:translate-x-4 w-10 h-10 bg-white/90 backdrop-blur rounded-full shadow-lg text-gray-600 flex items-center justify-center hover:bg-[#3AB4E6] hover:text-white transition-all z-10 opacity-100 md:opacity-0 md:group-hover:opacity-100 border border-gray-200">
+                            <FaArrowRight size={14} />
+                        </button>
+
+                        <div ref={recommendationScrollRef} className="flex gap-4 md:gap-6 overflow-x-auto pb-6 pt-2 snap-x snap-mandatory no-scrollbar scroll-smooth px-1">
+                            {isRecommending ? (
+                                Array.from({ length: 4 }).map((_, i) => (
+                                    <div key={i} className="flex-shrink-0 w-[75vw] sm:w-[40vw] lg:w-[250px] snap-center bg-white rounded-2xl p-5 shadow-sm border border-gray-100 animate-pulse">
+                                        <div className="w-10 h-10 bg-gray-100 rounded-xl mb-4"></div>
+                                        <div className="h-4 bg-gray-100 rounded w-3/4 mb-2"></div>
+                                        <div className="h-3 bg-gray-50 rounded w-1/2 mb-4"></div>
+                                        <div className="flex gap-2">
+                                            <div className="h-6 bg-gray-50 rounded w-16"></div>
+                                            <div className="h-6 bg-gray-50 rounded w-16"></div>
+                                        </div>
                                     </div>
-                                </div>
-                            ))
-                        ) : freshRecommendedJobs.length > 0 ? (
-                            freshRecommendedJobs.map((job) => {
-                                const isSaved = savedJobIds.includes(job.id);
-                                return (
-                                    <div
-                                        key={job.id}
-                                        onClick={() => handleJobClick(job)}
-                                        onMouseEnter={(e) => handleCardEnter(job, e.currentTarget)}
-                                        onMouseLeave={handleCardLeave}
-                                        className="group bg-white rounded-2xl p-6 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 border border-gray-100 relative cursor-pointer"
-                                    >
-                                        <div className="flex justify-between items-start mb-4">
-                                            <CompanyLogo
-                                                logoUrl={job.companyLogo || job.logo || job.logoUrl}
-                                                companyId={job.companyId}
-                                                companyName={job.companyName}
-                                                className="w-12 h-12 rounded-xl object-contain bg-gray-50 p-1"
-                                            />
-                                            <button
-                                                onClick={(e) => handleToggleSave(e, job.id)}
-                                                className={`w-8 h-8 rounded-lg flex items-center justify-center transition-all ${isSaved ? 'bg-blue-500 text-white shadow-md' : 'bg-gray-50 text-gray-400 group-hover:bg-blue-50'}`}
-                                            >
-                                                {isSaved ? <FaBookmark size={12} /> : <FaRegBookmark size={12} />}
-                                            </button>
-                                        </div>
+                                ))
+                            ) : freshRecommendedJobs.length > 0 ? (
+                                freshRecommendedJobs.map((job) => {
+                                    const isSaved = savedJobIds.includes(job.id);
+                                    return (
+                                        <div
+                                            key={job.id}
+                                            onClick={() => handleJobClick(job)}
+                                            onMouseEnter={(e) => handleCardEnter(job, e.currentTarget)}
+                                            onMouseLeave={handleCardLeave}
+                                            className="flex-shrink-0 w-[75vw] sm:w-[40vw] lg:w-[250px] snap-center group bg-white rounded-2xl p-5 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 border border-gray-100 relative cursor-pointer flex flex-col"
+                                        >
+                                            <div className="flex justify-between items-start mb-3">
+                                                <CompanyLogo
+                                                    logoUrl={job.companyLogo || job.logo || job.logoUrl}
+                                                    companyId={job.companyId}
+                                                    companyName={job.companyName}
+                                                    className="w-10 h-10 rounded-xl object-contain bg-gray-50 p-1"
+                                                />
+                                                <button
+                                                    onClick={(e) => handleToggleSave(e, job.id)}
+                                                    className={`w-8 h-8 rounded-lg flex items-center justify-center transition-all ${isSaved ? 'bg-blue-500 text-white shadow-md' : 'bg-gray-50 text-gray-400 group-hover:bg-blue-50'}`}
+                                                >
+                                                    {isSaved ? <FaBookmark size={12} /> : <FaRegBookmark size={12} />}
+                                                </button>
+                                            </div>
 
-                                        <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-blue-50 text-blue-600 text-[10px] font-bold mb-3 uppercase tracking-wider">
-                                            <FaMagic size={10} /> Gợi ý AI
-                                        </div>
+                                            <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-blue-50 text-blue-600 text-[10px] font-bold mb-3 uppercase tracking-wider">
+                                                <FaMagic size={10} /> Gợi ý AI
+                                            </div>
 
-                                        <h3 className="text-base font-bold text-gray-900 group-hover:text-blue-500 transition-colors line-clamp-2 min-h-[3rem]">
-                                            {job.title || job.position}
-                                        </h3>
-                                        <p className="text-xs text-gray-500 font-medium mb-4 truncate">{job.companyName}</p>
+                                            <h3 className="text-base font-bold text-gray-900 group-hover:text-blue-500 transition-colors line-clamp-2 min-h-[3rem]">
+                                                {job.title || job.position}
+                                            </h3>
+                                            <p className="text-xs text-gray-500 font-medium mb-4 truncate">{job.companyName}</p>
 
-                                        <div className="flex items-center gap-4 text-[11px] text-gray-400 mb-4 pt-4 border-t border-gray-50">
-                                            <span className="flex items-center gap-1">
-                                                <FaMapMarkerAlt className="text-red-400" /> {job.province || "Việt Nam"}
-                                            </span>
-                                            <span className="flex items-center gap-1">
-                                                <FaClock className="text-sky-400" /> {timeAgo(job.createdAt)}
-                                            </span>
-                                        </div>
+                                            <div className="flex items-center gap-4 text-[11px] text-gray-400 mb-4 pt-4 border-t border-gray-50">
+                                                <span className="flex items-center gap-1">
+                                                    <FaMapMarkerAlt className="text-red-400" /> {job.province || "Việt Nam"}
+                                                </span>
+                                                <span className="flex items-center gap-1">
+                                                    <FaClock className="text-sky-400" /> {timeAgo(job.createdAt)}
+                                                </span>
+                                            </div>
 
-                                        <div className="flex items-center justify-between">
-                                            <span className="text-sm font-bold text-blue-500">
-                                                {job.minSalary || job.maxSalary ? formatSalary(job.minSalary, job.maxSalary) : "Thỏa thuận"}
-                                            </span>
-                                            <div className="w-8 h-8 rounded-full bg-gray-50 group-hover:bg-blue-500 group-hover:text-white flex items-center justify-center transition-all">
-                                                <FaChevronRight size={10} />
+                                            <div className="flex items-center justify-between">
+                                                <span className="text-sm font-bold text-blue-500">
+                                                    {job.minSalary || job.maxSalary ? formatSalary(job.minSalary, job.maxSalary) : "Thỏa thuận"}
+                                                </span>
+                                                <div className="w-8 h-8 rounded-full bg-gray-50 group-hover:bg-blue-500 group-hover:text-white flex items-center justify-center transition-all">
+                                                    <FaChevronRight size={10} />
+                                                </div>
                                             </div>
                                         </div>
+                                    );
+                                })
+                            ) : (
+                                <div className="col-span-full py-20 text-center bg-white rounded-3xl border border-dashed border-gray-200">
+                                    <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-4 text-gray-300">
+                                        <FaBriefcase size={24} />
                                     </div>
-                                );
-                            })
-                        ) : (
-                            <div className="col-span-full py-20 text-center bg-white rounded-3xl border border-dashed border-gray-200">
-                                <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-4 text-gray-300">
-                                    <FaBriefcase size={24} />
+                                    <h3 className="text-lg font-bold text-gray-900 mb-1">Hiện chưa có đề xuất nào</h3>
+                                    <p className="text-gray-500 text-sm">Hãy cập nhật CV và xem thêm nhiều việc làm để chúng tôi gợi ý tốt hơn nhé!</p>
                                 </div>
-                                <h3 className="text-lg font-bold text-gray-900 mb-1">Hiện chưa có đề xuất nào</h3>
-                                <p className="text-gray-500 text-sm">Hãy cập nhật CV và xem thêm nhiều việc làm để chúng tôi gợi ý tốt hơn nhé!</p>
-                            </div>
-                        )}
+                            )}
+                        </div>
                     </div>
                 </div>
             </section>
@@ -680,21 +706,16 @@ const HomePage = () => {
                 <div className="container mx-auto px-4">
 
                     {/* 1. HEADER: Loại bỏ nút đen, dùng nút viền mảnh tinh tế */}
-                    <div className="flex flex-col md:flex-row justify-between items-end md:items-center mb-8 gap-4">
-                        <div>
+                    <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4 text-left">
+                        <div className="w-full md:w-auto">
                             <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2">Việc Làm Mới Nhất</h2>
                             <p className="text-gray-500 text-sm">Các cơ hội việc làm vừa được cập nhật gần đây</p>
                         </div>
 
                         <div className="flex items-center gap-3">
-                            <Link to="/jobs" className="text-gray-500 font-medium hover:text-[#3AB4E6] transition-colors text-sm mr-2">Xem tất cả</Link>
-                            {/* Sửa: Nút điều hướng trắng, viền xám */}
-                            <button className="w-9 h-9 rounded-full border border-gray-200 text-gray-400 flex items-center justify-center hover:border-[#3AB4E6] hover:text-[#3AB4E6] transition-all">
-                                <FaArrowLeft size={12} />
-                            </button>
-                            <button className="w-9 h-9 rounded-full border border-gray-200 text-gray-400 flex items-center justify-center hover:border-[#3AB4E6] hover:text-[#3AB4E6] transition-all">
-                                <FaArrowRight size={12} />
-                            </button>
+                            <Link to="/jobs" className="text-gray-500 font-medium hover:text-[#3AB4E6] transition-colors text-sm flex items-center gap-1">
+                                Xem tất cả <FaArrowRight size={10} />
+                            </Link>
                         </div>
                     </div>
 
@@ -707,21 +728,19 @@ const HomePage = () => {
                             <span className="text-gray-500 text-sm mr-1">Lọc theo:</span>
                             <button
                                 onClick={() => setFilterMode('location')}
-                                className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all ${
-                                    filterMode === 'location'
-                                        ? 'bg-[#3AB4E6] text-white shadow-sm'
-                                        : 'text-gray-500 hover:bg-gray-50'
-                                }`}
+                                className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all ${filterMode === 'location'
+                                    ? 'bg-[#3AB4E6] text-white shadow-sm'
+                                    : 'text-gray-500 hover:bg-gray-50'
+                                    }`}
                             >
                                 <FaMapMarkerAlt className="inline mr-1" size={10} />Địa điểm
                             </button>
                             <button
                                 onClick={() => setFilterMode('category')}
-                                className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all ${
-                                    filterMode === 'category'
-                                        ? 'bg-[#3AB4E6] text-white shadow-sm'
-                                        : 'text-gray-500 hover:bg-gray-50'
-                                }`}
+                                className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all ${filterMode === 'category'
+                                    ? 'bg-[#3AB4E6] text-white shadow-sm'
+                                    : 'text-gray-500 hover:bg-gray-50'
+                                    }`}
                             >
                                 <FaBriefcase className="inline mr-1" size={10} />Ngành nghề
                             </button>
@@ -735,7 +754,7 @@ const HomePage = () => {
                                     const ref = filterMode === 'location' ? provinceScrollRef : categoryScrollRef;
                                     ref.current?.scrollBy({ left: -300, behavior: 'smooth' });
                                 }}
-                                className="w-8 h-8 rounded-full bg-gray-50 text-gray-400 flex items-center justify-center hover:bg-gray-200 hover:text-gray-600 shrink-0 transition-colors"
+                                className="hidden md:flex w-8 h-8 rounded-full bg-gray-50 text-gray-400 items-center justify-center hover:bg-gray-200 hover:text-gray-600 shrink-0 transition-colors"
                             >
                                 <FaArrowLeft size={10} />
                             </button>
@@ -833,7 +852,7 @@ const HomePage = () => {
                                     const ref = filterMode === 'location' ? provinceScrollRef : categoryScrollRef;
                                     ref.current?.scrollBy({ left: 300, behavior: 'smooth' });
                                 }}
-                                className="w-8 h-8 rounded-full bg-gray-50 text-gray-400 flex items-center justify-center hover:bg-gray-200 hover:text-gray-600 shrink-0 transition-colors"
+                                className="hidden md:flex w-8 h-8 rounded-full bg-gray-50 text-gray-400 items-center justify-center hover:bg-gray-200 hover:text-gray-600 shrink-0 transition-colors"
                             >
                                 <FaArrowRight size={10} />
                             </button>
@@ -873,7 +892,7 @@ const HomePage = () => {
                                     onClick={() => handleJobClick(job)}
                                     onMouseEnter={(e) => handleCardEnter(job, e.currentTarget)}
                                     onMouseLeave={handleCardLeave}
-                                    className={`group relative border rounded-2xl p-6 transition-all duration-300 bg-white overflow-hidden cursor-pointer ${isHovered
+                                    className={`group relative border rounded-2xl p-4 md:p-6 transition-all duration-300 bg-white overflow-hidden cursor-pointer ${isHovered
                                         ? 'border-[#3AB4E6] shadow-lg ring-2 ring-[#3AB4E6]/20'
                                         : 'border-gray-100 hover:shadow-xl hover:shadow-blue-500/5'
                                         }`}>
@@ -881,61 +900,61 @@ const HomePage = () => {
                                     {/* Hiệu ứng: Thanh màu xanh trượt ra khi hover */}
                                     <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-[#3AB4E6] transform -translate-x-full group-hover:translate-x-0 transition-transform duration-300"></div>
 
-                                    <div className="flex flex-col md:flex-row gap-6">
+                                    <div className="flex flex-col md:flex-row gap-4 md:gap-6">
                                         {/* Logo */}
                                         <div className="shrink-0">
                                             <CompanyLogo
                                                 logoUrl={job.companyLogo || job.logo || job.logoUrl}
                                                 companyId={job.companyId}
                                                 companyName={job.companyName}
-                                                className="w-14 h-14 rounded-xl object-contain bg-gray-50 p-1 border border-gray-100"
+                                                className="w-12 h-12 md:w-14 md:h-14 rounded-xl object-contain bg-gray-50 p-1 border border-gray-100"
                                             />
                                         </div>
 
                                         {/* Nội dung */}
-                                        <div className="flex-1">
-                                            <div className="flex justify-between items-start mb-2">
-                                                <div>
-                                                    <h3 className="text-lg font-bold text-gray-900 group-hover:text-[#3AB4E6] transition-colors cursor-pointer">
+                                        <div className="flex-1 min-w-0">
+                                            <div className="flex justify-between items-start mb-1 md:mb-2 gap-2">
+                                                <div className="min-w-0">
+                                                    <h3 className="text-base md:text-lg font-bold text-gray-900 group-hover:text-[#3AB4E6] transition-colors cursor-pointer truncate md:whitespace-normal">
                                                         {job.title || job.position}
                                                     </h3>
-                                                    <p className="text-sm text-gray-500 font-medium mt-1">{job.companyName}</p>
+                                                    <p className="text-xs md:text-sm text-gray-500 font-medium mt-1 truncate">{job.companyName}</p>
                                                 </div>
                                                 <button
                                                     onClick={(e) => handleToggleSave(e, job.id)}
-                                                    className={`w-9 h-9 rounded-full flex items-center justify-center transition-all ${isSaved ? 'bg-[#3AB4E6] text-white shadow-md shadow-blue-200' : 'bg-gray-50 text-gray-400 hover:bg-[#3AB4E6] hover:text-white'}`}>
-                                                    {isSaved ? <FaBookmark size={14} /> : <FaRegBookmark size={14} />}
+                                                    className={`w-8 h-8 md:w-9 md:h-9 shrink-0 rounded-full flex items-center justify-center transition-all ${isSaved ? 'bg-[#3AB4E6] text-white shadow-md shadow-blue-200' : 'bg-gray-50 text-gray-400 hover:bg-[#3AB4E6] hover:text-white'}`}>
+                                                    {isSaved ? <FaBookmark size={12} /> : <FaRegBookmark size={12} />}
                                                 </button>
                                             </div>
 
                                             {/* Tags styled đẹp hơn */}
-                                            <div className="flex flex-wrap items-center gap-3 mt-3 text-xs text-gray-500 font-medium">
-                                                <span className="flex items-center gap-1.5 bg-gray-50 px-3 py-1.5 rounded-lg border border-gray-100">
+                                            <div className="flex flex-wrap items-center gap-2 md:gap-3 mt-2 md:mt-3 text-[10px] md:text-xs text-gray-500 font-medium">
+                                                <span className="flex items-center gap-1 md:gap-1.5 bg-gray-50 px-2 md:px-3 py-1 md:py-1.5 rounded-lg border border-gray-100">
                                                     <FaBriefcase className="text-blue-400" /> {jobTypeLabel(job.jobType) || "Toàn thời gian"}
                                                 </span>
-                                                <span className="flex items-center gap-1.5 bg-gray-50 px-3 py-1.5 rounded-lg border border-gray-100">
+                                                <span className="flex items-center gap-1 md:gap-1.5 bg-gray-50 px-2 md:px-3 py-1 md:py-1.5 rounded-lg border border-gray-100">
                                                     <FaClock className="text-sky-400" /> {formatSalary(job.minSalary, job.maxSalary)}
                                                 </span>
                                                 {/* Tech Stack */}
                                                 {job.skills && (
-                                                    <span className="flex items-center gap-1.5 bg-green-50 text-green-700 px-3 py-1.5 rounded-lg border border-green-100 font-bold truncate max-w-[200px]">
+                                                    <span className="flex items-center gap-1 md:gap-1.5 bg-green-50 text-green-700 px-2 md:px-3 py-1 md:py-1.5 rounded-lg border border-green-100 font-bold truncate max-w-[150px] md:max-w-[200px]">
                                                         {Array.isArray(job.skills) ? job.skills.join(', ') : job.skills}
                                                     </span>
                                                 )}
 
-                                                <span className="flex items-center gap-1.5 bg-gray-50 px-3 py-1.5 rounded-lg border border-gray-100">
+                                                <span className="flex items-center gap-1 md:gap-1.5 bg-gray-50 px-2 md:px-3 py-1 md:py-1.5 rounded-lg border border-gray-100">
                                                     <FaMapMarkerAlt className="text-red-400" /> {job.location || "Việt Nam"}
                                                 </span>
                                             </div>
                                         </div>
 
                                         {/* Nút hành động */}
-                                        <div className="flex flex-col justify-between items-end gap-3 min-w-[100px]">
+                                        <div className="flex flex-row md:flex-col justify-between items-center md:items-end gap-3 mt-4 md:mt-0 min-w-0 md:min-w-[100px] border-t md:border-t-0 border-gray-100 pt-4 md:pt-0">
                                             <span className="text-xs text-gray-400 font-medium bg-gray-50 px-2 py-1 rounded">
                                                 {timeAgo(job.createdAt)}
                                             </span>
                                             {/* Nút Chi Tiết style mới */}
-                                            <button className="w-full md:w-auto bg-[#EAF6FF] text-[#3AB4E6] hover:bg-[#3AB4E6] hover:text-white text-xs font-bold px-5 py-2.5 rounded-xl transition-all duration-300">
+                                            <button className="w-auto md:w-full bg-[#EAF6FF] text-[#3AB4E6] hover:bg-[#3AB4E6] hover:text-white text-xs font-bold px-5 py-2.5 rounded-xl transition-all duration-300">
                                                 Chi Tiết
                                             </button>
                                         </div>
@@ -1068,7 +1087,7 @@ const HomePage = () => {
                         <div className="lg:col-span-3 flex flex-col gap-5">
 
                             {/* STATS ROW */}
-                            <div className="grid grid-cols-3 gap-4">
+                            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                                 {[
                                     { label: 'Việc làm mới 24h gần nhất', value: (stats.newJobs24h ?? 0).toLocaleString('vi-VN'), accent: true },
                                     { label: 'Việc làm đang tuyển', value: (stats.totalJobs ?? 0).toLocaleString('vi-VN'), accent: false },
@@ -1076,10 +1095,10 @@ const HomePage = () => {
                                 ].map((s, i) => (
                                     <div
                                         key={i}
-                                        className={`rounded-2xl p-5 border ${s.accent
+                                        className={`rounded-2xl p-4 md:p-5 border ${s.accent
                                             ? 'bg-gradient-to-br from-[#3AB4E6]/20 to-blue-800/10 border-[#3AB4E6]/40'
                                             : 'bg-[#112240]/80 border-blue-800/60'
-                                            }`}
+                                            } ${i === 0 ? 'col-span-2 md:col-span-1' : ''}`}
                                     >
                                         <div className={`text-3xl md:text-4xl font-black mb-1 ${s.accent ? 'text-[#3AB4E6]' : 'text-white'}`}>
                                             {s.value}
@@ -1182,25 +1201,37 @@ const HomePage = () => {
             {/* PHẦN 2: JOB CATEGORIES */}
 
             <section className="py-10 px-8 bg-[#F0F5FA]">
-                <div className="container mx-auto px-4">
-                    <div className="text-center mb-12">
-                        <h2 className="text-2xl md:text-3xl font-bold text-gray-800 mb-3">Tìm việc theo lĩnh vực</h2>
-                        <p className="text-gray-500 text-sm">Khám phá các cơ hội nghề nghiệp trong lĩnh vực công nghệ – từ phát triển phần mềm, AI, đến an ninh mạng.</p>
+                <div className="container mx-auto px-4 relative">
+                    <div className="flex justify-between items-end mb-8 md:mb-12">
+                        <div className="text-left">
+                            <h2 className="text-2xl md:text-3xl font-bold text-gray-800 mb-2">Tìm việc theo lĩnh vực</h2>
+                            <p className="text-gray-500 text-sm mt-1">Khám phá các cơ hội nghề nghiệp trong lĩnh vực công nghệ – từ phát triển phần mềm, AI, đến an ninh mạng.</p>
+                        </div>
                     </div>
 
-                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-6">
-                        {categories.map((cat) => (
-                            <div
-                                key={cat.id}
-                                onClick={() => navigate(`/jobs?keyword=${encodeURIComponent(cat.name)}`)}
-                                className="bg-white p-8 rounded-xl shadow-sm hover:shadow-lg transition-all duration-300 cursor-pointer group flex flex-col items-center text-center border border-transparent hover:border-blue-200"
-                            >
-                                <div className="w-16 h-16 mb-4 text-[#3AB4E6] text-4xl group-hover:scale-110 transition-transform flex items-center justify-center">
-                                    {cat.icon}
+                    <div className="relative group">
+                        {/* Scroll buttons overlay */}
+                        <button onClick={() => featuredCategoryScrollRef.current?.scrollBy({ left: -300, behavior: 'smooth' })} className="absolute left-0 top-1/2 -translate-y-[calc(50%+8px)] -translate-x-2 md:-translate-x-4 w-10 h-10 bg-white/90 backdrop-blur rounded-full shadow-lg text-gray-600 flex items-center justify-center hover:bg-[#3AB4E6] hover:text-white transition-all z-10 opacity-100 md:opacity-0 md:group-hover:opacity-100 border border-gray-200">
+                            <FaArrowLeft size={14} />
+                        </button>
+                        <button onClick={() => featuredCategoryScrollRef.current?.scrollBy({ left: 300, behavior: 'smooth' })} className="absolute right-0 top-1/2 -translate-y-[calc(50%+8px)] translate-x-2 md:translate-x-4 w-10 h-10 bg-white/90 backdrop-blur rounded-full shadow-lg text-gray-600 flex items-center justify-center hover:bg-[#3AB4E6] hover:text-white transition-all z-10 opacity-100 md:opacity-0 md:group-hover:opacity-100 border border-gray-200">
+                            <FaArrowRight size={14} />
+                        </button>
+
+                        <div ref={featuredCategoryScrollRef} className="flex gap-4 md:gap-6 overflow-x-auto pb-6 pt-2 snap-x snap-mandatory no-scrollbar scroll-smooth px-1">
+                            {categories.map((cat) => (
+                                <div
+                                    key={cat.id}
+                                    onClick={() => navigate(`/jobs?keyword=${encodeURIComponent(cat.name)}`)}
+                                    className="flex-shrink-0 w-[42vw] sm:w-[30vw] md:w-[220px] snap-center bg-white p-6 md:p-8 rounded-xl shadow-sm hover:shadow-lg transition-all duration-300 cursor-pointer group flex flex-col items-center text-center border border-transparent hover:border-blue-200"
+                                >
+                                    <div className="w-16 h-16 mb-4 text-[#3AB4E6] text-4xl group-hover:scale-110 transition-transform flex items-center justify-center">
+                                        {cat.icon}
+                                    </div>
+                                    <h3 className="text-base font-bold text-gray-800 group-hover:text-[#3AB4E6] transition-colors">{cat.name}</h3>
                                 </div>
-                                <h3 className="text-base font-bold text-gray-800 group-hover:text-[#3AB4E6] transition-colors">{cat.name}</h3>
-                            </div>
-                        ))}
+                            ))}
+                        </div>
                     </div>
                 </div>
             </section>

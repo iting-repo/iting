@@ -4,7 +4,7 @@ import { BsBriefcaseFill } from 'react-icons/bs';
 
 const Footer = () => {
   return (
-    <footer className="bg-black text-white pt-16 pb-8 border-t border-gray-800">
+    <footer className="bg-black text-white pt-10 md:pt-16 pb-8 border-t border-gray-800">
       <div className="container mx-auto px-4">
         
         {/* --- PHẦN TRÊN: 4 CỘT --- */}

@@ -14,7 +14,7 @@ import { formatDistanceToNowStrict, parseISO } from 'date-fns';
 import { vi } from 'date-fns/locale';
 import { toast } from 'sonner';
 import { BsBell, BsEnvelope } from 'react-icons/bs';
-import { FaChevronDown, FaSignOutAlt, FaBuilding, FaLayerGroup, FaFileAlt, FaHistory, FaHeart, FaCog } from 'react-icons/fa';
+import { FaChevronDown, FaSignOutAlt, FaBuilding, FaLayerGroup, FaFileAlt, FaHistory, FaHeart, FaCog, FaBars, FaTimes } from 'react-icons/fa';
 
 const Header = () => {
   const navigate = useNavigate();
@@ -27,12 +27,15 @@ const Header = () => {
   const displayAvatar = user?.avatar || user?.avatarUrl || user?.logoUrl || user?.companyLogo || '';
   const initial = displayName?.charAt(0)?.toUpperCase() || 'U';
 
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
   const isActive = (path) => {
-    if (path === '/') return location.pathname === '/' ? 'text-[#3AB4E6] font-bold' : 'text-white hover:text-gray-300 transition-colors';
-    return location.pathname.startsWith(path) ? 'text-[#3AB4E6] font-bold' : 'text-white hover:text-gray-300 transition-colors';
+    if (path === '/') return location.pathname === '/' ? 'text-[#3AB4E6] font-bold block md:inline' : 'text-white hover:text-[#3AB4E6] transition-colors block md:inline';
+    return location.pathname.startsWith(path) ? 'text-[#3AB4E6] font-bold block md:inline' : 'text-white hover:text-[#3AB4E6] transition-colors block md:inline';
   };
 
   const [isNotifOpen, setIsNotifOpen] = useState(false);
+  const [isNotifExpanded, setIsNotifExpanded] = useState(false);
   const notifRef = useRef(null);
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -207,6 +210,21 @@ const Header = () => {
     }
   };
 
+  const fetchAllNotifications = async () => {
+    if (!user) return;
+    setLoadingNotifs(true);
+    try {
+      const recipientType = recipientTypeForRole(role);
+      const res = await notificationService.getNotifications({ recipientType, size: 50 });
+      setNotifications(res?.content || res || []);
+      setIsNotifExpanded(true);
+    } catch {
+      // ignore
+    } finally {
+      setLoadingNotifs(false);
+    }
+  };
+
   useEffect(() => {
     fetchUnreadCount();
     const iv = setInterval(fetchUnreadCount, 30000);
@@ -232,6 +250,7 @@ const Header = () => {
   const handleToggleNotifs = async () => {
     const opening = !isNotifOpen;
     setIsNotifOpen(opening);
+    if (!opening) setIsNotifExpanded(false);
     if (opening) await fetchUnreadNotifications();
   };
 
@@ -361,35 +380,35 @@ const Header = () => {
       : item)));
   };
 
-  const renderNavLinks = () => {
+  const renderNavLinks = (onClick) => {
     if (role === 'CANDIDATE') {
       return (
         <>
-          <Link to="/" className={isActive('/')}>Trang chủ</Link>
-          <Link to="/jobs" className={isActive('/jobs')}>Công việc</Link>
-          <Link to="/companies" className={isActive('/companies')}>Công ty</Link>
-          <Link to="/about" className={isActive('/about')}>Về chúng tôi</Link>
-          <Link to="/contact" className={isActive('/contact')}>Liên hệ</Link>
+          <Link to="/" onClick={onClick} className={isActive('/')}>Trang chủ</Link>
+          <Link to="/jobs" onClick={onClick} className={isActive('/jobs')}>Công việc</Link>
+          <Link to="/companies" onClick={onClick} className={isActive('/companies')}>Công ty</Link>
+          <Link to="/about" onClick={onClick} className={isActive('/about')}>Về chúng tôi</Link>
+          <Link to="/contact" onClick={onClick} className={isActive('/contact')}>Liên hệ</Link>
         </>
       );
     }
     if (role === 'EMPLOYER') {
       return (
         <>
-          <Link to="/employer/dashboard" className={isActive('/employer/dashboard')}>Tổng quan</Link>
-          <Link to="/employer/manage-jobs" className={isActive('/employer/manage-jobs')}>Tin đã đăng</Link>
-          <Link to="/employer/find-cv" className={isActive('/employer/find-cv')}>Tìm hồ sơ</Link>
-          <Link to="/employer/post-job" className="text-[#3AB4E6] hover:text-blue-300 font-bold transition-colors">+ Đăng tin mới</Link>
+          <Link to="/employer/dashboard" onClick={onClick} className={isActive('/employer/dashboard')}>Tổng quan</Link>
+          <Link to="/employer/manage-jobs" onClick={onClick} className={isActive('/employer/manage-jobs')}>Tin đã đăng</Link>
+          <Link to="/employer/find-cv" onClick={onClick} className={isActive('/employer/find-cv')}>Tìm hồ sơ</Link>
+          <Link to="/employer/post-job" onClick={onClick} className="text-[#3AB4E6] hover:text-blue-300 font-bold transition-colors">+ Đăng tin mới</Link>
         </>
       );
     }
     return (
       <>
-        <Link to="/" className={isActive('/')}>Trang chủ</Link>
-        <Link to="/jobs" className={isActive('/jobs')}>Công việc</Link>
-        <Link to="/companies" className={isActive('/companies')}>Công ty</Link>
-        <Link to="/about" className={isActive('/about')}>Về chúng tôi</Link>
-        <Link to="/contact" className={isActive('/contact')}>Liên hệ</Link>
+        <Link to="/" onClick={onClick} className={isActive('/')}>Trang chủ</Link>
+        <Link to="/jobs" onClick={onClick} className={isActive('/jobs')}>Công việc</Link>
+        <Link to="/companies" onClick={onClick} className={isActive('/companies')}>Công ty</Link>
+        <Link to="/about" onClick={onClick} className={isActive('/about')}>Về chúng tôi</Link>
+        <Link to="/contact" onClick={onClick} className={isActive('/contact')}>Liên hệ</Link>
       </>
     );
   };
@@ -421,8 +440,8 @@ const Header = () => {
   return (
     <>
     <header className="bg-black text-white h-20 sticky top-0 z-40 shadow-md">
-      <div className="container mx-auto px-12 h-full flex items-center justify-between">
-        <Link to={role === 'EMPLOYER' ? '/employer/dashboard' : '/'} className="flex items-center gap-2 select-none group">
+      <div className="container mx-auto px-4 lg:px-8 xl:px-12 h-full flex items-center justify-between gap-4">
+        <Link to={role === 'EMPLOYER' ? '/employer/dashboard' : '/'} className="flex items-center gap-2 select-none group shrink-0">
           <img 
             src="/logo-iting.png" 
             alt="ITing Logo" 
@@ -430,7 +449,7 @@ const Header = () => {
           />
         </Link>
 
-          <nav className="hidden md:flex items-center gap-8">{renderNavLinks()}</nav>
+          <nav className="hidden md:flex items-center gap-6 lg:gap-10 xl:gap-14 text-sm lg:text-base whitespace-nowrap">{renderNavLinks()}</nav>
 
         <div className="flex items-center gap-4">
           {role === 'guest' ? (
@@ -438,9 +457,15 @@ const Header = () => {
               <Link to="/login" className="hidden md:block text-white font-medium hover:text-gray-300 transition-colors">
                 Đăng nhập
               </Link>
-              <Link to="/register" className="bg-[#3AB4E6] hover:bg-blue-600 text-white px-5 py-2.5 rounded-lg font-bold transition-all shadow-lg shadow-blue-500/20 text-sm">
+              <Link to="/register" className="hidden md:block bg-[#3AB4E6] hover:bg-blue-600 text-white px-5 py-2.5 rounded-lg font-bold transition-all shadow-lg shadow-blue-500/20 text-sm">
                 Đăng ký
               </Link>
+              <button 
+                className="md:hidden text-white hover:text-[#3AB4E6] p-2 transition-transform duration-300 transform"
+                onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+              >
+                {isMobileMenuOpen ? <FaTimes size={24} className="animate-spin-slow" /> : <FaBars size={24} />}
+              </button>
             </>
           ) : (
             <>
@@ -448,7 +473,12 @@ const Header = () => {
                 {/* Messages Dropdown */}
                 <div className="relative flex items-center" ref={messageDropdownRef}>
                   <button
-                    onClick={() => setIsMessagesOpen((prev) => !prev)}
+                    onClick={() => {
+                      setIsMessagesOpen((prev) => !prev);
+                      setIsMobileMenuOpen(false);
+                      setIsNotifOpen(false);
+                      setIsDropdownOpen(false);
+                    }}
                     className="w-10 h-10 rounded-full bg-gray-800 hover:bg-gray-700 flex items-center justify-center transition-colors relative"
                   >
                     <BsEnvelope className="text-lg" />
@@ -459,7 +489,7 @@ const Header = () => {
                     ) : null}
                   </button>
                   {isMessagesOpen && (
-                    <div className="absolute top-14 right-0 w-[360px] max-w-[calc(100vw-16px)] bg-white text-gray-800 rounded-2xl border border-gray-100 shadow-2xl overflow-hidden z-[120]">
+                    <div className="fixed top-20 left-1/2 -translate-x-1/2 w-[95vw] max-w-sm md:absolute md:top-14 md:left-auto md:right-0 md:translate-x-0 md:w-[360px] bg-white text-gray-800 rounded-2xl border border-gray-100 shadow-2xl overflow-hidden z-[120]">
                       <div className="px-4 py-3 border-b border-gray-100">
                         <p className="font-bold text-gray-900">Tin nhắn gần đây</p>
                         <p className="text-xs text-gray-500 mt-0.5">Ưu tiên cuộc trò chuyện chưa đọc</p>
@@ -521,18 +551,26 @@ const Header = () => {
 
                 {/* Notifications Bell */}
                 <div className="relative" ref={notifRef}>
-                  <button onClick={handleToggleNotifs} className="w-10 h-10 rounded-full bg-gray-800 hover:bg-gray-700 flex items-center justify-center transition-colors relative">
+                  <button 
+                    onClick={() => {
+                      handleToggleNotifs();
+                      setIsMobileMenuOpen(false);
+                      setIsMessagesOpen(false);
+                      setIsDropdownOpen(false);
+                    }} 
+                    className="w-10 h-10 rounded-full bg-gray-800 hover:bg-gray-700 flex items-center justify-center transition-colors relative"
+                  >
                     <BsBell className="text-lg" />
                     {unreadCount > 0 ? <span className="absolute -top-1 -right-1 min-w-[18px] h-5 px-1 rounded-full bg-red-500 text-xs text-white flex items-center justify-center font-semibold">{unreadCount}</span> : null}
                   </button>
 
                   {isNotifOpen && (
-                    <div className="absolute right-0 mt-3 w-96 bg-white text-gray-800 rounded-xl shadow-2xl py-2 border border-gray-100 animate-fade-in origin-top-right overflow-hidden z-50">
+                    <div className="fixed top-20 left-1/2 -translate-x-1/2 w-[95vw] max-w-sm md:absolute md:top-full md:mt-3 md:left-auto md:right-0 md:translate-x-0 md:w-96 bg-white text-gray-800 rounded-xl shadow-2xl py-2 border border-gray-100 animate-fade-in origin-top md:origin-top-right overflow-hidden z-[120]">
                       <div className="px-4 py-3 flex items-center justify-between border-b border-gray-100">
                         <div className="text-sm font-semibold">Thông báo</div>
                         <button onClick={handleMarkAllRead} className="text-xs text-gray-500 hover:underline">Đánh dấu tất cả</button>
                       </div>
-                      <div className="max-h-80 overflow-y-auto no-scrollbar">
+                      <div className={`overflow-y-auto no-scrollbar transition-all duration-300 ${isNotifExpanded ? 'max-h-[60vh] md:max-h-[70vh]' : 'max-h-80'}`}>
                         {loadingNotifs && <div className="p-4 text-sm text-gray-500">Đang tải...</div>}
                         {!loadingNotifs && notifications.length === 0 && <div className="p-4 text-sm text-gray-500">Không có thông báo mới</div>}
                         {!loadingNotifs && notifications.map((n) => (
@@ -546,7 +584,12 @@ const Header = () => {
                         ))}
                       </div>
                       <div className="border-t px-3 py-2 text-center">
-                        <Link to="/notifications" className="text-sm text-[#3AB4E6] hover:underline">Xem tất cả</Link>
+                        <button 
+                          onClick={isNotifExpanded ? () => { setIsNotifExpanded(false); fetchUnreadNotifications(); } : fetchAllNotifications} 
+                          className="text-sm text-[#3AB4E6] hover:underline"
+                        >
+                          {isNotifExpanded ? "Thu gọn" : "Xem tất cả"}
+                        </button>
                       </div>
                     </div>
                   )}
@@ -555,7 +598,12 @@ const Header = () => {
 
               <div className="relative" ref={dropdownRef}>
                 <button
-                  onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                  onClick={() => {
+                    setIsDropdownOpen(!isDropdownOpen);
+                    setIsMobileMenuOpen(false);
+                    setIsMessagesOpen(false);
+                    setIsNotifOpen(false);
+                  }}
                   className="flex items-center gap-2 hover:bg-gray-900 py-1 px-2 rounded-lg transition-colors border border-transparent focus:border-gray-700"
                 >
                   <div className="w-9 h-9 rounded-full overflow-hidden border border-gray-600 p-0.5 bg-gray-800">
@@ -570,7 +618,7 @@ const Header = () => {
                 </button>
 
                   {isDropdownOpen && (
-                    <div className="absolute right-0 mt-3 w-64 bg-white text-gray-800 rounded-xl shadow-2xl py-2 border border-gray-100 animate-fade-in origin-top-right overflow-hidden">
+                    <div className="fixed top-20 left-1/2 -translate-x-1/2 w-[90vw] max-w-[280px] md:absolute md:top-full md:mt-3 md:left-auto md:right-0 md:translate-x-0 md:w-64 bg-white text-gray-800 rounded-xl shadow-2xl py-2 border border-gray-100 animate-fade-in origin-top md:origin-top-right overflow-hidden z-[120]">
                       <div className="px-4 py-3 border-b border-gray-100 bg-gray-50/50">
                         <p className="text-sm font-bold text-gray-900 truncate">{displayName}</p>
                         <p className="text-xs text-gray-500 truncate mt-0.5">{role === 'CANDIDATE' ? 'Ứng viên' : 'Nhà tuyển dụng'}</p>
@@ -598,9 +646,55 @@ const Header = () => {
                     </div>
                   )}
                 </div>
+
+                <button 
+                  className="md:hidden text-white hover:text-[#3AB4E6] p-2 ml-2 transition-transform duration-300 transform"
+                  onClick={() => {
+                    setIsMobileMenuOpen(!isMobileMenuOpen);
+                    setIsMessagesOpen(false);
+                    setIsNotifOpen(false);
+                    setIsDropdownOpen(false);
+                  }}
+                >
+                  {isMobileMenuOpen ? <FaTimes size={24} className="animate-spin-slow" /> : <FaBars size={24} />}
+                </button>
               </>
             )}
           </div>
+        </div>
+
+        {/* MOBILE MENU DROPDOWN */}
+        <div 
+          className={`md:hidden absolute top-20 left-0 w-full bg-[#0a0a0a]/95 backdrop-blur-xl border-t border-gray-800 shadow-2xl z-50 transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] origin-top ${
+            isMobileMenuOpen 
+              ? 'opacity-100 translate-y-0 pointer-events-auto' 
+              : 'opacity-0 -translate-y-4 pointer-events-none'
+          }`}
+        >
+          <nav className="flex flex-col px-8 py-6 space-y-6">
+            <div className="flex flex-col space-y-4 text-lg">
+              {renderNavLinks(() => setIsMobileMenuOpen(false))}
+            </div>
+            
+            {role === 'guest' && (
+              <div className="flex flex-col gap-4 pt-6 border-t border-gray-800/60">
+                <Link 
+                  to="/login" 
+                  onClick={() => setIsMobileMenuOpen(false)} 
+                  className="text-white font-medium hover:text-[#3AB4E6] transition-colors text-center py-3 border border-gray-700/50 hover:border-[#3AB4E6]/50 rounded-xl bg-white/5"
+                >
+                  Đăng nhập
+                </Link>
+                <Link 
+                  to="/register" 
+                  onClick={() => setIsMobileMenuOpen(false)} 
+                  className="bg-[#3AB4E6] hover:bg-blue-600 text-white py-3 rounded-xl font-bold transition-all shadow-[0_0_20px_rgba(58,180,230,0.3)] text-center"
+                >
+                  Đăng ký ngay
+                </Link>
+              </div>
+            )}
+          </nav>
         </div>
       </header>
 
