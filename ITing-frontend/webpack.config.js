@@ -119,6 +119,7 @@ module.exports = (env, argv) => {
       new HtmlWebpackPlugin({
         template: './public/index.html',
         filename: './index.html',
+        favicon: path.resolve(__dirname, 'src/assets/logo-iting.png'),
       }),
       // <-- 4. Thêm plugin React Refresh vào mảng, chỉ khi ở chế độ development
       isDev && new ReactRefreshWebpackPlugin(),
