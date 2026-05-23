@@ -30,11 +30,14 @@ public class CompanyReviewServiceImpl implements CompanyReviewService {
         Account account = accountRepository.findById(accountId)
                 .orElseThrow(() -> new RuntimeException("Account not found"));
 
+        // Candidate endpoint không qua moderation — auto-approve để hiển thị ngay.
+        // Endpoint full /api/companies/{id}/reviews vẫn giữ PENDING cho moderation flow.
         CompanyReview review = CompanyReview.builder()
                 .company(company)
                 .account(account)
                 .rating(rating)
                 .content(content)
+                .moderationStatus("APPROVED")
                 .build();
 
         return reviewRepository.save(review);
