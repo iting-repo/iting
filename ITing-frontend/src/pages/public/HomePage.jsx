@@ -417,7 +417,7 @@ const HomePage = () => {
         <div className="bg-white font-sans">
 
             {/* PHẦN 1: HERO SEARCH */}
-            <section className="relative z-10 bg-[#0B1B3D] pt-12 md:pt-20 pb-36 overflow-hidden">
+            <section className="relative z-10 bg-[#0B1B3D] pt-6 md:pt-10 pb-64 overflow-visible">
                 <div className="absolute inset-0 z-0">
                     <img src={heroBg} alt="Background" className="w-full h-full object-cover opacity-30 mix-blend-overlay" />
                     <div className="absolute inset-0 bg-gradient-to-b from-[#0B1B3D]/50 via-[#0B1B3D]/80 to-[#0B1B3D]"></div>
@@ -427,10 +427,10 @@ const HomePage = () => {
                 </div>
 
                 <div className="container mx-auto px-4 relative z-10 text-center">
-                    <h1 className="text-3xl md:text-5xl lg:text-6xl font-black text-white mb-4 tracking-tight leading-tight">
+                    <h1 className="text-2xl md:text-4xl lg:text-5xl font-black text-white mb-3 tracking-tight leading-tight">
                         Tìm việc làm IT <span className="text-[#3AB4E6]">chất lượng</span><br className="hidden md:block" /> trên toàn quốc
                     </h1>
-                    <p className="text-gray-300 mb-8 text-sm md:text-base max-w-2xl mx-auto font-medium">
+                    <p className="text-gray-300 mb-6 text-sm md:text-base max-w-2xl mx-auto font-medium">
                         Tiếp cận {(stats.totalJobs ?? 0).toLocaleString('vi-VN')}+ tin tuyển dụng việc làm mỗi ngày từ hàng nghìn doanh nghiệp uy tín tại Việt Nam
                     </p>
 

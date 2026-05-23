@@ -184,7 +184,7 @@ const LocationPicker = ({ value, onChange }) => {
             setCoords({
                 top: rect.bottom + window.scrollY,
                 left: rect.left + window.scrollX,
-                width: 550
+                width: 480
             });
         }
     };
@@ -346,44 +346,42 @@ const LocationPicker = ({ value, onChange }) => {
                         className="bg-white rounded-2xl shadow-[0_20px_60px_rgba(0,0,0,0.2)] border border-gray-100 overflow-hidden flex flex-col animate-in fade-in slide-in-from-top-2 duration-200"
                     >
                         {/* Header: Radio Options */}
-                        <div className="p-4 border-b border-gray-50 flex items-center gap-6 bg-white">
-                            <span className="text-sm font-bold text-gray-800">Tìm theo:</span>
-                            <div className="flex gap-4">
-                                <label className="flex items-center gap-2 cursor-pointer group">
+                        <div className="px-3 py-2 border-b border-gray-50 flex items-center gap-4 bg-white">
+                            <span className="text-xs font-bold text-gray-800">Tìm theo:</span>
+                            <div className="flex gap-3">
+                                <label className="flex items-center gap-1.5 cursor-pointer group">
                                     <div
                                         onClick={() => handleModeChange('old')}
-                                        className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${searchMode === 'old' ? 'border-[#3AB4E6] bg-white' : 'border-gray-200 group-hover:border-gray-300'}`}
+                                        className={`w-4 h-4 rounded-full border-2 flex items-center justify-center transition-all ${searchMode === 'old' ? 'border-[#3AB4E6] bg-white' : 'border-gray-200 group-hover:border-gray-300'}`}
                                     >
-                                        {searchMode === 'old' && <div className="w-2.5 h-2.5 rounded-full bg-[#3AB4E6]"></div>}
+                                        {searchMode === 'old' && <div className="w-2 h-2 rounded-full bg-[#3AB4E6]"></div>}
                                     </div>
-                                    <span className={`text-sm font-medium ${searchMode === 'old' ? 'text-[#3AB4E6]' : 'text-gray-500'}`}>Tỉnh, Quận/huyện cũ</span>
+                                    <span className={`text-xs font-medium ${searchMode === 'old' ? 'text-[#3AB4E6]' : 'text-gray-500'}`}>Tỉnh, Quận/huyện cũ</span>
                                 </label>
-                                <label className="flex items-center gap-2 cursor-pointer group">
+                                <label className="flex items-center gap-1.5 cursor-pointer group">
                                     <div
                                         onClick={() => handleModeChange('new')}
-                                        className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${searchMode === 'new' ? 'border-[#3AB4E6] bg-white' : 'border-gray-200 group-hover:border-gray-300'}`}
+                                        className={`w-4 h-4 rounded-full border-2 flex items-center justify-center transition-all ${searchMode === 'new' ? 'border-[#3AB4E6] bg-white' : 'border-gray-200 group-hover:border-gray-300'}`}
                                     >
-                                        {searchMode === 'new' && <div className="w-2.5 h-2.5 rounded-full bg-[#3AB4E6]"></div>}
+                                        {searchMode === 'new' && <div className="w-2 h-2 rounded-full bg-[#3AB4E6]"></div>}
                                     </div>
-                                    <div className="flex items-center gap-2">
-                                        <span className={`text-sm font-medium ${searchMode === 'new' ? 'text-[#3AB4E6]' : 'text-gray-500'}`}>Tỉnh, Phường/xã sau 1/7/2025</span>
-                                        <span className="px-1.5 py-0.5 bg-blue-500 text-white text-[9px] font-bold rounded uppercase">Mới</span>
-                                    </div>
+                                    <span className={`text-xs font-medium ${searchMode === 'new' ? 'text-[#3AB4E6]' : 'text-gray-500'}`}>Sau 1/7/2025</span>
+                                    <span className="px-1 py-0.5 bg-blue-500 text-white text-[8px] font-bold rounded uppercase">Mới</span>
                                 </label>
                             </div>
                         </div>
 
-                        <div className="flex h-[280px]">
+                        <div className="flex h-[180px]">
                             {/* Left Column: Provinces */}
                             <div className="w-1/2 border-r border-gray-50 flex flex-col">
-                                <div className="p-3 relative">
-                                    <FaSearch className="absolute left-6 top-1/2 -translate-y-1/2 text-gray-400 size-3" />
+                                <div className="p-2 relative">
+                                    <FaSearch className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-400 size-3" />
                                     <input
                                         type="text"
                                         placeholder="Nhập Tỉnh/Thành phố"
                                         value={searchTermProvince}
                                         onChange={(e) => setSearchTermProvince(e.target.value)}
-                                        className="w-full pl-9 pr-3 py-2 bg-white border border-gray-100 rounded-lg text-sm focus:border-[#3AB4E6] outline-none"
+                                        className="w-full pl-8 pr-2 py-1.5 bg-white border border-gray-100 rounded-lg text-xs focus:border-[#3AB4E6] outline-none"
                                     />
                                 </div>
                                 <div className="flex-1 overflow-y-auto custom-scrollbar px-1 pb-2">
@@ -398,13 +396,13 @@ const LocationPicker = ({ value, onChange }) => {
                                             <div
                                                 key={p.code}
                                                 onClick={() => handleProvinceSelect(p)}
-                                                className={`flex items-center justify-between px-4 py-2.5 rounded-lg cursor-pointer transition-colors ${selectedProvince?.code === p.code ? 'bg-[#EBF8FF] text-[#3AB4E6]' : 'hover:bg-gray-50 text-gray-600'}`}
+                                                className={`flex items-center justify-between px-3 py-2 rounded-lg cursor-pointer transition-colors ${selectedProvince?.code === p.code ? 'bg-[#EBF8FF] text-[#3AB4E6]' : 'hover:bg-gray-50 text-gray-600'}`}
                                             >
                                                 <div className="flex items-center gap-3">
                                                     <div className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-all ${selectedProvince?.code === p.code ? 'bg-[#3AB4E6] border-[#3AB4E6]' : 'border-gray-200 bg-white'}`}>
                                                         {selectedProvince?.code === p.code && <FaCheck className="text-white text-[10px]" />}
                                                     </div>
-                                                    <span className="text-sm font-medium">{p.name}</span>
+                                                    <span className="text-xs font-medium">{p.name}</span>
                                                 </div>
                                                 <FaChevronRight size={10} className={selectedProvince?.code === p.code ? 'text-[#3AB4E6]' : 'text-gray-200'} />
                                             </div>
@@ -415,14 +413,14 @@ const LocationPicker = ({ value, onChange }) => {
 
                             {/* Right Column: Districts / Wards */}
                             <div className="w-1/2 flex flex-col bg-white">
-                                <div className="p-3 relative">
-                                    <FaSearch className="absolute left-6 top-1/2 -translate-y-1/2 text-gray-400 size-3" />
+                                <div className="p-2 relative">
+                                    <FaSearch className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-400 size-3" />
                                     <input
                                         type="text"
-                                        placeholder={searchMode === 'old' ? "Nhập Quận/Huyện" : "Nhập Phường/Xã/Quận/Huyện mới"}
+                                        placeholder={searchMode === 'old' ? "Nhập Quận/Huyện" : "Nhập Phường/Xã"}
                                         value={searchTermDistrict}
                                         onChange={(e) => setSearchTermDistrict(e.target.value)}
-                                        className="w-full pl-9 pr-3 py-2 bg-white border border-gray-100 rounded-lg text-sm focus:border-[#3AB4E6] outline-none"
+                                        className="w-full pl-8 pr-2 py-1.5 bg-white border border-gray-100 rounded-lg text-xs focus:border-[#3AB4E6] outline-none"
                                     />
                                 </div>
                                 <div className="flex-1 overflow-y-auto custom-scrollbar px-1 pb-2">
@@ -440,19 +438,19 @@ const LocationPicker = ({ value, onChange }) => {
                                             {/* Option: Tất cả (chọn toàn tỉnh, không chọn quận cụ thể) */}
                                             <div
                                                 onClick={() => setSelectedDistricts([])}
-                                                className={`flex items-center gap-3 px-4 py-2.5 rounded-lg cursor-pointer transition-colors ${selectedDistricts.length === 0 ? 'text-[#3AB4E6]' : 'hover:bg-gray-50 text-gray-600'}`}
+                                                className={`flex items-center gap-3 px-3 py-2 rounded-lg cursor-pointer transition-colors ${selectedDistricts.length === 0 ? 'text-[#3AB4E6]' : 'hover:bg-gray-50 text-gray-600'}`}
                                             >
                                                 <div className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-all ${selectedDistricts.length === 0 ? 'bg-[#3AB4E6] border-[#3AB4E6]' : 'border-gray-200 bg-white'}`}>
                                                     {selectedDistricts.length === 0 && <FaCheck className="text-white text-[10px]" />}
                                                 </div>
-                                                <span className="text-sm font-medium">Tất cả {getShortName(selectedProvince)}</span>
+                                                <span className="text-xs font-medium">Tất cả {getShortName(selectedProvince)}</span>
                                             </div>
 
                                             {filteredDistricts.map((d) => (
                                                 <div
                                                     key={d.code}
                                                     onClick={() => toggleDistrict(d.name)}
-                                                    className={`flex items-center gap-3 px-4 py-2.5 rounded-lg cursor-pointer transition-colors ${selectedDistricts.includes(d.name) ? 'text-[#3AB4E6]' : 'hover:bg-gray-50 text-gray-600'}`}
+                                                    className={`flex items-center gap-3 px-3 py-2 rounded-lg cursor-pointer transition-colors ${selectedDistricts.includes(d.name) ? 'text-[#3AB4E6]' : 'hover:bg-gray-50 text-gray-600'}`}
                                                 >
                                                     <div className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-all ${selectedDistricts.includes(d.name) ? 'bg-[#3AB4E6] border-[#3AB4E6]' : 'border-gray-200 bg-white'}`}>
                                                         {selectedDistricts.includes(d.name) && <FaCheck className="text-white text-[10px]" />}
@@ -469,16 +467,16 @@ const LocationPicker = ({ value, onChange }) => {
                         </div>
 
                         {/* Footer */}
-                        <div className="p-4 border-t border-gray-50 flex items-center justify-between bg-white">
+                        <div className="px-3 py-2 border-t border-gray-50 flex items-center justify-between bg-white">
                             <button
                                 onClick={handleClear}
-                                className="text-[#3AB4E6] hover:underline text-sm font-medium"
+                                className="text-[#3AB4E6] hover:underline text-xs font-medium"
                             >
-                                Bỏ chọn tất cả
+                                Bỏ chọn
                             </button>
                             <button
                                 onClick={handleApply}
-                                className="px-10 py-2 bg-[#3AB4E6] hover:bg-[#2A9DCB] text-white font-bold rounded shadow-lg shadow-blue-100 transition-all text-sm"
+                                className="px-6 py-1.5 bg-[#3AB4E6] hover:bg-[#2A9DCB] text-white font-bold rounded shadow-lg shadow-blue-100 transition-all text-xs"
                             >
                                 Áp dụng
                             </button>
