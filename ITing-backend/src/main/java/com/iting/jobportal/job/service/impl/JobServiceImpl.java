@@ -434,6 +434,7 @@ public class JobServiceImpl implements JobService {
                 .jobType(request.getJobType())
                 .experienceLevel(request.getExperienceLevel())
                 .workingDays(request.getWorkingDays())
+                .cvLanguage(request.getCvLanguage())
                 .minSalary(request.getMinSalary())
                 .maxSalary(request.getMaxSalary())
                 .salaryType(request.getSalaryType())
@@ -510,6 +511,7 @@ public class JobServiceImpl implements JobService {
         if (request.getJobType() != null) job.setJobType(request.getJobType());
         if (request.getExperienceLevel() != null) job.setExperienceLevel(request.getExperienceLevel());
         if (request.getWorkingDays() != null) job.setWorkingDays(request.getWorkingDays());
+        if (request.getCvLanguage() != null) job.setCvLanguage(request.getCvLanguage());
 //        if (request.getStatus() != null) job.setStatus(request.getStatus());
         if (request.getMaxAccept() != null) job.setMaxAccept(request.getMaxAccept());
         if (request.getMinSalary() != null) job.setMinSalary(request.getMinSalary());

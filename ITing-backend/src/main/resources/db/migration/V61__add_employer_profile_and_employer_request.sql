@@ -2,7 +2,7 @@
 CREATE TABLE IF NOT EXISTS employer_profiles (
     id BIGSERIAL PRIMARY KEY,
     account_id BIGINT NOT NULL REFERENCES account(id) ON DELETE CASCADE,
-    company_id BIGINT REFERENCES company(id) ON DELETE SET NULL,
+    company_id BIGINT REFERENCES company(company_id) ON DELETE SET NULL,
     position VARCHAR(255),
     department VARCHAR(255),
     phone VARCHAR(50),
@@ -15,7 +15,7 @@ CREATE TABLE IF NOT EXISTS employer_profiles (
 CREATE TABLE IF NOT EXISTS employer_requests (
     id BIGSERIAL PRIMARY KEY,
     account_id BIGINT NOT NULL REFERENCES account(id) ON DELETE CASCADE,
-    company_id BIGINT REFERENCES company(id) ON DELETE SET NULL,
+    company_id BIGINT REFERENCES company(company_id) ON DELETE SET NULL,
     company_name VARCHAR(255),
     position VARCHAR(255),
     department VARCHAR(255),

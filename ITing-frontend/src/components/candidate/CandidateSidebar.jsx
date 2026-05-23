@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import {
   FaLayerGroup, FaFileAlt, FaBriefcase, FaHeart, FaBell, FaCog,
-  FaSignOutAlt, FaCheckCircle
+  FaSignOutAlt, FaCheckCircle, FaFileSignature
 } from 'react-icons/fa';
 import { useDispatch, useSelector } from 'react-redux';
 import { logout } from '../../store/auth/authSlice';
@@ -83,6 +83,7 @@ const CandidateSidebar = () => {
     { path: '/candidate/dashboard',    name: 'Tổng quan',          icon: <FaLayerGroup /> },
     { path: '/candidate/profile',      name: 'Hồ sơ của tôi',     icon: <FaFileAlt /> },
     { path: '/candidate/applied-jobs', name: 'Việc đã ứng tuyển',  icon: <FaBriefcase /> },
+    { path: '/candidate/offers',       name: 'Thư mời nhận việc',  icon: <FaFileSignature /> },
     { path: '/candidate/favorite-jobs',name: 'Việc đã lưu',        icon: <FaHeart /> },
     { path: '/candidate/job-alerts',   name: 'Thông báo việc làm', icon: <FaBell /> },
     { path: '/candidate/settings',     name: 'Cài đặt',           icon: <FaCog /> },

@@ -11,6 +11,10 @@ import com.iting.jobportal.common.service.EmailService;
 import com.iting.jobportal.company.service.AuthorizationService;
 import com.iting.jobportal.job.entity.Job;
 import com.iting.jobportal.job.repository.JobRepository;
+import com.iting.jobportal.notification.dto.request.CreateNotificationRequest;
+import com.iting.jobportal.notification.enums.NotificationType;
+import com.iting.jobportal.notification.enums.RecipientType;
+import com.iting.jobportal.notification.service.NotificationService;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import jakarta.servlet.http.HttpServletRequest;
@@ -59,6 +63,7 @@ public class HrPipelineController {
     private final EmailService emailService;
     private final AuthorizationService authorizationService;
     private final JwtTokenUtil jwtTokenUtil;
+    private final NotificationService notificationService;
 
     // ─── Stages list ──────────────────────────────────────────────
 
@@ -192,7 +197,66 @@ public class HrPipelineController {
             }
         }
 
+        // In-app notification cho candidate — luôn gửi (không phụ thuộc sendEmail flag).
+        // Best-effort: không cho lỗi ở đây ảnh hưởng tới response chuyển stage.
+        try {
+            sendStageInAppNotification(app, job, toStage);
+        } catch (Exception e) {
+            log.warn("Failed to create in-app notification for stage move (applyFormId={}, toStage={})",
+                    applyFormId, toStage, e);
+        }
+
         return ResponseEntity.ok(response);
+    }
+
+    /** Tạo in-app notification cho candidate khi HR chuyển stage. */
+    private void sendStageInAppNotification(ApplyFormSentToJob app, Job job, String toStage) {
+        Long candidateId = app.getUserId();
+        if (candidateId == null) return;
+
+        String jobTitle = job.getTitle() != null ? job.getTitle() : "công việc";
+        String companyName = (job.getCompany() != null && job.getCompany().getName() != null)
+                ? job.getCompany().getName() : "Nhà tuyển dụng";
+
+        NotificationType type;
+        String content;
+        switch (toStage) {
+            case "HIRED" -> {
+                type = NotificationType.APPLICATION_ACCEPTED;
+                content = String.format("%s đã chấp nhận hồ sơ của bạn cho vị trí \"%s\".", companyName, jobTitle);
+            }
+            case "REJECTED" -> {
+                type = NotificationType.APPLICATION_REJECTED;
+                content = String.format("Đơn ứng tuyển của bạn cho vị trí \"%s\" tại %s đã bị từ chối.", jobTitle, companyName);
+            }
+            default -> {
+                type = NotificationType.APPLICATION_STATUS_CHANGED;
+                content = String.format("Hồ sơ của bạn cho vị trí \"%s\" tại %s đã chuyển sang giai đoạn %s.",
+                        jobTitle, companyName, vietnameseStageLabel(toStage));
+            }
+        }
+
+        notificationService.createNotification(CreateNotificationRequest.builder()
+                .recipientId(candidateId)
+                .recipientType(RecipientType.USER)
+                .type(type)
+                .content(content)
+                .entityType("APPLICATION")
+                .entityId(app.getId().getApplyFormId())
+                .actionUrl("/candidate/applied-jobs")
+                .build());
+    }
+
+    private String vietnameseStageLabel(String stage) {
+        return switch (stage) {
+            case "SCREENING" -> "Đơn mới";
+            case "PHONE_SCREEN" -> "Đã liên hệ";
+            case "INTERVIEW" -> "Phỏng vấn";
+            case "OFFER" -> "Gửi offer";
+            case "HIRED" -> "Đã nhận";
+            case "REJECTED" -> "Từ chối";
+            default -> stage;
+        };
     }
 
     /** Render & send the email; returns "sent" / "skipped (no candidate email)" / etc. */

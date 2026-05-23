@@ -1,7 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { FaSearch, FaFilter, FaFileDownload, FaEye, FaArrowLeft, FaSort } from 'react-icons/fa';
+import { FaSearch, FaFilter, FaFileDownload, FaEye, FaArrowLeft, FaSort, FaFileSignature } from 'react-icons/fa';
 import CandidateDetailModal from '../../components/employer/CandidateDetailModal';
+import StagePopover from '../../components/employer/StagePopover';
+import SendOfferModal from '../../components/employer/SendOfferModal';
 import applicationService from '../../services/applicationService';
 import { normalizeJobKey } from '../../utils/jobUrl';
 import { Breadcrumb } from '../../components/common';
@@ -13,6 +15,7 @@ const JobApplications = () => {
    const [selectedCandidate, setSelectedCandidate] = useState(null);
    const [candidates, setCandidates] = useState([]);
    const [isLoading, setIsLoading] = useState(false);
+   const [offerTarget, setOfferTarget] = useState(null); // candidate đang mở modal offer
 
    // Filter and sort states
    const [keyword, setKeyword] = useState("");
@@ -50,18 +53,6 @@ const JobApplications = () => {
       return () => clearTimeout(debounce);
    }, [id, keyword, status, sortBy, sortOrder]);
 
-   const getStatusColor = (status) => {
-      if (!status) return 'bg-gray-50 text-gray-600';
-      const s = status.toUpperCase();
-      switch (s) {
-         case 'PENDING': return 'bg-yellow-50 text-yellow-600 border-yellow-100';
-         case 'REVIEWED': return 'bg-blue-50 text-blue-600 border-blue-100';
-         case 'INTERVIEW': return 'bg-purple-50 text-purple-600 border-purple-100';
-         case 'REJECTED': return 'bg-red-50 text-red-600 border-red-100';
-         default: return 'bg-gray-50 text-gray-600';
-      }
-   };
-
    return (
       <div className="bg-white rounded-xl p-8 min-h-screen border border-gray-100">
 
@@ -98,9 +89,10 @@ const JobApplications = () => {
                >
                   <option value="">Lọc: Tất cả trạng thái</option>
                   <option value="PENDING">Chờ xử lý</option>
-                  <option value="REVIEWED">Đã xem</option>
-                  <option value="INTERVIEW">Phỏng vấn</option>
+                  <option value="VIEWED">Đã xem</option>
+                  <option value="ACCEPTED">Đã chấp nhận</option>
                   <option value="REJECTED">Từ chối</option>
+                  <option value="WITHDRAWN">Đã rút đơn</option>
                </select>
                <select
                   value={`${sortBy}-${sortOrder}`}
@@ -126,7 +118,7 @@ const JobApplications = () => {
                      <th className="p-5">Kinh nghiệm</th>
                      <th className="p-5">Học vấn</th>
                      <th className="p-5">Ngày nộp</th>
-                     <th className="p-5">Trạng thái</th>
+                     <th className="p-5">Giai đoạn</th>
                      <th className="p-5 text-right">Hành động</th>
                   </tr>
                </thead>
@@ -159,9 +151,18 @@ const JobApplications = () => {
                         <td className="p-5 text-sm text-gray-600">{candidate.education || 'N/A'}</td>
                         <td className="p-5 text-sm text-gray-500">{candidate.timeSent ? new Date(candidate.timeSent).toLocaleDateString('vi-VN') : 'N/A'}</td>
                         <td className="p-5">
-                           <span className={`px-3 py-1 rounded-full text-xs font-bold border ${getStatusColor(candidate.status)}`}>
-                              {candidate.status || 'Chưa cập nhật'}
-                           </span>
+                           <StagePopover
+                              applyFormId={candidate.id}
+                              jobId={id}
+                              currentStage={candidate.pipelineStage}
+                              onMoved={(newStage) => {
+                                 setCandidates(prev => prev.map(c =>
+                                    c.id === candidate.id
+                                       ? { ...c, pipelineStage: newStage, stageUpdatedAt: new Date().toISOString() }
+                                       : c
+                                 ));
+                              }}
+                           />
                         </td>
                         <td className="p-5 text-right">
                            <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -192,6 +193,15 @@ const JobApplications = () => {
                               >
                                  <FaEye />
                               </button>
+                              {(candidate.pipelineStage === 'INTERVIEW' || candidate.pipelineStage === 'OFFER') && (
+                                 <button
+                                    onClick={() => setOfferTarget(candidate)}
+                                    className="p-2 bg-amber-50 text-amber-600 rounded-lg hover:bg-amber-500 hover:text-white transition-colors"
+                                    title="Gửi offer"
+                                 >
+                                    <FaFileSignature />
+                                 </button>
+                              )}
                            </div>
                         </td>
                      </tr>
@@ -213,6 +223,21 @@ const JobApplications = () => {
                }}
             />
          )}
+
+         <SendOfferModal
+            open={!!offerTarget}
+            applyFormId={offerTarget?.id}
+            jobId={id}
+            defaultPosition={offerTarget?.jobTitle}
+            candidateName={offerTarget?.applicantName}
+            onClose={() => setOfferTarget(null)}
+            onSent={() => {
+               // Sau khi gửi offer, BE đã auto-move stage sang OFFER
+               setCandidates(prev => prev.map(c =>
+                  c.id === offerTarget?.id ? { ...c, pipelineStage: 'OFFER' } : c
+               ));
+            }}
+         />
 
       </div>
    );

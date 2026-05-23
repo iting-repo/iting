@@ -99,5 +99,12 @@ public enum NotificationType {
     // Admin notifications
     ADMIN_COMPANY_REGISTERED,
     ADMIN_JOB_CREATED,
-    ADMIN_REPORT_RECEIVED
+    ADMIN_REPORT_RECEIVED,
+
+    // Offer letter (Phase B)
+    OFFER_SENT,
+    OFFER_ACCEPTED,
+    OFFER_DECLINED,
+    OFFER_REVOKED,
+    OFFER_EXPIRED
 }

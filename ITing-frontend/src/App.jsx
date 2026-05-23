@@ -4,6 +4,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import AppRoutes from './routes/AppRoutes';
 import { checkAuth } from './store/auth/authSlice';
 import ScrollToTop from './components/common/ScrollToTop';
+import SystemAnnouncementModal from './components/common/SystemAnnouncementModal';
 
 const PUBLIC_LANDING_PATTERNS = [
   /^\/$/,
@@ -58,6 +59,7 @@ function App() {
     <>
       <ScrollToTop />
       <AppRoutes />
+      <SystemAnnouncementModal />
     </>
   );
 }

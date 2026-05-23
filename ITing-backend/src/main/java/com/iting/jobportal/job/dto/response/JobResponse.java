@@ -32,6 +32,7 @@ public class JobResponse {
     private JobType jobType;
     private ExperienceLevel experienceLevel;
     private String workingDays;
+    private CvLanguage cvLanguage;
 
     // Salary
     private BigDecimal minSalary;
@@ -124,6 +125,7 @@ public class JobResponse {
                 .jobType(job.getJobType())
                 .experienceLevel(job.getExperienceLevel())
                 .workingDays(job.getWorkingDays() != null ? job.getWorkingDays().name() : null)
+                .cvLanguage(job.getCvLanguage())
 
                 .minSalary(job.getMinSalary())
                 .maxSalary(job.getMaxSalary())

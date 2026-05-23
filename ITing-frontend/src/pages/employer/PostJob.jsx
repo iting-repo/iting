@@ -54,6 +54,13 @@ const WORKING_DAYS_OPTIONS = [
   { value: "FLEXIBLE", label: "Linh động" },
 ];
 
+const CV_LANGUAGE_OPTIONS = [
+  { value: "ANY", label: "Việt hoặc Anh (không bắt buộc)" },
+  { value: "VIETNAMESE", label: "Bắt buộc tiếng Việt" },
+  { value: "ENGLISH", label: "Bắt buộc tiếng Anh" },
+  { value: "BOTH", label: "Song ngữ (Việt + Anh)" },
+];
+
 const MAX_TITLE_LENGTH = 150;
 
 const formatSalaryDisplay = (value) => {
@@ -334,6 +341,7 @@ const PostJob = ({
     workType: initialData?.jobType || "",
     experienceLevel: initialData?.experienceLevel || "",
     workingDays: initialData?.workingDays || "",
+    cvLanguage: initialData?.cvLanguage || "ANY",
     quantity: initialData?.maxAccept ?? "",
     deadline: initialData?.dueDate || "",
     province: initialData?.province || "",
@@ -487,6 +495,7 @@ const PostJob = ({
       jobType: formData.workType || null,
       experienceLevel: formData.experienceLevel || null,
       workingDays: formData.workingDays || null,
+      cvLanguage: formData.cvLanguage || "ANY",
       minSalary: formData.salaryType === "NEGOTIABLE" || formData.minSalary === "" ? null : Number(formData.minSalary),
       maxSalary: formData.salaryType === "NEGOTIABLE" || formData.maxSalary === "" ? null : Number(formData.maxSalary),
       salaryType: formData.salaryType || null,
@@ -894,7 +903,7 @@ const PostJob = ({
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-1 gap-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
                       <label className="block text-gray-700 text-sm font-medium mb-2">
                         Ngày hết hạn
@@ -913,6 +922,30 @@ const PostJob = ({
                           {errors.deadline}
                         </p>
                       )}
+                    </div>
+
+                    <div>
+                      <label className="block text-gray-700 text-sm font-medium mb-2">
+                        Ngôn ngữ CV yêu cầu
+                        <span className="ml-1 text-xs text-gray-400 font-normal">
+                          (ứng viên sẽ thấy yêu cầu này khi xem job)
+                        </span>
+                      </label>
+                      <div className="relative">
+                        <select
+                          name="cvLanguage"
+                          value={formData.cvLanguage}
+                          onChange={handleChange}
+                          className="w-full px-4 py-3 border border-gray-200 rounded-lg appearance-none bg-white focus:outline-none focus:border-[#3AB4E6] text-gray-600 text-sm"
+                        >
+                          {CV_LANGUAGE_OPTIONS.map((item) => (
+                            <option key={item.value} value={item.value}>
+                              {item.label}
+                            </option>
+                          ))}
+                        </select>
+                        <FaChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 text-xs pointer-events-none" />
+                      </div>
                     </div>
                   </div>
                 </div>

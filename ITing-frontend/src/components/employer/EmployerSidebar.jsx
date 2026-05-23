@@ -11,6 +11,7 @@ import {
   FaShieldAlt,
   FaFileContract,
   FaCog,
+  FaCrown,
 } from "react-icons/fa";
 import { useDispatch, useSelector } from "react-redux";
 import { logout } from "../../store/auth/authSlice";
@@ -109,6 +110,11 @@ const EmployerSidebar = () => {
       name: "Ứng viên yêu thích",
       icon: <FaHeart />,
       badge: favoriteCount,
+    },
+    {
+      path: "/employer/services",
+      name: "Dịch vụ",
+      icon: <FaCrown />,
     },
   ];
 

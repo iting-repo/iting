@@ -390,7 +390,7 @@ const JobPage = () => {
                             >
                                 <FaChevronLeft size={12} />
                             </button>
-                            <button className="w-10 h-10 flex items-center justify-center rounded-lg bg-[#00B4D8] text-white font-bold shadow-md">
+                            <button className="w-10 h-10 flex items-center justify-center rounded-lg bg-[#3AB4E6] text-white font-bold shadow-md">
                                 {currentPage}
                             </button>
                             <button

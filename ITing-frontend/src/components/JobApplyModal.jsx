@@ -21,7 +21,36 @@ import authService from "../services/authService";
 import jobService from "../services/jobService";
 import { storage } from "../utils/storage";
 
-const JobApplyModal = ({ isOpen, onClose, onSuccess, jobTitle, jobId }) => {
+// Map cvLanguage → CTA hiển thị cho ứng viên (cả CV và cover letter)
+const CV_LANGUAGE_CTA = {
+  VIETNAMESE: {
+    badge: '🇻🇳 Yêu cầu tiếng Việt',
+    cls: 'bg-red-50 text-red-700 border-red-200',
+    cvHint: 'Hãy chọn CV viết bằng tiếng Việt. Hồ sơ nộp sai ngôn ngữ có thể bị loại.',
+    coverHint: 'Viết thư giới thiệu bằng tiếng Việt.',
+  },
+  ENGLISH: {
+    badge: '🇬🇧 Required: English',
+    cls: 'bg-blue-50 text-blue-700 border-blue-200',
+    cvHint: 'HR requires an English CV. Please pick (or upload) a CV written in English.',
+    coverHint: 'Write your cover letter in English.',
+  },
+  BOTH: {
+    badge: '🇻🇳 + 🇬🇧 Song ngữ',
+    cls: 'bg-purple-50 text-purple-700 border-purple-200',
+    cvHint: 'HR yêu cầu CV song ngữ (Việt + Anh). Đảm bảo CV của bạn có cả 2 ngôn ngữ.',
+    coverHint: 'Thư giới thiệu nên viết bằng tiếng Anh, kèm 1-2 câu tóm tắt tiếng Việt.',
+  },
+  ANY: {
+    badge: '✓ Việt hoặc Anh',
+    cls: 'bg-gray-50 text-gray-600 border-gray-200',
+    cvHint: 'HR chấp nhận CV tiếng Việt hoặc tiếng Anh — chọn loại bạn tự tin nhất.',
+    coverHint: 'Viết thư giới thiệu bằng ngôn ngữ phù hợp với CV bạn nộp.',
+  },
+};
+
+const JobApplyModal = ({ isOpen, onClose, onSuccess, jobTitle, jobId, cvLanguage }) => {
+  const langCta = CV_LANGUAGE_CTA[cvLanguage] || CV_LANGUAGE_CTA.ANY;
   const navigate = useNavigate();
   const [cvMethod, setCvMethod] = useState("recent"); // 'recent', 'library', 'upload'
   const [coverLetter, setCoverLetter] = useState("");
@@ -257,7 +286,7 @@ const JobApplyModal = ({ isOpen, onClose, onSuccess, jobTitle, jobId }) => {
             </div>
             <h2 className="text-xl font-black text-gray-800 mb-1">Ứng tuyển thành công!</h2>
             <p className="text-sm text-gray-500">
-              Hồ sơ của bạn đã được gửi đến nhà tuyển dụng cho vị trí <span className="font-bold text-[#00B4D8]">{jobTitle}</span>
+              Hồ sơ của bạn đã được gửi đến nhà tuyển dụng cho vị trí <span className="font-bold text-[#3AB4E6]">{jobTitle}</span>
             </p>
             <div className="mt-3 bg-blue-50 border border-blue-100 rounded-lg p-3 text-xs text-blue-700 font-medium">
               📬 Thông báo đã được gửi. Theo dõi trạng thái tại mục <Link to="/candidate/applied-jobs" onClick={handleCloseSuccess} className="underline font-bold">"Việc đã ứng tuyển"</Link>
@@ -267,7 +296,7 @@ const JobApplyModal = ({ isOpen, onClose, onSuccess, jobTitle, jobId }) => {
           {/* Similar Jobs */}
           <div className="px-6 pb-6">
             <h3 className="font-bold text-gray-800 text-sm mb-3 flex items-center gap-2">
-              <FaBriefcase className="text-[#00B4D8]" />
+              <FaBriefcase className="text-[#3AB4E6]" />
               Việc làm tương tự có thể bạn quan tâm
             </h3>
 
@@ -280,7 +309,7 @@ const JobApplyModal = ({ isOpen, onClose, onSuccess, jobTitle, jobId }) => {
                     key={job.id}
                     to={`/jobs/${job.id}`}
                     onClick={handleCloseSuccess}
-                    className="flex items-start gap-3 p-3 rounded-xl border border-gray-100 hover:border-[#00B4D8]/40 hover:bg-blue-50/30 transition-all group"
+                    className="flex items-start gap-3 p-3 rounded-xl border border-gray-100 hover:border-[#3AB4E6]/40 hover:bg-blue-50/30 transition-all group"
                   >
                     <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center shrink-0 overflow-hidden">
                       {job.companyLogo || job.company?.logoUrl ? (
@@ -290,7 +319,7 @@ const JobApplyModal = ({ isOpen, onClose, onSuccess, jobTitle, jobId }) => {
                       )}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-bold text-gray-800 truncate group-hover:text-[#00B4D8] transition-colors">
+                      <p className="text-sm font-bold text-gray-800 truncate group-hover:text-[#3AB4E6] transition-colors">
                         {job.title}
                       </p>
                       <p className="text-xs text-gray-500 truncate">
@@ -305,7 +334,7 @@ const JobApplyModal = ({ isOpen, onClose, onSuccess, jobTitle, jobId }) => {
                         {job.salary && <span>{job.salary}</span>}
                       </div>
                     </div>
-                    <FaArrowRight className="text-gray-300 group-hover:text-[#00B4D8] transition-colors mt-3 shrink-0" size={12} />
+                    <FaArrowRight className="text-gray-300 group-hover:text-[#3AB4E6] transition-colors mt-3 shrink-0" size={12} />
                   </Link>
                 ))}
               </div>
@@ -327,7 +356,7 @@ const JobApplyModal = ({ isOpen, onClose, onSuccess, jobTitle, jobId }) => {
             <Link
               to="/jobs"
               onClick={handleCloseSuccess}
-              className="flex-1 py-2.5 bg-[#00B4D8] text-white font-bold rounded-xl hover:bg-[#118AB2] transition-colors text-sm text-center"
+              className="flex-1 py-2.5 bg-[#3AB4E6] text-white font-bold rounded-xl hover:bg-[#2C9ACD] transition-colors text-sm text-center"
             >
               Xem thêm việc làm
             </Link>
@@ -350,7 +379,7 @@ const JobApplyModal = ({ isOpen, onClose, onSuccess, jobTitle, jobId }) => {
         <div className="sticky top-0 bg-white z-10 px-6 py-4 border-b border-gray-100 flex justify-between items-start">
           <div>
             <h2 className="text-xl font-bold text-gray-800">
-              Ứng tuyển <span className="text-[#00B4D8]">{jobTitle}</span>
+              Ứng tuyển <span className="text-[#3AB4E6]">{jobTitle}</span>
             </h2>
           </div>
           <button onClick={onClose} className="text-gray-400 hover:text-gray-600 transition-colors p-1">
@@ -360,6 +389,17 @@ const JobApplyModal = ({ isOpen, onClose, onSuccess, jobTitle, jobId }) => {
 
         {/* Body */}
         <div className="p-6 space-y-4">
+          {/* CTA: Yêu cầu ngôn ngữ CV (do HR thiết lập) */}
+          <div className={`rounded-lg p-3 border ${langCta.cls} flex items-start gap-3`}>
+            <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-bold border ${langCta.cls} shrink-0`}>
+              {langCta.badge}
+            </span>
+            <div className="text-xs leading-relaxed">
+              <p className="font-semibold mb-0.5">{langCta.cvHint}</p>
+              <p className="opacity-80">{langCta.coverHint}</p>
+            </div>
+          </div>
+
           {/* CTA: Thông tin ứng tuyển (compact, trên cùng) */}
           {user && (
             <div className="bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 flex items-center justify-between gap-2 flex-wrap">
@@ -380,7 +420,7 @@ const JobApplyModal = ({ isOpen, onClose, onSuccess, jobTitle, jobId }) => {
               <Link
                 to="/candidate/profile"
                 onClick={onClose}
-                className="text-[11px] text-[#00B4D8] font-semibold hover:underline flex items-center gap-1 shrink-0"
+                className="text-[11px] text-[#3AB4E6] font-semibold hover:underline flex items-center gap-1 shrink-0"
               >
                 <FaUserEdit size={10} />
                 Cập nhật hồ sơ
@@ -388,32 +428,37 @@ const JobApplyModal = ({ isOpen, onClose, onSuccess, jobTitle, jobId }) => {
             </div>
           )}
 
-          <h3 className="font-bold text-gray-800 text-sm">Chọn CV để ứng tuyển</h3>
+          <div className="flex items-center justify-between flex-wrap gap-2">
+            <h3 className="font-bold text-gray-800 text-sm">Chọn CV để ứng tuyển</h3>
+            <span className="text-[11px] text-gray-500 italic">
+              💡 {langCta.cvHint}
+            </span>
+          </div>
 
           {/* OPTION 1: Recent CV */}
           <div
             onClick={() => recentCVs.length > 0 && setCvMethod("recent")}
             className={`border rounded-lg p-4 cursor-pointer transition-all ${
               cvMethod === "recent"
-                ? "border-[#00B4D8] bg-[#E6F6FD]/30"
-                : "border-gray-200 hover:border-[#00B4D8]"
+                ? "border-[#3AB4E6] bg-[#E6F6FD]/30"
+                : "border-gray-200 hover:border-[#3AB4E6]"
             } ${recentCVs.length === 0 ? 'opacity-50 cursor-not-allowed' : ''}`}
           >
             <div className="flex items-center gap-3 mb-3">
               <div
                 className={`w-5 h-5 rounded-full border flex items-center justify-center ${
-                  cvMethod === "recent" ? "border-[#00B4D8]" : "border-gray-300"
+                  cvMethod === "recent" ? "border-[#3AB4E6]" : "border-gray-300"
                 }`}
               >
-                {cvMethod === "recent" && <div className="w-2.5 h-2.5 bg-[#00B4D8] rounded-full"></div>}
+                {cvMethod === "recent" && <div className="w-2.5 h-2.5 bg-[#3AB4E6] rounded-full"></div>}
               </div>
-              <span className="font-bold text-[#00B4D8] text-sm flex-1">
+              <span className="font-bold text-[#3AB4E6] text-sm flex-1">
                 CV ứng tuyển gần nhất: {recentCVs[0]?.title || "Chưa có"}
               </span>
               {recentCVs[0]?.id && (
                 <button
                   onClick={(e) => { e.stopPropagation(); previewCV(recentCVs[0]); }}
-                  className="text-xs text-[#00B4D8] hover:underline"
+                  className="text-xs text-[#3AB4E6] hover:underline"
                 >
                   Xem
                 </button>
@@ -429,16 +474,16 @@ const JobApplyModal = ({ isOpen, onClose, onSuccess, jobTitle, jobId }) => {
           <div
             onClick={() => setCvMethod("library")}
             className={`border rounded-lg p-4 cursor-pointer transition-all ${
-              cvMethod === "library" ? "border-[#00B4D8] bg-[#E6F6FD]/10" : "border-gray-200 hover:border-[#00B4D8]"
+              cvMethod === "library" ? "border-[#3AB4E6] bg-[#E6F6FD]/10" : "border-gray-200 hover:border-[#3AB4E6]"
             }`}
           >
             <div className="flex items-center gap-3">
               <div
                 className={`w-5 h-5 rounded-full border flex items-center justify-center ${
-                  cvMethod === "library" ? "border-[#00B4D8]" : "border-gray-300"
+                  cvMethod === "library" ? "border-[#3AB4E6]" : "border-gray-300"
                 }`}
               >
-                {cvMethod === "library" && <div className="w-2.5 h-2.5 bg-[#00B4D8] rounded-full"></div>}
+                {cvMethod === "library" && <div className="w-2.5 h-2.5 bg-[#3AB4E6] rounded-full"></div>}
               </div>
               <span className="font-medium text-gray-700 text-sm">Chọn CV khác trong thư viện</span>
             </div>
@@ -450,7 +495,7 @@ const JobApplyModal = ({ isOpen, onClose, onSuccess, jobTitle, jobId }) => {
                     <div 
                       key={cv.id}
                       onClick={(e) => { e.stopPropagation(); setSelectedCVId(cv.id); }}
-                      className={`flex items-center justify-between p-3 rounded-lg border text-sm transition-all ${selectedCVId === cv.id ? 'border-[#00B4D8] bg-white shadow-sm' : 'border-gray-100 hover:bg-gray-50'}`}
+                      className={`flex items-center justify-between p-3 rounded-lg border text-sm transition-all ${selectedCVId === cv.id ? 'border-[#3AB4E6] bg-white shadow-sm' : 'border-gray-100 hover:bg-gray-50'}`}
                     >
                       <div className="flex items-center gap-2 truncate">
                         <FaFilePdf className="text-red-500 shrink-0" />
@@ -458,7 +503,7 @@ const JobApplyModal = ({ isOpen, onClose, onSuccess, jobTitle, jobId }) => {
                       </div>
                       <button
                         onClick={(e) => { e.stopPropagation(); previewCV(cv); }}
-                        className="text-[#00B4D8] text-xs font-bold hover:underline"
+                        className="text-[#3AB4E6] text-xs font-bold hover:underline"
                       >
                         Xem
                       </button>
@@ -475,16 +520,16 @@ const JobApplyModal = ({ isOpen, onClose, onSuccess, jobTitle, jobId }) => {
           <div
             onClick={() => setCvMethod("upload")}
             className={`border rounded-lg p-4 cursor-pointer transition-all ${
-              cvMethod === "upload" ? "border-[#00B4D8] bg-[#E6F6FD]/10" : "border-gray-200 hover:border-[#00B4D8]"
+              cvMethod === "upload" ? "border-[#3AB4E6] bg-[#E6F6FD]/10" : "border-gray-200 hover:border-[#3AB4E6]"
             }`}
           >
             <div className="flex items-center gap-3 mb-3">
               <div
                 className={`w-5 h-5 rounded-full border flex items-center justify-center ${
-                  cvMethod === "upload" ? "border-[#00B4D8]" : "border-gray-300"
+                  cvMethod === "upload" ? "border-[#3AB4E6]" : "border-gray-300"
                 }`}
               >
-                {cvMethod === "upload" && <div className="w-2.5 h-2.5 bg-[#00B4D8] rounded-full"></div>}
+                {cvMethod === "upload" && <div className="w-2.5 h-2.5 bg-[#3AB4E6] rounded-full"></div>}
               </div>
               <span className="font-medium text-gray-700 text-sm">Tải lên CV mới</span>
             </div>
@@ -501,7 +546,7 @@ const JobApplyModal = ({ isOpen, onClose, onSuccess, jobTitle, jobId }) => {
                     </label>
                   </>
                 ) : (
-                  <div className="w-full flex items-center justify-between bg-white p-3 rounded-lg border border-[#00B4D8]">
+                  <div className="w-full flex items-center justify-between bg-white p-3 rounded-lg border border-[#3AB4E6]">
                     <div className="flex items-center gap-3 truncate">
                       <FaFilePdf size={24} className="text-red-500 shrink-0" />
                       <div className="truncate">
@@ -510,7 +555,7 @@ const JobApplyModal = ({ isOpen, onClose, onSuccess, jobTitle, jobId }) => {
                       </div>
                     </div>
                     <div className="flex items-center gap-3">
-                      <button onClick={(e) => { e.stopPropagation(); previewLocalFile(); }} className="text-[#00B4D8] text-xs font-bold">Xem</button>
+                      <button onClick={(e) => { e.stopPropagation(); previewLocalFile(); }} className="text-[#3AB4E6] text-xs font-bold">Xem</button>
                       <button onClick={(e) => { e.stopPropagation(); setUploadedFile(null); }} className="text-gray-400 hover:text-red-500">✕</button>
                     </div>
                   </div>
@@ -521,7 +566,7 @@ const JobApplyModal = ({ isOpen, onClose, onSuccess, jobTitle, jobId }) => {
                     placeholder="Đặt tên cho CV này"
                     value={uploadTitle}
                     onChange={(e) => setUploadTitle(e.target.value)}
-                    className="mt-4 w-full px-3 py-2 border border-gray-200 rounded text-sm outline-none focus:ring-1 focus:ring-[#00B4D8]"
+                    className="mt-4 w-full px-3 py-2 border border-gray-200 rounded text-sm outline-none focus:ring-1 focus:ring-[#3AB4E6]"
                   />
                 )}
               </div>
@@ -530,15 +575,18 @@ const JobApplyModal = ({ isOpen, onClose, onSuccess, jobTitle, jobId }) => {
 
           {/* Cover Letter */}
           <div>
-            <h3 className="font-bold text-gray-800 text-sm mb-2 flex items-center gap-2">
+            <h3 className="font-bold text-gray-800 text-sm mb-1 flex items-center gap-2">
               Thư giới thiệu
               <FaPen size={10} className="text-gray-300" />
             </h3>
+            <p className="text-[11px] text-gray-500 italic mb-2">
+              💡 {langCta.coverHint}
+            </p>
             <div className="relative">
               <textarea
                 rows="3"
                 maxLength={500}
-                className={`w-full border rounded-lg p-3 text-sm focus:ring-1 focus:ring-[#00B4D8] outline-none resize-none bg-gray-50 ${
+                className={`w-full border rounded-lg p-3 text-sm focus:ring-1 focus:ring-[#3AB4E6] outline-none resize-none bg-gray-50 ${
                   coverLetter.length >= 500 ? 'border-red-400' : 'border-gray-200'
                 }`}
                 placeholder="Giới thiệu nhanh về bản thân..."
@@ -561,7 +609,7 @@ const JobApplyModal = ({ isOpen, onClose, onSuccess, jobTitle, jobId }) => {
             <button
               onClick={handleSubmit}
               disabled={isSubmitting}
-              className={`flex-1 py-2.5 bg-[#00B4D8] text-white font-bold rounded-lg hover:bg-[#118AB2] transition-colors text-sm shadow-lg ${isSubmitting ? "opacity-50 cursor-not-allowed" : ""}`}
+              className={`flex-1 py-2.5 bg-[#3AB4E6] text-white font-bold rounded-lg hover:bg-[#2C9ACD] transition-colors text-sm shadow-lg ${isSubmitting ? "opacity-50 cursor-not-allowed" : ""}`}
             >
               {isSubmitting
                 ? (cvMethod === 'upload'

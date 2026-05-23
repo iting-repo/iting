@@ -50,6 +50,10 @@ public class ApplicationResponse {
     /** Điểm phù hợp CV ↔ Job (0–100%). Null nếu chưa tính. */
     private Double matchScore;
 
+    /** Giai đoạn pipeline tuyển dụng: SCREENING / PHONE_SCREEN / INTERVIEW / OFFER / HIRED / REJECTED. */
+    private String pipelineStage;
+    private LocalDateTime stageUpdatedAt;
+
     public static ApplicationResponse fromEntities(
             ApplyForm form,
             ApplyFormSentToJob sent,

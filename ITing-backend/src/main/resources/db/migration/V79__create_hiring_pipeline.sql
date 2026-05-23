@@ -1,5 +1,5 @@
 -- Add hiring pipeline stage to ApplyFormSentToJob (composite key entity)
-ALTER TABLE applyformsenttojob
+ALTER TABLE apply_form_user_to_job
     ADD COLUMN IF NOT EXISTS pipeline_stage VARCHAR(30) NOT NULL DEFAULT 'SCREENING',
     ADD COLUMN IF NOT EXISTS stage_updated_at TIMESTAMP,
     ADD COLUMN IF NOT EXISTS stage_updated_by BIGINT;

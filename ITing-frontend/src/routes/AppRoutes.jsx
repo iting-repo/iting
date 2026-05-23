@@ -25,6 +25,9 @@ const Verification = lazy(() => import('../pages/employer/Verification'));
 const DataProcessing = lazy(() => import('../pages/employer/DataProcessing'));
 const FindCandidate = lazy(() => import('../pages/employer/FindCandidate'));
 const FavoriteCandidates = lazy(() => import('../pages/employer/FavoriteCandidates'));
+const EmployerServicesPage = lazy(() => import('../pages/employer/EmployerServicesPage'));
+const SubscriptionPricingPage = lazy(() => import('../pages/employer/subscription/SubscriptionPricingPage'));
+const ManageSubscriptionPage = lazy(() => import('../pages/employer/subscription/ManageSubscriptionPage'));
 const CandidateDashboard = lazy(() => import('../pages/candidate/CandidateDashboard'));
 const CandidateLayout = lazy(() => import('../layouts/CandidateLayout'));
 const CandidateProfile = lazy(() => import('../pages/candidate/profile/CandidateProfile'));
@@ -32,6 +35,7 @@ const AppliedJobs = lazy(() => import('../pages/candidate/AppliedJobs'));
 const JobAlerts = lazy(() => import('../pages/candidate/JobAlerts'));
 const FavoriteJobs = lazy(() => import('../pages/candidate/FavoriteJobs'));
 const SettingsPage = lazy(() => import('../pages/candidate/SettingsPage'));
+const CandidateOffers = lazy(() => import('../pages/candidate/CandidateOffers'));
 const AdminDashboard = lazy(() => import('../pages/admin/Dashboard'));
 const UserManagement = lazy(() => import('../pages/admin/users/UserManagement'));
 const CompanyManagement = lazy(() => import('../pages/admin/companies/CompanyManagement'));
@@ -49,6 +53,7 @@ const SystemConfig = lazy(() => import('../pages/admin/config/SystemConfig'));
 const NotificationManagement = lazy(() => import('../pages/admin/notifications/NotificationManagement'));
 const CategoryManagement = lazy(() => import('../pages/admin/categories/CategoryManagement'));
 const BannerManagement = lazy(() => import('../pages/admin/banner/BannerManagement'));
+const AnnouncementManagement = lazy(() => import('../pages/admin/announcements/AnnouncementManagement'));
 const BlogManagement = lazy(() => import('../pages/admin/blog/BlogManagement'));
 const FaqManagement = lazy(() => import('../pages/admin/faq/FaqManagement'));
 const RoleManagement = lazy(() => import('../pages/admin/roles/RoleManagement'));
@@ -96,6 +101,7 @@ const AppRoutes = () => {
             <Route path="notifications" element={<NotificationManagement />} />
             <Route path="categories" element={<CategoryManagement />} />
             <Route path="banner" element={<BannerManagement />} />
+            <Route path="announcements" element={<AnnouncementManagement />} />
             <Route path="blog" element={<BlogManagement />} />
             <Route path="faq" element={<FaqManagement />} />
             <Route path="roles" element={<RoleManagement />} />
@@ -119,6 +125,9 @@ const AppRoutes = () => {
               <Route path="job/:slug/:jobKey/applications" element={<JobApplications />} />
               <Route path="find-cv" element={<FindCandidate />} />
               <Route path="favorite-candidates" element={<FavoriteCandidates />} />
+              <Route path="services" element={<EmployerServicesPage />} />
+              <Route path="subscriptions" element={<SubscriptionPricingPage />} />
+              <Route path="manage-subscription" element={<ManageSubscriptionPage />} />
             </Route>
           </Route>
         </Route>
@@ -132,6 +141,7 @@ const AppRoutes = () => {
               {/* Các trang con khác làm sau, hiện tại để tạm div rỗng để ko lỗi */}
               <Route path="profile" element={<CandidateProfile defaultTab="personal" />} />
               <Route path="applied-jobs" element={<AppliedJobs />} />
+              <Route path="offers" element={<CandidateOffers />} />
               <Route path="favorite-jobs" element={<FavoriteJobs />} />
               <Route path="job-alerts" element={<JobAlerts />} />
               <Route path="settings" element={<SettingsPage />} />

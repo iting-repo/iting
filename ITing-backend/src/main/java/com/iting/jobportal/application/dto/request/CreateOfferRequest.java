@@ -1,0 +1,40 @@
+package com.iting.jobportal.application.dto.request;
+
+import jakarta.validation.constraints.*;
+import lombok.Data;
+
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+
+@Data
+public class CreateOfferRequest {
+
+    @NotNull
+    private Long applyFormId;
+
+    @NotNull
+    private Long jobId;
+
+    @NotBlank
+    @Size(max = 255)
+    private String position;
+
+    @DecimalMin("0.0")
+    private BigDecimal salaryAmount;
+
+    @Size(max = 10)
+    private String salaryCurrency; // default VND
+
+    @Pattern(regexp = "MONTH|YEAR")
+    private String salaryType; // default MONTH
+
+    private LocalDate startDate;
+
+    @NotNull
+    @Future(message = "Hạn phản hồi phải sau thời điểm hiện tại")
+    private LocalDateTime expiresAt;
+
+    @Size(max = 5000)
+    private String notes;
+}

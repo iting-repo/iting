@@ -57,7 +57,7 @@ const DualRangeSlider = ({ min, max, minVal, maxVal, step, onChange }) => {
                     style={{
                         left: `${minPercent}%`,
                         width: `${maxPercent - minPercent}%`,
-                        background: 'linear-gradient(90deg, #00B4D8, #0096B4)',
+                        background: 'linear-gradient(90deg, #3AB4E6, #2C9ACD)',
                     }}
                 />
             </div>
@@ -114,7 +114,7 @@ const DualRangeSlider = ({ min, max, minVal, maxVal, step, onChange }) => {
                     height: 20px;
                     border-radius: 50%;
                     background: white;
-                    border: 3px solid #00B4D8;
+                    border: 3px solid #3AB4E6;
                     box-shadow: 0 1px 4px rgba(0,0,0,0.15);
                     cursor: pointer;
                     pointer-events: all;
@@ -122,7 +122,7 @@ const DualRangeSlider = ({ min, max, minVal, maxVal, step, onChange }) => {
                 }
                 .salary-range-thumb::-webkit-slider-thumb:hover {
                     transform: scale(1.15);
-                    box-shadow: 0 2px 8px rgba(0,180,216,0.35);
+                    box-shadow: 0 2px 8px rgba(58,180,230,0.35);
                 }
                 .salary-range-thumb::-webkit-slider-thumb:active {
                     transform: scale(1.2);
@@ -133,7 +133,7 @@ const DualRangeSlider = ({ min, max, minVal, maxVal, step, onChange }) => {
                     height: 20px;
                     border-radius: 50%;
                     background: white;
-                    border: 3px solid #00B4D8;
+                    border: 3px solid #3AB4E6;
                     box-shadow: 0 1px 4px rgba(0,0,0,0.15);
                     cursor: pointer;
                     pointer-events: all;
@@ -188,9 +188,9 @@ const JobFilters = ({
                     type="checkbox"
                     checked={checked}
                     onChange={() => onToggle(value)}
-                    className="w-4 h-4 text-[#00B4D8] rounded border-gray-300 focus:ring-[#00B4D8] cursor-pointer"
+                    className="w-4 h-4 text-[#3AB4E6] rounded border-gray-300 focus:ring-[#3AB4E6] cursor-pointer"
                 />
-                <span className="text-gray-600 group-hover:text-[#00B4D8] text-sm transition-colors">
+                <span className="text-gray-600 group-hover:text-[#3AB4E6] text-sm transition-colors">
                     {label}
                 </span>
             </div>
@@ -211,14 +211,14 @@ const JobFilters = ({
                             value={filters.keyword}
                             onChange={(e) => onFieldChange('keyword', e.target.value)}
                             placeholder="Chức danh hoặc tên Công ty"
-                            className="w-full pl-9 pr-3 py-2.5 bg-white border border-transparent focus:border-[#00B4D8] rounded-lg outline-none text-sm transition-all placeholder-gray-400 shadow-sm"
+                            className="w-full pl-9 pr-3 py-2.5 bg-white border border-transparent focus:border-[#3AB4E6] rounded-lg outline-none text-sm transition-all placeholder-gray-400 shadow-sm"
                         />
                     </div>
                 </div>
 
                 <div>
                     <h3 className="font-bold text-gray-800 mb-3 text-sm">Địa điểm làm việc</h3>
-                    <div className="relative bg-white border border-transparent focus-within:border-[#00B4D8] rounded-lg shadow-sm">
+                    <div className="relative bg-white border border-transparent focus-within:border-[#3AB4E6] rounded-lg shadow-sm">
                         <FaMapMarkerAlt className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs z-10" />
                         <div className="pl-9 pr-3 py-2.5">
                             <LocationPicker
@@ -233,7 +233,7 @@ const JobFilters = ({
 
                 <button
                     onClick={onApply}
-                    className="w-full py-2 bg-[#00B4D8] hover:bg-[#0096B4] text-white text-xs font-bold rounded-lg transition-colors shadow-sm"
+                    className="w-full py-2 bg-[#3AB4E6] hover:bg-[#2C9ACD] text-white text-xs font-bold rounded-lg transition-colors shadow-sm"
                 >
                     Tìm kiếm
                 </button>
@@ -284,9 +284,9 @@ const JobFilters = ({
                                     name="postedWithinHours"
                                     checked={String(filters.postedWithinHours || '') === item.value}
                                     onChange={() => onFieldChange('postedWithinHours', item.value)}
-                                    className="w-4 h-4 text-[#00B4D8] border-gray-300 focus:ring-[#00B4D8] cursor-pointer"
+                                    className="w-4 h-4 text-[#3AB4E6] border-gray-300 focus:ring-[#3AB4E6] cursor-pointer"
                                 />
-                                <span className="text-gray-600 group-hover:text-[#00B4D8] text-sm transition-colors">
+                                <span className="text-gray-600 group-hover:text-[#3AB4E6] text-sm transition-colors">
                                     {item.label}
                                 </span>
                             </label>
@@ -303,7 +303,7 @@ const JobFilters = ({
                         {!isDefaultSalary && (
                             <button
                                 onClick={() => handleSalaryChange(SALARY_MIN, SALARY_MAX)}
-                                className="text-[10px] text-gray-400 hover:text-[#00B4D8] transition-colors"
+                                className="text-[10px] text-gray-400 hover:text-[#3AB4E6] transition-colors"
                             >
                                 Đặt lại
                             </button>
@@ -313,13 +313,13 @@ const JobFilters = ({
                     {/* Value display */}
                     <div className="flex items-center justify-between mb-4">
                         <div className="bg-white border border-gray-200 rounded-lg px-3 py-1.5 min-w-[70px] text-center">
-                            <span className="text-xs font-semibold text-[#00B4D8]">
+                            <span className="text-xs font-semibold text-[#3AB4E6]">
                                 {salaryRange[0] === SALARY_MIN ? '0' : formatVND(salaryRange[0])}
                             </span>
                         </div>
                         <span className="text-gray-300 text-xs mx-2">—</span>
                         <div className="bg-white border border-gray-200 rounded-lg px-3 py-1.5 min-w-[70px] text-center">
-                            <span className="text-xs font-semibold text-[#00B4D8]">
+                            <span className="text-xs font-semibold text-[#3AB4E6]">
                                 {salaryRange[1] === SALARY_MAX ? '100 tr+' : formatVND(salaryRange[1])}
                             </span>
                         </div>
@@ -348,7 +348,7 @@ const JobFilters = ({
                 <div className="flex gap-2">
                     <button
                         onClick={onApply}
-                        className="flex-1 py-2 bg-[#00B4D8] hover:bg-[#0096B4] text-white text-xs font-bold rounded-lg transition-colors"
+                        className="flex-1 py-2 bg-[#3AB4E6] hover:bg-[#2C9ACD] text-white text-xs font-bold rounded-lg transition-colors"
                     >
                         Áp dụng
                     </button>

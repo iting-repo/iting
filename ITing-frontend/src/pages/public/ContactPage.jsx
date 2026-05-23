@@ -23,7 +23,7 @@ const ContactPage = () => {
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                             {/* Phone */}
                             <div className="flex flex-col gap-2">
-                                <div className="flex items-center gap-2 text-[#00B4D8]">
+                                <div className="flex items-center gap-2 text-[#3AB4E6]">
                                     <FaPhoneAlt />
                                     <h3 className="font-bold text-gray-900">Gọi để được tư vấn</h3>
                                 </div>
@@ -32,7 +32,7 @@ const ContactPage = () => {
 
                             {/* Email */}
                             <div className="flex flex-col gap-2">
-                                <div className="flex items-center gap-2 text-[#00B4D8]">
+                                <div className="flex items-center gap-2 text-[#3AB4E6]">
                                     <FaEnvelope />
                                     <h3 className="font-bold text-gray-900">Gửi email cho chúng tôi</h3>
                                 </div>
@@ -41,7 +41,7 @@ const ContactPage = () => {
 
                             {/* Working Hours */}
                             <div className="flex flex-col gap-2">
-                                <div className="flex items-center gap-2 text-[#00B4D8]">
+                                <div className="flex items-center gap-2 text-[#3AB4E6]">
                                     <FaClock />
                                     <h3 className="font-bold text-gray-900">Giờ làm việc</h3>
                                 </div>
@@ -51,7 +51,7 @@ const ContactPage = () => {
 
                             {/* Office */}
                             <div className="flex flex-col gap-2">
-                                <div className="flex items-center gap-2 text-[#00B4D8]">
+                                <div className="flex items-center gap-2 text-[#3AB4E6]">
                                     <FaMapMarkerAlt />
                                     <h3 className="font-bold text-gray-900">Văn phòng</h3>
                                 </div>
@@ -74,7 +74,7 @@ const ContactPage = () => {
                                     <input
                                         type="text"
                                         placeholder="Nhập tên của bạn"
-                                        className="w-full p-3.5 rounded-xl border-none focus:ring-2 focus:ring-[#00B4D8] outline-none text-sm placeholder-gray-400 shadow-sm"
+                                        className="w-full p-3.5 rounded-xl border-none focus:ring-2 focus:ring-[#3AB4E6] outline-none text-sm placeholder-gray-400 shadow-sm"
                                     />
                                 </div>
                                 <div className="space-y-1.5">
@@ -82,7 +82,7 @@ const ContactPage = () => {
                                     <input
                                         type="text"
                                         placeholder="Nhập họ của bạn"
-                                        className="w-full p-3.5 rounded-xl border-none focus:ring-2 focus:ring-[#00B4D8] outline-none text-sm placeholder-gray-400 shadow-sm"
+                                        className="w-full p-3.5 rounded-xl border-none focus:ring-2 focus:ring-[#3AB4E6] outline-none text-sm placeholder-gray-400 shadow-sm"
                                     />
                                 </div>
                             </div>
@@ -92,7 +92,7 @@ const ContactPage = () => {
                                 <input
                                     type="email"
                                     placeholder="Nhập Địa chỉ email"
-                                    className="w-full p-3.5 rounded-xl border-none focus:ring-2 focus:ring-[#00B4D8] outline-none text-sm placeholder-gray-400 shadow-sm"
+                                    className="w-full p-3.5 rounded-xl border-none focus:ring-2 focus:ring-[#3AB4E6] outline-none text-sm placeholder-gray-400 shadow-sm"
                                 />
                             </div>
 
@@ -101,7 +101,7 @@ const ContactPage = () => {
                                 <textarea
                                     rows="4"
                                     placeholder="Nhập nội dung tin nhắn"
-                                    className="w-full p-3.5 rounded-xl border-none focus:ring-2 focus:ring-[#00B4D8] outline-none text-sm placeholder-gray-400 shadow-sm resize-none"
+                                    className="w-full p-3.5 rounded-xl border-none focus:ring-2 focus:ring-[#3AB4E6] outline-none text-sm placeholder-gray-400 shadow-sm resize-none"
                                 ></textarea>
                             </div>
 
@@ -128,7 +128,7 @@ const ContactPage = () => {
                     />
                     {/* Pin Location */}
                     <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
-                        <div className="w-12 h-12 bg-[#00B4D8] rounded-full flex items-center justify-center text-white text-2xl shadow-xl animate-bounce">
+                        <div className="w-12 h-12 bg-[#3AB4E6] rounded-full flex items-center justify-center text-white text-2xl shadow-xl animate-bounce">
                             <FaMapMarkerAlt />
                         </div>
                     </div>
