@@ -72,7 +72,10 @@ const mapJobToCard = (job) => ({
     type: job.jobType || 'FULL_TIME',
     salary: formatSalary(job.minSalary, job.maxSalary),
     location: job.location || job.province || 'Việt Nam',
-    timePosted: timeAgo(job.lastUpdate || job.createdAt),
+    // Ưu tiên createdAt (thời điểm post thật). lastUpdate reset khi admin
+    // edit/approve job → nếu dùng nó, mọi job vừa được duyệt sẽ hiển thị
+    // "Vừa xong" sai.
+    timePosted: timeAgo(job.createdAt || job.lastUpdate),
 });
 
 const compactParams = (filters) => ({
@@ -274,7 +277,7 @@ const JobPage = () => {
                         salary: formatSalary(job.minSalary, job.maxSalary, job.salaryType),
                         location: job.location || job.province,
                         type: job.jobType,
-                        postedAt: job.lastUpdate || job.createdAt,
+                        postedAt: job.createdAt || job.lastUpdate,
                         isHot: job.viewCount > 100 || job.applicationCount > 50,
                         featured: job.featured,
                         isAiSuggested: job.isAiSuggested
