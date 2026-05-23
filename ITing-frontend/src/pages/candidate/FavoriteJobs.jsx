@@ -108,9 +108,9 @@ const FavoriteJobs = () => {
   };
 
   return (
-    <div className="bg-white rounded-xl p-8 min-h-screen shadow-sm border border-gray-100">
-      <div className="flex items-center justify-between mb-6">
-        <h2 className="text-2xl font-bold text-gray-800">
+    <div className="bg-white rounded-xl p-4 sm:p-6 lg:p-8 min-h-screen shadow-sm border border-gray-100 flex flex-col w-full overflow-hidden">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-4 sm:mb-6">
+        <h2 className="text-xl md:text-2xl font-bold text-gray-800">
           Công việc đã lưu <span className="text-gray-400 font-normal text-lg">({totalElements})</span>
         </h2>
       </div>
@@ -131,6 +131,7 @@ const FavoriteJobs = () => {
       ) : (
         <>
           <Table
+            tableClassName="min-w-[800px] whitespace-nowrap"
             headers={[
               { label: "Công việc" },
               { label: "Mức lương" },

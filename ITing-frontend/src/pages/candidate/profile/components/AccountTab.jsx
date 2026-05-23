@@ -45,7 +45,7 @@ const AccountTab = () => {
                             />
                         </div>
                     </div>
-                    <button className="mt-2 bg-blue-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-blue-700 transition-colors">
+                    <button className="mt-2 w-full md:w-auto bg-blue-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-blue-700 transition-colors">
                         Cập nhật mật khẩu
                     </button>
                 </div>
@@ -72,7 +72,7 @@ const AccountTab = () => {
                             placeholder="new-email@example.com"
                         />
                     </div>
-                    <button className="bg-blue-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-blue-700 transition-colors">
+                    <button className="w-full md:w-auto bg-blue-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-blue-700 transition-colors">
                         Cập nhật Email
                     </button>
                 </div>
@@ -89,7 +89,7 @@ const AccountTab = () => {
                         <p className="text-sm text-red-600">Hành động này không thể hoàn tác. Tất cả dữ liệu sẽ bị xóa vĩnh viễn.</p>
                     </div>
                 </div>
-                <button className="bg-red-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-red-700 transition-colors">
+                <button className="w-full md:w-auto bg-red-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-red-700 transition-colors">
                     Xóa tài khoản ngay
                 </button>
             </section>

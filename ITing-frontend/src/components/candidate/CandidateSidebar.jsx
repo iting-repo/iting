@@ -10,7 +10,7 @@ import axiosInstance from '../../utils/axiosInstance';
 import { API_ORIGIN } from '../../config';
 import { storage } from '../../utils/storage';
 
-const CandidateSidebar = () => {
+const CandidateSidebar = ({ isMobile = false, onClose }) => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const { currentUser } = useSelector((state) => state.auth);
@@ -91,7 +91,11 @@ const CandidateSidebar = () => {
 
   // ══════════════════════════════════════════
   return (
-    <div className="w-[17rem] bg-white min-h-screen border-r border-gray-100 hidden lg:block sticky top-20 h-[calc(100vh-80px)] overflow-y-auto no-scrollbar">
+    <div className={`w-[17rem] bg-white border-r border-gray-100 no-scrollbar ${
+      isMobile 
+        ? 'block h-full overflow-y-auto relative' 
+        : 'hidden lg:block min-h-screen sticky top-20 h-[calc(100vh-80px)] overflow-y-auto'
+    }`}>
 
       {/* ═══ USER INFO CARD ═══ */}
       <div className="px-5 pt-6 pb-4">
@@ -206,6 +210,7 @@ const CandidateSidebar = () => {
             <li key={item.path}>
               <NavLink
                 to={item.path}
+                onClick={() => { if (isMobile && onClose) onClose(); }}
                 className={({ isActive }) =>
                   `flex items-center gap-3 px-4 py-2.5 rounded-lg font-medium text-sm transition-colors ${isActive
                     ? 'bg-blue-50 text-[#3AB4E6] border-l-4 border-[#3AB4E6]'

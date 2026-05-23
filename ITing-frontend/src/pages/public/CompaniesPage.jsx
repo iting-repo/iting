@@ -57,8 +57,25 @@ const CompaniesPage = () => {
   const [selectedIndustry, setSelectedIndustry] = useState("all");
   const [selectedLocation, setSelectedLocation] = useState("all");
   const [selectedSize, setSelectedSize] = useState("all");
+  const getResponsivePageSize = () => {
+    if (typeof window !== 'undefined' && window.innerWidth < 1024) return 6;
+    return 9;
+  };
+
   const [currentPage, setCurrentPage] = useState(0);
-  const [pageSize] = useState(9);
+  const [pageSize, setPageSize] = useState(getResponsivePageSize());
+
+  useEffect(() => {
+    const handleResize = () => {
+        const newSize = getResponsivePageSize();
+        if (pageSize !== newSize) {
+            setPageSize(newSize);
+            setCurrentPage(0);
+        }
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, [pageSize]);
   
   const [followingIds, setFollowingIds] = useState(new Set());
 
@@ -183,9 +200,9 @@ const CompaniesPage = () => {
                 />
               </div>
               
-              <div className="flex flex-wrap gap-2 md:w-auto">
+              <div className="flex flex-col md:flex-row gap-2 md:w-auto">
                 <select 
-                  className="px-4 py-2 bg-gray-50 border border-transparent rounded-xl text-sm font-medium text-gray-700 outline-none hover:bg-gray-100 focus:ring-2 focus:ring-[#3AB4E6]/20 transition-all cursor-pointer"
+                  className="px-4 py-4 md:py-4 bg-gray-50 border border-transparent rounded-xl text-sm font-medium text-gray-700 outline-none hover:bg-gray-100 focus:ring-2 focus:ring-[#3AB4E6]/20 transition-all cursor-pointer flex-1"
                   value={selectedLocation}
                   onChange={(e) => setSelectedLocation(e.target.value)}
                 >
@@ -194,7 +211,7 @@ const CompaniesPage = () => {
                 </select>
 
                 <select 
-                  className="px-4 py-2 bg-gray-50 border border-transparent rounded-xl text-sm font-medium text-gray-700 outline-none hover:bg-gray-100 focus:ring-2 focus:ring-[#3AB4E6]/20 transition-all cursor-pointer"
+                  className="px-4 py-4 md:py-4 bg-gray-50 border border-transparent rounded-xl text-sm font-medium text-gray-700 outline-none hover:bg-gray-100 focus:ring-2 focus:ring-[#3AB4E6]/20 transition-all cursor-pointer flex-1"
                   value={selectedIndustry}
                   onChange={(e) => setSelectedIndustry(e.target.value)}
                 >
@@ -204,7 +221,7 @@ const CompaniesPage = () => {
 
                 <button 
                   type="submit"
-                  className="bg-[#3AB4E6] hover:bg-[#2fa0cf] text-white px-8 py-4 rounded-xl font-bold transition-all shadow-lg shadow-[#3AB4E6]/20 flex items-center justify-center gap-2"
+                  className="bg-[#3AB4E6] hover:bg-[#2fa0cf] text-white px-8 py-4 rounded-xl font-bold transition-all shadow-lg shadow-[#3AB4E6]/20 flex items-center justify-center gap-2 w-full md:w-auto"
                 >
                   <Search className="w-5 h-5" /> Tìm kiếm
                 </button>
@@ -342,25 +359,58 @@ const CompaniesPage = () => {
           </div>
         )}
 
-        {/* Pagination component would go here */}
-        {totalElements > pageSize && (
-           <div className="mt-12 flex justify-center gap-3">
-              <button 
-                disabled={currentPage === 0}
-                onClick={() => setCurrentPage(p => p - 1)}
-                className="px-6 py-2.5 rounded-xl border border-gray-200 text-sm font-bold text-gray-600 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                Trước
-              </button>
-              <button 
-                disabled={companies.length < pageSize}
-                onClick={() => setCurrentPage(p => p + 1)}
-                className="px-6 py-2.5 rounded-xl bg-white border border-gray-200 text-sm font-bold text-gray-600 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
-              >
-                Tiếp theo
-              </button>
-           </div>
-        )}
+        {/* Pagination component */}
+        {totalElements > pageSize && (() => {
+            const totalPages = Math.ceil(totalElements / pageSize);
+            const currentDisplayPage = currentPage + 1;
+            
+            const pages = [];
+            const maxPages = typeof window !== 'undefined' && window.innerWidth < 640 ? 3 : 5;
+            let startPage = Math.max(1, currentDisplayPage - Math.floor(maxPages / 2));
+            let endPage = Math.min(totalPages, startPage + maxPages - 1);
+
+            if (endPage - startPage + 1 < maxPages) {
+                startPage = Math.max(1, endPage - maxPages + 1);
+            }
+
+            for (let i = startPage; i <= endPage; i++) {
+                pages.push(i);
+            }
+
+            return (
+               <div className="mt-12 flex justify-center items-center gap-1 md:gap-2">
+                  <button 
+                    disabled={currentPage === 0}
+                    onClick={() => setCurrentPage(p => p - 1)}
+                    className="w-8 h-8 md:w-10 md:h-10 flex items-center justify-center rounded-lg bg-white border border-gray-200 text-gray-600 hover:bg-gray-50 transition-colors disabled:opacity-50"
+                  >
+                    <ChevronDown className="w-4 h-4 rotate-90" />
+                  </button>
+
+                  {pages.map(pageNum => (
+                      <button
+                          key={pageNum}
+                          onClick={() => setCurrentPage(pageNum - 1)}
+                          className={`w-8 h-8 md:w-10 md:h-10 flex items-center justify-center rounded-lg text-sm md:text-base font-bold transition-colors ${
+                              pageNum === currentDisplayPage 
+                                  ? 'bg-[#3AB4E6] text-white shadow-md' 
+                                  : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50'
+                          }`}
+                      >
+                          {pageNum}
+                      </button>
+                  ))}
+
+                  <button 
+                    disabled={companies.length < pageSize}
+                    onClick={() => setCurrentPage(p => p + 1)}
+                    className="w-8 h-8 md:w-10 md:h-10 flex items-center justify-center rounded-lg bg-white border border-gray-200 text-gray-600 hover:bg-gray-50 transition-colors disabled:opacity-50 shadow-sm"
+                  >
+                    <ChevronDown className="w-4 h-4 -rotate-90" />
+                  </button>
+               </div>
+            );
+        })()}
       </div>
     </div>
   );

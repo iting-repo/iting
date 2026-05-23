@@ -177,8 +177,8 @@ const AppliedJobs = () => {
   };
 
   return (
-    <div className="bg-white rounded-xl p-8 min-h-screen shadow-sm border border-gray-100">
-      <h2 className="text-2xl font-bold text-gray-800 mb-6">
+    <div className="bg-white rounded-xl p-4 sm:p-6 lg:p-8 min-h-screen shadow-sm border border-gray-100 flex flex-col w-full overflow-hidden">
+      <h2 className="text-xl md:text-2xl font-bold text-gray-800 mb-4 sm:mb-6">
         Công việc đã ứng tuyển <span className="text-gray-400 font-normal text-lg">({totalElements})</span>
       </h2>
 
@@ -190,7 +190,7 @@ const AppliedJobs = () => {
       />
 
       <div className="overflow-x-auto rounded-lg border border-gray-100 mb-6">
-        <table className="w-full text-left border-collapse">
+        <table className="w-full text-left border-collapse min-w-[800px] whitespace-nowrap">
           <thead className="bg-gray-50 text-gray-500 text-xs uppercase font-semibold">
             <tr>
               <th className="p-4 rounded-tl-lg">Công việc</th>

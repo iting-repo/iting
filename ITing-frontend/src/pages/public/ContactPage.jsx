@@ -61,7 +61,7 @@ const ContactPage = () => {
                     </div>
 
                     {/* --- RIGHT COLUMN: CONTACT FORM --- */}
-                    <div className="bg-[#E6F6FD] p-8 md:p-10 rounded-3xl">
+                    <div className="bg-[#E6F6FD] p-6 sm:p-8 md:p-10 rounded-3xl">
                         <div className="text-center mb-8">
                             <h2 className="text-2xl font-bold text-gray-900">Thông tin liên hệ</h2>
                             <p className="text-sm text-gray-500 mt-1">Thông tin chúng tôi có thể liên hệ</p>
@@ -112,43 +112,6 @@ const ContactPage = () => {
                                 Gửi Tin Nhắn
                             </button>
                         </form>
-                    </div>
-                </div>
-            </div>
-
-            {/* ================= SECTION 2: MAP ================= */}
-            {/* Sử dụng ảnh static map hoặc iframe google map */}
-            <div className="container mx-auto px-4 max-w-7xl mb-16">
-                <div className="w-full h-[400px] rounded-3xl overflow-hidden shadow-lg border border-gray-100 relative group">
-                    {/* Giả lập Map bằng ảnh */}
-                    <img
-                        src="https://images.unsplash.com/photo-1524661135-423995f22d0b?ixlib=rb-4.0.3&auto=format&fit=crop&w=1600&q=80"
-                        alt="Office Map"
-                        className="w-full h-full object-cover opacity-90 group-hover:opacity-100 transition-opacity"
-                    />
-                    {/* Pin Location */}
-                    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
-                        <div className="w-12 h-12 bg-[#3AB4E6] rounded-full flex items-center justify-center text-white text-2xl shadow-xl animate-bounce">
-                            <FaMapMarkerAlt />
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            {/* ================= SECTION 3: PARTNERS ================= */}
-            <div className="container mx-auto px-4 max-w-5xl py-12 border-t border-gray-100">
-                <div className="flex flex-wrap justify-center md:justify-between items-center gap-8 opacity-50 grayscale hover:grayscale-0 transition-all duration-500">
-                    <div className="flex items-center gap-2 text-3xl font-bold text-gray-400 hover:text-blue-500 cursor-pointer">
-                        <SiZoom /> <span className="text-xl">zoom</span>
-                    </div>
-                    <div className="flex items-center gap-2 text-3xl font-bold text-gray-400 hover:text-pink-500 cursor-pointer">
-                        <SiTinder /> <span className="text-xl">tinder</span>
-                    </div>
-                    <div className="flex items-center gap-2 text-3xl font-bold text-gray-400 hover:text-pink-600 cursor-pointer">
-                        <SiDribbble /> <span className="text-xl">dribbble</span>
-                    </div>
-                    <div className="flex items-center gap-2 text-3xl font-bold text-gray-400 hover:text-red-500 cursor-pointer">
-                        <SiAsana /> <span className="text-xl">asana</span>
                     </div>
                 </div>
             </div>

@@ -82,7 +82,7 @@ const SocialLinksTab = () => {
     };
 
     return (
-        <div className="max-full bg-white">
+        <div className="w-full bg-white">
             <div className="mb-6">
                 <h3 className="text-lg font-semibold text-gray-800">Liên kết mạng xã hội</h3>
                 <p className="text-sm text-gray-500 mt-1">Gắn các liên kết này để nhà tuyển dụng có cái nhìn tổng quan hơn về bạn.</p>
@@ -111,7 +111,7 @@ const SocialLinksTab = () => {
                     <button 
                         type="submit" 
                         disabled={isSaving}
-                        className={`w-full flex items-center justify-center gap-2 text-white px-6 py-3 rounded-xl font-bold transition-all shadow-lg active:scale-[0.98] ${isSaving ? 'bg-[#7fcbed] cursor-not-allowed' : 'bg-[#3AB4E6] hover:bg-[#2fa1cf]'}`}>
+                        className={`w-full md:w-auto flex items-center justify-center gap-2 text-white px-8 py-3 rounded-xl font-bold transition-all shadow-lg active:scale-[0.98] ${isSaving ? 'bg-[#7fcbed] cursor-not-allowed' : 'bg-[#3AB4E6] hover:bg-[#2fa1cf]'}`}>
                         <FaSave /> {isSaving ? "Đang lưu..." : "Cập nhật tất cả liên kết"}
                     </button>
                 </div>

@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import authService from '../../services/authService';
+import publicService from '../../services/publicService';
 import { FaArrowRight, FaEye, FaEyeSlash, FaCheckCircle } from 'react-icons/fa';
-import { BsBriefcaseFill, BsBuilding, BsFileText } from 'react-icons/bs';
+import { BsBriefcaseFill, BsBuilding, BsPeopleFill } from 'react-icons/bs';
 import bgImage from '../../assets/bg_login.jpg';
 
 const ForgotPasswordPage = () => {
@@ -20,6 +21,19 @@ const ForgotPasswordPage = () => {
   // State hiện/ẩn pass
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [stats, setStats] = useState({ totalJobs: 0, totalCandidates: 0, totalCompanies: 0 });
+
+  React.useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        const data = await publicService.getHomeStats();
+        setStats({ totalJobs: 0, totalCandidates: 0, totalCompanies: 0, ...(data || {}) });
+      } catch (error) {
+        console.error("Failed to fetch stats:", error);
+      }
+    };
+    fetchStats();
+  }, []);
 
   // Xử lý gửi Email (Bước 1)
   const handleSendEmail = async (e) => {
@@ -58,7 +72,7 @@ const ForgotPasswordPage = () => {
     <div className="min-h-screen flex bg-white font-sans">
       
       {/* ================= LEFT COLUMN ================= */}
-      <div className="w-full lg:w-[50%] flex flex-col justify-center px-8 md:px-20 xl:px-32 relative z-10">
+      <div className="w-full lg:w-[50%] flex flex-col justify-center px-6 sm:px-10 md:px-20 xl:px-32 relative z-10 py-8 md:py-12">
         
         {/* Logo */}
         <div className="flex items-center gap-2 mb-8">
@@ -199,7 +213,7 @@ const ForgotPasswordPage = () => {
 
         <div className="absolute bottom-0 left-0 right-0 p-12 pl-24 text-white">
             <h2 className="text-4xl font-bold leading-tight mb-8 drop-shadow-lg">
-              Hơn <span className="text-blue-400">1,75,324</span> ứng viên đang tham gia để có công việc chất lượng.
+              Hơn <span className="text-blue-400">{(stats.totalCandidates || 0).toLocaleString('vi-VN')}</span> ứng viên đang tham gia để có công việc chất lượng.
             </h2>
             
              <div className="flex gap-4">
@@ -207,22 +221,22 @@ const ForgotPasswordPage = () => {
                   <div className="w-10 h-10 bg-white/20 rounded-lg flex items-center justify-center mb-3 text-blue-300">
                      <BsBriefcaseFill size={20} />
                   </div>
-                  <div className="text-xl font-bold">1,75,324</div>
+                  <div className="text-xl font-bold">{(stats.totalJobs || 0).toLocaleString('vi-VN')}</div>
                   <div className="text-[11px] text-gray-300 uppercase tracking-wide mt-1">Việc làm đang tuyển</div>
                </div>
                <div className="bg-white/10 backdrop-blur-md border border-white/10 p-4 rounded-xl flex-1 min-w-[140px]">
                   <div className="w-10 h-10 bg-white/20 rounded-lg flex items-center justify-center mb-3 text-sky-300">
                      <BsBuilding size={20} />
                   </div>
-                  <div className="text-xl font-bold">97,354</div>
+                  <div className="text-xl font-bold">{(stats.totalCompanies || 0).toLocaleString('vi-VN')}</div>
                   <div className="text-[11px] text-gray-300 uppercase tracking-wide mt-1">Công ty</div>
                </div>
                <div className="bg-white/10 backdrop-blur-md border border-white/10 p-4 rounded-xl flex-1 min-w-[140px]">
                   <div className="w-10 h-10 bg-white/20 rounded-lg flex items-center justify-center mb-3 text-green-300">
-                     <BsFileText size={20} />
+                     <BsPeopleFill size={20} />
                   </div>
-                  <div className="text-xl font-bold">7,532</div>
-                  <div className="text-[11px] text-gray-300 uppercase tracking-wide mt-1">CV Mới</div>
+                  <div className="text-xl font-bold">{(stats.totalCandidates || 0).toLocaleString('vi-VN')}</div>
+                  <div className="text-[11px] text-gray-300 uppercase tracking-wide mt-1">Ứng viên</div>
                </div>
             </div>
 

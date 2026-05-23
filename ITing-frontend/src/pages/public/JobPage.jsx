@@ -3,13 +3,16 @@ import { useDispatch, useSelector } from 'react-redux';
 import { useSearchParams, useParams, Link } from 'react-router-dom';
 import { JobFilters, JobCard, JobPromo } from '../../components';
 import JobPreviewPane from '../../components/JobPreviewModal';
-import { FaChevronRight, FaChevronLeft, FaMagic } from 'react-icons/fa';
+import { FaChevronRight, FaChevronLeft, FaMagic, FaFilter, FaTimes } from 'react-icons/fa';
 import { fetchJobsRequest } from '../../store/job/jobSlice';
 import axiosInstance from '../../utils/axiosInstance';
 import jobService from '../../services/jobService';
 import { toast } from 'sonner';
 
-const PAGE_SIZE = 10;
+const getResponsivePageSize = () => {
+    if (typeof window !== 'undefined' && window.innerWidth < 1024) return 5;
+    return 10;
+};
 
 const defaultFilters = {
     keyword: '',
@@ -20,7 +23,7 @@ const defaultFilters = {
     maxSalary: '',
     postedWithinHours: '',
     page: 0,
-    size: PAGE_SIZE,
+    size: 10, // Default for non-DOM environments, overridden later
     sortBy: 'lastUpdate',
     sortOrder: 'desc',
     isAiSearch: false,
@@ -100,6 +103,7 @@ const filtersFromQuery = (searchParams) => ({
     maxSalary: searchParams.get('maxSalary') || '',
     postedWithinHours: searchParams.get('postedWithinHours') || '',
     page: Math.max(Number(searchParams.get('page') || '1') - 1, 0),
+    size: searchParams.has('size') ? Number(searchParams.get('size')) : getResponsivePageSize(),
     sortBy: searchParams.get('sortBy') || 'lastUpdate',
     sortOrder: searchParams.get('sortOrder') || 'desc',
     isAiSearch: searchParams.get('isAiSearch') === 'true',
@@ -115,6 +119,7 @@ const queryFromFilters = (filters) => {
         maxSalary: filters.maxSalary || undefined,
         postedWithinHours: filters.postedWithinHours || undefined,
         page: String(filters.page + 1),
+        size: String(filters.size),
         sortBy: filters.sortBy,
         sortOrder: filters.sortOrder,
         isAiSearch: filters.isAiSearch ? 'true' : undefined,
@@ -131,6 +136,7 @@ const JobPage = () => {
     const [filters, setFilters] = useState(defaultFilters);
     const [provinces, setProvinces] = useState([]);
     const [isAiModalOpen, setIsAiModalOpen] = useState(false);
+    const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false);
     const [cvText, setCvText] = useState('');
     const [cvFile, setCvFile] = useState(null);
     const [aiMode, setAiMode] = useState('text');
@@ -143,7 +149,22 @@ const JobPage = () => {
                 if (Array.isArray(data)) setProvinces(data);
             })
             .catch(() => setProvinces([]));
-    }, []);
+
+        // Responsive page size
+        const handleResize = () => {
+            const newSize = getResponsivePageSize();
+            setFilters(prev => {
+                if (prev.size !== newSize) {
+                    const next = { ...prev, size: newSize, page: 0 };
+                    dispatch(fetchJobsRequest(compactParams(next)));
+                    return next;
+                }
+                return prev;
+            });
+        };
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, [dispatch]);
 
     const { keyword: pathKeyword } = useParams();
 
@@ -157,7 +178,7 @@ const JobPage = () => {
     }, [dispatch, pathKeyword, searchParams]);
 
     const currentPage = filters.page + 1;
-    const totalPages = Math.max(1, Math.ceil(totalJobs / PAGE_SIZE));
+    const totalPages = Math.max(1, Math.ceil(totalJobs / filters.size));
 
     const cardJobs = useMemo(() => jobs.map(mapJobToCard), [jobs]);
 
@@ -212,8 +233,8 @@ const JobPage = () => {
         submitFilters(next);
     };
 
-    const start = totalJobs === 0 ? 0 : filters.page * PAGE_SIZE + 1;
-    const end = Math.min((filters.page + 1) * PAGE_SIZE, totalJobs);
+    const start = totalJobs === 0 ? 0 : filters.page * filters.size + 1;
+    const end = Math.min((filters.page + 1) * filters.size, totalJobs);
 
     const [recommendedJobs, setRecommendedJobs] = useState([]);
     const [hoveredJob, setHoveredJob] = useState(null);
@@ -251,7 +272,7 @@ const JobPage = () => {
         if (enterTimerRef.current) clearTimeout(enterTimerRef.current);
         if (leaveTimerRef.current) clearTimeout(leaveTimerRef.current);
     }, []);
-    
+
     useEffect(() => {
         if (cardJobs.length === 0 && !isLoading) {
             axiosInstance.get('/jobs/hot?limit=5')
@@ -264,7 +285,7 @@ const JobPage = () => {
                         };
                         return `${formatNum(min)} - ${formatNum(max)}`;
                     };
-                    
+
                     const mapped = res.map(job => ({
                         id: job.id,
                         title: job.title,
@@ -304,7 +325,8 @@ const JobPage = () => {
                 </nav>
 
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-                    <div className="lg:col-span-3">
+                    {/* Desktop Sidebar (hidden on mobile/tablet) */}
+                    <div className="hidden lg:block lg:col-span-3">
                         <JobFilters
                             filters={filters}
                             provinces={provinces}
@@ -324,6 +346,17 @@ const JobPage = () => {
                     </div>
 
                     <div className="lg:col-span-9 space-y-6">
+                        {/* Mobile Filter Button */}
+                        <div className="lg:hidden flex justify-between items-center bg-white p-4 rounded-lg border border-gray-100 shadow-sm">
+                            <span className="font-bold text-gray-800">Bộ lọc tìm kiếm</span>
+                            <button
+                                onClick={() => setIsMobileFilterOpen(true)}
+                                className="flex items-center gap-2 bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-lg text-sm font-semibold transition-colors"
+                            >
+                                <FaFilter size={14} /> Lọc kết quả
+                            </button>
+                        </div>
+
                         <div className="flex flex-col md:flex-row justify-between items-center bg-white p-4 rounded-lg border border-gray-100">
                             <span className="text-gray-500 text-sm mb-2 md:mb-0">
                                 Hiển thị <span className="font-bold text-gray-800">{start}-{end}</span> trong tổng số <span className="font-bold text-gray-800">{totalJobs}</span> kết quả
@@ -382,23 +415,48 @@ const JobPage = () => {
                             </div>
                         )}
 
-                        <div className="flex justify-center items-center gap-2 mt-8">
+                        <div className="flex justify-center items-center gap-1 md:gap-2 mt-8">
                             <button
                                 onClick={() => goToPage(currentPage - 1)}
                                 disabled={currentPage <= 1}
-                                className="w-10 h-10 flex items-center justify-center rounded-lg bg-white border border-gray-200 text-gray-600 hover:bg-gray-50 transition-colors disabled:opacity-50"
+                                className="w-8 h-8 md:w-10 md:h-10 flex items-center justify-center rounded-lg bg-white border border-gray-200 text-gray-600 hover:bg-gray-50 transition-colors disabled:opacity-50"
                             >
                                 <FaChevronLeft size={12} />
                             </button>
-                            <button className="w-10 h-10 flex items-center justify-center rounded-lg bg-[#3AB4E6] text-white font-bold shadow-md">
-                                {currentPage}
-                            </button>
+
+                            {(() => {
+                                const pages = [];
+                                const maxPages = typeof window !== 'undefined' && window.innerWidth < 640 ? 3 : 5;
+                                let startPage = Math.max(1, currentPage - Math.floor(maxPages / 2));
+                                let endPage = Math.min(totalPages, startPage + maxPages - 1);
+
+                                if (endPage - startPage + 1 < maxPages) {
+                                    startPage = Math.max(1, endPage - maxPages + 1);
+                                }
+
+                                for (let i = startPage; i <= endPage; i++) {
+                                    pages.push(
+                                        <button
+                                            key={i}
+                                            onClick={() => goToPage(i)}
+                                            className={`w-8 h-8 md:w-10 md:h-10 flex items-center justify-center rounded-lg text-sm md:text-base font-bold transition-colors ${i === currentPage
+                                                ? 'bg-[#3AB4E6] text-white shadow-md'
+                                                : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50'
+                                                }`}
+                                        >
+                                            {i}
+                                        </button>
+                                    );
+                                }
+                                return pages;
+                            })()}
+
                             <button
                                 onClick={() => goToPage(currentPage + 1)}
                                 disabled={currentPage >= totalPages}
-                                className="h-10 px-4 flex items-center gap-1 rounded-lg bg-white border border-gray-200 text-gray-600 hover:bg-gray-50 transition-colors font-medium disabled:opacity-50"
+                                className="w-8 h-8 md:w-10 md:h-10 flex items-center justify-center rounded-lg bg-white border border-gray-200 text-gray-600 hover:bg-gray-50 transition-colors disabled:opacity-50"
                             >
-                                Tiếp <FaChevronRight size={12} />
+                                <FaChevronRight size={12} />
                             </button>
                         </div>
                     </div>
@@ -448,21 +506,19 @@ const JobPage = () => {
                         <div className="flex gap-2 mb-4">
                             <button
                                 onClick={() => setAiMode('text')}
-                                className={`flex-1 py-2.5 rounded-xl text-sm font-bold transition-all ${
-                                    aiMode === 'text'
-                                        ? 'bg-[#3AB4E6] text-white shadow-md'
-                                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                                }`}
+                                className={`flex-1 py-2.5 rounded-xl text-sm font-bold transition-all ${aiMode === 'text'
+                                    ? 'bg-[#3AB4E6] text-white shadow-md'
+                                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                                    }`}
                             >
                                 Dán nội dung CV
                             </button>
                             <button
                                 onClick={() => setAiMode('file')}
-                                className={`flex-1 py-2.5 rounded-xl text-sm font-bold transition-all ${
-                                    aiMode === 'file'
-                                        ? 'bg-[#3AB4E6] text-white shadow-md'
-                                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                                }`}
+                                className={`flex-1 py-2.5 rounded-xl text-sm font-bold transition-all ${aiMode === 'file'
+                                    ? 'bg-[#3AB4E6] text-white shadow-md'
+                                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                                    }`}
                             >
                                 Tải file CV
                             </button>
@@ -569,7 +625,50 @@ const JobPage = () => {
                     </div>
                 </div>
             )}
+
+            {/* Mobile Filter Drawer */}
+            <div className={`fixed inset-0 z-[100] flex justify-end lg:hidden transition-opacity duration-300 ${isMobileFilterOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}>
+                {/* Overlay */}
+                <div
+                    className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm"
+                    onClick={() => setIsMobileFilterOpen(false)}
+                ></div>
+
+                {/* Drawer Content */}
+                <div className={`relative w-full max-w-[85vw] sm:max-w-sm h-full bg-[#F5F7FA] overflow-y-auto shadow-2xl transition-transform duration-300 ease-in-out ${isMobileFilterOpen ? 'translate-x-0' : 'translate-x-full'}`}>
+                    {/* Header */}
+                    <div className="sticky top-0 z-10 bg-white border-b border-gray-200 px-4 py-4 flex items-center justify-between shadow-sm">
+                        <h2 className="text-lg font-bold text-gray-800 flex items-center gap-2">
+                            <FaFilter className="text-[#3AB4E6]" /> Bộ lọc tìm kiếm
+                        </h2>
+                        <button
+                            onClick={() => setIsMobileFilterOpen(false)}
+                            className="w-8 h-8 flex items-center justify-center rounded-full bg-gray-100 hover:bg-gray-200 text-gray-600 transition-colors"
+                        >
+                            <FaTimes />
+                        </button>
+                    </div>
+                    {/* Body */}
+                    <div className="p-4 space-y-6 pb-6">
+                        <JobFilters
+                            filters={filters}
+                            provinces={provinces}
+                            onFieldChange={updateFilterField}
+                            onApply={() => { handleApplyFilters(); setIsMobileFilterOpen(false); }}
+                            onReset={() => { handleResetFilters(); setIsMobileFilterOpen(false); }}
+                        />
+                        <JobPromo />
+                        <button
+                            onClick={() => { setIsMobileFilterOpen(false); setIsAiModalOpen(true); }}
+                            className="w-full mt-4 py-3 bg-gradient-to-r from-[#1E3A8A] to-[#3AB4E6] hover:from-[#1E3A8A] hover:to-[#2a9fd4] text-white font-bold text-sm rounded-xl transition-all flex items-center justify-center gap-2 shadow-md hover:shadow-lg"
+                        >
+                            <FaMagic className="text-yellow-300" /> Tìm việc bằng AI
+                        </button>
+                    </div>
+                </div>
+            </div>
         </div>
+
     );
 };
 

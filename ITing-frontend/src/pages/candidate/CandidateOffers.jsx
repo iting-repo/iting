@@ -81,8 +81,8 @@ const CandidateOffers = () => {
    };
 
    return (
-      <div className="bg-white rounded-xl p-8 shadow-sm border border-gray-100 min-h-screen">
-         <div className="flex items-center gap-3 mb-6">
+       <div className="bg-white rounded-xl p-4 sm:p-6 lg:p-8 shadow-sm border border-gray-100 min-h-screen flex flex-col w-full overflow-hidden">
+          <div className="flex items-center gap-3 mb-4 sm:mb-6">
             <div className="w-10 h-10 rounded-xl bg-[#3AB4E6]/10 flex items-center justify-center text-[#3AB4E6]">
                <FaFileSignature className="text-lg" />
             </div>
@@ -161,33 +161,33 @@ const CandidateOffers = () => {
                            </div>
                         )}
 
-                        <div className="flex items-center justify-between gap-3 pt-3 border-t border-gray-100">
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-3 border-t border-gray-100">
                            <button
                               onClick={() => handleViewPdf(o.id)}
-                              className="inline-flex items-center gap-2 px-3 py-1.5 text-xs font-semibold text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-50"
+                              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-3 py-1.5 text-xs font-semibold text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-50"
                            >
                               <FaFilePdf className="text-red-500" /> Xem PDF
                            </button>
 
                            {isActive && !expired ? (
-                              <div className="flex gap-2">
+                              <div className="flex flex-row gap-2 w-full sm:w-auto">
                                  <button
                                     onClick={() => setDeclineTarget(o.id)}
                                     disabled={actingId === o.id}
-                                    className="inline-flex items-center gap-1.5 px-4 py-2 bg-white border border-red-200 text-red-600 text-xs font-bold rounded-lg hover:bg-red-50 disabled:opacity-50"
+                                    className="flex-1 sm:flex-none inline-flex items-center justify-center gap-1.5 px-4 py-2 bg-white border border-red-200 text-red-600 text-xs font-bold rounded-lg hover:bg-red-50 disabled:opacity-50"
                                  >
                                     <FaTimes /> Từ chối
                                  </button>
                                  <button
                                     onClick={() => handleAccept(o.id)}
                                     disabled={actingId === o.id}
-                                    className="inline-flex items-center gap-1.5 px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-bold rounded-lg disabled:opacity-50"
+                                    className="flex-1 sm:flex-none inline-flex items-center justify-center gap-1.5 px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-bold rounded-lg disabled:opacity-50"
                                  >
                                     <FaCheck /> {actingId === o.id ? 'Đang xử lý…' : 'Chấp nhận'}
                                  </button>
                               </div>
                            ) : (
-                              <span className="text-xs text-gray-400 italic">Không thể phản hồi</span>
+                              <span className="text-xs text-gray-400 italic text-center w-full sm:w-auto">Không thể phản hồi</span>
                            )}
                         </div>
 

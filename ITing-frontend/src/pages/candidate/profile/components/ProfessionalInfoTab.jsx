@@ -26,13 +26,13 @@ const ProfessionalInfoTab = () => {
                 <div className="flex flex-col sm:flex-row gap-3 mt-4 md:mt-0">
                     <button
                         onClick={() => setIsParseModalOpen(true)}
-                        className="flex items-center justify-center gap-2 bg-gradient-to-r from-indigo-500 to-purple-600 text-white px-5 py-2.5 rounded-xl font-bold hover:from-indigo-600 hover:to-purple-700 transition-all shadow-md whitespace-nowrap"
+                        className="w-full sm:w-auto flex items-center justify-center gap-2 bg-gradient-to-r from-indigo-500 to-purple-600 text-white px-5 py-2.5 rounded-xl font-bold hover:from-indigo-600 hover:to-purple-700 transition-all shadow-md whitespace-nowrap"
                     >
                         <FaMagic /> Auto-Fill bằng AI
                     </button>
                     <button
                         onClick={() => setIsPreviewOpen(true)}
-                        className="flex items-center justify-center gap-2 bg-white text-blue-600 border-2 border-blue-600 px-5 py-2.5 rounded-xl font-bold hover:bg-blue-600 hover:text-white transition-all shadow-sm whitespace-nowrap"
+                        className="w-full sm:w-auto flex items-center justify-center gap-2 bg-white text-blue-600 border-2 border-blue-600 px-5 py-2.5 rounded-xl font-bold hover:bg-blue-600 hover:text-white transition-all shadow-sm whitespace-nowrap"
                     >
                         <FaEye /> Xem dưới góc nhìn NTD
                     </button>

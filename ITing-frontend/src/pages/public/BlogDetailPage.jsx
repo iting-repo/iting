@@ -64,7 +64,7 @@ const BlogDetailPage = () => {
                 <article className="bg-white rounded-2xl shadow-sm overflow-hidden">
                     {/* Thumbnail */}
                     {blog.thumbnailUrl && (
-                        <div className="w-full h-[400px] overflow-hidden">
+                        <div className="w-full h-[250px] md:h-[400px] overflow-hidden">
                             <img 
                                 src={blog.thumbnailUrl} 
                                 alt={blog.title} 

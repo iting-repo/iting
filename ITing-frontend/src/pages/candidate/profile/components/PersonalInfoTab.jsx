@@ -104,7 +104,7 @@ const PersonalInfoTab = () => {
     }
 
     return (
-        <div className="max-full">
+        <div className="w-full">
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                 {/* Left side: Avatar and Basic Identifiers */}
                 <div className="lg:col-span-1 border-r border-gray-100 pr-8">
@@ -226,7 +226,7 @@ const PersonalInfoTab = () => {
                             <button
                                 type="submit"
                                 disabled={isSaving}
-                                className={`flex items-center gap-2 text-white px-8 py-2.5 rounded-lg font-bold shadow-md transition-all active:scale-95 ${isSaving ? 'bg-blue-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'}`}>
+                                className={`w-full md:w-auto flex items-center justify-center gap-2 text-white px-8 py-2.5 rounded-lg font-bold shadow-md transition-all active:scale-95 ${isSaving ? 'bg-blue-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'}`}>
                                 <FaSave /> {isSaving ? "Đang lưu..." : "Lưu thay đổi"}
                             </button>
                         </div>

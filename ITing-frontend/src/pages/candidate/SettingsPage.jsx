@@ -252,7 +252,7 @@ const SettingsPage = () => {
     <>
       <SEO title="Cài đặt thông báo" noIndex />
 
-      <div className="bg-white rounded-xl p-6 md:p-8 shadow-sm border border-gray-100 min-h-screen animate-fade-in">
+      <div className="bg-white rounded-xl p-4 sm:p-6 lg:p-8 shadow-sm border border-gray-100 min-h-screen flex flex-col w-full overflow-hidden animate-fade-in">
 
         {/* ── Page Header ── */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
@@ -269,12 +269,12 @@ const SettingsPage = () => {
           </div>
 
           {/* Global Toggle & Save */}
-          <div className="flex items-center gap-3 ml-[52px] md:ml-0">
+          <div className="flex flex-col sm:flex-row items-center gap-3 w-full md:w-auto mt-4 md:mt-0">
             <button
               id="toggle-all-notifications"
               onClick={toggleAll}
               className={`
-                flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold
+                flex items-center justify-center w-full sm:w-auto gap-2 px-4 py-2 rounded-xl text-sm font-bold
                 transition-all duration-200 border-2
                 ${allEnabled
                   ? 'border-[#3AB4E6] text-[#3AB4E6] bg-[#3AB4E6]/5 hover:bg-[#3AB4E6]/10'
@@ -291,7 +291,7 @@ const SettingsPage = () => {
               onClick={handleSave}
               disabled={!hasChanges || saving || loading}
               className={`
-                flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold
+                flex items-center justify-center w-full sm:w-auto gap-2 px-5 py-2.5 rounded-xl text-sm font-bold
                 transition-all duration-200 shadow-sm
                 ${hasChanges && !loading
                   ? 'bg-[#3AB4E6] text-white hover:bg-[#2da3d5] hover:shadow-md shadow-[#3AB4E6]/20'

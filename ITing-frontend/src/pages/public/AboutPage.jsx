@@ -58,7 +58,7 @@ const AboutPage = () => {
                 </div>
 
                 {/* Hero Image (Ảnh mờ trong design -> Thay bằng ảnh Unsplash) */}
-                <div className="rounded-3xl overflow-hidden h-[300px] lg:h-[500px] shadow-lg">
+                <div className="rounded-3xl overflow-hidden h-[250px] md:h-[400px] lg:h-[500px] shadow-lg">
                     <img
                         src="https://images.unsplash.com/photo-1522071820081-009f0129c71c?ixlib=rb-4.0.3&auto=format&fit=crop&w=1600&q=80"
                         alt="ITing Team"
@@ -202,7 +202,7 @@ const AboutPage = () => {
             <div className="container mx-auto px-4 max-w-7xl py-16">
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
                     {/* Left Gallery (Masonry style mockup) */}
-                    <div className="grid grid-cols-2 gap-4 h-[500px]">
+                    <div className="grid grid-cols-2 gap-4 h-[300px] md:h-[400px] lg:h-[500px]">
                         <div className="h-full rounded-2xl overflow-hidden">
                             <img src="https://images.unsplash.com/photo-1542744173-8e7e53415bb0?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80" alt="Office 1" className="w-full h-full object-cover hover:scale-105 transition-transform duration-500" />
                         </div>
@@ -225,7 +225,7 @@ const AboutPage = () => {
                             Chúng tôi kết nối với các công ty công nghệ hàng đầu và những nhân tài xuất sắc nhất để mang đến cơ hội việc làm chất lượng và phù hợp nhất cho bạn.
                         </p>
 
-                        <div className="grid grid-cols-2 gap-y-8 gap-x-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-6 sm:gap-y-8 gap-x-4">
                             <div className="flex gap-4">
                                 <div className="text-[#3AB4E6] text-2xl mt-1"><FaMedal /></div>
                                 <div>

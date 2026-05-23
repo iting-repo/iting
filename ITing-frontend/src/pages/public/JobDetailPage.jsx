@@ -755,8 +755,8 @@ const JobDetailPage = () => {
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
                     <div className="lg:col-span-8 space-y-10">
                         <div className="space-y-6">
-                            <div className="flex items-center gap-3">
-                                <span className="bg-[#E6F6FD] text-[#3AB4E6] text-xs font-bold px-3 py-1 rounded-full">
+                            <div className="flex flex-wrap items-center gap-2 md:gap-3">
+                                <span className="bg-[#E6F6FD] text-[#3AB4E6] text-[10px] md:text-xs font-bold px-3 py-1 rounded-full">
                                     {jobDetail.postedTime}
                                 </span>
 
@@ -771,14 +771,14 @@ const JobDetailPage = () => {
                                         }
                                         setShowSimilarModal(true);
                                     }}
-                                    className="flex items-center gap-2 text-[#3AB4E6] text-sm font-bold border border-[#3AB4E6] px-4 py-2 rounded-lg hover:bg-[#E6F6FD] transition-colors"
+                                    className="flex items-center gap-2 text-[#3AB4E6] text-xs md:text-sm font-bold border border-[#3AB4E6] px-3 py-1.5 md:px-4 md:py-2 rounded-lg hover:bg-[#E6F6FD] transition-colors"
                                 >
-                                    <FaBell /> Gửi tôi việc làm tương tự
+                                    <FaBell /> <span className="hidden sm:inline">Gửi tôi việc làm tương tự</span><span className="sm:hidden">Nhận thông báo</span>
                                 </button>
                             </div>
 
-                            <div className="flex gap-4">
-                                <div className="w-20 h-20 rounded-xl border border-gray-100 p-2 flex items-center justify-center shadow-sm">
+                            <div className="flex gap-3 md:gap-4">
+                                <div className="w-16 h-16 md:w-20 md:h-20 shrink-0 rounded-xl border border-gray-100 p-2 flex items-center justify-center shadow-sm">
                                     <CompanyLogo
                                         logoUrl={currentJob.companyLogo || companyInfo?.logoUrl}
                                         companyId={currentJob.companyId}
@@ -788,10 +788,10 @@ const JobDetailPage = () => {
                                 </div>
 
                                 <div>
-                                    <h1 className="text-3xl font-bold text-gray-800 mb-2">
+                                    <h1 className="text-xl md:text-3xl font-bold text-gray-800 mb-1 md:mb-2">
                                         {jobDetail.title}
                                     </h1>
-                                    <p className="text-gray-500 font-medium">
+                                    <p className="text-sm md:text-base text-gray-500 font-medium">
                                         {jobDetail.company}
                                     </p>
                                 </div>

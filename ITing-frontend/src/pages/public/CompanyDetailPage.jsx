@@ -421,12 +421,14 @@ const CompanyDetailPage = () => {
                 {isFollowing ? (
                   <>
                     <CheckCircle2 className="w-5 h-5" />
-                    Đang theo dõi
+                    <span className="hidden sm:inline">Đang theo dõi</span>
+                    <span className="sm:hidden">Đã theo dõi</span>
                   </>
                 ) : (
                   <>
                     <Users className="w-5 h-5" />
-                    Theo dõi công ty
+                    <span className="hidden sm:inline">Theo dõi công ty</span>
+                    <span className="sm:hidden">Theo dõi</span>
                   </>
                 )}
               </button>

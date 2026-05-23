@@ -1,8 +1,8 @@
 import React from 'react';
 
-export const Table = ({ headers, children, className = "" }) => (
+export const Table = ({ headers, children, className = "", tableClassName = "" }) => (
   <div className={`overflow-x-auto rounded-xl border border-gray-100 bg-white ${className}`}>
-    <table className="w-full text-left border-collapse">
+    <table className={`w-full text-left border-collapse ${tableClassName}`}>
       <thead className="bg-gray-50/80 text-gray-500 text-xs uppercase tracking-wider font-semibold">
         <tr>
           {headers.map((h, i) => (

@@ -124,9 +124,9 @@ const JobAlerts = () => {
   };
 
   return (
-    <div className="bg-white rounded-xl p-8 min-h-screen shadow-sm border border-gray-100">
-      <div className="flex items-center justify-between mb-6">
-        <h2 className="text-2xl font-bold text-gray-800 flex items-center gap-2">
+    <div className="bg-white rounded-xl p-4 sm:p-6 lg:p-8 min-h-screen shadow-sm border border-gray-100 flex flex-col w-full overflow-hidden">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-4 sm:mb-6">
+        <h2 className="text-xl md:text-2xl font-bold text-gray-800 flex items-center gap-2">
           <FaBell className="text-[#3AB4E6]" />
           Thông báo việc làm
           {totalElements > 0 && (

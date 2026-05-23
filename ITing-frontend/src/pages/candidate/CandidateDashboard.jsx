@@ -55,11 +55,11 @@ const CandidateDashboard = () => {
   }, []);
 
   return (
-    <div className="bg-white rounded-xl p-8 shadow-sm border border-gray-100 min-h-screen animate-fade-in">
+    <div className="bg-white rounded-xl p-4 sm:p-6 lg:p-8 shadow-sm border border-gray-100 min-h-screen animate-fade-in">
       
       {/* HEADER: Chào mừng */}
       <div className="mb-8">
-        <h1 className="text-2xl font-bold text-gray-800 mb-2">Hello, {fullName || 'Bạn'}!</h1>
+        <h1 className="text-xl md:text-2xl font-bold text-gray-800 mb-2">Hello, {fullName || 'Bạn'}!</h1>
         <p className="text-gray-500 mb-8">Đây là các hoạt động hằng ngày và thông báo việc làm của bạn.</p>
 
         {/* STATS CARDS */}
@@ -93,7 +93,7 @@ const CandidateDashboard = () => {
         <div className="bg-[#D93025] rounded-xl p-6 mb-10 flex flex-col md:flex-row items-center justify-between shadow-lg shadow-red-200 text-white relative overflow-hidden group">
            <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/3 blur-2xl group-hover:bg-white/20 transition-all"></div>
 
-           <div className="flex items-center gap-6 relative z-10">
+           <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-6 relative z-10 text-center sm:text-left">
               <div className="w-16 h-16 rounded-full border-2 border-white overflow-hidden shrink-0 shadow-md">
                  <img src={avatarUrl || "https://i.pravatar.cc/150?img=12"} alt="Avatar" className="w-full h-full object-cover" />
               </div>
@@ -105,7 +105,7 @@ const CandidateDashboard = () => {
 
            <button 
               onClick={() => navigate('/candidate/profile')}
-              className="mt-4 md:mt-0 bg-white text-[#D93025] hover:bg-gray-100 px-6 py-3 rounded-lg font-bold text-sm flex items-center gap-2 transition-colors shadow-md relative z-10"
+              className="mt-6 md:mt-0 w-full sm:w-auto justify-center bg-white text-[#D93025] hover:bg-gray-100 px-6 py-3 rounded-lg font-bold text-sm flex items-center gap-2 transition-colors shadow-md relative z-10"
            >
               Chỉnh Sửa Hồ Sơ <FaArrowRight />
            </button>
@@ -167,7 +167,7 @@ const CandidateDashboard = () => {
          </div>
 
          <div className="overflow-x-auto rounded-xl border border-gray-100">
-            <table className="w-full text-left border-collapse">
+            <table className="w-full text-left border-collapse min-w-[600px] whitespace-nowrap">
                <thead className="bg-gray-50 text-gray-500 text-xs uppercase font-semibold">
                   <tr>
                      <th className="p-4 rounded-tl-lg">Công việc</th>
