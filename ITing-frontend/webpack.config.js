@@ -34,7 +34,11 @@ module.exports = (env, argv) => {
     entry: './src/index.js',
     output: {
       path: path.resolve(__dirname, 'dist'),
-      filename: 'bundle.js',
+      // Prod: [contenthash] để bypass browser cache khi nội dung đổi.
+      // Dev: tên tĩnh để hot reload + devtools dễ map.
+      filename: isProd ? 'bundle.[contenthash].js' : 'bundle.js',
+      chunkFilename: isProd ? '[name].[contenthash].bundle.js' : '[name].bundle.js',
+      assetModuleFilename: isProd ? 'assets/[name].[contenthash][ext]' : 'assets/[name][ext]',
       publicPath: '/',
       clean: true,
     },
@@ -119,6 +123,7 @@ module.exports = (env, argv) => {
       new HtmlWebpackPlugin({
         template: './public/index.html',
         filename: './index.html',
+        favicon: path.resolve(__dirname, 'src/assets/logo-iting.png'),
       }),
       // <-- 4. Thêm plugin React Refresh vào mảng, chỉ khi ở chế độ development
       isDev && new ReactRefreshWebpackPlugin(),

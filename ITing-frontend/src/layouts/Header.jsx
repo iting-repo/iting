@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
+import logoIting from '../assets/logo-iting.png';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
 import { logout } from '../store/auth/authSlice';
@@ -443,7 +444,7 @@ const Header = () => {
       <div className="container mx-auto px-4 lg:px-8 xl:px-12 h-full flex items-center justify-between gap-4">
         <Link to={role === 'EMPLOYER' ? '/employer/dashboard' : '/'} className="flex items-center gap-2 select-none group shrink-0">
           <img 
-            src="/logo-iting.png" 
+            src={logoIting} 
             alt="ITing Logo" 
             className="h-14 w-auto object-contain transition-all duration-500 group-hover:scale-110 group-hover:drop-shadow-[0_0_15px_rgba(58,180,230,0.6)]" 
           />

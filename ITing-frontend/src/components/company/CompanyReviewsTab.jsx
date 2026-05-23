@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useSelector } from 'react-redux';
 import { toast } from 'sonner';
 import {
-  FaStar, FaThumbsUp, FaFlag, FaPen, FaUserShield, FaBriefcase
+  FaStar, FaThumbsUp, FaFlag, FaPen, FaUserShield, FaBriefcase, FaTrash
 } from 'react-icons/fa';
 import companyReviewService from '../../services/companyReviewService';
 import { ConfirmModal } from '../../components/common';
@@ -61,6 +61,24 @@ const CompanyReviewsTab = ({ companyId, companyName }) => {
     });
   };
 
+  const handleDelete = (reviewId) => {
+    if (!currentUser) return;
+    askConfirm({
+      title: "Xóa đánh giá",
+      message: "Bạn chắc chắn muốn xóa đánh giá này? Hành động này không thể hoàn tác.",
+      confirmText: "Xóa",
+      variant: "danger",
+      onConfirm: async () => {
+        resetConfirm();
+        try {
+          await companyReviewService.delete(reviewId);
+          toast.success('Đã xóa đánh giá');
+          load();
+        } catch { toast.error('Lỗi khi xóa đánh giá'); }
+      }
+    });
+  };
+
   if (loading) return <div className="text-center py-10 text-slate-400">Đang tải đánh giá...</div>;
 
   const reviews = data?.reviews || [];
@@ -103,8 +121,10 @@ const CompanyReviewsTab = ({ companyId, companyName }) => {
           {reviews.map((r) => (
             <ReviewCard
               key={r.id} review={r}
+              currentUserId={currentUser?.id}
               onHelpful={() => handleHelpful(r.id)}
               onReport={() => handleReport(r.id)}
+              onDelete={() => handleDelete(r.id)}
             />
           ))}
         </div>
@@ -123,7 +143,8 @@ const CompanyReviewsTab = ({ companyId, companyName }) => {
   );
 };
 
-const ReviewCard = ({ review, onHelpful, onReport }) => {
+const ReviewCard = ({ review, currentUserId, onHelpful, onReport, onDelete }) => {
+  const isAuthor = currentUserId && review.accountId && currentUserId === review.accountId;
   const workTypeLabel = {
     CURRENT_EMPLOYEE: 'Đang làm việc',
     FORMER_EMPLOYEE: 'Cựu nhân viên',
@@ -203,6 +224,11 @@ const ReviewCard = ({ review, onHelpful, onReport }) => {
         <button onClick={onReport} className="flex items-center gap-1 hover:text-red-600">
           <FaFlag /> Báo cáo
         </button>
+        {isAuthor && (
+          <button onClick={onDelete} className="flex items-center gap-1 hover:text-red-600 ml-auto">
+            <FaTrash /> Xóa
+          </button>
+        )}
       </div>
     </article>
   );

@@ -17,6 +17,7 @@ import com.iting.jobportal.notification.enums.NotificationType;
 import com.iting.jobportal.user.entity.User;
 import com.iting.jobportal.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -67,19 +68,25 @@ public class MessageServiceImpl implements MessageService {
             conversation = conversationRepository.findById(request.getConversationId())
                     .orElseThrow(() -> new RuntimeException("Conversation not found"));
         } else {
-            // Create new conversation
+            // Get-or-create với unique constraint guard (V103: uq_conversations_participants_type).
+            // Nếu 2 request song song cùng race vào nhánh tạo mới, request thua sẽ bắt
+            // DataIntegrityViolationException và re-query để lấy conversation request thắng vừa tạo.
             ConversationType conversationType = determineConversationType(request);
-
-            // Check if conversation already exists
-            conversation = conversationRepository.findByParticipantsAndType(
-                    senderId, request.getReceiverId(), conversationType).orElseGet(() -> {
-                        // Create new conversation
+            conversation = conversationRepository
+                    .findByParticipantsAndType(senderId, request.getReceiverId(), conversationType)
+                    .orElseGet(() -> {
                         Conversation newConv = Conversation.builder()
                                 .type(conversationType)
                                 .participant1Id(senderId)
                                 .participant2Id(request.getReceiverId())
                                 .build();
-                        return conversationRepository.save(newConv);
+                        try {
+                            return conversationRepository.saveAndFlush(newConv);
+                        } catch (DataIntegrityViolationException dup) {
+                            return conversationRepository
+                                    .findByParticipantsAndType(senderId, request.getReceiverId(), conversationType)
+                                    .orElseThrow(() -> dup);
+                        }
                     });
         }
 

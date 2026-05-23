@@ -5,7 +5,7 @@
 -- chỉ giữ phần giới thiệu — nên description cần dài + structure rõ ràng.
 -- =====================================================================
 
-UPDATE postgres.company SET description = $$FPT Software là công ty công nghệ thông tin lớn nhất Việt Nam, thành viên của Tập đoàn FPT — tập đoàn kinh tế tư nhân hàng đầu cả nước. Được thành lập từ năm 1999, FPT Software đã có hơn 25 năm kinh nghiệm trong lĩnh vực dịch vụ phần mềm, chuyển đổi số và tư vấn công nghệ cho khách hàng tại hơn 30 quốc gia.
+UPDATE company SET description = $$FPT Software là công ty công nghệ thông tin lớn nhất Việt Nam, thành viên của Tập đoàn FPT — tập đoàn kinh tế tư nhân hàng đầu cả nước. Được thành lập từ năm 1999, FPT Software đã có hơn 25 năm kinh nghiệm trong lĩnh vực dịch vụ phần mềm, chuyển đổi số và tư vấn công nghệ cho khách hàng tại hơn 30 quốc gia.
 
 Lĩnh vực hoạt động chính:
 • Phát triển phần mềm theo yêu cầu (custom software development) cho khách hàng toàn cầu — đặc biệt là Nhật Bản, Hàn Quốc, Mỹ, châu Âu.
@@ -24,7 +24,7 @@ Văn hóa & con người:
 Tại FPT Software, chúng tôi tin rằng "Con người là tài sản quý giá nhất". Môi trường làm việc đa văn hóa, năng động, khuyến khích sáng tạo và học hỏi liên tục thông qua FPT Software Academy với hàng nghìn khóa đào tạo công nghệ và kỹ năng mềm. Cơ hội luân chuyển dự án quốc tế (onsite Nhật Bản, Mỹ, châu Âu), lộ trình thăng tiến rõ ràng theo chuẩn quốc tế (CMMI Level 5, ISO 27001).$$
 WHERE company_id = 11;
 
-UPDATE postgres.company SET description = $$VNG Corporation là một trong những công ty công nghệ tiên phong và thành công nhất Việt Nam, được mệnh danh là "Kỳ lân công nghệ" đầu tiên của Việt Nam (Unicorn). Thành lập năm 2004, VNG đã phát triển từ một startup nhỏ thành tập đoàn công nghệ đa lĩnh vực với hệ sinh thái sản phẩm phục vụ hàng chục triệu người dùng.
+UPDATE company SET description = $$VNG Corporation là một trong những công ty công nghệ tiên phong và thành công nhất Việt Nam, được mệnh danh là "Kỳ lân công nghệ" đầu tiên của Việt Nam (Unicorn). Thành lập năm 2004, VNG đã phát triển từ một startup nhỏ thành tập đoàn công nghệ đa lĩnh vực với hệ sinh thái sản phẩm phục vụ hàng chục triệu người dùng.
 
 Hệ sinh thái sản phẩm:
 • Zalo: ứng dụng nhắn tin và mạng xã hội lớn nhất Việt Nam với 75+ triệu người dùng hoạt động hàng tháng.
@@ -42,7 +42,7 @@ Văn hóa làm việc:
 VNG xây dựng văn hóa "Build technology that matters" — khuyến khích kỹ sư đặt ra những câu hỏi lớn và giải quyết vấn đề thực sự của hàng triệu người dùng. Môi trường flat-hierarchy, ngân sách R&D rộng rãi, cơ hội tiếp xúc trực tiếp với các technology như Kubernetes, Apache Kafka, Spark, ML Ops ở quy mô lớn.$$
 WHERE company_id = 12;
 
-UPDATE postgres.company SET description = $$Vingroup là tập đoàn kinh tế tư nhân lớn nhất Việt Nam, thành lập năm 1993 bởi ông Phạm Nhật Vượng. Vingroup hoạt động đa ngành với 3 nhóm trụ cột chính: Công nghệ - Công nghiệp, Thương mại - Dịch vụ, và Thiện nguyện - Xã hội.
+UPDATE company SET description = $$Vingroup là tập đoàn kinh tế tư nhân lớn nhất Việt Nam, thành lập năm 1993 bởi ông Phạm Nhật Vượng. Vingroup hoạt động đa ngành với 3 nhóm trụ cột chính: Công nghệ - Công nghiệp, Thương mại - Dịch vụ, và Thiện nguyện - Xã hội.
 
 Các thương hiệu thành viên:
 • VinFast: hãng xe điện đầu tiên của Việt Nam, niêm yết Nasdaq, xuất khẩu sang Mỹ, châu Âu.
@@ -61,7 +61,7 @@ Cơ hội tại Vingroup:
 Hơn 50,000+ nhân viên trong toàn hệ thống, môi trường năng động, chế độ phúc lợi cạnh tranh, cơ hội phát triển toàn diện. Đặc biệt VinAI và VinBigData mang đến môi trường nghiên cứu đẳng cấp quốc tế với các giáo sư đầu ngành từ Stanford, MIT, Carnegie Mellon.$$
 WHERE company_id = 13;
 
-UPDATE postgres.company SET description = $$Tiki là nền tảng thương mại điện tử "Made in Vietnam" được thành lập năm 2010 bởi Trần Ngọc Thái Sơn. Khởi nguồn từ một website bán sách online, Tiki đã phát triển thành sàn TMĐT đa ngành hàng top đầu Việt Nam với hệ sinh thái dịch vụ toàn diện.
+UPDATE company SET description = $$Tiki là nền tảng thương mại điện tử "Made in Vietnam" được thành lập năm 2010 bởi Trần Ngọc Thái Sơn. Khởi nguồn từ một website bán sách online, Tiki đã phát triển thành sàn TMĐT đa ngành hàng top đầu Việt Nam với hệ sinh thái dịch vụ toàn diện.
 
 Hệ sinh thái sản phẩm:
 • Tiki Shopping: sàn TMĐT với hơn 10 triệu sản phẩm thuộc 30+ ngành hàng.
@@ -79,7 +79,7 @@ Văn hóa kỹ sư:
 Tiki Tech Center là một trong những engineering org lớn nhất Việt Nam với hơn 1,000+ kỹ sư. Áp dụng các công nghệ hiện đại: microservices trên Kubernetes, event-driven architecture với Kafka, ML Recommendation system cá nhân hóa, big data với Spark/Flink. Team Search & Discovery, Personalization, Logistics Engineering đều là sandbox tuyệt vời để giải quyết bài toán quy mô lớn.$$
 WHERE company_id = 14;
 
-UPDATE postgres.company SET description = $$Shopee là sàn thương mại điện tử dẫn đầu Đông Nam Á và Đài Loan, thuộc tập đoàn Sea Limited (niêm yết NYSE). Tại Việt Nam, Shopee là nền tảng TMĐT số 1 về lượng truy cập và đơn hàng kể từ năm 2019.
+UPDATE company SET description = $$Shopee là sàn thương mại điện tử dẫn đầu Đông Nam Á và Đài Loan, thuộc tập đoàn Sea Limited (niêm yết NYSE). Tại Việt Nam, Shopee là nền tảng TMĐT số 1 về lượng truy cập và đơn hàng kể từ năm 2019.
 
 Sản phẩm & dịch vụ:
 • Shopee Mall: gian hàng chính hãng từ các thương hiệu lớn.
@@ -97,7 +97,7 @@ Công nghệ & văn hóa:
 Shopee Engineering áp dụng các công nghệ hàng đầu thế giới: Go, Java, Python, React Native, Kubernetes, gRPC, Cassandra, Elasticsearch, Kafka. Văn hóa "We get it done" — đề cao sự nhanh nhẹn, dữ liệu (data-driven), và ownership. Cơ hội luân chuyển khu vực (Singapore, Đài Loan, Indonesia), lương thưởng & phúc lợi cạnh tranh hàng đầu thị trường.$$
 WHERE company_id = 15;
 
-UPDATE postgres.company SET description = $$Viettel Digital là thành viên của Tập đoàn Công nghiệp - Viễn thông Quân đội (Viettel), đảm nhận sứ mệnh dẫn dắt chuyển đổi số quốc gia thông qua các giải pháp công nghệ tiên tiến, đặc biệt trong lĩnh vực tài chính số, chính phủ điện tử và Smart City.
+UPDATE company SET description = $$Viettel Digital là thành viên của Tập đoàn Công nghiệp - Viễn thông Quân đội (Viettel), đảm nhận sứ mệnh dẫn dắt chuyển đổi số quốc gia thông qua các giải pháp công nghệ tiên tiến, đặc biệt trong lĩnh vực tài chính số, chính phủ điện tử và Smart City.
 
 Lĩnh vực hoạt động:
 • Viettel Money: ví điện tử và mobile money với hơn 25 triệu người dùng — top 3 thị trường thanh toán không tiền mặt Việt Nam.
@@ -116,7 +116,7 @@ Văn hóa Viettel:
 Văn hóa "Người Viettel" đặc trưng: kỷ luật của quân đội + tốc độ của startup + tầm nhìn doanh nghiệp toàn cầu. Cơ hội tham gia các dự án quốc gia có tác động xã hội lớn (chuyển đổi số quốc gia, eKYC, định danh điện tử). Lộ trình thăng tiến rõ ràng, chế độ đãi ngộ cạnh tranh.$$
 WHERE company_id = 21;
 
-UPDATE postgres.company SET description = $$MoMo (M-Service) là ví điện tử số 1 Việt Nam, được sáng lập năm 2007 và là kỳ lân công nghệ tài chính (FinTech Unicorn) đầu tiên của Việt Nam. MoMo đã phát triển từ dịch vụ chuyển tiền cơ bản thành super-app tài chính phục vụ hơn 31 triệu người dùng.
+UPDATE company SET description = $$MoMo (M-Service) là ví điện tử số 1 Việt Nam, được sáng lập năm 2007 và là kỳ lân công nghệ tài chính (FinTech Unicorn) đầu tiên của Việt Nam. MoMo đã phát triển từ dịch vụ chuyển tiền cơ bản thành super-app tài chính phục vụ hơn 31 triệu người dùng.
 
 Hệ sinh thái dịch vụ:
 • Thanh toán: QR Pay, chuyển khoản, thanh toán hóa đơn (điện, nước, internet, viễn thông).
@@ -135,7 +135,7 @@ Văn hóa & công nghệ:
 MoMo Tech áp dụng các công nghệ FinTech hàng đầu: microservices, event sourcing, distributed transaction, real-time fraud detection bằng ML. Văn hóa "Move fast & build right" — kết hợp tốc độ startup với độ tin cậy ngân hàng. Cơ hội làm việc với 1,500+ engineers ở các domain payment, lending, security, data science cực kỳ thú vị.$$
 WHERE company_id = 22;
 
-UPDATE postgres.company SET description = $$Grab là super-app số 1 Đông Nam Á, được thành lập năm 2012 tại Malaysia bởi Anthony Tan và Tan Hooi Ling. Hiện niêm yết Nasdaq (GRAB) với vốn hóa hơn 15 tỷ USD. Tại Việt Nam, Grab có mặt từ năm 2014 và là nền tảng dẫn đầu trong các mảng gọi xe, giao đồ ăn, giao hàng, thanh toán.
+UPDATE company SET description = $$Grab là super-app số 1 Đông Nam Á, được thành lập năm 2012 tại Malaysia bởi Anthony Tan và Tan Hooi Ling. Hiện niêm yết Nasdaq (GRAB) với vốn hóa hơn 15 tỷ USD. Tại Việt Nam, Grab có mặt từ năm 2014 và là nền tảng dẫn đầu trong các mảng gọi xe, giao đồ ăn, giao hàng, thanh toán.
 
 Hệ sinh thái sản phẩm tại Việt Nam:
 • GrabCar / GrabBike: dịch vụ gọi xe với hàng trăm nghìn tài xế đối tác.

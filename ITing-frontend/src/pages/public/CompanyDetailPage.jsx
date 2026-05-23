@@ -189,7 +189,10 @@ const CompanyDetailPage = () => {
 
         setCompany(compRes.data || compRes); // Handle possible data wrapper variations
         setRatingStats(statsRes.data || statsRes);
-        setReviews(reviewsRes.data || reviewsRes);
+        // Backend /reviews trả {reviews:[...], averageRating, totalReviews, ...}
+        // — extract đúng array, không set cả object.
+        const reviewsBody = reviewsRes.data || reviewsRes;
+        setReviews(Array.isArray(reviewsBody) ? reviewsBody : (reviewsBody?.reviews || []));
 
         if (isAuthenticated && user?.role === 'CANDIDATE') {
           const followRes = await companyService.checkFollowing(id);
@@ -280,7 +283,8 @@ const CompanyDetailPage = () => {
         companyService.getCompanyReviews(id)
       ]);
       setRatingStats(statsRes.data || statsRes);
-      setReviews(reviewsRes.data || reviewsRes);
+      const reviewsBody = reviewsRes.data || reviewsRes;
+      setReviews(Array.isArray(reviewsBody) ? reviewsBody : (reviewsBody?.reviews || []));
     } catch (error) {
       console.error("Review submission failed:", error);
       toast.error(error.response?.data?.message || "Không thể gửi đánh giá. Vui lòng thử lại sau.");

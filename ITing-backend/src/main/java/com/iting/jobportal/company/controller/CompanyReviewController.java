@@ -1,33 +1,250 @@
 package com.iting.jobportal.company.controller;
 
-import com.iting.jobportal.company.dto.response.CompanyReviewResponse;
-import com.iting.jobportal.company.service.CompanyReviewService;
-import com.iting.jobportal.file.FileUploadService;
+import com.iting.jobportal.auth.entity.Account;
+import com.iting.jobportal.auth.repository.AccountRepository;
+import com.iting.jobportal.auth.security.JwtTokenUtil;
+import com.iting.jobportal.company.entity.Company;
+import com.iting.jobportal.company.entity.CompanyReview;
+import com.iting.jobportal.company.entity.CompanyReviewVote;
+import com.iting.jobportal.company.repository.CompanyRepository;
+import com.iting.jobportal.company.repository.CompanyReviewRepository;
+import com.iting.jobportal.company.repository.CompanyReviewVoteRepository;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
+
+import java.math.BigDecimal;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+/**
+ * Glassdoor-style company reviews — anonymous by default, moderated, helpful-votes.
+ *
+ * <p>Endpoints:
+ * <ul>
+ *   <li>GET    /api/public/companies/{id}/reviews   — list APPROVED only + summary</li>
+ *   <li>POST   /api/companies/{id}/reviews           — submit (status=PENDING)</li>
+ *   <li>POST   /api/reviews/{id}/helpful              — toggle helpful vote</li>
+ *   <li>POST   /api/reviews/{id}/report               — flag for moderation</li>
+ *   <li>DELETE  /api/reviews/{id}                      — delete own review</li>
+ * </ul>
+ */
 @RestController
-@RequestMapping("/api/public/companies")
 @RequiredArgsConstructor
 public class CompanyReviewController {
 
-    private final CompanyReviewService reviewService;
-    private final FileUploadService fileUploadService;
+    private final CompanyReviewRepository reviewRepository;
+    private final CompanyReviewVoteRepository voteRepository;
+    private final CompanyRepository companyRepository;
+    private final AccountRepository accountRepository;
+    private final JwtTokenUtil jwtTokenUtil;
 
-    @GetMapping("/{id}/reviews")
-    public ResponseEntity<List<CompanyReviewResponse>> getReviews(@PathVariable Long id) {
-        return ResponseEntity.ok(
-                reviewService.getCompanyReviews(id).stream()
-                        .map(r -> CompanyReviewResponse.fromEntity(r, fileUploadService))
-                        .collect(Collectors.toList()));
+    /** Public: rating stats summary cho company (shape khớp frontend cũ). */
+    @GetMapping("/api/public/companies/{companyId}/rating-stats")
+    @org.springframework.transaction.annotation.Transactional(readOnly = true)
+    public ResponseEntity<Map<String, Object>> ratingStats(@PathVariable Long companyId) {
+        List<CompanyReview> approved = reviewRepository
+                .findByCompanyIdOrderByCreatedAtDesc(companyId).stream()
+                .filter(r -> "APPROVED".equals(r.getModerationStatus()))
+                .collect(Collectors.toList());
+
+        double avg = approved.stream().mapToInt(CompanyReview::getRating).average().orElse(0);
+        long recommendCount = approved.stream()
+                .filter(r -> Boolean.TRUE.equals(r.getWouldRecommend())).count();
+
+        // Histogram theo số sao (1-5)
+        Map<Integer, Long> dist = new LinkedHashMap<>();
+        for (int star = 5; star >= 1; star--) {
+            final int s = star;
+            dist.put(star, approved.stream().filter(r -> r.getRating() != null && r.getRating() == s).count());
+        }
+
+        Map<String, Object> response = new LinkedHashMap<>();
+        response.put("averageRating", Math.round(avg * 10) / 10.0);
+        response.put("reviewCount", approved.size());
+        response.put("recommendPercent", approved.isEmpty() ? 0
+                : Math.round(recommendCount * 100.0 / approved.size()));
+        response.put("ratingDistribution", dist);
+        return ResponseEntity.ok(response);
     }
 
-    @GetMapping("/{id}/rating-stats")
-    public ResponseEntity<Map<String, Object>> getRatingStats(@PathVariable Long id) {
-        return ResponseEntity.ok(reviewService.getCompanyRatingStats(id));
+    /** Public: list approved reviews + aggregate stats for a company. */
+    @GetMapping("/api/public/companies/{companyId}/reviews")
+    @org.springframework.transaction.annotation.Transactional(readOnly = true)
+    public ResponseEntity<Map<String, Object>> listReviews(@PathVariable Long companyId) {
+        List<CompanyReview> all = reviewRepository.findByCompanyIdOrderByCreatedAtDesc(companyId);
+        List<CompanyReview> approved = all.stream()
+                .filter(r -> "APPROVED".equals(r.getModerationStatus()))
+                .collect(Collectors.toList());
+
+        double avgOverall = approved.stream().mapToInt(CompanyReview::getRating).average().orElse(0);
+        long recommendCount = approved.stream().filter(r -> Boolean.TRUE.equals(r.getWouldRecommend())).count();
+
+        Map<String, Object> response = new LinkedHashMap<>();
+        response.put("totalReviews", approved.size());
+        response.put("averageRating", Math.round(avgOverall * 10) / 10.0);
+        response.put("recommendPercent", approved.isEmpty() ? 0
+                : Math.round(recommendCount * 100.0 / approved.size()));
+        response.put("reviews", approved.stream().map(this::toPublicDto).collect(Collectors.toList()));
+        return ResponseEntity.ok(response);
+    }
+
+    /** Authenticated: submit new review (status=PENDING until moderated). */
+    @PostMapping("/api/companies/{companyId}/reviews")
+    public ResponseEntity<Map<String, Object>> submitReview(
+            @PathVariable Long companyId,
+            @RequestBody Map<String, Object> body,
+            HttpServletRequest request) {
+
+        Long userId = requireUser(request);
+        Company company = companyRepository.findById(companyId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Công ty không tồn tại"));
+        Account account = accountRepository.findById(userId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Account không tồn tại"));
+
+        CompanyReview review = CompanyReview.builder()
+                .company(company)
+                .account(account)
+                .rating(asInt(body.get("rating"), 5))
+                .title(asString(body.get("title"), null))
+                .content(asString(body.get("content"), null))
+                .pros(asString(body.get("pros"), null))
+                .cons(asString(body.get("cons"), null))
+                .workType(asString(body.get("workType"), "FORMER_EMPLOYEE"))
+                .jobTitle(asString(body.get("jobTitle"), null))
+                .workYears(asInt(body.get("workYears"), null))
+                .salaryRangeMin(asBigDecimal(body.get("salaryRangeMin")))
+                .salaryRangeMax(asBigDecimal(body.get("salaryRangeMax")))
+                .wouldRecommend(Boolean.TRUE.equals(body.get("wouldRecommend")))
+                .cultureRating(asInt(body.get("cultureRating"), null))
+                .workLifeBalanceRating(asInt(body.get("workLifeBalanceRating"), null))
+                .careerGrowthRating(asInt(body.get("careerGrowthRating"), null))
+                .salaryBenefitsRating(asInt(body.get("salaryBenefitsRating"), null))
+                .managementRating(asInt(body.get("managementRating"), null))
+                .isAnonymous(!Boolean.FALSE.equals(body.get("isAnonymous")))
+                .moderationStatus("PENDING")
+                .helpfulCount(0)
+                .reportCount(0)
+                .build();
+        review = reviewRepository.save(review);
+
+        return ResponseEntity.ok(Map.of(
+                "id", review.getId(),
+                "status", review.getModerationStatus(),
+                "message", "Đánh giá đã được gửi và đang chờ admin duyệt."
+        ));
+    }
+
+    /** Toggle helpful vote on a review. */
+    @PostMapping("/api/reviews/{reviewId}/helpful")
+    public ResponseEntity<Map<String, Object>> toggleHelpful(
+            @PathVariable Long reviewId, HttpServletRequest request) {
+
+        Long userId = requireUser(request);
+        CompanyReview review = reviewRepository.findById(reviewId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Review không tồn tại"));
+
+        var existingVote = voteRepository.findByReviewIdAndAccountId(reviewId, userId);
+        boolean nowHelpful;
+        if (existingVote.isPresent()) {
+            voteRepository.delete(existingVote.get());
+            review.setHelpfulCount(Math.max(0, review.getHelpfulCount() - 1));
+            nowHelpful = false;
+        } else {
+            voteRepository.save(CompanyReviewVote.builder()
+                    .reviewId(reviewId).accountId(userId).build());
+            review.setHelpfulCount(review.getHelpfulCount() + 1);
+            nowHelpful = true;
+        }
+        reviewRepository.save(review);
+        return ResponseEntity.ok(Map.of("helpful", nowHelpful, "helpfulCount", review.getHelpfulCount()));
+    }
+
+    /** Report a review for moderation. */
+    @PostMapping("/api/reviews/{reviewId}/report")
+    public ResponseEntity<Map<String, String>> reportReview(
+            @PathVariable Long reviewId, HttpServletRequest request) {
+        requireUser(request);
+        CompanyReview review = reviewRepository.findById(reviewId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Review không tồn tại"));
+        review.setReportCount(review.getReportCount() + 1);
+        if (review.getReportCount() >= 5 && "APPROVED".equals(review.getModerationStatus())) {
+            review.setModerationStatus("PENDING");
+        }
+        reviewRepository.save(review);
+        return ResponseEntity.ok(Map.of("message", "Cảm ơn bạn đã báo cáo."));
+    }
+
+    /** Delete own review. Only the author can delete. */
+    @DeleteMapping("/api/reviews/{reviewId}")
+    public ResponseEntity<Map<String, String>> deleteReview(
+            @PathVariable Long reviewId, HttpServletRequest request) {
+        Long userId = requireUser(request);
+        CompanyReview review = reviewRepository.findById(reviewId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Review không tồn tại"));
+
+        if (review.getAccount() == null || !userId.equals(review.getAccount().getId())) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Bạn không có quyền xóa đánh giá này");
+        }
+
+        // Also delete associated votes
+        voteRepository.deleteAllByReviewId(reviewId);
+        reviewRepository.delete(review);
+        return ResponseEntity.ok(Map.of("message", "Đã xóa đánh giá thành công."));
+    }
+
+    // ─── Helpers ─────────────────────────────────────────────
+
+    private Map<String, Object> toPublicDto(CompanyReview r) {
+        Map<String, Object> m = new LinkedHashMap<>();
+        m.put("id", r.getId());
+        m.put("title", r.getTitle());
+        m.put("rating", r.getRating());
+        m.put("content", r.getContent());
+        m.put("pros", r.getPros());
+        m.put("cons", r.getCons());
+        m.put("workType", r.getWorkType());
+        m.put("jobTitle", r.getJobTitle());
+        m.put("workYears", r.getWorkYears());
+        m.put("wouldRecommend", r.getWouldRecommend());
+        m.put("cultureRating", r.getCultureRating());
+        m.put("workLifeBalanceRating", r.getWorkLifeBalanceRating());
+        m.put("careerGrowthRating", r.getCareerGrowthRating());
+        m.put("salaryBenefitsRating", r.getSalaryBenefitsRating());
+        m.put("managementRating", r.getManagementRating());
+        m.put("helpfulCount", r.getHelpfulCount());
+        m.put("createdAt", r.getCreatedAt());
+        m.put("accountId", r.getAccount() != null ? r.getAccount().getId() : null);
+        if (Boolean.FALSE.equals(r.getIsAnonymous()) && r.getAccount() != null) {
+            m.put("authorName", r.getAccount().getFullName());
+        } else {
+            m.put("authorName", "Người dùng ẩn danh");
+        }
+        return m;
+    }
+
+    private Long requireUser(HttpServletRequest request) {
+        Long id = jwtTokenUtil.getUserIdFromHeader(request);
+        if (id == null) throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Phiên đăng nhập không hợp lệ");
+        return id;
+    }
+
+    private String asString(Object o, String def) {
+        if (o == null) return def;
+        String s = o.toString().trim();
+        return s.isEmpty() ? def : s;
+    }
+    private Integer asInt(Object o, Integer def) {
+        if (o == null) return def;
+        try { return Integer.parseInt(o.toString()); } catch (Exception e) { return def; }
+    }
+    private BigDecimal asBigDecimal(Object o) {
+        if (o == null) return null;
+        try { return new BigDecimal(o.toString()); } catch (Exception e) { return null; }
     }
 }

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import logoIting from '../../assets/logo-iting.png';
 import { Link, useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { useGoogleLogin } from '@react-oauth/google';
@@ -84,7 +85,7 @@ const LoginPage = () => {
     <div className="min-h-screen flex bg-white font-sans animate-in fade-in duration-500">
       <div className="w-full lg:w-[50%] flex flex-col px-6 sm:px-10 md:px-20 xl:px-32 relative z-10 h-full overflow-y-auto no-scrollbar py-8 md:py-12">
         <Link to="/" className="flex items-center gap-2 mb-6 w-fit hover:opacity-80 transition-opacity">
-          <img src="/logo-iting.png" alt="ITing Logo" className="h-20 w-auto object-contain drop-shadow-sm" />
+          <img src={logoIting} alt="ITing Logo" className="h-20 w-auto object-contain drop-shadow-sm" />
         </Link>
         <div>
           <h1 className="text-[30px] font-semibold text-[#1F2937] mb-6">

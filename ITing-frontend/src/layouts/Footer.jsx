@@ -1,4 +1,5 @@
 import React from 'react';
+import logoIting from '../assets/logo-iting.png';
 import { Link } from 'react-router-dom';
 import { BsBriefcaseFill } from 'react-icons/bs';
 
@@ -13,7 +14,7 @@ const Footer = () => {
           {/* CỘT 1: LOGO & GIỚI THIỆU */}
           <div>
             <Link to="/" className="flex items-center gap-2 mb-6">
-               <img src="/logo-iting.png" alt="ITing Logo" className="h-10 w-auto object-contain brightness-110" />
+               <img src={logoIting} alt="ITing Logo" className="h-10 w-auto object-contain brightness-110" />
             </Link>
             <p className="text-gray-400 text-sm leading-relaxed mb-4">
               Nền tảng tuyển dụng dành riêng cho lĩnh vực công nghệ thông tin.

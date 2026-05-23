@@ -86,6 +86,11 @@ public class SecurityConfig {
                 // ── Public: WebSocket handshake endpoint ───────────────────
                 .requestMatchers("/ws/**").permitAll()
 
+                // ── Public: Payment tiers (pricing pages) ──────────────────
+                .requestMatchers(HttpMethod.GET, "/api/payments/subscription-tiers").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/payments/boost-tiers").permitAll()
+                .requestMatchers(HttpMethod.POST, "/api/payments/sepay-webhook").permitAll()
+
                 // ── EMPLOYER: Quản lý Job (phải khai báo TRƯỚC các rule /{id}) ──
                 .requestMatchers(HttpMethod.GET,  "/api/jobs/my-jobs").hasRole("EMPLOYER")
                 .requestMatchers(HttpMethod.POST, "/api/jobs").hasRole("EMPLOYER")

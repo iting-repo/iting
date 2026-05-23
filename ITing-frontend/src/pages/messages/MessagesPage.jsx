@@ -525,17 +525,31 @@ const MessagesPage = () => {
                 {pendingAppliedCompanies.map((comp) => (
                   <button
                     key={`applied-${comp.id}`}
-                    onClick={async () => {
+                    onClick={async (e) => {
+                      // Disable button để chặn double-click → 2 conversation trùng
+                      if (e.currentTarget.disabled) return;
+                      e.currentTarget.disabled = true;
                       try {
+                        // Pre-check: nếu vừa fetch xong đã thấy conversation với company này → vào thẳng
+                        const existing = conversations.find(c => c.otherParticipantId === comp.id);
+                        if (existing) {
+                          setActiveConversationId(existing.id);
+                          return;
+                        }
                         const sent = await messageService.sendMessage({
                           receiverId: comp.id,
                           receiverType: 'COMPANY',
                           senderType: 'USER',
                           content: `Chào ${comp.name}, tôi muốn trao đổi về vị trí ${comp.jobTitle || 'đang ứng tuyển'}.`,
                         });
+                        // Refresh để company chuyển từ "pending" sang danh sách conversation chính
+                        const res = await messageService.getConversations({ page: 0, size: 50 });
+                        setConversations(sortConversationsForInbox(res?.conversations || []));
                         setActiveConversationId(sent.conversationId);
                       } catch (err) {
                         console.error("Initiation failed", err);
+                      } finally {
+                        if (e.currentTarget) e.currentTarget.disabled = false;
                       }
                     }}
                     style={{

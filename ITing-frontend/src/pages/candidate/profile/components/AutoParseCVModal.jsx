@@ -68,12 +68,10 @@ const AutoParseCVModal = ({ isOpen, onClose, onComplete }) => {
             const formData = new FormData();
             formData.append('file', selectedFile);
 
-            // Gửi API call tới Spring Boot
+            // Gửi API call tới Spring Boot.
+            // axiosInstance interceptor đã unwrap response.data → response chính là body Gemini trả về.
             const response = await cvService.parseCV(formData);
-            const data = response.data; // Đây là chuỗi JSON từ Gemini
-            
-            // Xử lý chuỗi JSON nếu là string
-            let finalJson = typeof data === 'string' ? JSON.parse(data) : data;
+            let finalJson = typeof response === 'string' ? JSON.parse(response) : response;
             
             setParsedData(finalJson);
             setProgress(100);

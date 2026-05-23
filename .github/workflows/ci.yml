@@ -93,6 +93,7 @@ jobs:
         run: npm run build -- --env APP_ENV=production
         env:
           VITE_API_BASE: https://datnhk252iting.dpdns.org
+          REACT_APP_GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
 
       - name: Upload build
         uses: actions/upload-artifact@v4
@@ -151,7 +152,9 @@ jobs:
         with:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+          # PAT thay GITHUB_TOKEN vì sau khi transfer repo sang org iting-repo,
+          # default GITHUB_TOKEN bị denied khi push GHCR packages.
+          password: ${{ secrets.GHCR_PAT }}
 
       - name: Download backend JAR
         uses: actions/download-artifact@v4
@@ -190,5 +193,6 @@ jobs:
             ${{ startsWith(github.ref, 'refs/tags/') && format('{0}/{1}/iting-frontend:{2}', env.REGISTRY, github.repository, github.ref_name) || '' }}
           build-args: |
             VITE_API_BASE=https://datnhk252iting.dpdns.org
+            REACT_APP_GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID }}
           cache-from: type=gha
           cache-to: type=gha,mode=max

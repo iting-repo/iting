@@ -8,4 +8,9 @@ import java.util.Optional;
 public interface CompanyReviewVoteRepository extends JpaRepository<CompanyReviewVote, Long> {
     Optional<CompanyReviewVote> findByReviewIdAndAccountId(Long reviewId, Long accountId);
     long countByReviewId(Long reviewId);
+
+    /** Cascade-delete votes khi xoá review. Cần @Modifying + @Transactional cho derived delete. */
+    @org.springframework.transaction.annotation.Transactional
+    @org.springframework.data.jpa.repository.Modifying
+    void deleteAllByReviewId(Long reviewId);
 }

@@ -372,8 +372,9 @@ const JobDetailPage = () => {
         type: job.jobType || 'FULL_TIME',
         salary: formatSalary(job.minSalary, job.maxSalary),
         location: job.location || job.province || 'Việt Nam',
-        timePosted: job.lastUpdate || job.createdAt
-            ? formatDistanceToNowStrict(parseISO(job.lastUpdate || job.createdAt), {
+        // Ưu tiên createdAt — lastUpdate bị reset khi admin edit/approve.
+        timePosted: job.createdAt || job.lastUpdate
+            ? formatDistanceToNowStrict(parseISO(job.createdAt || job.lastUpdate), {
                 addSuffix: true,
                 locale: vi,
             })
