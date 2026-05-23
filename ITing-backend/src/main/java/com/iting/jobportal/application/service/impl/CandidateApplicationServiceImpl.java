@@ -195,11 +195,13 @@ public class CandidateApplicationServiceImpl implements CandidateApplicationServ
     }
 
     @Override
+    @Transactional(readOnly = true)
     public Page<ApplicationResponse> getMyApplications(Long userId, int page, int size) {
         return getMyApplications(userId, null, page, size);
     }
 
     @Override
+    @Transactional(readOnly = true)
     public Page<ApplicationResponse> getMyApplications(Long userId, String status, int page, int size) {
         Pageable pageable = PageRequest.of(page, size, Sort.by("timeSent").descending());
         Page<com.iting.jobportal.application.entity.ApplyFormSentToJob> data;
