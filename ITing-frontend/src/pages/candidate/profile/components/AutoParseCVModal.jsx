@@ -20,6 +20,7 @@ const AutoParseCVModal = ({ isOpen, onClose, onComplete }) => {
     const [parseLog, setParseLog] = useState('');
     const [selectedFile, setSelectedFile] = useState(null);
     const [parsedData, setParsedData] = useState(null);
+    const [isSaving, setIsSaving] = useState(false);
 
     useModalEscape(isOpen ? onClose : null);
 
@@ -94,8 +95,6 @@ const AutoParseCVModal = ({ isOpen, onClose, onComplete }) => {
             setProgress(0);
         }
     };
-
-    const [isSaving, setIsSaving] = useState(false);
 
     const handleFinish = async () => {
         if (!parsedData) {
