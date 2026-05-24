@@ -1,8 +1,8 @@
 import React, { useEffect, useCallback, useState } from "react";
 import ReactDOM from "react-dom";
-import { 
-    FaTimes, FaEnvelope, FaPhone, 
-    FaCheckCircle, FaUserTie, 
+import {
+    FaTimes, FaEnvelope, FaPhone,
+    FaUserTie,
     FaExclamationTriangle, FaExternalLinkAlt,
     FaRegStar, FaStar
 } from 'react-icons/fa';
@@ -11,6 +11,7 @@ import reportService from "../../services/reportService";
 import favoriteCandidateService from "../../services/favoriteCandidateService";
 import messageService from "../../services/messageService";
 import { useNavigate } from "react-router-dom";
+import StagePopover, { STAGES, stageMeta } from "./StagePopover";
 
 const REPORT_REASONS = [
   { value: "SPAM", label: "Tin nhắn rác / Spam" },
@@ -21,15 +22,30 @@ const REPORT_REASONS = [
   { value: "OTHER", label: "Lý do khác" },
 ];
 
-const ReviewCandidateModal = ({ candidate, onClose }) => {
+/**
+ * @param {object} props
+ * @param {object} props.candidate
+ * @param {() => void} props.onClose
+ * @param {number} [props.applyFormId] - Nếu có → hiển thị stage bar + StagePopover ở đầu
+ *                                       (ứng viên đã apply). Nếu null → luồng AI/search,
+ *                                       chỉ cho nhắn tin.
+ * @param {number} [props.jobId]       - Job đang xét stage (đi cùng applyFormId).
+ * @param {string} [props.currentStage] - Pipeline stage hiện tại.
+ * @param {(newStage: string) => void} [props.onStageMoved]
+ */
+const ReviewCandidateModal = ({ candidate, onClose, applyFormId, jobId, currentStage, onStageMoved }) => {
   const navigate = useNavigate();
   const [isFavorited, setIsFavorited] = useState(false);
   const [isReporting, setIsReporting] = useState(false);
   const [showReportModal, setShowReportModal] = useState(false);
+  const [stage, setStage] = useState(currentStage || 'SCREENING');
   const [reportData, setReportData] = useState({
     type: "OTHER",
     description: ""
   });
+  const isApplied = !!applyFormId;
+
+  useEffect(() => { setStage(currentStage || 'SCREENING'); }, [currentStage]);
 
   useEffect(() => {
     if (candidate) {
@@ -100,12 +116,6 @@ const ReviewCandidateModal = ({ candidate, onClose }) => {
     onClose();
   };
 
-  const handleAccept = () => {
-    if (!candidate) return;
-    // Giả lập API chấp nhận tuyển dụng/mời ứng viên
-    toast.success(`Đã gửi yêu cầu tuyển dụng đến ứng viên ${candidate.name}`);
-  };
-
   if (!candidate) return null;
 
   const modalRoot = document.body;
@@ -164,6 +174,49 @@ const ReviewCandidateModal = ({ candidate, onClose }) => {
 
         {/* CỘT PHẢI: THÔNG TIN & THAO TÁC (3/7) */}
         <div className="flex-[3] flex flex-col bg-white overflow-hidden relative">
+          {/* Pipeline stage bar — chỉ hiện khi ứng viên đã apply */}
+          {isApplied && (
+            <div className="px-6 pt-4 pb-3 border-b border-slate-100 bg-gradient-to-r from-blue-50/50 to-purple-50/50 shrink-0">
+              <div className="flex items-center justify-between mb-2">
+                <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Trạng thái pipeline</p>
+                <StagePopover
+                  applyFormId={applyFormId}
+                  jobId={jobId}
+                  currentStage={stage}
+                  onMoved={(newStage) => { setStage(newStage); onStageMoved?.(newStage); }}
+                />
+              </div>
+              <div className="flex items-center gap-1 overflow-x-auto no-scrollbar">
+                {STAGES.filter(s => s.value !== 'REJECTED').map((s, idx, arr) => {
+                  const meta = stageMeta(s.value);
+                  const currentIdx = arr.findIndex(x => x.value === stage);
+                  const isPast = idx < currentIdx;
+                  const isCurrent = idx === currentIdx;
+                  return (
+                    <React.Fragment key={s.value}>
+                      <span
+                        title={meta.label}
+                        className={`whitespace-nowrap px-2 py-0.5 rounded-full text-[10px] font-bold border ${
+                          isCurrent ? meta.color + ' ring-2 ring-offset-1 ring-[#3AB4E6]/40' :
+                          isPast    ? 'bg-emerald-50 text-emerald-700 border-emerald-200' :
+                                      'bg-white text-slate-400 border-slate-200'
+                        }`}
+                      >
+                        {meta.label}
+                      </span>
+                      {idx < arr.length - 1 && (
+                        <span className={`h-px flex-1 min-w-2 ${isPast ? 'bg-emerald-300' : 'bg-slate-200'}`} />
+                      )}
+                    </React.Fragment>
+                  );
+                })}
+              </div>
+              {stage === 'REJECTED' && (
+                <p className="mt-2 text-[11px] font-semibold text-red-600">Hồ sơ đã bị từ chối.</p>
+              )}
+            </div>
+          )}
+
           {/* Header Action */}
           <div className="p-6 border-b border-slate-100 flex justify-between items-center shrink-0">
             <div className="flex gap-2">
@@ -239,18 +292,17 @@ const ReviewCandidateModal = ({ candidate, onClose }) => {
 
             {/* Action Buttons */}
             <div className="pt-4 flex flex-col gap-3">
-              <button 
+              <button
                 onClick={handleSendMessage}
-                className="w-full flex justify-center items-center gap-2 px-6 py-4 bg-white border-2 border-slate-200 text-slate-700 font-bold rounded-2xl hover:bg-slate-50 hover:border-slate-300 transition-all active:scale-95 shadow-sm"
+                className="w-full flex justify-center items-center gap-2 px-6 py-4 bg-[#1967D2] text-white font-bold rounded-2xl hover:bg-blue-700 shadow-xl shadow-blue-100 transition-all active:scale-95"
               >
                 <FaEnvelope /> Gửi tin nhắn
               </button>
-              <button 
-                onClick={handleAccept}
-                className="w-full flex justify-center items-center gap-2 px-6 py-4 bg-[#1967D2] text-white font-bold rounded-2xl hover:bg-blue-700 shadow-xl shadow-blue-100 transition-all active:scale-95"
-              >
-                <FaCheckCircle /> Chấp nhận tuyển dụng
-              </button>
+              {!isApplied && (
+                <p className="text-xs text-slate-400 text-center">
+                  Ứng viên này chưa apply. Sau khi ứng viên gửi hồ sơ, bạn có thể chuyển trạng thái phỏng vấn / nhận.
+                </p>
+              )}
             </div>
           </div>
         </div>

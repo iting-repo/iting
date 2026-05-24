@@ -15,6 +15,7 @@ import ReviewCandidateModal from "./ReviewCandidateModal";
  *  - onCreditsConsumed (optional callback để parent refresh credit badge)
  */
 const PAGE_SIZE = 10;
+const CREDIT_COST = 5;
 
 const MatchCandidatesDrawer = ({ isOpen, jobId, jobTitle, onClose, onCreditsConsumed }) => {
     const [loading, setLoading] = useState(false);
@@ -23,6 +24,8 @@ const MatchCandidatesDrawer = ({ isOpen, jobId, jobTitle, onClose, onCreditsCons
     const [totalElements, setTotalElements] = useState(0);
     const [page, setPage] = useState(0);
     const [viewCandidate, setViewCandidate] = useState(null);
+    // null = chưa confirm, false = đã từ chối (đóng drawer), true = đã confirm + search
+    const [confirmed, setConfirmed] = useState(null);
 
     const load = useCallback(async (currentPage) => {
         if (!jobId) return;
@@ -38,36 +41,58 @@ const MatchCandidatesDrawer = ({ isOpen, jobId, jobTitle, onClose, onCreditsCons
             // Bắn event global để Header refresh badge
             window.dispatchEvent(new Event("credit-refresh"));
         } catch (e) {
-            const status = e?.response?.status;
-            const data = e?.response?.data;
-            if (status === 402 || data?.code === "INSUFFICIENT_CREDITS") {
-                setError({ kind: "insufficient", message: data?.error || "Không đủ credits" });
-            } else if (status === 403) {
-                setError({ kind: "forbidden", message: data?.error || "Bạn không có quyền match job này" });
-            } else if (status === 404) {
-                setError({ kind: "notfound", message: data?.error || "Job không tồn tại" });
+            // axiosInstance interceptor reject với plain `error.response.data` —
+            // không có .response.status. Phải đọc field code/error trực tiếp.
+            const code = e?.code;
+            const msg = e?.error || e?.message;
+            if (code === "INSUFFICIENT_CREDITS" || /credit/i.test(msg || "")) {
+                setError({ kind: "insufficient", message: msg || "Không đủ credits" });
+            } else if (/không có quyền|forbidden/i.test(msg || "")) {
+                setError({ kind: "forbidden", message: msg });
+            } else if (/không tồn tại|not found/i.test(msg || "")) {
+                setError({ kind: "notfound", message: msg });
             } else {
-                setError({ kind: "unknown", message: data?.error || data?.message || "Có lỗi xảy ra" });
+                setError({ kind: "unknown", message: msg || "Có lỗi xảy ra" });
             }
         } finally {
             setLoading(false);
         }
     }, [jobId, onCreditsConsumed]);
 
-    // Mỗi lần mở drawer với jobId mới → reset state + reload
+    // Mỗi lần mở drawer với jobId mới → reset về confirm state, KHÔNG auto-search
     useEffect(() => {
         if (isOpen && jobId) {
             setPage(0);
-            load(0);
+            setConfirmed(null);
+            setCandidates([]);
+            setError(null);
+            setTotalElements(0);
         }
         if (!isOpen) {
             // Clear state khi đóng để lần mở sau không nhấp nháy data cũ
             setCandidates([]);
             setError(null);
             setTotalElements(0);
+            setConfirmed(null);
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [isOpen, jobId]);
+
+    // Sau khi user confirm → mới gọi API trừ credits + search
+    useEffect(() => {
+        if (isOpen && confirmed === true && jobId) {
+            load(0);
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [isOpen, confirmed, jobId]);
+
+    // Body scroll lock khi drawer mở
+    useEffect(() => {
+        if (!isOpen) return;
+        const prev = document.body.style.overflow;
+        document.body.style.overflow = "hidden";
+        return () => { document.body.style.overflow = prev; };
+    }, [isOpen]);
 
     const totalPages = Math.max(1, Math.ceil(totalElements / PAGE_SIZE));
 
@@ -102,20 +127,58 @@ const MatchCandidatesDrawer = ({ isOpen, jobId, jobTitle, onClose, onCreditsCons
                     </button>
                 </div>
 
-                <div className="px-6 py-3 bg-amber-50 border-b border-amber-100 flex items-center gap-2 text-xs text-amber-700">
-                    <FaCoins /> Đã trừ <strong>5 credits</strong> cho lần tìm kiếm này. Chỉ hiện ứng viên đang tìm việc.
-                </div>
+                {confirmed === true && (
+                    <div className="px-6 py-3 bg-amber-50 border-b border-amber-100 flex items-center gap-2 text-xs text-amber-700">
+                        <FaCoins /> Đã trừ <strong>{CREDIT_COST} credits</strong> cho lần tìm kiếm này. Chỉ hiện ứng viên đang tìm việc.
+                    </div>
+                )}
 
                 {/* Body */}
                 <div className="flex-1 overflow-y-auto px-6 py-5">
-                    {loading && (
+                    {/* Confirm screen — hiển thị trước khi search */}
+                    {confirmed === null && (
+                        <div className="max-w-md mx-auto py-8 text-center">
+                            <div className="w-20 h-20 mx-auto mb-5 rounded-2xl bg-gradient-to-br from-indigo-100 to-purple-100 flex items-center justify-center">
+                                <FaMagic className="text-3xl text-indigo-500" />
+                            </div>
+                            <h3 className="text-xl font-bold text-gray-900 mb-2">Xác nhận tìm ứng viên AI</h3>
+                            <p className="text-sm text-gray-600 mb-1">Job:</p>
+                            <p className="text-base font-semibold text-gray-800 mb-6 line-clamp-2">{jobTitle || `Job #${jobId}`}</p>
+
+                            <div className="rounded-xl bg-amber-50 border border-amber-200 p-4 mb-6 text-left">
+                                <div className="flex items-center gap-2 text-amber-700 font-bold mb-2">
+                                    <FaCoins /> Phí: {CREDIT_COST} credits
+                                </div>
+                                <ul className="text-xs text-amber-700/80 space-y-1 list-disc list-inside">
+                                    <li>AI sẽ dùng embedding của job để match với CV của các ứng viên <strong>đang tìm việc</strong></li>
+                                    <li>Kết quả sắp xếp theo độ phù hợp, kèm lý do match</li>
+                                    <li>Credit được trừ ngay khi bấm xác nhận, không hoàn lại</li>
+                                </ul>
+                            </div>
+
+                            <div className="flex gap-3">
+                                <button
+                                    onClick={onClose}
+                                    className="flex-1 py-3 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold text-sm"
+                                >Hủy</button>
+                                <button
+                                    onClick={() => setConfirmed(true)}
+                                    className="flex-[1.4] py-3 rounded-xl bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white font-bold text-sm shadow-md flex items-center justify-center gap-2"
+                                >
+                                    <FaMagic /> Xác nhận, trừ {CREDIT_COST} credits
+                                </button>
+                            </div>
+                        </div>
+                    )}
+
+                    {confirmed === true && loading && (
                         <div className="flex flex-col items-center justify-center py-20 text-gray-500">
                             <FaSpinner className="text-3xl animate-spin text-[#3AB4E6] mb-3" />
                             <p>AI đang phân tích {jobTitle ? `"${jobTitle}"` : "job"}...</p>
                         </div>
                     )}
 
-                    {!loading && error && (
+                    {confirmed === true && !loading && error && (
                         <div className="rounded-xl border border-red-100 bg-red-50 p-6 text-center">
                             {error.kind === "insufficient" ? (
                                 <>
@@ -142,7 +205,7 @@ const MatchCandidatesDrawer = ({ isOpen, jobId, jobTitle, onClose, onCreditsCons
                         </div>
                     )}
 
-                    {!loading && !error && candidates.length === 0 && (
+                    {confirmed === true && !loading && !error && candidates.length === 0 && (
                         <div className="text-center py-16 text-gray-500">
                             <FaUser className="mx-auto text-4xl text-gray-300 mb-3" />
                             <p className="font-semibold mb-1">Chưa tìm thấy ứng viên phù hợp</p>
@@ -150,7 +213,7 @@ const MatchCandidatesDrawer = ({ isOpen, jobId, jobTitle, onClose, onCreditsCons
                         </div>
                     )}
 
-                    {!loading && !error && candidates.length > 0 && (
+                    {confirmed === true && !loading && !error && candidates.length > 0 && (
                         <>
                             <p className="text-sm text-gray-500 mb-4">
                                 Tìm thấy <strong className="text-gray-900">{totalElements}</strong> ứng viên đang tìm việc, ranked theo độ match.

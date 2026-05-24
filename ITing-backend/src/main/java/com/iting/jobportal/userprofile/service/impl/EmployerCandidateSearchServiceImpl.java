@@ -202,26 +202,28 @@ public class EmployerCandidateSearchServiceImpl implements EmployerCandidateSear
         }
 
         // ── Build filter từ job fields ──
-        String locationFilter = (request != null && request.getLocationOverride() != null
+        // QUAN TRỌNG: filter SQL phải LỎNG cho AI match — strict skill IN / exp range
+        // chặn quá nhiều candidate. Để vector cosine + KG bonus rank tự nhiên.
+        String locationHint = (request != null && request.getLocationOverride() != null
                 && !request.getLocationOverride().isBlank())
                         ? request.getLocationOverride().trim()
                         : job.getProvince();
         List<String> jobSkills = job.getSkills() == null ? List.of()
                 : job.getSkills().stream().filter(s -> s != null && !s.isBlank()).distinct().toList();
-        String level = job.getExperienceLevel() == null ? null : job.getExperienceLevel().name();
-        ExperienceRange expRange = ExperienceRange.fromLevel(level);
 
-        // Bắt buộc onlyAvailable=true (intent: candidates đang tìm việc)
+        // SQL chỉ filter openToWork=true + có role candidate. Mọi gating khác bỏ
+        // qua: không truyền skills (exact-match IN), không truyền exp range (chặn
+        // theo level cứng), không truyền location (để KG location bonus xử lý).
         List<UserProfile> matched = userProfileRepository.employerSearchCandidates(
-                null,                       // keyword: dùng vector thay keyword
-                null,                       // position: skip (job đã định danh rõ rồi)
-                locationFilter,
+                null,                       // keyword
+                null,                       // position
+                null,                       // location → KG locScore handle proximity
                 true,                       // onlyAvailable
-                expRange.minYears(),
-                expRange.maxYears(),
-                null,                       // degree: không gating
-                jobSkills.isEmpty(),
-                jobSkills.isEmpty() ? List.of("__EMPTY__") : jobSkills);
+                null,                       // minExp
+                null,                       // maxExp
+                null,                       // degree
+                true,                       // skillsEmpty=true → bỏ qua skill IN filter
+                List.of("__EMPTY__"));
 
         // ── KG expansion từ job skills để bonus ──
         java.util.Set<String> expandedKeywords = new java.util.HashSet<>();
@@ -255,10 +257,10 @@ public class EmployerCandidateSearchServiceImpl implements EmployerCandidateSear
                 }
             }
 
-            // Location proximity bonus
+            // Location proximity bonus (dùng locationHint từ job.province)
             double locScore = 0.0;
-            if (locationFilter != null && !locationFilter.isBlank()) {
-                locScore = knowledgeGraphService.locationScore(locationFilter, profile.getLocation());
+            if (locationHint != null && !locationHint.isBlank()) {
+                locScore = knowledgeGraphService.locationScore(locationHint, profile.getLocation());
                 score += LOCATION_WEIGHT * locScore;
             }
 
