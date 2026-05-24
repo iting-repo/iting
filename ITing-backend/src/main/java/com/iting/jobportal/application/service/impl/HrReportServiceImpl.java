@@ -97,7 +97,7 @@ public class HrReportServiceImpl implements HrReportService {
     }
 
     private long countJobs(Long hrId, boolean activeOnly) {
-        String sql = "SELECT COUNT(*) FROM \"Job\" WHERE posted_by_hr_id = :hr"
+        String sql = "SELECT COUNT(*) FROM job WHERE posted_by_hr_id = :hr"
                 + (activeOnly ? " AND status = 'ACTIVE'" : "");
         Object o = em.createNativeQuery(sql).setParameter("hr", hrId).getSingleResult();
         return ((Number) o).longValue();
