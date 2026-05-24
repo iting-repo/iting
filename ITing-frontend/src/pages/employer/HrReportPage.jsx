@@ -9,7 +9,7 @@ import { Breadcrumb } from "../../components/common";
 import hrReportService from "../../services/hrReportService";
 
 const STAGE_META = {
-    SCREENING:    { label: "Hồ sơ tiếp nhận",  color: "#94a3b8" },
+    SCREENING:    { label: "Đang sàng lọc",   color: "#94a3b8" },
     PHONE_SCREEN: { label: "Đã liên hệ",       color: "#0ea5e9" },
     INTERVIEW:    { label: "Hẹn phỏng vấn",    color: "#3b82f6" },
     OFFER:        { label: "Gửi đề nghị",      color: "#f59e0b" },
@@ -57,7 +57,9 @@ const HrReportPage = () => {
     };
 
     const stages = data?.applicationsByStage || {};
-    const totalForBar = Object.values(stages).reduce((s, v) => s + v, 0) || 1;
+    // Bar % tính trên TỔNG hồ sơ tiếp nhận (totalApplications) thay vì sum stages.
+    // 2 giá trị này thường bằng nhau, nhưng dùng totalApplications cho chính xác về ngữ nghĩa.
+    const totalForBar = Math.max(1, data?.totalApplications || 0);
 
     return (
         <div className="space-y-6 pb-20">
@@ -150,6 +152,20 @@ const HrReportPage = () => {
                         <div className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm">
                             <h3 className="text-xs font-black uppercase tracking-widest text-gray-400 mb-4">Trạng thái hồ sơ</h3>
                             <ul className="space-y-3">
+                                {/* Hàng tổng — baseline 100% */}
+                                <li>
+                                    <div className="flex items-center justify-between text-xs mb-1">
+                                        <div className="flex items-center gap-2">
+                                            <span className="w-2 h-2 rounded-full bg-slate-800" />
+                                            <span className="font-bold text-gray-800">Tổng hồ sơ tiếp nhận</span>
+                                            <span className="text-gray-500 font-bold ml-1">{fmtNum(data.totalApplications)}</span>
+                                        </div>
+                                        <span className="text-gray-500 font-semibold">100%</span>
+                                    </div>
+                                    <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+                                        <div className="h-full rounded-full bg-slate-800" style={{ width: `100%` }} />
+                                    </div>
+                                </li>
                                 {Object.entries(STAGE_META).map(([code, meta]) => {
                                     const count = stages[code] || 0;
                                     const pct = (count / totalForBar) * 100;
