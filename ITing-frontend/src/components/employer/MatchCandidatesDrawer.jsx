@@ -38,16 +38,18 @@ const MatchCandidatesDrawer = ({ isOpen, jobId, jobTitle, onClose, onCreditsCons
             // Bắn event global để Header refresh badge
             window.dispatchEvent(new Event("credit-refresh"));
         } catch (e) {
-            const status = e?.response?.status;
-            const data = e?.response?.data;
-            if (status === 402 || data?.code === "INSUFFICIENT_CREDITS") {
-                setError({ kind: "insufficient", message: data?.error || "Không đủ credits" });
-            } else if (status === 403) {
-                setError({ kind: "forbidden", message: data?.error || "Bạn không có quyền match job này" });
-            } else if (status === 404) {
-                setError({ kind: "notfound", message: data?.error || "Job không tồn tại" });
+            // axiosInstance interceptor reject với plain `error.response.data` —
+            // không có .response.status. Phải đọc field code/error trực tiếp.
+            const code = e?.code;
+            const msg = e?.error || e?.message;
+            if (code === "INSUFFICIENT_CREDITS" || /credit/i.test(msg || "")) {
+                setError({ kind: "insufficient", message: msg || "Không đủ credits" });
+            } else if (/không có quyền|forbidden/i.test(msg || "")) {
+                setError({ kind: "forbidden", message: msg });
+            } else if (/không tồn tại|not found/i.test(msg || "")) {
+                setError({ kind: "notfound", message: msg });
             } else {
-                setError({ kind: "unknown", message: data?.error || data?.message || "Có lỗi xảy ra" });
+                setError({ kind: "unknown", message: msg || "Có lỗi xảy ra" });
             }
         } finally {
             setLoading(false);
