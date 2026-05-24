@@ -40,6 +40,8 @@ import java.util.Optional;
 @Slf4j
 public class SubscriptionService {
 
+    private final CreditService creditService;
+
     @Value("${sepay.order-prefix:ITI}")
     private String orderPrefix;
 
@@ -163,10 +165,16 @@ public class SubscriptionService {
         }
         subscriptionRepository.save(sub);
 
-        // ── Add credits to HR account ──
+        // ── Add credits to HR account (via CreditService để có audit ledger) ──
         Account account = order.getAccount();
         int creditsToAdd = tier.getCredits();
-        account.setCredits((account.getCredits() != null ? account.getCredits() : 0) + creditsToAdd);
+        creditService.grant(
+                accountId,
+                creditsToAdd,
+                "SUBSCRIPTION",
+                sub.getId(),
+                "Kích hoạt gói " + tier.getDisplayName() + " (" + tier.name() + ")"
+        );
         account.setPremiumUntil(sub.getExpiresAt());
         account.setPremiumSource(tier.name());
         accountRepository.save(account);

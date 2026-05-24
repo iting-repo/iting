@@ -1,20 +1,31 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { toast } from 'sonner';
-import { FaCrown, FaCheckCircle, FaTimes, FaCalendarAlt, FaSync } from 'react-icons/fa';
+import { FaCrown, FaCheckCircle, FaTimes, FaCalendarAlt, FaSync, FaCoins } from 'react-icons/fa';
 import SEO from '../../../components/common/SEO';
 import subscriptionService from '../../../services/subscriptionService';
+import creditService from '../../../services/creditService';
 
 const ManageSubscriptionPage = () => {
   const [data, setData] = useState(null);
+  const [credit, setCredit] = useState({ balance: 0 });
+  const [history, setHistory] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showCancelDialog, setShowCancelDialog] = useState(false);
   const [cancelReason, setCancelReason] = useState('');
 
   const load = () => {
     setLoading(true);
-    subscriptionService.getMine()
-      .then(setData)
+    Promise.all([
+      subscriptionService.getMine().catch(() => null),
+      creditService.getBalance().catch(() => ({ balance: 0 })),
+      creditService.getHistory(0, 10).catch(() => ({ items: [] })),
+    ])
+      .then(([sub, bal, hist]) => {
+        setData(sub);
+        setCredit(bal || { balance: 0 });
+        setHistory(hist?.items || []);
+      })
       .catch(() => toast.error('Không tải được dữ liệu subscription'))
       .finally(() => setLoading(false));
   };
@@ -43,6 +54,53 @@ const ManageSubscriptionPage = () => {
 
       <div className="max-w-3xl mx-auto px-4 py-10">
         <h1 className="text-2xl font-bold text-slate-900 mb-6">Quản lý gói dịch vụ</h1>
+
+        {/* Credit balance card — luôn hiển thị (cả khi chưa subscribe vẫn cho thấy 0 credits) */}
+        <div className="bg-gradient-to-r from-[#3AB4E6] to-[#1E3A8A] rounded-2xl p-6 text-white shadow-lg mb-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <div className="inline-flex items-center gap-2 text-xs uppercase tracking-wider text-blue-100 mb-1">
+                <FaCoins /> Credit của bạn
+              </div>
+              <div className="text-4xl font-black">
+                {(credit.balance || 0).toLocaleString('vi-VN')}
+                <span className="text-base font-medium text-blue-100 ml-2">credits</span>
+              </div>
+              {credit.premiumSource && (
+                <p className="text-xs text-blue-100 mt-2">
+                  Nguồn gói gần nhất: <strong>{credit.premiumSource}</strong>
+                </p>
+              )}
+            </div>
+            <div className="w-16 h-16 rounded-full bg-white/15 backdrop-blur-sm flex items-center justify-center">
+              <FaCoins className="text-3xl text-yellow-300" />
+            </div>
+          </div>
+        </div>
+
+        {/* History list */}
+        {history.length > 0 && (
+          <div className="bg-white ring-1 ring-slate-200 rounded-2xl p-5 mb-6">
+            <h3 className="font-semibold text-slate-900 mb-3 flex items-center gap-2">
+              <FaCoins className="text-amber-500" /> Lịch sử giao dịch credit
+            </h3>
+            <ul className="divide-y divide-slate-100">
+              {history.map((tx) => (
+                <li key={tx.id} className="flex items-center justify-between py-2.5 text-sm">
+                  <div className="min-w-0">
+                    <p className="text-slate-700 truncate">{tx.description || tx.source}</p>
+                    <p className="text-xs text-slate-400">
+                      {new Date(tx.createdAt).toLocaleString('vi-VN')} · {tx.source}
+                    </p>
+                  </div>
+                  <div className={`font-bold tabular-nums ${tx.amount > 0 ? 'text-emerald-600' : 'text-red-500'}`}>
+                    {tx.amount > 0 ? '+' : ''}{tx.amount.toLocaleString('vi-VN')}
+                  </div>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
 
         {!data?.active ? (
           // FREE state — CTA to subscribe

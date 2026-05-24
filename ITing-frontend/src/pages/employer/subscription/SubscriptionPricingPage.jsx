@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
-import { FaCheck, FaCrown, FaRocket, FaStar, FaCopy } from 'react-icons/fa';
+import { FaCheck, FaCrown, FaRocket, FaStar, FaCopy, FaCoins } from 'react-icons/fa';
 import SEO from '../../../components/common/SEO';
 import subscriptionService from '../../../services/subscriptionService';
+import creditService from '../../../services/creditService';
 
 const TIER_ICONS = {
   BASIC: <FaStar className="text-blue-500" />,
@@ -15,6 +16,7 @@ const SubscriptionPricingPage = () => {
   const navigate = useNavigate();
   const [tiers, setTiers] = useState([]);
   const [current, setCurrent] = useState(null);
+  const [creditBalance, setCreditBalance] = useState(0);
   const [loading, setLoading] = useState(true);
 
   // Order modal state
@@ -25,10 +27,12 @@ const SubscriptionPricingPage = () => {
     Promise.all([
       subscriptionService.getTiers(),
       subscriptionService.getMine().catch(() => ({ active: false })),
+      creditService.getBalance().catch(() => ({ balance: 0 })),
     ])
-      .then(([tList, mine]) => {
+      .then(([tList, mine, bal]) => {
         setTiers(tList);
         setCurrent(mine);
+        setCreditBalance(bal?.balance ?? 0);
       })
       .catch(() => toast.error('Không tải được dữ liệu'))
       .finally(() => setLoading(false));
@@ -92,6 +96,9 @@ const SubscriptionPricingPage = () => {
               </button>
             </div>
           )}
+          <div className="mt-4 inline-flex items-center gap-2 px-4 py-2 bg-amber-50 text-amber-700 rounded-full text-sm font-semibold">
+            <FaCoins /> Số dư hiện tại: <span className="font-black tabular-nums">{creditBalance.toLocaleString('vi-VN')}</span> credits
+          </div>
         </div>
 
         {loading ? (
@@ -124,6 +131,11 @@ const SubscriptionPricingPage = () => {
                     </span>
                     <span className="text-slate-500 text-sm"> / {t.periodDays} ngày</span>
                   </div>
+                  {t.credits != null && (
+                    <div className="mt-3 inline-flex items-center gap-1.5 px-3 py-1.5 bg-amber-50 text-amber-700 rounded-full text-xs font-bold ring-1 ring-amber-200">
+                      <FaCoins /> +{Number(t.credits).toLocaleString('vi-VN')} credits khi kích hoạt
+                    </div>
+                  )}
 
                   <ul className="space-y-2 my-6 text-sm text-slate-700">
                     {tierFeatures(t).map((f) => (

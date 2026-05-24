@@ -8,6 +8,7 @@ import chatRealtimeService from '../services/chatRealtimeService';
 import { formatChatTime, sortConversationsForInbox } from '../utils/chatFormat';
 import ChatDockBox from '../components/chat/ChatDockBox';
 import notificationService from '../services/notificationService';
+import creditService from '../services/creditService';
 import axiosInstance from '../utils/axiosInstance';
 import { storage } from '../utils/storage';
 import { CompanyLogo } from '../components/common';
@@ -54,6 +55,22 @@ const Header = () => {
   // ── Open to Work toggle (Candidate only) ──
   const [openToWork, setOpenToWork] = useState(false);
   const [isTogglingOTW, setIsTogglingOTW] = useState(false);
+
+  // ── Credit balance (Employer only) ──
+  const [creditBalance, setCreditBalance] = useState(0);
+
+  useEffect(() => {
+    if (role !== 'EMPLOYER') return;
+    let cancelled = false;
+    const fetchCredits = async () => {
+      try {
+        const res = await creditService.getBalance();
+        if (!cancelled) setCreditBalance(res?.balance ?? 0);
+      } catch { /* silent */ }
+    };
+    fetchCredits();
+    // refresh khi dropdown mở (case user vừa thanh toán xong)
+  }, [role, isDropdownOpen]);
 
   useEffect(() => {
     if (role !== 'CANDIDATE') return;
@@ -632,6 +649,18 @@ const Header = () => {
                       <div className="px-4 py-3 border-b border-gray-100 bg-gray-50/50">
                         <p className="text-sm font-bold text-gray-900 truncate">{displayName}</p>
                         <p className="text-xs text-gray-500 truncate mt-0.5">{role === 'CANDIDATE' ? 'Ứng viên' : 'Nhà tuyển dụng'}</p>
+                        {role === 'EMPLOYER' && (
+                          <Link
+                            to="/employer/subscriptions/manage"
+                            onClick={() => setIsDropdownOpen(false)}
+                            className="mt-2 flex items-center justify-between rounded-lg bg-gradient-to-r from-blue-50 to-amber-50 ring-1 ring-amber-200 px-3 py-2 hover:from-blue-100 hover:to-amber-100 transition-colors group"
+                          >
+                            <span className="text-[11px] uppercase tracking-wider text-slate-500 font-semibold">Credits</span>
+                            <span className="text-sm font-black text-amber-600 group-hover:text-amber-700 tabular-nums">
+                              {creditBalance.toLocaleString('vi-VN')}
+                            </span>
+                          </Link>
+                        )}
                         {role === 'CANDIDATE' && (
                           <div className="flex items-center justify-between mt-2">
                             <span className={`text-[11px] font-semibold ${openToWork ? 'text-[#3AB4E6]' : 'text-gray-400'}`}>
