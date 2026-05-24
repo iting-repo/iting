@@ -34,7 +34,7 @@ import applicationService from '../../services/applicationService';
 import reportService from '../../services/reportService';
 import axiosInstance from '../../utils/axiosInstance';
 import { storage } from '../../utils/storage';
-import { Breadcrumb, CompanyLogo, LocationPicker, CategoryPicker } from '../../components/common';
+import { Breadcrumb, CompanyLogo, LocationPicker, CategoryPicker, SearchOverlay, saveSearchKeyword } from '../../components/common';
 import {
     getCompanyLogoUrl,
     getJobTitle,
@@ -153,7 +153,10 @@ const JobDetailPage = () => {
     const [loadingMerged, setLoadingMerged] = useState(false);
     const [searchLocation, setSearchLocation] = useState('');
     const [searchCategory, setSearchCategory] = useState('');
+    const [searchKeyword, setSearchKeyword] = useState('');
     const [provinces, setProvinces] = useState([]);
+    const [isSearchOverlayOpen, setIsSearchOverlayOpen] = useState(false);
+    const [searchType, setSearchType] = useState('job');
 
     const normalizedJobId = useMemo(() => (id ? normalizeJobKey(id) : null), [id]);
 
@@ -671,8 +674,8 @@ const JobDetailPage = () => {
             />
 
             {/* ── CTA Search Banner (homepage style) ── */}
-            <div className="bg-gradient-to-r from-[#1E3A8A] via-[#2a7cb8] to-[#3AB4E6] relative overflow-hidden">
-                <div className="absolute inset-0 pointer-events-none">
+            <div className="bg-gradient-to-r from-[#1E3A8A] via-[#2a7cb8] to-[#3AB4E6] relative overflow-visible">
+                <div className="absolute inset-0 pointer-events-none overflow-hidden">
                     <div className="absolute -top-1/2 -right-1/4 w-[50%] h-[200%] rounded-full bg-white/[0.04] blur-3xl" />
                     <div className="absolute bottom-0 left-0 w-1/3 h-full rounded-full bg-cyan-300/10 blur-3xl" />
                 </div>
@@ -686,22 +689,48 @@ const JobDetailPage = () => {
                             />
                         </div>
                         {/* Keyword */}
-                        <div className="flex-1 w-full md:w-auto h-11 px-4 flex items-center border-b md:border-b-0 md:border-r border-gray-200">
+                        <div className="flex-1 w-full md:w-auto h-11 px-4 flex items-center border-b md:border-b-0 md:border-r border-gray-200 relative">
                             <FaSearch className="text-gray-400 mr-2 flex-shrink-0 text-sm" />
                             <input
                                 id="jd-search-keyword"
                                 type="text"
+                                data-search-trigger
                                 placeholder="Vị trí tuyển dụng, tên công ty"
+                                value={searchKeyword}
+                                onChange={(e) => setSearchKeyword(e.target.value)}
+                                onFocus={() => setIsSearchOverlayOpen(true)}
                                 className="w-full outline-none text-gray-700 text-sm placeholder-gray-400"
                                 onKeyDown={(e) => {
                                     if (e.key === 'Enter') {
+                                        setIsSearchOverlayOpen(false);
                                         const params = new URLSearchParams();
                                         const finalKeyword = [searchCategory, e.target.value.trim()].filter(Boolean).join(' ');
-                                        if (finalKeyword) params.append('keyword', finalKeyword);
+                                        if (finalKeyword) {
+                                            params.append('keyword', finalKeyword);
+                                            saveSearchKeyword(finalKeyword);
+                                        }
                                         if (searchLocation) params.append('location', searchLocation);
+                                        if (searchType === 'company') params.append('searchType', 'company');
                                         navigate(`/jobs?${params.toString()}`);
                                     }
                                 }}
+                            />
+                            <SearchOverlay
+                                isOpen={isSearchOverlayOpen}
+                                onClose={() => setIsSearchOverlayOpen(false)}
+                                searchType={searchType}
+                                onSearchTypeChange={setSearchType}
+                                onSearch={(keyword) => {
+                                    setSearchKeyword(keyword);
+                                    saveSearchKeyword(keyword);
+                                    const params = new URLSearchParams();
+                                    const finalKeyword = [searchCategory, keyword].filter(Boolean).join(' ');
+                                    if (finalKeyword) params.append('keyword', finalKeyword);
+                                    if (searchLocation) params.append('location', searchLocation);
+                                    if (searchType === 'company') params.append('searchType', 'company');
+                                    navigate(`/jobs?${params.toString()}`);
+                                }}
+                                variant="compact"
                             />
                         </div>
                         {/* Location */}
@@ -716,12 +745,16 @@ const JobDetailPage = () => {
                         {/* Button */}
                         <button
                             onClick={() => {
-                                const keywordInput = document.querySelector('#jd-search-keyword');
-                                const keyword = keywordInput?.value?.trim() || '';
+                                setIsSearchOverlayOpen(false);
+                                const keyword = searchKeyword.trim();
                                 const finalKeyword = [searchCategory, keyword].filter(Boolean).join(' ');
                                 const params = new URLSearchParams();
-                                if (finalKeyword) params.append('keyword', finalKeyword);
+                                if (finalKeyword) {
+                                    params.append('keyword', finalKeyword);
+                                    saveSearchKeyword(finalKeyword);
+                                }
                                 if (searchLocation) params.append('location', searchLocation);
+                                if (searchType === 'company') params.append('searchType', 'company');
                                 navigate(`/jobs?${params.toString()}`);
                             }}
                             className="w-full md:w-auto bg-[#3AB4E6] hover:bg-[#2a9fd4] text-white px-6 py-2.5 rounded-b-lg md:rounded-r-full md:rounded-bl-none font-bold text-sm transition-all flex items-center justify-center gap-2"

@@ -6,7 +6,7 @@ import { fetchJobsRequest } from '../../store/job/jobSlice';
 import { buildJobDetailPath } from '../../utils/jobUrl';
 import { jobTypeLabel } from '../../utils/enumLabels';
 import publicService from '../../services/publicService';
-import { CompanyLogo, LocationPicker, CategoryPicker } from '../../components/common';
+import { CompanyLogo, LocationPicker, CategoryPicker, SearchOverlay, saveSearchKeyword } from '../../components/common';
 import { useModalEscape } from '../../hooks/useModalEscape';
 
 // FIX: Gom tất cả icon về react-icons/fa để tránh lỗi import undefined
@@ -55,6 +55,11 @@ const HomePage = () => {
     const categoryScrollRef = useRef(null);
     const recommendationScrollRef = useRef(null);
     const featuredCategoryScrollRef = useRef(null);
+    const searchBoxRef = useRef(null);
+
+    // Search overlay state
+    const [isSearchOverlayOpen, setIsSearchOverlayOpen] = useState(false);
+    const [searchType, setSearchType] = useState('job');
 
     const handleCardEnter = (job, el) => {
         if (leaveTimerRef.current) clearTimeout(leaveTimerRef.current);
@@ -283,10 +288,15 @@ const HomePage = () => {
         const params = new URLSearchParams();
         const finalKeyword = [searchForm.category, searchForm.keyword].filter(Boolean).join(' ');
 
-        if (finalKeyword) params.append('keyword', finalKeyword);
+        if (finalKeyword) {
+            params.append('keyword', finalKeyword);
+            saveSearchKeyword(finalKeyword);
+        }
         if (searchForm.location) params.append('location', searchForm.location);
         if (searchForm.jobType) params.append('jobTypes', searchForm.jobType);
+        if (searchType === 'company') params.append('searchType', 'company');
 
+        setIsSearchOverlayOpen(false);
         navigate(`/jobs?${params.toString()}`);
     };
 
@@ -447,7 +457,7 @@ const HomePage = () => {
 
                     {/* Search Box */}
                     <div className="bg-white/10 backdrop-blur-md p-3 md:p-2 rounded-3xl md:rounded-full max-w-5xl mx-auto shadow-2xl border border-white/20">
-                        <div className="flex flex-col md:flex-row items-stretch md:items-center gap-3 md:gap-0 md:bg-white md:rounded-full md:overflow-hidden">
+                        <div className="flex flex-col md:flex-row items-stretch md:items-center gap-3 md:gap-0 md:bg-white md:rounded-full">
                             {/* 1. Category Picker */}
                             <div className="w-full md:w-[25%] h-14 md:h-14 flex items-center px-5 relative bg-white rounded-xl md:rounded-none md:border-r border-gray-200 hover:bg-gray-50 transition-colors shadow-sm md:shadow-none">
                                 <CategoryPicker
@@ -457,17 +467,39 @@ const HomePage = () => {
                             </div>
 
                             {/* 2. Keyword Input */}
-                            <div className="md:flex-1 w-full md:w-auto h-14 md:h-14 px-5 flex items-center bg-white rounded-xl md:rounded-none md:border-r border-gray-200 hover:bg-gray-50 transition-colors shadow-sm md:shadow-none">
+                            <div className="md:flex-1 w-full md:w-auto h-14 md:h-14 px-5 flex items-center bg-white rounded-xl md:rounded-none md:border-r border-gray-200 hover:bg-gray-50 transition-colors shadow-sm md:shadow-none relative" ref={searchBoxRef}>
                                 <FaSearch className="text-[#3AB4E6] mr-3" size={18} />
                                 <input
                                     type="text"
+                                    data-search-trigger
                                     placeholder="Vị trí tuyển dụng, tên công ty"
                                     value={searchForm.keyword}
                                     onChange={(e) => handleChangeSearchField('keyword', e.target.value)}
+                                    onFocus={() => setIsSearchOverlayOpen(true)}
                                     onKeyDown={(e) => {
-                                        if (e.key === 'Enter') handleSearch();
+                                        if (e.key === 'Enter') {
+                                            setIsSearchOverlayOpen(false);
+                                            handleSearch();
+                                        }
                                     }}
                                     className="w-full h-full bg-transparent outline-none text-gray-800 text-base placeholder-gray-400 font-medium"
+                                />
+                                <SearchOverlay
+                                    isOpen={isSearchOverlayOpen}
+                                    onClose={() => setIsSearchOverlayOpen(false)}
+                                    searchType={searchType}
+                                    onSearchTypeChange={setSearchType}
+                                    onSearch={(keyword) => {
+                                        handleChangeSearchField('keyword', keyword);
+                                        saveSearchKeyword(keyword);
+                                        const params = new URLSearchParams();
+                                        const finalKeyword = [searchForm.category, keyword].filter(Boolean).join(' ');
+                                        if (finalKeyword) params.append('keyword', finalKeyword);
+                                        if (searchForm.location) params.append('location', searchForm.location);
+                                        if (searchType === 'company') params.append('searchType', 'company');
+                                        navigate(`/jobs?${params.toString()}`);
+                                    }}
+                                    variant="homepage"
                                 />
                             </div>
 
