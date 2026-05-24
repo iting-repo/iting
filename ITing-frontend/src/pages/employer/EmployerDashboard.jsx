@@ -24,7 +24,7 @@ const EmployerDashboard = () => {
         const fetchDashboardData = async () => {
             try {
                 setLoading(true);
-                
+
                 // Fetch company info, app stats, and recent jobs in parallel
                 const [companyRes, statsRes, jobsRes] = await Promise.all([
                     companyService.getMyCompany(),
@@ -83,9 +83,9 @@ const EmployerDashboard = () => {
         <div className="p-8 bg-white rounded-2xl shadow-sm border border-gray-100 min-h-screen">
 
             <Breadcrumb
-              rootLabel="Tổng quan"
-              rootLink="/employer/dashboard"
-              items={[]}
+                rootLabel="Tổng quan"
+                rootLink="/employer/dashboard"
+                items={[]}
             />
 
             {/* Header & Stats */}
@@ -126,15 +126,17 @@ const EmployerDashboard = () => {
 
             {/* Recent Jobs Table */}
             <div>
-                <div className="flex justify-between items-center mb-8">
-                    <h2 className="text-2xl font-extrabold text-gray-900 tracking-tight">{t('employer_dashboard.recent_jobs')}</h2>
-                    <Link to="/employer/manage-jobs" className="text-[#3AB4E6] text-sm font-bold hover:text-[#2d9dcb] flex items-center gap-1 group">
-                        {t('employer_dashboard.view_all')} <span className="text-lg group-hover:translate-x-1 transition-transform ml-1">→</span>
+                <div className="flex items-center justify-between mb-4 md:mb-8 gap-2">
+                    <h2 className="text-lg md:text-2xl font-extrabold text-gray-900 tracking-tight line-clamp-1">
+                        {t('employer_dashboard.recent_jobs')}
+                    </h2>
+                    <Link to="/employer/manage-jobs" className="text-[#3AB4E6] text-xs md:text-sm font-bold hover:text-[#2d9dcb] flex items-center gap-1 group shrink-0 whitespace-nowrap">
+                        {t('employer_dashboard.view_all')} <span className="text-base md:text-lg group-hover:translate-x-1 transition-transform ml-1">→</span>
                     </Link>
                 </div>
 
-                <div className="overflow-hidden rounded-2xl border border-gray-100 shadow-sm">
-                    <table className="w-full text-left border-collapse">
+                <div className="overflow-x-auto rounded-2xl border border-gray-100 shadow-sm custom-scrollbar min-h-[250px]">
+                    <table className="w-full text-left border-collapse min-w-[800px]">
                         <thead>
                             <tr className="bg-gray-50/80 text-gray-400 text-xs font-bold uppercase tracking-widest border-b border-gray-100">
                                 <th className="py-5 px-6">{t('employer_dashboard.table.job')}</th>
@@ -150,7 +152,7 @@ const EmployerDashboard = () => {
                                     const isExpiredByDate = job.dueDate && daysLeft === 0;
                                     const isExpiredByStatus = job.status === 'EXPIRED' || job.status === 'expired' || job.status === 'CLOSED' || job.status === 'closed';
                                     const isActive = (job.status === 'ACTIVE' || job.status === 'active') && !isExpiredByDate;
-                                    
+
                                     return (
                                         <tr key={job.id} className="hover:bg-gray-50/40 transition-all group">
                                             <td className="py-6 px-6">

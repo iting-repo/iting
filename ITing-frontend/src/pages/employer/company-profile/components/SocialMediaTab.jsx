@@ -225,9 +225,9 @@ const SocialMediaTab = () => {
                      <label className="block text-gray-700 text-sm font-medium mb-1">
                         Link {index + 1}
                      </label>
-                     <div className="flex gap-3 items-start">
+                     <div className="flex flex-col sm:flex-row gap-3 items-start">
                         {/* Dropdown Platform */}
-                        <div className="relative w-44 shrink-0">
+                        <div className="relative w-full sm:w-44 shrink-0">
                            <div className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none text-base">
                               {getIcon(item.platform)}
                            </div>
@@ -242,44 +242,46 @@ const SocialMediaTab = () => {
                            </select>
                         </div>
 
-                        {/* Input URL */}
-                        <div className="flex-1">
-                           <input
-                              type="url"
-                              placeholder="Dán liên kết hồ sơ tại đây..."
-                              value={item.url}
-                              onChange={(e) => updateRow(item._localId, { url: e.target.value })}
-                              className={`w-full px-4 py-3 border rounded-lg focus:outline-none ${
-                                 err
-                                    ? 'border-red-300 focus:border-red-400 bg-red-50/30'
-                                    : 'border-gray-200 focus:border-[#3AB4E6]'
-                              }`}
-                           />
-                           {err && <p className="text-xs text-red-500 mt-1">{err}</p>}
-                        </div>
+                        {/* Input URL & Actions */}
+                        <div className="flex flex-row w-full gap-3">
+                           <div className="flex-1">
+                              <input
+                                 type="url"
+                                 placeholder="Dán liên kết hồ sơ tại đây..."
+                                 value={item.url}
+                                 onChange={(e) => updateRow(item._localId, { url: e.target.value })}
+                                 className={`w-full px-4 py-3 border rounded-lg focus:outline-none ${
+                                    err
+                                       ? 'border-red-300 focus:border-red-400 bg-red-50/30'
+                                       : 'border-gray-200 focus:border-[#3AB4E6]'
+                                 }`}
+                              />
+                              {err && <p className="text-xs text-red-500 mt-1">{err}</p>}
+                           </div>
 
-                        {/* Preview link */}
-                        {previewable && !err && (
-                           <a
-                              href={url}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              title="Mở liên kết trong tab mới"
-                              className="w-12 h-12 flex items-center justify-center bg-gray-100 rounded-lg text-gray-500 hover:bg-blue-50 hover:text-[#3AB4E6] transition-colors shrink-0"
+                           {/* Preview link */}
+                           {previewable && !err && (
+                              <a
+                                 href={url}
+                                 target="_blank"
+                                 rel="noopener noreferrer"
+                                 title="Mở liên kết trong tab mới"
+                                 className="w-12 h-12 flex items-center justify-center bg-gray-100 rounded-lg text-gray-500 hover:bg-blue-50 hover:text-[#3AB4E6] transition-colors shrink-0"
+                              >
+                                 <FaExternalLinkAlt size={12} />
+                              </a>
+                           )}
+
+                           {/* Delete */}
+                           <button
+                              type="button"
+                              onClick={() => removeSocial(item._localId)}
+                              className="w-12 h-12 flex items-center justify-center bg-gray-100 rounded-lg hover:bg-red-100 hover:text-red-500 transition-colors shrink-0"
+                              title="Xóa liên kết"
                            >
-                              <FaExternalLinkAlt size={12} />
-                           </a>
-                        )}
-
-                        {/* Delete */}
-                        <button
-                           type="button"
-                           onClick={() => removeSocial(item._localId)}
-                           className="w-12 h-12 flex items-center justify-center bg-gray-100 rounded-lg hover:bg-red-100 hover:text-red-500 transition-colors shrink-0"
-                           title="Xóa liên kết"
-                        >
-                           <FaTimes />
-                        </button>
+                              <FaTimes />
+                           </button>
+                        </div>
                      </div>
                   </div>
                );

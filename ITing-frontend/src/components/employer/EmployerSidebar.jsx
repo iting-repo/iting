@@ -12,6 +12,7 @@ import {
   FaFileContract,
   FaCog,
   FaCrown,
+  FaTimes,
 } from "react-icons/fa";
 import { useDispatch, useSelector } from "react-redux";
 import { logout } from "../../store/auth/authSlice";
@@ -19,7 +20,7 @@ import companyService from "../../services/companyService";
 import favoriteCandidateService from "../../services/favoriteCandidateService";
 import ScrollToTop from "../common/ScrollToTop";
 
-const EmployerSidebar = () => {
+const EmployerSidebar = ({ isOpen, onClose }) => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const { currentUser } = useSelector((state) => state.auth);
@@ -119,61 +120,81 @@ const EmployerSidebar = () => {
   ];
 
   return (
-    <div className="w-64 bg-white min-h-screen border-r border-gray-100 hidden lg:block sticky top-20 h-[calc(100vh-80px)]">
-      <ScrollToTop />
-      <div className="p-6">
-        <h3 className="text-xs font-bold text-gray-400 uppercase mb-4 tracking-wider">
-          Nhà tuyển dụng
-        </h3>
-        <ul className="space-y-2">
-          {menuItems.map((item) => (
-            <li key={item.path}>
+    <>
+      {/* Mobile Overlay */}
+      {isOpen && (
+        <div
+          className="fixed inset-0 bg-black/50 z-[100] lg:hidden transition-opacity"
+          onClick={onClose}
+        />
+      )}
+
+      {/* Sidebar Content */}
+      <div className={`fixed inset-y-0 left-0 z-[110] w-64 bg-white border-r border-gray-100 transform transition-transform duration-300 lg:translate-x-0 lg:flex-shrink-0 ${
+        isOpen ? 'translate-x-0' : '-translate-x-full'
+      } lg:sticky lg:top-20 lg:z-30 lg:self-start lg:h-[calc(100vh-80px)] overflow-y-auto custom-scrollbar`}>
+        <ScrollToTop />
+        <div className="p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider">
+              Nhà tuyển dụng
+            </h3>
+            <button className="lg:hidden text-gray-400 hover:text-gray-600" onClick={onClose}>
+              <FaTimes size={16} />
+            </button>
+          </div>
+          <ul className="space-y-2">
+            {menuItems.map((item) => (
+              <li key={item.path}>
+                <NavLink
+                  to={item.path}
+                  onClick={onClose}
+                  className={({ isActive }) =>
+                    `flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-colors ${isActive
+                      ? "bg-blue-50 text-[#3AB4E6] border-l-4 border-[#3AB4E6]"
+                      : "text-gray-500 hover:bg-gray-50 hover:text-gray-900"
+                    }`
+                  }
+                >
+                  <span className="text-lg">{item.icon}</span>
+                  <span className="flex-1">{item.name}</span>
+                  {item.badge > 0 && (
+                    <span className="ml-auto inline-flex items-center justify-center min-w-[22px] h-[22px] px-1.5 text-[10px] font-bold rounded-full bg-amber-100 text-amber-700">
+                      {item.badge > 99 ? "99+" : item.badge}
+                    </span>
+                  )}
+                </NavLink>
+              </li>
+            ))}
+
+            <li className="mt-8 pt-8 border-t border-gray-100">
               <NavLink
-                to={item.path}
+                to="/employer/company-profile?tab=settings"
+                onClick={onClose}
                 className={({ isActive }) =>
-                  `flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-colors ${isActive
+                  `flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-colors ${isActive && window.location.search.includes('tab=settings')
                     ? "bg-blue-50 text-[#3AB4E6] border-l-4 border-[#3AB4E6]"
                     : "text-gray-500 hover:bg-gray-50 hover:text-gray-900"
                   }`
                 }
               >
-                <span className="text-lg">{item.icon}</span>
-                <span className="flex-1">{item.name}</span>
-                {item.badge > 0 && (
-                  <span className="ml-auto inline-flex items-center justify-center min-w-[22px] h-[22px] px-1.5 text-[10px] font-bold rounded-full bg-amber-100 text-amber-700">
-                    {item.badge > 99 ? "99+" : item.badge}
-                  </span>
-                )}
+                <span className="text-lg"><FaCog /></span>
+                <span className="flex-1">Thiết lập</span>
               </NavLink>
             </li>
-          ))}
-
-          <li className="mt-8 pt-8 border-t border-gray-100">
-            <NavLink
-              to="/employer/company-profile?tab=settings"
-              className={({ isActive }) =>
-                `flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-colors ${isActive && window.location.search.includes('tab=settings')
-                  ? "bg-blue-50 text-[#3AB4E6] border-l-4 border-[#3AB4E6]"
-                  : "text-gray-500 hover:bg-gray-50 hover:text-gray-900"
-                }`
-              }
-            >
-              <span className="text-lg"><FaCog /></span>
-              <span className="flex-1">Thiết lập</span>
-            </NavLink>
-          </li>
-          <li>
-            <button
-              onClick={handleLogout}
-              className="flex items-center gap-3 px-4 py-3 rounded-lg font-medium text-gray-500 hover:bg-red-50 hover:text-red-600 w-full transition-colors"
-            >
-              <FaSignOutAlt className="text-lg" />
-              Đăng xuất
-            </button>
-          </li>
-        </ul>
+            <li>
+              <button
+                onClick={handleLogout}
+                className="flex items-center gap-3 px-4 py-3 rounded-lg font-medium text-gray-500 hover:bg-red-50 hover:text-red-600 w-full transition-colors"
+              >
+                <FaSignOutAlt className="text-lg" />
+                Đăng xuất
+              </button>
+            </li>
+          </ul>
+        </div>
       </div>
-    </div>
+    </>
   );
 };
 

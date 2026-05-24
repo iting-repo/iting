@@ -175,27 +175,27 @@ const DEFAULT_TECH_OPTIONS = [
 
 function EditorToolbar() {
   return (
-    <div className="bg-gray-50 border-b border-gray-200 px-3 py-2 flex gap-4 text-gray-500 mb-2">
-      <button type="button" className="hover:text-black">
+    <div className="bg-gray-50 border-b border-gray-200 px-2 md:px-3 py-2 flex flex-wrap gap-2 md:gap-4 text-gray-500 mb-2 items-center">
+      <button type="button" className="hover:text-black p-1 md:p-0">
         <FaBold />
       </button>
-      <button type="button" className="hover:text-black">
+      <button type="button" className="hover:text-black p-1 md:p-0">
         <FaItalic />
       </button>
-      <button type="button" className="hover:text-black">
+      <button type="button" className="hover:text-black p-1 md:p-0">
         <FaUnderline />
       </button>
-      <button type="button" className="hover:text-black">
+      <button type="button" className="hover:text-black p-1 md:p-0">
         <FaStrikethrough />
       </button>
-      <div className="w-px bg-gray-300 mx-1"></div>
-      <button type="button" className="hover:text-black">
+      <div className="w-px bg-gray-300 mx-1 h-4"></div>
+      <button type="button" className="hover:text-black p-1 md:p-0">
         <FaLink />
       </button>
-      <button type="button" className="hover:text-black">
+      <button type="button" className="hover:text-black p-1 md:p-0">
         <FaListUl />
       </button>
-      <button type="button" className="hover:text-black">
+      <button type="button" className="hover:text-black p-1 md:p-0">
         <FaListOl />
       </button>
     </div>
@@ -698,10 +698,10 @@ const PostJob = ({
       )}
 
       <div
-        className="w-full max-w-6xl max-h-[92vh] overflow-y-auto bg-white rounded-2xl shadow-2xl border border-gray-100 animate-fade-in"
+        className="w-full max-w-6xl h-full max-h-[95vh] md:max-h-[92vh] overflow-y-auto bg-white rounded-2xl shadow-2xl border border-gray-100 animate-fade-in flex flex-col"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="sticky top-0 z-10 bg-white border-b border-gray-100 px-6 py-4 flex items-center justify-between rounded-t-2xl">
+        <div className="sticky top-0 z-10 bg-white border-b border-gray-100 px-4 md:px-6 py-4 flex items-center justify-between rounded-t-2xl shrink-0">
           <div>
             <h2 className="text-2xl font-bold text-gray-800">
               {isEdit ? "Chỉnh sửa công việc" : "Đăng công việc"}
@@ -722,7 +722,7 @@ const PostJob = ({
           </button>
         </div>
 
-        <div className="p-8">
+        <div className="p-4 md:p-8 flex-1">
           {
             showSuccess ? (
               <div className="py-12 flex flex-col items-center text-center animate-fade-in">
@@ -1173,20 +1173,20 @@ const PostJob = ({
                   </div>
                 </div>
 
-                <div className="flex items-center justify-end gap-3 pt-4 border-t border-gray-100">
+                <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-end gap-3 pt-4 sm:pt-6 border-t border-gray-100">
                   <button
                     type="button"
                     onClick={handleClose}
-                    className="border border-gray-200 text-gray-700 font-semibold py-3 px-6 rounded-lg transition-colors hover:bg-gray-50"
+                    className="w-full sm:w-auto border border-gray-200 text-gray-700 font-semibold py-3 px-6 rounded-lg transition-colors hover:bg-gray-50 text-center"
                   >
                     Hủy
                   </button>
 
                   <button
                     type="submit"
-                    className="bg-[#1967D2] hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-lg transition-colors flex items-center gap-2"
+                    className="w-full sm:w-auto bg-[#1967D2] hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-lg transition-colors flex items-center justify-center gap-2"
                   >
-                    {isEdit ? "Cập nhật · Chờ duyệt lại" : "Đăng bài"}
+                    {isEdit ? "Cập nhật" : "Đăng bài"}
                     <FaArrowRight size={14} />
                   </button>
                 </div>

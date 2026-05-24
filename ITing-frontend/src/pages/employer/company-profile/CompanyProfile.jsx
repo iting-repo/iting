@@ -111,7 +111,7 @@ const CompanyProfile = () => {
   // Nếu chưa thiết lập thông tin (profileSetup == false)
   if (company && !company.profileSetup) {
     return (
-      <div className="bg-white rounded-xl p-8 shadow-sm border border-gray-100 min-h-screen pt-12">
+      <div className="bg-white rounded-xl p-4 md:p-8 shadow-sm border border-gray-100 min-h-screen pt-8 md:pt-12">
         <div className="text-center mb-10">
           <div className="w-20 h-20 bg-sky-50 rounded-2xl flex items-center justify-center mb-6 text-[#3AB4E6] mx-auto">
             <FaRocket className="text-4xl" />
@@ -144,7 +144,7 @@ const CompanyProfile = () => {
             <button
               key={idx}
               onClick={() => setCompany({ ...company, profileSetup: true }) || setTimeout(() => setActiveTab(step.tab), 0)}
-              className={`w-full flex items-center gap-5 p-5 rounded-2xl border transition-all text-left group hover:shadow-md ${
+              className={`w-full flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-5 p-4 sm:p-5 rounded-2xl border transition-all text-left group hover:shadow-md ${
                 step.done
                   ? 'bg-green-50/50 border-green-200'
                   : step.pending
@@ -161,13 +161,13 @@ const CompanyProfile = () => {
               }`}>
                 {step.done ? <FaCheckCircle /> : step.icon}
               </div>
-              <div className="flex-1 min-w-0">
+              <div className="flex-1 w-full min-w-0">
                 <p className={`font-bold text-sm ${step.done ? 'text-green-700 line-through' : 'text-gray-800'}`}>
                   Bước {idx + 1}: {step.label}
                 </p>
                 <p className="text-xs text-gray-500 mt-0.5">{step.description}</p>
               </div>
-              <div className="flex items-center gap-2 shrink-0">
+              <div className="flex items-center justify-between w-full sm:w-auto gap-2 shrink-0 mt-2 sm:mt-0">
                 {step.done && (
                   <span className="text-[10px] font-bold text-green-600 bg-green-100 px-2 py-1 rounded-full uppercase">Hoàn thành</span>
                 )}
@@ -197,7 +197,7 @@ const CompanyProfile = () => {
   }
 
   return (
-    <div className="bg-white rounded-xl p-8 shadow-sm border border-gray-100 min-h-screen">
+    <div className="bg-white rounded-xl p-4 md:p-8 shadow-sm border border-gray-100 min-h-screen">
       <Breadcrumb
         rootLabel="Tổng quan"
         rootLink="/employer/dashboard"
@@ -209,7 +209,7 @@ const CompanyProfile = () => {
       <p className="text-gray-500 text-sm mb-6">Quản lý và cập nhật thông tin doanh nghiệp của bạn</p>
 
       {/* TABS NAVIGATION */}
-      <div className="flex border-b border-gray-200 mb-8 overflow-x-auto">
+      <div className="flex border-b border-gray-200 mb-8 overflow-x-auto custom-scrollbar scrollbar-hide">
         <button
           onClick={() => setActiveTab('founding')}
           className={`flex items-center gap-2 px-6 py-3 font-medium text-sm transition-all border-b-2 whitespace-nowrap ${activeTab === 'founding'

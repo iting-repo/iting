@@ -1,12 +1,13 @@
 import React, { useEffect, useState } from 'react';
 import { Outlet, useNavigate } from 'react-router-dom';
 import EmployerSidebar from '../components/employer/EmployerSidebar';
-import { FaBan } from 'react-icons/fa';
+import { FaBan, FaBars } from 'react-icons/fa';
 import companyService from '../services/companyService';
 
 const EmployerLayout = () => {
   const [companySuspended, setCompanySuspended] = useState(false);
   const [suspendReason, setSuspendReason] = useState(null);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -28,12 +29,24 @@ const EmployerLayout = () => {
   return (
     // bg-gray-50 để làm nền tổng thể màu xám nhẹ, giúp các card màu trắng nổi bật
     <div className="flex bg-gray-50 min-h-screen">
-      
+
       {/* Sidebar cố định bên trái */}
-      <EmployerSidebar />
+      <EmployerSidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
 
       {/* Nội dung thay đổi bên phải */}
-      <div className="flex-1 p-6 lg:p-8 overflow-x-hidden">
+      <div className="flex-1 p-4 md:p-6 lg:p-8 overflow-x-hidden">
+
+        {/* Mobile Header / Hamburger Toggle */}
+        <div className="lg:hidden flex items-center justify-between mb-4 bg-white p-4 rounded-2xl shadow-sm border border-gray-100">
+          <h2 className="font-extrabold text-[#3AB4E6] tracking-tight">Trang cho Nhà tuyển dụng</h2>
+          <button
+            onClick={() => setIsSidebarOpen(true)}
+            className="w-10 h-10 flex items-center justify-center bg-gray-50 rounded-xl border border-gray-200 text-[#3AB4E6] hover:bg-[#EAF6FF] transition-colors"
+          >
+            <FaBars size={18} />
+          </button>
+        </div>
+
         <div className="max-w-7xl mx-auto">
           {/* Banner đình chỉ */}
           {companySuspended && (
@@ -47,7 +60,7 @@ const EmployerLayout = () => {
                     Tài khoản công ty đã bị đình chỉ
                   </h3>
                   <p className="text-sm text-red-600 leading-relaxed">
-                    Tất cả tin tuyển dụng của bạn đã bị tạm ẩn khỏi ứng viên. 
+                    Tất cả tin tuyển dụng của bạn đã bị tạm ẩn khỏi ứng viên.
                     Bạn không thể đăng tin mới cho đến khi được gỡ đình chỉ. Vui lòng xem chi tiết hồ sơ và đọc các điều khoản để tiến hành khiếu nại (nếu có).
                   </p>
                   {suspendReason && (
@@ -66,7 +79,7 @@ const EmployerLayout = () => {
               </div>
             </div>
           )}
-             <Outlet />
+          <Outlet />
         </div>
       </div>
     </div>

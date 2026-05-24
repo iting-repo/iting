@@ -172,7 +172,7 @@ const EmployerServicesPage = () => {
     <>
       <SEO title="Dịch vụ & Gói Premium" noIndex />
 
-      <div className="p-8 bg-white rounded-2xl shadow-sm border border-gray-100 min-h-screen">
+      <div className="p-4 md:p-8 bg-white rounded-2xl shadow-sm border border-gray-100 min-h-screen">
         <Breadcrumb
           rootLabel="Tổng quan"
           rootLink="/employer/dashboard"
@@ -333,7 +333,7 @@ const EmployerServicesPage = () => {
         </div>
 
         {/* ═══ Bottom info section ═══ */}
-        <div className="grid sm:grid-cols-3 gap-6 mb-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
           <div className="bg-gradient-to-br from-sky-50 to-blue-50 rounded-2xl p-5 ring-1 ring-sky-100">
             <div className="flex items-center gap-3 mb-3">
               <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center shadow-sm">
@@ -410,7 +410,7 @@ const EmployerServicesPage = () => {
             <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-4 text-sm flex items-center gap-3">
               <div className="flex-1">
                 <div className="text-amber-700 text-xs font-bold uppercase tracking-wider mb-1">Nội dung CK</div>
-                <div className="font-mono font-bold text-gray-900 text-base">{order.orderCode}</div>
+                <div className="font-mono font-bold text-gray-900 text-base break-all">{order.orderCode}</div>
               </div>
               <button
                 onClick={() => {

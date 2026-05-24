@@ -36,10 +36,22 @@ const CategoryPicker = ({ value, onChange }) => {
     const updatePosition = () => {
         if (triggerRef.current) {
             const rect = triggerRef.current.getBoundingClientRect();
+            const modalWidth = Math.min(480, window.innerWidth - 32);
+            let leftPos = rect.left + window.scrollX;
+            
+            // Adjust left position to prevent overflowing right edge
+            if (leftPos + modalWidth > window.innerWidth) {
+                leftPos = window.innerWidth - modalWidth - 16;
+            }
+            // Adjust left position to prevent overflowing left edge
+            if (leftPos < 16) {
+                leftPos = 16;
+            }
+
             setCoords({
                 top: rect.bottom + window.scrollY,
-                left: rect.left + window.scrollX,
-                width: 480
+                left: leftPos,
+                width: modalWidth
             });
         }
     };
@@ -178,8 +190,8 @@ const CategoryPicker = ({ value, onChange }) => {
 
                             {/* Right Column: Subs */}
                             <div className="w-[60%] flex flex-col bg-white">
-                                <div className="p-2 bg-gray-50/50 flex gap-8">
-                                    <span className="text-[9px] font-bold text-gray-400 uppercase tracking-widest">NGHỀ</span>
+                                <div className="p-2 bg-gray-50/50 flex flex-col sm:flex-row gap-2 sm:gap-8">
+                                    <span className="text-[9px] font-bold text-gray-400 uppercase tracking-widest hidden sm:inline">NGHỀ</span>
                                     <span className="text-[9px] font-bold text-gray-400 uppercase tracking-widest">VỊ TRÍ CHUYÊN MÔN</span>
                                 </div>
                                 <div className="flex-1 overflow-y-auto custom-scrollbar p-3">
@@ -189,7 +201,7 @@ const CategoryPicker = ({ value, onChange }) => {
                                             <p className="text-sm font-bold text-gray-700">Vui lòng chọn Nhóm nghề</p>
                                         </div>
                                     ) : (
-                                        <div className="grid grid-cols-2 gap-x-8 gap-y-4">
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 sm:gap-x-8 gap-y-4">
                                             {selectedGroup.sub.map(sub => (
                                                 <div
                                                     key={sub}

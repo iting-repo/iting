@@ -54,7 +54,7 @@ const JobApplications = () => {
    }, [id, keyword, status, sortBy, sortOrder]);
 
    return (
-      <div className="bg-white rounded-xl p-8 min-h-screen border border-gray-100">
+      <div className="bg-white rounded-xl p-4 md:p-8 min-h-screen border border-gray-100">
 
          {/* 1. Header & Toolbar */}
          <Breadcrumb
@@ -70,7 +70,7 @@ const JobApplications = () => {
             <p className="text-gray-500 text-sm">Quản lý danh sách hồ sơ ứng tuyển cho công việc này</p>
          </div>
 
-         <div className="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
+         <div className="flex flex-col md:flex-row justify-between items-stretch md:items-center mb-6 gap-4">
             <div className="relative w-full md:w-96">
                <FaSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
                <input
@@ -81,7 +81,7 @@ const JobApplications = () => {
                   className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:border-[#3AB4E6]"
                />
             </div>
-            <div className="flex gap-3">
+            <div className="flex flex-col sm:flex-row gap-3">
                <select
                   value={status}
                   onChange={(e) => setStatus(e.target.value)}
@@ -110,8 +110,8 @@ const JobApplications = () => {
          </div>
 
          {/* 2. Candidate Table (Giao diện mới) */}
-         <div className="overflow-x-auto rounded-xl border border-gray-200">
-            <table className="w-full text-left border-collapse">
+         <div className="overflow-x-auto rounded-xl border border-gray-200 custom-scrollbar min-h-[300px]">
+            <table className="w-full text-left border-collapse min-w-[1000px]">
                <thead>
                   <tr className="bg-gray-50 text-gray-600 text-xs uppercase tracking-wider font-semibold">
                      <th className="p-5">Ứng viên</th>

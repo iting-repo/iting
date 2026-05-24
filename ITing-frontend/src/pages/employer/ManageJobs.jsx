@@ -261,42 +261,42 @@ const ManageJobs = () => {
 
   return (
     <>
-      <div className="bg-white rounded-xl p-8 shadow-sm border border-gray-100 min-h-screen">
+      <div className="bg-white rounded-xl p-4 md:p-8 shadow-sm border border-gray-100 min-h-screen">
         <Breadcrumb
           rootLabel="Tổng quan"
           rootLink="/employer/dashboard"
           items={[{ label: "Quản lý công việc" }]}
         />
 
-        <div className="flex flex-col md:flex-row justify-between items-end md:items-center mb-8 gap-4">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 md:mb-8 gap-4">
           <div>
-            <h2 className="text-2xl font-bold text-gray-900">
+            <h2 className="text-xl md:text-2xl font-bold text-gray-900">
               Tất cả công việc ({filteredJobs.length})
             </h2>
-            <p className="text-gray-500 text-sm mt-1">
+            <p className="text-gray-500 text-xs md:text-sm mt-1">
               Quản lý trạng thái và hồ sơ ứng tuyển
             </p>
           </div>
 
-          <div className="flex items-center gap-3 flex-wrap">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full md:w-auto">
             <button
               onClick={() => setIsPostJobOpen(true)}
-              className="bg-[#1967D2] hover:bg-blue-700 text-white text-sm font-bold px-5 py-3 rounded-lg transition-colors flex items-center gap-2 shadow-sm"
+              className="bg-[#1967D2] hover:bg-blue-700 text-white text-sm font-bold px-5 py-3 rounded-lg transition-colors flex items-center justify-center gap-2 shadow-sm order-2 sm:order-1"
             >
               <FaPlus size={12} />
               Đăng công việc
             </button>
 
-            <span className="text-sm text-gray-500 font-medium">
-              Trạng thái:
-            </span>
-
-            <div className="relative">
-              <select
-                value={filterStatus}
-                onChange={(e) => setFilterStatus(e.target.value)}
-                className="appearance-none bg-white border border-gray-200 text-gray-700 py-2 pl-4 pr-10 rounded-lg focus:outline-none focus:border-[#3AB4E6] cursor-pointer text-sm font-medium shadow-sm hover:border-gray-300 transition-colors"
-              >
+            <div className="flex items-center gap-2 w-full sm:w-auto order-1 sm:order-2">
+              <span className="text-sm text-gray-500 font-medium whitespace-nowrap">
+                Trạng thái:
+              </span>
+              <div className="relative flex-1 sm:flex-none">
+                <select
+                  value={filterStatus}
+                  onChange={(e) => setFilterStatus(e.target.value)}
+                  className="w-full appearance-none bg-white border border-gray-200 text-gray-700 py-2.5 sm:py-2 pl-4 pr-10 rounded-lg focus:outline-none focus:border-[#3AB4E6] cursor-pointer text-sm font-medium shadow-sm hover:border-gray-300 transition-colors"
+                >
                 {STATUS_FILTER_OPTIONS.map((option) => (
                   <option key={option.value} value={option.value}>
                     {option.label}
@@ -316,15 +316,16 @@ const ManageJobs = () => {
             </div>
           </div>
         </div>
+        </div>
 
-        <div className="overflow-x-auto rounded-t-xl border border-gray-100">
-          <table className="w-full text-left border-collapse">
+        <div className="overflow-x-auto rounded-xl border border-gray-100 shadow-sm custom-scrollbar min-h-[300px]">
+          <table className="w-full text-left border-collapse min-w-[800px]">
             <thead>
-              <tr className="bg-gray-50 text-gray-500 text-xs uppercase tracking-wider font-semibold">
-                <th className="p-5">Công việc</th>
-                <th className="p-5">Trạng thái</th>
-                <th className="p-5">Số lượng hồ sơ</th>
-                <th className="p-5 text-right">Hành động</th>
+              <tr className="bg-gray-50 text-gray-500 text-xs uppercase tracking-wider font-semibold border-b border-gray-100">
+                <th className="p-4 md:p-5">Công việc</th>
+                <th className="p-4 md:p-5">Trạng thái</th>
+                <th className="p-4 md:p-5">Số lượng hồ sơ</th>
+                <th className="p-4 md:p-5 text-right whitespace-nowrap">Hành động</th>
               </tr>
             </thead>
 
@@ -341,8 +342,8 @@ const ManageJobs = () => {
                     key={job.id}
                     className="hover:bg-gray-50/60 transition-colors group"
                   >
-                    <td className="p-5">
-                      <div className="font-bold text-gray-800 text-base mb-1 group-hover:text-[#3AB4E6] transition-colors cursor-pointer">
+                    <td className="p-4 md:p-5">
+                      <div className="font-bold text-gray-800 text-base mb-1 group-hover:text-[#3AB4E6] transition-colors cursor-pointer line-clamp-1">
                         {job.title}
                       </div>
                       <div className="text-sm text-gray-500 flex items-center gap-2">
@@ -356,7 +357,7 @@ const ManageJobs = () => {
                       </div>
                     </td>
 
-                    <td className="p-5">
+                    <td className="p-4 md:p-5">
                       {(() => {
                         const config = STATUS_CONFIG[job.status] || {
                           label: job.status || "Chưa cập nhật",
@@ -374,7 +375,7 @@ const ManageJobs = () => {
                       })()}
                     </td>
 
-                    <td className="p-5">
+                    <td className="p-4 md:p-5">
                       <div className="flex items-center gap-2 text-gray-600">
                         <FaUserFriends className="text-gray-400" />
                         <span className="font-semibold">{job.apps} hồ sơ</span>
@@ -458,7 +459,7 @@ const ManageJobs = () => {
         {!loadingJobs && totalItems > 0 && (
           <div className="flex flex-col md:flex-row justify-between items-center gap-4 mt-8 px-2">
             {/* Counter + page size */}
-            <div className="flex items-center gap-4 text-sm text-gray-500">
+            <div className="flex flex-col sm:flex-row items-center gap-3 sm:gap-4 text-sm text-gray-500 w-full md:w-auto text-center sm:text-left">
               <span>
                 Hiển thị{" "}
                 <span className="font-semibold text-gray-700">
@@ -468,7 +469,7 @@ const ManageJobs = () => {
               </span>
 
               <div className="flex items-center gap-2">
-                <label htmlFor="page-size" className="text-gray-400">
+                <label htmlFor="page-size" className="text-gray-400 whitespace-nowrap">
                   Hiển thị:
                 </label>
                 <select

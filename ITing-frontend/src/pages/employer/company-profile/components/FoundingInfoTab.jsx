@@ -692,12 +692,12 @@ const FoundingInfoTab = ({ onTabChange }) => {
       subtitle="Thông tin sẽ được admin duyệt trước khi cập nhật chính thức."
       size="lg"
       footer={
-        <div className="flex justify-end gap-3">
-          <button onClick={() => setShowRequestModal(false)} className="rounded-lg border border-gray-300 bg-white px-6 py-2.5 text-sm font-medium text-gray-700 transition hover:bg-gray-50">Hủy</button>
+        <div className="flex flex-col-reverse sm:flex-row justify-end gap-3">
+          <button onClick={() => setShowRequestModal(false)} className="w-full sm:w-auto rounded-lg border border-gray-300 bg-white px-6 py-2.5 text-sm font-medium text-gray-700 transition hover:bg-gray-50 text-center">Hủy</button>
           <button
             onClick={handleSubmitUpdateRequest}
             disabled={submittingRequest || uploadingLogo || (!affiliation ? false : !hasChanges)}
-            className={`flex items-center gap-2 rounded-lg px-8 py-2.5 text-sm font-bold text-white transition disabled:cursor-not-allowed ${
+            className={`w-full sm:w-auto flex justify-center items-center gap-2 rounded-lg px-8 py-2.5 text-sm font-bold text-white transition disabled:cursor-not-allowed ${
               (!affiliation || hasChanges)
                 ? "bg-[#3AB4E6] hover:opacity-90"
                 : "bg-gray-300 text-gray-500 opacity-60"
@@ -965,13 +965,13 @@ const FoundingInfoTab = ({ onTabChange }) => {
         </div>
       )}
 
-      <div className="rounded-xl border border-gray-200 bg-white p-6">
-        <div className="mb-4 flex items-center justify-between gap-4">
+      <div className="rounded-xl border border-gray-200 bg-white p-4 sm:p-6">
+        <div className="mb-4 flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
             <h3 className="text-lg font-semibold text-gray-800">Yêu cầu cập nhật thông tin</h3>
             <p className="mt-1 text-sm text-gray-500">Thông tin hiển thị bên dưới là dữ liệu cuối cùng đã được duyệt.</p>
           </div>
-          <div className="flex gap-2">
+          <div className="flex flex-col sm:flex-row gap-2 w-full md:w-auto">
             {(company?.companyInfoUpdateStatus === 'DRAFT' || company?.companyInfoUpdateStatus === 'REJECTED' || company?.companyInfoUpdateStatus === 'NEEDS_RESUBMISSION') && (
               <button
                 type="button"
@@ -993,7 +993,7 @@ const FoundingInfoTab = ({ onTabChange }) => {
                     setLoading(false);
                   }
                 }}
-                className="inline-flex items-center gap-2 rounded-lg bg-emerald-600 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-50"
+                className="w-full sm:w-auto flex justify-center items-center gap-2 rounded-lg bg-emerald-600 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 <FaCheckCircle />
                 Gửi duyệt hồ sơ
@@ -1003,7 +1003,7 @@ const FoundingInfoTab = ({ onTabChange }) => {
               type="button"
               onClick={openCreateRequestModal}
               disabled={hasPendingRequest}
-              className="inline-flex items-center gap-2 rounded-lg bg-[#3AB4E6] px-4 py-2.5 text-sm font-medium text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
+              className="w-full sm:w-auto flex justify-center items-center gap-2 rounded-lg bg-[#3AB4E6] px-4 py-2.5 text-sm font-medium text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
             >
               <FaPlus />
               {company?.companyInfoUpdateStatus === 'APPROVED' ? "Tạo yêu cầu thay đổi" : "Chỉnh sửa thông tin"}

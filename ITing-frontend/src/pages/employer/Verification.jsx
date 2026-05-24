@@ -173,9 +173,9 @@ const Verification = () => {
         <p className="text-gray-500">Nâng cao độ tin cậy và mở khóa đầy đủ tính năng bằng cách xác thực doanh nghiệp của bạn.</p>
       </div>
 
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 sm:p-8">
         <div className="mb-8">
-          <h2 className="text-lg font-bold text-gray-800 mb-1 flex items-center gap-2">
+          <h2 className="text-lg font-bold text-gray-800 mb-1 flex flex-wrap items-center gap-2">
             <FileText className="w-5 h-5 text-[#3AB4E6]" />
             Thông tin Giấy đăng ký doanh nghiệp
             <span className={`ml-2 text-xs font-bold px-3 py-1 rounded-full ${currentStatus.color}`}>
@@ -316,13 +316,13 @@ const Verification = () => {
               identity flow đã được loại khỏi spec ở Phase 4 redesign (xem REFACTOR_HR_COMPANY_SPEC.md). */}
         </div>
 
-        <div className="flex justify-end mt-10 pt-6 border-t border-gray-100 gap-4">
+        <div className="flex flex-col-reverse sm:flex-row justify-end mt-10 pt-6 border-t border-gray-100 gap-4">
           {file && (
             <Button
               variant="outline"
               onClick={handleUpload}
               disabled={submitting}
-              className="px-8 py-6 text-base font-bold border-[#3AB4E6] text-[#3AB4E6] hover:bg-blue-50"
+              className="w-full sm:w-auto px-8 py-4 sm:py-6 text-base font-bold border-[#3AB4E6] text-[#3AB4E6] hover:bg-blue-50"
             >
               {submitting ? "Đang tải lên..." : "Tải lên tài liệu"}
             </Button>
@@ -342,7 +342,7 @@ const Verification = () => {
                   ? 'Hồ sơ đang chờ admin xét duyệt'
                   : ''
             }
-            className="px-10 py-6 min-w-[200px] text-base font-bold shadow-lg shadow-blue-500/20"
+            className="w-full sm:w-auto px-10 py-4 sm:py-6 min-w-0 sm:min-w-[200px] text-base font-bold shadow-lg shadow-blue-500/20"
           >
             {submitting
               ? "Đang xử lý..."

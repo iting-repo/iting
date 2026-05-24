@@ -90,7 +90,7 @@ const ManageApplications = () => {
     };
 
     return (
-        <div className="bg-white rounded-xl p-8 min-h-screen border border-gray-100">
+        <div className="bg-white rounded-xl p-4 md:p-8 min-h-screen border border-gray-100">
             <Breadcrumb
               rootLabel="Tổng quan"
               rootLink="/employer/dashboard"
@@ -159,6 +159,8 @@ const ManageApplications = () => {
                     { label: 'Trạng thái' },
                     { label: 'Thao tác', className: "text-right" }
                 ]}
+                className="custom-scrollbar min-h-[300px]"
+                tableClassName="min-w-[800px]"
             >
                 {isLoading ? (
                     <tr>

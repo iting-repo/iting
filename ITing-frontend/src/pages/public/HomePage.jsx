@@ -265,6 +265,17 @@ const HomePage = () => {
         };
         updateLocationQuery(updatedForm.location);
         dispatch(fetchJobsRequest(params));
+
+        // Cuộn lên đầu danh sách việc làm khi chuyển trang trên mobile/tablet
+        if (window.innerWidth < 1024) {
+            const section = document.getElementById('best-jobs-section');
+            if (section) {
+                setTimeout(() => {
+                    const y = section.getBoundingClientRect().top + window.scrollY - 80; // Trừ hao khoảng trống phía trên (ví dụ: header cố định)
+                    window.scrollTo({ top: y, behavior: 'smooth' });
+                }, 100);
+            }
+        }
     };
 
 
