@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { FaSearch, FaFilter, FaFileDownload, FaEye, FaArrowLeft, FaSort, FaFileSignature } from 'react-icons/fa';
+import { FaSearch, FaFilter, FaFileDownload, FaEye, FaArrowLeft, FaSort, FaFileSignature, FaMagic } from 'react-icons/fa';
 import CandidateDetailModal from '../../components/employer/CandidateDetailModal';
 import StagePopover from '../../components/employer/StagePopover';
 import SendOfferModal from '../../components/employer/SendOfferModal';
+import MatchCandidatesDrawer from '../../components/employer/MatchCandidatesDrawer';
 import applicationService from '../../services/applicationService';
 import { normalizeJobKey } from '../../utils/jobUrl';
 import { Breadcrumb } from '../../components/common';
@@ -16,6 +17,7 @@ const JobApplications = () => {
    const [candidates, setCandidates] = useState([]);
    const [isLoading, setIsLoading] = useState(false);
    const [offerTarget, setOfferTarget] = useState(null); // candidate đang mở modal offer
+   const [matchDrawerOpen, setMatchDrawerOpen] = useState(false);
 
    // Filter and sort states
    const [keyword, setKeyword] = useState("");
@@ -65,9 +67,17 @@ const JobApplications = () => {
              { label: 'Hồ sơ ứng viên' }
            ]}
          />
-         <div className="mb-6">
-            <h2 className="text-2xl font-bold text-gray-800">Danh sách ứng viên</h2>
-            <p className="text-gray-500 text-sm">Quản lý danh sách hồ sơ ứng tuyển cho công việc này</p>
+         <div className="mb-6 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+            <div>
+               <h2 className="text-2xl font-bold text-gray-800">Danh sách ứng viên</h2>
+               <p className="text-gray-500 text-sm">Quản lý danh sách hồ sơ ứng tuyển cho công việc này</p>
+            </div>
+            <button
+               onClick={() => setMatchDrawerOpen(true)}
+               className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white text-sm font-bold shadow-md whitespace-nowrap"
+            >
+               <FaMagic /> Tìm thêm ứng viên AI <span className="text-[10px] opacity-80">5 credits</span>
+            </button>
          </div>
 
          <div className="flex flex-col md:flex-row justify-between items-stretch md:items-center mb-6 gap-4">
@@ -237,6 +247,13 @@ const JobApplications = () => {
                   c.id === offerTarget?.id ? { ...c, pipelineStage: 'OFFER' } : c
                ));
             }}
+         />
+
+         <MatchCandidatesDrawer
+            isOpen={matchDrawerOpen}
+            jobId={id}
+            jobTitle={candidates[0]?.jobTitle}
+            onClose={() => setMatchDrawerOpen(false)}
          />
 
       </div>

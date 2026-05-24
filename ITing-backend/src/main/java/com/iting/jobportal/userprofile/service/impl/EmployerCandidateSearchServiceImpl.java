@@ -2,7 +2,11 @@ package com.iting.jobportal.userprofile.service.impl;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.iting.jobportal.job.entity.Job;
+import com.iting.jobportal.job.repository.JobRepository;
+import com.iting.jobportal.job.service.JobEmbeddingService;
 import com.iting.jobportal.userprofile.dto.request.EmployerCandidateSearchRequest;
+import com.iting.jobportal.userprofile.dto.request.MatchByJobRequest;
 import com.iting.jobportal.userprofile.dto.response.EmployerCandidateSearchResponse;
 import com.iting.jobportal.userprofile.entity.Education;
 import com.iting.jobportal.userprofile.entity.Skill;
@@ -13,12 +17,15 @@ import com.iting.jobportal.userprofile.service.EmployerCandidateSearchService;
 import com.iting.jobportal.userprofile.service.embedding.EmbeddingClient;
 import com.iting.jobportal.common.service.KnowledgeGraphService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import com.iting.jobportal.userprofile.dto.response.CandidateFullProfileResponse;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
+import org.springframework.http.HttpStatus;
 
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -29,6 +36,7 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class EmployerCandidateSearchServiceImpl implements EmployerCandidateSearchService {
 
     private final UserProfileRepository userProfileRepository;
@@ -36,6 +44,8 @@ public class EmployerCandidateSearchServiceImpl implements EmployerCandidateSear
     private final EmbeddingClient embeddingClient;
     private final ObjectMapper objectMapper;
     private final KnowledgeGraphService knowledgeGraphService;
+    private final JobRepository jobRepository;
+    private final JobEmbeddingService jobEmbeddingService;
 
     @Override
     @Transactional(readOnly = true)
@@ -163,6 +173,159 @@ public class EmployerCandidateSearchServiceImpl implements EmployerCandidateSear
                 .collect(Collectors.toList());
 
         return new PageImpl<>(content, PageRequest.of(page, size), scored.size());
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Page<EmployerCandidateSearchResponse> searchByJob(Long jobId, MatchByJobRequest request) {
+        if (jobId == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "jobId không được rỗng");
+        }
+        int page = request == null || request.getPage() == null ? 0 : Math.max(0, request.getPage());
+        int size = request == null || request.getSize() == null ? 20 : Math.max(1, Math.min(50, request.getSize()));
+
+        Job job = jobRepository.findById(jobId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Job không tồn tại"));
+
+        // ── Lấy job embedding (lazy compute nếu null) ──
+        double[] jobVec = parseEmbedding(job.getJobEmbedding()).orElse(null);
+        if (jobVec == null || jobVec.length == 0) {
+            try {
+                boolean ok = jobEmbeddingService.embedJob(job);
+                if (ok) {
+                    Job reloaded = jobRepository.findById(jobId).orElse(job);
+                    jobVec = parseEmbedding(reloaded.getJobEmbedding()).orElse(null);
+                }
+            } catch (Exception e) {
+                log.warn("[matchByJob] Embed job sync failed for jobId={}: {}", jobId, e.getMessage());
+            }
+        }
+
+        // ── Build filter từ job fields ──
+        String locationFilter = (request != null && request.getLocationOverride() != null
+                && !request.getLocationOverride().isBlank())
+                        ? request.getLocationOverride().trim()
+                        : job.getProvince();
+        List<String> jobSkills = job.getSkills() == null ? List.of()
+                : job.getSkills().stream().filter(s -> s != null && !s.isBlank()).distinct().toList();
+        String level = job.getExperienceLevel() == null ? null : job.getExperienceLevel().name();
+        ExperienceRange expRange = ExperienceRange.fromLevel(level);
+
+        // Bắt buộc onlyAvailable=true (intent: candidates đang tìm việc)
+        List<UserProfile> matched = userProfileRepository.employerSearchCandidates(
+                null,                       // keyword: dùng vector thay keyword
+                null,                       // position: skip (job đã định danh rõ rồi)
+                locationFilter,
+                true,                       // onlyAvailable
+                expRange.minYears(),
+                expRange.maxYears(),
+                null,                       // degree: không gating
+                jobSkills.isEmpty(),
+                jobSkills.isEmpty() ? List.of("__EMPTY__") : jobSkills);
+
+        // ── KG expansion từ job skills để bonus ──
+        java.util.Set<String> expandedKeywords = new java.util.HashSet<>();
+        for (String s : jobSkills) {
+            expandedKeywords.addAll(knowledgeGraphService.expandKeyword(s));
+        }
+
+        final double LOCATION_WEIGHT = 2.0;
+        final double[] finalJobVec = jobVec; // for lambda capture
+
+        List<ScoredCandidate> scored = new ArrayList<>(matched.size());
+        for (UserProfile profile : matched) {
+            double cosine = 0.0;
+            if (finalJobVec != null) {
+                List<String> cvEmb = cvRepository.findActiveCvEmbeddingByProfileId(profile.getId(), PageRequest.of(0, 1));
+                String candidateEmbedding = cvEmb.isEmpty() ? null : cvEmb.get(0);
+                cosine = cosineSimilarity(finalJobVec, parseEmbedding(candidateEmbedding).orElse(null));
+            }
+
+            double score = cosine;
+
+            // KG skill bonus
+            int skillMatchCount = 0;
+            if (!expandedKeywords.isEmpty() && profile.getSkills() != null) {
+                for (Skill s : profile.getSkills()) {
+                    if (s.getName() != null && expandedKeywords.stream()
+                            .anyMatch(ek -> s.getName().toLowerCase().contains(ek.toLowerCase()))) {
+                        score += 0.3;
+                        skillMatchCount++;
+                    }
+                }
+            }
+
+            // Location proximity bonus
+            double locScore = 0.0;
+            if (locationFilter != null && !locationFilter.isBlank()) {
+                locScore = knowledgeGraphService.locationScore(locationFilter, profile.getLocation());
+                score += LOCATION_WEIGHT * locScore;
+            }
+
+            scored.add(new ScoredCandidate(profile, score, cosine, skillMatchCount, locScore));
+        }
+
+        // Sort by combined score DESC
+        scored.sort(Comparator.comparing(ScoredCandidate::score).reversed()
+                .thenComparing(c -> c.profile().getId()));
+
+        int fromIndex = Math.min(page * size, scored.size());
+        int toIndex = Math.min(fromIndex + size, scored.size());
+
+        List<EmployerCandidateSearchResponse> content = scored.subList(fromIndex, toIndex).stream()
+                .map(sc -> toJobMatchResponse(sc, job, jobSkills))
+                .collect(Collectors.toList());
+
+        return new PageImpl<>(content, PageRequest.of(page, size), scored.size());
+    }
+
+    private EmployerCandidateSearchResponse toJobMatchResponse(ScoredCandidate sc, Job job, List<String> jobSkills) {
+        UserProfile profile = sc.profile();
+        var account = profile.getUser().getAccount();
+
+        List<String> candidateSkills = profile.getSkills() == null ? List.of()
+                : profile.getSkills().stream()
+                        .map(Skill::getName)
+                        .filter(s -> s != null && !s.isBlank())
+                        .distinct()
+                        .toList();
+
+        // Build matchReasons từ signals đã tính
+        List<String> reasons = new ArrayList<>();
+        if (sc.cosine() > 0) {
+            reasons.add(String.format(Locale.ROOT, "Match nội dung CV: %.0f%%", Math.min(1.0, sc.cosine()) * 100));
+        }
+        if (sc.skillMatchCount() > 0 && !jobSkills.isEmpty()) {
+            reasons.add(String.format("Khớp %d/%d kỹ năng yêu cầu", sc.skillMatchCount(), jobSkills.size()));
+        }
+        if (sc.locScore() > 0.7 && job.getProvince() != null) {
+            reasons.add("Cùng địa điểm " + job.getProvince());
+        } else if (sc.locScore() > 0.3) {
+            reasons.add("Địa điểm gần " + job.getProvince());
+        }
+        Integer years = profile.getTotalExperienceYears();
+        if (years != null && job.getExperienceLevel() != null) {
+            reasons.add(String.format("%d năm kinh nghiệm phù hợp cấp %s", years, job.getExperienceLevel().name()));
+        }
+
+        return EmployerCandidateSearchResponse.builder()
+                .id(profile.getId())
+                .name(account != null ? account.getFullName() : null)
+                .email(account == null ? null : account.getEmail())
+                .title(nullToEmpty(profile.getHeadline()))
+                .level(deriveLevel(years))
+                .location(nullToEmpty(profile.getLocation()))
+                .experience(years == null ? 0 : years)
+                .degree(pickDegree(profile.getEducations()))
+                .education(profile.getEducationSummary() != null ? profile.getEducationSummary().getDescription() : "")
+                .workType("")
+                .salaryExpectation("")
+                .skills(candidateSkills)
+                .summary(nullToEmpty(profile.getShortBio()))
+                .isAvailable(Boolean.TRUE.equals(profile.getOpenToWork()))
+                .score(sc.score())
+                .matchReasons(reasons)
+                .build();
     }
 
     @Override
@@ -330,7 +493,10 @@ public class EmployerCandidateSearchServiceImpl implements EmployerCandidateSear
         return value == null ? "" : value;
     }
 
-    private record ScoredCandidate(UserProfile profile, double score) {
+    private record ScoredCandidate(UserProfile profile, double score, double cosine, int skillMatchCount, double locScore) {
+        ScoredCandidate(UserProfile profile, double score) {
+            this(profile, score, 0.0, 0, 0.0);
+        }
     }
 
     private static Integer combineMin(Integer a, Integer b) {

@@ -10,6 +10,8 @@ import { toast } from "sonner";
 import { employerCandidateService } from "../../services/employerCandidateService";
 import companyService from "../../services/companyService";
 import ReviewCandidateModal from "../../components/employer/ReviewCandidateModal";
+import MatchCandidatesDrawer from "../../components/employer/MatchCandidatesDrawer";
+import { FaMagic } from "react-icons/fa";
 
 const POSITIONS = ["Frontend Developer", "Backend Developer", "Fullstack Developer", "Mobile Developer", "DevOps Engineer"];
 const WORK_TYPES = [
@@ -78,6 +80,10 @@ const FindCandidate = () => {
   const [employerLocation, setEmployerLocation] = useState("");
   const [industryContext, setIndustryContext] = useState("");
 
+  // AI Match-by-job state
+  const [myJobs, setMyJobs] = useState([]);
+  const [matchDrawer, setMatchDrawer] = useState({ open: false, jobId: null, jobTitle: "" });
+
   // Fetch employer's company profile on mount:
   //  - employerLocation → used for location proximity scoring in KG
   //  - industryContext  → used as a silent keyword when no explicit search is typed,
@@ -100,6 +106,14 @@ const FindCandidate = () => {
       .catch(() => {
         // Non-critical: smart recommendation will degrade gracefully
       });
+
+    // Load my jobs cho dropdown "Match theo job"
+    companyService.getMyJobs(0, 100)
+      .then(res => {
+        const items = Array.isArray(res?.content) ? res.content : (Array.isArray(res) ? res : []);
+        setMyJobs(items.filter(j => j?.status === 'ACTIVE' || !j?.status));
+      })
+      .catch(() => setMyJobs([]));
   }, []);
 
   const resetFilters = () => {
@@ -209,6 +223,33 @@ const FindCandidate = () => {
 
       {/* Search and Filters Section */}
       <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 space-y-6">
+        {/* AI Match-by-job dropdown */}
+        {myJobs.length > 0 && (
+          <div className="flex flex-col md:flex-row items-stretch md:items-center gap-3 p-3 rounded-xl bg-gradient-to-r from-indigo-50 to-purple-50 border border-indigo-100">
+            <div className="flex items-center gap-2 text-sm font-semibold text-indigo-700 shrink-0">
+              <FaMagic /> Match AI theo job đã đăng
+            </div>
+            <select
+              defaultValue=""
+              onChange={(e) => {
+                const jobId = Number(e.target.value);
+                if (!jobId) return;
+                const j = myJobs.find(x => x.id === jobId);
+                setMatchDrawer({ open: true, jobId, jobTitle: j?.title || "" });
+                e.target.value = ""; // reset để lần sau chọn lại trigger
+              }}
+              className="flex-1 px-4 py-2 rounded-lg border border-gray-200 bg-white text-sm focus:border-[#3AB4E6] outline-none"
+            >
+              <option value="">— Chọn job để tìm ứng viên (5 credits/lần) —</option>
+              {myJobs.map(j => (
+                <option key={j.id} value={j.id}>
+                  {j.title || `Job #${j.id}`}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
+
         <div className="flex flex-col md:flex-row gap-4">
           <div className="relative flex-1">
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
@@ -473,9 +514,17 @@ const FindCandidate = () => {
       )}
 
       {/* ════════════ CANDIDATE PROFILE MODAL ════════════ */}
-      <ReviewCandidateModal 
-        candidate={viewCandidate} 
-        onClose={() => setViewCandidate(null)} 
+      <ReviewCandidateModal
+        candidate={viewCandidate}
+        onClose={() => setViewCandidate(null)}
+      />
+
+      {/* ════════════ AI MATCH-BY-JOB DRAWER ════════════ */}
+      <MatchCandidatesDrawer
+        isOpen={matchDrawer.open}
+        jobId={matchDrawer.jobId}
+        jobTitle={matchDrawer.jobTitle}
+        onClose={() => setMatchDrawer({ open: false, jobId: null, jobTitle: "" })}
       />
     </div>
   );

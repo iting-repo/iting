@@ -69,6 +69,13 @@ const Header = () => {
       } catch { /* silent */ }
     };
     fetchCredits();
+    // Lắng nghe sự kiện global 'credit-refresh' (bắn từ AI match drawer / boost flow)
+    const handler = () => fetchCredits();
+    window.addEventListener('credit-refresh', handler);
+    return () => {
+      cancelled = true;
+      window.removeEventListener('credit-refresh', handler);
+    };
     // refresh khi dropdown mở (case user vừa thanh toán xong)
   }, [role, isDropdownOpen]);
 

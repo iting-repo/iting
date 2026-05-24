@@ -47,4 +47,16 @@ export const employerCandidateService = {
 
   getFullProfile: (candidateId) =>
     axiosInstance.get(`/hr/candidates/${candidateId}/profile`),
+
+  /**
+   * AI match-by-job: dùng embedding của 1 job để tìm ứng viên openToWork=true.
+   * Backend trừ 5 credits/lần (HrCandidateController.MATCH_BY_JOB_CREDIT_COST).
+   * Throws 402 với code=INSUFFICIENT_CREDITS nếu thiếu credits.
+   */
+  matchByJob: (jobId, { page = 0, size = 20, locationOverride } = {}) =>
+    axiosInstance.post(`/hr/candidates/match-by-job/${jobId}`, {
+      page,
+      size,
+      locationOverride: locationOverride || null,
+    }),
 };

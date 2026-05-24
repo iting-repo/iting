@@ -15,6 +15,7 @@ import {
   FaPauseCircle,
   FaExclamationTriangle,
   FaTrash,
+  FaMagic,
 } from "react-icons/fa";
 import { BsThreeDotsVertical } from "react-icons/bs";
 import { toast } from "sonner";
@@ -22,6 +23,7 @@ import { toast } from "sonner";
 import PostJob from "./PostJob";
 import companyService from "../../services/companyService";
 import { Breadcrumb, ConfirmModal } from "../../components/common";
+import MatchCandidatesDrawer from "../../components/employer/MatchCandidatesDrawer";
 
 const PAGE_SIZE_OPTIONS = [5, 10, 20, 50];
 
@@ -104,6 +106,7 @@ const ManageJobs = () => {
   const [loadingJobs, setLoadingJobs] = useState(true);
   const [editingJob, setEditingJob] = useState(null);
   const [confirmAction, setConfirmAction] = useState(null); // { type, jobId, title }
+  const [matchDrawer, setMatchDrawer] = useState({ open: false, jobId: null, jobTitle: "" });
 
   const fetchJobs = async () => {
     try {
@@ -415,6 +418,16 @@ const ManageJobs = () => {
                               <FaEye /> Xem / Chỉnh sửa
                             </button>
 
+                            <button
+                              onClick={() => {
+                                setActiveMenu(null);
+                                setMatchDrawer({ open: true, jobId: job.id, jobTitle: job.title });
+                              }}
+                              className="w-full text-left px-4 py-3 text-sm text-indigo-600 hover:bg-indigo-50 flex items-center gap-2 border-b border-gray-50"
+                            >
+                              <FaMagic /> Tìm ứng viên AI <span className="ml-auto text-[10px] text-amber-600 font-bold">5 credits</span>
+                            </button>
+
                             {job.status === "ACTIVE" && (
                               <button
                                 className="w-full text-left px-4 py-3 text-sm text-gray-600 hover:bg-red-50 hover:text-red-500 flex items-center gap-2 border-b border-gray-50"
@@ -630,6 +643,13 @@ const ManageJobs = () => {
           : confirmAction?.type === 'close' ? 'Đóng tin'
           : 'Mở lại'
         }
+      />
+
+      <MatchCandidatesDrawer
+        isOpen={matchDrawer.open}
+        jobId={matchDrawer.jobId}
+        jobTitle={matchDrawer.jobTitle}
+        onClose={() => setMatchDrawer({ open: false, jobId: null, jobTitle: "" })}
       />
     </>
   );

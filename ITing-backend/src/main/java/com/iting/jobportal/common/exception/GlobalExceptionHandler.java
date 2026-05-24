@@ -1,6 +1,7 @@
 package com.iting.jobportal.common.exception;
 
 import com.iting.jobportal.auth.exception.ResourceNotFoundException;
+import com.iting.jobportal.payment.service.CreditService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.FieldError;
@@ -14,6 +15,16 @@ import java.util.Map;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
+
+    /** Insufficient credits → 402 Payment Required. FE handle để hiện CTA "Nạp credits". */
+    @ExceptionHandler(CreditService.InsufficientCreditException.class)
+    public ResponseEntity<Map<String, String>> handleInsufficientCredits(
+            CreditService.InsufficientCreditException ex) {
+        Map<String, String> body = new HashMap<>();
+        body.put("error", ex.getMessage() != null ? ex.getMessage() : "Không đủ credits");
+        body.put("code", "INSUFFICIENT_CREDITS");
+        return new ResponseEntity<>(body, HttpStatus.PAYMENT_REQUIRED);
+    }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<Map<String, String>> handleValidationExceptions(MethodArgumentNotValidException ex) {
