@@ -29,6 +29,7 @@ const FavoriteCandidates = lazy(() => import('../pages/employer/FavoriteCandidat
 const EmployerServicesPage = lazy(() => import('../pages/employer/EmployerServicesPage'));
 const SubscriptionPricingPage = lazy(() => import('../pages/employer/subscription/SubscriptionPricingPage'));
 const ManageSubscriptionPage = lazy(() => import('../pages/employer/subscription/ManageSubscriptionPage'));
+const HrReportPage = lazy(() => import('../pages/employer/HrReportPage'));
 const CandidateDashboard = lazy(() => import('../pages/candidate/CandidateDashboard'));
 const CandidateLayout = lazy(() => import('../layouts/CandidateLayout'));
 const CandidateProfile = lazy(() => import('../pages/candidate/profile/CandidateProfile'));
@@ -126,7 +127,8 @@ const AppRoutes = () => {
               <Route path="favorite-candidates" element={<FavoriteCandidates />} />
               <Route path="services" element={<EmployerServicesPage />} />
               <Route path="subscriptions" element={<SubscriptionPricingPage />} />
-              <Route path="manage-subscription" element={<ManageSubscriptionPage />} />
+              <Route path="subscriptions/manage" element={<ManageSubscriptionPage />} />
+              <Route path="reports" element={<HrReportPage />} />
             </Route>
           </Route>
         </Route>
