@@ -158,7 +158,8 @@ const SettingsTab = () => {
                               type="tel"
                               value={phone}
                               onChange={(e) => {
-                                 setPhone(e.target.value);
+                                 const cleaned = e.target.value.replace(/[^0-9+]/g, '');
+                                 setPhone(cleaned);
                                  if (otpStep === 'sent') {
                                     setOtpStep('idle');
                                     setOtpCode('');

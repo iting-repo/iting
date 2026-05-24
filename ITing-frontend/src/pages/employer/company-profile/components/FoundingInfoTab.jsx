@@ -401,6 +401,8 @@ const FoundingInfoTab = ({ onTabChange }) => {
     }
     if (!requestForm.phone.trim()) {
       newErrors.phone = "Vui lòng nhập số điện thoại";
+    } else if (!/^(\+84|0)(3|5|7|8|9)[0-9]{8}$/.test(requestForm.phone.replace(/\s+/g, ''))) {
+      newErrors.phone = "Số điện thoại không hợp lệ (VD: 0912345678)";
     }
     if (!requestForm.email.trim()) {
       newErrors.email = "Vui lòng nhập email công ty";
@@ -435,6 +437,9 @@ const FoundingInfoTab = ({ onTabChange }) => {
   };
 
   const handleRequestFieldChange = (field, value) => {
+    if (field === 'phone') {
+      value = value.replace(/[^0-9+]/g, '');
+    }
     setRequestForm((prev) => ({
       ...prev,
       [field]: value,
@@ -775,7 +780,7 @@ const FoundingInfoTab = ({ onTabChange }) => {
           </div>
           <div>
             <label className="mb-2 block text-sm font-medium text-gray-700">Số điện thoại</label>
-            <input type="text" value={requestForm.phone} onChange={(e) => handleRequestFieldChange("phone", e.target.value)} className="w-full rounded-lg border border-gray-300 px-4 py-3 text-sm focus:border-[#3AB4E6]" />
+            <input type="tel" value={requestForm.phone} onChange={(e) => handleRequestFieldChange("phone", e.target.value)} placeholder="VD: 0912345678" className="w-full rounded-lg border border-gray-300 px-4 py-3 text-sm focus:border-[#3AB4E6]" />
             {requestErrors.phone && <p className="mt-1 text-xs text-red-500">{requestErrors.phone}</p>}
           </div>
           <div>

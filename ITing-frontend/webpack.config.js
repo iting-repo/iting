@@ -15,7 +15,7 @@ module.exports = (env, argv) => {
   // Xác định file .env cần load
   // Mặc định: development -> .env.local, production -> .env.production
   // Có thể truyền --env APP_ENV=development để load .env.development
-  const appEnv = env.APP_ENV || (isDev ? 'local' : 'production');
+  const appEnv = env.APP_ENV || (isDev ? 'development' : 'production');
   const envPath = path.resolve(__dirname, `.env.${appEnv}`);
   const finalEnvPath = fs.existsSync(envPath) ? envPath : path.resolve(__dirname, '.env');
 
