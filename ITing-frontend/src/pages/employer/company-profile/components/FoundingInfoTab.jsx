@@ -146,6 +146,19 @@ const FoundingInfoTab = ({ onTabChange }) => {
   const navigate = useNavigate();
   const [logoPreview, setLogoPreview] = useState(null);
   const [imageError, setImageError] = useState(false);
+  // CTA "Tài khoản xác thực" có thể đóng — persist qua localStorage để không
+  // hiện lại sau reload. User mở lại bằng nút "Hiện CTA xác thực" ở header tab.
+  const [verificationDismissed, setVerificationDismissed] = useState(() => {
+    try { return localStorage.getItem('iting:hideVerificationCta') === '1'; } catch { return false; }
+  });
+  const dismissVerificationCta = () => {
+    setVerificationDismissed(true);
+    try { localStorage.setItem('iting:hideVerificationCta', '1'); } catch { /* no-op */ }
+  };
+  const showVerificationCta = () => {
+    setVerificationDismissed(false);
+    try { localStorage.removeItem('iting:hideVerificationCta'); } catch { /* no-op */ }
+  };
 
   // === Verification (GPKD) states ===
   const [licenseFile, setLicenseFile] = useState(null);
@@ -911,8 +924,27 @@ const FoundingInfoTab = ({ onTabChange }) => {
         </div>
       )}
 
-      <div className="rounded-2xl border border-green-100 bg-[#F4FBF4] p-8 shadow-sm">
-        <div className="mb-4">
+      {verificationDismissed ? (
+        <div className="flex justify-end -mt-2">
+          <button
+            type="button"
+            onClick={showVerificationCta}
+            className="text-xs text-gray-400 hover:text-green-600 underline decoration-dotted underline-offset-4"
+          >
+            Hiện lại CTA xác thực
+          </button>
+        </div>
+      ) : (
+      <div className="rounded-2xl border border-green-100 bg-[#F4FBF4] p-8 shadow-sm relative">
+        <button
+          type="button"
+          onClick={dismissVerificationCta}
+          title="Ẩn CTA này"
+          className="absolute top-4 right-4 w-8 h-8 rounded-full text-gray-400 hover:text-gray-600 hover:bg-white/60 flex items-center justify-center transition-colors"
+        >
+          <FaTimes />
+        </button>
+        <div className="mb-4 pr-10">
           <h3 className="text-xl font-bold text-gray-800">
             Tài khoản xác thực: Cấp {completedCount}/{verificationSteps.length}
           </h3>
@@ -957,6 +989,7 @@ const FoundingInfoTab = ({ onTabChange }) => {
           ))}
         </div>
       </div>
+      )}
 
       {isUsingDefaultLogo && (
         <div className="rounded-xl border border-yellow-200 bg-yellow-50 p-4">
