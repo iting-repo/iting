@@ -85,9 +85,9 @@ public class HrReportServiceImpl implements HrReportService {
     private long countApplications(Long hrId, LocalDateTime from, LocalDateTime to) {
         Object o = em.createNativeQuery("""
                 SELECT COUNT(*) FROM apply_form_user_to_job a
-                JOIN "Job" j ON j.id = a."Job_id"
+                JOIN job j ON j.id = a.job_id
                 WHERE j.posted_by_hr_id = :hr
-                  AND a."Time_sent" BETWEEN :from AND :to
+                  AND a.time_sent BETWEEN :from AND :to
                 """)
                 .setParameter("hr", hrId)
                 .setParameter("from", Timestamp.valueOf(from))
@@ -105,7 +105,7 @@ public class HrReportServiceImpl implements HrReportService {
 
     private long countBoostedJobs(Long hrId) {
         Object o = em.createNativeQuery("""
-                SELECT COUNT(*) FROM "Job"
+                SELECT COUNT(*) FROM job
                 WHERE posted_by_hr_id = :hr AND featured_until IS NOT NULL AND featured_until > NOW()
                 """).setParameter("hr", hrId).getSingleResult();
         return ((Number) o).longValue();
@@ -152,7 +152,7 @@ public class HrReportServiceImpl implements HrReportService {
     private long sumPaymentVnd(Long accountId, LocalDateTime from, LocalDateTime to) {
         try {
             Object o = em.createNativeQuery("""
-                    SELECT COALESCE(SUM(amount), 0) FROM payment_order
+                    SELECT COALESCE(SUM(amount), 0) FROM payment_orders
                     WHERE account_id = :acc AND status = 'PAID'
                       AND created_at BETWEEN :from AND :to
                     """)
@@ -172,9 +172,9 @@ public class HrReportServiceImpl implements HrReportService {
     private Map<String, Long> applicationsByStage(Long hrId, LocalDateTime from, LocalDateTime to) {
         List<Object[]> rows = em.createNativeQuery("""
                 SELECT a.pipeline_stage, COUNT(*) FROM apply_form_user_to_job a
-                JOIN "Job" j ON j.id = a."Job_id"
+                JOIN job j ON j.id = a.job_id
                 WHERE j.posted_by_hr_id = :hr
-                  AND a."Time_sent" BETWEEN :from AND :to
+                  AND a.time_sent BETWEEN :from AND :to
                 GROUP BY a.pipeline_stage
                 """)
                 .setParameter("hr", hrId)
@@ -194,18 +194,18 @@ public class HrReportServiceImpl implements HrReportService {
     @SuppressWarnings("unchecked")
     private List<TimeSeriesPoint> buildTimeSeries(Long hrId, LocalDateTime from, LocalDateTime to) {
         List<Object[]> rows = em.createNativeQuery("""
-                SELECT DATE(a."Time_sent") AS d,
+                SELECT DATE(a.time_sent) AS d,
                        COUNT(*) AS total,
                        COUNT(*) FILTER (WHERE a.pipeline_stage = 'INTERVIEW') AS itv,
                        COUNT(*) FILTER (WHERE a.pipeline_stage = 'OFFER')     AS off,
                        COUNT(*) FILTER (WHERE a.pipeline_stage = 'HIRED')     AS hir,
                        COUNT(*) FILTER (WHERE a.pipeline_stage = 'REJECTED')  AS rej
                 FROM apply_form_user_to_job a
-                JOIN "Job" j ON j.id = a."Job_id"
+                JOIN job j ON j.id = a.job_id
                 WHERE j.posted_by_hr_id = :hr
-                  AND a."Time_sent" BETWEEN :from AND :to
-                GROUP BY DATE(a."Time_sent")
-                ORDER BY DATE(a."Time_sent")
+                  AND a.time_sent BETWEEN :from AND :to
+                GROUP BY DATE(a.time_sent)
+                ORDER BY DATE(a.time_sent)
                 """)
                 .setParameter("hr", hrId)
                 .setParameter("from", Timestamp.valueOf(from))
@@ -238,10 +238,10 @@ public class HrReportServiceImpl implements HrReportService {
                        COUNT(*) FILTER (WHERE a.pipeline_stage = 'OFFER')        AS off,
                        COUNT(*) FILTER (WHERE a.pipeline_stage = 'HIRED')        AS hir,
                        COUNT(*) FILTER (WHERE a.pipeline_stage = 'REJECTED')     AS rej
-                FROM "Job" j
+                FROM job j
                 LEFT JOIN apply_form_user_to_job a
-                       ON a."Job_id" = j.id
-                      AND a."Time_sent" BETWEEN :from AND :to
+                       ON a.job_id = j.id
+                      AND a.time_sent BETWEEN :from AND :to
                 WHERE j.posted_by_hr_id = :hr
                 GROUP BY j.id, j.title
                 ORDER BY total DESC, j.id DESC
