@@ -77,7 +77,7 @@ export const JobTable = ({
 
   return (
     <Table
-      className="!overflow-visible"
+      className="overflow-x-auto custom-scrollbar sm:!overflow-visible"
       headers={[
         {
           label: (
@@ -90,13 +90,13 @@ export const JobTable = ({
           ),
           className: "w-10",
         },
-        { label: "Mã công việc" },
-        { label: "Tiêu đề công việc" },
-        { label: "Tên công ty" },
-        { label: "Địa điểm", className: "w-48" },
+        { label: "Mã công việc", className: "whitespace-nowrap" },
+        { label: "Tiêu đề công việc", className: "whitespace-nowrap min-w-[200px]" },
+        { label: "Tên công ty", className: "whitespace-nowrap min-w-[150px]" },
+        { label: "Địa điểm", className: "w-48 min-w-[150px]" },
         { label: "Trạng thái", className: "w-40 whitespace-nowrap" },
-        { label: "AI kiểm duyệt", className: "w-56 whitespace-nowrap" },
-        { label: "Thao tác", className: "text-right" },
+        { label: "AI kiểm duyệt", className: "w-56 min-w-[200px]" },
+        { label: "Thao tác", className: "text-right whitespace-nowrap" },
       ]}
     >
       {loading ? (
@@ -134,19 +134,20 @@ export const JobTable = ({
                   className="h-4 w-4 rounded border-slate-300 text-sky-600 focus:ring-sky-500"
                 />
               </Td>
-              <Td>{job.id}</Td>
+              <Td className="whitespace-nowrap">{job.id}</Td>
 
               <Td>
                 <button
-                  className="font-bold text-blue-600 hover:text-blue-800 transition-colors text-left"
+                  className="font-bold text-blue-600 hover:text-blue-800 transition-colors text-left line-clamp-2"
                   onClick={() => onPreview(job)}
+                  title={job.title || job.position}
                 >
                   {job.title || job.position}
                 </button>
               </Td>
 
               <Td>
-                <div className="font-medium text-slate-700">
+                <div className="font-medium text-slate-700 whitespace-nowrap">
                   {job.company || job.companyName}
                 </div>
               </Td>

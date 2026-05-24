@@ -94,8 +94,8 @@ const AuditLogPage = () => {
     <div className="space-y-6 animate-in fade-in duration-500">
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-6 rounded-2xl border border-slate-100 shadow-sm">
-        <div className="flex items-center gap-4">
-          <div className="w-12 h-12 bg-sky-50 rounded-xl flex items-center justify-center text-sky-600">
+        <div className="flex items-start sm:items-center gap-4">
+          <div className="w-12 h-12 bg-sky-50 rounded-xl flex items-center justify-center text-sky-600 shrink-0">
             <Shield className="w-6 h-6" />
           </div>
           <div>
@@ -103,13 +103,13 @@ const AuditLogPage = () => {
             <p className="text-sm text-slate-500 font-medium">Lịch sử mọi hành động thay đổi trên hệ thống</p>
           </div>
         </div>
-        <Button variant="outline" className="h-10 border-slate-200 text-xs font-bold uppercase tracking-widest" onClick={handleExport}>
+        <Button variant="outline" className="h-10 border-slate-200 text-xs font-bold uppercase tracking-widest self-start md:self-auto shrink-0" onClick={handleExport}>
           <Download className="w-4 h-4 mr-2" /> Xuất dữ liệu
         </Button>
       </div>
 
       {/* Stats - Quick Overview */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="bg-white p-4 rounded-xl border border-slate-100 shadow-sm text-center space-y-1">
           <p className="text-2xl font-black text-slate-900">{totalElements}</p>
           <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Tổng bản ghi</p>
@@ -133,7 +133,7 @@ const AuditLogPage = () => {
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
           <Input
-            className="pl-10 h-11 border-slate-200"
+            className="pl-10 h-11 border-slate-200 w-full"
             placeholder="Tìm theo hành động, đối tượng hoặc chi tiết..."
             value={search}
             onChange={(e) => { setSearch(e.target.value); setPage(0); }}
@@ -154,49 +154,49 @@ const AuditLogPage = () => {
         {loading ? (
           <div className="py-20 flex justify-center"><LoadingSpinner /></div>
         ) : (
-          <div className="overflow-x-auto overflow-y-hidden">
+          <div className="overflow-x-auto overflow-y-hidden custom-scrollbar">
             <Table
               headers={[
-                { label: "Thời gian", className: "w-40" },
-                { label: "Danh mục", className: "w-32" },
-                { label: "Hành động" },
-                { label: "Đối tượng", className: "w-48" },
-                { label: "Biến động", className: "w-40 text-center" },
-                { label: "Người thực hiện", className: "w-40" }
+                { label: "Thời gian", className: "w-40 min-w-[150px] whitespace-nowrap" },
+                { label: "Danh mục", className: "w-32 min-w-[120px] whitespace-nowrap" },
+                { label: "Hành động", className: "min-w-[200px]" },
+                { label: "Đối tượng", className: "w-48 min-w-[180px]" },
+                { label: "Biến động", className: "w-40 text-center min-w-[150px]" },
+                { label: "Người thực hiện", className: "w-40 min-w-[160px] whitespace-nowrap" }
               ]}
             >
               {logs.length > 0 ? logs.map((log) => {
-                const cat = CATEGORY_MAP[log.category?.toLowerCase()] || { label: log.category, icon: <LayoutDashboard className="w-3 px-0 h-4" />, color: "bg-slate-100 text-slate-600" };
+                const cat = CATEGORY_MAP[log.category?.toLowerCase()] || { label: log.category, icon: <LayoutDashboard className="w-3 px-0 h-4 shrink-0" />, color: "bg-slate-100 text-slate-600" };
                 return (
                   <tr key={log.id} className="hover:bg-slate-50 transition-colors group">
                     <Td>
-                      <div className="flex items-center gap-2 text-slate-500 font-medium">
-                        <Calendar className="w-3 h-3" />
+                      <div className="flex items-center gap-2 text-slate-500 font-medium whitespace-nowrap">
+                        <Calendar className="w-3 h-3 shrink-0" />
                         {formatTimestamp(log.timestamp)}
                       </div>
                     </Td>
                     <Td>
-                      <Badge variant="outline" className={`text-[10px] font-black uppercase flex items-center gap-1.5 border-transparent ${cat.color}`}>
+                      <Badge variant="outline" className={`text-[10px] font-black uppercase flex items-center gap-1.5 border-transparent shrink-0 whitespace-nowrap w-fit ${cat.color}`}>
                         {cat.icon} {cat.label}
                       </Badge>
                     </Td>
                     <Td>
                       <div className="space-y-1">
-                        <p className="text-sm font-bold text-slate-800">{log.action}</p>
-                        <p className="text-[11px] text-slate-500 line-clamp-1 group-hover:line-clamp-none transition-all" title={log.detail}>
+                        <p className="text-sm font-bold text-slate-800 break-words">{log.action}</p>
+                        <p className="text-[11px] text-slate-500 line-clamp-1 group-hover:line-clamp-none transition-all break-words" title={log.detail}>
                           {log.detail}
                         </p>
                       </div>
                     </Td>
-                    <Td className="font-bold text-sky-600 text-xs">
+                    <Td className="font-bold text-sky-600 text-xs break-all">
                       {log.target}
                     </Td>
                     <Td className="text-center">
                       {log.fromStatus && log.toStatus ? (
-                        <div className="flex items-center justify-center gap-2">
-                          <Badge variant="outline" className="text-[10px] font-bold border-slate-200 text-slate-400">{log.fromStatus}</Badge>
-                          <span className="text-slate-300 text-xs">→</span>
-                          <Badge variant="outline" className="text-[10px] font-bold border-emerald-100 text-emerald-600 bg-emerald-50">{log.toStatus}</Badge>
+                        <div className="flex items-center justify-center gap-2 flex-wrap sm:flex-nowrap">
+                          <Badge variant="outline" className="text-[10px] font-bold border-slate-200 text-slate-400 shrink-0">{log.fromStatus}</Badge>
+                          <span className="text-slate-300 text-xs shrink-0">→</span>
+                          <Badge variant="outline" className="text-[10px] font-bold border-emerald-100 text-emerald-600 bg-emerald-50 shrink-0">{log.toStatus}</Badge>
                         </div>
                       ) : (
                         <span className="text-slate-300">—</span>
@@ -204,12 +204,12 @@ const AuditLogPage = () => {
                     </Td>
                     <Td>
                       <div className="flex items-center gap-2">
-                        <div className="w-7 h-7 rounded-full bg-slate-100 flex items-center justify-center text-slate-500">
-                          <User className="w-4 h-4" />
+                        <div className="w-7 h-7 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 shrink-0">
+                          <User className="w-4 h-4 shrink-0" />
                         </div>
                         <div>
-                          <p className="text-xs font-bold text-slate-700">{log.performer}</p>
-                          <p className="text-[10px] font-medium text-slate-400 uppercase tracking-tighter">{log.performerRole}</p>
+                          <p className="text-xs font-bold text-slate-700 whitespace-nowrap">{log.performer}</p>
+                          <p className="text-[10px] font-medium text-slate-400 uppercase tracking-tighter whitespace-nowrap">{log.performerRole}</p>
                         </div>
                       </div>
                     </Td>

@@ -1,11 +1,24 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { Outlet } from 'react-router-dom';
 import AdminSidebar from '../components/admin/AdminSidebar';
 import AdminHeader from '../components/admin/AdminHeader';
 import './AdminLayout.css';
 
 const AdminLayout = () => {
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(window.innerWidth <= 768);
+
+  // Lắng nghe resize để điều chỉnh trạng thái sidebar tự động
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth <= 768) {
+        setSidebarCollapsed(true);
+      } else {
+        setSidebarCollapsed(false);
+      }
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   const handleToggleSidebar = useCallback(() => {
     setSidebarCollapsed(prev => !prev);
@@ -14,7 +27,13 @@ const AdminLayout = () => {
   return (
     <div className="admin-layout">
       {/* Header */}
-      <AdminHeader />
+      <AdminHeader onToggleSidebar={handleToggleSidebar} />
+
+      {/* Mobile Overlay */}
+      <div 
+        className={`admin-layout__overlay ${!sidebarCollapsed ? 'admin-layout__overlay--active' : ''}`}
+        onClick={() => setSidebarCollapsed(true)}
+      />
 
       {/* Sidebar — state managed here */}
       <AdminSidebar

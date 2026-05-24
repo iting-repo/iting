@@ -293,12 +293,12 @@ const ReportManagement = () => {
   return (
     <div className="p-6 space-y-6 bg-slate-50 min-h-screen">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-black text-slate-900 tracking-tight">Báo cáo vi phạm</h1>
           <p className="text-slate-500 text-sm font-medium mt-1">Quản lý và xử lý các báo cáo vi phạm từ người dùng</p>
         </div>
-        <Button variant="outline" className="gap-2 bg-white border-slate-200" onClick={fetchReports}>
+        <Button variant="outline" className="gap-2 bg-white border-slate-200 self-start sm:self-auto" onClick={fetchReports}>
           <Calendar className="w-4 h-4" /> Làm mới dữ liệu
         </Button>
       </div>
@@ -332,20 +332,20 @@ const ReportManagement = () => {
       </div>
 
       {/* Custom Tabs List */}
-      <div className="flex gap-1 p-1 bg-slate-200/50 w-fit rounded-xl border border-slate-200">
+      <div className="flex flex-wrap gap-1 p-1 bg-slate-200/50 w-full sm:w-fit rounded-xl border border-slate-200">
         <button
           onClick={() => setActiveTab("list")}
-          className={`flex items-center gap-2 px-6 py-2 rounded-lg text-sm font-bold transition-all ${activeTab === "list" ? "bg-white text-blue-600 shadow-sm" : "text-slate-500 hover:text-slate-700"
+          className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 sm:px-6 py-2 rounded-lg text-sm font-bold transition-all ${activeTab === "list" ? "bg-white text-blue-600 shadow-sm" : "text-slate-500 hover:text-slate-700"
             }`}
         >
-          <FileText className="w-4 h-4" /> Danh sách báo cáo
+          <FileText className="w-4 h-4" /> Danh sách
         </button>
         <button
           onClick={() => setActiveTab("analytics")}
-          className={`flex items-center gap-2 px-6 py-2 rounded-lg text-sm font-bold transition-all ${activeTab === "analytics" ? "bg-white text-blue-600 shadow-sm" : "text-slate-500 hover:text-slate-700"
+          className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 sm:px-6 py-2 rounded-lg text-sm font-bold transition-all ${activeTab === "analytics" ? "bg-white text-blue-600 shadow-sm" : "text-slate-500 hover:text-slate-700"
             }`}
         >
-          <BarChart3 className="w-4 h-4" /> Phân tích dữ liệu
+          <BarChart3 className="w-4 h-4" /> Phân tích
         </button>
       </div>
 
@@ -416,24 +416,25 @@ const ReportManagement = () => {
 
           {/* Table Container */}
           <Card className="border border-slate-100 shadow-sm !p-0 overflow-hidden bg-white">
-            <div className="flex items-center justify-between border-b border-slate-100 px-6 py-4 bg-white">
+            <div className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-100 px-4 sm:px-6 py-4 bg-white">
               <div className="flex items-center gap-2">
-                <FileText className="text-[#3AB4E6] w-5 h-5" />
+                <FileText className="text-[#3AB4E6] w-5 h-5 shrink-0" />
                 <span className="font-semibold text-slate-800">Danh sách báo cáo vi phạm ({totalElements})</span>
               </div>
-              {loading && <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />}
+              {loading && <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent shrink-0" />}
             </div>
-            <Table
-              headers={[
-                { label: "ID", className: "w-[80px]" },
-                { label: "Đối tượng" },
-                { label: "Loại vi phạm", className: "whitespace-nowrap" },
-                { label: "Mức độ", className: "w-32 whitespace-nowrap" },
-                { label: "Trạng thái", className: "w-36 whitespace-nowrap" },
-                { label: "Ngày tạo", className: "whitespace-nowrap" },
-                { label: "Thao tác", className: "text-right" }
-              ]}
-            >
+            <div className="overflow-x-auto custom-scrollbar">
+              <Table
+                headers={[
+                  { label: "ID", className: "w-[80px] whitespace-nowrap" },
+                  { label: "Đối tượng", className: "min-w-[200px]" },
+                  { label: "Loại vi phạm", className: "whitespace-nowrap min-w-[150px]" },
+                  { label: "Mức độ", className: "w-32 whitespace-nowrap" },
+                  { label: "Trạng thái", className: "w-36 whitespace-nowrap" },
+                  { label: "Ngày tạo", className: "whitespace-nowrap" },
+                  { label: "Thao tác", className: "text-right whitespace-nowrap" }
+                ]}
+              >
               {reports.length === 0 && !loading ? (
                 <tr><Td colSpan={7} className="text-center py-12 text-slate-400 italic">Không tìm thấy báo cáo nào</Td></tr>
               ) : reports.map((r) => {
@@ -447,7 +448,8 @@ const ReportManagement = () => {
                         <Badge variant={TARGET_MAP[r.targetType]?.color || "default"}>{TARGET_MAP[r.targetType]?.label || r.targetType}</Badge>
                         <button
                           onClick={() => handleOpenTargetDetail(r.targetType, r.targetId)}
-                          className="text-sm font-bold text-slate-700 truncate max-w-[250px] hover:text-blue-600 hover:underline transition-all text-left"
+                          className="text-sm font-bold text-slate-700 line-clamp-2 hover:text-blue-600 hover:underline transition-all text-left"
+                          title={r.targetName || `ID: ${r.targetId}`}
                         >
                           {r.targetName || `ID: ${r.targetId}`}
                         </button>
@@ -474,7 +476,8 @@ const ReportManagement = () => {
                   </tr>
                 );
               })}
-            </Table>
+              </Table>
+            </div>
             <Pagination
               currentPage={page}
               totalPages={totalPages}

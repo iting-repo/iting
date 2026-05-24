@@ -125,8 +125,8 @@ const SystemConfig = () => {
     <div className="space-y-6 animate-in fade-in duration-500">
       {/* Page Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-6 rounded-2xl border border-slate-100 shadow-sm">
-        <div className="flex items-center gap-4">
-          <div className="w-12 h-12 bg-sky-50 rounded-xl flex items-center justify-center text-sky-600">
+        <div className="flex items-start sm:items-center gap-4">
+          <div className="w-12 h-12 bg-sky-50 rounded-xl flex items-center justify-center text-sky-600 shrink-0">
              <Database className="w-6 h-6" />
           </div>
           <div>
@@ -134,11 +134,11 @@ const SystemConfig = () => {
             <p className="text-sm text-slate-500 font-medium">Quản lý các thiết lập vận hành toàn hệ thống</p>
           </div>
         </div>
-        <div className="flex gap-3">
-          <Button variant="outline" className="h-11 border-slate-200" onClick={handleReset}>
+        <div className="flex flex-wrap gap-3">
+          <Button variant="outline" className="h-11 border-slate-200 shrink-0" onClick={handleReset}>
             <RotateCcw className="w-4 h-4 mr-2" /> Khôi phục
           </Button>
-          <Button className="h-11 bg-[#3AB4E6] hover:bg-[#2fa0d1] shadow-lg shadow-sky-100" onClick={handleSave}>
+          <Button className="h-11 bg-[#3AB4E6] hover:bg-[#2fa0d1] shadow-lg shadow-sky-100 shrink-0" onClick={handleSave}>
             <Save className="w-4 h-4 mr-2" /> Lưu thay đổi
           </Button>
         </div>
@@ -146,12 +146,12 @@ const SystemConfig = () => {
 
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-8 items-start">
         {/* Sidebar Navigation */}
-        <div className="space-y-2 p-2 bg-white rounded-2xl border border-slate-100 shadow-sm">
+        <div className="flex overflow-x-auto lg:flex-col p-2 bg-white rounded-2xl border border-slate-100 shadow-sm gap-2 lg:gap-0 custom-scrollbar lg:space-y-2 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
           {CONFIG_GROUPS.map((group) => (
             <button
               key={group.key}
               onClick={() => setActiveGroup(group.key)}
-              className={`w-full flex items-center gap-3 px-4 py-3 text-sm rounded-xl transition-all ${
+              className={`shrink-0 lg:w-full flex items-center gap-3 px-4 py-3 text-sm rounded-xl transition-all ${
                 activeGroup === group.key 
                   ? "bg-slate-900 text-white font-bold shadow-lg shadow-slate-200 scale-[1.02]" 
                   : "text-slate-500 hover:bg-slate-50 hover:text-slate-900"
@@ -202,12 +202,12 @@ const SystemConfig = () => {
                   </div>
                 </div>
 
-                <div className="flex items-center justify-between p-4 bg-sky-50/50 rounded-2xl border border-sky-100">
+                <div className="flex items-start sm:items-center justify-between p-4 bg-sky-50/50 rounded-2xl border border-sky-100 gap-4">
                   <div className="space-y-1">
                     <p className="text-sm font-bold text-slate-800">Tự động duyệt công ty đã xác minh</p>
                     <p className="text-xs text-slate-500">Công ty có trạng thái Verified sẽ được duyệt tin tự động</p>
                   </div>
-                  <Switch checked={config.autoApproveVerified} onCheckedChange={(v) => updateConfig("autoApproveVerified", v)} />
+                  <Switch className="shrink-0" checked={config.autoApproveVerified} onCheckedChange={(v) => updateConfig("autoApproveVerified", v)} />
                 </div>
               </CardContent>
             </Card>
@@ -282,12 +282,12 @@ const SystemConfig = () => {
                   { key: "notifyNewJob", label: "Tin tuyển dụng mới", desc: "Nhận mail khi có tin mới chờ duyệt" },
                   { key: "notifyUserReport", label: "Báo cáo vi phạm", desc: "Nhận mail khi người dùng report" },
                 ].map((item) => (
-                  <div key={item.key} className="flex items-center justify-between p-4 rounded-xl border border-slate-100 hover:bg-slate-50/50 transition-colors">
+                  <div key={item.key} className="flex items-start sm:items-center justify-between p-4 rounded-xl border border-slate-100 hover:bg-slate-50/50 transition-colors gap-4">
                     <div className="space-y-1">
                       <p className="text-sm font-bold text-slate-800">{item.label}</p>
                       <p className="text-xs text-slate-500 font-medium">{item.desc}</p>
                     </div>
-                    <Switch checked={config[item.key]} onCheckedChange={(v) => updateConfig(item.key, v)} />
+                    <Switch className="shrink-0" checked={config[item.key]} onCheckedChange={(v) => updateConfig(item.key, v)} />
                   </div>
                 ))}
                 <div className="pt-4 space-y-2">
@@ -335,12 +335,12 @@ const SystemConfig = () => {
                     { key: "requireEmailVerification", label: "Yêu cầu xác minh email", desc: "Bắt buộc ứng viên xác thực mail sau khi tạo tài khoản" },
                     { key: "enable2FA", label: "Xác thực 2 yếu tố (2FA)", desc: "Dành riêng cho các tài khoản Quản trị" },
                   ].map((item) => (
-                    <div key={item.key} className="flex items-center justify-between p-4 rounded-xl border border-slate-100">
+                    <div key={item.key} className="flex items-start sm:items-center justify-between p-4 rounded-xl border border-slate-100 gap-4">
                       <div className="space-y-1">
                         <p className="text-sm font-bold text-slate-800">{item.label}</p>
                         <p className="text-xs text-slate-500 font-medium">{item.desc}</p>
                       </div>
-                      <Switch checked={config[item.key]} onCheckedChange={(v) => updateConfig(item.key, v)} />
+                      <Switch className="shrink-0" checked={config[item.key]} onCheckedChange={(v) => updateConfig(item.key, v)} />
                     </div>
                   ))}
                 </div>
@@ -356,17 +356,17 @@ const SystemConfig = () => {
               </CardHeader>
               <Separator />
               <CardContent className="space-y-6 pt-6">
-                <div className="p-4 bg-rose-50 border border-rose-100 rounded-2xl flex items-center justify-between">
-                  <div className="flex items-center gap-4">
-                    <div className="w-10 h-10 bg-rose-500 text-white rounded-lg flex items-center justify-center shadow-md">
+                <div className="p-4 bg-rose-50 border border-rose-100 rounded-2xl flex items-start sm:items-center justify-between gap-4">
+                  <div className="flex items-start sm:items-center gap-4">
+                    <div className="w-10 h-10 bg-rose-500 text-white rounded-lg flex items-center justify-center shadow-md shrink-0">
                         <AlertCircle className="w-5 h-5" />
                     </div>
                     <div>
                       <p className="text-sm font-bold text-rose-900 uppercase tracking-tight">Chế độ bảo trì</p>
-                      <p className="text-xs text-rose-600 font-medium whitespace-nowrap">Hệ thống sẽ bị ngắt kết nối với người dùng</p>
+                      <p className="text-xs text-rose-600 font-medium mt-0.5">Hệ thống sẽ bị ngắt kết nối với người dùng</p>
                     </div>
                   </div>
-                  <Switch checked={config.maintenanceMode} onCheckedChange={(v) => updateConfig("maintenanceMode", v)} />
+                  <Switch className="shrink-0" checked={config.maintenanceMode} onCheckedChange={(v) => updateConfig("maintenanceMode", v)} />
                 </div>
                 
                 {config.maintenanceMode && (
@@ -382,12 +382,12 @@ const SystemConfig = () => {
                   <h3 className="text-sm font-black uppercase tracking-wider text-slate-400 flex items-center gap-2">
                     <Clock className="w-4 h-4" /> Lịch trình sao lưu (Backup)
                   </h3>
-                  <div className="flex items-center justify-between p-4 border border-slate-100 rounded-xl">
+                  <div className="flex items-start sm:items-center justify-between p-4 border border-slate-100 rounded-xl gap-4">
                     <div className="space-y-0.5">
                       <p className="text-sm font-bold text-slate-800">Bật sao lưu tự động</p>
                       <p className="text-xs text-slate-500 font-medium">Tự động backup database định kỳ</p>
                     </div>
-                    <Switch checked={config.autoBackup} onCheckedChange={(v) => updateConfig("autoBackup", v)} />
+                    <Switch className="shrink-0" checked={config.autoBackup} onCheckedChange={(v) => updateConfig("autoBackup", v)} />
                   </div>
                   
                   {config.autoBackup && (

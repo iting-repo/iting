@@ -200,14 +200,14 @@ const NotificationManagement = () => {
   return (
     <div className="p-6 space-y-6 bg-slate-50 min-h-screen">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-slate-900">Thông báo</h1>
           <p className="text-slate-500 text-sm mt-1">
             Quản lý thông báo hệ thống và gửi thông báo mới
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <Button variant="outline" className="gap-2 bg-white" onClick={markAllRead}>
             <MailOpen className="w-4 h-4" /> Đọc tất cả
           </Button>
@@ -293,19 +293,19 @@ const NotificationManagement = () => {
       <Card className="shadow-sm border border-slate-100">
         <CardContent className="p-4">
           <div className="flex items-center gap-3 flex-wrap">
-            <div className="relative flex-1 min-w-[200px]">
+            <div className="relative flex-1 w-full sm:min-w-[200px]">
               <Filter className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
               <Input
                 placeholder="Tìm kiếm thông báo..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="pl-9 h-10"
+                className="pl-9 h-10 w-full"
               />
             </div>
             <Select
               value={typeFilter}
               onChange={(e) => setTypeFilter(e.target.value)}
-              className="w-[180px] h-10"
+              className="w-full sm:w-[180px] h-10"
             >
               <option value="all">Tất cả loại</option>
               {Object.entries(TYPE_MAP).map(([k, v]) => (
@@ -320,7 +320,7 @@ const NotificationManagement = () => {
 
       {/* Bulk actions */}
       {selected.size > 0 && (
-        <div className="flex items-center gap-3 p-3 bg-blue-50 border border-blue-100 rounded-lg">
+        <div className="flex flex-wrap items-center gap-3 p-3 bg-blue-50 border border-blue-100 rounded-lg">
           <span className="text-sm font-medium text-slate-700">
             Đã chọn {selected.size} thông báo
           </span>
@@ -396,9 +396,9 @@ const NotificationManagement = () => {
                     <TypeIcon className={`w-4 h-4 ${typeInfo.color}`} />
                   </div>
 
-                  <div className="flex-1 min-w-0 pr-4">
-                    <div className="flex justify-between items-start">
-                      <div className="flex flex-col gap-1 pr-6">
+                  <div className="flex-1 min-w-0 pr-2 sm:pr-4">
+                    <div className="flex flex-col sm:flex-row sm:justify-between items-start gap-1">
+                      <div className="flex flex-col gap-1 pr-2 sm:pr-6">
                         <div className="flex items-center gap-2">
                           {!n.isRead && (
                             <div className="w-2 h-2 rounded-full bg-blue-500 shrink-0" />
@@ -415,7 +415,7 @@ const NotificationManagement = () => {
                           {n.content?.split('] ')[1] || n.content}
                         </p>
                       </div>
-                      <span className="text-[11px] font-medium text-slate-400 shrink-0 whitespace-nowrap">
+                      <span className="text-[11px] font-medium text-slate-400 shrink-0 sm:whitespace-nowrap mt-1 sm:mt-0">
                         {n.time ? new Date(n.time).toLocaleString() : "---"}
                       </span>
                     </div>

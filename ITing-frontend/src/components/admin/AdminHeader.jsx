@@ -1,12 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Bell, LogOut } from 'lucide-react';
+import { Bell, LogOut, Menu } from 'lucide-react';
 import { useSelector, useDispatch } from 'react-redux';
 import { logout } from '../../store/auth/authSlice';
 import { useNavigate } from 'react-router-dom';
 import notificationService from '../../services/notificationService';
 import { formatDistanceToNowStrict, parseISO } from 'date-fns';
 
-const AdminHeader = () => {
+const AdminHeader = ({ onToggleSidebar }) => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const { currentUser } = useSelector((state) => state.auth);
@@ -98,14 +98,22 @@ const AdminHeader = () => {
 
   return (
     <div className="fixed top-0 left-0 right-0 h-14 bg-[#1A8FBF] flex items-center justify-between px-6 z-50">
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-2 md:gap-4">
+        {/* Mobile menu toggle */}
+        <button
+          onClick={onToggleSidebar}
+          className="md:hidden p-1.5 mr-1 text-white hover:bg-white/20 rounded-lg transition-colors"
+          aria-label="Menu"
+        >
+          <Menu className="w-5 h-5" />
+        </button>
         <div className="flex items-center gap-2">
           <div className="w-7 h-7 rounded-lg bg-white flex items-center justify-center">
             <span className="text-[#1A8FBF] font-bold text-sm">IT</span>
           </div>
           <span className="text-white font-bold text-lg font-display">Quản trị ITing</span>
         </div>
-        <div className="relative ml-4">
+        <div className="relative ml-4 hidden md:block">
           <input
             className="w-64 h-9 rounded-lg bg-white/20 text-white text-sm pl-9 pr-3 placeholder:text-white/70 focus:outline-none focus:bg-white/30"
             placeholder="Tìm kiếm user, company, job..."

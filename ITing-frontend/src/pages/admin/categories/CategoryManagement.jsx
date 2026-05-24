@@ -309,12 +309,12 @@ const CategoryManagement = () => {
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h2 className="text-2xl font-bold text-gray-800">Quản lý Danh mục</h2>
           <p className="text-gray-500 text-sm mt-1">{cfg.desc}</p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2 self-start sm:self-auto shrink-0">
           <Button variant="outline" onClick={() => fetchCategories(activeTab)} disabled={loading}>
             <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
             Làm mới
@@ -327,7 +327,7 @@ const CategoryManagement = () => {
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-1 bg-gray-100 rounded-xl p-1 w-fit">
+      <div className="flex gap-1 bg-gray-100 rounded-xl p-1 w-full sm:w-fit overflow-x-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
         {tabs.map((tab) => {
           const TabIcon = tab.icon;
           let count = summary[tab.key] || 0;
@@ -351,7 +351,7 @@ const CategoryManagement = () => {
                 setActiveTab(tab.key);
                 setSearch('');
               }}
-              className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+              className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium transition-all shrink-0 ${
                 activeTab === tab.key
                   ? 'bg-white text-gray-900 shadow-sm'
                   : 'text-gray-500 hover:text-gray-700'
@@ -370,18 +370,18 @@ const CategoryManagement = () => {
       </div>
 
       {/* Search + Stats bar */}
-      <div className="flex items-center gap-4 flex-wrap">
-        <div className="relative max-w-sm flex-1">
+      <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+        <div className="relative w-full sm:max-w-sm flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
           <Input
             placeholder={`Tìm ${cfg.label.toLowerCase()}...`}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="pl-9"
+            className="pl-9 w-full"
           />
         </div>
         {!loading && filtered.length > 0 && (
-          <div className="flex items-center gap-3 text-xs text-gray-400">
+          <div className="flex items-center gap-3 text-xs text-gray-400 flex-wrap">
             {activeTab === 'INDUSTRY' && (
               <>
                 <span className="flex items-center gap-1">
@@ -460,7 +460,7 @@ const CategoryManagement = () => {
                   onDragEnter={() => handleDragEnter(index)}
                   onDragEnd={handleDragEnd}
                   onDragOver={(e) => e.preventDefault()}
-                  className={`flex items-center gap-4 p-4 bg-white rounded-2xl border transition-all ${
+                  className={`flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 p-4 bg-white rounded-2xl border transition-all ${
                     draggingId === item.id
                       ? 'shadow-lg ring-2 ring-[#3AB4E6]/30 border-[#3AB4E6]/20 opacity-80 scale-[1.01]'
                       : isSystem
@@ -470,74 +470,66 @@ const CategoryManagement = () => {
                           : 'border-gray-100 shadow-sm hover:shadow-md opacity-50'
                   }`}
                 >
-                  {/* Drag Handle */}
-                  <div className={`${isSystem ? 'text-gray-200 cursor-default' : 'cursor-grab active:cursor-grabbing text-gray-400 hover:text-gray-600'} transition-colors`}>
-                    <GripVertical className="h-5 w-5" />
-                  </div>
-
-                  {/* Type Icon */}
-                  <div className={`h-9 w-9 rounded-lg flex items-center justify-center shrink-0 ${
-                    isSystem ? 'bg-purple-500/10 text-purple-600' : cfg.color
-                  }`}>
-                    {isSystem ? <Shield className="h-4 w-4" /> : <Icon className="h-4 w-4" />}
-                  </div>
-
-                  {/* Info */}
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <h3 className="font-semibold text-gray-800 text-sm truncate">{item.name}</h3>
-                      {isSystem && (
-                        <Badge className="text-[10px] bg-purple-100 text-purple-600 border-purple-200">Hệ thống</Badge>
-                      )}
-                      {!item.active && !isSystem && (
-                        <Badge variant="outline" className="text-xs text-gray-400 border-gray-200">Ẩn</Badge>
-                      )}
+                  <div className="flex items-center gap-3 flex-1 min-w-0">
+                    {/* Drag Handle */}
+                    <div className={`${isSystem ? 'text-gray-200 cursor-default' : 'cursor-grab active:cursor-grabbing text-gray-400 hover:text-gray-600'} transition-colors shrink-0`}>
+                      <GripVertical className="h-5 w-5" />
                     </div>
-                    <p className="text-xs text-gray-400 truncate">
-                      {item.nameEn || '—'}
-                      {isSystem && item.enumValue && (
-                        <span className="ml-2 text-purple-300 font-mono text-[10px]">{item.enumValue}</span>
-                      )}
-                      {!isSystem && item.description && (
-                        <span className="ml-2 text-gray-300">• {item.description}</span>
-                      )}
-                    </p>
+
+                    {/* Type Icon */}
+                    <div className={`h-9 w-9 rounded-lg flex items-center justify-center shrink-0 ${
+                      isSystem ? 'bg-purple-500/10 text-purple-600' : cfg.color
+                    }`}>
+                      {isSystem ? <Shield className="h-4 w-4" /> : <Icon className="h-4 w-4" />}
+                    </div>
+
+                    {/* Info */}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <h3 className="font-semibold text-gray-800 text-sm truncate">{item.name}</h3>
+                        {isSystem && (
+                          <Badge className="text-[10px] bg-purple-100 text-purple-600 border-purple-200 shrink-0">Hệ thống</Badge>
+                        )}
+                        {!item.active && !isSystem && (
+                          <Badge variant="outline" className="text-xs text-gray-400 border-gray-200 shrink-0">Ẩn</Badge>
+                        )}
+                      </div>
+                      <p className="text-xs text-gray-400 truncate">
+                        {item.nameEn || '—'}
+                        {isSystem && item.enumValue && (
+                          <span className="ml-2 text-purple-300 font-mono text-[10px]">{item.enumValue}</span>
+                        )}
+                        {!isSystem && item.description && (
+                          <span className="ml-2 text-gray-300">• {item.description}</span>
+                        )}
+                      </p>
+                    </div>
                   </div>
 
-                  {/* Active Toggle — only for custom items */}
+                  {/* Actions — only for custom items */}
                   {!isSystem && (
-                    <div className="flex items-center gap-1.5">
-                      <span className="text-xs text-gray-400 hidden sm:inline">
-                        {item.active ? 'Hiện' : 'Ẩn'}
-                      </span>
-                      <Switch checked={item.active} onCheckedChange={() => toggleActive(item.id)} />
+                    <div className="flex items-center justify-end gap-2 w-full sm:w-auto border-t sm:border-t-0 border-gray-100 pt-3 sm:pt-0 sm:border-l sm:pl-4 shrink-0">
+                      <div className="flex items-center gap-1.5 mr-2">
+                        <span className="text-xs text-gray-400 hidden sm:inline">
+                          {item.active ? 'Hiện' : 'Ẩn'}
+                        </span>
+                        <Switch checked={item.active} onCheckedChange={() => toggleActive(item.id)} />
+                      </div>
+                      <button
+                        onClick={() => openEdit(item)}
+                        className="p-2 rounded-lg text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-colors"
+                        title="Chỉnh sửa"
+                      >
+                        <Pencil className="h-4 w-4" />
+                      </button>
+                      <button
+                        onClick={() => setDeleteTarget(item)}
+                        className="p-2 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 transition-colors"
+                        title="Xóa"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
                     </div>
-                  )}
-
-                  {/* Edit — only for custom items */}
-                  {!isSystem ? (
-                    <button
-                      onClick={() => openEdit(item)}
-                      className="p-2 rounded-lg text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-colors"
-                      title="Chỉnh sửa"
-                    >
-                      <Pencil className="h-4 w-4" />
-                    </button>
-                  ) : (
-                    <div className="w-10" /> // placeholder for alignment
-                  )}
-
-                  {/* Delete — only for custom items */}
-                  {!isSystem ? (
-                    <button
-                      onClick={() => setDeleteTarget(item)}
-                      className="p-2 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 transition-colors"
-                      title="Xóa"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </button>
-                  ) : (
-                    <div className="w-10" /> // placeholder for alignment
                   )}
                 </div>
               </React.Fragment>

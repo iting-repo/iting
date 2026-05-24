@@ -43,3 +43,24 @@
     padding: 16px;
   }
 }
+
+/* ── Mobile Overlay ────────────────────────────────────────────────────── */
+.admin-layout__overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  top: 56px; /* Below header */
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 30; /* Below sidebar (40) but above main content */
+  opacity: 0;
+  transition: opacity 280ms ease;
+  pointer-events: none;
+}
+
+@media (max-width: 768px) {
+  .admin-layout__overlay--active {
+    display: block;
+    opacity: 1;
+    pointer-events: auto;
+  }
+}

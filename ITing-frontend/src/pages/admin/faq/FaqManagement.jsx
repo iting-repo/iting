@@ -174,7 +174,7 @@ const FaqManagement = () => {
     return (
         <div className="space-y-6 p-6 pb-20 bg-slate-50 min-h-screen">
             {/* Header */}
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
                     <h1 className="text-2xl font-bold text-slate-900 flex items-center gap-2">
                         <HelpCircle className="h-6 w-6 text-[#3AB4E6]" />
@@ -189,7 +189,7 @@ const FaqManagement = () => {
                 </div>
                 <Button
                     onClick={openCreate}
-                    className="flex items-center gap-2 bg-[#1967D2] hover:bg-[#1452A8] text-white shadow-lg shadow-blue-100"
+                    className="flex items-center gap-2 bg-[#1967D2] hover:bg-[#1452A8] text-white shadow-lg shadow-blue-100 self-start sm:self-auto shrink-0"
                 >
                     <Plus className="h-4 w-4" /> Thêm câu hỏi
                 </Button>
@@ -197,8 +197,8 @@ const FaqManagement = () => {
 
             {/* Filters */}
             <Card className="border border-slate-100 shadow-sm">
-                <div className="flex gap-3 p-4">
-                    <div className="relative flex-1 max-w-md">
+                <div className="flex flex-col sm:flex-row gap-3 p-4">
+                    <div className="relative flex-1 w-full sm:max-w-md">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
                         <Input
                             placeholder="Tìm câu hỏi theo tiêu đề..."
@@ -210,7 +210,7 @@ const FaqManagement = () => {
                     <Select
                         value={filterStatus}
                         onChange={(e) => setFilterStatus(e.target.value)}
-                        className="w-44"
+                        className="w-full sm:w-44"
                     >
                         <option value="all">Tất cả trạng thái</option>
                         <option value="published">Đã xuất bản</option>
@@ -244,59 +244,61 @@ const FaqManagement = () => {
                                 key={faq.id}
                                 className="transition-all border border-slate-100 shadow-sm hover:shadow-md"
                             >
-                                <div className="flex items-start gap-4 p-4">
-                                    <div className="h-10 w-10 rounded-lg bg-[#E6F6FD] text-[#3AB4E6] flex items-center justify-center shrink-0 font-bold text-sm">
-                                        #{faq.sortOrder ?? 0}
+                                <div className="flex flex-col sm:flex-row sm:items-start gap-4 p-4">
+                                    <div className="flex items-start gap-4 flex-1 min-w-0">
+                                        <div className="h-10 w-10 rounded-lg bg-[#E6F6FD] text-[#3AB4E6] flex items-center justify-center shrink-0 font-bold text-sm">
+                                            #{faq.sortOrder ?? 0}
+                                        </div>
+
+                                        <div className="flex-1 min-w-0">
+                                            <button
+                                                onClick={() => setExpandedId(isExpanded ? null : faq.id)}
+                                                className="text-left w-full"
+                                            >
+                                                <div className="flex items-center gap-2">
+                                                    <h3 className="font-bold text-slate-800 break-words line-clamp-2">
+                                                        {faq.title}
+                                                    </h3>
+                                                    {isExpanded ? (
+                                                        <ChevronUp className="h-4 w-4 text-slate-400 shrink-0" />
+                                                    ) : (
+                                                        <ChevronDown className="h-4 w-4 text-slate-400 shrink-0" />
+                                                    )}
+                                                </div>
+                                                <div className="text-xs text-slate-500 mt-1.5 flex items-center gap-2 overflow-x-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] whitespace-nowrap">
+                                                    <span className="inline-flex items-center gap-1 shrink-0">
+                                                        <Hash className="h-3 w-3 shrink-0" />
+                                                        /{faq.slug}
+                                                    </span>
+                                                    <span className="shrink-0 text-slate-300">·</span>
+                                                    <span className="inline-flex items-center gap-1 shrink-0">
+                                                        <Calendar className="h-3 w-3 shrink-0" />
+                                                        {formatDate(faq.createdAt)}
+                                                    </span>
+                                                </div>
+                                            </button>
+
+                                            {isExpanded && faq.content && (
+                                                <div
+                                                    className="prose prose-sm max-w-none text-slate-600 mt-3 p-3 bg-slate-50 rounded-lg border border-slate-100 overflow-x-auto break-words"
+                                                    dangerouslySetInnerHTML={{ __html: faq.content }}
+                                                />
+                                            )}
+                                        </div>
                                     </div>
 
-                                    <div className="flex-1 min-w-0">
-                                        <button
-                                            onClick={() => setExpandedId(isExpanded ? null : faq.id)}
-                                            className="text-left w-full"
-                                        >
-                                            <div className="flex items-center gap-2">
-                                                <h3 className="font-bold text-slate-800 break-words">
-                                                    {faq.title}
-                                                </h3>
-                                                {isExpanded ? (
-                                                    <ChevronUp className="h-4 w-4 text-slate-400 shrink-0" />
-                                                ) : (
-                                                    <ChevronDown className="h-4 w-4 text-slate-400 shrink-0" />
-                                                )}
-                                            </div>
-                                            <p className="text-xs text-slate-500 mt-1 flex items-center gap-1.5 flex-wrap">
-                                                <span className="inline-flex items-center gap-1">
-                                                    <Hash className="h-3 w-3" />
-                                                    {faq.slug}
-                                                </span>
-                                                <span>·</span>
-                                                <span className="inline-flex items-center gap-1">
-                                                    <Calendar className="h-3 w-3" />
-                                                    {formatDate(faq.createdAt)}
-                                                </span>
-                                            </p>
-                                        </button>
-
-                                        {isExpanded && faq.content && (
-                                            <div
-                                                className="prose prose-sm max-w-none text-slate-600 mt-3 p-3 bg-slate-50 rounded-lg border border-slate-100"
-                                                dangerouslySetInnerHTML={{ __html: faq.content }}
-                                            />
-                                        )}
-                                    </div>
-
-                                    <div className="flex items-center gap-2 shrink-0">
+                                    <div className="flex items-center justify-between sm:justify-end gap-3 w-full sm:w-auto border-t sm:border-t-0 border-slate-100 pt-3 sm:pt-0 sm:border-l sm:pl-4 mt-2 sm:mt-0 shrink-0">
                                         <button
                                             onClick={() => handleTogglePublish(faq)}
                                             title={faq.published ? "Đổi sang nháp" : "Xuất bản"}
-                                            className="flex items-center"
+                                            className="flex items-center shrink-0"
                                         >
                                             <Badge variant={faq.published ? "success" : "warning"}>
                                                 {faq.published ? "Đã xuất bản" : "Bản nháp"}
                                             </Badge>
                                         </button>
 
-                                        <div className="flex items-center gap-1 ml-2 border-l pl-2 border-slate-100">
+                                        <div className="flex items-center gap-1">
                                             <button
                                                 onClick={() => {
                                                     setPreviewFaq(faq);
@@ -425,15 +427,15 @@ const FaqManagement = () => {
                 {previewFaq && (
                     <div className="space-y-5 max-h-[70vh] overflow-y-auto pr-1">
                         <div>
-                            <h2 className="text-xl font-bold text-slate-900">{previewFaq.title}</h2>
+                            <h2 className="text-xl font-bold text-slate-900 break-words">{previewFaq.title}</h2>
                             <div className="flex items-center gap-3 mt-2 flex-wrap">
-                                <Badge variant={previewFaq.published ? "success" : "warning"}>
+                                <Badge variant={previewFaq.published ? "success" : "warning"} className="shrink-0">
                                     {previewFaq.published ? "Đã xuất bản" : "Bản nháp"}
                                 </Badge>
-                                <span className="text-xs text-slate-500">
+                                <span className="text-xs text-slate-500 shrink-0">
                                     #{previewFaq.sortOrder ?? 0}
                                 </span>
-                                <span className="text-xs text-slate-500">
+                                <span className="text-xs text-slate-500 shrink-0">
                                     {formatDate(previewFaq.createdAt)}
                                 </span>
                             </div>
@@ -441,7 +443,7 @@ const FaqManagement = () => {
 
                         {previewFaq.content && (
                             <div
-                                className="prose prose-sm max-w-none text-slate-700 bg-white p-4 rounded-xl border border-slate-100"
+                                className="prose prose-sm max-w-none text-slate-700 bg-white p-4 rounded-xl border border-slate-100 overflow-x-auto break-words"
                                 dangerouslySetInnerHTML={{ __html: previewFaq.content }}
                             />
                         )}
@@ -450,15 +452,15 @@ const FaqManagement = () => {
                             <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">
                                 Thông tin chi tiết
                             </h4>
-                            <div className="grid grid-cols-2 gap-3 text-sm">
-                                <div className="flex items-center gap-2 text-slate-600">
-                                    <Hash className="h-3.5 w-3.5 text-slate-400" />
-                                    <span className="font-medium">Slug:</span> {previewFaq.slug}
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
+                                <div className="flex items-start sm:items-center gap-2 text-slate-600">
+                                    <Hash className="h-3.5 w-3.5 text-slate-400 shrink-0 mt-0.5 sm:mt-0" />
+                                    <span className="font-medium shrink-0">Slug:</span> <span className="break-all">/{previewFaq.slug}</span>
                                 </div>
                                 <div className="flex items-center gap-2 text-slate-600">
-                                    <Calendar className="h-3.5 w-3.5 text-slate-400" />
-                                    <span className="font-medium">Tạo:</span>{" "}
-                                    {formatDate(previewFaq.createdAt)}
+                                    <Calendar className="h-3.5 w-3.5 text-slate-400 shrink-0" />
+                                    <span className="font-medium shrink-0">Tạo:</span>{" "}
+                                    <span>{formatDate(previewFaq.createdAt)}</span>
                                 </div>
                             </div>
                         </div>

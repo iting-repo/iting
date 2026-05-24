@@ -126,7 +126,7 @@ const BlogManagement = () => {
   return (
     <div className="space-y-6 p-6 pb-20 bg-slate-50 min-h-screen">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-slate-900">Quản lý Blog</h1>
           <p className="text-slate-500 text-sm mt-1">
@@ -136,15 +136,15 @@ const BlogManagement = () => {
             Sắp xếp tự động: Bài nổi bật ⭐ luôn lên đầu, mới nhất hiển thị trước
           </p>
         </div>
-        <Button onClick={openCreate} className="flex items-center gap-2 bg-[#1967D2] hover:bg-[#1452A8] text-white shadow-lg shadow-blue-100">
+        <Button onClick={openCreate} className="flex items-center gap-2 bg-[#1967D2] hover:bg-[#1452A8] text-white shadow-lg shadow-blue-100 self-start sm:self-auto shrink-0">
           <Plus className="h-4 w-4" /> Tạo bài viết
         </Button>
       </div>
 
       {/* Filters */}
       <Card className="border border-slate-100 shadow-sm">
-        <div className="flex gap-3 p-4">
-          <div className="relative flex-1 max-w-md">
+        <div className="flex flex-col sm:flex-row gap-3 p-4">
+          <div className="relative flex-1 w-full sm:max-w-md">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
             <Input
               placeholder="Tìm bài viết theo tiêu đề..."
@@ -153,7 +153,7 @@ const BlogManagement = () => {
               className="pl-9 w-full"
             />
           </div>
-          <Select value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)} className="w-44">
+          <Select value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)} className="w-full sm:w-44">
             <option value="all">Tất cả trạng thái</option>
             <option value="PUBLISHED">Đã xuất bản</option>
             <option value="DRAFT">Bản nháp</option>
@@ -181,47 +181,51 @@ const BlogManagement = () => {
               key={blog.id}
               className="transition-all p-4 border border-slate-100 shadow-sm hover:shadow-md"
             >
-              <div className="flex items-center gap-4">
-                <div className="h-16 w-16 rounded-xl bg-slate-100 flex items-center justify-center shrink-0 overflow-hidden border border-slate-200">
-                  {blog.thumbnailUrl ? (
-                    <img src={blog.thumbnailUrl} alt="" className="h-full w-full object-cover" />
-                  ) : (
-                    <ImageIcon className="h-6 w-6 text-slate-300" />
-                  )}
-                </div>
-
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2">
-                    <h3 className="font-bold text-slate-800 truncate">{blog.title}</h3>
-                    {blog.isFeatured && (
-                      <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold bg-amber-50 text-amber-600 border border-amber-200">
-                        <Star className="h-2.5 w-2.5 fill-amber-400" /> Nổi bật
-                      </span>
+              <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+                <div className="flex items-start sm:items-center gap-4 flex-1 min-w-0">
+                  <div className="h-16 w-16 rounded-xl bg-slate-100 flex items-center justify-center shrink-0 overflow-hidden border border-slate-200">
+                    {blog.thumbnailUrl ? (
+                      <img src={blog.thumbnailUrl} alt="" className="h-full w-full object-cover" />
+                    ) : (
+                      <ImageIcon className="h-6 w-6 text-slate-300" />
                     )}
                   </div>
-                  <p className="text-xs text-slate-500 mt-1 flex items-center gap-1.5 flex-wrap">
-                    <span className="inline-flex items-center gap-1"><Globe className="h-3 w-3" />/{blog.slug}</span>
-                    <span>·</span>
-                    <span className="inline-flex items-center gap-1"><Tag className="h-3 w-3" />{blog.category || "Chưa phân loại"}</span>
-                    <span>·</span>
-                    <span className="inline-flex items-center gap-1"><User className="h-3 w-3" />{blog.author}</span>
-                    <span>·</span>
-                    <span className="inline-flex items-center gap-1"><Calendar className="h-3 w-3" />{formatDate(blog.createdAt)}</span>
-                  </p>
+
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <h3 className="font-bold text-slate-800 line-clamp-2" title={blog.title}>{blog.title}</h3>
+                      {blog.isFeatured && (
+                        <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold bg-amber-50 text-amber-600 border border-amber-200 shrink-0">
+                          <Star className="h-2.5 w-2.5 fill-amber-400" /> Nổi bật
+                        </span>
+                      )}
+                    </div>
+                    <div className="text-xs text-slate-500 mt-1.5 flex items-center gap-2 overflow-x-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] whitespace-nowrap">
+                      <span className="inline-flex items-center gap-1 shrink-0"><Globe className="h-3 w-3" />/{blog.slug}</span>
+                      <span className="shrink-0 text-slate-300">·</span>
+                      <span className="inline-flex items-center gap-1 shrink-0"><Tag className="h-3 w-3" />{blog.category || "Chưa phân loại"}</span>
+                      <span className="shrink-0 text-slate-300">·</span>
+                      <span className="inline-flex items-center gap-1 shrink-0"><User className="h-3 w-3" />{blog.author}</span>
+                      <span className="shrink-0 text-slate-300">·</span>
+                      <span className="inline-flex items-center gap-1 shrink-0"><Calendar className="h-3 w-3" />{formatDate(blog.createdAt)}</span>
+                    </div>
+                  </div>
                 </div>
 
-                <Badge variant={statusColor(blog.status)}>{statusLabel(blog.status)}</Badge>
+                <div className="flex items-center justify-between sm:justify-end gap-3 w-full sm:w-auto border-t sm:border-t-0 border-slate-100 pt-3 sm:pt-0 sm:border-l sm:pl-4 mt-2 sm:mt-0 shrink-0">
+                  <Badge variant={statusColor(blog.status)}>{statusLabel(blog.status)}</Badge>
 
-                <div className="flex items-center gap-1 ml-2 border-l pl-4 border-slate-100">
-                  <button onClick={() => { setPreviewBlog(blog); setPreviewOpen(true); }} className="p-2 text-slate-400 hover:text-[#3AB4E6] hover:bg-blue-50 rounded-lg transition-colors" title="Xem">
-                    <Eye className="h-4 w-4" />
-                  </button>
-                  <button onClick={() => openEdit(blog)} className="p-2 text-slate-400 hover:text-amber-500 hover:bg-amber-50 rounded-lg transition-colors" title="Sửa">
-                    <Pencil className="h-4 w-4" />
-                  </button>
-                  <button onClick={() => setDeleteConfirm(blog)} className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors" title="Xóa">
-                    <Trash2 className="h-4 w-4" />
-                  </button>
+                  <div className="flex items-center gap-1">
+                    <button onClick={() => { setPreviewBlog(blog); setPreviewOpen(true); }} className="p-2 text-slate-400 hover:text-[#3AB4E6] hover:bg-blue-50 rounded-lg transition-colors" title="Xem">
+                      <Eye className="h-4 w-4" />
+                    </button>
+                    <button onClick={() => openEdit(blog)} className="p-2 text-slate-400 hover:text-amber-500 hover:bg-amber-50 rounded-lg transition-colors" title="Sửa">
+                      <Pencil className="h-4 w-4" />
+                    </button>
+                    <button onClick={() => setDeleteConfirm(blog)} className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors" title="Xóa">
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  </div>
                 </div>
               </div>
             </Card>
@@ -324,16 +328,16 @@ const BlogManagement = () => {
             )}
 
             <div>
-              <h2 className="text-xl font-bold text-slate-900">{previewBlog.title}</h2>
+              <h2 className="text-xl font-bold text-slate-900 break-words">{previewBlog.title}</h2>
               <div className="flex items-center gap-3 mt-2 flex-wrap">
-                <Badge variant="info">{previewBlog.category || "Chưa phân loại"}</Badge>
-                <Badge variant={statusColor(previewBlog.status)}>{statusLabel(previewBlog.status)}</Badge>
+                <Badge variant="info" className="shrink-0">{previewBlog.category || "Chưa phân loại"}</Badge>
+                <Badge variant={statusColor(previewBlog.status)} className="shrink-0">{statusLabel(previewBlog.status)}</Badge>
                 {previewBlog.isFeatured && (
-                  <span className="inline-flex items-center gap-1 text-xs font-bold text-amber-600">
+                  <span className="inline-flex items-center gap-1 text-xs font-bold text-amber-600 shrink-0">
                     <Star className="h-3 w-3 fill-amber-400" /> Nổi bật
                   </span>
                 )}
-                <span className="text-xs text-slate-500">{formatDate(previewBlog.createdAt)}</span>
+                <span className="text-xs text-slate-500 shrink-0">{formatDate(previewBlog.createdAt)}</span>
               </div>
             </div>
 
@@ -346,17 +350,17 @@ const BlogManagement = () => {
             {previewBlog.content && (
               <div className="border-t border-slate-100 pt-4">
                 <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">Nội dung</h4>
-                <div className="prose prose-sm max-w-none text-slate-700 bg-white p-4 rounded-xl border border-slate-100" dangerouslySetInnerHTML={{ __html: previewBlog.content }} />
+                <div className="prose prose-sm max-w-none text-slate-700 bg-white p-4 rounded-xl border border-slate-100 overflow-x-auto break-words" dangerouslySetInnerHTML={{ __html: previewBlog.content }} />
               </div>
             )}
 
             <div className="border-t border-slate-100 pt-4">
               <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">Thông tin chi tiết</h4>
-              <div className="grid grid-cols-2 gap-3 text-sm">
-                <div className="flex items-center gap-2 text-slate-600"><Globe className="h-3.5 w-3.5 text-slate-400" /><span className="font-medium">Slug:</span> /{previewBlog.slug}</div>
-                <div className="flex items-center gap-2 text-slate-600"><User className="h-3.5 w-3.5 text-slate-400" /><span className="font-medium">Tác giả:</span> {previewBlog.author}</div>
-                <div className="flex items-center gap-2 text-slate-600"><Calendar className="h-3.5 w-3.5 text-slate-400" /><span className="font-medium">Tạo:</span> {formatDate(previewBlog.createdAt)}</div>
-                <div className="flex items-center gap-2 text-slate-600"><Calendar className="h-3.5 w-3.5 text-slate-400" /><span className="font-medium">Cập nhật:</span> {formatDate(previewBlog.updatedAt)}</div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
+                <div className="flex items-start sm:items-center gap-2 text-slate-600"><Globe className="h-3.5 w-3.5 text-slate-400 shrink-0 mt-0.5 sm:mt-0" /><span className="font-medium shrink-0">Slug:</span> <span className="break-all">/{previewBlog.slug}</span></div>
+                <div className="flex items-start sm:items-center gap-2 text-slate-600"><User className="h-3.5 w-3.5 text-slate-400 shrink-0 mt-0.5 sm:mt-0" /><span className="font-medium shrink-0">Tác giả:</span> <span className="break-words">{previewBlog.author}</span></div>
+                <div className="flex items-center gap-2 text-slate-600"><Calendar className="h-3.5 w-3.5 text-slate-400 shrink-0" /><span className="font-medium shrink-0">Tạo:</span> <span>{formatDate(previewBlog.createdAt)}</span></div>
+                <div className="flex items-center gap-2 text-slate-600"><Calendar className="h-3.5 w-3.5 text-slate-400 shrink-0" /><span className="font-medium shrink-0">Cập nhật:</span> <span>{formatDate(previewBlog.updatedAt)}</span></div>
               </div>
             </div>
 
@@ -364,9 +368,9 @@ const BlogManagement = () => {
               <div className="border-t border-slate-100 pt-4">
                 <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">SEO Meta</h4>
                 <div className="bg-white border border-slate-200 rounded-xl p-4 space-y-2">
-                  <p className="text-sm text-blue-700 font-medium">{previewBlog.seoMetaTitle || previewBlog.title}</p>
-                  <p className="text-xs text-green-700">iting.com/blog/{previewBlog.slug}</p>
-                  <p className="text-xs text-slate-500 leading-relaxed">{previewBlog.seoMetaDescription || "—"}</p>
+                  <p className="text-sm text-blue-700 font-medium break-words">{previewBlog.seoMetaTitle || previewBlog.title}</p>
+                  <p className="text-xs text-green-700 break-all">iting.com/blog/{previewBlog.slug}</p>
+                  <p className="text-xs text-slate-500 leading-relaxed break-words">{previewBlog.seoMetaDescription || "—"}</p>
                 </div>
               </div>
             )}

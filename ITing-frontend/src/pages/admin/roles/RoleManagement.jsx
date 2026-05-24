@@ -210,30 +210,30 @@ const RoleManagement = () => {
       <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
         <div>
           <h2 className="text-xl font-bold text-slate-800 flex items-center gap-2">
-            <FaShieldAlt className="text-[#3AB4E6]" />
-            Phân quyền RBAC
+            <FaShieldAlt className="text-[#3AB4E6] shrink-0" />
+            <span className="break-words">Phân quyền RBAC</span>
           </h2>
           <p className="mt-1 text-sm text-slate-500">
             {SYSTEM_ROLES.length} vai trò · {totalPermissions} quyền hạn · Quản lý theo mô hình Role-Based Access Control
           </p>
         </div>
 
-        <div className="flex items-center gap-2">
-          <div className="relative">
+        <div className="flex items-center gap-2 w-full md:w-auto">
+          <div className="relative w-full">
             <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={13} />
             <input
               type="text"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               placeholder="Tìm quyền hạn..."
-              className="pl-9 pr-4 py-2.5 text-sm border border-slate-200 rounded-xl outline-none focus:border-[#3AB4E6] focus:ring-2 focus:ring-[#3AB4E6]/20 w-64 transition-all"
+              className="pl-9 pr-4 py-2.5 text-sm border border-slate-200 rounded-xl outline-none focus:border-[#3AB4E6] focus:ring-2 focus:ring-[#3AB4E6]/20 w-full sm:w-64 transition-all"
             />
           </div>
         </div>
       </div>
 
       {/* Role Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         {roleStats.map((role) => {
           const c = colorMap[role.color];
           const Icon = role.icon;
@@ -259,13 +259,13 @@ const RoleManagement = () => {
                     <Icon size={22} />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 flex-wrap">
                       <h3 className="font-bold text-slate-800">{role.label}</h3>
-                      <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold text-white ${c.badge}`}>
+                      <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold text-white shrink-0 ${c.badge}`}>
                         {role.key}
                       </span>
                       {role.locked && (
-                        <FaLock size={10} className="text-slate-400" title="Không thể chỉnh sửa" />
+                        <FaLock size={10} className="text-slate-400 shrink-0" title="Không thể chỉnh sửa" />
                       )}
                     </div>
                     <p className="text-xs text-slate-500 mt-1 line-clamp-2">{role.description}</p>
@@ -326,23 +326,23 @@ const RoleManagement = () => {
 
       {/* Permission Matrix */}
       <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
-        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
-          <div className="flex items-center gap-2">
-            <FaShieldAlt className="text-[#3AB4E6]" />
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between px-6 py-4 border-b border-slate-100 gap-3">
+          <div className="flex items-center gap-2 flex-wrap">
+            <FaShieldAlt className="text-[#3AB4E6] shrink-0" />
             <span className="font-bold text-slate-800">Ma trận quyền hạn</span>
             {selectedRole && (
-              <span className="ml-2 px-2.5 py-0.5 bg-sky-50 text-sky-700 text-xs font-bold rounded-full border border-sky-200">
+              <span className="ml-2 px-2.5 py-0.5 bg-sky-50 text-sky-700 text-xs font-bold rounded-full border border-sky-200 shrink-0">
                 Đang lọc: {SYSTEM_ROLES.find(r => r.key === selectedRole)?.label}
               </span>
             )}
             {editingRole && (
-              <span className="ml-2 px-2.5 py-0.5 bg-amber-50 text-amber-700 text-xs font-bold rounded-full border border-amber-200 animate-pulse">
+              <span className="ml-2 px-2.5 py-0.5 bg-amber-50 text-amber-700 text-xs font-bold rounded-full border border-amber-200 animate-pulse shrink-0">
                 ✏️ Đang chỉnh sửa: {SYSTEM_ROLES.find(r => r.key === editingRole)?.label}
               </span>
             )}
           </div>
-          <div className="flex items-center gap-1.5 text-xs text-slate-400">
-            <FaInfoCircle size={12} />
+          <div className="flex items-center gap-1.5 text-xs text-slate-400 shrink-0">
+            <FaInfoCircle size={12} className="shrink-0" />
             {editingRole ? 'Click ô để bật/tắt quyền' : 'Chọn "Chỉnh sửa quyền" để thay đổi'}
           </div>
         </div>
@@ -351,7 +351,7 @@ const RoleManagement = () => {
           <table className="w-full">
             <thead>
               <tr className="bg-slate-50/80">
-                <th className="text-left px-6 py-3 text-xs font-bold text-slate-500 uppercase tracking-wider w-[45%]">
+                <th className="text-left px-6 py-3 text-xs font-bold text-slate-500 uppercase tracking-wider w-[45%] min-w-[200px]">
                   Quyền hạn
                 </th>
                 {SYSTEM_ROLES.map(role => {

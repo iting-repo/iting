@@ -28,7 +28,7 @@
   display: flex;
   flex-direction: column;
   z-index: 40;
-  transition: width var(--sb-transition);
+  transition: width var(--sb-transition), transform var(--sb-transition);
   overflow: hidden;
   border-right: 1px solid var(--sb-border);
 }
@@ -257,14 +257,21 @@
   letter-spacing: 0.04em;
 }
 
-/* ── Responsive: hide sidebar on mobile, show toggle ───────────────────── */
+/* ── Responsive: overlay sidebar on mobile, toggle from header ───────────── */
 @media (max-width: 768px) {
   .adm-sb {
     transform: translateX(-100%);
+    width: 280px;
+    box-shadow: 4px 0 24px rgba(0, 0, 0, 0.4);
   }
+  
+  /* When NOT collapsed on mobile, slide it in */
   .adm-sb:not(.adm-sb--collapsed) {
     transform: translateX(0);
-    width: 240px;
-    box-shadow: 4px 0 24px rgba(0, 0, 0, 0.4);
+  }
+
+  /* Hide the desktop toggle bar inside the sidebar on mobile */
+  .adm-sb__toggle-bar {
+    display: none;
   }
 }

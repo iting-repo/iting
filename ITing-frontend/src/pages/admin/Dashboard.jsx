@@ -283,33 +283,35 @@ const AdminDashboard = () => {
                 <h3 className="font-bold text-gray-800 mb-6 flex items-center gap-2">
                     <span className="w-1 h-6 bg-[#3AB4E6] rounded-full"></span> Hoạt động gần đây
                 </h3>
-                <Table
-                    headers={[
-                        { label: "Tiêu đề công việc" },
-                        { label: "Công ty" },
-                        { label: "Ngày - Giờ" },
-                        { label: "Lượt ứng tuyển" },
-                        { label: "Trạng thái", className: "text-center" }
-                    ]}
-                >
-                    {stats.recentActivities.length > 0 ? stats.recentActivities.map((job, idx) => (
-                        <tr key={idx} className="hover:bg-gray-50/60 transition-colors group">
-                            <Td className="font-bold text-gray-800">{job.jobTitle}</Td>
-                            <Td className="text-gray-600">{job.company}</Td>
-                            <Td className="text-gray-500 whitespace-nowrap">{job.dateTime}</Td>
-                            <Td className="font-medium text-gray-700">{formatter.format(job.applications)}</Td>
-                            <Td className="text-center">
-                                <span className={`px-3 py-1 rounded-full text-xs font-bold ${getStatusColor(job.status)}`}>
-                                    {getStatusLabel(job.status)}
-                                </span>
-                            </Td>
-                        </tr>
-                    )) : (
-                        <tr>
-                            <td colSpan="5" className="py-8 text-center text-gray-400 text-sm">Không có hoạt động gần đây.</td>
-                        </tr>
-                    )}
-                </Table>
+                <div className="overflow-x-auto custom-scrollbar">
+                    <Table
+                        headers={[
+                            { label: "Tiêu đề công việc" },
+                            { label: "Công ty" },
+                            { label: "Ngày - Giờ" },
+                            { label: "Lượt ứng tuyển" },
+                            { label: "Trạng thái", className: "text-center" }
+                        ]}
+                    >
+                        {stats.recentActivities.length > 0 ? stats.recentActivities.map((job, idx) => (
+                            <tr key={idx} className="hover:bg-gray-50/60 transition-colors group">
+                                <Td className="font-bold text-gray-800 whitespace-nowrap">{job.jobTitle}</Td>
+                                <Td className="text-gray-600 whitespace-nowrap">{job.company}</Td>
+                                <Td className="text-gray-500 whitespace-nowrap">{job.dateTime}</Td>
+                                <Td className="font-medium text-gray-700">{formatter.format(job.applications)}</Td>
+                                <Td className="text-center">
+                                    <span className={`px-3 py-1 rounded-full text-xs font-bold whitespace-nowrap ${getStatusColor(job.status)}`}>
+                                        {getStatusLabel(job.status)}
+                                    </span>
+                                </Td>
+                            </tr>
+                        )) : (
+                            <tr>
+                                <td colSpan="5" className="py-8 text-center text-gray-400 text-sm">Không có hoạt động gần đây.</td>
+                            </tr>
+                        )}
+                    </Table>
+                </div>
             </div>
         </div>
     );

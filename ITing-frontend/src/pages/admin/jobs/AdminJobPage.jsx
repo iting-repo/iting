@@ -345,12 +345,12 @@ const AdminJobPage = () => {
 
       {/* Bulk Action Bar */}
       {selectedIds.length > 0 && (
-        <div className="fixed bottom-6 left-1/2 z-[60] flex -translate-x-1/2 items-center gap-6 rounded-2xl border border-sky-100 bg-white px-6 py-4 shadow-2xl animate-in fade-in slide-in-from-bottom-4">
-          <div className="flex items-center gap-3 border-r border-slate-100 pr-6">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-sky-100 text-sky-600">
-              <FaCheckSquare className="h-5 w-5" />
+        <div className="fixed bottom-6 left-1/2 z-[60] flex -translate-x-1/2 items-center gap-4 sm:gap-6 w-[95%] sm:w-auto max-w-[95vw] overflow-x-auto custom-scrollbar rounded-2xl border border-sky-100 bg-white px-4 sm:px-6 py-3 sm:py-4 shadow-2xl animate-in fade-in slide-in-from-bottom-4">
+          <div className="flex items-center gap-2 sm:gap-3 border-r border-slate-100 pr-4 sm:pr-6 shrink-0">
+            <div className="flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-xl bg-sky-100 text-sky-600 shrink-0">
+              <FaCheckSquare className="h-4 w-4 sm:h-5 sm:w-5" />
             </div>
-            <div>
+            <div className="shrink-0">
               <p className="text-sm font-bold text-slate-800">Đã chọn {selectedIds.length} mục</p>
               <button 
                 onClick={() => setSelectedIds([])}
@@ -361,10 +361,10 @@ const AdminJobPage = () => {
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 shrink-0">
             <button
                onClick={() => handleBulkAction('approve')}
-               className="flex items-center gap-2 whitespace-nowrap rounded-xl bg-emerald-500 px-5 py-2.5 text-sm font-bold text-white shadow-lg shadow-emerald-100 transition-all hover:bg-emerald-600 hover:scale-105 active:scale-95"
+               className="flex items-center gap-1.5 sm:gap-2 whitespace-nowrap rounded-xl bg-emerald-500 px-3 sm:px-5 py-2 sm:py-2.5 text-xs sm:text-sm font-bold text-white shadow-lg shadow-emerald-100 transition-all hover:bg-emerald-600 hover:scale-105 active:scale-95"
             >
               <FaCheckCircle className="h-4 w-4" />
               Duyệt
@@ -372,7 +372,7 @@ const AdminJobPage = () => {
             
             <button
                onClick={() => handleBulkAction('reject')}
-               className="flex items-center gap-2 whitespace-nowrap rounded-xl bg-amber-500 px-5 py-2.5 text-sm font-bold text-white shadow-lg shadow-amber-100 transition-all hover:bg-amber-600 hover:scale-105 active:scale-95"
+               className="flex items-center gap-1.5 sm:gap-2 whitespace-nowrap rounded-xl bg-amber-500 px-3 sm:px-5 py-2 sm:py-2.5 text-xs sm:text-sm font-bold text-white shadow-lg shadow-amber-100 transition-all hover:bg-amber-600 hover:scale-105 active:scale-95"
             >
               <FaTimesCircle className="h-4 w-4" />
               Từ chối
@@ -380,7 +380,7 @@ const AdminJobPage = () => {
 
             <button
                onClick={() => handleBulkAction('suspend')}
-               className="flex items-center gap-2 whitespace-nowrap rounded-xl bg-orange-600 px-5 py-2.5 text-sm font-bold text-white shadow-lg shadow-orange-100 transition-all hover:bg-orange-700 hover:scale-105 active:scale-95"
+               className="flex items-center gap-1.5 sm:gap-2 whitespace-nowrap rounded-xl bg-orange-600 px-3 sm:px-5 py-2 sm:py-2.5 text-xs sm:text-sm font-bold text-white shadow-lg shadow-orange-100 transition-all hover:bg-orange-700 hover:scale-105 active:scale-95"
             >
               <FaBan className="h-4 w-4" />
               Đình chỉ
@@ -388,7 +388,7 @@ const AdminJobPage = () => {
 
             <button
                onClick={() => handleBulkAction('close')}
-               className="flex items-center gap-2 whitespace-nowrap rounded-xl bg-slate-700 px-5 py-2.5 text-sm font-bold text-white shadow-lg shadow-slate-100 transition-all hover:bg-slate-800 hover:scale-105 active:scale-95"
+               className="flex items-center gap-1.5 sm:gap-2 whitespace-nowrap rounded-xl bg-slate-700 px-3 sm:px-5 py-2 sm:py-2.5 text-xs sm:text-sm font-bold text-white shadow-lg shadow-slate-100 transition-all hover:bg-slate-800 hover:scale-105 active:scale-95"
             >
               <FaClock className="h-4 w-4" />
               Đóng
@@ -396,7 +396,7 @@ const AdminJobPage = () => {
 
             <button
                onClick={() => handleBulkAction('delete')}
-               className="flex items-center gap-2 whitespace-nowrap rounded-xl bg-red-500 px-5 py-2.5 text-sm font-bold text-white shadow-lg shadow-red-100 transition-all hover:bg-red-600 hover:scale-105 active:scale-95"
+               className="flex items-center gap-1.5 sm:gap-2 whitespace-nowrap rounded-xl bg-red-500 px-3 sm:px-5 py-2 sm:py-2.5 text-xs sm:text-sm font-bold text-white shadow-lg shadow-red-100 transition-all hover:bg-red-600 hover:scale-105 active:scale-95"
             >
               <FaTrashAlt className="h-4 w-4" />
               Xóa
