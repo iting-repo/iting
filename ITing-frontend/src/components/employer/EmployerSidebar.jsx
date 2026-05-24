@@ -13,6 +13,7 @@ import {
   FaCog,
   FaCrown,
   FaTimes,
+  FaChartBar,
 } from "react-icons/fa";
 import { useDispatch, useSelector } from "react-redux";
 import { logout } from "../../store/auth/authSlice";
@@ -111,6 +112,11 @@ const EmployerSidebar = ({ isOpen, onClose }) => {
       name: "Ứng viên yêu thích",
       icon: <FaHeart />,
       badge: favoriteCount,
+    },
+    {
+      path: "/employer/reports",
+      name: "Báo cáo tuyển dụng",
+      icon: <FaChartBar />,
     },
     {
       path: "/employer/services",
