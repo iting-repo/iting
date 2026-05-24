@@ -456,10 +456,11 @@ const HomePage = () => {
                     </p>
 
                     {/* Search Box */}
-                    <div className="bg-white/10 backdrop-blur-md p-3 md:p-2 rounded-3xl md:rounded-full max-w-5xl mx-auto shadow-2xl border border-white/20">
-                        <div className="flex flex-col md:flex-row items-stretch md:items-center gap-3 md:gap-0 md:bg-white md:rounded-full">
+                    <div className="bg-white/10 backdrop-blur-md p-3 lg:p-3 rounded-2xl max-w-5xl mx-auto shadow-2xl border border-white/20">
+                        <div className="flex flex-col lg:flex-row items-stretch gap-3 lg:gap-0 lg:bg-white lg:rounded-xl">
+
                             {/* 1. Category Picker */}
-                            <div className="w-full md:w-[25%] h-14 md:h-14 flex items-center px-5 relative bg-white rounded-xl md:rounded-none md:border-r border-gray-200 hover:bg-gray-50 transition-colors shadow-sm md:shadow-none">
+                            <div className="w-full lg:w-[25%] h-14 flex items-center px-5 relative bg-white rounded-xl lg:rounded-none lg:rounded-l-xl lg:border-r border-gray-200 hover:bg-gray-50 transition-colors shadow-sm lg:shadow-none flex-shrink-0">
                                 <CategoryPicker
                                     value={searchForm.category}
                                     onChange={(val) => handleChangeSearchField('category', val)}
@@ -467,8 +468,8 @@ const HomePage = () => {
                             </div>
 
                             {/* 2. Keyword Input */}
-                            <div className="md:flex-1 w-full md:w-auto h-14 md:h-14 px-5 flex items-center bg-white rounded-xl md:rounded-none md:border-r border-gray-200 hover:bg-gray-50 transition-colors shadow-sm md:shadow-none relative" ref={searchBoxRef}>
-                                <FaSearch className="text-[#3AB4E6] mr-3" size={18} />
+                            <div className="w-full lg:flex-1 h-14 px-5 flex items-center bg-white rounded-xl lg:rounded-none lg:border-r border-gray-200 hover:bg-gray-50 transition-colors shadow-sm lg:shadow-none relative min-w-0" ref={searchBoxRef}>
+                                <FaSearch className="text-[#3AB4E6] absolute left-5 lg:static lg:mr-3 flex-shrink-0" size={18} />
                                 <input
                                     type="text"
                                     data-search-trigger
@@ -482,7 +483,7 @@ const HomePage = () => {
                                             handleSearch();
                                         }
                                     }}
-                                    className="w-full h-full bg-transparent outline-none text-gray-800 text-base placeholder-gray-400 font-medium"
+                                    className="w-full h-full bg-transparent outline-none text-gray-800 text-sm lg:text-base text-center lg:text-left placeholder-gray-400 font-medium min-w-0 px-8 lg:px-0"
                                 />
                                 <SearchOverlay
                                     isOpen={isSearchOverlayOpen}
@@ -504,7 +505,7 @@ const HomePage = () => {
                             </div>
 
                             {/* 3. Location Picker */}
-                            <div className="w-full md:w-[25%] h-14 md:h-14 px-5 flex items-center bg-white rounded-xl md:rounded-none hover:bg-gray-50 transition-colors relative shadow-sm md:shadow-none">
+                            <div className="w-full lg:w-[22%] h-14 px-5 flex items-center bg-white rounded-xl lg:rounded-none hover:bg-gray-50 transition-colors relative shadow-sm lg:shadow-none flex-shrink-0">
                                 <FaMapMarkerAlt className="text-[#3AB4E6] mr-3 flex-shrink-0" size={18} />
                                 <LocationPicker
                                     value={searchForm.location}
@@ -514,20 +515,21 @@ const HomePage = () => {
                             </div>
 
                             {/* 4. Buttons */}
-                            <div className="w-full md:w-auto flex flex-row gap-2 md:gap-0 md:h-14">
+                            <div className="w-full lg:w-auto flex flex-row gap-2 lg:gap-0 h-14 flex-shrink-0">
                                 <button
                                     onClick={handleAiSearch}
-                                    className="flex-1 md:flex-none rounded-xl md:rounded-none bg-gradient-to-r from-blue-800 to-blue-600 hover:from-blue-900 hover:to-blue-700 text-white px-4 md:px-6 py-4 md:py-0 font-bold text-sm md:text-base flex items-center justify-center gap-2 transition-all md:border-r border-white/20 shadow-sm md:shadow-none"
+                                    className="flex-1 lg:flex-none rounded-xl lg:rounded-none bg-gradient-to-r from-blue-800 to-blue-600 hover:from-blue-900 hover:to-blue-700 text-white px-4 lg:px-6 font-bold text-sm lg:text-base flex items-center justify-center gap-2 transition-all lg:border-r border-white/20 shadow-sm lg:shadow-none"
                                 >
-                                    <FaMagic className="text-[#3AB4E6]" /> AI Match
+                                    <FaMagic className="text-[#3AB4E6] flex-shrink-0" /> AI Match
                                 </button>
                                 <button
                                     onClick={handleSearch}
-                                    className="flex-1 md:flex-none rounded-xl md:rounded-none bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 text-white px-4 md:px-8 py-4 md:py-0 font-bold text-sm md:text-base transition-all flex items-center justify-center gap-2 shadow-sm md:shadow-none"
+                                    className="flex-1 lg:flex-none rounded-xl lg:rounded-none lg:rounded-r-xl bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 text-white px-4 lg:px-8 font-bold text-sm lg:text-base transition-all flex items-center justify-center gap-2 shadow-sm lg:shadow-none"
                                 >
                                     Tìm kiếm
                                 </button>
                             </div>
+
                         </div>
                     </div>
 
@@ -1324,25 +1326,25 @@ const HomePage = () => {
                     onClick={() => setIsAiModalOpen(false)}
                 >
                     <div
-                        className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden transform transition-all animate-in fade-in zoom-in duration-300"
+                        className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[85vh] flex flex-col overflow-hidden transform transition-all animate-in fade-in zoom-in duration-300"
                         onClick={(e) => e.stopPropagation()}
                     >
-                        <div className="bg-[#3AB4E6] p-6 text-white relative">
+                        <div className="bg-[#3AB4E6] p-4 md:p-6 text-white relative shrink-0">
                             <button
                                 onClick={() => setIsAiModalOpen(false)}
-                                className="absolute top-4 right-4 text-white/80 hover:text-white transition-colors"
+                                className="absolute top-3 right-3 text-white/80 hover:text-white transition-colors p-2"
                             >
-                                <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                                 </svg>
                             </button>
-                            <h3 className="text-2xl font-bold flex items-center gap-2">
-                                <FaMagic className="text-yellow-300" /> Tìm việc bằng AI
+                            <h3 className="text-xl md:text-2xl font-bold flex items-center gap-2 pr-6">
+                                <FaMagic className="text-yellow-300 shrink-0" /> Tìm việc bằng AI
                             </h3>
-                            <p className="text-blue-50/80 mt-1">Dán nội dung CV của bạn vào đây, AI sẽ tự động phân tích và tìm kiếm công việc phù hợp nhất.</p>
+                            <p className="text-blue-50/80 mt-1 text-sm">Dán nội dung CV của bạn vào đây, AI sẽ tự động phân tích và tìm kiếm công việc phù hợp nhất.</p>
                         </div>
 
-                        <div className="p-6 space-y-4">
+                        <div className="p-4 md:p-6 space-y-4 overflow-y-auto custom-scrollbar flex-1 min-h-0">
                             {/* Tab switcher: paste text vs upload file */}
                             <div className="flex gap-2 bg-gray-100 p-1 rounded-xl">
                                 <button

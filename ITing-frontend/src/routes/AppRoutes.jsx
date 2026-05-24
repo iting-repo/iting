@@ -149,8 +149,11 @@ const AppRoutes = () => {
           </Route>
         </Route>
 
-        <Route path="/messages" element={<PrivateRoute allowedRoles={['CANDIDATE', 'EMPLOYER']} />}>
-          <Route index element={<MessagesPage />} />
+        {/* Add messages route inside MainLayout so it gets Header, but Footer is hidden via MainLayout logic */}
+        <Route element={<MainLayout />}>
+          <Route path="/messages" element={<PrivateRoute allowedRoles={['CANDIDATE', 'EMPLOYER']} />}>
+            <Route index element={<MessagesPage />} />
+          </Route>
         </Route>
 
         <Route path="*" element={<div>Không tìm thấy trang</div>} />

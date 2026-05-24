@@ -523,12 +523,12 @@ const Header = () => {
                       ) : null}
                     </button>
                     {isMessagesOpen && (
-                      <div className="fixed top-20 left-1/2 -translate-x-1/2 w-[95vw] max-w-sm md:absolute md:top-14 md:left-auto md:right-0 md:translate-x-0 md:w-[360px] bg-white text-gray-800 rounded-2xl border border-gray-100 shadow-2xl overflow-hidden z-[120]">
-                        <div className="px-4 py-3 border-b border-gray-100">
+                      <div className="fixed top-20 left-4 right-4 mx-auto w-auto max-w-[360px] md:mx-0 md:absolute md:top-14 md:left-auto md:-right-2 md:w-[360px] md:max-w-none max-h-[80vh] flex flex-col bg-white text-gray-800 rounded-2xl border border-gray-100 shadow-2xl overflow-hidden z-[120]">
+                        <div className="px-4 py-3 border-b border-gray-100 shrink-0">
                           <p className="font-bold text-gray-900">Tin nhắn gần đây</p>
                           <p className="text-xs text-gray-500 mt-0.5">Ưu tiên cuộc trò chuyện chưa đọc</p>
                         </div>
-                        <div className="max-h-80 overflow-y-auto custom-scrollbar">
+                        <div className="overflow-y-auto custom-scrollbar flex-1 min-h-0">
                           {topConversations.length === 0 ? (
                             <p className="text-sm text-gray-500 p-4">Chưa có cuộc trò chuyện.</p>
                           ) : (
@@ -568,7 +568,7 @@ const Header = () => {
                             ))
                           )}
                         </div>
-                        <div className="px-4 py-3 border-t border-gray-100 bg-gray-50">
+                        <div className="px-4 py-3 border-t border-gray-100 bg-gray-50 shrink-0">
                           <button
                             onClick={() => {
                               setIsMessagesOpen(false);
@@ -599,12 +599,12 @@ const Header = () => {
                     </button>
 
                     {isNotifOpen && (
-                      <div className="fixed top-20 left-1/2 -translate-x-1/2 w-[95vw] max-w-sm md:absolute md:top-full md:mt-3 md:left-auto md:right-0 md:translate-x-0 md:w-96 bg-white text-gray-800 rounded-xl shadow-2xl py-2 border border-gray-100 animate-fade-in origin-top md:origin-top-right overflow-hidden z-[120]">
-                        <div className="px-4 py-3 flex items-center justify-between border-b border-gray-100">
+                      <div className="fixed top-20 left-4 right-4 mx-auto w-auto max-w-[360px] md:mx-0 md:absolute md:top-full md:mt-3 md:left-auto md:-right-2 md:w-96 md:max-w-none max-h-[80vh] flex flex-col bg-white text-gray-800 rounded-xl shadow-2xl py-2 border border-gray-100 animate-fade-in origin-top md:origin-top-right overflow-hidden z-[120]">
+                        <div className="px-4 py-3 flex items-center justify-between border-b border-gray-100 shrink-0">
                           <div className="text-sm font-semibold">Thông báo</div>
                           <button onClick={handleMarkAllRead} className="text-xs text-gray-500 hover:underline">Đánh dấu tất cả</button>
                         </div>
-                        <div className={`overflow-y-auto no-scrollbar transition-all duration-300 ${isNotifExpanded ? 'max-h-[60vh] md:max-h-[70vh]' : 'max-h-80'}`}>
+                        <div className={`overflow-y-auto no-scrollbar flex-1 min-h-0 transition-all duration-300 ${isNotifExpanded ? 'max-h-[60vh] md:max-h-[70vh]' : 'max-h-80'}`}>
                           {loadingNotifs && <div className="p-4 text-sm text-gray-500">Đang tải...</div>}
                           {!loadingNotifs && notifications.length === 0 && <div className="p-4 text-sm text-gray-500">Không có thông báo mới</div>}
                           {!loadingNotifs && notifications.map((n) => (
@@ -617,7 +617,7 @@ const Header = () => {
                             </button>
                           ))}
                         </div>
-                        <div className="border-t px-3 py-2 text-center">
+                        <div className="border-t px-3 py-2 text-center shrink-0">
                           <button
                             onClick={isNotifExpanded ? () => { setIsNotifExpanded(false); fetchUnreadNotifications(); } : fetchAllNotifications}
                             className="text-sm text-[#3AB4E6] hover:underline"
@@ -652,8 +652,8 @@ const Header = () => {
                   </button>
 
                   {isDropdownOpen && (
-                    <div className="fixed top-20 left-1/2 -translate-x-1/2 w-[90vw] max-w-[280px] md:absolute md:top-full md:mt-3 md:left-auto md:right-0 md:translate-x-0 md:w-64 bg-white text-gray-800 rounded-xl shadow-2xl py-2 border border-gray-100 animate-fade-in origin-top md:origin-top-right overflow-hidden z-[120]">
-                      <div className="px-4 py-3 border-b border-gray-100 bg-gray-50/50">
+                    <div className="fixed top-20 left-4 right-4 mx-auto w-auto max-w-[280px] md:mx-0 md:absolute md:top-full md:mt-3 md:left-auto md:right-0 md:w-64 md:max-w-none max-h-[80vh] flex flex-col bg-white text-gray-800 rounded-xl shadow-2xl py-2 border border-gray-100 animate-fade-in origin-top md:origin-top-right overflow-hidden z-[120]">
+                      <div className="px-4 py-3 border-b border-gray-100 bg-gray-50/50 shrink-0">
                         <p className="text-sm font-bold text-gray-900 truncate">{displayName}</p>
                         <p className="text-xs text-gray-500 truncate mt-0.5">{role === 'CANDIDATE' ? 'Ứng viên' : 'Nhà tuyển dụng'}</p>
                         {role === 'EMPLOYER' && (
@@ -683,8 +683,10 @@ const Header = () => {
                           </div>
                         )}
                       </div>
-                      {renderDropdownMenu()}
-                      <div className="border-t border-gray-100 mt-1 pt-1">
+                      <div className="overflow-y-auto custom-scrollbar flex-1 min-h-0">
+                        {renderDropdownMenu()}
+                      </div>
+                      <div className="border-t border-gray-100 mt-1 pt-1 shrink-0">
                         <button onClick={handleLogout} className="w-full text-left flex items-center gap-3 px-4 py-2 text-red-600 hover:bg-red-50 text-sm font-medium transition-colors">
                           <FaSignOutAlt /> Đăng xuất
                         </button>

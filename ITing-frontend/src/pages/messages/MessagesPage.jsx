@@ -349,396 +349,279 @@ const MessagesPage = () => {
   const TEXT_MUTED = '#94a3b8';
 
   return (
-    <div style={{
-      position: 'fixed', inset: 0, zIndex: 9999,
-      display: 'flex', flexDirection: 'column',
-      background: BG,
-      fontFamily: "'Inter', 'Segoe UI', sans-serif",
-    }}>
-      {/* ─── Top bar ─── */}
-      <div style={{
-        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        padding: '10px 24px',
-        background: PRIMARY,
-        flexShrink: 0,
-        boxShadow: '0 2px 8px rgba(58,180,230,0.25)',
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <span style={{ fontSize: 22 }}>💬</span>
-          <span style={{ fontSize: 17, fontWeight: 700, color: '#fff', letterSpacing: '-0.3px' }}>
-            Nhắn tin
-          </span>
+    <div className="flex-1 flex overflow-hidden bg-white w-full h-full">
+      
+      {/* ─── Sidebar (Conversations List) ─── */}
+      <aside 
+        className={`w-full md:w-[360px] flex-shrink-0 flex-col bg-white border-r border-slate-200 ${
+          activeConversationId ? 'hidden md:flex' : 'flex'
+        }`}
+      >
+        {/* Header & Search */}
+        <div className="p-4 flex-shrink-0">
+          <h2 className="text-2xl font-bold text-slate-900 mb-4 tracking-tight">Đoạn chat</h2>
+          <div className="relative">
+            <FaSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-sm" />
+            <input
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Tìm kiếm trên Messenger"
+              className="w-full h-10 pl-10 pr-4 bg-slate-100 rounded-full text-[15px] outline-none placeholder-slate-500 focus:bg-slate-200/50 transition-colors"
+            />
+          </div>
         </div>
-        <button
-          onClick={handleExit}
-          style={{
-            display: 'flex', alignItems: 'center', gap: 7,
-            padding: '7px 16px', borderRadius: 8,
-            background: 'rgba(255,255,255,0.2)',
-            border: '1px solid rgba(255,255,255,0.35)',
-            color: '#fff', fontSize: 13, fontWeight: 600,
-            cursor: 'pointer', transition: 'all 0.2s',
-          }}
-          onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.35)'; }}
-          onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.2)'; }}
-        >
-          <FaSignOutAlt size={12} />
-          Thoát
-        </button>
-      </div>
 
-      {/* ─── Main area ─── */}
-      <div style={{ flex: 1, display: 'flex', overflow: 'hidden', minHeight: 0 }}>
-
-        {/* ─── Sidebar ─── */}
-        <aside style={{
-          width: 340, flexShrink: 0,
-          display: 'flex', flexDirection: 'column',
-          background: BG,
-          borderRight: `1px solid ${BORDER}`,
-        }}>
-          {/* Search */}
-          <div style={{ padding: 14, borderBottom: `1px solid ${BORDER}`, flexShrink: 0 }}>
-            <div style={{ position: 'relative' }}>
-              <FaSearch style={{
-                position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)',
-                color: TEXT_MUTED, fontSize: 13,
-              }} />
-              <input
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                placeholder="Tìm kiếm tin nhắn"
-                style={{
-                  width: '100%', height: 40, paddingLeft: 36, paddingRight: 12,
-                  borderRadius: 10, border: `1px solid ${BORDER}`,
-                  background: BG_SECONDARY, color: TEXT_PRIMARY,
-                  fontSize: 13, outline: 'none',
-                  boxSizing: 'border-box',
-                }}
-                onFocus={e => e.currentTarget.style.borderColor = PRIMARY}
-                onBlur={e => e.currentTarget.style.borderColor = BORDER}
-              />
-            </div>
-          </div>
-
-          {/* Conversations list */}
-          <div style={{ flex: 1, overflowY: 'auto', minHeight: 0 }}>
-            {loading ? (
-              <p style={{ padding: 16, color: TEXT_MUTED, fontSize: 13 }}>Đang tải...</p>
-            ) : filteredConversations.length === 0 ? (
-              <p style={{ padding: 16, color: TEXT_MUTED, fontSize: 13 }}>Chưa có cuộc trò chuyện.</p>
-            ) : (
-              filteredConversations.map((conv) => {
-                const active = conv.id === activeConversationId;
-                return (
-                  <button
-                    key={conv.id}
-                    onClick={() => setActiveConversationId(conv.id)}
-                    style={{
-                      width: '100%', textAlign: 'left',
-                      padding: '12px 14px', display: 'block',
-                      borderBottom: `1px solid ${BORDER}`,
-                      background: active ? PRIMARY_LIGHT : BG,
-                      borderLeft: active ? `3px solid ${PRIMARY}` : '3px solid transparent',
-                      cursor: 'pointer', transition: 'all 0.15s',
-                      border: 'none',
-                      borderBottomWidth: 1, borderBottomStyle: 'solid', borderBottomColor: BORDER,
-                      ...(active ? { borderLeft: `3px solid ${PRIMARY}`, background: PRIMARY_LIGHT } : {}),
-                    }}
-                    onMouseEnter={e => { if (!active) e.currentTarget.style.background = BG_SECONDARY; }}
-                    onMouseLeave={e => { if (!active) e.currentTarget.style.background = active ? PRIMARY_LIGHT : BG; }}
-                  >
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 11 }}>
-                      <div style={{ position: 'relative', flexShrink: 0 }}>
-                        <div style={{
-                          width: 44, height: 44, borderRadius: '50%',
-                          background: BG_SECONDARY, overflow: 'hidden',
-                          border: active ? `2px solid ${PRIMARY}` : `2px solid ${BORDER}`,
-                          padding: 2,
-                        }}>
-                          <CompanyLogo
-                            logoUrl={conv.otherParticipantAvatar}
-                            companyId={conv.otherParticipantId}
-                            companyName={conv.otherParticipantName}
-                            className="w-full h-full object-contain"
-                          />
-                        </div>
-                        {onlineUsers[conv.otherParticipantId] && (
-                          <span style={{
-                            position: 'absolute', right: 0, bottom: 0,
-                            width: 12, height: 12, borderRadius: '50%',
-                            background: '#22c55e', border: '2px solid #fff',
-                          }} />
-                        )}
-                      </div>
-                      <div style={{ minWidth: 0, flex: 1 }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', gap: 6 }}>
-                          <p style={{
-                            fontWeight: conv.unreadCount > 0 ? 700 : 500,
-                            color: TEXT_PRIMARY, fontSize: 14, margin: 0,
-                            overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-                          }}>
-                            {conv.otherParticipantName || 'Unknown'}
-                          </p>
-                          <span style={{ fontSize: 11, color: TEXT_MUTED, flexShrink: 0 }}>
-                            {formatChatTime(conv.lastMessageTime)}
-                          </span>
-                        </div>
-                        <p style={{
-                          fontSize: 12, margin: '3px 0 0',
-                          color: conv.unreadCount > 0 ? TEXT_PRIMARY : TEXT_SECONDARY,
-                          fontWeight: conv.unreadCount > 0 ? 600 : 400,
-                          overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-                        }}>
-                          {conv.lastMessageContent || 'Chưa có nội dung'}
-                        </p>
-                      </div>
-                      {conv.unreadCount > 0 && (
-                        <span style={{
-                          minWidth: 20, height: 20, padding: '0 6px',
-                          borderRadius: 10, background: '#ef4444',
-                          color: '#fff', fontSize: 11, fontWeight: 700,
-                          display: 'flex', alignItems: 'center', justifyContent: 'center',
-                          flexShrink: 0,
-                        }}>
-                          {conv.unreadCount}
-                        </span>
-                      )}
+        {/* Conversations list */}
+        <div className="flex-1 overflow-y-auto min-h-0 custom-scrollbar px-2">
+          {loading ? (
+            <p className="p-4 text-slate-400 text-sm text-center">Đang tải...</p>
+          ) : filteredConversations.length === 0 ? (
+            <p className="p-4 text-slate-400 text-sm text-center">Chưa có cuộc trò chuyện.</p>
+          ) : (
+            filteredConversations.map((conv) => {
+              const active = conv.id === activeConversationId;
+              const hasUnread = conv.unreadCount > 0;
+              return (
+                <button
+                  key={conv.id}
+                  onClick={() => setActiveConversationId(conv.id)}
+                  className={`w-full text-left p-2 rounded-lg flex items-center gap-3 transition-colors mb-1 ${
+                    active ? 'bg-sky-50' : 'hover:bg-slate-50'
+                  }`}
+                >
+                  <div className="relative flex-shrink-0">
+                    <div className={`w-14 h-14 rounded-full bg-slate-100 overflow-hidden border-2 flex-shrink-0 ${hasUnread ? 'border-sky-500' : 'border-transparent'}`}>
+                      <CompanyLogo
+                        logoUrl={conv.otherParticipantAvatar}
+                        companyId={conv.otherParticipantId}
+                        companyName={conv.otherParticipantName}
+                        className="w-full h-full object-cover"
+                      />
                     </div>
-                  </button>
-                );
-              })
-            )}
+                    {onlineUsers[conv.otherParticipantId] && (
+                      <span className="absolute right-0 bottom-0 w-3.5 h-3.5 rounded-full bg-green-500 border-2 border-white" />
+                    )}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className={`text-[15px] mb-0.5 truncate ${hasUnread ? 'font-bold text-slate-900' : 'font-medium text-slate-800'}`}>
+                      {conv.otherParticipantName || 'Người dùng'}
+                    </p>
+                    <div className="flex items-center gap-1.5 text-[13px]">
+                      <p className={`truncate ${hasUnread ? 'font-semibold text-slate-900' : 'text-slate-500'}`}>
+                        {conv.lastMessageContent || 'Chưa có nội dung'}
+                      </p>
+                      <span className={`flex-shrink-0 ${hasUnread ? 'font-semibold text-slate-900' : 'text-slate-500'}`}>
+                        · {formatChatTime(conv.lastMessageTime)}
+                      </span>
+                    </div>
+                  </div>
+                  {hasUnread && (
+                    <span className="w-3 h-3 rounded-full bg-sky-500 flex-shrink-0"></span>
+                  )}
+                </button>
+              );
+            })
+          )}
 
-            {/* Applied companies */}
-            {pendingAppliedCompanies.length > 0 && (
-              <div>
-                <div style={{
-                  padding: '8px 14px', background: BG_SECONDARY,
-                  borderTop: `1px solid ${BORDER}`, borderBottom: `1px solid ${BORDER}`,
-                }}>
-                  <p style={{
-                    fontSize: 10, fontWeight: 700, color: TEXT_MUTED,
-                    textTransform: 'uppercase', letterSpacing: '0.08em', margin: 0,
-                  }}>Các công ty đã ứng tuyển</p>
-                </div>
-                {pendingAppliedCompanies.map((comp) => (
-                  <button
-                    key={`applied-${comp.id}`}
-                    onClick={async (e) => {
-                      // Disable button để chặn double-click → 2 conversation trùng
-                      if (e.currentTarget.disabled) return;
-                      e.currentTarget.disabled = true;
-                      try {
-                        // Pre-check: nếu vừa fetch xong đã thấy conversation với company này → vào thẳng
-                        const existing = conversations.find(c => c.otherParticipantId === comp.id);
-                        if (existing) {
-                          setActiveConversationId(existing.id);
-                          return;
-                        }
-                        const sent = await messageService.sendMessage({
-                          receiverId: comp.id,
-                          receiverType: 'COMPANY',
-                          senderType: 'USER',
-                          content: `Chào ${comp.name}, tôi muốn trao đổi về vị trí ${comp.jobTitle || 'đang ứng tuyển'}.`,
-                        });
-                        // Refresh để company chuyển từ "pending" sang danh sách conversation chính
-                        const res = await messageService.getConversations({ page: 0, size: 50 });
-                        setConversations(sortConversationsForInbox(res?.conversations || []));
-                        setActiveConversationId(sent.conversationId);
-                      } catch (err) {
-                        console.error("Initiation failed", err);
-                      } finally {
-                        if (e.currentTarget) e.currentTarget.disabled = false;
+          {/* Applied companies */}
+          {pendingAppliedCompanies.length > 0 && (
+            <div className="mt-4 border-t border-slate-100 pt-2">
+              <p className="px-3 text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
+                Các công ty đã ứng tuyển
+              </p>
+              {pendingAppliedCompanies.map((comp) => (
+                <button
+                  key={`applied-${comp.id}`}
+                  onClick={async (e) => {
+                    if (e.currentTarget.disabled) return;
+                    e.currentTarget.disabled = true;
+                    try {
+                      const existing = conversations.find(c => c.otherParticipantId === comp.id);
+                      if (existing) {
+                        setActiveConversationId(existing.id);
+                        return;
                       }
-                    }}
-                    style={{
-                      width: '100%', textAlign: 'left',
-                      padding: '12px 14px', display: 'block',
-                      borderBottom: `1px solid ${BORDER}`,
-                      background: BG, cursor: 'pointer',
-                      transition: 'all 0.15s', border: 'none',
-                    }}
-                    onMouseEnter={e => e.currentTarget.style.background = BG_SECONDARY}
-                    onMouseLeave={e => e.currentTarget.style.background = BG}
-                  >
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 11 }}>
-                      <div style={{
-                        width: 44, height: 44, borderRadius: '50%',
-                        background: BG_SECONDARY, overflow: 'hidden',
-                        border: `2px solid ${BORDER}`, padding: 2, flexShrink: 0,
-                      }}>
-                        <CompanyLogo
-                          logoUrl={comp.avatar}
-                          companyId={comp.id}
-                          companyName={comp.name}
-                          className="w-full h-full object-contain"
-                        />
-                      </div>
-                      <div style={{ minWidth: 0, flex: 1 }}>
-                        <p style={{ fontWeight: 500, color: TEXT_PRIMARY, fontSize: 14, margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                          {comp.name}
-                        </p>
-                        <p style={{ fontSize: 11, color: PRIMARY, fontStyle: 'italic', margin: '3px 0 0' }}>
-                          Chưa có tin nhắn • Nhấp để liên hệ
-                        </p>
-                      </div>
-                    </div>
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-        </aside>
+                      const sent = await messageService.sendMessage({
+                        receiverId: comp.id,
+                        receiverType: 'COMPANY',
+                        senderType: 'USER',
+                        content: `Chào ${comp.name}, tôi muốn trao đổi về vị trí ${comp.jobTitle || 'đang ứng tuyển'}.`,
+                      });
+                      const res = await messageService.getConversations({ page: 0, size: 50 });
+                      setConversations(sortConversationsForInbox(res?.conversations || []));
+                      setActiveConversationId(sent.conversationId);
+                    } catch (err) {
+                      console.error("Initiation failed", err);
+                    } finally {
+                      if (e.currentTarget) e.currentTarget.disabled = false;
+                    }
+                  }}
+                  className="w-full text-left p-2 rounded-lg flex items-center gap-3 hover:bg-slate-50 transition-colors mb-1"
+                >
+                  <div className="w-12 h-12 rounded-full bg-slate-100 overflow-hidden flex-shrink-0 border border-slate-200">
+                    <CompanyLogo
+                      logoUrl={comp.avatar}
+                      companyId={comp.id}
+                      companyName={comp.name}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-[15px] font-medium text-slate-800 truncate mb-0.5">
+                      {comp.name}
+                    </p>
+                    <p className="text-[13px] text-sky-600 font-medium truncate">
+                      Chưa có tin nhắn · Nhấp để liên hệ
+                    </p>
+                  </div>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      </aside>
 
-        {/* ─── Chat area ─── */}
-        <section style={{
-          flex: 1, display: 'flex', flexDirection: 'column',
-          minWidth: 0, minHeight: 0,
-          background: BG_SECONDARY,
-        }}>
-          {activeConversation ? (
-            <>
-              {/* Chat header */}
-              <div style={{
-                padding: '12px 24px',
-                borderBottom: `1px solid ${BORDER}`,
-                display: 'flex', alignItems: 'center', gap: 12,
-                background: BG, flexShrink: 0,
-              }}>
-                <div style={{
-                  width: 42, height: 42, borderRadius: '50%',
-                  background: BG_SECONDARY, overflow: 'hidden',
-                  border: `2px solid ${PRIMARY}`, padding: 2,
-                }}>
+      {/* ─── Chat area (Main content) ─── */}
+      <section 
+        className={`flex-1 flex-col min-w-0 min-h-0 bg-white ${
+          activeConversationId ? 'flex' : 'hidden md:flex'
+        }`}
+      >
+        {activeConversation ? (
+          <>
+            {/* Chat header */}
+            <div className="flex items-center gap-3 px-4 py-3 border-b border-slate-200 flex-shrink-0 shadow-sm z-10">
+              <button 
+                onClick={() => setActiveConversationId(null)}
+                className="md:hidden w-10 h-10 rounded-full text-sky-500 hover:bg-slate-100 flex items-center justify-center -ml-2 transition-colors flex-shrink-0"
+              >
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+              </button>
+              <div className="w-10 h-10 rounded-full bg-slate-100 overflow-hidden flex-shrink-0">
+                <CompanyLogo
+                  logoUrl={activeConversation.otherParticipantAvatar}
+                  companyId={activeConversation.otherParticipantId}
+                  companyName={activeConversation.otherParticipantName}
+                  className="w-full h-full object-cover"
+                />
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="font-bold text-[15px] text-slate-900 truncate">
+                  {activeConversation.otherParticipantName || 'Người dùng'}
+                </p>
+                <p className={`text-xs truncate ${activeConversation.otherParticipantActive === false ? 'text-red-500 font-medium' : 'text-slate-500'}`}>
+                  {activeConversation.otherParticipantActive === false 
+                    ? '🚫 Tài khoản bị đình chỉ'
+                    : typingUsers[activeConversation.otherParticipantId]
+                      ? 'Đang soạn tin nhắn...'
+                      : (onlineUsers[activeConversation.otherParticipantId]
+                        ? 'Đang hoạt động'
+                        : '')}
+                </p>
+              </div>
+            </div>
+
+            {/* Messages */}
+            <div
+              ref={messagesRef}
+              className="flex-1 overflow-y-auto px-4 py-4 min-h-0 flex flex-col gap-1.5 custom-scrollbar"
+            >
+              <div className="flex flex-col items-center justify-center py-8 text-center px-4">
+                 <div className="w-20 h-20 rounded-full bg-slate-100 overflow-hidden mb-3">
                   <CompanyLogo
                     logoUrl={activeConversation.otherParticipantAvatar}
                     companyId={activeConversation.otherParticipantId}
                     companyName={activeConversation.otherParticipantName}
-                    className="w-full h-full object-contain"
+                    className="w-full h-full object-cover"
                   />
-                </div>
-                <div>
-                  <p style={{ fontWeight: 700, color: TEXT_PRIMARY, fontSize: 15, margin: 0 }}>
-                    {activeConversation.otherParticipantName || 'Unknown'}
-                  </p>
-                  <p style={{ fontSize: 12, margin: '2px 0 0', color: activeConversation.otherParticipantActive === false ? '#EF4444' : TEXT_SECONDARY }}>
-                    {activeConversation.otherParticipantActive === false 
-                      ? '🚫 Tài khoản bị đình chỉ'
-                      : typingUsers[activeConversation.otherParticipantId]
-                        ? '✏️ Đang nhập...'
-                        : (onlineUsers[activeConversation.otherParticipantId]
-                          ? '🟢 Đang hoạt động'
-                          : 'Cuộc trò chuyện')}
-                  </p>
-                </div>
+                 </div>
+                 <h3 className="font-bold text-lg text-slate-900">{activeConversation.otherParticipantName}</h3>
+                 <p className="text-sm text-slate-500 mt-1">Các bạn hiện đã có thể nhắn tin với nhau</p>
               </div>
 
-              {/* Messages */}
-              <div
-                ref={messagesRef}
-                style={{
-                  flex: 1, overflowY: 'auto', padding: '20px 24px',
-                  minHeight: 0, display: 'flex', flexDirection: 'column', gap: 10,
-                }}
-              >
-                {messages.map((msg) => {
-                  const mine = msg.senderId === myActorId;
-                  return (
-                    <div key={msg.id} style={{
-                      display: 'flex',
-                      justifyContent: mine ? 'flex-end' : 'flex-start',
-                    }}>
-                      <div style={{
-                        maxWidth: '70%',
-                        padding: '10px 16px',
-                        borderRadius: mine ? '18px 18px 6px 18px' : '18px 18px 18px 6px',
-                        fontSize: 14, lineHeight: 1.5,
-                        ...(mine
-                          ? { background: PRIMARY, color: '#fff' }
-                          : { background: '#fff', color: TEXT_PRIMARY, border: `1px solid ${BORDER}` }),
-                        boxShadow: '0 1px 3px rgba(0,0,0,0.06)',
-                      }}>
-                        <p style={{ margin: 0, whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
-                          {msg.content}
-                        </p>
-                        <p style={{
-                          fontSize: 10, marginTop: 4, marginBottom: 0,
-                          color: mine ? 'rgba(255,255,255,0.7)' : TEXT_MUTED,
-                        }}>
-                          {formatChatTime(msg.createdAt)}
-                        </p>
+              {messages.map((msg, idx) => {
+                const mine = msg.senderId === myActorId;
+                const prevMsg = idx > 0 ? messages[idx - 1] : null;
+                const nextMsg = idx < messages.length - 1 ? messages[idx + 1] : null;
+                
+                const isFirstInGroup = !prevMsg || prevMsg.senderId !== msg.senderId;
+                const isLastInGroup = !nextMsg || nextMsg.senderId !== msg.senderId;
+
+                let roundedClasses = "";
+                if (mine) {
+                   roundedClasses = `rounded-l-2xl ${isFirstInGroup ? 'rounded-tr-2xl' : 'rounded-tr-[4px]'} ${isLastInGroup ? 'rounded-br-2xl' : 'rounded-br-[4px]'}`;
+                } else {
+                   roundedClasses = `rounded-r-2xl ${isFirstInGroup ? 'rounded-tl-2xl' : 'rounded-tl-[4px]'} ${isLastInGroup ? 'rounded-bl-2xl' : 'rounded-bl-[4px]'}`;
+                }
+
+                return (
+                  <div key={msg.id} className={`flex ${mine ? 'justify-end' : 'justify-start'} ${isFirstInGroup ? 'mt-2' : ''}`}>
+                    <div className="flex items-end gap-2 max-w-[75%] md:max-w-[65%]">
+                      {!mine && isLastInGroup && (
+                        <div className="w-7 h-7 rounded-full bg-slate-100 overflow-hidden flex-shrink-0 mb-[2px]">
+                          <CompanyLogo
+                            logoUrl={activeConversation.otherParticipantAvatar}
+                            companyId={activeConversation.otherParticipantId}
+                            companyName={activeConversation.otherParticipantName}
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+                      )}
+                      {!mine && !isLastInGroup && (
+                        <div className="w-7 flex-shrink-0"></div>
+                      )}
+
+                      <div className={`
+                        px-3.5 py-2 text-[15px] shadow-sm
+                        ${mine ? 'bg-[#0084FF] text-white' : 'bg-[#E4E6EB] text-slate-900'}
+                        ${roundedClasses}
+                      `}>
+                        <p className="whitespace-pre-wrap break-words leading-relaxed">{msg.content}</p>
                       </div>
                     </div>
-                  );
-                })}
-              </div>
-
-              {/* Input */}
-              {activeConversation.otherParticipantActive === false ? (
-                <div style={{
-                  padding: '16px 24px',
-                  borderTop: `1px solid ${BORDER}`,
-                  background: '#FEF2F2',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  flexShrink: 0,
-                }}>
-                  <p style={{ color: '#DC2626', fontSize: 14, margin: 0, fontWeight: 500, textAlign: 'center' }}>
-                    Tài khoản công ty này hiện đang bị đình chỉ. Không thể gửi hoặc nhận tin nhắn mới.
-                  </p>
-                </div>
-              ) : (
-                <form onSubmit={handleSend} style={{
-                  padding: '12px 24px',
-                  borderTop: `1px solid ${BORDER}`,
-                  background: BG,
-                  display: 'flex', alignItems: 'center', gap: 10,
-                  flexShrink: 0,
-                }}>
-                  <input
-                    value={draft}
-                    onChange={(e) => handleDraftChange(e.target.value)}
-                    placeholder="Nhập tin nhắn..."
-                    style={{
-                      flex: 1, height: 42, padding: '0 16px',
-                      borderRadius: 12,
-                      border: `1px solid ${BORDER}`,
-                      background: BG_SECONDARY,
-                      color: TEXT_PRIMARY, fontSize: 14, outline: 'none',
-                      boxSizing: 'border-box',
-                    }}
-                    onFocus={e => e.currentTarget.style.borderColor = PRIMARY}
-                    onBlur={e => e.currentTarget.style.borderColor = BORDER}
-                  />
-                  <button
-                    type="submit"
-                    disabled={!draft.trim() || sending}
-                    style={{
-                      width: 42, height: 42, borderRadius: 12,
-                      background: !draft.trim() || sending ? '#c3e6f5' : PRIMARY,
-                      color: '#fff', border: 'none',
-                      display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      cursor: !draft.trim() || sending ? 'not-allowed' : 'pointer',
-                      transition: 'all 0.2s', flexShrink: 0,
-                    }}
-                  >
-                    <FaPaperPlane size={14} />
-                  </button>
-                </form>
-              )}
-            </>
-          ) : (
-            <div style={{
-              flex: 1, display: 'flex', flexDirection: 'column',
-              alignItems: 'center', justifyContent: 'center',
-              color: TEXT_MUTED, gap: 10,
-            }}>
-              <div style={{ fontSize: 48, opacity: 0.35 }}>💬</div>
-              <p style={{ fontSize: 15, margin: 0 }}>Chọn một cuộc trò chuyện để bắt đầu.</p>
+                  </div>
+                );
+              })}
             </div>
-          )}
-        </section>
-      </div>
+
+            {/* Input Area */}
+            {activeConversation.otherParticipantActive === false ? (
+              <div className="p-4 bg-red-50 border-t border-red-100 flex-shrink-0 text-center">
+                <p className="text-red-600 text-sm font-medium">
+                  Tài khoản này hiện đang bị đình chỉ. Không thể gửi hoặc nhận tin nhắn mới.
+                </p>
+              </div>
+            ) : (
+              <form onSubmit={handleSend} className="p-4 bg-white flex items-center gap-2 flex-shrink-0 pb-6 md:pb-4 border-t border-slate-100">
+                <input
+                  value={draft}
+                  onChange={(e) => handleDraftChange(e.target.value)}
+                  placeholder="Aa"
+                  className="flex-1 h-[40px] px-4 rounded-full bg-slate-100 text-[15px] text-slate-900 outline-none placeholder-slate-500 focus:bg-slate-200/50 transition-colors"
+                />
+                <button
+                  type="submit"
+                  disabled={!draft.trim() || sending}
+                  className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 transition-colors ${
+                    !draft.trim() || sending ? 'text-slate-300' : 'text-[#0084FF] hover:bg-sky-50'
+                  }`}
+                >
+                  <svg viewBox="0 0 24 24" fill="currentColor" className="w-6 h-6">
+                    <path d="M3.4 20.4l17.4.5-17.4-4.5 3-4-3-4 17.4-4.5-17.4.5a2 2 0 0 0-1.8 2.2l1.3 5.4v.8l-1.3 5.4a2 2 0 0 0 1.8 2.2z"></path>
+                  </svg>
+                </button>
+              </form>
+            )}
+          </>
+        ) : (
+          <div className="flex-1 flex flex-col items-center justify-center text-slate-400 gap-4 bg-slate-50/50">
+            <div className="w-24 h-24 rounded-full bg-slate-100 flex items-center justify-center">
+               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" className="w-10 h-10 text-slate-300" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/><circle cx="9" cy="9" r="2"/><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/></svg>
+            </div>
+            <p className="text-lg font-medium text-slate-500">Chọn một cuộc trò chuyện để bắt đầu</p>
+          </div>
+        )}
+      </section>
     </div>
   );
 };

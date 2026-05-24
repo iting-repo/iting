@@ -1,27 +1,28 @@
 import React from 'react';
 import { Outlet } from 'react-router-dom';
 import Header from './Header'; 
-import Footer from './Footer'; // 1. Import Footer
+import Footer from './Footer';
 import { useLocation } from 'react-router-dom';
 
 const MainLayout = () => {
+  const location = useLocation();
+  const isMessagesPage = location.pathname.startsWith('/messages');
+
   return (
-    // Flex-col và min-h-screen giúp footer luôn nằm đáy
-    <div className="flex flex-col min-h-screen bg-gray-50">
+    // Flex-col và min-h-screen giúp footer luôn nằm đáy (hoặc h-screen cho trang messages)
+    <div className={`flex flex-col ${isMessagesPage ? 'h-screen overflow-hidden' : 'min-h-screen'} bg-gray-50`}>
       
       {/* HEADER (Sticky) */}
       <Header />
 
       {/* MAIN CONTENT */}
       {/* flex-grow đẩy footer xuống dưới cùng nếu nội dung ngắn */}
-      <main className="flex-grow">
-        {/* Giữ container nếu muốn nội dung căn giữa, hoặc bỏ đi nếu muốn full-width */}
-        {/* Ở đây mình để full-width cho main, các trang con tự lo phần container của nó thì linh hoạt hơn */}
+      <main className="flex-grow flex flex-col min-h-0 relative">
         <Outlet />
       </main>
 
-      {/* FOOTER (Mới tích hợp) */}
-      <Footer />
+      {/* FOOTER (Ẩn ở trang Messages để full height cho chat) */}
+      {!isMessagesPage && <Footer />}
 
     </div>
   );

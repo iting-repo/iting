@@ -38,7 +38,7 @@ const CategoryPicker = ({ value, onChange }) => {
             const rect = triggerRef.current.getBoundingClientRect();
             const modalWidth = Math.min(480, window.innerWidth - 32);
             let leftPos = rect.left + window.scrollX;
-            
+
             // Adjust left position to prevent overflowing right edge
             if (leftPos + modalWidth > window.innerWidth) {
                 leftPos = window.innerWidth - modalWidth - 16;
