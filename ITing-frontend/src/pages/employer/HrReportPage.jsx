@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState, Component } from "react";
 import { toast } from "sonner";
 import {
     FaFileAlt, FaUserCheck, FaMagic, FaSearch, FaBolt, FaDownload,
@@ -20,6 +20,28 @@ const STAGE_META = {
 const fmtVnd = (n) => (n || 0).toLocaleString("vi-VN") + " ₫";
 const fmtNum = (n) => (n || 0).toLocaleString("vi-VN");
 const toIso = (d) => d.toISOString().slice(0, 10);
+
+/**
+ * ErrorBoundary cho recharts. Recharts có 1 vài edge case crash với React 18
+ * strict mode + many data points → fiber bị mutate-after-freeze. Bị nó kéo
+ * cả page xuống → wrap riêng để chỉ chart hiện fallback, page vẫn dùng được.
+ */
+class ChartErrorBoundary extends Component {
+    constructor(props) { super(props); this.state = { err: null }; }
+    static getDerivedStateFromError(err) { return { err }; }
+    componentDidCatch(err) { console.error("[ChartErrorBoundary]", err); }
+    render() {
+        if (this.state.err) {
+            return (
+                <div className="py-12 text-center text-gray-400 text-sm">
+                    <p className="font-semibold mb-1">Không hiển thị được biểu đồ</p>
+                    <p className="text-xs">Dữ liệu vẫn xem được ở bảng dưới.</p>
+                </div>
+            );
+        }
+        return this.props.children;
+    }
+}
 
 const HrReportPage = () => {
     const today = useMemo(() => new Date(), []);
@@ -267,23 +289,25 @@ const HrReportPage = () => {
                     {/* Time series chart */}
                     <div className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm">
                         <h3 className="text-xs font-black uppercase tracking-widest text-gray-400 mb-4">Hiệu quả tuyển dụng theo thời gian</h3>
-                        {data.timeSeries?.length > 0 ? (
-                            <div style={{ width: "100%", height: 320 }}>
-                                <ResponsiveContainer>
-                                    <LineChart data={data.timeSeries} margin={{ top: 10, right: 20, bottom: 0, left: 0 }}>
-                                        <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
-                                        <XAxis dataKey="date" tick={{ fontSize: 11 }} />
-                                        <YAxis tick={{ fontSize: 11 }} />
-                                        <Tooltip />
-                                        <Legend wrapperStyle={{ fontSize: 12 }} />
-                                        <Line type="monotone" dataKey="applications" name="Hồ sơ tiếp nhận" stroke="#94a3b8" strokeWidth={2} dot={false} />
-                                        <Line type="monotone" dataKey="interviews" name="Phỏng vấn" stroke="#3b82f6" strokeWidth={2} dot={false} />
-                                        <Line type="monotone" dataKey="offers" name="Gửi đề nghị" stroke="#f59e0b" strokeWidth={2} dot={false} />
-                                        <Line type="monotone" dataKey="hired" name="Nhận việc" stroke="#10b981" strokeWidth={2} dot={false} />
-                                        <Line type="monotone" dataKey="rejected" name="Từ chối" stroke="#ef4444" strokeWidth={2} dot={false} />
-                                    </LineChart>
-                                </ResponsiveContainer>
-                            </div>
+                        {Array.isArray(data.timeSeries) && data.timeSeries.length > 0 ? (
+                            <ChartErrorBoundary>
+                                <div style={{ width: "100%", height: 320 }}>
+                                    <ResponsiveContainer width="100%" height={320}>
+                                        <LineChart data={data.timeSeries} margin={{ top: 10, right: 20, bottom: 0, left: 0 }}>
+                                            <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+                                            <XAxis dataKey="date" tick={{ fontSize: 11 }} />
+                                            <YAxis tick={{ fontSize: 11 }} />
+                                            <Tooltip />
+                                            <Legend wrapperStyle={{ fontSize: 12 }} />
+                                            <Line type="monotone" dataKey="applications" name="Hồ sơ tiếp nhận" stroke="#94a3b8" strokeWidth={2} dot={false} isAnimationActive={false} />
+                                            <Line type="monotone" dataKey="interviews" name="Phỏng vấn" stroke="#3b82f6" strokeWidth={2} dot={false} isAnimationActive={false} />
+                                            <Line type="monotone" dataKey="offers" name="Gửi đề nghị" stroke="#f59e0b" strokeWidth={2} dot={false} isAnimationActive={false} />
+                                            <Line type="monotone" dataKey="hired" name="Nhận việc" stroke="#10b981" strokeWidth={2} dot={false} isAnimationActive={false} />
+                                            <Line type="monotone" dataKey="rejected" name="Từ chối" stroke="#ef4444" strokeWidth={2} dot={false} isAnimationActive={false} />
+                                        </LineChart>
+                                    </ResponsiveContainer>
+                                </div>
+                            </ChartErrorBoundary>
                         ) : (
                             <p className="text-sm text-gray-400 py-8 text-center">Chưa có dữ liệu trong khoảng thời gian này.</p>
                         )}
