@@ -366,7 +366,34 @@ const SystemConfig = () => {
                       <p className="text-xs text-rose-600 font-medium mt-0.5">Hệ thống sẽ bị ngắt kết nối với người dùng</p>
                     </div>
                   </div>
-                  <Switch className="shrink-0" checked={config.maintenanceMode} onCheckedChange={(v) => updateConfig("maintenanceMode", v)} />
+                  <Switch
+                    className="shrink-0"
+                    checked={config.maintenanceMode}
+                    onCheckedChange={(v) => {
+                      if (v) {
+                        askConfirm({
+                          title: "Bật chế độ bảo trì",
+                          message: "Khi bật chế độ bảo trì, người dùng thông thường sẽ không thể truy cập website.",
+                          warning: "Chỉ tài khoản Admin mới có thể truy cập hệ thống khi đang bảo trì.",
+                          confirmText: "Bật bảo trì",
+                          variant: "warning",
+                          onConfirm: () => {
+                            updateConfig("maintenanceMode", true);
+                          }
+                        });
+                      } else {
+                        askConfirm({
+                          title: "Tắt chế độ bảo trì",
+                          message: "Hệ thống sẽ hoạt động bình thường trở lại.",
+                          confirmText: "Tắt bảo trì",
+                          variant: "primary",
+                          onConfirm: () => {
+                            updateConfig("maintenanceMode", false);
+                          }
+                        });
+                      }
+                    }}
+                  />
                 </div>
                 
                 {config.maintenanceMode && (
