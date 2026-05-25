@@ -37,9 +37,18 @@ const HrReportPage = () => {
     const [data, setData] = useState(null);
 
     const load = (params = {}) => {
+        const f = params.from ?? from;
+        const t = params.to ?? to;
+        if (f && t && f > t) {
+            toast.error("Ngày bắt đầu phải trước ngày kết thúc");
+            return;
+        }
         setLoading(true);
-        hrReportService.getOverview({ from: params.from ?? from, to: params.to ?? to })
-            .then(setData)
+        hrReportService.getOverview({ from: f, to: t })
+            .then((res) => {
+                setData(res);
+                if (params.showToast) toast.success(`Đã cập nhật báo cáo (${f} → ${t})`);
+            })
             .catch((e) => toast.error(e?.error || "Không tải được báo cáo"))
             .finally(() => setLoading(false));
     };
@@ -48,14 +57,55 @@ const HrReportPage = () => {
 
     const handleExport = () => {
         if (!data) return;
-        const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+        // CSV (UTF-8 BOM) — Excel/Google Sheets mở native, không cần lib ngoài.
+        const lines = [];
+        lines.push(`Báo cáo tuyển dụng,${from} → ${to}`);
+        lines.push("");
+        lines.push("Chỉ số tổng,Giá trị");
+        lines.push(`Hồ sơ tiếp nhận,${data.totalApplications}`);
+        lines.push(`Đã nhận việc,${data.applicationsByStage?.HIRED || 0}`);
+        lines.push(`AI Match đã chạy,${data.aiMatchCount}`);
+        lines.push(`Tin đăng (active/total),${data.activeJobs}/${data.totalJobs}`);
+        lines.push(`Tin đang boost,${data.boostedJobs}`);
+        lines.push(`Credit đã nhận,${data.creditsGranted}`);
+        lines.push(`Credit đã dùng,${data.creditsSpent}`);
+        lines.push(`Credit số dư,${data.creditsBalance}`);
+        lines.push(`Chi phí đã thanh toán (VND),${data.totalSpentVnd}`);
+        lines.push("");
+        lines.push("Trạng thái hồ sơ,Số lượng,Chi phí/CV (VND)");
+        for (const [code, label] of Object.entries({
+            SCREENING: "Đang sàng lọc",
+            PHONE_SCREEN: "Đã liên hệ",
+            INTERVIEW: "Hẹn phỏng vấn",
+            OFFER: "Gửi đề nghị",
+            HIRED: "Đã nhận việc",
+            REJECTED: "Từ chối",
+        })) {
+            lines.push(`${label},${data.applicationsByStage?.[code] || 0},${Math.round(data.costPerStageVnd?.[code] || 0)}`);
+        }
+        lines.push("");
+        lines.push("Hiệu quả theo ngày");
+        lines.push("Ngày,Hồ sơ tiếp nhận,Phỏng vấn,Gửi đề nghị,Nhận việc,Từ chối");
+        for (const p of (data.timeSeries || [])) {
+            lines.push(`${p.date},${p.applications},${p.interviews},${p.offers},${p.hired},${p.rejected}`);
+        }
+        lines.push("");
+        lines.push("Top tin tuyển dụng");
+        lines.push("Tin,Tổng,Hồ sơ mới,Phỏng vấn,Đề nghị,Nhận việc,Từ chối");
+        for (const j of (data.topJobs || [])) {
+            const safeTitle = (j.title || "").replace(/"/g, '""');
+            lines.push(`"${safeTitle}",${j.totalApplications},${j.screening},${j.interview},${j.offer},${j.hired},${j.rejected}`);
+        }
+
+        const csv = "﻿" + lines.join("\n");  // BOM cho Excel detect UTF-8
+        const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
         const url = URL.createObjectURL(blob);
         const a = document.createElement("a");
         a.href = url;
-        a.download = `iting-hr-report_${from}_to_${to}.json`;
+        a.download = `iting-hr-report_${from}_to_${to}.csv`;
         a.click();
         URL.revokeObjectURL(url);
-        toast.success("Đã xuất báo cáo (JSON)");
+        toast.success("Đã xuất báo cáo (CSV — mở bằng Excel)");
     };
 
     const stages = data?.applicationsByStage || {};
@@ -94,11 +144,11 @@ const HrReportPage = () => {
                         className="px-3 py-2 rounded-lg border border-gray-200 bg-white text-sm"
                     />
                     <button
-                        onClick={() => load()}
+                        onClick={() => load({ showToast: true })}
                         disabled={loading}
-                        className="px-4 py-2 rounded-lg bg-[#3AB4E6] text-white text-sm font-semibold hover:bg-[#2A9DCB] disabled:opacity-50"
+                        className="px-4 py-2 rounded-lg bg-[#3AB4E6] text-white text-sm font-semibold hover:bg-[#2A9DCB] disabled:opacity-50 flex items-center gap-2"
                     >
-                        {loading ? <FaSpinner className="animate-spin" /> : "Áp dụng"}
+                        {loading ? <><FaSpinner className="animate-spin" /> Đang tải</> : "Áp dụng"}
                     </button>
                     <button
                         onClick={handleExport}
