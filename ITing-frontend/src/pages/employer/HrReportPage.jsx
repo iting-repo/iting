@@ -25,7 +25,9 @@ const HrReportPage = () => {
     const today = useMemo(() => new Date(), []);
     const defaultFrom = useMemo(() => {
         const d = new Date(today);
-        d.setDate(d.getDate() - 29);
+        // Default 365 ngày — đa số HR seed thưa, 30 ngày dễ ra rỗng. User
+        // có thể chỉnh date picker để zoom lại nếu cần.
+        d.setDate(d.getDate() - 364);
         return d;
     }, [today]);
 

@@ -34,7 +34,9 @@ public class HrReportController {
 
         LocalDate today = LocalDate.now();
         LocalDate effectiveTo = to != null ? to : today;
-        LocalDate effectiveFrom = from != null ? from : effectiveTo.minusDays(30);
+        // Default 365 ngày — đa số HR tự seed dữ liệu thưa, 30 ngày quá hẹp.
+        // User vẫn có thể chọn range hẹp hơn qua date picker.
+        LocalDate effectiveFrom = from != null ? from : effectiveTo.minusDays(365);
         if (effectiveFrom.isAfter(effectiveTo)) {
             LocalDate swap = effectiveFrom;
             effectiveFrom = effectiveTo;
