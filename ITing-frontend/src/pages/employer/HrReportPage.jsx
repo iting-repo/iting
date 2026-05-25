@@ -155,18 +155,35 @@ const HrReportPage = () => {
                     <input
                         type="date"
                         value={from}
-                        onChange={(e) => setFrom(e.target.value)}
+                        max={toIso(today)}
+                        onChange={(e) => {
+                            const v = e.target.value;
+                            // Chặn ngày tương lai — không thể có dữ liệu chưa xảy ra
+                            if (v && v > toIso(today)) {
+                                toast.warning("Không thể chọn ngày tương lai");
+                                return;
+                            }
+                            setFrom(v);
+                        }}
                         className="px-3 py-2 rounded-lg border border-gray-200 bg-white text-sm"
                     />
                     <span className="text-gray-400">→</span>
                     <input
                         type="date"
                         value={to}
-                        onChange={(e) => setTo(e.target.value)}
+                        max={toIso(today)}
+                        onChange={(e) => {
+                            const v = e.target.value;
+                            if (v && v > toIso(today)) {
+                                toast.warning("Không thể chọn ngày tương lai");
+                                return;
+                            }
+                            setTo(v);
+                        }}
                         className="px-3 py-2 rounded-lg border border-gray-200 bg-white text-sm"
                     />
                     <button
-                        onClick={() => load({ showToast: true })}
+                        onClick={() => load({ from, to, showToast: true })}
                         disabled={loading}
                         className="px-4 py-2 rounded-lg bg-[#3AB4E6] text-white text-sm font-semibold hover:bg-[#2A9DCB] disabled:opacity-50 flex items-center gap-2"
                     >
