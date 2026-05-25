@@ -18,6 +18,9 @@ public interface FileUploadService {
 
     String uploadLogo(MultipartFile file);
 
+    /** Upload image dùng trong rich-text editor (blog content). */
+    String uploadBlogImage(MultipartFile file);
+
     /**
      * Upload raw bytes (e.g. generated PDF invoice/report) to the configured storage
      * under a specific key. Returns the public URL where the object can be fetched.

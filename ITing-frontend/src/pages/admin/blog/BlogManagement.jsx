@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { Plus, Pencil, Trash2, Eye, Search, Image as ImageIcon, Star, Calendar, User, Globe, Tag, FileText } from "lucide-react";
 import { Button, Input, Textarea, Badge, Card, Dialog, Select, Switch } from "../../../components";
 import { toast } from "sonner";
@@ -6,16 +6,47 @@ import ReactQuill from "react-quill-new";
 import "react-quill-new/dist/quill.snow.css";
 import adminBlogService from "../../../services/adminBlogService";
 
-const quillModules = {
-  toolbar: [
-    [{ header: [1, 2, 3, false] }],
-    ["bold", "italic", "underline", "strike"],
-    [{ list: "ordered" }, { list: "bullet" }],
-    ["blockquote", "code-block"],
-    ["link", "image"],
-    [{ align: [] }],
-    ["clean"],
-  ],
+/**
+ * Quill image handler: hỗ trợ chọn nhiều file cùng lúc, upload tuần tự
+ * lên backend /api/admin/blogs/upload-image, sau đó insert lần lượt vào
+ * editor tại con trỏ hiện tại.
+ */
+const makeImageHandler = (quillRef) => () => {
+  const input = document.createElement("input");
+  input.type = "file";
+  input.accept = "image/*";
+  input.multiple = true; // <-- cho phép chọn nhiều ảnh
+  input.click();
+
+  input.onchange = async () => {
+    const files = Array.from(input.files || []);
+    if (files.length === 0) return;
+    const editor = quillRef.current?.getEditor?.();
+    if (!editor) return;
+
+    toast.info(`Đang upload ${files.length} ảnh...`);
+    for (const file of files) {
+      try {
+        if (file.size > 5 * 1024 * 1024) {
+          toast.error(`${file.name}: quá 5MB, bỏ qua`);
+          continue;
+        }
+        const res = await adminBlogService.uploadImage(file);
+        const url = res?.url || res?.data?.url;
+        if (!url) {
+          toast.error(`${file.name}: không nhận được URL`);
+          continue;
+        }
+        const range = editor.getSelection(true);
+        editor.insertEmbed(range.index, "image", url, "user");
+        editor.setSelection(range.index + 1, 0);
+      } catch (e) {
+        toast.error(`${file.name}: upload thất bại`);
+        console.error("upload-image failed:", e);
+      }
+    }
+    toast.success("Upload xong");
+  };
 };
 
 const emptyForm = {
@@ -40,6 +71,26 @@ const formatDate = (v) => {
 };
 
 const BlogManagement = () => {
+  const quillRef = useRef(null);
+  const quillModules = useMemo(() => ({
+    toolbar: {
+      container: [
+        [{ header: [1, 2, 3, false] }],
+        ["bold", "italic", "underline", "strike"],
+        [{ list: "ordered" }, { list: "bullet" }],
+        ["blockquote", "code-block"],
+        ["link", "image"],
+        [{ align: [] }],
+        ["clean"],
+      ],
+      handlers: {
+        image: makeImageHandler(quillRef),
+      },
+    },
+    // Cho phép paste/drop ảnh trực tiếp được Quill xử lý — tự upload sẽ
+    // cần thêm clipboard module, ở bản này dùng button toolbar là đủ.
+  }), []);
+
   const [blogs, setBlogs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -273,7 +324,7 @@ const BlogManagement = () => {
           <div className="space-y-1.5">
             <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Nội dung bài viết</label>
             <div className="border border-slate-200 rounded-lg overflow-hidden [&_.ql-toolbar]:border-slate-200 [&_.ql-container]:border-0 [&_.ql-editor]:min-h-[180px]">
-              <ReactQuill theme="snow" value={form.content} onChange={(v) => setForm({ ...form, content: v })} modules={quillModules} placeholder="Viết nội dung bài viết tại đây..." />
+              <ReactQuill ref={quillRef} theme="snow" value={form.content} onChange={(v) => setForm({ ...form, content: v })} modules={quillModules} placeholder="Viết nội dung bài viết tại đây..." />
             </div>
           </div>
 

@@ -3,6 +3,7 @@ package com.iting.jobportal.admin.controller;
 import com.iting.jobportal.admin.dto.request.BlogRequest;
 import com.iting.jobportal.admin.entity.Blog;
 import com.iting.jobportal.admin.service.AdminBlogService;
+import com.iting.jobportal.file.FileUploadService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -10,7 +11,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.util.HashMap;
 import java.util.Map;
 
 @RestController
@@ -20,6 +23,7 @@ import java.util.Map;
 public class AdminBlogController {
 
     private final AdminBlogService adminBlogService;
+    private final FileUploadService fileUploadService;
 
     @GetMapping
     @Operation(summary = "Lấy danh sách bài viết (có search, filter, phân trang, tự động sắp xếp: Nổi bật trước, mới nhất trước)")
@@ -56,5 +60,28 @@ public class AdminBlogController {
     public ResponseEntity<?> deleteBlog(@PathVariable Long id) {
         adminBlogService.deleteBlog(id);
         return ResponseEntity.ok(Map.of("message", "Đã xóa bài viết thành công"));
+    }
+
+    /**
+     * Upload ảnh vào blog (dùng từ rich-text editor — Quill imageHandler).
+     * Trả về { url } để frontend chèn <img src=url> vào content.
+     */
+    @PostMapping(value = "/upload-image", consumes = "multipart/form-data")
+    @Operation(summary = "Upload 1 ảnh cho blog editor, trả về URL")
+    public ResponseEntity<Map<String, String>> uploadImage(@RequestParam("file") MultipartFile file) {
+        if (file == null || file.isEmpty()) {
+            return ResponseEntity.badRequest().body(Map.of("error", "File rỗng"));
+        }
+        String contentType = file.getContentType();
+        if (contentType == null || !contentType.startsWith("image/")) {
+            return ResponseEntity.badRequest().body(Map.of("error", "Chỉ chấp nhận file ảnh"));
+        }
+        if (file.getSize() > 5L * 1024 * 1024) {
+            return ResponseEntity.badRequest().body(Map.of("error", "Ảnh tối đa 5MB"));
+        }
+        String url = fileUploadService.uploadBlogImage(file);
+        Map<String, String> body = new HashMap<>();
+        body.put("url", url);
+        return ResponseEntity.ok(body);
     }
 }

@@ -59,6 +59,11 @@ public class LocalFileUploadServiceImpl implements FileUploadService {
     }
 
     @Override
+    public String uploadBlogImage(MultipartFile file) {
+        return saveFile(file, "blog");
+    }
+
+    @Override
     public String uploadLogo(MultipartFile file) {
         return saveFile(file, "company-logo");
     }
