@@ -76,4 +76,40 @@ public class HrCandidateController {
 
         return ResponseEntity.ok(employerCandidateSearchService.searchByJob(jobId, request));
     }
+
+    /**
+     * Cross-recommendation: gợi ý ứng viên tương tự cho job hiện tại khi HR
+     * đang xem chi tiết 1 application. KHÔNG trừ credit (free, complementary
+     * feature), giới hạn top N nhỏ (default 5).
+     */
+    @org.springframework.web.bind.annotation.GetMapping("/similar-by-job/{jobId}")
+    @PreAuthorize("hasRole('EMPLOYER')")
+    @Operation(summary = "Top N ứng viên tương tự cho job (free, dùng cho cross-rec)")
+    public ResponseEntity<java.util.List<EmployerCandidateSearchResponse>> similarByJob(
+            @PathVariable Long jobId,
+            @CurrentUser Long accountId,
+            @org.springframework.web.bind.annotation.RequestParam(required = false) Long excludeUserId,
+            @org.springframework.web.bind.annotation.RequestParam(defaultValue = "5") int limit) {
+
+        Job job = jobRepository.findById(jobId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Job không tồn tại"));
+        if (job.getPostedByHrId() == null || !job.getPostedByHrId().equals(accountId)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Không có quyền");
+        }
+
+        int safeLimit = Math.min(Math.max(limit, 1), 20);
+        // Lấy nhiều hơn 1 chút để có buffer sau khi filter excludeUserId
+        MatchByJobRequest req = MatchByJobRequest.builder()
+                .page(0)
+                .size(safeLimit + (excludeUserId != null ? 1 : 0))
+                .build();
+        Page<EmployerCandidateSearchResponse> page = employerCandidateSearchService.searchByJob(jobId, req);
+
+        java.util.List<EmployerCandidateSearchResponse> filtered = page.getContent().stream()
+                .filter(c -> excludeUserId == null || !excludeUserId.equals(c.getId()))
+                .limit(safeLimit)
+                .collect(java.util.stream.Collectors.toList());
+
+        return ResponseEntity.ok(filtered);
+    }
 }

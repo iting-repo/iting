@@ -155,7 +155,7 @@ const RegisterPage = () => {
             )}
             <div className="flex items-start text-sm mt-4">
               <input type="checkbox" required className="mt-1 mr-2" />
-              <label className="text-gray-500">Tôi đồng ý với <a href="#" className="text-[#3AB4E6] hover:underline">Điều khoản</a> và <a href="#" className="text-[#3AB4E6] hover:underline">Chính sách bảo mật</a>.</label>
+              <label className="text-gray-500">Tôi đồng ý với <a href="/terms" target="_blank" rel="noopener noreferrer" className="text-[#3AB4E6] hover:underline">Điều khoản</a> và <a href="/privacy" target="_blank" rel="noopener noreferrer" className="text-[#3AB4E6] hover:underline">Chính sách bảo mật</a>.</label>
             </div>
             <button type="submit" disabled={isLoading} className="w-full bg-[#3AB4E6] hover:bg-[#19A4DD] text-white font-bold py-3.5 rounded-lg transition shadow-lg shadow-blue-500/30">{isLoading ? 'Đang xử lý...' : 'Đăng Ký'} <FaArrowRight className="inline ml-1" size={14} /></button>
           </form>
