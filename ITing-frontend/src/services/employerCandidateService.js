@@ -59,4 +59,13 @@ export const employerCandidateService = {
       size,
       locationOverride: locationOverride || null,
     }),
+
+  /**
+   * Cross-recommendation: top N ứng viên tương tự cho 1 job, exclude 1 user.
+   * KHÔNG trừ credit (free). Dùng cho side panel khi HR xem chi tiết application.
+   */
+  similarCandidatesForJob: (jobId, { excludeUserId, limit = 5 } = {}) =>
+    axiosInstance.get(`/hr/candidates/similar-by-job/${jobId}`, {
+      params: { excludeUserId, limit },
+    }),
 };

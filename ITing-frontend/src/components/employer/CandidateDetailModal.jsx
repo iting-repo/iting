@@ -33,7 +33,7 @@ const REJECT_REASONS = [
     { value: 'OTHER', label: 'Lý do khác...' },
 ];
 
-const CandidateDetailModal = ({ candidate, onClose, onStatusUpdate }) => {
+const CandidateDetailModal = ({ candidate, jobId, onClose, onStatusUpdate, onSwitchCandidate }) => {
     const navigate = useNavigate();
     const [isAccepting, setIsAccepting] = useState(false);
     const [showReportModal, setShowReportModal] = useState(false);
@@ -52,6 +52,9 @@ const CandidateDetailModal = ({ candidate, onClose, onStatusUpdate }) => {
     const [isStartingChat, setIsStartingChat] = useState(false);
     const [fullProfile, setFullProfile] = useState(null);
     const [isLoadingProfile, setIsLoadingProfile] = useState(false);
+    // Cross-recommendation: AI gợi ý ứng viên tương tự cho job này
+    const [similarCandidates, setSimilarCandidates] = useState([]);
+    const [loadingSimilar, setLoadingSimilar] = useState(false);
 
     useModalEscape(onClose);
 
@@ -68,8 +71,25 @@ const CandidateDetailModal = ({ candidate, onClose, onStatusUpdate }) => {
         if (candidate) {
             setIsFavorited(favoriteCandidateService.isFavorite(candidate.id));
             fetchFullProfile();
+            fetchSimilar();
         }
-    }, [candidate, onStatusUpdate]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [candidate, onStatusUpdate, jobId]);
+
+    const fetchSimilar = async () => {
+        if (!jobId) return; // chỉ chạy khi modal mở từ context có job (JobApplications)
+        try {
+            setLoadingSimilar(true);
+            const excludeUserId = candidate?.userId || candidate?.applicantId;
+            const res = await employerCandidateService.similarCandidatesForJob(jobId, { excludeUserId, limit: 5 });
+            setSimilarCandidates(Array.isArray(res) ? res : (res?.data || []));
+        } catch (e) {
+            console.warn('Không lấy được gợi ý ứng viên tương tự:', e);
+            setSimilarCandidates([]);
+        } finally {
+            setLoadingSimilar(false);
+        }
+    };
 
     const fetchFullProfile = async () => {
         try {
@@ -452,6 +472,64 @@ const CandidateDetailModal = ({ candidate, onClose, onStatusUpdate }) => {
                                         </div>
                                     ))}
                                 </div>
+                            </section>
+                        )}
+
+                        {/* Cross-recommendation: ứng viên tương tự cho job này (AI, free) */}
+                        {jobId && (
+                            <section>
+                                <h4 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em] mb-3 flex items-center gap-2">
+                                    <span className="w-1.5 h-1.5 bg-indigo-500 rounded-full"></span>
+                                    Ứng viên tương tự cho job này
+                                    <span className="ml-auto text-[10px] font-bold text-indigo-500 normal-case tracking-normal">AI</span>
+                                </h4>
+                                {loadingSimilar ? (
+                                    <p className="text-xs text-slate-400 py-3">Đang phân tích...</p>
+                                ) : similarCandidates.length === 0 ? (
+                                    <p className="text-xs text-slate-400 py-3">Chưa có gợi ý phù hợp.</p>
+                                ) : (
+                                    <ul className="space-y-2">
+                                        {similarCandidates.map((sc) => {
+                                            const pct = sc.score ? Math.round(Math.min(Math.max(sc.score, 0), 1) * 100) : null;
+                                            return (
+                                                <li key={sc.id}>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => onSwitchCandidate?.(sc)}
+                                                        disabled={!onSwitchCandidate}
+                                                        className={`w-full text-left p-3 rounded-xl border border-slate-100 hover:border-indigo-200 hover:bg-indigo-50/40 transition-colors ${!onSwitchCandidate ? 'cursor-default' : ''}`}
+                                                    >
+                                                        <div className="flex items-start gap-3">
+                                                            <div className="w-9 h-9 rounded-lg bg-indigo-50 flex items-center justify-center text-indigo-500 flex-shrink-0">
+                                                                <FaUserTie size={14} />
+                                                            </div>
+                                                            <div className="min-w-0 flex-1">
+                                                                <div className="flex items-center justify-between gap-2">
+                                                                    <p className="font-bold text-sm text-slate-800 truncate">{sc.name || 'Ẩn danh'}</p>
+                                                                    {pct !== null && (
+                                                                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${pct >= 70 ? 'bg-emerald-100 text-emerald-700' : pct >= 40 ? 'bg-amber-100 text-amber-700' : 'bg-slate-100 text-slate-500'}`}>
+                                                                            {pct}%
+                                                                        </span>
+                                                                    )}
+                                                                </div>
+                                                                {sc.title && (
+                                                                    <p className="text-xs text-slate-500 truncate mt-0.5">{sc.title}</p>
+                                                                )}
+                                                                {sc.skills?.length > 0 && (
+                                                                    <div className="flex flex-wrap gap-1 mt-1.5">
+                                                                        {sc.skills.slice(0, 3).map((s) => (
+                                                                            <span key={s} className="text-[10px] px-1.5 py-0.5 bg-blue-50 text-blue-600 rounded">{s}</span>
+                                                                        ))}
+                                                                    </div>
+                                                                )}
+                                                            </div>
+                                                        </div>
+                                                    </button>
+                                                </li>
+                                            );
+                                        })}
+                                    </ul>
+                                )}
                             </section>
                         )}
 

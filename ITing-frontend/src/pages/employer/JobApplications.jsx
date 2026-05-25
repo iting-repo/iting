@@ -224,12 +224,30 @@ const JobApplications = () => {
          {selectedCandidate && (
             <CandidateDetailModal
                candidate={selectedCandidate}
+               jobId={id}
                onClose={() => setSelectedCandidate(null)}
                onStatusUpdate={(appId, newStatus) => {
                   setCandidates(prev => prev.map(c =>
                      c.id === appId ? { ...c, status: newStatus } : c
                   ));
                   setSelectedCandidate(prev => prev ? { ...prev, status: newStatus } : prev);
+               }}
+               onSwitchCandidate={(sc) => {
+                  // Cross-rec: chuyển sang xem ứng viên tương tự. sc là Employer
+                  // candidate response shape — wrap thành application shape ngắn
+                  // gọn để modal tiếp tục hoạt động (không có applyFormId nên
+                  // 1 số action sẽ ẩn).
+                  setSelectedCandidate({
+                     id: sc.id,
+                     userId: sc.id,
+                     applicantName: sc.name,
+                     applicantEmail: sc.email,
+                     jobTitle: selectedCandidate?.jobTitle,
+                     cvUrl: null,
+                     status: 'SUGGESTED',
+                     score: sc.score,
+                     matchReasons: sc.matchReasons,
+                  });
                }}
             />
          )}
