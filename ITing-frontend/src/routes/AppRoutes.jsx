@@ -48,6 +48,8 @@ const BlogPage = lazy(() => import('../pages/public/BlogPage'));
 const BlogDetailPage = lazy(() => import('../pages/public/BlogDetailPage'));
 const AboutPage = lazy(() => import('../pages/public/AboutPage'));
 const ContactPage = lazy(() => import('../pages/public/ContactPage'));
+const PrivacyPage = lazy(() => import('../pages/public/PrivacyPage'));
+const TermsPage = lazy(() => import('../pages/public/TermsPage'));
 const AdminJobPage = lazy(() => import('../pages/admin/jobs/AdminJobPage'));
 const ApprovalManagement = lazy(() => import('../pages/admin/approvals/ApprovalManagement'));
 const AuditLogPage = lazy(() => import('../pages/admin/audit/AuditLogPage'));
@@ -86,6 +88,8 @@ const AppRoutes = () => {
           <Route path="/salary-lookup" element={<SalaryLookupPage />} />
           <Route path="/about" element={<AboutPage />} />
           <Route path="/contact" element={<ContactPage />} />
+          <Route path="/privacy" element={<PrivacyPage />} />
+          <Route path="/terms" element={<TermsPage />} />
         </Route>
 
         <Route element={<PrivateRoute allowedRoles={['ADMIN']} />}>
