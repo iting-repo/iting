@@ -11,6 +11,7 @@ import {
   Input,
   Textarea,
 } from "../../../components/common";
+import Pagination from "../../../components/common/Pagination";
 import { toast } from "sonner";
 import {
   AlertTriangle,
@@ -30,6 +31,8 @@ import {
   Trash2,
   Users,
   Briefcase,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 import notificationService from "../../../services/notificationService";
 
@@ -60,6 +63,10 @@ const NotificationManagement = () => {
   const [search, setSearch] = useState("");
   const [activeTab, setActiveTab] = useState("all");
 
+  // Pagination
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 5;
+
   // Selection & Actions
   const [selected, setSelected] = useState(new Set());
   const [detailOpen, setDetailOpen] = useState(null);
@@ -80,6 +87,13 @@ const NotificationManagement = () => {
     if (search && !n.content.toLowerCase().includes(search.toLowerCase())) return false;
     return true;
   });
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [activeTab, typeFilter, search]);
+
+  const totalPages = Math.ceil(filtered.length / itemsPerPage);
+  const currentData = filtered.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
   const fetchNotifications = async () => {
     try {
@@ -220,7 +234,7 @@ const NotificationManagement = () => {
       {/* Summary Cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <Card className="border-l-4 border-l-blue-500 shadow-sm border-y-0 border-r-0">
-          <CardContent className="p-4 flex items-center gap-3">
+          <CardContent className="!p-4 flex items-center gap-3">
             <div className="p-2.5 rounded-lg bg-blue-50">
               <Bell className="w-5 h-5 text-blue-600" />
             </div>
@@ -231,7 +245,7 @@ const NotificationManagement = () => {
           </CardContent>
         </Card>
         <Card className="border-l-4 border-l-yellow-500 shadow-sm border-y-0 border-r-0">
-          <CardContent className="p-4 flex items-center gap-3">
+          <CardContent className="!p-4 flex items-center gap-3">
             <div className="p-2.5 rounded-lg bg-yellow-50">
               <Mail className="w-5 h-5 text-yellow-600" />
             </div>
@@ -242,7 +256,7 @@ const NotificationManagement = () => {
           </CardContent>
         </Card>
         <Card className="border-l-4 border-l-green-500 shadow-sm border-y-0 border-r-0">
-          <CardContent className="p-4 flex items-center gap-3">
+          <CardContent className="!p-4 flex items-center gap-3">
             <div className="p-2.5 rounded-lg bg-green-50">
               <CheckCircle className="w-5 h-5 text-green-600" />
             </div>
@@ -253,7 +267,7 @@ const NotificationManagement = () => {
           </CardContent>
         </Card>
         <Card className="border-l-4 border-l-slate-400 shadow-sm border-y-0 border-r-0">
-          <CardContent className="p-4 flex items-center gap-3">
+          <CardContent className="!p-4 flex items-center gap-3">
             <div className="p-2.5 rounded-lg bg-slate-100">
               <Settings className="w-5 h-5 text-slate-600" />
             </div>
@@ -366,7 +380,7 @@ const NotificationManagement = () => {
           </div>
         ) : (
           <div className="divide-y divide-slate-100">
-            {filtered.map((n) => {
+            {currentData.map((n) => {
               const typeInfo = getNotiTypeInfo(n.type);
               const TypeIcon = typeInfo.icon;
               return (
@@ -396,9 +410,9 @@ const NotificationManagement = () => {
                     <TypeIcon className={`w-4 h-4 ${typeInfo.color}`} />
                   </div>
 
-                  <div className="flex-1 min-w-0 pr-2 sm:pr-4">
+                  <div className="flex-1 min-w-0 pr-2 sm:pr-4 overflow-hidden">
                     <div className="flex flex-col sm:flex-row sm:justify-between items-start gap-1">
-                      <div className="flex flex-col gap-1 pr-2 sm:pr-6">
+                      <div className="flex flex-col gap-1 pr-2 sm:pr-6 min-w-0 w-full overflow-hidden">
                         <div className="flex items-center gap-2">
                           {!n.isRead && (
                             <div className="w-2 h-2 rounded-full bg-blue-500 shrink-0" />
@@ -411,9 +425,11 @@ const NotificationManagement = () => {
                             {n.content?.split('] ')[0]?.replace('[', '') || "Thông báo hệ thống"}
                           </p>
                         </div>
-                        <p className={`text-sm text-slate-500 line-clamp-1 ${!n.isRead ? "font-medium" : ""}`}>
-                          {n.content?.split('] ')[1] || n.content}
-                        </p>
+                        <div className="w-full overflow-x-auto pb-1 custom-scrollbar">
+                          <p className={`text-sm text-slate-500 whitespace-nowrap ${!n.isRead ? "font-medium" : ""}`}>
+                            {n.content?.split('] ')[1] || n.content}
+                          </p>
+                        </div>
                       </div>
                       <span className="text-[11px] font-medium text-slate-400 shrink-0 sm:whitespace-nowrap mt-1 sm:mt-0">
                         {n.time ? new Date(n.time).toLocaleString() : "---"}
@@ -446,6 +462,17 @@ const NotificationManagement = () => {
               );
             })}
           </div>
+        )}
+        
+        {/* Pagination UI */}
+        {filtered.length > 0 && totalPages > 1 && (
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={setCurrentPage}
+            totalItems={filtered.length}
+            itemsPerPage={itemsPerPage}
+          />
         )}
       </Card>
 
