@@ -73,9 +73,11 @@ __pycache__/
 *.py[cod]
 .pytest_cache/
 
-# Playwright / test artifacts
+# Playwright / test artifacts (match nested)
 playwright-report/
 test-results/
+**/playwright-report/
+**/test-results/
 *.webm
 
 # LaTeX build files
