@@ -5,7 +5,7 @@ import {
     FaCoins, FaChartLine, FaSpinner,
 } from "react-icons/fa";
 import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from "recharts";
-import { Breadcrumb } from "../../components/common";
+import { Breadcrumb, DateRangePicker } from "../../components/common";
 import hrReportService from "../../services/hrReportService";
 
 const STAGE_META = {
@@ -152,35 +152,11 @@ const HrReportPage = () => {
                     </p>
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
-                    <input
-                        type="date"
-                        value={from}
-                        max={toIso(today)}
-                        onChange={(e) => {
-                            const v = e.target.value;
-                            // Chặn ngày tương lai — không thể có dữ liệu chưa xảy ra
-                            if (v && v > toIso(today)) {
-                                toast.warning("Không thể chọn ngày tương lai");
-                                return;
-                            }
-                            setFrom(v);
-                        }}
-                        className="px-3 py-2 rounded-lg border border-gray-200 bg-white text-sm"
-                    />
-                    <span className="text-gray-400">→</span>
-                    <input
-                        type="date"
-                        value={to}
-                        max={toIso(today)}
-                        onChange={(e) => {
-                            const v = e.target.value;
-                            if (v && v > toIso(today)) {
-                                toast.warning("Không thể chọn ngày tương lai");
-                                return;
-                            }
-                            setTo(v);
-                        }}
-                        className="px-3 py-2 rounded-lg border border-gray-200 bg-white text-sm"
+                    <DateRangePicker
+                        from={from}
+                        to={to}
+                        onChange={({ from: f, to: t }) => { setFrom(f); setTo(t); }}
+                        blockFuture
                     />
                     <button
                         onClick={() => load({ from, to, showToast: true })}
