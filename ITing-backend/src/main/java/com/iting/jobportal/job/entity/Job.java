@@ -29,7 +29,10 @@ public class Job {
     private Long id;
 
     // ===== RELATION =====
-    @ManyToOne(fetch = FetchType.LAZY)
+    // EAGER: hầu hết view (admin list, dashboard, public job card) cần
+    // company.name + logo. Lazy thường rơi vào LazyInit khi Jackson serialize
+    // ngoài tx. Trade-off: thêm 1 JOIN khi load Job — acceptable cho use case.
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "Company_id", nullable = false)
     private Company company;
 
