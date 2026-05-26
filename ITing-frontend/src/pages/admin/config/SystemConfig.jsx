@@ -30,6 +30,7 @@ import { ConfirmModal } from "../../../components/common";
 import useConfirm from "../../../hooks/useConfirm";
 import { toast } from "sonner";
 import adminConfigService from "../../../services/adminConfigService";
+import backupService from "../../../services/backupService";
 
 const CONFIG_GROUPS = [
   { key: "general", label: "Chung", icon: <Globe className="w-4 h-4" />, description: "Cài đặt chung của hệ thống" },
@@ -47,6 +48,7 @@ const SystemConfig = () => {
   const [emailTestStatus, setEmailTestStatus] = useState(null);
   const [config, setConfig] = useState(null);
   const [confirm, askConfirm, resetConfirm] = useConfirm();
+  const [creatingBackup, setCreatingBackup] = useState(false);
 
   useEffect(() => {
     const fetchSettings = async () => {
@@ -129,6 +131,18 @@ const SystemConfig = () => {
       toast.error(error.message || "Kết nối SMTP thất bại. Vui lòng kiểm tra lại cấu hình.");
     } finally {
       setTestingEmail(false);
+    }
+  };
+
+  const handleCreateBackup = async () => {
+    setCreatingBackup(true);
+    try {
+      const result = await backupService.createBackup();
+      toast.success(`Backup đã được tạo thành công! Snapshot: ${result.snapshotId}`);
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Không thể tạo backup. Vui lòng thử lại.");
+    } finally {
+      setCreatingBackup(false);
     }
   };
 
@@ -447,8 +461,20 @@ const SystemConfig = () => {
                       </div>
                     </div>
                   )}
-                  <Button variant="outline" className="w-full h-12 md:w-auto px-8 border-slate-200 text-slate-700 font-bold uppercase tracking-widest text-[10px]">
-                     Tạo Backup ngay bây giờ
+                  <Button
+                    variant="outline"
+                    className="w-full h-12 md:w-auto px-8 border-slate-200 text-slate-700 font-bold uppercase tracking-widest text-[10px]"
+                    onClick={handleCreateBackup}
+                    disabled={creatingBackup}
+                  >
+                    {creatingBackup ? (
+                      <>
+                        <span className="w-4 h-4 border-2 border-slate-400 border-t-slate-600 rounded-full animate-spin mr-2" />
+                        Đang tạo backup...
+                      </>
+                    ) : (
+                      "Tạo Backup ngay bây giờ"
+                    )}
                   </Button>
                 </div>
               </CardContent>
