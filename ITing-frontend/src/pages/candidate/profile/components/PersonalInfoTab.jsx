@@ -14,6 +14,7 @@ const PersonalInfoTab = () => {
     const [isLoading, setIsLoading] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
     const [isUploading, setIsUploading] = useState(false);
+    const [formErrors, setFormErrors] = useState({});
     const fileInputRef = useRef(null);
 
     useEffect(() => {
@@ -47,6 +48,17 @@ const PersonalInfoTab = () => {
 
     const handleUpdatePersonal = async (e) => {
         e.preventDefault();
+        const errors = {};
+        if (!formData.fullName || !formData.fullName.trim()) errors.fullName = "Vui lòng nhập họ và tên";
+        if (!formData.phoneNum || !formData.phoneNum.trim()) errors.phoneNum = "Vui lòng nhập số điện thoại";
+        else if (!/^(0[1|3|5|7|8|9])+([0-9]{8})\b/.test(formData.phoneNum)) errors.phoneNum = "Số điện thoại không hợp lệ";
+
+        if (Object.keys(errors).length > 0) {
+            setFormErrors(errors);
+            return;
+        }
+        setFormErrors({});
+
         setIsSaving(true);
         try {
             await axiosInstance.put('/user/profile/personal', {
@@ -87,7 +99,7 @@ const PersonalInfoTab = () => {
                     'Content-Type': 'multipart/form-data',
                 },
             });
-            
+
             const newAvatarUrl = response.avatarUrl || response.data?.avatarUrl;
             setFormData(prev => ({ ...prev, avatarUrl: newAvatarUrl }));
             toast.success("Tải ảnh đại diện lên thành công!");
@@ -122,14 +134,14 @@ const PersonalInfoTab = () => {
                                     <FaUserCircle className="w-full h-full text-gray-300" />
                                 )}
                             </div>
-                            <input 
-                                type="file" 
-                                ref={fileInputRef} 
-                                className="hidden" 
-                                accept="image/*" 
-                                onChange={handleFileChange} 
+                            <input
+                                type="file"
+                                ref={fileInputRef}
+                                className="hidden"
+                                accept="image/*"
+                                onChange={handleFileChange}
                             />
-                            <button 
+                            <button
                                 type="button"
                                 onClick={handleCameraClick}
                                 disabled={isUploading}
@@ -162,9 +174,9 @@ const PersonalInfoTab = () => {
                                     type="text"
                                     value={formData.fullName}
                                     onChange={handleChange}
-                                    required
-                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                                    className={`w-full px-4 py-2 border ${formErrors.fullName ? 'border-red-500' : 'border-gray-300'} rounded-lg focus:ring-2 focus:ring-blue-500 outline-none`}
                                 />
+                                {formErrors.fullName && <span className="text-red-500 text-sm mt-1 block">* {formErrors.fullName}</span>}
                             </div>
 
                             <div>
@@ -187,9 +199,9 @@ const PersonalInfoTab = () => {
                                     type="text"
                                     value={formData.phoneNum}
                                     onChange={handleChange}
-                                    required
-                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                                    className={`w-full px-4 py-2 border ${formErrors.phoneNum ? 'border-red-500' : 'border-gray-300'} rounded-lg focus:ring-2 focus:ring-blue-500 outline-none`}
                                 />
+                                {formErrors.phoneNum && <span className="text-red-500 text-sm mt-1 block">* {formErrors.phoneNum}</span>}
                             </div>
 
                             {/* 

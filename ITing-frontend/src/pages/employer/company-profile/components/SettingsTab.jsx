@@ -18,6 +18,7 @@ const SettingsTab = () => {
    const [verifyingPhone, setVerifyingPhone] = useState(false);
    const [resendCountdown, setResendCountdown] = useState(0);
    const [loadingCompany, setLoadingCompany] = useState(true);
+   const [formErrors, setFormErrors] = useState({});
 
    // ─── PASSWORD STATE ─────────────────────────────────────────────────
    const [oldPassword, setOldPassword] = useState('');
@@ -55,9 +56,10 @@ const SettingsTab = () => {
    const handleSendOtp = async () => {
       const normalized = (phone || '').replace(/\s+/g, '');
       if (!PHONE_REGEX.test(normalized)) {
-         toast.error('Số điện thoại không hợp lệ. Định dạng: 0xxxxxxxxx hoặc +84xxxxxxxxx.');
+         setFormErrors(prev => ({...prev, phone: '* Số điện thoại không hợp lệ. Định dạng: 0xxxxxxxxx hoặc +84xxxxxxxxx.'}));
          return;
       }
+      setFormErrors(prev => ({...prev, phone: ''}));
       try {
          setSendingOtp(true);
          await companyService.sendPhoneOtp(normalized);
@@ -65,7 +67,7 @@ const SettingsTab = () => {
          setResendCountdown(OTP_RESEND_SECONDS);
          toast.success('Đã gửi mã OTP. Vui lòng kiểm tra điện thoại của bạn.');
       } catch (err) {
-         toast.error(err?.response?.data?.message || 'Không thể gửi OTP. Vui lòng thử lại.');
+         setFormErrors(prev => ({...prev, phone: '* ' + (err?.response?.data?.message || 'Không thể gửi OTP. Vui lòng thử lại.')}));
       } finally {
          setSendingOtp(false);
       }
@@ -73,9 +75,10 @@ const SettingsTab = () => {
 
    const handleVerifyOtp = async () => {
       if (!otpCode.trim() || otpCode.trim().length < 4) {
-         toast.error('Vui lòng nhập mã OTP gồm 6 chữ số.');
+         setFormErrors(prev => ({...prev, otpCode: '* Vui lòng nhập mã OTP.'}));
          return;
       }
+      setFormErrors(prev => ({...prev, otpCode: ''}));
       try {
          setVerifyingPhone(true);
          await companyService.verifyPhone(phone.replace(/\s+/g, ''), otpCode.trim());
@@ -84,29 +87,25 @@ const SettingsTab = () => {
          setOtpCode('');
          setOtpStep('idle');
       } catch (err) {
-         toast.error(err?.response?.data?.message || 'Mã OTP không hợp lệ hoặc đã hết hạn.');
+         setFormErrors(prev => ({...prev, otpCode: '* ' + (err?.response?.data?.message || 'Mã OTP không hợp lệ hoặc đã hết hạn.')}));
       } finally {
          setVerifyingPhone(false);
       }
    };
 
    const handleChangePassword = async () => {
-      if (!oldPassword) {
-         toast.error('Vui lòng nhập mật khẩu hiện tại.');
+      const errs = {};
+      if (!oldPassword) errs.oldPassword = '* Vui lòng nhập mật khẩu hiện tại.';
+      if (!newPassword || newPassword.length < 8) errs.newPassword = '* Mật khẩu mới phải có ít nhất 8 ký tự.';
+      if (newPassword && confirmPassword && newPassword !== confirmPassword) errs.confirmPassword = '* Mật khẩu xác nhận không khớp.';
+      if (newPassword && oldPassword && newPassword === oldPassword) errs.newPassword = '* Mật khẩu mới phải khác mật khẩu hiện tại.';
+
+      if (Object.keys(errs).length > 0) {
+         setFormErrors(prev => ({...prev, ...errs}));
          return;
       }
-      if (!newPassword || newPassword.length < 8) {
-         toast.error('Mật khẩu mới phải có ít nhất 8 ký tự.');
-         return;
-      }
-      if (newPassword !== confirmPassword) {
-         toast.error('Mật khẩu xác nhận không khớp.');
-         return;
-      }
-      if (newPassword === oldPassword) {
-         toast.error('Mật khẩu mới phải khác mật khẩu hiện tại.');
-         return;
-      }
+      setFormErrors(prev => ({...prev, oldPassword: '', newPassword: '', confirmPassword: '', passwordGeneral: ''}));
+
       try {
          setChangingPassword(true);
          await authService.changePassword(oldPassword, newPassword);
@@ -115,7 +114,7 @@ const SettingsTab = () => {
          setNewPassword('');
          setConfirmPassword('');
       } catch (err) {
-         toast.error(err?.response?.data?.message || 'Đổi mật khẩu thất bại. Vui lòng kiểm tra lại mật khẩu hiện tại.');
+         setFormErrors(prev => ({...prev, passwordGeneral: '* ' + (err?.response?.data?.message || 'Đổi mật khẩu thất bại. Vui lòng kiểm tra lại mật khẩu hiện tại.')}));
       } finally {
          setChangingPassword(false);
       }
@@ -160,6 +159,7 @@ const SettingsTab = () => {
                               onChange={(e) => {
                                  const cleaned = e.target.value.replace(/[^0-9+]/g, '');
                                  setPhone(cleaned);
+                                 setFormErrors(prev => ({...prev, phone: ''}));
                                  if (otpStep === 'sent') {
                                     setOtpStep('idle');
                                     setOtpCode('');
@@ -188,7 +188,8 @@ const SettingsTab = () => {
                            )}
                         </button>
                      </div>
-                     {isPhoneVerified && !phoneChanged && (
+                     {formErrors.phone && <p className="text-xs text-red-500 mt-2">{formErrors.phone}</p>}
+                     {isPhoneVerified && !phoneChanged && !formErrors.phone && (
                         <p className="text-xs text-green-600 mt-2 flex items-center gap-1">
                            <FaCheckCircle /> Số điện thoại này đã được xác minh.
                         </p>
@@ -211,7 +212,10 @@ const SettingsTab = () => {
                               inputMode="numeric"
                               maxLength={6}
                               value={otpCode}
-                              onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, ''))}
+                              onChange={(e) => {
+                                 setOtpCode(e.target.value.replace(/\D/g, ''))
+                                 setFormErrors(prev => ({...prev, otpCode: ''}));
+                              }}
                               placeholder="Nhập mã OTP"
                               className="flex-1 px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:border-[#3AB4E6] text-center font-mono text-lg tracking-widest"
                            />
@@ -229,6 +233,7 @@ const SettingsTab = () => {
                               )}
                            </button>
                         </div>
+                        {formErrors.otpCode && <p className="text-xs text-red-500 mt-2">{formErrors.otpCode}</p>}
                      </div>
                   )}
                </div>
@@ -250,8 +255,15 @@ const SettingsTab = () => {
                      <input
                         type={showCurrentPass ? 'text' : 'password'}
                         value={oldPassword}
-                        onChange={(e) => setOldPassword(e.target.value)}
-                        className="w-full px-4 py-3 pr-10 border border-gray-200 rounded-lg focus:outline-none focus:border-[#3AB4E6]"
+                        onChange={(e) => {
+                           setOldPassword(e.target.value);
+                           setFormErrors(prev => ({...prev, oldPassword: '', passwordGeneral: ''}));
+                        }}
+                        className={`w-full px-4 py-3 pr-10 border rounded-lg focus:outline-none ${
+                           formErrors.oldPassword
+                              ? 'border-red-300 focus:border-red-400'
+                              : 'border-gray-200 focus:border-[#3AB4E6]'
+                        }`}
                         placeholder="Mật khẩu hiện tại"
                         autoComplete="current-password"
                      />
@@ -263,6 +275,7 @@ const SettingsTab = () => {
                         {showCurrentPass ? <FaEyeSlash /> : <FaEye />}
                      </button>
                   </div>
+                  {formErrors.oldPassword && <p className="text-xs text-red-500 mt-1">{formErrors.oldPassword}</p>}
                </div>
 
                {/* Mật khẩu mới */}
@@ -272,8 +285,15 @@ const SettingsTab = () => {
                      <input
                         type={showNewPass ? 'text' : 'password'}
                         value={newPassword}
-                        onChange={(e) => setNewPassword(e.target.value)}
-                        className="w-full px-4 py-3 pr-10 border border-gray-200 rounded-lg focus:outline-none focus:border-[#3AB4E6]"
+                        onChange={(e) => {
+                           setNewPassword(e.target.value);
+                           setFormErrors(prev => ({...prev, newPassword: '', passwordGeneral: ''}));
+                        }}
+                        className={`w-full px-4 py-3 pr-10 border rounded-lg focus:outline-none ${
+                           formErrors.newPassword
+                              ? 'border-red-300 focus:border-red-400'
+                              : 'border-gray-200 focus:border-[#3AB4E6]'
+                        }`}
                         placeholder="Tối thiểu 8 ký tự"
                         autoComplete="new-password"
                      />
@@ -285,6 +305,7 @@ const SettingsTab = () => {
                         {showNewPass ? <FaEyeSlash /> : <FaEye />}
                      </button>
                   </div>
+                  {formErrors.newPassword && <p className="text-xs text-red-500 mt-1">{formErrors.newPassword}</p>}
                </div>
 
                {/* Xác nhận */}
@@ -294,9 +315,12 @@ const SettingsTab = () => {
                      <input
                         type={showConfirmPass ? 'text' : 'password'}
                         value={confirmPassword}
-                        onChange={(e) => setConfirmPassword(e.target.value)}
+                        onChange={(e) => {
+                           setConfirmPassword(e.target.value);
+                           setFormErrors(prev => ({...prev, confirmPassword: '', passwordGeneral: ''}));
+                        }}
                         className={`w-full px-4 py-3 pr-10 border rounded-lg focus:outline-none ${
-                           confirmPassword && confirmPassword !== newPassword
+                           formErrors.confirmPassword
                               ? 'border-red-300 focus:border-red-400'
                               : 'border-gray-200 focus:border-[#3AB4E6]'
                         }`}
@@ -311,11 +335,13 @@ const SettingsTab = () => {
                         {showConfirmPass ? <FaEyeSlash /> : <FaEye />}
                      </button>
                   </div>
-                  {confirmPassword && confirmPassword !== newPassword && (
-                     <p className="text-xs text-red-500 mt-1">Mật khẩu xác nhận không khớp.</p>
+                  {formErrors.confirmPassword && (
+                     <p className="text-xs text-red-500 mt-1">{formErrors.confirmPassword}</p>
                   )}
                </div>
             </div>
+
+            {formErrors.passwordGeneral && <p className="text-sm text-red-500 mb-4">{formErrors.passwordGeneral}</p>}
 
             <button
                onClick={handleChangePassword}

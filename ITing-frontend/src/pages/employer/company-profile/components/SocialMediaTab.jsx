@@ -256,7 +256,7 @@ const SocialMediaTab = () => {
                                        : 'border-gray-200 focus:border-[#3AB4E6]'
                                  }`}
                               />
-                              {err && <p className="text-xs text-red-500 mt-1">{err}</p>}
+                              {err && <p className="text-xs text-red-500 mt-1">* {err}</p>}
                            </div>
 
                            {/* Preview link */}

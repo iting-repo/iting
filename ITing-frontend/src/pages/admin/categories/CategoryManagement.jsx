@@ -241,11 +241,18 @@ const CategoryManagement = () => {
     setDialogOpen(true);
   };
 
+  const [formErrors, setFormErrors] = useState({});
+
   const handleSave = async () => {
-    if (!form.name.trim()) {
-      toast.error('Tên không được trống');
+    const errors = {};
+    if (!form.name.trim()) errors.name = '* Vui lòng nhập tên danh mục';
+    
+    if (Object.keys(errors).length > 0) {
+      setFormErrors(errors);
       return;
     }
+    
+    setFormErrors({});
     setSaving(true);
     try {
       const payload = {
@@ -551,14 +558,19 @@ const CategoryManagement = () => {
             </label>
             <Input
               value={form.name}
-              onChange={(e) => setForm({ ...form, name: e.target.value })}
+              onChange={(e) => {
+                setForm({ ...form, name: e.target.value });
+                if (formErrors.name) setFormErrors({ ...formErrors, name: null });
+              }}
               placeholder={
                 activeTab === 'SKILL' ? 'VD: Java, Python, React...' :
                 activeTab === 'LOCATION' ? 'VD: Hà Nội, TP. Hồ Chí Minh...' :
                 'VD: Fintech, EdTech, HealthTech...'
               }
               autoFocus
+              className={formErrors.name ? 'border-red-300 focus:border-red-500 focus:ring-red-200' : ''}
             />
+            {formErrors.name && <p className="text-xs text-red-500 mt-1">{formErrors.name}</p>}
           </div>
           <div className="space-y-2">
             <label className="text-sm font-medium text-gray-700">Tên tiếng Anh</label>

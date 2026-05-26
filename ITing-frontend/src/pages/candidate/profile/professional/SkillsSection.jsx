@@ -10,6 +10,7 @@ const SkillsSection = () => {
     const [newSkillName, setNewSkillName] = useState('');
     const [availableSkills, setAvailableSkills] = useState([]);
     const [confirmModal, setConfirmModal] = useState({ isOpen: false, id: null });
+    const [formErrors, setFormErrors] = useState({});
 
     const fetchSkills = async () => {
         try {
@@ -36,7 +37,11 @@ const SkillsSection = () => {
 
     const handleAddSkill = async (e) => {
         e.preventDefault();
-        if (!newSkillName.trim()) return;
+        if (!newSkillName.trim()) {
+            setFormErrors({ name: "Vui lòng nhập tên kỹ năng" });
+            return;
+        }
+        setFormErrors({});
         try {
             await axiosInstance.post('/user/professional-profile/skills', {
                 name: newSkillName.trim()
@@ -114,14 +119,14 @@ const SkillsSection = () => {
                                             </select>
                                             <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4 pointer-events-none" />
                                         </div>
-                                        <div className="flex gap-2">
+                                        <div className="flex flex-col gap-2">
                                             <Input 
                                                 placeholder="VD: ReactJS, Java..." 
                                                 value={newSkillName}
                                                 onChange={(e) => setNewSkillName(e.target.value)}
-                                                className="w-full md:w-64"
-                                                required
+                                                className={`w-full md:w-64 ${formErrors.name ? 'border-red-500' : ''}`}
                                             />
+                                            {formErrors.name && <span className="text-red-500 text-xs">* {formErrors.name}</span>}
                                         </div>
                                     </div>
                                 </div>

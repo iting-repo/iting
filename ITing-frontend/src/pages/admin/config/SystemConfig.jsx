@@ -67,6 +67,20 @@ const SystemConfig = () => {
   };
 
   const handleSave = async () => {
+    // Validate config
+    const errors = [];
+    if (config.maxJobsPerCompany < 1) errors.push("Số tin tối đa mỗi công ty phải lớn hơn 0.");
+    if (config.jobExpiryDays < 1) errors.push("Thời gian hết hạn tin phải lớn hơn 0.");
+    if (config.maxLoginAttempts < 1) errors.push("Số lần đăng nhập sai tối đa phải lớn hơn 0.");
+    if (config.lockoutDuration < 1) errors.push("Thời gian khóa tài khoản phải lớn hơn 0.");
+    if (config.sessionTimeout < 1) errors.push("Thời gian hết hạn phiên làm việc phải lớn hơn 0.");
+    if (config.minPasswordLength < 6) errors.push("Độ dài mật khẩu tối thiểu phải từ 6 ký tự.");
+    
+    if (errors.length > 0) {
+      errors.forEach(err => toast.error(err));
+      return;
+    }
+
     setIsSaving(true);
     try {
       const data = await adminConfigService.updateConfig(config);

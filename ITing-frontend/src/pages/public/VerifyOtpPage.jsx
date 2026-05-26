@@ -16,6 +16,7 @@ const VerifyOtpPage = () => {
   const [timer, setTimer] = useState(60);
   const [isLoading, setIsLoading] = useState(false);
   const [isResending, setIsResending] = useState(false);
+  const [formErrors, setFormErrors] = useState({});
   const inputRefs = [useRef(), useRef(), useRef(), useRef(), useRef(), useRef()];
 
   useEffect(() => {
@@ -56,9 +57,10 @@ const VerifyOtpPage = () => {
     if (e) e.preventDefault();
     const otpCode = otp.join("");
     if (otpCode.length < 6) {
-      toast.error("Vui lòng nhập đủ 6 chữ số");
+      setFormErrors({ otp: "Vui lòng nhập đủ 6 chữ số" });
       return;
     }
+    setFormErrors({});
 
     try {
       setIsLoading(true);
@@ -123,10 +125,11 @@ const VerifyOtpPage = () => {
                     value={digit}
                     onChange={(e) => handleChange(idx, e.target.value)}
                     onKeyDown={(e) => handleKeyDown(idx, e)}
-                    className="w-12 h-14 text-center text-xl font-bold border-2 rounded-xl bg-[#F0F5FA] border-transparent focus:bg-white focus:border-[#3AB4E6] focus:ring-4 focus:ring-[#3AB4E6]/10 outline-none transition-all"
+                    className={`w-12 h-14 text-center text-xl font-bold border-2 rounded-xl bg-[#F0F5FA] ${formErrors.otp ? 'border-red-500' : 'border-transparent'} focus:bg-white focus:border-[#3AB4E6] focus:ring-4 focus:ring-[#3AB4E6]/10 outline-none transition-all`}
                   />
                 ))}
               </div>
+              {formErrors.otp && <span className="text-red-500 text-sm mt-1 block">* {formErrors.otp}</span>}
 
               <div className="space-y-4 max-w-sm">
                 <Button

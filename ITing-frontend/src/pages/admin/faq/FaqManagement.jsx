@@ -63,6 +63,7 @@ const FaqManagement = () => {
     const [dialogOpen, setDialogOpen] = useState(false);
     const [editingFaq, setEditingFaq] = useState(null);
     const [form, setForm] = useState(emptyForm);
+    const [formErrors, setFormErrors] = useState({});
     const [saving, setSaving] = useState(false);
 
     const [previewOpen, setPreviewOpen] = useState(false);
@@ -94,6 +95,7 @@ const FaqManagement = () => {
     const openCreate = () => {
         setEditingFaq(null);
         setForm(emptyForm);
+        setFormErrors({});
         setDialogOpen(true);
     };
 
@@ -106,18 +108,21 @@ const FaqManagement = () => {
             sortOrder: faq.sortOrder ?? 0,
             published: faq.published ?? true,
         });
+        setFormErrors({});
         setDialogOpen(true);
     };
 
     const handleSave = async () => {
-        if (!form.title.trim()) {
-            toast.error("Câu hỏi không được để trống");
+        const errors = {};
+        if (!form.title.trim()) errors.title = "* Vui lòng nhập câu hỏi";
+        if (!form.content || !form.content.replace(/<[^>]*>/g, "").trim()) errors.content = "* Vui lòng nhập câu trả lời";
+
+        if (Object.keys(errors).length > 0) {
+            setFormErrors(errors);
             return;
         }
-        if (!form.content || !form.content.replace(/<[^>]*>/g, "").trim()) {
-            toast.error("Câu trả lời không được để trống");
-            return;
-        }
+
+        setFormErrors({});
         setSaving(true);
         try {
             const payload = {
@@ -345,10 +350,15 @@ const FaqManagement = () => {
                         </label>
                         <Textarea
                             value={form.title}
-                            onChange={(e) => setForm({ ...form, title: e.target.value })}
+                            onChange={(e) => {
+                                setForm({ ...form, title: e.target.value });
+                                if (formErrors.title) setFormErrors({ ...formErrors, title: null });
+                            }}
                             rows={2}
                             placeholder="VD: Làm sao để đăng tin tuyển dụng trên ITing?"
+                            className={formErrors.title ? "border-red-300 focus:border-red-500 focus:ring-red-200" : ""}
                         />
+                        {formErrors.title && <p className="text-xs text-red-500">{formErrors.title}</p>}
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -379,15 +389,19 @@ const FaqManagement = () => {
                         <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">
                             Câu trả lời *
                         </label>
-                        <div className="border border-slate-200 rounded-lg overflow-hidden [&_.ql-toolbar]:border-slate-200 [&_.ql-container]:border-0 [&_.ql-editor]:min-h-[180px]">
+                        <div className={`border rounded-lg overflow-hidden [&_.ql-toolbar]:border-slate-200 [&_.ql-container]:border-0 [&_.ql-editor]:min-h-[180px] ${formErrors.content ? "border-red-300" : "border-slate-200"}`}>
                             <ReactQuill
                                 theme="snow"
                                 value={form.content}
-                                onChange={(v) => setForm({ ...form, content: v })}
+                                onChange={(v) => {
+                                    setForm({ ...form, content: v });
+                                    if (formErrors.content) setFormErrors({ ...formErrors, content: null });
+                                }}
                                 modules={quillModules}
                                 placeholder="Nhập nội dung câu trả lời..."
                             />
                         </div>
+                        {formErrors.content && <p className="text-xs text-red-500">{formErrors.content}</p>}
                     </div>
 
                     <div className="flex items-center gap-3 pt-2">

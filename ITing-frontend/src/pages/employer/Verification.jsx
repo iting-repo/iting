@@ -79,12 +79,12 @@ const Verification = () => {
     const f = e.target.files?.[0];
     if (f) {
       if (f.size > 5 * 1024 * 1024) {
-        setError("Dung lượng tối đa 5MB");
+        setError("* Dung lượng tối đa 5MB");
         return;
       }
       const validTypes = ["image/jpeg", "image/jpg", "image/png", "application/pdf"];
       if (!validTypes.includes(f.type)) {
-        setError("Định dạng cho phép: jpeg, jpg, png, pdf");
+        setError("* Định dạng cho phép: jpeg, jpg, png, pdf");
         return;
       }
       setFile(f);
@@ -96,7 +96,7 @@ const Verification = () => {
 
   const handleUpload = async () => {
     if (!file) {
-      setError("Vui lòng chọn file để tải lên");
+      setError("* Vui lòng chọn file để tải lên");
       return;
     }
 

@@ -8,6 +8,7 @@ const EducationSection = () => {
     const [educationList, setEducationList] = useState([]);
     const [isAdding, setIsAdding] = useState(false);
     const [confirm, askConfirm, resetConfirm] = useConfirm();
+    const [formErrors, setFormErrors] = useState({});
     
     const [formData, setFormData] = useState({
         schoolName: '',
@@ -39,7 +40,20 @@ const EducationSection = () => {
 
     const handleAddSubmit = async (e) => {
         e.preventDefault();
-        if (!formData.schoolName.trim() || !formData.major.trim() || !formData.startDate) return;
+        const errors = {};
+        if (!formData.schoolName.trim()) errors.schoolName = "Vui lòng nhập trường/cơ sở đào tạo";
+        if (!formData.major.trim()) errors.major = "Vui lòng nhập ngành học";
+        if (!formData.startDate) errors.startDate = "Vui lòng chọn ngày bắt đầu";
+        
+        if (formData.startDate && formData.endDate && new Date(formData.startDate) > new Date(formData.endDate)) {
+            errors.endDate = "Ngày kết thúc phải sau ngày bắt đầu";
+        }
+
+        if (Object.keys(errors).length > 0) {
+            setFormErrors(errors);
+            return;
+        }
+        setFormErrors({});
         
         try {
             const payload = { ...formData };
@@ -113,11 +127,13 @@ const EducationSection = () => {
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     <div>
                                         <label className="block text-xs font-medium text-gray-700 mb-1">Trường/Cơ sở đào tạo *</label>
-                                        <Input name="schoolName" value={formData.schoolName} onChange={handleChange} required placeholder="VD: Đại học Bách Khoa" />
+                                        <Input name="schoolName" value={formData.schoolName} onChange={handleChange} placeholder="VD: Đại học Bách Khoa" className={formErrors.schoolName ? 'border-red-500' : ''} />
+                                        {formErrors.schoolName && <span className="text-red-500 text-xs mt-1 block">* {formErrors.schoolName}</span>}
                                     </div>
                                     <div>
                                         <label className="block text-xs font-medium text-gray-700 mb-1">Ngành học/Chuyên ngành *</label>
-                                        <Input name="major" value={formData.major} onChange={handleChange} required placeholder="VD: Khoa học máy tính" />
+                                        <Input name="major" value={formData.major} onChange={handleChange} placeholder="VD: Khoa học máy tính" className={formErrors.major ? 'border-red-500' : ''} />
+                                        {formErrors.major && <span className="text-red-500 text-xs mt-1 block">* {formErrors.major}</span>}
                                     </div>
                                     <div>
                                         <label className="block text-xs font-medium text-gray-700 mb-1">Bằng cấp</label>
@@ -129,11 +145,13 @@ const EducationSection = () => {
                                     </div>
                                     <div>
                                         <label className="block text-xs font-medium text-gray-700 mb-1">Ngày bắt đầu *</label>
-                                        <Input type="date" name="startDate" value={formData.startDate} onChange={handleChange} required />
+                                        <Input type="date" name="startDate" value={formData.startDate} onChange={handleChange} className={formErrors.startDate ? 'border-red-500' : ''} />
+                                        {formErrors.startDate && <span className="text-red-500 text-xs mt-1 block">* {formErrors.startDate}</span>}
                                     </div>
                                     <div>
                                         <label className="block text-xs font-medium text-gray-700 mb-1">Ngày kết thúc</label>
-                                        <Input type="date" name="endDate" value={formData.endDate} onChange={handleChange} />
+                                        <Input type="date" name="endDate" value={formData.endDate} onChange={handleChange} className={formErrors.endDate ? 'border-red-500' : ''} />
+                                        {formErrors.endDate && <span className="text-red-500 text-xs mt-1 block">* {formErrors.endDate}</span>}
                                     </div>
                                 </div>
                                 <div>

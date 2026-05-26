@@ -443,31 +443,31 @@ const PostJob = ({
   const validate = () => {
     const newErrors = {};
 
-    if (!formData.jobTitle.trim()) newErrors.jobTitle = "Bắt buộc";
-    else if (formData.jobTitle.trim().length > MAX_TITLE_LENGTH) newErrors.jobTitle = `Tiêu đề không được vượt quá ${MAX_TITLE_LENGTH} ký tự`;
-    if (formData.jobPosition.length === 0) newErrors.jobPosition = "Bắt buộc";
-    if (formData.techStack.length === 0) newErrors.techStack = "Bắt buộc";
-    if (!formData.workType) newErrors.workType = "Bắt buộc";
-    if (!formData.experienceLevel) newErrors.experienceLevel = "Bắt buộc";
-    if (!formData.workingDays) newErrors.workingDays = "Bắt buộc";
-    if (!formData.quantity) newErrors.quantity = "Bắt buộc";
-    if (!formData.deadline) newErrors.deadline = "Bắt buộc";
+    if (!formData.jobTitle.trim()) newErrors.jobTitle = "* Vui lòng nhập tiêu đề công việc";
+    else if (formData.jobTitle.trim().length > MAX_TITLE_LENGTH) newErrors.jobTitle = `* Tiêu đề không được vượt quá ${MAX_TITLE_LENGTH} ký tự`;
+    if (formData.jobPosition.length === 0) newErrors.jobPosition = "* Vui lòng chọn vị trí tuyển dụng";
+    if (formData.techStack.length === 0) newErrors.techStack = "* Vui lòng chọn công nghệ yêu cầu";
+    if (!formData.workType) newErrors.workType = "* Vui lòng chọn hình thức làm việc";
+    if (!formData.experienceLevel) newErrors.experienceLevel = "* Vui lòng chọn kinh nghiệm";
+    if (!formData.workingDays) newErrors.workingDays = "* Vui lòng chọn ngày làm việc";
+    if (!formData.quantity) newErrors.quantity = "* Vui lòng nhập số lượng cần tuyển";
+    if (!formData.deadline) newErrors.deadline = "* Vui lòng chọn ngày hết hạn";
     else {
       const today = new Date();
       today.setHours(0, 0, 0, 0);
       const deadlineDate = new Date(formData.deadline + "T00:00:00");
-      if (deadlineDate < today) newErrors.deadline = "Hạn ứng tuyển không được ở quá khứ";
+      if (deadlineDate < today) newErrors.deadline = "* Hạn ứng tuyển không được ở quá khứ";
     }
-    if (!formData.province) newErrors.province = "Bắt buộc";
-    if (!formData.ward) newErrors.ward = "Bắt buộc";
-    if (!formData.address.trim()) newErrors.address = "Bắt buộc";
+    if (!formData.province) newErrors.province = "* Vui lòng chọn tỉnh/thành phố";
+    if (!formData.ward) newErrors.ward = "* Vui lòng chọn phường/xã";
+    if (!formData.address.trim()) newErrors.address = "* Vui lòng nhập địa chỉ cụ thể";
     if (formData.salaryType !== "NEGOTIABLE" && !formData.minSalary) {
-      newErrors.minSalary = "Bắt buộc";
+      newErrors.minSalary = "* Vui lòng nhập lương tối thiểu";
     }
     if (formData.salaryType !== "NEGOTIABLE" && !formData.maxSalary) {
-      newErrors.maxSalary = "Bắt buộc";
+      newErrors.maxSalary = "* Vui lòng nhập lương tối đa";
     }
-    if (!formData.description.trim()) newErrors.description = "Bắt buộc";
+    if (!formData.description.trim()) newErrors.description = "* Vui lòng nhập mô tả công việc";
 
     if (
       formData.salaryType !== "NEGOTIABLE" &&
@@ -476,7 +476,7 @@ const PostJob = ({
       Number(formData.minSalary) > Number(formData.maxSalary)
     ) {
       newErrors.maxSalary =
-        "Lương tối đa phải lớn hơn hoặc bằng lương tối thiểu";
+        "* Lương tối đa phải lớn hơn hoặc bằng lương tối thiểu";
     }
 
     setErrors(newErrors);

@@ -124,6 +124,7 @@ const CompanyDetailPage = () => {
   const [showReviewModal, setShowReviewModal] = useState(false);
   const [reviewRating, setReviewRating] = useState(5);
   const [reviewContent, setReviewContent] = useState("");
+  const [formErrors, setFormErrors] = useState({});
   const [isSubmittingReview, setIsSubmittingReview] = useState(false);
 
   // Dynamic banner gradient based on logo color
@@ -260,10 +261,15 @@ const CompanyDetailPage = () => {
 
   const handleReviewSubmit = async (e) => {
     e.preventDefault();
+    const errors = {};
     if (!reviewContent.trim()) {
-      toast.error("Vui lòng nhập nội dung đánh giá");
+      errors.content = "Vui lòng nhập nội dung đánh giá";
+    }
+    if (Object.keys(errors).length > 0) {
+      setFormErrors(errors);
       return;
     }
+    setFormErrors({});
 
     try {
       setIsSubmittingReview(true);
@@ -745,8 +751,9 @@ const CompanyDetailPage = () => {
                     value={reviewContent}
                     onChange={(e) => setReviewContent(e.target.value)}
                     placeholder="Hãy chia sẻ những điều bạn ấn tượng hoặc cần cải thiện tại đây..."
-                    className="w-full h-32 p-5 bg-gray-50 border-2 border-gray-100 rounded-2xl focus:border-[#3AB4E6] focus:bg-white outline-none transition-all text-sm font-medium resize-none"
+                    className={`w-full h-32 p-5 bg-gray-50 border-2 ${formErrors.content ? 'border-red-500' : 'border-gray-100'} rounded-2xl focus:border-[#3AB4E6] focus:bg-white outline-none transition-all text-sm font-medium resize-none`}
                   ></textarea>
+                  {formErrors.content && <span className="text-red-500 text-sm mt-1 block">* {formErrors.content}</span>}
                 </div>
 
                 <div className="flex gap-3 pt-4">

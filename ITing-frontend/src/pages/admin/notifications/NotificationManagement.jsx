@@ -78,6 +78,7 @@ const NotificationManagement = () => {
   const [composeType, setComposeType] = useState("SYSTEM_ANNOUNCEMENT");
   const [recipientId, setRecipientId] = useState("");
   const [recipientType, setRecipientType] = useState("USER");
+  const [formErrors, setFormErrors] = useState({});
 
   const unreadCount = notifications.filter((n) => !n.isRead).length;
 
@@ -188,10 +189,18 @@ const NotificationManagement = () => {
   };
 
   const handleCompose = async () => {
-    if (!composeMessage.trim() || !recipientId) {
-      toast.error("Vui lòng điền đầy đủ nội dung và ID người nhận");
+    const errors = {};
+    if (!recipientId) errors.recipientId = "* Vui lòng nhập ID người nhận";
+    if (recipientId && parseInt(recipientId) <= 0) errors.recipientId = "* ID người nhận không hợp lệ";
+    if (!composeMessage.trim()) errors.composeMessage = "* Vui lòng nhập nội dung thông báo";
+    if (composeMessage.trim() && composeMessage.trim().length < 10) errors.composeMessage = "* Nội dung phải dài ít nhất 10 ký tự";
+
+    if (Object.keys(errors).length > 0) {
+      setFormErrors(errors);
       return;
     }
+    
+    setFormErrors({});
     
     try {
       await notificationService.createNotification({
@@ -206,6 +215,7 @@ const NotificationManagement = () => {
       setComposeTitle("");
       setComposeMessage("");
       setRecipientId("");
+      setFormErrors({});
     } catch (error) {
       toast.error("Lỗi khi gửi thông báo.");
     }
@@ -530,9 +540,15 @@ const NotificationManagement = () => {
                 type="number"
                 placeholder="Ví dụ: 12"
                 value={recipientId}
-                onChange={(e) => setRecipientId(e.target.value)}
-                className="h-11"
+                onChange={(e) => {
+                  setRecipientId(e.target.value);
+                  if (formErrors.recipientId) setFormErrors({ ...formErrors, recipientId: null });
+                }}
+                className={`h-11 ${formErrors.recipientId ? 'border-red-300 focus:border-red-500 focus:ring-red-200' : ''}`}
               />
+              {formErrors.recipientId && (
+                <p className="mt-1 text-xs text-red-500">{formErrors.recipientId}</p>
+              )}
             </div>
           </div>
           <div>
@@ -559,15 +575,20 @@ const NotificationManagement = () => {
             <Textarea
               placeholder="Nhập nội dung thông báo..."
               value={composeMessage}
-              onChange={(e) => setComposeMessage(e.target.value)}
-              className="min-h-[120px]"
+              onChange={(e) => {
+                setComposeMessage(e.target.value);
+                if (formErrors.composeMessage) setFormErrors({ ...formErrors, composeMessage: null });
+              }}
+              className={`min-h-[120px] ${formErrors.composeMessage ? 'border-red-300 focus:border-red-500 focus:ring-red-200' : ''}`}
             />
+            {formErrors.composeMessage && (
+              <p className="mt-1 text-xs text-red-500">{formErrors.composeMessage}</p>
+            )}
           </div>
           <div className="flex justify-end gap-3 pt-4 border-t border-slate-100">
             <Button variant="outline" onClick={() => setComposeOpen(false)}>Hủy</Button>
             <Button
               className="bg-[#3AB4E6] hover:bg-[#2C9ACD] text-white"
-              disabled={!composeMessage.trim() || !recipientId}
               onClick={handleCompose}
             >
               Gửi thiết lập
