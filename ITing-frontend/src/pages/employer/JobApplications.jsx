@@ -7,7 +7,7 @@ import SendOfferModal from '../../components/employer/SendOfferModal';
 import MatchCandidatesDrawer from '../../components/employer/MatchCandidatesDrawer';
 import applicationService from '../../services/applicationService';
 import { normalizeJobKey } from '../../utils/jobUrl';
-import { Breadcrumb } from '../../components/common';
+import { Breadcrumb, Pagination } from '../../components/common';
 
 const JobApplications = () => {
    const { jobKey } = useParams();
@@ -25,14 +25,23 @@ const JobApplications = () => {
    const [sortBy, setSortBy] = useState("timeSent");
    const [sortOrder, setSortOrder] = useState("desc");
 
+   // Pagination (0-based ở backend, 1-based ở UI)
+   const PAGE_SIZE = 10;
+   const [page, setPage] = useState(0);
+   const [totalElements, setTotalElements] = useState(0);
+   const [totalPages, setTotalPages] = useState(0);
+
+   // Khi đổi filter/sort/keyword → reset về trang 0
+   useEffect(() => { setPage(0); }, [keyword, status, sortBy, sortOrder]);
+
    useEffect(() => {
       const fetchApplications = async () => {
          try {
             setIsLoading(true);
             const params = {
                jobId: id,
-               page: 0,
-               size: 10,
+               page,
+               size: PAGE_SIZE,
                sortBy,
                sortOrder
             };
@@ -41,6 +50,8 @@ const JobApplications = () => {
 
             const response = await applicationService.searchApplications(params);
             setCandidates(response.content || []);
+            setTotalElements(response.totalElements ?? 0);
+            setTotalPages(response.totalPages ?? 0);
          } catch (error) {
             console.error("Failed to fetch applications:", error);
          } finally {
@@ -53,7 +64,7 @@ const JobApplications = () => {
       }, 300);
 
       return () => clearTimeout(debounce);
-   }, [id, keyword, status, sortBy, sortOrder]);
+   }, [id, keyword, status, sortBy, sortOrder, page]);
 
    return (
       <div className="bg-white rounded-xl p-4 md:p-8 min-h-screen border border-gray-100">
@@ -219,6 +230,19 @@ const JobApplications = () => {
                </tbody>
             </table>
          </div>
+
+         {/* Pagination */}
+         {totalElements > 0 && (
+            <div className="mt-4">
+               <Pagination
+                  currentPage={page + 1}
+                  totalPages={totalPages}
+                  totalItems={totalElements}
+                  itemsPerPage={PAGE_SIZE}
+                  onPageChange={(p) => setPage(Math.max(0, p - 1))}
+               />
+            </div>
+         )}
 
          {/* 3. Render Modal */}
          {selectedCandidate && (
