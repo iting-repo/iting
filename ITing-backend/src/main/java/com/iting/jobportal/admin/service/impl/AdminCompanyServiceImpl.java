@@ -37,6 +37,7 @@ import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
+@Transactional(readOnly = true)
 public class AdminCompanyServiceImpl implements AdminCompanyService {
 
         private final CompanyRepository companyRepository;
