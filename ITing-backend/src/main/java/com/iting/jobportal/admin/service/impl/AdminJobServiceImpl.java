@@ -60,6 +60,7 @@ public class AdminJobServiceImpl implements AdminJobService {
      */
 
     @Override
+    @org.springframework.transaction.annotation.Transactional(readOnly = true)
     public Page<JobResponse> filterJobs(
             JobStatus status,
             Long companyId,
