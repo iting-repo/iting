@@ -121,3 +121,7 @@ ai-matching/
 backup/
 *.dump
 *.sql.gz
+
+# Tài liệu cá nhân để trong public/ (Scrum guide, đề cương, …) — không deploy
+ITing-frontend/public/2020-Scrum-Guide-Vietnamese.pdf
+ITing-frontend/public/Cau_truc_roi_rac_them_cau_hoi_6_6_chi_cau_hoi.pdf
