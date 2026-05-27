@@ -477,7 +477,11 @@ const Header = () => {
           <nav className="hidden md:flex items-center gap-6 lg:gap-10 xl:gap-14 text-sm lg:text-base whitespace-nowrap">{renderNavLinks()}</nav>
 
           <div className="flex items-center gap-4">
-            {role === 'guest' ? (
+            {/* CTA "Đăng tuyển ngay" — CHỈ hiện cho guest (chưa login). Gate
+                bằng !currentUser thay vì role === 'guest' để defensive:
+                role là derived value, nếu sau này refactor có thể vô tình
+                để role='guest' cho user có currentUser. */}
+            {!currentUser ? (
               <>
                 <Link
                   to="/register?role=employer"
@@ -723,7 +727,7 @@ const Header = () => {
               {renderNavLinks(() => setIsMobileMenuOpen(false))}
             </div>
 
-            {role === 'guest' && (
+            {!currentUser && (
               <div className="flex flex-col gap-4 flex-1 border-l border-gray-800/60 pl-4">
                 <Link
                   to="/register?role=employer"
