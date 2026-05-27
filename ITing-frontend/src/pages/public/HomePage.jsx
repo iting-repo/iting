@@ -819,7 +819,7 @@ const HomePage = () => {
                                             </h3>
                                             <p className="text-xs text-gray-500 font-medium mb-4 truncate">{job.companyName}</p>
 
-                                            <div className="flex items-center gap-4 text-[11px] text-gray-400 mb-4 pt-4 border-t border-gray-50">
+                                            <div className="flex items-center gap-4 text-[11px] text-gray-600 mb-4 pt-4 border-t border-gray-50">
                                                 <span className="flex items-center gap-1">
                                                     <FaMapMarkerAlt className="text-red-400" /> {job.province || "Việt Nam"}
                                                 </span>
@@ -1107,7 +1107,7 @@ const HomePage = () => {
                                                 {timeAgo(job.createdAt)}
                                             </span>
                                             {/* Nút Chi Tiết style mới */}
-                                            <button className="w-auto md:w-full bg-[#EAF6FF] text-[#3AB4E6] hover:bg-[#3AB4E6] hover:text-white text-xs font-bold px-5 py-2.5 rounded-xl transition-all duration-300">
+                                            <button className="w-auto md:w-full bg-[#EAF6FF] text-[#0E7BAA] hover:bg-[#0E7BAA] hover:text-white text-xs font-bold px-5 py-2.5 rounded-xl transition-all duration-300">
                                                 Chi Tiết
                                             </button>
                                         </div>
@@ -1407,7 +1407,7 @@ const HomePage = () => {
                             <p className="text-gray-500 text-sm">Cập nhật tin tức mới nhất về công nghệ và thị trường tuyển dụng</p>
                         </div>
                         {/* FIX: Thay BsArrowRight bằng FaArrowRight */}
-                        <Link to="/blogs" className="text-[#3AB4E6] font-medium hover:underline flex items-center gap-1">
+                        <Link to="/blogs" className="text-[#0E7BAA] font-medium hover:underline flex items-center gap-1">
                             View all <FaArrowRight />
                         </Link>
                     </div>
