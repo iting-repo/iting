@@ -61,6 +61,7 @@ const AnnouncementManagement = lazy(() => import('../pages/admin/announcements/A
 const BlogManagement = lazy(() => import('../pages/admin/blog/BlogManagement'));
 const FaqManagement = lazy(() => import('../pages/admin/faq/FaqManagement'));
 const RoleManagement = lazy(() => import('../pages/admin/roles/RoleManagement'));
+const AdminProfilePage = lazy(() => import('../pages/admin/profile/AdminProfilePage'));
 const CompaniesPage = lazy(() => import('../pages/public/CompaniesPage'));
 const CompanyDetailPage = lazy(() => import('../pages/public/CompanyDetailPage'));
 const SalaryLookupPage = lazy(() => import('../pages/public/SalaryLookupPage'));
@@ -109,6 +110,7 @@ const AppRoutes = () => {
             <Route path="blog" element={<BlogManagement />} />
             <Route path="faq" element={<FaqManagement />} />
             <Route path="roles" element={<RoleManagement />} />
+            <Route path="profile" element={<AdminProfilePage />} />
           </Route>
         </Route>
 
