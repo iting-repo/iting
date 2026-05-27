@@ -498,10 +498,13 @@ const Header = () => {
                   Đăng ký
                 </Link>
                 <button
+                  type="button"
+                  aria-label={isMobileMenuOpen ? 'Đóng menu' : 'Mở menu'}
+                  aria-expanded={isMobileMenuOpen}
                   className="md:hidden text-white hover:text-[#3AB4E6] p-2 transition-transform duration-300 transform"
                   onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
                 >
-                  {isMobileMenuOpen ? <FaTimes size={24} className="animate-spin-slow" /> : <FaBars size={24} />}
+                  {isMobileMenuOpen ? <FaTimes size={24} className="animate-spin-slow" aria-hidden="true" /> : <FaBars size={24} aria-hidden="true" />}
                 </button>
               </>
             ) : (
@@ -511,6 +514,8 @@ const Header = () => {
                   {/* Messages Dropdown */}
                   <div className="relative flex items-center" ref={messageDropdownRef}>
                     <button
+                      type="button"
+                      aria-label={unreadMessageCount > 0 ? `Tin nhắn (${unreadMessageCount} chưa đọc)` : 'Tin nhắn'}
                       onClick={() => {
                         setIsMessagesOpen((prev) => !prev);
                         setIsMobileMenuOpen(false);
@@ -519,7 +524,7 @@ const Header = () => {
                       }}
                       className="w-10 h-10 rounded-full bg-gray-800 hover:bg-gray-700 flex items-center justify-center transition-colors relative"
                     >
-                      <BsEnvelope className="text-lg" />
+                      <BsEnvelope className="text-lg" aria-hidden="true" />
                       {unreadMessageCount > 0 ? (
                         <span className="absolute -top-1 -right-1 min-w-5 h-5 px-1 rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center">
                           {unreadMessageCount > 99 ? '99+' : unreadMessageCount}
@@ -590,6 +595,8 @@ const Header = () => {
                   {/* Notifications Bell */}
                   <div className="relative" ref={notifRef}>
                     <button
+                      type="button"
+                      aria-label={unreadCount > 0 ? `Thông báo (${unreadCount} chưa đọc)` : 'Thông báo'}
                       onClick={() => {
                         handleToggleNotifs();
                         setIsMobileMenuOpen(false);
@@ -598,7 +605,7 @@ const Header = () => {
                       }}
                       className="w-10 h-10 rounded-full bg-gray-800 hover:bg-gray-700 flex items-center justify-center transition-colors relative"
                     >
-                      <BsBell className="text-lg" />
+                      <BsBell className="text-lg" aria-hidden="true" />
                       {unreadCount > 0 ? <span className="absolute -top-1 -right-1 min-w-[18px] h-5 px-1 rounded-full bg-red-500 text-xs text-white flex items-center justify-center font-semibold">{unreadCount}</span> : null}
                     </button>
 

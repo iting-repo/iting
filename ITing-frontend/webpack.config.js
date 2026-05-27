@@ -137,5 +137,77 @@ module.exports = (env, argv) => {
     resolve: {
       extensions: ['.js', '.jsx'],
     },
+    // Tách vendor / runtime để giảm main bundle, cải thiện FCP/LCP và cache hit rate
+    // giữa các route. Chỉ áp dụng cho prod — dev giữ HMR đơn giản.
+    optimization: isProd ? {
+      runtimeChunk: 'single',
+      moduleIds: 'deterministic',
+      splitChunks: {
+        chunks: 'all',
+        maxInitialRequests: 25,
+        minSize: 20000,
+        cacheGroups: {
+          // React core: rất hot, tách riêng để cache lâu.
+          react: {
+            test: /[\\/]node_modules[\\/](react|react-dom|scheduler|react-is)[\\/]/,
+            name: 'vendor-react',
+            priority: 40,
+            reuseExistingChunk: true,
+          },
+          // Redux + saga + immer: state layer chung toàn app.
+          redux: {
+            test: /[\\/]node_modules[\\/](@reduxjs|react-redux|redux|redux-saga|immer)[\\/]/,
+            name: 'vendor-redux',
+            priority: 35,
+            reuseExistingChunk: true,
+          },
+          // Router.
+          router: {
+            test: /[\\/]node_modules[\\/]react-router(-dom)?[\\/]/,
+            name: 'vendor-router',
+            priority: 30,
+            reuseExistingChunk: true,
+          },
+          // Charts: chỉ dùng ở dashboard/report, nặng nhưng không cần trên home.
+          charts: {
+            test: /[\\/]node_modules[\\/](chart\.js|react-chartjs-2|recharts|d3-.*|victory-vendor)[\\/]/,
+            name: 'vendor-charts',
+            priority: 25,
+            reuseExistingChunk: true,
+          },
+          // Quill editor: rất nặng, chỉ dùng ở blog/post.
+          quill: {
+            test: /[\\/]node_modules[\\/](react-quill-new|quill)[\\/]/,
+            name: 'vendor-quill',
+            priority: 25,
+            reuseExistingChunk: true,
+          },
+          // i18n.
+          i18n: {
+            test: /[\\/]node_modules[\\/](i18next|react-i18next)[\\/]/,
+            name: 'vendor-i18n',
+            priority: 20,
+            reuseExistingChunk: true,
+          },
+          // Icons: react-icons + lucide.
+          icons: {
+            test: /[\\/]node_modules[\\/](react-icons|lucide-react)[\\/]/,
+            name: 'vendor-icons',
+            priority: 20,
+            reuseExistingChunk: true,
+          },
+          // Phần còn lại.
+          vendors: {
+            test: /[\\/]node_modules[\\/]/,
+            name: 'vendors',
+            priority: 10,
+            reuseExistingChunk: true,
+          },
+        },
+      },
+    } : undefined,
+    performance: {
+      hints: false,
+    },
   };
 };

@@ -22,8 +22,8 @@ import recommendationService from '../../services/recommendationService';
 import JobCard from '../../components/JobCard';
 import JobPreviewPane from '../../components/JobPreviewModal';
 
-// Import hình nền
-const heroBg = '/homepage-page.png';
+// Hero background: dùng AVIF 11KB thay PNG 1.3MB — ảnh đè opacity-30 nên không cần độ phân giải cao.
+const heroBg = '/jobportal_banner.avif';
 
 const HomePage = () => {
     const dispatch = useDispatch();
@@ -60,6 +60,10 @@ const HomePage = () => {
     // Search overlay state
     const [isSearchOverlayOpen, setIsSearchOverlayOpen] = useState(false);
     const [searchType, setSearchType] = useState('job');
+
+    // Banner CMS State
+    const [banners, setBanners] = useState([]);
+    const [currentBannerIndex, setCurrentBannerIndex] = useState(0);
 
     const handleCardEnter = (job, el) => {
         if (leaveTimerRef.current) clearTimeout(leaveTimerRef.current);
@@ -180,6 +184,26 @@ const HomePage = () => {
         };
         fetchBlogs();
     }, []);
+
+    useEffect(() => {
+        const fetchBanners = async () => {
+            try {
+                const data = await publicService.getBanners('homepage_main');
+                setBanners(Array.isArray(data) ? data : []);
+            } catch (error) {
+                console.error("Failed to fetch active banners:", error);
+            }
+        };
+        fetchBanners();
+    }, []);
+
+    useEffect(() => {
+        if (banners.length <= 1) return;
+        const interval = setInterval(() => {
+            setCurrentBannerIndex((prev) => (prev + 1) % banners.length);
+        }, 5000);
+        return () => clearInterval(interval);
+    }, [banners]);
 
     const handleToggleSave = async (e, jobId) => {
         e.stopPropagation();
@@ -440,7 +464,7 @@ const HomePage = () => {
             {/* PHẦN 1: HERO SEARCH */}
             <section className="relative z-10 bg-[#0B1B3D] pt-6 md:pt-10 pb-64 overflow-visible">
                 <div className="absolute inset-0 z-0">
-                    <img src={heroBg} alt="Background" className="w-full h-full object-cover opacity-30 mix-blend-overlay" />
+                    <img src={heroBg} alt="" aria-hidden="true" width="1600" height="900" fetchpriority="high" decoding="async" className="w-full h-full object-cover opacity-30 mix-blend-overlay" />
                     <div className="absolute inset-0 bg-gradient-to-b from-[#0B1B3D]/50 via-[#0B1B3D]/80 to-[#0B1B3D]"></div>
                     {/* Glowing Orbs */}
                     <div className="absolute top-0 left-1/4 w-96 h-96 bg-[#3AB4E6] rounded-full mix-blend-screen filter blur-[120px] opacity-20"></div>
@@ -533,6 +557,77 @@ const HomePage = () => {
                         </div>
                     </div>
 
+                    {/* Banners Carousel (Desktop & Tablet only, hidden on Mobile) */}
+                    {banners.length > 0 && (
+                        <div className="hidden md:block max-w-5xl mx-auto mt-8 relative group overflow-hidden rounded-2xl border border-white/10 shadow-2xl transition-all duration-300 hover:border-white/20">
+                            <div className="relative aspect-[31/10] w-full overflow-hidden bg-slate-950">
+                                {banners.map((banner, index) => {
+                                    const isActive = index === currentBannerIndex;
+                                    return (
+                                        <div
+                                            key={banner.id || index}
+                                            className={`absolute inset-0 transition-opacity duration-1000 ease-in-out ${
+                                                isActive ? "opacity-100 z-10 pointer-events-auto" : "opacity-0 z-0 pointer-events-none"
+                                            }`}
+                                        >
+                                            {banner.link ? (
+                                                <a href={banner.link} target="_blank" rel="noopener noreferrer" className="block w-full h-full">
+                                                    <img
+                                                        src={banner.imageDesktop}
+                                                        alt={banner.title}
+                                                        className="w-full h-full object-cover select-none transition-transform duration-700 hover:scale-105"
+                                                    />
+                                                </a>
+                                            ) : (
+                                                <img
+                                                    src={banner.imageDesktop}
+                                                    alt={banner.title}
+                                                    className="w-full h-full object-cover select-none"
+                                                />
+                                            )}
+                                        </div>
+                                    );
+                                })}
+
+                                {/* Controls: Left & Right Arrows */}
+                                {banners.length > 1 && (
+                                    <>
+                                        <button
+                                            type="button"
+                                            onClick={() => setCurrentBannerIndex((prev) => (prev - 1 + banners.length) % banners.length)}
+                                            className="absolute left-4 top-1/2 -translate-y-1/2 z-20 w-10 h-10 rounded-full bg-black/40 backdrop-blur-sm text-white flex items-center justify-center hover:bg-[#3AB4E6] hover:text-white transition-all opacity-0 group-hover:opacity-100 border border-white/10"
+                                        >
+                                            <FaArrowLeft size={12} />
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={() => setCurrentBannerIndex((prev) => (prev + 1) % banners.length)}
+                                            className="absolute right-4 top-1/2 -translate-y-1/2 z-20 w-10 h-10 rounded-full bg-black/40 backdrop-blur-sm text-white flex items-center justify-center hover:bg-[#3AB4E6] hover:text-white transition-all opacity-0 group-hover:opacity-100 border border-white/10"
+                                        >
+                                            <FaArrowRight size={12} />
+                                        </button>
+                                    </>
+                                )}
+
+                                {/* Dot Indicators */}
+                                {banners.length > 1 && (
+                                    <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-20 flex gap-2">
+                                        {banners.map((_, index) => (
+                                            <button
+                                                key={index}
+                                                type="button"
+                                                onClick={() => setCurrentBannerIndex(index)}
+                                                className={`w-2.5 h-2.5 rounded-full transition-all duration-300 ${
+                                                    index === currentBannerIndex ? "bg-[#3AB4E6] w-6" : "bg-white/40 hover:bg-white/60"
+                                                }`}
+                                            />
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    )}
+
                     <div className="mt-8 flex flex-wrap justify-center gap-3 items-center">
                         <span className="text-gray-300 text-base font-medium">Gợi ý:</span>
                         {['Intern', 'Thực tập sinh IT', 'Senior Frontend', 'Junior', 'Java Developer'].map((tag, i) => (
@@ -610,6 +705,10 @@ const HomePage = () => {
                         <img
                             src="/tech-fox.png"
                             alt="Cáo Công Nghệ AI"
+                            width="320"
+                            height="320"
+                            loading="lazy"
+                            decoding="async"
                             className="relative z-10 w-full max-w-[320px] object-contain drop-shadow-[0_0_25px_rgba(58,180,230,0.4)] animate-[bounce_4s_ease-in-out_infinite] hover:scale-105 transition-transform duration-500"
                         />
                     </div>
@@ -659,11 +758,11 @@ const HomePage = () => {
 
                     <div className="relative group">
                         {/* Scroll buttons overlay */}
-                        <button onClick={() => recommendationScrollRef.current?.scrollBy({ left: -300, behavior: 'smooth' })} className="absolute left-0 top-1/2 -translate-y-[calc(50%+8px)] -translate-x-2 md:-translate-x-4 w-10 h-10 bg-white/90 backdrop-blur rounded-full shadow-lg text-gray-600 flex items-center justify-center hover:bg-[#3AB4E6] hover:text-white transition-all z-10 opacity-100 md:opacity-0 md:group-hover:opacity-100 border border-gray-200">
-                            <FaArrowLeft size={14} />
+                        <button type="button" aria-label="Cuộn sang trái" onClick={() => recommendationScrollRef.current?.scrollBy({ left: -300, behavior: 'smooth' })} className="absolute left-0 top-1/2 -translate-y-[calc(50%+8px)] -translate-x-2 md:-translate-x-4 w-10 h-10 bg-white/90 backdrop-blur rounded-full shadow-lg text-gray-600 flex items-center justify-center hover:bg-[#3AB4E6] hover:text-white transition-all z-10 opacity-100 md:opacity-0 md:group-hover:opacity-100 border border-gray-200">
+                            <FaArrowLeft size={14} aria-hidden="true" />
                         </button>
-                        <button onClick={() => recommendationScrollRef.current?.scrollBy({ left: 300, behavior: 'smooth' })} className="absolute right-0 top-1/2 -translate-y-[calc(50%+8px)] translate-x-2 md:translate-x-4 w-10 h-10 bg-white/90 backdrop-blur rounded-full shadow-lg text-gray-600 flex items-center justify-center hover:bg-[#3AB4E6] hover:text-white transition-all z-10 opacity-100 md:opacity-0 md:group-hover:opacity-100 border border-gray-200">
-                            <FaArrowRight size={14} />
+                        <button type="button" aria-label="Cuộn sang phải" onClick={() => recommendationScrollRef.current?.scrollBy({ left: 300, behavior: 'smooth' })} className="absolute right-0 top-1/2 -translate-y-[calc(50%+8px)] translate-x-2 md:translate-x-4 w-10 h-10 bg-white/90 backdrop-blur rounded-full shadow-lg text-gray-600 flex items-center justify-center hover:bg-[#3AB4E6] hover:text-white transition-all z-10 opacity-100 md:opacity-0 md:group-hover:opacity-100 border border-gray-200">
+                            <FaArrowRight size={14} aria-hidden="true" />
                         </button>
 
                         <div ref={recommendationScrollRef} className="flex gap-4 md:gap-6 overflow-x-auto pb-6 pt-2 snap-x snap-mandatory no-scrollbar scroll-smooth px-1">
@@ -913,7 +1012,7 @@ const HomePage = () => {
                         <div className="flex-1 text-xs md:text-sm text-gray-600">
                             <span className="font-bold text-[#3AB4E6]">Gợi ý:</span> Đưa chuột vào tiêu đề công việc để xem trước thông tin chi tiết nhanh.
                         </div>
-                        <button className="text-gray-400 hover:text-gray-600 px-2">✕</button>
+                        <button type="button" aria-label="Đóng gợi ý" className="text-gray-400 hover:text-gray-600 px-2">✕</button>
                     </div>
 
                     {/* 4. JOB LIST: Thêm hiệu ứng hover xịn & bo góc mềm */}
@@ -1090,6 +1189,10 @@ const HomePage = () => {
                                 <img
                                     src="/tech-fox-dashboard.png"
                                     alt="Cáo Công Nghệ ITing"
+                                    width="200"
+                                    height="200"
+                                    loading="lazy"
+                                    decoding="async"
                                     className="relative z-10 h-44 object-contain drop-shadow-[0_0_20px_rgba(58,180,230,0.5)]"
                                 />
                             </div>
@@ -1256,11 +1359,11 @@ const HomePage = () => {
 
                     <div className="relative group">
                         {/* Scroll buttons overlay */}
-                        <button onClick={() => featuredCategoryScrollRef.current?.scrollBy({ left: -300, behavior: 'smooth' })} className="absolute left-0 top-1/2 -translate-y-[calc(50%+8px)] -translate-x-2 md:-translate-x-4 w-10 h-10 bg-white/90 backdrop-blur rounded-full shadow-lg text-gray-600 flex items-center justify-center hover:bg-[#3AB4E6] hover:text-white transition-all z-10 opacity-100 md:opacity-0 md:group-hover:opacity-100 border border-gray-200">
-                            <FaArrowLeft size={14} />
+                        <button type="button" aria-label="Cuộn sang trái" onClick={() => featuredCategoryScrollRef.current?.scrollBy({ left: -300, behavior: 'smooth' })} className="absolute left-0 top-1/2 -translate-y-[calc(50%+8px)] -translate-x-2 md:-translate-x-4 w-10 h-10 bg-white/90 backdrop-blur rounded-full shadow-lg text-gray-600 flex items-center justify-center hover:bg-[#3AB4E6] hover:text-white transition-all z-10 opacity-100 md:opacity-0 md:group-hover:opacity-100 border border-gray-200">
+                            <FaArrowLeft size={14} aria-hidden="true" />
                         </button>
-                        <button onClick={() => featuredCategoryScrollRef.current?.scrollBy({ left: 300, behavior: 'smooth' })} className="absolute right-0 top-1/2 -translate-y-[calc(50%+8px)] translate-x-2 md:translate-x-4 w-10 h-10 bg-white/90 backdrop-blur rounded-full shadow-lg text-gray-600 flex items-center justify-center hover:bg-[#3AB4E6] hover:text-white transition-all z-10 opacity-100 md:opacity-0 md:group-hover:opacity-100 border border-gray-200">
-                            <FaArrowRight size={14} />
+                        <button type="button" aria-label="Cuộn sang phải" onClick={() => featuredCategoryScrollRef.current?.scrollBy({ left: 300, behavior: 'smooth' })} className="absolute right-0 top-1/2 -translate-y-[calc(50%+8px)] translate-x-2 md:translate-x-4 w-10 h-10 bg-white/90 backdrop-blur rounded-full shadow-lg text-gray-600 flex items-center justify-center hover:bg-[#3AB4E6] hover:text-white transition-all z-10 opacity-100 md:opacity-0 md:group-hover:opacity-100 border border-gray-200">
+                            <FaArrowRight size={14} aria-hidden="true" />
                         </button>
 
                         <div ref={featuredCategoryScrollRef} className="flex gap-4 md:gap-6 overflow-x-auto pb-6 pt-2 snap-x snap-mandatory no-scrollbar scroll-smooth px-1">
