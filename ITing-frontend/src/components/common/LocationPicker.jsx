@@ -338,7 +338,7 @@ const LocationPicker = ({ value, onChange }) => {
                 onClick={() => setIsOpen(!isOpen)}
                 className="flex items-center cursor-pointer w-full group py-1"
             >
-                <span className={`flex-1 truncate text-sm ${value ? 'text-gray-700 font-semibold' : 'text-gray-400'}`}>
+                <span className={`flex-1 truncate text-sm ${value ? 'text-gray-700 font-semibold' : 'text-gray-600'}`}>
                     {value || 'Tất cả địa điểm'}
                 </span>
                 <FaChevronRight size={10} className={`text-gray-300 transition-transform ${isOpen ? 'rotate-90' : ''}`} />

@@ -127,7 +127,7 @@ const CategoryPicker = ({ value, onChange }) => {
                 className="flex items-center gap-3 cursor-pointer w-full group py-1 h-full pr-4"
             >
                 <FaBars className="text-gray-500 group-hover:text-[#3AB4E6] transition-colors" />
-                <span className={`flex-1 truncate text-sm ${value ? 'text-gray-700 font-bold' : 'text-gray-500'}`}>
+                <span className={`flex-1 truncate text-sm ${value ? 'text-gray-700 font-bold' : 'text-gray-600'}`}>
                     {value || 'Danh mục nghề nghiệp'}
                 </span>
             </div>

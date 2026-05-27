@@ -470,6 +470,8 @@ const Header = () => {
             <img
               src={logoIting}
               alt="ITing Logo"
+              width="120"
+              height="56"
               className="h-14 w-auto object-contain transition-all duration-500 group-hover:scale-110 group-hover:drop-shadow-[0_0_15px_rgba(58,180,230,0.6)]"
             />
           </Link>

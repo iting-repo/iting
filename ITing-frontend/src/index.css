@@ -6,6 +6,12 @@
   body {
     font-family: 'Inter', sans-serif;
   }
+  /* WCAG AA: default placeholder #9CA3AF (gray-400) fail 3.27:1 trên trắng → bump lên gray-600 (#4B5563 = 7:1). */
+  input::placeholder,
+  textarea::placeholder {
+    color: #4B5563;
+    opacity: 1;
+  }
 }
 
 @layer utilities {

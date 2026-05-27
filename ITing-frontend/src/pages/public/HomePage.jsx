@@ -826,7 +826,7 @@ const HomePage = () => {
                                             </div>
 
                                             <div className="flex items-center justify-between">
-                                                <span className="text-sm font-bold text-blue-500">
+                                                <span className="text-sm font-bold text-blue-700">
                                                     {job.minSalary || job.maxSalary ? formatSalary(job.minSalary, job.maxSalary) : "Thỏa thuận"}
                                                 </span>
                                                 <div className="w-8 h-8 rounded-full bg-gray-50 group-hover:bg-blue-500 group-hover:text-white flex items-center justify-center transition-all">
@@ -876,8 +876,8 @@ const HomePage = () => {
                             <button
                                 onClick={() => setFilterMode('location')}
                                 className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all ${filterMode === 'location'
-                                    ? 'bg-[#3AB4E6] text-white shadow-sm'
-                                    : 'text-gray-500 hover:bg-gray-50'
+                                    ? 'bg-[#0E7BAA] text-white shadow-sm'
+                                    : 'text-gray-700 hover:bg-gray-50'
                                     }`}
                             >
                                 <FaMapMarkerAlt className="inline mr-1" size={10} />Địa điểm
@@ -885,8 +885,8 @@ const HomePage = () => {
                             <button
                                 onClick={() => setFilterMode('category')}
                                 className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all ${filterMode === 'category'
-                                    ? 'bg-[#3AB4E6] text-white shadow-sm'
-                                    : 'text-gray-500 hover:bg-gray-50'
+                                    ? 'bg-[#0E7BAA] text-white shadow-sm'
+                                    : 'text-gray-700 hover:bg-gray-50'
                                     }`}
                             >
                                 <FaBriefcase className="inline mr-1" size={10} />Ngành nghề
@@ -1013,7 +1013,7 @@ const HomePage = () => {
                             <FaMagic size={14} />
                         </div>
                         <div className="flex-1 text-xs md:text-sm text-gray-600">
-                            <span className="font-bold text-[#3AB4E6]">Gợi ý:</span> Đưa chuột vào tiêu đề công việc để xem trước thông tin chi tiết nhanh.
+                            <span className="font-bold text-[#0E7BAA]">Gợi ý:</span> Đưa chuột vào tiêu đề công việc để xem trước thông tin chi tiết nhanh.
                         </div>
                         <button type="button" aria-label="Đóng gợi ý" className="text-gray-400 hover:text-gray-600 px-2">✕</button>
                     </div>
@@ -1097,7 +1097,7 @@ const HomePage = () => {
 
                                         {/* Nút hành động */}
                                         <div className="flex flex-row md:flex-col justify-between items-center md:items-end gap-3 mt-4 md:mt-0 min-w-0 md:min-w-[100px] border-t md:border-t-0 border-gray-100 pt-4 md:pt-0">
-                                            <span className="text-xs text-gray-400 font-medium bg-gray-50 px-2 py-1 rounded">
+                                            <span className="text-xs text-gray-600 font-medium bg-gray-50 px-2 py-1 rounded">
                                                 {timeAgo(job.createdAt)}
                                             </span>
                                             {/* Nút Chi Tiết style mới */}
@@ -1411,7 +1411,7 @@ const HomePage = () => {
                                         {blog.category || 'Tin tức'}
                                     </span>
                                 </div>
-                                <div className="text-gray-400 text-xs mb-2">{timeAgo(blog.createdAt)}</div>
+                                <div className="text-gray-600 text-xs mb-2">{timeAgo(blog.createdAt)}</div>
                                 <h3 className="text-xl font-bold text-gray-800 mb-3 group-hover:text-[#3AB4E6] transition-colors leading-snug line-clamp-2 min-h-[3.5rem]">
                                     {blog.title}
                                 </h3>
@@ -1483,7 +1483,7 @@ const HomePage = () => {
                                         placeholder="Ví dụ: Tôi là lập trình viên Java có 3 năm kinh nghiệm, thành thạo Spring Boot, React và AWS..."
                                         className="w-full h-64 p-4 bg-gray-50 border-2 border-gray-100 rounded-xl focus:border-[#3AB4E6] focus:ring-0 outline-none transition-all resize-none text-gray-700 placeholder-gray-400"
                                     />
-                                    <div className="absolute bottom-3 right-3 text-gray-400 text-xs font-medium">
+                                    <div className="absolute bottom-3 right-3 text-gray-600 text-xs font-medium">
                                         {cvText.length} ký tự
                                     </div>
                                 </div>
@@ -1493,7 +1493,7 @@ const HomePage = () => {
                                         <>
                                             <FaCloudUploadAlt size={48} className="text-gray-300 mb-3" />
                                             <p className="text-sm font-bold text-gray-700 mb-1">Chọn file CV để AI phân tích</p>
-                                            <p className="text-xs text-gray-400 mb-4">PDF hoặc ảnh, tối đa 5MB</p>
+                                            <p className="text-xs text-gray-600 mb-4">PDF hoặc ảnh, tối đa 5MB</p>
                                             <label className="px-5 py-2.5 bg-white border border-gray-300 rounded-lg text-sm font-bold text-gray-700 hover:bg-gray-100 cursor-pointer shadow-sm transition-colors">
                                                 Chọn file
                                                 <input
@@ -1510,7 +1510,7 @@ const HomePage = () => {
                                                 <FaFilePdf size={28} className="text-red-500 shrink-0" />
                                                 <div className="truncate">
                                                     <p className="text-sm font-bold text-gray-800 truncate">{cvFile.name}</p>
-                                                    <p className="text-xs text-gray-400">
+                                                    <p className="text-xs text-gray-600">
                                                         {(cvFile.size / 1024 / 1024).toFixed(2)} MB
                                                     </p>
                                                 </div>

@@ -4,8 +4,10 @@ import MainLayout from '../layouts/MainLayout';
 import AdminLayout from '../layouts/AdminLayout';
 import PrivateRoute from './PrivateRoute';
 import { GlobalLoading } from '../components/common';
-
-const HomePage = lazy(() => import('../pages/public/HomePage'));
+// HomePage import eagerly để cải thiện LCP — đây là landing page chính, lazy-load
+// tạo waterfall (main bundle → chunk fetch → render) làm LCP element render delay
+// >1s trên simulated mobile.
+import HomePage from '../pages/public/HomePage';
 const Login = lazy(() => import('../pages/public/LoginPage'));
 const Register = lazy(() => import('../pages/public/RegisterPage'));
 const JobPage = lazy(() => import('../pages/public/JobPage'));
