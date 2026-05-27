@@ -8,6 +8,9 @@ import companyReviewService from '../../services/companyReviewService';
 import { ConfirmModal } from '../../components/common';
 import useConfirm from '../../hooks/useConfirm';
 import WriteReviewModal from './WriteReviewModal';
+import Pagination from '../common/Pagination';
+
+const REVIEWS_PER_PAGE = 10;
 
 /**
  * Glassdoor-style reviews tab for a company detail page.
@@ -20,6 +23,7 @@ const CompanyReviewsTab = ({ companyId, companyName }) => {
   const [loading, setLoading] = useState(true);
   const [showWriteModal, setShowWriteModal] = useState(false);
   const [confirm, askConfirm, resetConfirm] = useConfirm();
+  const [currentPage, setCurrentPage] = useState(1);
 
   const load = () => {
     setLoading(true);
@@ -82,6 +86,12 @@ const CompanyReviewsTab = ({ companyId, companyName }) => {
   if (loading) return <div className="text-center py-10 text-slate-400">Đang tải đánh giá...</div>;
 
   const reviews = data?.reviews || [];
+  const totalPages = Math.ceil(reviews.length / REVIEWS_PER_PAGE) || 1;
+  const safePage = Math.min(currentPage, totalPages);
+  const pagedReviews = reviews.slice(
+    (safePage - 1) * REVIEWS_PER_PAGE,
+    safePage * REVIEWS_PER_PAGE,
+  );
 
   return (
     <div className="space-y-6">
@@ -117,17 +127,30 @@ const CompanyReviewsTab = ({ companyId, companyName }) => {
           <p className="text-sm text-slate-400">Hãy là người đầu tiên chia sẻ trải nghiệm!</p>
         </div>
       ) : (
-        <div className="space-y-4">
-          {reviews.map((r) => (
-            <ReviewCard
-              key={r.id} review={r}
-              currentUserId={currentUser?.id}
-              onHelpful={() => handleHelpful(r.id)}
-              onReport={() => handleReport(r.id)}
-              onDelete={() => handleDelete(r.id)}
+        <>
+          <div className="space-y-4">
+            {pagedReviews.map((r) => (
+              <ReviewCard
+                key={r.id} review={r}
+                currentUserId={currentUser?.id}
+                currentUserRole={currentUser?.role}
+                onHelpful={() => handleHelpful(r.id)}
+                onReport={() => handleReport(r.id)}
+                onDelete={() => handleDelete(r.id)}
+              />
+            ))}
+          </div>
+
+          {totalPages > 1 && (
+            <Pagination
+              currentPage={safePage}
+              totalPages={totalPages}
+              onPageChange={setCurrentPage}
+              totalItems={reviews.length}
+              itemsPerPage={REVIEWS_PER_PAGE}
             />
-          ))}
-        </div>
+          )}
+        </>
       )}
 
       <WriteReviewModal
@@ -143,8 +166,10 @@ const CompanyReviewsTab = ({ companyId, companyName }) => {
   );
 };
 
-const ReviewCard = ({ review, currentUserId, onHelpful, onReport, onDelete }) => {
+const ReviewCard = ({ review, currentUserId, currentUserRole, onHelpful, onReport, onDelete }) => {
   const isAuthor = currentUserId && review.accountId && currentUserId === review.accountId;
+  const isAdmin = currentUserRole === 'ADMIN';
+  const canDelete = isAuthor || isAdmin;
   const workTypeLabel = {
     CURRENT_EMPLOYEE: 'Đang làm việc',
     FORMER_EMPLOYEE: 'Cựu nhân viên',
@@ -224,9 +249,9 @@ const ReviewCard = ({ review, currentUserId, onHelpful, onReport, onDelete }) =>
         <button onClick={onReport} className="flex items-center gap-1 hover:text-red-600">
           <FaFlag /> Báo cáo
         </button>
-        {isAuthor && (
-          <button onClick={onDelete} className="flex items-center gap-1 hover:text-red-600 ml-auto">
-            <FaTrash /> Xóa
+        {canDelete && (
+          <button onClick={onDelete} className="flex items-center gap-1 hover:text-red-600 ml-auto" title={isAdmin && !isAuthor ? "Xóa (quyền admin)" : "Xóa đánh giá của bạn"}>
+            <FaTrash /> Xóa{isAdmin && !isAuthor ? " (admin)" : ""}
           </button>
         )}
       </div>

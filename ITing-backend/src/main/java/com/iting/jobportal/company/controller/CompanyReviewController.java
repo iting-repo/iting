@@ -180,7 +180,7 @@ public class CompanyReviewController {
         return ResponseEntity.ok(Map.of("message", "Cảm ơn bạn đã báo cáo."));
     }
 
-    /** Delete own review. Only the author can delete. */
+    /** Delete review. Author OR admin có quyền xóa (moderation). */
     @DeleteMapping("/api/reviews/{reviewId}")
     public ResponseEntity<Map<String, String>> deleteReview(
             @PathVariable Long reviewId, HttpServletRequest request) {
@@ -188,11 +188,15 @@ public class CompanyReviewController {
         CompanyReview review = reviewRepository.findById(reviewId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Review không tồn tại"));
 
-        if (review.getAccount() == null || !userId.equals(review.getAccount().getId())) {
+        boolean isAuthor = review.getAccount() != null && userId.equals(review.getAccount().getId());
+        boolean isAdmin = accountRepository.findById(userId)
+                .map(a -> a.getRole() != null && "ADMIN".equals(a.getRole().name()))
+                .orElse(false);
+
+        if (!isAuthor && !isAdmin) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Bạn không có quyền xóa đánh giá này");
         }
 
-        // Also delete associated votes
         voteRepository.deleteAllByReviewId(reviewId);
         reviewRepository.delete(review);
         return ResponseEntity.ok(Map.of("message", "Đã xóa đánh giá thành công."));
@@ -220,8 +224,13 @@ public class CompanyReviewController {
         m.put("helpfulCount", r.getHelpfulCount());
         m.put("createdAt", r.getCreatedAt());
         m.put("accountId", r.getAccount() != null ? r.getAccount().getId() : null);
-        if (Boolean.FALSE.equals(r.getIsAnonymous()) && r.getAccount() != null) {
-            m.put("authorName", r.getAccount().getFullName());
+        // Hiển thị tên thật của reviewer (yêu cầu product). Chỉ fallback
+        // "Người dùng ẩn danh" khi account đã bị xóa / null. Bỏ qua cờ
+        // isAnonymous trong DB — design cũ là Glassdoor-style nhưng product
+        // muốn minh bạch danh tính reviewer.
+        if (r.getAccount() != null) {
+            String name = r.getAccount().getFullName();
+            m.put("authorName", (name != null && !name.isBlank()) ? name : r.getAccount().getEmail());
         } else {
             m.put("authorName", "Người dùng ẩn danh");
         }
