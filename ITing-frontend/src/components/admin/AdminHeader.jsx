@@ -154,7 +154,18 @@ const AdminHeader = ({ onToggleSidebar }) => {
                 ))}
               </div>
               <div className="border-t px-3 py-2 text-center">
-                <button onClick={() => { navigate('/admin/notifications'); setIsNotifOpen(false); }} className="text-sm text-[#3AB4E6] hover:underline">Xem tất cả</button>
+                <button
+                  onClick={() => {
+                    // Truyền state.ts để useLocation re-trigger refetch khi
+                    // user đã ở /admin/notifications (navigate cùng path
+                    // không tự re-render — phải đổi location.key).
+                    navigate('/admin/notifications', { state: { ts: Date.now() } });
+                    setIsNotifOpen(false);
+                  }}
+                  className="text-sm text-[#3AB4E6] hover:underline"
+                >
+                  Xem tất cả
+                </button>
               </div>
             </div>
           )}

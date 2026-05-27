@@ -1,37 +1,39 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
     FaRegUser, FaFileAlt, FaSearch, FaCheckCircle,
     FaPlay, FaChevronDown, FaChevronUp, FaArrowRight,
     FaMedal, FaUserTie, FaBuilding, FaTools
 } from 'react-icons/fa';
+import publicContentService from '../../services/publicContentService';
+
+// Fallback khi API lỗi / chưa có FAQ nào published — giữ trải nghiệm
+// không vỡ. Admin có thể tạo FAQ qua /admin/faq để override list này.
+const FALLBACK_FAQS = [
+    { title: "Tôi có thể tải lên CV không?", content: "Có, bạn có thể tải CV của mình trực tiếp lên hệ thống để nhà tuyển dụng dễ dàng xem và liên hệ." },
+    { title: "Quy trình tuyển dụng mất bao lâu?", content: "Thời gian tuyển dụng phụ thuộc vào từng công ty và vị trí cụ thể. Thông thường quy trình kéo dài từ 1-3 tuần." },
+    { title: "Quy trình tuyển chọn ứng viên bao gồm những bước nào?", content: "Thường bao gồm: Sàng lọc hồ sơ → Phỏng vấn sơ bộ → Phỏng vấn chuyên môn → Deal lương → Onboarding." },
+    { title: "Nền tảng có tuyển dụng cho sinh viên mới ra trường hoặc thực tập sinh?", content: "Có, ITing có rất nhiều vị trí Internship và Fresher dành cho các bạn sinh viên mới ra trường." },
+    { title: "Tôi có thể nhận thông báo khi có công việc mới phù hợp không?", content: "Có, bạn hãy bật tính năng 'Nhận thông báo việc làm' trong phần cài đặt tài khoản." },
+];
 
 const AboutPage = () => {
-    // State cho phần FAQ (Câu hỏi thường gặp)
     const [openFaqIndex, setOpenFaqIndex] = useState(0);
+    const [faqs, setFaqs] = useState(FALLBACK_FAQS);
 
-    // Dữ liệu FAQ
-    const faqs = [
-        {
-            question: "Tôi có thể tải lên CV không?",
-            answer: "Có, bạn có thể tải CV của mình trực tiếp lên hệ thống để nhà tuyển dụng dễ dàng xem và liên hệ. Nếu bạn dùng AI matching, có thể thêm: 'Hệ thống sẽ tự động gợi ý việc làm phù hợp dựa trên nội dung CV của bạn'."
-        },
-        {
-            question: "Quy trình tuyển dụng mất bao lâu?",
-            answer: "Thời gian tuyển dụng phụ thuộc vào từng công ty và vị trí cụ thể. Thông thường quy trình kéo dài từ 1-3 tuần."
-        },
-        {
-            question: "Quy trình tuyển chọn ứng viên bao gồm những bước nào?",
-            answer: "Thường bao gồm: Sàng lọc hồ sơ -> Phỏng vấn sơ bộ -> Phỏng vấn chuyên môn -> Deal lương -> Onboarding."
-        },
-        {
-            question: "Nền tảng có tuyển dụng cho sinh viên mới ra trường hoặc thực tập sinh?",
-            answer: "Có, ITing có rất nhiều vị trí Internship và Fresher dành cho các bạn sinh viên mới ra trường."
-        },
-        {
-            question: "Tôi có thể nhận thông báo khi có công việc mới phù hợp không?",
-            answer: "Có, bạn hãy bật tính năng 'Nhận thông báo việc làm' trong phần cài đặt tài khoản."
-        }
-    ];
+    useEffect(() => {
+        let alive = true;
+        publicContentService
+            .getFaqs()
+            .then((data) => {
+                if (!alive) return;
+                const list = Array.isArray(data) ? data : [];
+                if (list.length > 0) setFaqs(list);
+            })
+            .catch(() => {
+                // giữ FALLBACK_FAQS
+            });
+        return () => { alive = false; };
+    }, []);
 
     return (
         <div className="bg-white min-h-screen font-sans text-gray-700">
@@ -170,31 +172,37 @@ const AboutPage = () => {
                 </div>
 
                 <div className="space-y-4">
-                    {faqs.map((item, index) => (
-                        <div key={index} className="rounded-xl overflow-hidden transition-all duration-300">
-                            <button
-                                onClick={() => setOpenFaqIndex(openFaqIndex === index ? -1 : index)}
-                                className={`w-full flex items-center justify-between p-6 text-left transition-colors ${openFaqIndex === index ? 'bg-[#89CFF0]/20' : 'bg-white hover:bg-gray-50'
-                                    }`}
-                            >
-                                <span className={`font-bold text-lg ${openFaqIndex === index ? 'text-gray-900' : 'text-gray-600'}`}>
-                                    <span className="mr-4 text-[#3AB4E6] opacity-50">0{index + 1}</span>
-                                    {item.question}
-                                </span>
-                                {openFaqIndex === index ?
-                                    <FaChevronUp className="text-[#3AB4E6]" /> :
-                                    <FaChevronDown className="text-gray-400" />
-                                }
-                            </button>
+                    {faqs.map((item, index) => {
+                        const key = item.id ?? index;
+                        const num = String(index + 1).padStart(2, '0');
+                        const isOpen = openFaqIndex === index;
+                        return (
+                            <div key={key} className="rounded-xl overflow-hidden transition-all duration-300">
+                                <button
+                                    onClick={() => setOpenFaqIndex(isOpen ? -1 : index)}
+                                    className={`w-full flex items-center justify-between p-6 text-left transition-colors ${isOpen ? 'bg-[#89CFF0]/20' : 'bg-white hover:bg-gray-50'}`}
+                                >
+                                    <span className={`font-bold text-lg ${isOpen ? 'text-gray-900' : 'text-gray-600'}`}>
+                                        <span className="mr-4 text-[#3AB4E6] opacity-50">{num}</span>
+                                        {item.title}
+                                    </span>
+                                    {isOpen
+                                        ? <FaChevronUp className="text-[#3AB4E6]" />
+                                        : <FaChevronDown className="text-gray-400" />}
+                                </button>
 
-                            {openFaqIndex === index && (
-                                <div className="bg-[#89CFF0]/20 px-6 pb-6 pl-14 text-gray-600 text-sm leading-relaxed">
-                                    {item.answer}
-                                </div>
-                            )}
-                            <div className="h-[1px] bg-gray-100 w-full"></div>
-                        </div>
-                    ))}
+                                {isOpen && (
+                                    <div
+                                        className="bg-[#89CFF0]/20 px-6 pb-6 pl-14 text-gray-600 text-sm leading-relaxed faq-content"
+                                        // content do admin nhập qua ReactQuill → HTML.
+                                        // ReactQuill sanitize trước khi lưu, BE chỉ proxy.
+                                        dangerouslySetInnerHTML={{ __html: item.content || '' }}
+                                    />
+                                )}
+                                <div className="h-[1px] bg-gray-100 w-full"></div>
+                            </div>
+                        );
+                    })}
                 </div>
             </div>
 
