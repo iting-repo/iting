@@ -27,9 +27,16 @@ const FacebookIcon = () => (
   </svg>
 );
 
+// Khoá lưu email trong localStorage cho "Ghi nhớ tài khoản". Chỉ lưu
+// email, KHÔNG lưu mật khẩu — browser password manager đã làm phần đó
+// an toàn hơn, mình chỉ tiết kiệm thao tác gõ email cho user.
+const REMEMBER_EMAIL_KEY = 'iting_remember_email';
+
 const LoginPage = () => {
-  const [email, setEmail] = useState("");
+  const rememberedEmail = (typeof window !== 'undefined') ? localStorage.getItem(REMEMBER_EMAIL_KEY) : null;
+  const [email, setEmail] = useState(rememberedEmail || "");
   const [password, setPassword] = useState("");
+  const [rememberMe, setRememberMe] = useState(!!rememberedEmail);
 
   const dispatch = useDispatch();
   const navigate = useNavigate();
@@ -94,6 +101,13 @@ const LoginPage = () => {
       return;
     }
     setFormErrors({});
+
+    if (rememberMe) {
+      localStorage.setItem(REMEMBER_EMAIL_KEY, email);
+    } else {
+      localStorage.removeItem(REMEMBER_EMAIL_KEY);
+    }
+
     dispatch(loginRequest({ email, password, navigate }));
   }
 
@@ -155,7 +169,12 @@ const LoginPage = () => {
             </div>
             <div className="flex justify-between items-center text-sm mt-2">
               <label className="flex items-center text-gray-500 cursor-pointer select-none">
-                <input type="checkbox" className="mr-2 w-4 h-4 text-[#3AB4E6] border-gray-300 rounded focus:ring-blue-500" />
+                <input
+                  type="checkbox"
+                  checked={rememberMe}
+                  onChange={(e) => setRememberMe(e.target.checked)}
+                  className="mr-2 w-4 h-4 text-[#3AB4E6] border-gray-300 rounded focus:ring-blue-500"
+                />
                 Ghi nhớ tài khoản
               </label>
               <Link to="/forgot-password" className="text-[#3AB4E6] font-medium hover:underline">Quên mật khẩu?</Link>
