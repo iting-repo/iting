@@ -21,6 +21,13 @@ permissions:
   contents: read
   packages: read
 
+# Tránh queue chồng chất khi push nhiều tag liên tiếp. Mỗi tag là 1 deploy
+# tuần tự — KHÔNG cancel-in-progress vì SSH/docker compose recreate đang
+# chạy dở dang dễ để server ở trạng thái lạ.
+concurrency:
+  group: deploy-to-ec2
+  cancel-in-progress: false
+
 env:
   REGISTRY: ghcr.io
   BACKEND_IMAGE: ghcr.io/${{ github.repository }}/iting-backend:${{ github.ref_name }}
@@ -46,21 +53,26 @@ jobs:
           password: ${{ secrets.GHCR_PAT }}
 
       - name: Wait for tagged images in GHCR
-        # Tăng lên 60 attempts × 15s = 15 phút để đủ cho CI Docker build
-        # khi cache miss (entity changes làm rebuild full Java image).
+        # 120 attempts × 30s = 60 phút. Cần buffer rộng vì:
+        #   - Push nhiều tag liên tiếp → CI queue trên GitHub runners
+        #     (free tier limit) → CI cho tag X có thể chờ 30+ phút mới
+        #     được runner trước khi build/push image.
+        #   - Cache miss (entity changes) → backend Docker build full
+        #     từ jdk image = 10-15 phút.
+        # Tổng 60 phút an toàn cho cả 2 trường hợp cộng dồn.
         run: |
           echo "Waiting for ${{ env.BACKEND_IMAGE }}"
           echo "Waiting for ${{ env.FRONTEND_IMAGE }}"
 
-          for i in {1..60}; do
+          for i in {1..120}; do
             if docker manifest inspect "${{ env.BACKEND_IMAGE }}" >/dev/null 2>&1 && \
                docker manifest inspect "${{ env.FRONTEND_IMAGE }}" >/dev/null 2>&1; then
               echo "Tagged images are available"
               exit 0
             fi
 
-            echo "Tagged images not ready yet... attempt $i/60"
-            sleep 15
+            echo "Tagged images not ready yet... attempt $i/120"
+            sleep 30
           done
 
           echo "Timed out waiting for tagged images in GHCR"

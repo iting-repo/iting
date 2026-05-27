@@ -27,6 +27,15 @@ permissions:
   packages: write
   security-events: write
 
+# Branch/PR/tag → 1 nhóm riêng. Khi push tag mới chồng lên tag cũ (rapid
+# tagging cho test/release work), CI của tag cũ bị cancel → giải phóng
+# runner cho tag mới + tránh tích tụ queue 30+ phút.
+# Tag deploy vẫn cần image: nếu CI tag cũ bị cancel, deploy.yml của tag cũ
+# sẽ timeout (acceptable — chỉ tag mới nhất quan trọng).
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 env:
   JAVA_VERSION: "17"
   NODE_VERSION: "20"
