@@ -3,6 +3,7 @@ import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import { FaArrowRight, FaEye, FaEyeSlash } from 'react-icons/fa';
 import bgImage from '../../assets/bg_login.jpg';
 import authService from '../../services/authService';
+import { firstPasswordError } from '../../utils/passwordPolicy';
 
 const ResetPasswordPage = () => {
   const [searchParams] = useSearchParams();
@@ -29,8 +30,12 @@ const ResetPasswordPage = () => {
     if (!token) return;
 
     const errors = {};
-    if (!password) errors.password = "Vui lòng nhập mật khẩu mới";
-    else if (password.length < 6) errors.password = "Mật khẩu tối thiểu 6 ký tự";
+    if (!password) {
+      errors.password = "Vui lòng nhập mật khẩu mới";
+    } else {
+      const pwErr = firstPasswordError(password);
+      if (pwErr) errors.password = pwErr;
+    }
     if (!confirmPassword) errors.confirmPassword = "Vui lòng xác nhận mật khẩu";
     else if (password !== confirmPassword) errors.confirmPassword = "Mật khẩu xác nhận không khớp!";
     

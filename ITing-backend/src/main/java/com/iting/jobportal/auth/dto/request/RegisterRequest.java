@@ -1,6 +1,7 @@
 package com.iting.jobportal.auth.dto.request;
 
 import com.iting.jobportal.auth.entity.Enum.Role;
+import com.iting.jobportal.common.validation.StrongPassword;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -23,6 +24,7 @@ public class RegisterRequest {
     private String email;
 
     @NotBlank(message = "Password is required")
+    @StrongPassword
     private String password;
 
     @NotNull(message = "Role is required")

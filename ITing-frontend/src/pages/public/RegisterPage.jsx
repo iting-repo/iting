@@ -7,6 +7,7 @@ import { FaEye, FaEyeSlash, FaArrowRight } from "react-icons/fa";
 import { BsBriefcaseFill, BsBuilding, BsPeopleFill } from "react-icons/bs";
 import publicService from "../../services/publicService";
 import { useModalEscape } from "../../hooks/useModalEscape";
+import { validatePassword, firstPasswordError } from "../../utils/passwordPolicy";
 
 const bgImage = "/homepage-page.png";
 
@@ -111,8 +112,12 @@ const RegisterPage = () => {
     if (!formData.fullName) errors.fullName = isEmployer ? "Vui lòng nhập tên công ty/doanh nghiệp" : "Vui lòng nhập họ tên";
     if (!formData.email) errors.email = "Vui lòng nhập email";
     else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) errors.email = "Email không hợp lệ";
-    if (!formData.password) errors.password = "Vui lòng nhập mật khẩu";
-    else if (formData.password.length < 6) errors.password = "Mật khẩu tối thiểu 6 ký tự";
+    if (!formData.password) {
+      errors.password = "Vui lòng nhập mật khẩu";
+    } else {
+      const pwErr = firstPasswordError(formData.password);
+      if (pwErr) errors.password = pwErr;
+    }
     if (!formData.confirmPassword) errors.confirmPassword = "Vui lòng xác nhận mật khẩu";
     else if (formData.password !== formData.confirmPassword) errors.confirmPassword = "Mật khẩu xác nhận không khớp!";
     
@@ -167,6 +172,33 @@ const RegisterPage = () => {
                 <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400">{showPassword ? <FaEyeSlash size={18} /> : <FaEye size={18} />}</button>
               </div>
               {formErrors.password && <span className="text-red-500 text-sm mt-1 block">* {formErrors.password}</span>}
+              {formData.password && (() => {
+                const { checks, score } = validatePassword(formData.password);
+                const strengthLabel = ["Rất yếu", "Yếu", "Trung bình", "Khá", "Mạnh"][score];
+                const strengthColor = ["bg-red-500", "bg-red-400", "bg-yellow-400", "bg-blue-400", "bg-green-500"][score];
+                return (
+                  <div className="mt-2 space-y-1.5">
+                    <div className="flex items-center gap-2">
+                      <div className="flex-1 h-1.5 bg-gray-200 rounded-full overflow-hidden">
+                        <div className={`h-full ${strengthColor} transition-all`} style={{ width: `${(score / 4) * 100}%` }} />
+                      </div>
+                      <span className="text-xs text-gray-500 w-16 text-right">{strengthLabel}</span>
+                    </div>
+                    <ul className="text-xs space-y-0.5">
+                      {[
+                        { ok: checks.length, label: "Ít nhất 8 ký tự" },
+                        { ok: checks.upper, label: "Có chữ HOA" },
+                        { ok: checks.lower, label: "Có chữ thường" },
+                        { ok: checks.digit, label: "Có số" },
+                      ].map(({ ok, label }) => (
+                        <li key={label} className={ok ? "text-green-600" : "text-gray-400"}>
+                          {ok ? "✓" : "○"} {label}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                );
+              })()}
             </div>
             <div>
               <div className="relative">

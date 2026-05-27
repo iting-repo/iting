@@ -1,5 +1,6 @@
 package com.iting.jobportal.auth.dto.request;
 
+import com.iting.jobportal.common.validation.StrongPassword;
 import jakarta.validation.constraints.NotBlank;
 
 public class ChangePasswordRequest {
@@ -8,6 +9,7 @@ public class ChangePasswordRequest {
     private String oldPassword;
 
     @NotBlank(message = "New password is required")
+    @StrongPassword
     private String newPassword;
 
     public String getOldPassword() {

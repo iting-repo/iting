@@ -1,5 +1,6 @@
 package com.iting.jobportal.auth.dto.request;
 
+import com.iting.jobportal.common.validation.StrongPassword;
 import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
 
@@ -12,5 +13,6 @@ public class ResetPasswordRequest {
     private String otpCode;
 
     @NotBlank
+    @StrongPassword
     private String newPassword;
 }
