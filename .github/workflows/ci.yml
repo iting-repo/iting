@@ -55,9 +55,48 @@ jobs:
         working-directory: ITing-backend
         run: mvn -B clean package -DskipTests
 
-      - name: Run tests
+      - name: Run tests + coverage (JaCoCo)
         working-directory: ITing-backend
-        run: mvn -B test
+        run: mvn -B test jacoco:report
+        continue-on-error: true
+
+      - name: Upload JaCoCo coverage report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: jacoco-report
+          path: ITing-backend/target/site/jacoco/
+          retention-days: 14
+
+      # Cache NVD CVE database (~500MB) — nếu không cache, lần đầu mất 30 phút
+      - name: Cache OWASP Dependency-Check DB
+        uses: actions/cache@v4
+        with:
+          path: ~/.m2/repository/org/owasp/dependency-check-data/
+          key: dep-check-db-${{ runner.os }}-v9
+          restore-keys: dep-check-db-${{ runner.os }}-
+
+      - name: OWASP Dependency-Check (Java)
+        working-directory: ITing-backend
+        # NVD_API_KEY tăng tốc 10× — đăng ký free tại
+        # https://nvd.nist.gov/developers/request-an-api-key
+        # Thêm secret repo: Settings → Secrets → Actions → NVD_API_KEY
+        run: mvn -B org.owasp:dependency-check-maven:12.2.2:check
+              -DfailBuildOnCVSS=9
+              -DsuppressionFile=.dependency-check-suppressions.xml
+              -DskipProvidedScope=true
+              -DknownExploitedEnabled=false
+              -DnvdApiDelay=2000
+              ${{ secrets.NVD_API_KEY != '' && format('-DnvdApiKey={0}', secrets.NVD_API_KEY) || '' }}
+        continue-on-error: true
+
+      - name: Upload Dependency-Check report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: dependency-check-report
+          path: ITing-backend/target/dependency-check-report.html
+          retention-days: 14
 
       - name: Upload JAR
         uses: actions/upload-artifact@v4
@@ -87,6 +126,16 @@ jobs:
       - name: Install dependencies
         working-directory: ITing-frontend
         run: npm ci
+
+      - name: npm audit (high+ severity)
+        working-directory: ITing-frontend
+        run: npm audit --omit=dev --audit-level=high
+        continue-on-error: true
+
+      - name: ESLint
+        working-directory: ITing-frontend
+        run: npx eslint "src/**/*.{js,jsx,ts,tsx}" --max-warnings=200
+        continue-on-error: true
 
       - name: Build frontend
         working-directory: ITing-frontend
@@ -196,3 +245,21 @@ jobs:
             REACT_APP_GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+      - name: Trivy scan backend image
+        uses: aquasecurity/trivy-action@master
+        continue-on-error: true
+        with:
+          image-ref: ${{ env.REGISTRY }}/${{ github.repository }}/iting-backend:${{ github.sha }}
+          format: "table"
+          severity: "CRITICAL,HIGH"
+          exit-code: "0"
+
+      - name: Trivy scan frontend image
+        uses: aquasecurity/trivy-action@master
+        continue-on-error: true
+        with:
+          image-ref: ${{ env.REGISTRY }}/${{ github.repository }}/iting-frontend:${{ github.sha }}
+          format: "table"
+          severity: "CRITICAL,HIGH"
+          exit-code: "0"

@@ -1,0 +1,17 @@
+# ZAP rules — IGNORE/WARN/FAIL.
+# Format: <ruleId>\t<state>\t<reason (optional)>
+#
+# state:
+#   IGNORE = không báo
+#   WARN   = báo nhưng không fail build
+#   FAIL   = fail build (mặc định FAIL với HIGH/MEDIUM trong baseline)
+#
+# Tham khảo rule id: https://www.zaproxy.org/docs/alerts/
+
+10015	IGNORE	# Incomplete or No Cache-control Header — false positive với static assets
+10027	IGNORE	# Information Disclosure - Suspicious Comments (false positive với code minified)
+10049	IGNORE	# Storable and Cacheable Content — không phải lỗ hổng
+10096	IGNORE	# Timestamp Disclosure — Spring trả timestamp trong error response là bình thường
+90004	IGNORE	# Insufficient Site Isolation Against Spectre Vulnerability
+10038	WARN	# Content Security Policy (CSP) Header Not Set — TODO: thêm CSP middleware
+10036	WARN	# Server Leaks Version Information via "Server" HTTP Response Header

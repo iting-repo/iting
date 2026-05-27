@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<suppressions xmlns="https://jeremylong.github.io/DependencyCheck/dependency-suppression.1.3.xsd">
+    <!--
+      Suppression file cho OWASP Dependency-Check.
+      Khi 1 CVE là false positive hoặc không applicable, thêm <suppress> ở đây.
+      Tham khảo: https://jeremylong.github.io/DependencyCheck/general/suppression.html
+    -->
+
+    <!-- Ví dụ: bỏ qua CVE không liên quan -->
+    <!--
+    <suppress>
+        <notes>CVE-XXXX-YYYY chỉ ảnh hưởng Windows native; ITing chạy Linux container</notes>
+        <packageUrl regex="true">^pkg:maven/com\.example/.*$</packageUrl>
+        <cve>CVE-XXXX-YYYY</cve>
+    </suppress>
+    -->
+</suppressions>
