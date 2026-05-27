@@ -83,6 +83,13 @@ jobs:
             # Log in to GHCR
             echo "${{ secrets.GHCR_TOKEN }}" | docker login ${{ env.REGISTRY }} -u ${{ secrets.GHCR_USERNAME }} --password-stdin
 
+            # Free disk BEFORE pull — backend image is ~820MB, EC2 has 29GB
+            # root and we used to keep every v1.0.x tag (33GB+ accumulated →
+            # 100% full → pull "succeeded silently" while container stuck on
+            # old version). Remove unused tagged images >24h old, then dangling.
+            docker image prune -a -f --filter "until=24h"
+            docker image prune -f
+
             # Pull latest images
             BACKEND_IMAGE="${{ env.BACKEND_IMAGE }}" FRONTEND_IMAGE="${{ env.FRONTEND_IMAGE }}" docker compose \
               -f docker-compose.yml \
@@ -97,7 +104,7 @@ jobs:
               --env-file /opt/iting/.env.prod \
               up -d --remove-orphans
 
-            # Clean up old images
+            # Final dangling-layer cleanup after recreate
             docker image prune -f
 
             # Backend start_period is 240s; wait before recycling nginx or external health checks
