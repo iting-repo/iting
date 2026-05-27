@@ -594,17 +594,19 @@ const HomePage = () => {
                                     <>
                                         <button
                                             type="button"
+                                            aria-label="Banner trước"
                                             onClick={() => setCurrentBannerIndex((prev) => (prev - 1 + banners.length) % banners.length)}
                                             className="absolute left-4 top-1/2 -translate-y-1/2 z-20 w-10 h-10 rounded-full bg-black/40 backdrop-blur-sm text-white flex items-center justify-center hover:bg-[#3AB4E6] hover:text-white transition-all opacity-0 group-hover:opacity-100 border border-white/10"
                                         >
-                                            <FaArrowLeft size={12} />
+                                            <FaArrowLeft size={12} aria-hidden="true" />
                                         </button>
                                         <button
                                             type="button"
+                                            aria-label="Banner kế tiếp"
                                             onClick={() => setCurrentBannerIndex((prev) => (prev + 1) % banners.length)}
                                             className="absolute right-4 top-1/2 -translate-y-1/2 z-20 w-10 h-10 rounded-full bg-black/40 backdrop-blur-sm text-white flex items-center justify-center hover:bg-[#3AB4E6] hover:text-white transition-all opacity-0 group-hover:opacity-100 border border-white/10"
                                         >
-                                            <FaArrowRight size={12} />
+                                            <FaArrowRight size={12} aria-hidden="true" />
                                         </button>
                                     </>
                                 )}
@@ -1068,9 +1070,12 @@ const HomePage = () => {
                                                     <p className="text-xs md:text-sm text-gray-500 font-medium mt-1 truncate">{job.companyName}</p>
                                                 </div>
                                                 <button
+                                                    type="button"
+                                                    aria-label={isSaved ? 'Bỏ lưu việc làm' : 'Lưu việc làm'}
+                                                    aria-pressed={isSaved}
                                                     onClick={(e) => handleToggleSave(e, job.id)}
                                                     className={`w-8 h-8 md:w-9 md:h-9 shrink-0 rounded-full flex items-center justify-center transition-all ${isSaved ? 'bg-[#3AB4E6] text-white shadow-md shadow-blue-200' : 'bg-gray-50 text-gray-400 hover:bg-[#3AB4E6] hover:text-white'}`}>
-                                                    {isSaved ? <FaBookmark size={12} /> : <FaRegBookmark size={12} />}
+                                                    {isSaved ? <FaBookmark size={12} aria-hidden="true" /> : <FaRegBookmark size={12} aria-hidden="true" />}
                                                 </button>
                                             </div>
 
@@ -1115,10 +1120,12 @@ const HomePage = () => {
                     {totalJobs > 0 && (
                         <div className="flex justify-center items-center gap-2">
                             <button
+                                type="button"
+                                aria-label="Trang trước"
                                 onClick={() => currentPage > 1 && handlePageChange(currentPage - 1)}
                                 disabled={currentPage === 1}
                                 className={`w-10 h-10 rounded-full flex items-center justify-center border transition-all ${currentPage === 1 ? 'border-gray-100 text-gray-300 bg-gray-50 cursor-not-allowed' : 'border-gray-200 text-gray-400 hover:border-[#3AB4E6] hover:text-[#3AB4E6] bg-white'}`}>
-                                <FaArrowLeft size={12} />
+                                <FaArrowLeft size={12} aria-hidden="true" />
                             </button>
 
                             {Array.from({ length: Math.ceil(totalJobs / searchForm.size) }, (_, i) => i + 1)
