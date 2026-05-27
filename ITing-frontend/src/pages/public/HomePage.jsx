@@ -1149,10 +1149,12 @@ const HomePage = () => {
                             }
 
                             <button
+                                type="button"
+                                aria-label="Trang sau"
                                 onClick={() => currentPage < Math.ceil(totalJobs / searchForm.size) && handlePageChange(currentPage + 1)}
                                 disabled={currentPage === Math.ceil(totalJobs / searchForm.size)}
                                 className={`w-10 h-10 rounded-full flex items-center justify-center border transition-all ${currentPage === Math.ceil(totalJobs / searchForm.size) ? 'border-gray-100 text-gray-300 bg-gray-50 cursor-not-allowed' : 'border-gray-200 text-gray-400 hover:border-[#3AB4E6] hover:text-[#3AB4E6] bg-white'}`}>
-                                <FaArrowRight size={12} />
+                                <FaArrowRight size={12} aria-hidden="true" />
                             </button>
                         </div>
                     )}
