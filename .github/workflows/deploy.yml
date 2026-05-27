@@ -40,22 +40,27 @@ jobs:
         with:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+          # GHCR_PAT thay GITHUB_TOKEN: sau khi transfer repo sang org
+          # iting-repo, default GITHUB_TOKEN bị denied khi read private
+          # GHCR packages → manifest inspect luôn fail → deploy timeout.
+          password: ${{ secrets.GHCR_PAT }}
 
       - name: Wait for tagged images in GHCR
+        # Tăng lên 60 attempts × 15s = 15 phút để đủ cho CI Docker build
+        # khi cache miss (entity changes làm rebuild full Java image).
         run: |
           echo "Waiting for ${{ env.BACKEND_IMAGE }}"
           echo "Waiting for ${{ env.FRONTEND_IMAGE }}"
 
-          for i in {1..30}; do
+          for i in {1..60}; do
             if docker manifest inspect "${{ env.BACKEND_IMAGE }}" >/dev/null 2>&1 && \
                docker manifest inspect "${{ env.FRONTEND_IMAGE }}" >/dev/null 2>&1; then
               echo "Tagged images are available"
               exit 0
             fi
 
-            echo "Tagged images not ready yet... attempt $i/30"
-            sleep 10
+            echo "Tagged images not ready yet... attempt $i/60"
+            sleep 15
           done
 
           echo "Timed out waiting for tagged images in GHCR"
