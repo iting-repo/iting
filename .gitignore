@@ -98,8 +98,19 @@ Thumbs.db
 
 # Local/private config
 .codex/
-# Markdown docs
+# Markdown docs — ignore tất cả trừ docs/ chính thức + README + license
 *.md
+!docs/**/*.md
+!README.md
+!README*.md
+!LICENSE.md
+!CHANGELOG.md
+!CONTRIBUTING.md
+!*-README.md
+# Subfolder docs cụ thể (UML/, instructions/, ...)
+!UML/**/*.md
+!ITing-backend/instructions/*.md
+!ITing-frontend/README*.md
 
 # LaTeX source files
 *.tex
