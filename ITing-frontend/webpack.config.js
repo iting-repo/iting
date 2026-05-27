@@ -2,10 +2,12 @@ const path = require('path');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 // <-- 1. Import plugin React Refresh
 const ReactRefreshWebpackPlugin = require('@pmmmwh/react-refresh-webpack-plugin');
+const CompressionPlugin = require('compression-webpack-plugin');
 const Dotenv = require('dotenv-webpack');
 const webpack = require('webpack');
 const dotenv = require('dotenv');
 const fs = require('fs');
+const zlib = require('zlib');
 
 // <-- 2. Chuyển đổi module.exports thành một hàm để nhận biết chế độ development
 module.exports = (env, argv) => {
@@ -132,6 +134,26 @@ module.exports = (env, argv) => {
         systemvars: true,
       }),
       new webpack.DefinePlugin(envKeys),
+      // Gzip + Brotli compression cho prod — nginx tự serve .gz/.br nếu client support
+      isProd && new CompressionPlugin({
+        filename: '[path][base].gz',
+        algorithm: 'gzip',
+        test: /\.(js|css|html|svg|json)$/,
+        threshold: 10240,    // chỉ nén file > 10KB
+        minRatio: 0.8,
+      }),
+      isProd && new CompressionPlugin({
+        filename: '[path][base].br',
+        algorithm: 'brotliCompress',
+        test: /\.(js|css|html|svg|json)$/,
+        threshold: 10240,
+        minRatio: 0.8,
+        compressionOptions: {
+          params: {
+            [zlib.constants.BROTLI_PARAM_QUALITY]: 11,
+          },
+        },
+      }),
     ].filter(Boolean), // .filter(Boolean) để loại bỏ các giá trị false nếu isDevelopment là false
     // Cấu hình để import không cần đuôi file
     resolve: {

@@ -117,11 +117,14 @@ const JobCard = ({ job, onHoverIn, onHoverOut, isHovered = false }) => {
                     )}
                 </div>
                 <button
+                  type="button"
+                  aria-label={isSaved ? 'Bỏ lưu việc làm' : 'Lưu việc làm'}
+                  aria-pressed={isSaved}
                   onClick={handleToggleSave}
                   disabled={isSaving}
                   className={`transition-colors ${isSaved ? 'text-[#3AB4E6]' : 'text-gray-300 hover:text-[#3AB4E6]'} ${isSaving ? 'opacity-60 cursor-not-allowed' : ''}`}
                 >
-                    {isSaved ? <FaBookmark size={16} /> : <FaRegBookmark size={16} />}
+                    {isSaved ? <FaBookmark size={16} aria-hidden="true" /> : <FaRegBookmark size={16} aria-hidden="true" />}
                 </button>
             </div>
 

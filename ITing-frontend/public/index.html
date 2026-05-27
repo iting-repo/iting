@@ -20,6 +20,11 @@
     <meta property="og:image" content="/logo-iting.png" />
     <meta name="twitter:card" content="summary_large_image" />
 
+    <!-- Preconnect tới backend API + S3 (giảm RTT cho first XHR ~100-300ms) -->
+    <link rel="preconnect" href="https://datnhk252iting.dpdns.org" crossorigin>
+    <link rel="dns-prefetch" href="https://datnhk252iting.dpdns.org">
+    <link rel="dns-prefetch" href="https://iting-bucket.s3.ap-southeast-1.amazonaws.com">
+
     <!-- Font: preconnect + non-blocking stylesheet (print → onload swap) cải thiện FCP/LCP -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>

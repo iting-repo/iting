@@ -797,10 +797,13 @@ const HomePage = () => {
                                                     className="w-10 h-10 rounded-xl object-contain bg-gray-50 p-1"
                                                 />
                                                 <button
+                                                    type="button"
+                                                    aria-label={isSaved ? 'Bỏ lưu việc làm' : 'Lưu việc làm'}
+                                                    aria-pressed={isSaved}
                                                     onClick={(e) => handleToggleSave(e, job.id)}
                                                     className={`w-8 h-8 rounded-lg flex items-center justify-center transition-all ${isSaved ? 'bg-blue-500 text-white shadow-md' : 'bg-gray-50 text-gray-400 group-hover:bg-blue-50'}`}
                                                 >
-                                                    {isSaved ? <FaBookmark size={12} /> : <FaRegBookmark size={12} />}
+                                                    {isSaved ? <FaBookmark size={12} aria-hidden="true" /> : <FaRegBookmark size={12} aria-hidden="true" />}
                                                 </button>
                                             </div>
 
