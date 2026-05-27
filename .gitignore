@@ -125,3 +125,19 @@ backup/
 # Tài liệu cá nhân để trong public/ (Scrum guide, đề cương, …) — không deploy
 ITing-frontend/public/2020-Scrum-Guide-Vietnamese.pdf
 ITing-frontend/public/Cau_truc_roi_rac_them_cau_hoi_6_6_chi_cau_hoi.pdf
+
+# Test report outputs (Lighthouse, k6, dep-check, jacoco) — chỉ để xem local, CI sẽ
+# sinh + upload làm artifact riêng. Không commit để git lịch sử không phình.
+lighthouse-report.*
+lhci-report/
+.lighthouseci/
+k6-summary.json
+k6-result.json
+zap-baseline-report.*
+zap-api-report.*
+report_html.html
+report_json.json
+report_md.md
+**/dependency-check-report.html
+**/dependency-check-report.json
+**/dependency-check-report.xml
