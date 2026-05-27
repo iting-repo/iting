@@ -22,8 +22,8 @@ import recommendationService from '../../services/recommendationService';
 import JobCard from '../../components/JobCard';
 import JobPreviewPane from '../../components/JobPreviewModal';
 
-// Hero background: dùng AVIF 11KB thay PNG 1.3MB — ảnh đè opacity-30 nên không cần độ phân giải cao.
-const heroBg = '/jobportal_banner.avif';
+// Hero background — đã đổi sang PNG (1.6MB). Cân nhắc convert lại AVIF (~12KB) để giảm LCP.
+const heroBg = '/jobportal_banner.png';
 
 const HomePage = () => {
     const dispatch = useDispatch();
