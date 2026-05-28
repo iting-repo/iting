@@ -26,6 +26,19 @@ import JobPreviewPane from '../../components/JobPreviewModal';
 // Sinh bởi: node scripts/convert-banners-avif.js
 const heroBg = '/jobportal_banner.avif';
 
+// Defer non-critical work tới sau lần paint đầu — dùng requestIdleCallback nếu có,
+// fallback setTimeout. Mục tiêu: giảm TBT bằng cách không block main thread cho
+// các API call (banners, recommendations, blogs, stats) ngay khi mount.
+const deferIdle = (fn, timeout = 1500) => {
+    if (typeof window === 'undefined') return () => {};
+    if ('requestIdleCallback' in window) {
+        const id = window.requestIdleCallback(fn, { timeout });
+        return () => window.cancelIdleCallback?.(id);
+    }
+    const id = setTimeout(fn, 200);
+    return () => clearTimeout(id);
+};
+
 const HomePage = () => {
     const dispatch = useDispatch();
     const navigate = useNavigate();
@@ -113,28 +126,29 @@ const HomePage = () => {
     }, [dispatch]);
 
     useEffect(() => {
-        fetch('https://provinces.open-api.vn/api/v2/p/')
-            .then((res) => res.json())
-            .then((data) => {
-                if (Array.isArray(data)) {
-                    setProvinces(data);
-                }
-            })
-            .catch(() => {
-                setProvinces([]);
-            });
+        return deferIdle(() => {
+            fetch('https://provinces.open-api.vn/api/v2/p/')
+                .then((res) => res.json())
+                .then((data) => {
+                    if (Array.isArray(data)) {
+                        setProvinces(data);
+                    }
+                })
+                .catch(() => {
+                    setProvinces([]);
+                });
+        });
     }, []);
 
     useEffect(() => {
-        const fetchStats = async () => {
+        return deferIdle(async () => {
             try {
                 const data = await publicService.getHomeStats();
                 setStats({ totalJobs: 0, totalCandidates: 0, totalCompanies: 0, ...(data || {}) });
             } catch (error) {
                 console.error("Failed to fetch home stats:", error);
             }
-        };
-        fetchStats();
+        });
     }, []);
 
     useEffect(() => {
@@ -155,8 +169,8 @@ const HomePage = () => {
     }, [currentUser]);
 
     useEffect(() => {
-        const fetchRecommendations = async () => {
-            setIsRecommending(true);
+        setIsRecommending(true);
+        return deferIdle(async () => {
             try {
                 const data = await recommendationService.getHomepageRecommendations(8);
                 setRecommendedJobs(Array.isArray(data) ? data : []);
@@ -165,12 +179,11 @@ const HomePage = () => {
             } finally {
                 setIsRecommending(false);
             }
-        };
-        fetchRecommendations();
+        });
     }, [currentUser]);
 
     useEffect(() => {
-        const fetchBlogs = async () => {
+        return deferIdle(async () => {
             try {
                 const response = await publicService.getBlogs({ page: 0, size: 2 });
                 const data = response.data || response;
@@ -182,20 +195,18 @@ const HomePage = () => {
             } catch (error) {
                 console.error("Failed to fetch blogs:", error);
             }
-        };
-        fetchBlogs();
+        });
     }, []);
 
     useEffect(() => {
-        const fetchBanners = async () => {
+        return deferIdle(async () => {
             try {
                 const data = await publicService.getBanners('homepage_main');
                 setBanners(Array.isArray(data) ? data : []);
             } catch (error) {
                 console.error("Failed to fetch active banners:", error);
             }
-        };
-        fetchBanners();
+        });
     }, []);
 
     useEffect(() => {

@@ -1,10 +1,11 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, lazy, Suspense } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import AppRoutes from './routes/AppRoutes';
 import { checkAuth } from './store/auth/authSlice';
 import ScrollToTop from './components/common/ScrollToTop';
-import SystemAnnouncementModal from './components/common/SystemAnnouncementModal';
+// Lazy-load: modal chỉ render khi có announcement active, không cần trong initial bundle.
+const SystemAnnouncementModal = lazy(() => import('./components/common/SystemAnnouncementModal'));
 
 const PUBLIC_LANDING_PATTERNS = [
   /^\/$/,
@@ -59,7 +60,9 @@ function App() {
     <>
       <ScrollToTop />
       <AppRoutes />
-      <SystemAnnouncementModal />
+      <Suspense fallback={null}>
+        <SystemAnnouncementModal />
+      </Suspense>
     </>
   );
 }
