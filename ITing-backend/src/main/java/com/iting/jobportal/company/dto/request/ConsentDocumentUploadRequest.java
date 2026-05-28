@@ -8,12 +8,15 @@ import org.springframework.web.multipart.MultipartFile;
 @Data
 public class ConsentDocumentUploadRequest {
 
-    @NotNull(message = "Vui lòng chọn file văn bản thỏa thuận")
-    @Schema(description = "File văn bản thỏa thuận dữ liệu cá nhân", type = "string", format = "binary")
-    private MultipartFile file;
+  @NotNull(message = "Vui lòng chọn file văn bản thỏa thuận")
+  @Schema(
+      description = "File văn bản thỏa thuận dữ liệu cá nhân",
+      type = "string",
+      format = "binary")
+  private MultipartFile file;
 
-    @NotNull(message = "Vui lòng xác nhận cam kết")
-    private Boolean confirmed;
+  @NotNull(message = "Vui lòng xác nhận cam kết")
+  private Boolean confirmed;
 
-    private String version;
+  private String version;
 }

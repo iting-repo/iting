@@ -14,17 +14,18 @@ import org.springframework.stereotype.Component;
 @ConditionalOnProperty(name = "spring.kafka.enabled", havingValue = "true")
 public class CompanyNotificationKafkaProducer {
 
-    private final KafkaTemplate<String, Object> kafkaTemplate;
+  private final KafkaTemplate<String, Object> kafkaTemplate;
 
-    @EventListener
-    public void produceKybNotificationToKafka(CompanyInfoSubmittedEvent event) {
-        log.info("Sending CompanyInfoSubmittedEvent to Kafka Topic 'kyb-notifications' for Company: {}",
-                event.getCompanyName());
+  @EventListener
+  public void produceKybNotificationToKafka(CompanyInfoSubmittedEvent event) {
+    log.info(
+        "Sending CompanyInfoSubmittedEvent to Kafka Topic 'kyb-notifications' for Company: {}",
+        event.getCompanyName());
 
-        // Gửi message nhẹ dạng chuỗi CSV hoặc JSON
-        // Ở đây gửi chuỗi: "companyId,companyName" để Worker xử lý
-        String messagePayload = event.getCompanyId() + "|||" + event.getCompanyName();
+    // Gửi message nhẹ dạng chuỗi CSV hoặc JSON
+    // Ở đây gửi chuỗi: "companyId,companyName" để Worker xử lý
+    String messagePayload = event.getCompanyId() + "|||" + event.getCompanyName();
 
-        kafkaTemplate.send("kyb-notifications", event.getCompanyId().toString(), messagePayload);
-    }
+    kafkaTemplate.send("kyb-notifications", event.getCompanyId().toString(), messagePayload);
+  }
 }

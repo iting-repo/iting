@@ -14,36 +14,34 @@ import lombok.*;
 @EqualsAndHashCode(callSuper = false)
 public class Category extends AuditEntity {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+  @Id
+  @GeneratedValue(strategy = GenerationType.IDENTITY)
+  private Long id;
 
-    @Column(nullable = false, length = 50)
-    private String type; // INDUSTRY, SKILL, LOCATION
+  @Column(nullable = false, length = 50)
+  private String type; // INDUSTRY, SKILL, LOCATION
 
-    @Column(nullable = false, length = 100)
-    private String name;
+  @Column(nullable = false, length = 100)
+  private String name;
 
-    @Column(length = 100)
-    private String nameEn; // English name for internationalization
+  @Column(length = 100)
+  private String nameEn; // English name for internationalization
 
-    @Column(length = 255)
-    private String description;
+  @Column(length = 255)
+  private String description;
 
-    @Column(length = 500)
-    private String icon; // Icon class or image path
+  @Column(length = 500)
+  private String icon; // Icon class or image path
 
-    private Long parentId; // Cho category phân cấp
+  private Long parentId; // Cho category phân cấp
 
-    private Integer sortOrder;
+  private Integer sortOrder;
 
-    private Boolean active;
+  private Boolean active;
 
-    @PrePersist
-    protected void onCreate() {
-        if (active == null)
-            active = true;
-        if (sortOrder == null)
-            sortOrder = 0;
-    }
+  @PrePersist
+  protected void onCreate() {
+    if (active == null) active = true;
+    if (sortOrder == null) sortOrder = 0;
+  }
 }

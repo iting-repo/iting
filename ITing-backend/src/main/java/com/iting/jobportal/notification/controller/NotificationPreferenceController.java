@@ -17,25 +17,24 @@ import org.springframework.web.server.ResponseStatusException;
 @RequiredArgsConstructor
 public class NotificationPreferenceController {
 
-    private final NotificationPreferenceService service;
+  private final NotificationPreferenceService service;
 
-    @GetMapping
-    @Operation(summary = "Lấy cài đặt thông báo hiện tại (tự tạo default nếu chưa có)")
-    public ResponseEntity<NotificationPreferenceDto> get(@CurrentUser Long userId) {
-        if (userId == null) {
-            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Chưa đăng nhập");
-        }
-        return ResponseEntity.ok(service.getOrCreate(userId));
+  @GetMapping
+  @Operation(summary = "Lấy cài đặt thông báo hiện tại (tự tạo default nếu chưa có)")
+  public ResponseEntity<NotificationPreferenceDto> get(@CurrentUser Long userId) {
+    if (userId == null) {
+      throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Chưa đăng nhập");
     }
+    return ResponseEntity.ok(service.getOrCreate(userId));
+  }
 
-    @PutMapping
-    @Operation(summary = "Cập nhật cài đặt thông báo (partial update)")
-    public ResponseEntity<NotificationPreferenceDto> update(
-            @CurrentUser Long userId,
-            @RequestBody NotificationPreferenceDto dto) {
-        if (userId == null) {
-            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Chưa đăng nhập");
-        }
-        return ResponseEntity.ok(service.update(userId, dto));
+  @PutMapping
+  @Operation(summary = "Cập nhật cài đặt thông báo (partial update)")
+  public ResponseEntity<NotificationPreferenceDto> update(
+      @CurrentUser Long userId, @RequestBody NotificationPreferenceDto dto) {
+    if (userId == null) {
+      throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Chưa đăng nhập");
     }
+    return ResponseEntity.ok(service.update(userId, dto));
+  }
 }

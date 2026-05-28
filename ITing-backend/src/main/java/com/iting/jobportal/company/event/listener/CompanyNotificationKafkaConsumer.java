@@ -16,32 +16,34 @@ import org.springframework.stereotype.Component;
 @ConditionalOnProperty(name = "spring.kafka.enabled", havingValue = "true")
 public class CompanyNotificationKafkaConsumer {
 
-    private final NotificationService notificationService;
+  private final NotificationService notificationService;
 
-    @KafkaListener(topics = "kyb-notifications", groupId = "kyb-notification-group")
-    public void consumeKybNotification(String messagePayload) {
-        try {
-            log.info("Worker received Kafka message: {}", messagePayload);
+  @KafkaListener(topics = "kyb-notifications", groupId = "kyb-notification-group")
+  public void consumeKybNotification(String messagePayload) {
+    try {
+      log.info("Worker received Kafka message: {}", messagePayload);
 
-            // Tách dữ liệu "id|||Name"
-            String[] parts = messagePayload.split("\\|\\|\\|");
-            Long companyId = Long.parseLong(parts[0]);
-            String companyName = parts[1];
+      // Tách dữ liệu "id|||Name"
+      String[] parts = messagePayload.split("\\|\\|\\|");
+      Long companyId = Long.parseLong(parts[0]);
+      String companyName = parts[1];
 
-            CreateNotificationRequest request = CreateNotificationRequest.builder()
-                    .recipientId(1L) // Gửi cho Admin chính
-                    .recipientType(RecipientType.ADMIN)
-                    .type(NotificationType.COMPANY_UPDATE)
-                    .content("Công ty [" + companyName + "] vừa cập nhật hồ sơ đăng ký và đang chờ duyệt!")
-                    .entityType("COMPANY")
-                    .entityId(companyId)
-                    .actionUrl("/admin/companies/" + companyId)
-                    .build();
+      CreateNotificationRequest request =
+          CreateNotificationRequest.builder()
+              .recipientId(1L) // Gửi cho Admin chính
+              .recipientType(RecipientType.ADMIN)
+              .type(NotificationType.COMPANY_UPDATE)
+              .content(
+                  "Công ty [" + companyName + "] vừa cập nhật hồ sơ đăng ký và đang chờ duyệt!")
+              .entityType("COMPANY")
+              .entityId(companyId)
+              .actionUrl("/admin/companies/" + companyId)
+              .build();
 
-            notificationService.createNotification(request);
-            log.info("Worker successfully generated Admin notification for company {}", companyId);
-        } catch (Exception e) {
-            log.error("Worker failed to process Kafka message: {}", messagePayload, e);
-        }
+      notificationService.createNotification(request);
+      log.info("Worker successfully generated Admin notification for company {}", companyId);
+    } catch (Exception e) {
+      log.error("Worker failed to process Kafka message: {}", messagePayload, e);
     }
+  }
 }

@@ -9,27 +9,28 @@ import org.springframework.data.domain.Page;
 
 public interface AdminUserService {
 
-    Page<UserListResponse> getAllUsers(String keyword, Role role, AccountStatus status, int page, int size);
+  Page<UserListResponse> getAllUsers(
+      String keyword, Role role, AccountStatus status, int page, int size);
 
-    UserListResponse getUserById(Long userId);
+  UserListResponse getUserById(Long userId);
 
-    UserListResponse updateUser(Long adminId, Long userId, UpdateUserRequest request);
+  UserListResponse updateUser(Long adminId, Long userId, UpdateUserRequest request);
 
-    void banUser(Long adminId, Long userId, BanUserRequest request);
+  void banUser(Long adminId, Long userId, BanUserRequest request);
 
-    void unbanUser(Long adminId, Long userId);
+  void unbanUser(Long adminId, Long userId);
 
-    void deleteUser(Long adminId, Long userId);
+  void deleteUser(Long adminId, Long userId);
 
-    void bulkBanUsers(java.util.List<Long> userIds, BanUserRequest request);
+  void bulkBanUsers(java.util.List<Long> userIds, BanUserRequest request);
 
-    void bulkUnbanUsers(java.util.List<Long> userIds);
+  void bulkUnbanUsers(java.util.List<Long> userIds);
 
-    void bulkDeleteUsers(java.util.List<Long> userIds);
+  void bulkDeleteUsers(java.util.List<Long> userIds);
 
-    java.io.ByteArrayInputStream exportUsersToExcel();
+  java.io.ByteArrayInputStream exportUsersToExcel();
 
-    void importUsersFromExcel(org.springframework.web.multipart.MultipartFile file);
+  void importUsersFromExcel(org.springframework.web.multipart.MultipartFile file);
 
-    java.io.ByteArrayInputStream getImportTemplate();
+  java.io.ByteArrayInputStream getImportTemplate();
 }

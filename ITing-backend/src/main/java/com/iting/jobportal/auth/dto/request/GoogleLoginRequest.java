@@ -11,6 +11,5 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class GoogleLoginRequest {
-    @NotBlank
-    private String tokenId;
+  @NotBlank private String tokenId;
 }

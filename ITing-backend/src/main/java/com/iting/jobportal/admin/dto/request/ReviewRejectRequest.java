@@ -4,5 +4,5 @@ import lombok.Data;
 
 @Data
 public class ReviewRejectRequest {
-    private String reason;
+  private String reason;
 }

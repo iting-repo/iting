@@ -6,14 +6,14 @@ import com.iting.jobportal.application.dto.response.ApplicationSubmitResponse;
 import org.springframework.data.domain.Page;
 
 public interface CandidateApplicationService {
-    ApplicationSubmitResponse applyJob(Long userId, ApplyJobRequest request);
+  ApplicationSubmitResponse applyJob(Long userId, ApplyJobRequest request);
 
-    void withdrawApplication(Long userId, Long applicationId);
+  void withdrawApplication(Long userId, Long applicationId);
 
-    Page<ApplicationResponse> getMyApplications(Long userId, int page, int size);
+  Page<ApplicationResponse> getMyApplications(Long userId, int page, int size);
 
-    /** Filter by status — when status is null returns all. */
-    Page<ApplicationResponse> getMyApplications(Long userId, String status, int page, int size);
+  /** Filter by status — when status is null returns all. */
+  Page<ApplicationResponse> getMyApplications(Long userId, String status, int page, int size);
 
-    boolean hasApplied(Long userId, Long jobId);
+  boolean hasApplied(Long userId, Long jobId);
 }

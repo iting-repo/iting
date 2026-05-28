@@ -13,30 +13,33 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 /**
- * @deprecated Phase 4 dual-mount. Dùng {@link HrCandidateController} ở
- *             {@code /api/hr/candidates/**}. Sẽ remove sau 2 sprint.
+ * @deprecated Phase 4 dual-mount. Dùng {@link HrCandidateController} ở {@code
+ *     /api/hr/candidates/**}. Sẽ remove sau 2 sprint.
  */
 @Deprecated(since = "Phase 4")
 @RestController
 @RequestMapping("/api/employers/candidates")
 @RequiredArgsConstructor
-@Tag(name = "08. Candidates - Employer (DEPRECATED)", description = "DEPRECATED — dùng /api/hr/candidates/**")
+@Tag(
+    name = "08. Candidates - Employer (DEPRECATED)",
+    description = "DEPRECATED — dùng /api/hr/candidates/**")
 public class EmployerCandidateController {
 
-    private final EmployerCandidateSearchService employerCandidateSearchService;
+  private final EmployerCandidateSearchService employerCandidateSearchService;
 
-    @PostMapping("/search")
-    @PreAuthorize("hasRole('EMPLOYER')")
-    @Operation(summary = "Tìm kiếm ứng viên (AI embedding similarity + filters)")
-    public ResponseEntity<Page<EmployerCandidateSearchResponse>> search(
-            @RequestBody EmployerCandidateSearchRequest request) {
-        return ResponseEntity.ok(employerCandidateSearchService.search(request));
-    }
+  @PostMapping("/search")
+  @PreAuthorize("hasRole('EMPLOYER')")
+  @Operation(summary = "Tìm kiếm ứng viên (AI embedding similarity + filters)")
+  public ResponseEntity<Page<EmployerCandidateSearchResponse>> search(
+      @RequestBody EmployerCandidateSearchRequest request) {
+    return ResponseEntity.ok(employerCandidateSearchService.search(request));
+  }
 
-    @GetMapping("/{candidateId}/profile")
-    @PreAuthorize("hasRole('EMPLOYER')")
-    @Operation(summary = "Lấy toàn bộ hồ sơ chi tiết của ứng viên")
-    public ResponseEntity<CandidateFullProfileResponse> getCandidateFullProfile(@PathVariable Long candidateId) {
-        return ResponseEntity.ok(employerCandidateSearchService.getCandidateFullProfile(candidateId));
-    }
+  @GetMapping("/{candidateId}/profile")
+  @PreAuthorize("hasRole('EMPLOYER')")
+  @Operation(summary = "Lấy toàn bộ hồ sơ chi tiết của ứng viên")
+  public ResponseEntity<CandidateFullProfileResponse> getCandidateFullProfile(
+      @PathVariable Long candidateId) {
+    return ResponseEntity.ok(employerCandidateSearchService.getCandidateFullProfile(candidateId));
+  }
 }

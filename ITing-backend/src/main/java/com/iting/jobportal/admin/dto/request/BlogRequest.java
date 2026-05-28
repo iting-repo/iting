@@ -13,32 +13,32 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class BlogRequest {
 
-    @NotBlank(message = "Tiêu đề không được để trống")
-    @Size(max = 500, message = "Tiêu đề không được dài quá 500 ký tự")
-    private String title;
+  @NotBlank(message = "Tiêu đề không được để trống")
+  @Size(max = 500, message = "Tiêu đề không được dài quá 500 ký tự")
+  private String title;
 
-    @Size(max = 500)
-    private String slug;
+  @Size(max = 500)
+  private String slug;
 
-    @Size(max = 100)
-    private String category;
+  @Size(max = 100)
+  private String category;
 
-    private String status; // PUBLISHED, DRAFT
+  private String status; // PUBLISHED, DRAFT
 
-    private String summary;
+  private String summary;
 
-    private String content;
+  private String content;
 
-    @Size(max = 1000)
-    private String thumbnailUrl;
+  @Size(max = 1000)
+  private String thumbnailUrl;
 
-    @Size(max = 255)
-    private String author;
+  @Size(max = 255)
+  private String author;
 
-    private Boolean isFeatured;
+  private Boolean isFeatured;
 
-    @Size(max = 500)
-    private String seoMetaTitle;
+  @Size(max = 500)
+  private String seoMetaTitle;
 
-    private String seoMetaDescription;
+  private String seoMetaDescription;
 }

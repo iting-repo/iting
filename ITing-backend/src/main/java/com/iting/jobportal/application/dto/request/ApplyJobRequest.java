@@ -6,10 +6,10 @@ import lombok.Data;
 @Data
 public class ApplyJobRequest {
 
-    @NotNull(message = "Job ID không được để trống")
-    private Long jobId;
+  @NotNull(message = "Job ID không được để trống")
+  private Long jobId;
 
-    private Long cvId;
+  private Long cvId;
 
-    private String coverLetter;
+  private String coverLetter;
 }

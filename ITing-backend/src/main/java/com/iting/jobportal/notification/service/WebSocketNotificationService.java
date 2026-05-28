@@ -5,7 +5,8 @@ import com.iting.jobportal.notification.enums.RecipientType;
 
 public interface WebSocketNotificationService {
 
-    void sendNotificationToRecipient(Long recipientId, RecipientType recipientType, NotificationResponse notification);
+  void sendNotificationToRecipient(
+      Long recipientId, RecipientType recipientType, NotificationResponse notification);
 
-    void sendUnreadCount(Long recipientId, RecipientType recipientType, Long unreadCount);
+  void sendUnreadCount(Long recipientId, RecipientType recipientType, Long unreadCount);
 }

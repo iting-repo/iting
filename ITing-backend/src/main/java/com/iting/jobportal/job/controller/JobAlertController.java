@@ -1,6 +1,5 @@
 package com.iting.jobportal.job.controller;
 
-import com.iting.jobportal.job.controller.CurrentUser;
 import com.iting.jobportal.job.dto.FollowedCompanyJobResponse;
 import com.iting.jobportal.job.service.JobAlertService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -18,15 +17,15 @@ import org.springframework.web.bind.annotation.*;
 @RequiredArgsConstructor
 public class JobAlertController {
 
-    private final JobAlertService jobAlertService;
+  private final JobAlertService jobAlertService;
 
-    @GetMapping
-    @Operation(summary = "Get jobs from followed companies (paginated)")
-    public ResponseEntity<Page<FollowedCompanyJobResponse>> getJobAlerts(
-            @CurrentUser Long userId,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size) {
-        PageRequest pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
-        return ResponseEntity.ok(jobAlertService.getJobsFromFollowedCompanies(userId, pageable));
-    }
+  @GetMapping
+  @Operation(summary = "Get jobs from followed companies (paginated)")
+  public ResponseEntity<Page<FollowedCompanyJobResponse>> getJobAlerts(
+      @CurrentUser Long userId,
+      @RequestParam(defaultValue = "0") int page,
+      @RequestParam(defaultValue = "10") int size) {
+    PageRequest pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
+    return ResponseEntity.ok(jobAlertService.getJobsFromFollowedCompanies(userId, pageable));
+  }
 }

@@ -7,54 +7,56 @@ import com.iting.jobportal.company.entity.CompanyReview;
 import com.iting.jobportal.company.repository.CompanyRepository;
 import com.iting.jobportal.company.repository.CompanyReviewRepository;
 import com.iting.jobportal.company.service.CompanyReviewService;
+import java.util.List;
+import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.util.List;
-import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
 public class CompanyReviewServiceImpl implements CompanyReviewService {
 
-    private final CompanyReviewRepository reviewRepository;
-    private final CompanyRepository companyRepository;
-    private final AccountRepository accountRepository;
+  private final CompanyReviewRepository reviewRepository;
+  private final CompanyRepository companyRepository;
+  private final AccountRepository accountRepository;
 
-    @Override
-    @Transactional
-    public CompanyReview createReview(Long companyId, Long accountId, int rating, String content) {
-        Company company = companyRepository.findById(companyId)
-                .orElseThrow(() -> new RuntimeException("Company not found"));
-        Account account = accountRepository.findById(accountId)
-                .orElseThrow(() -> new RuntimeException("Account not found"));
+  @Override
+  @Transactional
+  public CompanyReview createReview(Long companyId, Long accountId, int rating, String content) {
+    Company company =
+        companyRepository
+            .findById(companyId)
+            .orElseThrow(() -> new RuntimeException("Company not found"));
+    Account account =
+        accountRepository
+            .findById(accountId)
+            .orElseThrow(() -> new RuntimeException("Account not found"));
 
-        // Candidate endpoint không qua moderation — auto-approve để hiển thị ngay.
-        // Endpoint full /api/companies/{id}/reviews vẫn giữ PENDING cho moderation flow.
-        CompanyReview review = CompanyReview.builder()
-                .company(company)
-                .account(account)
-                .rating(rating)
-                .content(content)
-                .moderationStatus("APPROVED")
-                .build();
+    // Candidate endpoint không qua moderation — auto-approve để hiển thị ngay.
+    // Endpoint full /api/companies/{id}/reviews vẫn giữ PENDING cho moderation flow.
+    CompanyReview review =
+        CompanyReview.builder()
+            .company(company)
+            .account(account)
+            .rating(rating)
+            .content(content)
+            .moderationStatus("APPROVED")
+            .build();
 
-        return reviewRepository.save(review);
-    }
+    return reviewRepository.save(review);
+  }
 
-    @Override
-    public List<CompanyReview> getCompanyReviews(Long companyId) {
-        return reviewRepository.findByCompanyIdOrderByCreatedAtDesc(companyId);
-    }
+  @Override
+  public List<CompanyReview> getCompanyReviews(Long companyId) {
+    return reviewRepository.findByCompanyIdOrderByCreatedAtDesc(companyId);
+  }
 
-    @Override
-    public Map<String, Object> getCompanyRatingStats(Long companyId) {
-        Double avg = reviewRepository.getAverageRating(companyId);
-        long count = reviewRepository.countByCompanyId(companyId);
+  @Override
+  public Map<String, Object> getCompanyRatingStats(Long companyId) {
+    Double avg = reviewRepository.getAverageRating(companyId);
+    long count = reviewRepository.countByCompanyId(companyId);
 
-        return Map.of(
-                "averageRating", avg != null ? avg : 0.0,
-                "reviewCount", count);
-    }
+    return Map.of("averageRating", avg != null ? avg : 0.0, "reviewCount", count);
+  }
 }

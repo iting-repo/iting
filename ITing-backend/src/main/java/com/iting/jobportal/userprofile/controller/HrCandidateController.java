@@ -20,8 +20,8 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
 /**
- * HR-side candidate search. Cùng logic với {@link EmployerCandidateController},
- * chỉ khác base path. Phase 4 dual-mount.
+ * HR-side candidate search. Cùng logic với {@link EmployerCandidateController}, chỉ khác base path.
+ * Phase 4 dual-mount.
  */
 @RestController
 @RequestMapping("/api/hr/candidates")
@@ -29,87 +29,101 @@ import org.springframework.web.server.ResponseStatusException;
 @Tag(name = "08. Candidates - HR", description = "APIs HR tìm kiếm ứng viên (path mới)")
 public class HrCandidateController {
 
-    /** Số credit trừ mỗi lần chạy AI match-by-job. */
-    private static final int MATCH_BY_JOB_CREDIT_COST = 5;
+  /** Số credit trừ mỗi lần chạy AI match-by-job. */
+  private static final int MATCH_BY_JOB_CREDIT_COST = 5;
 
-    private final EmployerCandidateSearchService employerCandidateSearchService;
-    private final JobRepository jobRepository;
-    private final CreditService creditService;
+  private final EmployerCandidateSearchService employerCandidateSearchService;
+  private final JobRepository jobRepository;
+  private final CreditService creditService;
 
-    @PostMapping("/search")
-    @PreAuthorize("hasRole('EMPLOYER')")
-    @Operation(summary = "Tìm kiếm ứng viên (AI embedding similarity + filters)")
-    public ResponseEntity<Page<EmployerCandidateSearchResponse>> search(@RequestBody EmployerCandidateSearchRequest request) {
-        return ResponseEntity.ok(employerCandidateSearchService.search(request));
+  @PostMapping("/search")
+  @PreAuthorize("hasRole('EMPLOYER')")
+  @Operation(summary = "Tìm kiếm ứng viên (AI embedding similarity + filters)")
+  public ResponseEntity<Page<EmployerCandidateSearchResponse>> search(
+      @RequestBody EmployerCandidateSearchRequest request) {
+    return ResponseEntity.ok(employerCandidateSearchService.search(request));
+  }
+
+  @GetMapping("/{candidateId}/profile")
+  @PreAuthorize("hasRole('EMPLOYER')")
+  @Operation(summary = "Lấy toàn bộ hồ sơ chi tiết của ứng viên")
+  public ResponseEntity<CandidateFullProfileResponse> getCandidateFullProfile(
+      @PathVariable Long candidateId) {
+    return ResponseEntity.ok(employerCandidateSearchService.getCandidateFullProfile(candidateId));
+  }
+
+  /**
+   * AI match: dùng embedding của job đã đăng để tìm ứng viên openToWork=true. Mỗi lần chạy trừ
+   * {@value #MATCH_BY_JOB_CREDIT_COST} credits.
+   */
+  @PostMapping("/match-by-job/{jobId}")
+  @PreAuthorize("hasRole('EMPLOYER')")
+  @Operation(summary = "Match ứng viên dựa trên job embedding (trừ 5 credits/lần)")
+  public ResponseEntity<Page<EmployerCandidateSearchResponse>> matchByJob(
+      @PathVariable Long jobId,
+      @CurrentUser Long accountId,
+      @RequestBody(required = false) MatchByJobRequest request) {
+
+    // Ownership check: HR chỉ được match candidates với job mình đăng.
+    Job job =
+        jobRepository
+            .findById(jobId)
+            .orElseThrow(
+                () -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Job không tồn tại"));
+    if (job.getPostedByHrId() == null || !job.getPostedByHrId().equals(accountId)) {
+      throw new ResponseStatusException(
+          HttpStatus.FORBIDDEN, "Bạn không có quyền match ứng viên cho job này");
     }
 
-    @GetMapping("/{candidateId}/profile")
-    @PreAuthorize("hasRole('EMPLOYER')")
-    @Operation(summary = "Lấy toàn bộ hồ sơ chi tiết của ứng viên")
-    public ResponseEntity<CandidateFullProfileResponse> getCandidateFullProfile(@PathVariable Long candidateId) {
-        return ResponseEntity.ok(employerCandidateSearchService.getCandidateFullProfile(candidateId));
+    // Consume credits trước khi gọi service. Throw InsufficientCreditException → 402.
+    creditService.consume(
+        accountId,
+        MATCH_BY_JOB_CREDIT_COST,
+        "AI_CANDIDATE_MATCH",
+        jobId,
+        "AI match ứng viên cho job #" + jobId);
+
+    return ResponseEntity.ok(employerCandidateSearchService.searchByJob(jobId, request));
+  }
+
+  /**
+   * Cross-recommendation: gợi ý ứng viên tương tự cho job hiện tại khi HR đang xem chi tiết 1
+   * application. KHÔNG trừ credit (free, complementary feature), giới hạn top N nhỏ (default 5).
+   */
+  @org.springframework.web.bind.annotation.GetMapping("/similar-by-job/{jobId}")
+  @PreAuthorize("hasRole('EMPLOYER')")
+  @Operation(summary = "Top N ứng viên tương tự cho job (free, dùng cho cross-rec)")
+  public ResponseEntity<java.util.List<EmployerCandidateSearchResponse>> similarByJob(
+      @PathVariable Long jobId,
+      @CurrentUser Long accountId,
+      @org.springframework.web.bind.annotation.RequestParam(required = false) Long excludeUserId,
+      @org.springframework.web.bind.annotation.RequestParam(defaultValue = "5") int limit) {
+
+    Job job =
+        jobRepository
+            .findById(jobId)
+            .orElseThrow(
+                () -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Job không tồn tại"));
+    if (job.getPostedByHrId() == null || !job.getPostedByHrId().equals(accountId)) {
+      throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Không có quyền");
     }
 
-    /**
-     * AI match: dùng embedding của job đã đăng để tìm ứng viên openToWork=true.
-     * Mỗi lần chạy trừ {@value #MATCH_BY_JOB_CREDIT_COST} credits.
-     */
-    @PostMapping("/match-by-job/{jobId}")
-    @PreAuthorize("hasRole('EMPLOYER')")
-    @Operation(summary = "Match ứng viên dựa trên job embedding (trừ 5 credits/lần)")
-    public ResponseEntity<Page<EmployerCandidateSearchResponse>> matchByJob(
-            @PathVariable Long jobId,
-            @CurrentUser Long accountId,
-            @RequestBody(required = false) MatchByJobRequest request) {
+    int safeLimit = Math.min(Math.max(limit, 1), 20);
+    // Lấy nhiều hơn 1 chút để có buffer sau khi filter excludeUserId
+    MatchByJobRequest req =
+        MatchByJobRequest.builder()
+            .page(0)
+            .size(safeLimit + (excludeUserId != null ? 1 : 0))
+            .build();
+    Page<EmployerCandidateSearchResponse> page =
+        employerCandidateSearchService.searchByJob(jobId, req);
 
-        // Ownership check: HR chỉ được match candidates với job mình đăng.
-        Job job = jobRepository.findById(jobId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Job không tồn tại"));
-        if (job.getPostedByHrId() == null || !job.getPostedByHrId().equals(accountId)) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN,
-                    "Bạn không có quyền match ứng viên cho job này");
-        }
+    java.util.List<EmployerCandidateSearchResponse> filtered =
+        page.getContent().stream()
+            .filter(c -> excludeUserId == null || !excludeUserId.equals(c.getId()))
+            .limit(safeLimit)
+            .collect(java.util.stream.Collectors.toList());
 
-        // Consume credits trước khi gọi service. Throw InsufficientCreditException → 402.
-        creditService.consume(accountId, MATCH_BY_JOB_CREDIT_COST, "AI_CANDIDATE_MATCH",
-                jobId, "AI match ứng viên cho job #" + jobId);
-
-        return ResponseEntity.ok(employerCandidateSearchService.searchByJob(jobId, request));
-    }
-
-    /**
-     * Cross-recommendation: gợi ý ứng viên tương tự cho job hiện tại khi HR
-     * đang xem chi tiết 1 application. KHÔNG trừ credit (free, complementary
-     * feature), giới hạn top N nhỏ (default 5).
-     */
-    @org.springframework.web.bind.annotation.GetMapping("/similar-by-job/{jobId}")
-    @PreAuthorize("hasRole('EMPLOYER')")
-    @Operation(summary = "Top N ứng viên tương tự cho job (free, dùng cho cross-rec)")
-    public ResponseEntity<java.util.List<EmployerCandidateSearchResponse>> similarByJob(
-            @PathVariable Long jobId,
-            @CurrentUser Long accountId,
-            @org.springframework.web.bind.annotation.RequestParam(required = false) Long excludeUserId,
-            @org.springframework.web.bind.annotation.RequestParam(defaultValue = "5") int limit) {
-
-        Job job = jobRepository.findById(jobId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Job không tồn tại"));
-        if (job.getPostedByHrId() == null || !job.getPostedByHrId().equals(accountId)) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Không có quyền");
-        }
-
-        int safeLimit = Math.min(Math.max(limit, 1), 20);
-        // Lấy nhiều hơn 1 chút để có buffer sau khi filter excludeUserId
-        MatchByJobRequest req = MatchByJobRequest.builder()
-                .page(0)
-                .size(safeLimit + (excludeUserId != null ? 1 : 0))
-                .build();
-        Page<EmployerCandidateSearchResponse> page = employerCandidateSearchService.searchByJob(jobId, req);
-
-        java.util.List<EmployerCandidateSearchResponse> filtered = page.getContent().stream()
-                .filter(c -> excludeUserId == null || !excludeUserId.equals(c.getId()))
-                .limit(safeLimit)
-                .collect(java.util.stream.Collectors.toList());
-
-        return ResponseEntity.ok(filtered);
-    }
+    return ResponseEntity.ok(filtered);
+  }
 }

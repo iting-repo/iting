@@ -13,36 +13,36 @@ import org.springframework.web.method.support.ModelAndViewContainer;
 @Component
 public class CurrentUserArgumentResolver implements HandlerMethodArgumentResolver {
 
-    @Override
-    public boolean supportsParameter(MethodParameter parameter) {
-        return (parameter.hasParameterAnnotation(CurrentUser.class)
-                || parameter.hasParameterAnnotation(com.iting.jobportal.user.controller.CurrentUser.class))
-                && (Long.class.isAssignableFrom(parameter.getParameterType())
-                        || String.class.isAssignableFrom(parameter.getParameterType()));
+  @Override
+  public boolean supportsParameter(MethodParameter parameter) {
+    return (parameter.hasParameterAnnotation(CurrentUser.class)
+            || parameter.hasParameterAnnotation(
+                com.iting.jobportal.user.controller.CurrentUser.class))
+        && (Long.class.isAssignableFrom(parameter.getParameterType())
+            || String.class.isAssignableFrom(parameter.getParameterType()));
+  }
+
+  @Override
+  public Object resolveArgument(
+      MethodParameter parameter,
+      ModelAndViewContainer mavContainer,
+      NativeWebRequest webRequest,
+      WebDataBinderFactory binderFactory) {
+    Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+    if (auth == null || auth.getPrincipal() == null) return null;
+
+    Object principal = auth.getPrincipal();
+    if (!(principal instanceof AuthUser)) {
+      return null;
     }
 
-    @Override
-    public Object resolveArgument(
-            MethodParameter parameter,
-            ModelAndViewContainer mavContainer,
-            NativeWebRequest webRequest,
-            WebDataBinderFactory binderFactory) {
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        if (auth == null || auth.getPrincipal() == null)
-            return null;
-
-        Object principal = auth.getPrincipal();
-        if (!(principal instanceof AuthUser)) {
-            return null;
-        }
-
-        AuthUser user = (AuthUser) principal;
-        if (Long.class.isAssignableFrom(parameter.getParameterType())) {
-            return user.getId();
-        }
-        if (String.class.isAssignableFrom(parameter.getParameterType())) {
-            return user.getUsername();
-        }
-        return null;
+    AuthUser user = (AuthUser) principal;
+    if (Long.class.isAssignableFrom(parameter.getParameterType())) {
+      return user.getId();
     }
+    if (String.class.isAssignableFrom(parameter.getParameterType())) {
+      return user.getUsername();
+    }
+    return null;
+  }
 }

@@ -20,43 +20,40 @@ import org.springframework.web.bind.annotation.*;
 @RequiredArgsConstructor
 public class AdminAnnouncementController {
 
-    private final SystemAnnouncementService service;
+  private final SystemAnnouncementService service;
 
-    @GetMapping
-    @Operation(summary = "List announcements (paginated)")
-    public ResponseEntity<Page<AnnouncementDto>> list(
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "20") int size) {
-        Pageable pageable = PageRequest.of(Math.max(0, page), Math.min(100, Math.max(1, size)));
-        return ResponseEntity.ok(service.list(pageable));
-    }
+  @GetMapping
+  @Operation(summary = "List announcements (paginated)")
+  public ResponseEntity<Page<AnnouncementDto>> list(
+      @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "20") int size) {
+    Pageable pageable = PageRequest.of(Math.max(0, page), Math.min(100, Math.max(1, size)));
+    return ResponseEntity.ok(service.list(pageable));
+  }
 
-    @GetMapping("/{id}")
-    @Operation(summary = "Get announcement detail")
-    public ResponseEntity<AnnouncementDto> get(@PathVariable Long id) {
-        return ResponseEntity.ok(service.get(id));
-    }
+  @GetMapping("/{id}")
+  @Operation(summary = "Get announcement detail")
+  public ResponseEntity<AnnouncementDto> get(@PathVariable Long id) {
+    return ResponseEntity.ok(service.get(id));
+  }
 
-    @PostMapping
-    @Operation(summary = "Tạo announcement mới")
-    public ResponseEntity<AnnouncementDto> create(
-            @CurrentUser Long adminId,
-            @RequestBody AnnouncementDto dto) {
-        return ResponseEntity.ok(service.create(dto, adminId));
-    }
+  @PostMapping
+  @Operation(summary = "Tạo announcement mới")
+  public ResponseEntity<AnnouncementDto> create(
+      @CurrentUser Long adminId, @RequestBody AnnouncementDto dto) {
+    return ResponseEntity.ok(service.create(dto, adminId));
+  }
 
-    @PutMapping("/{id}")
-    @Operation(summary = "Cập nhật announcement (partial)")
-    public ResponseEntity<AnnouncementDto> update(
-            @PathVariable Long id,
-            @RequestBody AnnouncementDto dto) {
-        return ResponseEntity.ok(service.update(id, dto));
-    }
+  @PutMapping("/{id}")
+  @Operation(summary = "Cập nhật announcement (partial)")
+  public ResponseEntity<AnnouncementDto> update(
+      @PathVariable Long id, @RequestBody AnnouncementDto dto) {
+    return ResponseEntity.ok(service.update(id, dto));
+  }
 
-    @DeleteMapping("/{id}")
-    @Operation(summary = "Xoá announcement")
-    public ResponseEntity<?> delete(@PathVariable Long id) {
-        service.delete(id);
-        return ResponseEntity.noContent().build();
-    }
+  @DeleteMapping("/{id}")
+  @Operation(summary = "Xoá announcement")
+  public ResponseEntity<?> delete(@PathVariable Long id) {
+    service.delete(id);
+    return ResponseEntity.noContent().build();
+  }
 }

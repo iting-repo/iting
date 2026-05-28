@@ -9,17 +9,18 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 @Repository
-public interface UserSaveJobRepository extends JpaRepository<UserSaveJob, UserSaveJob.UserSaveJobId> {
+public interface UserSaveJobRepository
+    extends JpaRepository<UserSaveJob, UserSaveJob.UserSaveJobId> {
 
-    long countByUserId(Long userId);
+  long countByUserId(Long userId);
 
-    boolean existsByUserIdAndJobId(Long userId, Long jobId);
+  boolean existsByUserIdAndJobId(Long userId, Long jobId);
 
-    void deleteByUserIdAndJobId(Long userId, Long jobId);
+  void deleteByUserIdAndJobId(Long userId, Long jobId);
 
-    @Query("SELECT s FROM UserSaveJob s WHERE s.userId = :userId")
-    Page<UserSaveJob> findAllByUserId(@Param("userId") Long userId, Pageable pageable);
+  @Query("SELECT s FROM UserSaveJob s WHERE s.userId = :userId")
+  Page<UserSaveJob> findAllByUserId(@Param("userId") Long userId, Pageable pageable);
 
-    @Query("SELECT s.jobId FROM UserSaveJob s WHERE s.userId = :userId")
-    java.util.List<Long> findAllJobIdByUserId(@Param("userId") Long userId);
+  @Query("SELECT s.jobId FROM UserSaveJob s WHERE s.userId = :userId")
+  java.util.List<Long> findAllJobIdByUserId(@Param("userId") Long userId);
 }

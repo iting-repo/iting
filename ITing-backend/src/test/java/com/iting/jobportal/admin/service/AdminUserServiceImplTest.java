@@ -1,5 +1,10 @@
 package com.iting.jobportal.admin.service;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
 import com.iting.jobportal.admin.dto.request.UpdateUserRequest;
 import com.iting.jobportal.admin.dto.response.UserListResponse;
 import com.iting.jobportal.admin.service.impl.AdminUserServiceImpl;
@@ -10,6 +15,8 @@ import com.iting.jobportal.auth.repository.AccountRepository;
 import com.iting.jobportal.company.repository.CompanyHrAffiliationRepository;
 import com.iting.jobportal.user.entity.User;
 import com.iting.jobportal.user.repository.UserRepository;
+import java.util.List;
+import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -21,85 +28,79 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 
-import java.util.List;
-import java.util.Optional;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-
 @ExtendWith(MockitoExtension.class)
 class AdminUserServiceImplTest {
 
-    @Mock
-    private AccountRepository accountRepository;
+  @Mock private AccountRepository accountRepository;
 
-    @Mock
-    private UserRepository userRepository;
+  @Mock private UserRepository userRepository;
 
-    @Mock
-    private CompanyHrAffiliationRepository affiliationRepository;
+  @Mock private CompanyHrAffiliationRepository affiliationRepository;
 
-    @InjectMocks
-    private AdminUserServiceImpl service;
+  @InjectMocks private AdminUserServiceImpl service;
 
-    @Test
-    void getAllUsers_shouldMapSupplementalUserFields() {
-        User user = new User();
-        user.setId(1L);
+  @Test
+  void getAllUsers_shouldMapSupplementalUserFields() {
+    User user = new User();
+    user.setId(1L);
 
-        // fullName + avatar đã được hợp nhất về Account sau V83.
-        Account account = Account.builder()
-                .id(1L).email("u@test.com")
-                .role(Role.CANDIDATE).status(AccountStatus.ACTIVE)
-                .fullName("Test User")
-                .avatarUrl("/a.png")
-                .user(user)
-                .build();
-        user.setAccount(account);
+    // fullName + avatar đã được hợp nhất về Account sau V83.
+    Account account =
+        Account.builder()
+            .id(1L)
+            .email("u@test.com")
+            .role(Role.CANDIDATE)
+            .status(AccountStatus.ACTIVE)
+            .fullName("Test User")
+            .avatarUrl("/a.png")
+            .user(user)
+            .build();
+    user.setAccount(account);
 
-        when(accountRepository.findAll(any(Specification.class), any(Pageable.class)))
-                .thenReturn(new PageImpl<>(List.of(account)));
-        Mockito.lenient().when(affiliationRepository.findActiveByHrAccountId(1L))
-                .thenReturn(Optional.empty());
+    when(accountRepository.findAll(any(Specification.class), any(Pageable.class)))
+        .thenReturn(new PageImpl<>(List.of(account)));
+    Mockito.lenient()
+        .when(affiliationRepository.findActiveByHrAccountId(1L))
+        .thenReturn(Optional.empty());
 
-        Page<UserListResponse> result = service.getAllUsers(null, null, null, 0, 10);
+    Page<UserListResponse> result = service.getAllUsers(null, null, null, 0, 10);
 
-        assertEquals(1, result.getContent().size());
-        assertEquals("Test User", result.getContent().get(0).getFullName());
-        assertEquals("/a.png", result.getContent().get(0).getAvatarUrl());
-    }
+    assertEquals(1, result.getContent().size());
+    assertEquals("Test User", result.getContent().get(0).getFullName());
+    assertEquals("/a.png", result.getContent().get(0).getAvatarUrl());
+  }
 
-    @Test
-    void updateUser_shouldApplyProvidedRoleAndStatus() {
-        Account account = Account.builder().id(2L).role(Role.CANDIDATE).status(AccountStatus.ACTIVE).build();
-        UpdateUserRequest request = new UpdateUserRequest();
-        request.setRole(Role.EMPLOYER);
-        request.setStatus(AccountStatus.BANNED);
+  @Test
+  void updateUser_shouldApplyProvidedRoleAndStatus() {
+    Account account =
+        Account.builder().id(2L).role(Role.CANDIDATE).status(AccountStatus.ACTIVE).build();
+    UpdateUserRequest request = new UpdateUserRequest();
+    request.setRole(Role.EMPLOYER);
+    request.setStatus(AccountStatus.BANNED);
 
-        when(accountRepository.findById(2L)).thenReturn(Optional.of(account));
-        when(accountRepository.save(account)).thenReturn(account);
-        Mockito.lenient().when(affiliationRepository.findActiveByHrAccountId(2L))
-                .thenReturn(Optional.empty());
+    when(accountRepository.findById(2L)).thenReturn(Optional.of(account));
+    when(accountRepository.save(account)).thenReturn(account);
+    Mockito.lenient()
+        .when(affiliationRepository.findActiveByHrAccountId(2L))
+        .thenReturn(Optional.empty());
 
-        UserListResponse result = service.updateUser(1L, 2L, request);
+    UserListResponse result = service.updateUser(1L, 2L, request);
 
-        assertEquals(Role.EMPLOYER, account.getRole());
-        assertEquals(AccountStatus.BANNED, account.getStatus());
-        assertEquals(Role.EMPLOYER, result.getRole());
-    }
+    assertEquals(Role.EMPLOYER, account.getRole());
+    assertEquals(AccountStatus.BANNED, account.getStatus());
+    assertEquals(Role.EMPLOYER, result.getRole());
+  }
 
-    @Test
-    void banAndUnbanUser_shouldToggleStatus() {
-        Account account = Account.builder().id(2L).status(AccountStatus.ACTIVE).build();
-        when(accountRepository.findById(2L)).thenReturn(Optional.of(account));
+  @Test
+  void banAndUnbanUser_shouldToggleStatus() {
+    Account account = Account.builder().id(2L).status(AccountStatus.ACTIVE).build();
+    when(accountRepository.findById(2L)).thenReturn(Optional.of(account));
 
-        service.banUser(1L, 2L, new com.iting.jobportal.admin.dto.request.BanUserRequest());
-        assertEquals(AccountStatus.BANNED, account.getStatus());
+    service.banUser(1L, 2L, new com.iting.jobportal.admin.dto.request.BanUserRequest());
+    assertEquals(AccountStatus.BANNED, account.getStatus());
 
-        service.unbanUser(1L, 2L);
-        assertEquals(AccountStatus.ACTIVE, account.getStatus());
-        verify(accountRepository, org.mockito.Mockito.times(2)).save(account);
-    }
+    service.unbanUser(1L, 2L);
+    assertEquals(AccountStatus.ACTIVE, account.getStatus());
+    verify(accountRepository, org.mockito.Mockito.times(2)).save(account);
+  }
 }

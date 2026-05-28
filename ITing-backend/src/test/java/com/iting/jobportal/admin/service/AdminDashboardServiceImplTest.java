@@ -1,5 +1,7 @@
 package com.iting.jobportal.admin.service;
 
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+
 import com.iting.jobportal.admin.dto.DashboardStats;
 import com.iting.jobportal.admin.service.impl.AdminDashboardServiceImpl;
 import com.iting.jobportal.application.repository.AdminApplicationRepository;
@@ -11,27 +13,21 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-
 @ExtendWith(MockitoExtension.class)
 class AdminDashboardServiceImplTest {
 
-    @Mock
-    private AccountRepository accountRepository;
+  @Mock private AccountRepository accountRepository;
 
-    @Mock
-    private JobRepository jobRepository;
+  @Mock private JobRepository jobRepository;
 
-    @Mock
-    private AdminApplicationRepository adminApplicationRepository;
+  @Mock private AdminApplicationRepository adminApplicationRepository;
 
-    @InjectMocks
-    private AdminDashboardServiceImpl service;
+  @InjectMocks private AdminDashboardServiceImpl service;
 
-    @Test
-    void getDashboardStats_shouldReturnEmptyStatsObject() {
-        DashboardStats stats = service.getDashboardStats();
+  @Test
+  void getDashboardStats_shouldReturnEmptyStatsObject() {
+    DashboardStats stats = service.getDashboardStats();
 
-        assertNotNull(stats);
-    }
+    assertNotNull(stats);
+  }
 }

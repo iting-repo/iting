@@ -1,4 +1,3 @@
 package com.iting.jobportal.userprofile.service.impl;
 
-public class CertificateServiceImpl {
-}
+public class CertificateServiceImpl {}

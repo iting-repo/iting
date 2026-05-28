@@ -1,9 +1,8 @@
 package com.iting.jobportal.job.entity;
 
 import jakarta.persistence.Embeddable;
-import lombok.*;
-
 import java.io.Serializable;
+import lombok.*;
 
 @Embeddable
 @Getter
@@ -13,7 +12,7 @@ import java.io.Serializable;
 @EqualsAndHashCode
 public class CompanyUploadJobId implements Serializable {
 
-    private Long jobId;
+  private Long jobId;
 
-    private Long companyId;
+  private Long companyId;
 }

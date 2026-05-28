@@ -1,8 +1,8 @@
 package com.iting.jobportal.security.user;
 
 import com.iting.jobportal.auth.entity.Account;
-import com.iting.jobportal.auth.security.AuthUser;
 import com.iting.jobportal.auth.repository.AccountRepository;
+import com.iting.jobportal.auth.security.AuthUser;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -16,16 +16,19 @@ import org.springframework.transaction.annotation.Transactional;
 @Slf4j
 public class AuthUserDetailsService implements UserDetailsService {
 
-    private final AccountRepository accountRepository;
+  private final AccountRepository accountRepository;
 
-    @Override
-    @Transactional(readOnly = true)
-    public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
-        Account account = accountRepository.findByEmail(email)
-                .orElseThrow(() -> new UsernameNotFoundException("User not found with email: " + email));
+  @Override
+  @Transactional(readOnly = true)
+  public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
+    Account account =
+        accountRepository
+            .findByEmail(email)
+            .orElseThrow(
+                () -> new UsernameNotFoundException("User not found with email: " + email));
 
-        log.debug("Loading user details for email: {}", email);
+    log.debug("Loading user details for email: {}", email);
 
-        return new AuthUser(account);
-    }
+    return new AuthUser(account);
+  }
 }

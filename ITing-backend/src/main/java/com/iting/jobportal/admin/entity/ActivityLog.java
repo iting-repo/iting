@@ -14,36 +14,36 @@ import lombok.*;
 @EqualsAndHashCode(callSuper = false)
 public class ActivityLog extends AuditEntity {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+  @Id
+  @GeneratedValue(strategy = GenerationType.IDENTITY)
+  private Long id;
 
-    @Column(nullable = false)
-    private Long userId;
+  @Column(nullable = false)
+  private Long userId;
 
-    @Column(nullable = false, length = 50)
-    private String action;
+  @Column(nullable = false, length = 50)
+  private String action;
 
-    @Column(length = 100)
-    private String entityType;
+  @Column(length = 100)
+  private String entityType;
 
-    private Long entityId;
+  private Long entityId;
 
-    @Column(length = 500)
-    private String description;
+  @Column(length = 500)
+  private String description;
 
-    @Column(length = 100)
-    private String targetName;
+  @Column(length = 100)
+  private String targetName;
 
-    @Column(length = 50)
-    private String fromStatus;
+  @Column(length = 50)
+  private String fromStatus;
 
-    @Column(length = 50)
-    private String toStatus;
+  @Column(length = 50)
+  private String toStatus;
 
-    @Column(length = 50)
-    private String ipAddress;
+  @Column(length = 50)
+  private String ipAddress;
 
-    @Column(length = 255)
-    private String userAgent;
+  @Column(length = 255)
+  private String userAgent;
 }

@@ -1,8 +1,8 @@
 package com.iting.jobportal.admin.entity.enums;
 
 public enum SeverityLevel {
-    LOW,
-    MEDIUM,
-    HIGH,
-    CRITICAL
+  LOW,
+  MEDIUM,
+  HIGH,
+  CRITICAL
 }

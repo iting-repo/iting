@@ -4,5 +4,5 @@ import lombok.Data;
 
 @Data
 public class UpdateDescriptionRequest {
-    private String description;
+  private String description;
 }

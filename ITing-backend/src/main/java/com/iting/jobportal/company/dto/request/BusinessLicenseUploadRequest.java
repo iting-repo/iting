@@ -8,7 +8,7 @@ import org.springframework.web.multipart.MultipartFile;
 @Data
 public class BusinessLicenseUploadRequest {
 
-    @NotNull(message = "Vui lòng chọn file PDF")
-    @Schema(description = "File giấy phép kinh doanh", type = "string", format = "binary")
-    private MultipartFile file;
+  @NotNull(message = "Vui lòng chọn file PDF")
+  @Schema(description = "File giấy phép kinh doanh", type = "string", format = "binary")
+  private MultipartFile file;
 }

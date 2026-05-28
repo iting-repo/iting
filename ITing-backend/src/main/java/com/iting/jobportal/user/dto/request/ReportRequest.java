@@ -10,11 +10,11 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class ReportRequest {
-    private Long targetId;
-    private String targetType; // JOB, COMPANY, USER, REVIEW
-    private String targetName;
-    private String type; // Category: SPAM, SCAM, INAPPROPRIATE, etc.
-    private String reason;
-    private String description;
-    private String priority;
+  private Long targetId;
+  private String targetType; // JOB, COMPANY, USER, REVIEW
+  private String targetName;
+  private String type; // Category: SPAM, SCAM, INAPPROPRIATE, etc.
+  private String reason;
+  private String description;
+  private String priority;
 }
