@@ -1,53 +1,17 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FaSearch, FaClock, FaTimes, FaTrashAlt, FaArrowRight, FaFire, FaBriefcase } from 'react-icons/fa';
+import { FaSearch, FaClock, FaTimes, FaArrowRight, FaFire, FaBriefcase } from 'react-icons/fa';
 import CompanyLogo from './CompanyLogo';
 import axiosInstance from '../../utils/axiosInstance';
 import { buildJobDetailPath } from '../../utils/jobUrl';
-
-const SEARCH_HISTORY_KEY = 'iting_search_history';
-const MAX_HISTORY = 10;
+import searchHistoryService from '../../services/searchHistoryService';
 
 /**
- * Load search history from localStorage
- */
-const loadSearchHistory = () => {
-    try {
-        const raw = localStorage.getItem(SEARCH_HISTORY_KEY);
-        if (!raw) return [];
-        const parsed = JSON.parse(raw);
-        return Array.isArray(parsed) ? parsed : [];
-    } catch {
-        return [];
-    }
-};
-
-/**
- * Save a keyword to search history
+ * Save a keyword to local fallback (server-side tự lưu qua /api/jobs/search).
+ * Giữ export để code khác đang dùng vẫn compile.
  */
 export const saveSearchKeyword = (keyword) => {
-    if (!keyword || !keyword.trim()) return;
-    const trimmed = keyword.trim();
-    const history = loadSearchHistory();
-    // Remove duplicates, add to front
-    const updated = [trimmed, ...history.filter((k) => k !== trimmed)].slice(0, MAX_HISTORY);
-    localStorage.setItem(SEARCH_HISTORY_KEY, JSON.stringify(updated));
-};
-
-/**
- * Clear all search history
- */
-const clearSearchHistory = () => {
-    localStorage.removeItem(SEARCH_HISTORY_KEY);
-};
-
-/**
- * Remove a single keyword from history
- */
-const removeSearchKeyword = (keyword) => {
-    const history = loadSearchHistory();
-    const updated = history.filter((k) => k !== keyword);
-    localStorage.setItem(SEARCH_HISTORY_KEY, JSON.stringify(updated));
+    searchHistoryService.saveLocal(keyword);
 };
 
 const formatSalary = (min, max) => {
@@ -84,11 +48,19 @@ const SearchOverlay = ({
     const [suggestedJobs, setSuggestedJobs] = useState([]);
     const [loadingSuggestions, setLoadingSuggestions] = useState(false);
 
-    // Load history whenever overlay opens
+    // Load history whenever overlay opens (server if logged in, localStorage otherwise)
     useEffect(() => {
-        if (isOpen) {
-            setHistory(loadSearchHistory());
-        }
+        if (!isOpen) return;
+        let cancelled = false;
+        (async () => {
+            const items = await searchHistoryService.list({ limit: 10 });
+            // normalize: items can be array of strings (local) or { id, keyword } (server)
+            const normalized = items.map((it) =>
+                typeof it === 'string' ? { id: null, keyword: it } : it
+            );
+            if (!cancelled) setHistory(normalized);
+        })();
+        return () => { cancelled = true; };
     }, [isOpen]);
 
     // Fetch suggested jobs
@@ -202,19 +174,19 @@ const SearchOverlay = ({
     }, [isOpen]);
 
     const handleKeywordClick = useCallback((keyword) => {
-        saveSearchKeyword(keyword);
+        searchHistoryService.saveLocal(keyword); // optimistic local; server tracks on actual /jobs/search call
         onSearch?.(keyword);
         onClose?.();
     }, [onSearch, onClose]);
 
-    const handleRemoveKeyword = useCallback((e, keyword) => {
+    const handleRemoveKeyword = useCallback(async (e, item) => {
         e.stopPropagation();
-        removeSearchKeyword(keyword);
-        setHistory(loadSearchHistory());
+        await searchHistoryService.removeOne({ id: item.id, keyword: item.keyword });
+        setHistory((prev) => prev.filter((h) => h.keyword !== item.keyword));
     }, []);
 
-    const handleClearAll = useCallback(() => {
-        clearSearchHistory();
+    const handleClearAll = useCallback(async () => {
+        await searchHistoryService.clear();
         setHistory([]);
     }, []);
 
@@ -316,18 +288,18 @@ const SearchOverlay = ({
                             </div>
                         ) : (
                             <div className="space-y-0.5">
-                                {history.map((keyword, i) => (
+                                {history.map((item, i) => (
                                     <div
-                                        key={`${keyword}-${i}`}
-                                        onClick={() => handleKeywordClick(keyword)}
+                                        key={`${item.keyword}-${item.id ?? i}`}
+                                        onClick={() => handleKeywordClick(item.keyword)}
                                         className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-gray-50 cursor-pointer group transition-colors"
                                     >
                                         <FaClock className="text-gray-300 group-hover:text-gray-400 shrink-0" size={12} />
                                         <span className="flex-1 text-sm text-gray-700 truncate group-hover:text-gray-900 transition-colors">
-                                            {keyword}
+                                            {item.keyword}
                                         </span>
                                         <button
-                                            onClick={(e) => handleRemoveKeyword(e, keyword)}
+                                            onClick={(e) => handleRemoveKeyword(e, item)}
                                             className="opacity-0 group-hover:opacity-100 text-gray-300 hover:text-red-400 transition-all p-1"
                                             title="Xóa"
                                         >

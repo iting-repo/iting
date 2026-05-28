@@ -2,14 +2,18 @@ package com.iting.jobportal.recommendation.service.impl;
 
 import com.iting.jobportal.auth.repository.AccountRepository;
 import com.iting.jobportal.job.repository.JobRepository;
+import com.iting.jobportal.recommendation.dto.response.SearchHistoryResponse;
 import com.iting.jobportal.recommendation.entity.UserJobInteraction;
 import com.iting.jobportal.recommendation.entity.UserSearchHistory;
 import com.iting.jobportal.recommendation.entity.enums.InteractionType;
 import com.iting.jobportal.recommendation.repository.UserJobInteractionRepository;
 import com.iting.jobportal.recommendation.repository.UserSearchHistoryRepository;
 import com.iting.jobportal.recommendation.service.InteractionService;
+import java.util.Collections;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -66,6 +70,33 @@ public class InteractionServiceImpl implements InteractionService {
     } catch (Exception e) {
       log.error("Failed to track search history: {}", e.getMessage());
     }
+  }
+
+  @Override
+  public List<SearchHistoryResponse> getSearchHistory(Long userId, int limit) {
+    if (userId == null) return Collections.emptyList();
+    int safeLimit = Math.max(1, Math.min(limit, 50));
+    return searchHistoryRepository
+        .findByAccountIdOrderByCreatedAtDesc(userId, PageRequest.of(0, safeLimit))
+        .stream()
+        .map(SearchHistoryResponse::from)
+        .toList();
+  }
+
+  @Override
+  @Transactional
+  public void deleteSearchHistoryItem(Long userId, Long historyId) {
+    if (userId == null || historyId == null) return;
+    searchHistoryRepository
+        .findByIdAndAccountId(historyId, userId)
+        .ifPresent(searchHistoryRepository::delete);
+  }
+
+  @Override
+  @Transactional
+  public int clearSearchHistory(Long userId) {
+    if (userId == null) return 0;
+    return searchHistoryRepository.deleteAllByAccountId(userId);
   }
 
   @Override
