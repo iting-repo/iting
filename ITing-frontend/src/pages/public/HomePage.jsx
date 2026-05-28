@@ -491,8 +491,9 @@ const HomePage = () => {
                         Tiếp cận {(stats.totalJobs ?? 0).toLocaleString('vi-VN')}+ tin tuyển dụng việc làm mỗi ngày từ hàng nghìn doanh nghiệp uy tín tại Việt Nam
                     </p>
 
-                    {/* Search Box */}
-                    <div className="bg-white/10 backdrop-blur-md p-3 lg:p-3 rounded-2xl max-w-5xl mx-auto shadow-2xl border border-white/20">
+                    {/* Search Box — z-30 để dropdown SearchOverlay/LocationPicker/CategoryPicker
+                        đè lên banner carousel (sibling sau trong DOM, cùng container z-10). */}
+                    <div className="bg-white/10 backdrop-blur-md p-3 lg:p-3 rounded-2xl max-w-5xl mx-auto shadow-2xl border border-white/20 relative z-30">
                         <div className="flex flex-col lg:flex-row items-stretch gap-3 lg:gap-0 lg:bg-white lg:rounded-xl">
 
                             {/* 1. Category Picker */}
@@ -571,7 +572,7 @@ const HomePage = () => {
 
                     {/* Banners Carousel (Desktop & Tablet only, hidden on Mobile) */}
                     {banners.length > 0 && (
-                        <div className="hidden md:block max-w-5xl mx-auto mt-8 relative group overflow-hidden rounded-2xl border border-white/10 shadow-2xl transition-all duration-300 hover:border-white/20">
+                        <div className="hidden md:block max-w-5xl mx-auto mt-8 relative z-0 group overflow-hidden rounded-2xl border border-white/10 shadow-2xl transition-all duration-300 hover:border-white/20">
                             <div className="relative aspect-[31/10] w-full overflow-hidden bg-slate-950">
                                 {banners.map((banner, index) => {
                                     const isActive = index === currentBannerIndex;
