@@ -135,6 +135,33 @@ module.exports = (env, argv) => {
         filename: './index.html',
         favicon: path.resolve(__dirname, 'src/assets/logo-iting.png'),
       }),
+      // Plugin nhỏ: convert <link rel="stylesheet"> tự inject bởi MiniCssExtract
+      // → non-blocking via media="print" + onload swap. Critical CSS đã inline
+      // trong index.html nên hero render ngay; CSS extracted áp dụng sau.
+      // Result: LCP không bị render-blocking CSS chặn (saves ~1-2s trên mobile sim).
+      isProd && {
+        apply(compiler) {
+          compiler.hooks.compilation.tap('AsyncCSSPlugin', (compilation) => {
+            HtmlWebpackPlugin.getHooks(compilation).alterAssetTagGroups.tap('AsyncCSSPlugin', (data) => {
+              data.headTags = data.headTags.map((tag) => {
+                if (tag.tagName === 'link' && tag.attributes && tag.attributes.rel === 'stylesheet'
+                    && typeof tag.attributes.href === 'string' && tag.attributes.href.startsWith('/styles')) {
+                  return {
+                    ...tag,
+                    attributes: {
+                      ...tag.attributes,
+                      media: 'print',
+                      onload: "this.media='all'",
+                    },
+                  };
+                }
+                return tag;
+              });
+              return data;
+            });
+          });
+        },
+      },
       // <-- 4. Thêm plugin React Refresh vào mảng, chỉ khi ở chế độ development
       isDev && new ReactRefreshWebpackPlugin(),
       new Dotenv({
