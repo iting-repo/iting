@@ -40,10 +40,84 @@
     <!-- Favicon được HtmlWebpackPlugin (option `favicon`) tự inject từ src/assets/logo-iting.png.
          Apple touch icon: copy file vào public/ sẽ vẫn hoạt động khi Dockerfile copy public/. -->
     <link rel="apple-touch-icon" sizes="180x180" href="/logo-iting.png" />
+
+    <!-- ============================================================
+         CRITICAL CSS — render hero ngay khi parse HTML, không đợi
+         Tailwind CSS hoặc React mount. LCP element là <h1> hero,
+         giờ paint ngay sau khi browser parse HTML (~200ms) thay
+         vì đợi JS bundle + React mount (~3-8s trên mobile sim).
+         React 18 createRoot sẽ replace toàn bộ content khi mount;
+         server-side LCP đã được capture trước đó.
+         ============================================================ -->
+    <style>
+        body { margin: 0; font-family: 'Inter', -apple-system, BlinkMacSystemFont, system-ui, sans-serif; }
+        #root { min-height: 100vh; }
+        .lh-hero {
+            position: relative;
+            background: #0B1B3D;
+            padding: 32px 16px 96px;
+            text-align: center;
+            color: #fff;
+            overflow: hidden;
+            isolation: isolate;
+        }
+        .lh-hero::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background-image: url('/jobportal_banner.avif');
+            background-size: cover;
+            background-position: center;
+            opacity: 0.18;
+            z-index: -1;
+        }
+        .lh-hero-inner {
+            max-width: 1024px;
+            margin: 0 auto;
+            position: relative;
+        }
+        .lh-hero h1 {
+            font-size: clamp(24px, 5vw, 48px);
+            font-weight: 900;
+            line-height: 1.15;
+            margin: 0 0 12px;
+            letter-spacing: -0.02em;
+            color: #fff;
+        }
+        .lh-hero h1 .accent { color: #3AB4E6; }
+        .lh-hero p {
+            color: #d1d5db;
+            font-size: clamp(14px, 2.2vw, 16px);
+            max-width: 640px;
+            margin: 0 auto 24px;
+            font-weight: 500;
+        }
+        .lh-hero-search {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(8px);
+            padding: 12px;
+            border-radius: 16px;
+            max-width: 960px;
+            margin: 0 auto;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            min-height: 56px;
+        }
+    </style>
 </head>
 
-<body class="bg-gray-100">
-    <div id="root"></div>
+<body>
+    <div id="root">
+        <!-- Static hero shell — React sẽ thay thế khi mount.
+             Giữ markup tối thiểu để LCP element (h1) paint ngay
+             sau khi HTML parsed, không phụ thuộc JS bundle hoặc Tailwind. -->
+        <section class="lh-hero">
+            <div class="lh-hero-inner">
+                <h1>Tìm việc làm IT <span class="accent">chất lượng</span><br>trên toàn quốc</h1>
+                <p>Nền tảng tuyển dụng IT hàng đầu Việt Nam — kết nối ứng viên công nghệ với hàng nghìn doanh nghiệp uy tín.</p>
+                <div class="lh-hero-search"></div>
+            </div>
+        </section>
+    </div>
 </body>
 
 </html>
