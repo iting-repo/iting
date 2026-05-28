@@ -3,7 +3,9 @@ import logoIting from '../../assets/logo-iting.png';
 import { Link, useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { useGoogleLogin } from '@react-oauth/google';
-import { loginRequest, googleLoginRequest } from '../../store/auth/authSlice';
+import { loginRequest, googleLoginRequest, facebookLoginRequest } from '../../store/auth/authSlice';
+import useFacebookLogin from '../../hooks/useFacebookLogin';
+import { toast } from 'sonner';
 import { FaEye, FaEyeSlash, FaArrowRight } from 'react-icons/fa';
 import { BsBriefcaseFill, BsBuilding, BsPeopleFill } from 'react-icons/bs';
 import publicService from '../../services/publicService';
@@ -61,13 +63,24 @@ const LoginPage = () => {
   const handleGoogleLogin = useGoogleLogin({
     onSuccess: (tokenResponse) => {
       console.log("Google Auth Success, access token:", tokenResponse.access_token);
-      dispatch(googleLoginRequest({ 
-        tokenId: tokenResponse.access_token, 
-        navigate 
+      dispatch(googleLoginRequest({
+        tokenId: tokenResponse.access_token,
+        navigate
       }));
     },
     onError: (error) => {
       console.error("Lỗi đăng nhập Google:", error);
+    },
+  });
+
+  // --- FACEBOOK LOGIN HOOK ---
+  const { login: handleFacebookLogin, loading: fbLoading, configured: fbConfigured } = useFacebookLogin({
+    onSuccess: ({ accessToken }) => {
+      dispatch(facebookLoginRequest({ accessToken, navigate }));
+    },
+    onError: (err) => {
+      console.error("Lỗi đăng nhập Facebook:", err);
+      toast.error(err?.message || 'Đăng nhập Facebook thất bại');
     },
   });
 
@@ -195,8 +208,14 @@ const LoginPage = () => {
                 <span className="relative bg-white px-4 text-xs text-gray-400 uppercase tracking-wide">Hoặc đăng nhập bằng</span>
               </div>
               <div className="grid grid-cols-2 gap-4">
-                <button type="button" className="flex items-center justify-center gap-3 border border-gray-200 py-3 rounded-lg hover:bg-gray-50 transition font-medium text-gray-700">
-                  <FacebookIcon /><span className="text-sm">Facebook</span>
+                <button
+                  type="button"
+                  onClick={handleFacebookLogin}
+                  disabled={fbLoading || !fbConfigured}
+                  title={!fbConfigured ? 'REACT_APP_FACEBOOK_APP_ID chưa được cấu hình' : ''}
+                  className="flex items-center justify-center gap-3 border border-gray-200 py-3 rounded-lg hover:bg-gray-50 transition font-medium text-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <FacebookIcon /><span className="text-sm">{fbLoading ? 'Đang xử lý...' : 'Facebook'}</span>
                 </button>
                 <button
                   type="button"

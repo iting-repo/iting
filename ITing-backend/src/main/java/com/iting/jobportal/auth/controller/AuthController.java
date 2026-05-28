@@ -1,6 +1,7 @@
 package com.iting.jobportal.auth.controller;
 
 import com.iting.jobportal.auth.dto.request.ChangePasswordRequest;
+import com.iting.jobportal.auth.dto.request.FacebookLoginRequest;
 import com.iting.jobportal.auth.dto.request.ForgotPasswordRequest;
 import com.iting.jobportal.auth.dto.request.GoogleLoginRequest;
 import com.iting.jobportal.auth.dto.request.LoginRequest;
@@ -74,6 +75,12 @@ public class AuthController {
   @RateLimited(policy = RateLimitPolicy.LOGIN)
   public LoginResponse googleLogin(@Valid @RequestBody GoogleLoginRequest request) {
     return authService.loginWithGoogle(request.getTokenId());
+  }
+
+  @PostMapping("/facebook")
+  @RateLimited(policy = RateLimitPolicy.LOGIN)
+  public LoginResponse facebookLogin(@Valid @RequestBody FacebookLoginRequest request) {
+    return authService.loginWithFacebook(request.getAccessToken());
   }
 
   @PostMapping("/change-password")

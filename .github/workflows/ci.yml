@@ -252,6 +252,7 @@ jobs:
           build-args: |
             VITE_API_BASE=https://datnhk252iting.dpdns.org
             REACT_APP_GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID }}
+            REACT_APP_FACEBOOK_APP_ID=${{ secrets.FACEBOOK_APP_ID }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 

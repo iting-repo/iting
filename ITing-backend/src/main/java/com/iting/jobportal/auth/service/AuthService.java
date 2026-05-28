@@ -12,6 +12,8 @@ public interface AuthService {
 
   LoginResponse loginWithGoogle(String tokenId);
 
+  LoginResponse loginWithFacebook(String accessToken);
+
   void changePassword(Long accountId, ChangePasswordRequest request);
 
   Account getAccountByEmail(String email);

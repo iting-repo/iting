@@ -41,6 +41,7 @@ public class AuthServiceImpl implements AuthService {
   private final RefreshTokenService refreshTokenService;
   private final CompanyRepository companyRepository;
   private final GoogleAuthService googleAuthService;
+  private final com.iting.jobportal.auth.service.FacebookAuthService facebookAuthService;
   private final OtpCodeRepository otpCodeRepository;
   private final EmailService emailService;
   private final EmailTemplateService emailTemplateService;
@@ -106,6 +107,84 @@ public class AuthServiceImpl implements AuthService {
 
     } catch (Exception e) {
       throw new RuntimeException("Xác thực Google thất bại: " + e.getMessage());
+    }
+  }
+
+  @Override
+  @Transactional
+  public LoginResponse loginWithFacebook(String accessToken) {
+    try {
+      var payload = facebookAuthService.getUserInfo(accessToken);
+      String email = (String) payload.get("email");
+      String name = (String) payload.get("name");
+      // payload.get("picture") reserved cho avatar sync sau này.
+
+      // Facebook không bắt buộc public email — nếu user chưa cấp quyền email
+      // hoặc đã ẩn email, fallback sang Facebook ID làm phần local của email
+      // để vẫn tạo được account (user có thể đổi email sau).
+      if (email == null || email.isBlank()) {
+        Object fbId = payload.get("id");
+        if (fbId == null) {
+          throw new RuntimeException(
+              "Không lấy được email từ Facebook. Vui lòng cấp quyền email hoặc đăng nhập bằng"
+                  + " Google.");
+        }
+        email = "fb_" + fbId + "@facebook.local";
+      }
+
+      final String finalEmail = email;
+      final String finalName = name;
+      Account account =
+          accountRepository
+              .findByEmail(finalEmail)
+              .orElseGet(
+                  () -> {
+                    Account newAccount =
+                        Account.builder()
+                            .email(finalEmail)
+                            .passwordHash(
+                                passwordEncoder.encode(
+                                    "SOCIAL_LOGIN_" + System.currentTimeMillis()))
+                            .fullName(
+                                finalName != null && !finalName.isBlank()
+                                    ? finalName.trim()
+                                    : finalEmail)
+                            .role(Role.CANDIDATE)
+                            .status(AccountStatus.ACTIVE)
+                            .build();
+                    Account saved = accountRepository.save(newAccount);
+                    createUserIfNeeded(
+                        saved, RegisterRequest.builder().fullName(finalName).build());
+                    return saved;
+                  });
+
+      if (account.getStatus() == AccountStatus.BANNED) {
+        throw new RuntimeException("Tài khoản của bạn đã bị khóa.");
+      }
+
+      account.setLastLoginAt(LocalDateTime.now());
+      accountRepository.save(account);
+
+      String primaryRole = account.getRole().normalizedName();
+      String jwtToken =
+          jwtTokenUtil.generateToken(account.getId(), account.getEmail(), primaryRole);
+
+      var refreshToken =
+          refreshTokenService.createRefreshToken(
+              account.getId(), account.getEmail(), "Facebook Social Login", "Unknown");
+
+      return LoginResponse.builder()
+          .userId(account.getId())
+          .email(account.getEmail())
+          .role(primaryRole)
+          .accessToken(jwtToken)
+          .refreshToken(refreshToken.getToken())
+          .tokenType("Bearer")
+          .expiresIn(86400L)
+          .build();
+
+    } catch (Exception e) {
+      throw new RuntimeException("Xác thực Facebook thất bại: " + e.getMessage());
     }
   }
 
