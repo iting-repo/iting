@@ -3,6 +3,9 @@ const HtmlWebpackPlugin = require('html-webpack-plugin');
 // <-- 1. Import plugin React Refresh
 const ReactRefreshWebpackPlugin = require('@pmmmwh/react-refresh-webpack-plugin');
 const CompressionPlugin = require('compression-webpack-plugin');
+const MiniCssExtractPlugin = require('mini-css-extract-plugin');
+const CssMinimizerPlugin = require('css-minimizer-webpack-plugin');
+const TerserPlugin = require('terser-webpack-plugin');
 const Dotenv = require('dotenv-webpack');
 const webpack = require('webpack');
 const dotenv = require('dotenv');
@@ -84,10 +87,15 @@ module.exports = (env, argv) => {
             },
           },
         },
-        // Rule cho file CSS
+        // Rule cho file CSS — prod extract ra .css file để parallel-load + cache,
+        // dev dùng style-loader cho HMR.
         {
           test: /\.css$/,
-          use: ['style-loader', 'css-loader', 'postcss-loader'],
+          use: [
+            isProd ? MiniCssExtractPlugin.loader : 'style-loader',
+            'css-loader',
+            'postcss-loader',
+          ],
         },
         // Các rule cho tài nguyên khác giữ nguyên
         {
@@ -135,6 +143,12 @@ module.exports = (env, argv) => {
       }),
       new webpack.DefinePlugin(envKeys),
       // Gzip + Brotli compression cho prod — nginx tự serve .gz/.br nếu client support
+      // Extract CSS thành file riêng cho prod → browser parse CSS song song với JS,
+      // không cần JS execute trước để inject CSS (giảm TBT).
+      isProd && new MiniCssExtractPlugin({
+        filename: 'styles.[contenthash].css',
+        chunkFilename: '[name].[contenthash].css',
+      }),
       isProd && new CompressionPlugin({
         filename: '[path][base].gz',
         algorithm: 'gzip',
@@ -164,6 +178,20 @@ module.exports = (env, argv) => {
     optimization: isProd ? {
       runtimeChunk: 'single',
       moduleIds: 'deterministic',
+      minimize: true,
+      minimizer: [
+        // Terser với passes=2 + mangle để giảm bundle size thêm ~5-10%
+        new TerserPlugin({
+          terserOptions: {
+            compress: { passes: 2, drop_console: false, drop_debugger: true },
+            mangle: true,
+            format: { comments: false },
+          },
+          extractComments: false,
+        }),
+        // Minify CSS — Lighthouse báo save 6 KiB
+        new CssMinimizerPlugin(),
+      ],
       splitChunks: {
         chunks: 'all',
         maxInitialRequests: 25,
