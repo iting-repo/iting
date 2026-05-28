@@ -411,6 +411,40 @@
                 </executions>
             </plugin>
 
+            <!-- ===== Spotless: Google Java Style enforcement (NFR 3.3.6) =====
+                 Áp dụng google-java-format trên toàn bộ source.
+                 Gọi tay:
+                   mvn spotless:check     # CI: fail nếu lệch chuẩn
+                   mvn spotless:apply     # local: auto-format file
+                 Không bind vào phase mặc định để build nhanh hơn. -->
+            <plugin>
+                <groupId>com.diffplug.spotless</groupId>
+                <artifactId>spotless-maven-plugin</artifactId>
+                <version>2.43.0</version>
+                <configuration>
+                    <java>
+                        <includes>
+                            <include>src/main/java/**/*.java</include>
+                            <include>src/test/java/**/*.java</include>
+                        </includes>
+                        <googleJavaFormat>
+                            <version>1.22.0</version>
+                            <style>GOOGLE</style>
+                            <reflowLongStrings>true</reflowLongStrings>
+                        </googleJavaFormat>
+                        <removeUnusedImports/>
+                        <trimTrailingWhitespace/>
+                        <endWithNewline/>
+                    </java>
+                    <pom>
+                        <sortPom>
+                            <expandEmptyElements>false</expandEmptyElements>
+                            <keepBlankLines>true</keepBlankLines>
+                        </sortPom>
+                    </pom>
+                </configuration>
+            </plugin>
+
             <!-- ===== OWASP Dependency-Check: scan Java libs CVE (NFR 3.3.4) ===== -->
             <!-- v12.x dùng NVD 2.0 API (v9.x bị NVD trả 403 vì wrong endpoint) -->
             <plugin>
