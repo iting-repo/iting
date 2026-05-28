@@ -1,5 +1,7 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import logoIting from '../assets/logo-iting.png';
+// Dùng AVIF 10KB từ public/ thay PNG 70KB từ src/assets — Header logo hiển thị max 56px
+// nên không cần 500×500. AVIF support >95% trình duyệt hiện đại.
+const logoIting = '/logo-iting-small.avif';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
 import { logout } from '../store/auth/authSlice';

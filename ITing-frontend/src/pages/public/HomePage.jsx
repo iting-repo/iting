@@ -717,7 +717,7 @@ const HomePage = () => {
 
                         {/* Yêu cầu người dùng lưu ảnh với tên tech-fox.png trong thư mục public */}
                         <img
-                            src="/tech-fox.png"
+                            src="/tech-fox.avif"
                             alt="Cáo Công Nghệ AI"
                             width="320"
                             height="320"
@@ -1211,7 +1211,7 @@ const HomePage = () => {
                             <div className="relative rounded-2xl overflow-hidden bg-gradient-to-br from-[#112240] to-[#0a192f] border border-blue-800/60 flex items-end justify-center pt-4 h-52">
                                 <div className="absolute inset-0 bg-gradient-to-t from-[#3AB4E6]/10 to-transparent"></div>
                                 <img
-                                    src="/tech-fox-dashboard.png"
+                                    src="/tech-fox-dashboard.avif"
                                     alt="Cáo Công Nghệ ITing"
                                     width="200"
                                     height="200"

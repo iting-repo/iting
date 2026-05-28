@@ -1,5 +1,6 @@
 import React from 'react';
-import logoIting from '../assets/logo-iting.png';
+// Dùng AVIF 10KB từ public/ — Footer logo hiển thị max 40px.
+const logoIting = '/logo-iting-small.avif';
 import { Link } from 'react-router-dom';
 import { BsBriefcaseFill } from 'react-icons/bs';
 
