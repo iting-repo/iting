@@ -157,6 +157,50 @@ const SearchOverlay = ({
         return () => document.removeEventListener('keydown', handleEsc);
     }, [isOpen, onClose]);
 
+    const [styleCoords, setStyleCoords] = useState({});
+
+    // Calculate dynamic position to break out of parent container on desktop/tablet
+    useEffect(() => {
+        if (!isOpen) {
+            setStyleCoords({});
+            return;
+        }
+
+        const updatePosition = () => {
+            if (!overlayRef.current) return;
+            const parent = overlayRef.current.parentElement;
+            if (!parent) return;
+
+            const outerContainer = parent.closest('.max-w-5xl') || parent;
+            const parentRect = parent.getBoundingClientRect();
+            const outerRect = outerContainer.getBoundingClientRect();
+            
+            const isMobile = window.innerWidth < 768;
+
+            if (isMobile) {
+                setStyleCoords({});
+            } else {
+                const leftOffset = parentRect.left - outerRect.left;
+                const computed = window.getComputedStyle(outerContainer);
+                const pl = parseFloat(computed.paddingLeft) || 0;
+                const pr = parseFloat(computed.paddingRight) || 0;
+                
+                setStyleCoords({
+                    left: -(leftOffset - pl),
+                    width: outerRect.width - pl - pr
+                });
+            }
+        };
+
+        updatePosition();
+        const timer = setTimeout(updatePosition, 50);
+        window.addEventListener('resize', updatePosition);
+        return () => {
+            clearTimeout(timer);
+            window.removeEventListener('resize', updatePosition);
+        };
+    }, [isOpen]);
+
     const handleKeywordClick = useCallback((keyword) => {
         saveSearchKeyword(keyword);
         onSearch?.(keyword);
@@ -186,13 +230,15 @@ const SearchOverlay = ({
     return (
         <div
             ref={overlayRef}
-            className={`absolute left-0 right-0 bg-white rounded-2xl shadow-2xl border border-gray-100 z-[100] overflow-hidden
+            className={`absolute bg-white rounded-2xl shadow-2xl border border-gray-100 z-[100] overflow-hidden
                 ${isCompact ? 'top-full mt-2' : 'top-full mt-3'}
+                ${Object.keys(styleCoords).length === 0 ? 'left-0 right-0' : ''}
             `}
             style={{
                 animation: 'searchOverlayIn 0.2s ease-out',
                 maxHeight: '70vh',
                 overflowY: 'auto',
+                ...styleCoords
             }}
         >
             {/* Global animation keyframes */}

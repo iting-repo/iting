@@ -5,6 +5,7 @@ import com.iting.jobportal.company.entity.enums.CompanyReviewStatus;
 import com.iting.jobportal.company.entity.enums.DocumentReviewStatus;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
@@ -13,6 +14,16 @@ import org.springframework.data.repository.query.Param;
 import java.util.Optional;
 
 public interface CompanyRepository extends JpaRepository<Company, Long>, JpaSpecificationExecutor<Company> {
+    // Force load industries trong cùng SQL — tránh LazyInit khi mapper truy
+    // cập company.getIndustries() ngoài transaction (mọi admin list endpoint).
+    @Override
+    @EntityGraph(attributePaths = {"industries"})
+    Page<Company> findAll(Pageable pageable);
+
+    @Override
+    @EntityGraph(attributePaths = {"industries"})
+    Optional<Company> findById(Long id);
+
     Page<Company> findByCompanyReviewStatus(CompanyReviewStatus status, Pageable pageable);
 
     Optional<Company> findByTaxCode(String taxCode);

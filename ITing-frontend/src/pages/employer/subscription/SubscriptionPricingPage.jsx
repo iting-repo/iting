@@ -50,7 +50,7 @@ const SubscriptionPricingPage = () => {
           setTimeout(() => {
             setOrder(null);
             setOrderStage('idle');
-            navigate('/employer/manage-subscription');
+            navigate('/employer/subscriptions/manage');
           }, 3000);
         } else if (['EXPIRED', 'FAILED', 'CANCELED'].includes(r.status)) {
           toast.error('Đơn hàng hết hạn. Vui lòng thử lại.');
@@ -89,7 +89,7 @@ const SubscriptionPricingPage = () => {
             <div className="mt-4 inline-flex items-center gap-2 px-4 py-2 bg-green-50 text-green-700 rounded-full text-sm font-medium">
               <FaCheck /> Bạn đang dùng gói {current.tierDisplayName}
               <button
-                onClick={() => navigate('/employer/manage-subscription')}
+                onClick={() => navigate('/employer/subscriptions/manage')}
                 className="ml-2 underline hover:no-underline"
               >
                 Quản lý

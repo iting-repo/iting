@@ -8,6 +8,7 @@ const CertificateSection = () => {
     const [certificates, setCertificates] = useState([]);
     const [isAdding, setIsAdding] = useState(false);
     const [confirm, askConfirm, resetConfirm] = useConfirm();
+    const [formErrors, setFormErrors] = useState({});
     
     const [formData, setFormData] = useState({
         title: '',
@@ -42,7 +43,24 @@ const CertificateSection = () => {
 
     const handleAddSubmit = async (e) => {
         e.preventDefault();
-        if (!formData.title.trim() || !formData.issuingOrganization.trim()) return;
+        
+        const errors = {};
+        if (!formData.title.trim()) errors.title = "Vui lòng nhập tên chứng chỉ";
+        if (!formData.issuingOrganization.trim()) errors.issuingOrganization = "Vui lòng nhập tổ chức cấp";
+        
+        if (formData.issueDate && formData.expirationDate && !formData.doesNotExpire && new Date(formData.issueDate) > new Date(formData.expirationDate)) {
+            errors.expirationDate = "Ngày hết hạn phải sau ngày cấp";
+        }
+    
+        if (formData.credentialUrl && !/^https?:\/\/.+/.test(formData.credentialUrl.trim())) {
+            errors.credentialUrl = "URL không hợp lệ, phải bắt đầu bằng http:// hoặc https://";
+        }
+    
+        if (Object.keys(errors).length > 0) {
+            setFormErrors(errors);
+            return;
+        }
+        setFormErrors({});
         
         try {
             const payload = { ...formData };
@@ -115,11 +133,13 @@ const CertificateSection = () => {
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     <div>
                                         <label className="block text-xs font-medium text-gray-700 mb-1">Tên chứng chỉ *</label>
-                                        <Input name="title" value={formData.title} onChange={handleChange} required placeholder="VD: AWS Certified..." />
+                                        <Input name="title" value={formData.title} onChange={handleChange} placeholder="VD: AWS Certified..." className={formErrors.title ? 'border-red-500' : ''} />
+                                        {formErrors.title && <span className="text-red-500 text-xs mt-1 block">* {formErrors.title}</span>}
                                     </div>
                                     <div>
                                         <label className="block text-xs font-medium text-gray-700 mb-1">Tổ chức cấp *</label>
-                                        <Input name="issuingOrganization" value={formData.issuingOrganization} onChange={handleChange} required placeholder="VD: Amazon Web Services" />
+                                        <Input name="issuingOrganization" value={formData.issuingOrganization} onChange={handleChange} placeholder="VD: Amazon Web Services" className={formErrors.issuingOrganization ? 'border-red-500' : ''} />
+                                        {formErrors.issuingOrganization && <span className="text-red-500 text-xs mt-1 block">* {formErrors.issuingOrganization}</span>}
                                     </div>
                                     <div>
                                         <label className="block text-xs font-medium text-gray-700 mb-1">Ngày cấp</label>
@@ -127,7 +147,8 @@ const CertificateSection = () => {
                                     </div>
                                     <div>
                                         <label className="block text-xs font-medium text-gray-700 mb-1">Ngày hết hạn</label>
-                                        <Input type="date" name="expirationDate" value={formData.expirationDate} onChange={handleChange} disabled={formData.doesNotExpire} />
+                                        <Input type="date" name="expirationDate" value={formData.expirationDate} onChange={handleChange} disabled={formData.doesNotExpire} className={formErrors.expirationDate ? 'border-red-500' : ''} />
+                                        {formErrors.expirationDate && <span className="text-red-500 text-xs mt-1 block">* {formErrors.expirationDate}</span>}
                                         <div className="mt-2 flex items-center">
                                             <input 
                                                 type="checkbox" 
@@ -146,7 +167,8 @@ const CertificateSection = () => {
                                     </div>
                                     <div>
                                         <label className="block text-xs font-medium text-gray-700 mb-1">URL Chứng chỉ</label>
-                                        <Input name="credentialUrl" value={formData.credentialUrl} onChange={handleChange} placeholder="https://..." />
+                                        <Input name="credentialUrl" value={formData.credentialUrl} onChange={handleChange} placeholder="https://..." className={formErrors.credentialUrl ? 'border-red-500' : ''} />
+                                        {formErrors.credentialUrl && <span className="text-red-500 text-xs mt-1 block">* {formErrors.credentialUrl}</span>}
                                     </div>
                                 </div>
                                 <div className="flex gap-3 justify-end mt-6 pt-4 border-t border-gray-100">

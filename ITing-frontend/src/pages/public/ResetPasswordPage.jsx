@@ -13,6 +13,7 @@ const ResetPasswordPage = () => {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [formErrors, setFormErrors] = useState({});
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
@@ -26,10 +27,19 @@ const ResetPasswordPage = () => {
     e.preventDefault();
     setError(null);
     if (!token) return;
-    if (password !== confirmPassword) {
-      setError('Mật khẩu không khớp');
+
+    const errors = {};
+    if (!password) errors.password = "Vui lòng nhập mật khẩu mới";
+    else if (password.length < 6) errors.password = "Mật khẩu tối thiểu 6 ký tự";
+    if (!confirmPassword) errors.confirmPassword = "Vui lòng xác nhận mật khẩu";
+    else if (password !== confirmPassword) errors.confirmPassword = "Mật khẩu xác nhận không khớp!";
+    
+    if (Object.keys(errors).length > 0) {
+      setFormErrors(errors);
       return;
     }
+    setFormErrors({});
+
     try {
       setLoading(true);
       await authService.resetPassword(token, password);
@@ -67,12 +77,13 @@ const ResetPasswordPage = () => {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="Mật khẩu mới"
-                  className="w-full px-5 py-3.5 bg-[#F0F5FA] border border-transparent rounded-lg text-gray-700 focus:outline-none"
+                  className={`w-full px-5 py-3.5 bg-[#F0F5FA] border ${formErrors.password ? 'border-red-500' : 'border-transparent'} rounded-lg text-gray-700 focus:outline-none`}
                 />
                 <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400">
                   {showPassword ? <FaEyeSlash size={18} /> : <FaEye size={18} />}
                 </button>
               </div>
+              {formErrors.password && <span className="text-red-500 text-sm mt-1 block">* {formErrors.password}</span>}
 
               <div className="relative">
                 <input
@@ -81,12 +92,13 @@ const ResetPasswordPage = () => {
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   placeholder="Nhập lại mật khẩu mới"
-                  className="w-full px-5 py-3.5 bg-[#F0F5FA] border border-transparent rounded-lg text-gray-700 focus:outline-none"
+                  className={`w-full px-5 py-3.5 bg-[#F0F5FA] border ${formErrors.confirmPassword ? 'border-red-500' : 'border-transparent'} rounded-lg text-gray-700 focus:outline-none`}
                 />
                 <button type="button" onClick={() => setShowConfirmPassword(!showConfirmPassword)} className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400">
                   {showConfirmPassword ? <FaEyeSlash size={18} /> : <FaEye size={18} />}
                 </button>
               </div>
+              {formErrors.confirmPassword && <span className="text-red-500 text-sm mt-1 block">* {formErrors.confirmPassword}</span>}
 
               <button type="submit" disabled={loading} className="w-full bg-[#3AB4E6] hover:bg-blue-600 text-white font-bold py-3.5 rounded-lg transition duration-200 flex items-center justify-center gap-2">
                 {loading ? 'Đang xử lý...' : 'Đặt lại mật khẩu'} <FaArrowRight />

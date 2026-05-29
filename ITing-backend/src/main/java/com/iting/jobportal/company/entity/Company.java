@@ -64,7 +64,9 @@ public class Company {
     // @Column(name = "Industry", length = 255)
     // private String industry;
 
-    @ElementCollection(targetClass = Industry.class)
+    // EAGER: industries thường ≤ 5 phần tử, nhiều mapper truy cập ngoài tx
+    // (dashboard, admin list, public list...) — EAGER tránh LazyInit hoàn toàn.
+    @ElementCollection(targetClass = Industry.class, fetch = FetchType.EAGER)
     @Enumerated(EnumType.STRING)
     @CollectionTable(name = "company_industries", joinColumns = @JoinColumn(name = "company_id"))
     @Column(name = "industry")

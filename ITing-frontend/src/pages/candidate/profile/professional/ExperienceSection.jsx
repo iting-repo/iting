@@ -8,6 +8,7 @@ const ExperienceSection = () => {
     const [experiences, setExperiences] = useState([]);
     const [isAdding, setIsAdding] = useState(false);
     const [confirm, askConfirm, resetConfirm] = useConfirm();
+    const [formErrors, setFormErrors] = useState({});
     
     const [formData, setFormData] = useState({
         companyName: '',
@@ -41,7 +42,23 @@ const ExperienceSection = () => {
 
     const handleAddSubmit = async (e) => {
         e.preventDefault();
-        if (!formData.companyName.trim() || !formData.position.trim() || !formData.startDate) return;
+        
+        const errors = {};
+        if (!formData.companyName.trim()) errors.companyName = "Vui lòng nhập tên công ty";
+        if (!formData.position.trim()) errors.position = "Vui lòng nhập vị trí/chức danh";
+        if (!formData.startDate) errors.startDate = "Vui lòng chọn ngày bắt đầu";
+        
+        if (!formData.isCurrent && !formData.endDate) {
+            errors.endDate = "Vui lòng chọn ngày kết thúc";
+        } else if (formData.startDate && formData.endDate && !formData.isCurrent && new Date(formData.startDate) > new Date(formData.endDate)) {
+            errors.endDate = "Ngày kết thúc phải sau ngày bắt đầu";
+        }
+
+        if (Object.keys(errors).length > 0) {
+            setFormErrors(errors);
+            return;
+        }
+        setFormErrors({});
         
         try {
             const payload = { ...formData };
@@ -117,19 +134,23 @@ const ExperienceSection = () => {
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     <div>
                                         <label className="block text-xs font-medium text-gray-700 mb-1">Vị trí chức danh *</label>
-                                        <Input name="position" value={formData.position} onChange={handleChange} required placeholder="VD: Senior Frontend Developer" />
+                                        <Input name="position" value={formData.position} onChange={handleChange} placeholder="VD: Senior Frontend Developer" className={formErrors.position ? 'border-red-500' : ''} />
+                                        {formErrors.position && <span className="text-red-500 text-xs mt-1 block">* {formErrors.position}</span>}
                                     </div>
                                     <div>
                                         <label className="block text-xs font-medium text-gray-700 mb-1">Tên công ty *</label>
-                                        <Input name="companyName" value={formData.companyName} onChange={handleChange} required placeholder="VD: FPT Software" />
+                                        <Input name="companyName" value={formData.companyName} onChange={handleChange} placeholder="VD: FPT Software" className={formErrors.companyName ? 'border-red-500' : ''} />
+                                        {formErrors.companyName && <span className="text-red-500 text-xs mt-1 block">* {formErrors.companyName}</span>}
                                     </div>
                                     <div>
                                         <label className="block text-xs font-medium text-gray-700 mb-1">Ngày bắt đầu *</label>
-                                        <Input type="date" name="startDate" value={formData.startDate} onChange={handleChange} required />
+                                        <Input type="date" name="startDate" value={formData.startDate} onChange={handleChange} className={formErrors.startDate ? 'border-red-500' : ''} />
+                                        {formErrors.startDate && <span className="text-red-500 text-xs mt-1 block">* {formErrors.startDate}</span>}
                                     </div>
                                     <div>
                                         <label className="block text-xs font-medium text-gray-700 mb-1">Ngày kết thúc</label>
-                                        <Input type="date" name="endDate" value={formData.endDate} onChange={handleChange} disabled={formData.isCurrent} />
+                                        <Input type="date" name="endDate" value={formData.endDate} onChange={handleChange} disabled={formData.isCurrent} className={formErrors.endDate ? 'border-red-500' : ''} />
+                                        {formErrors.endDate && <span className="text-red-500 text-xs mt-1 block">* {formErrors.endDate}</span>}
                                         <div className="mt-2 flex items-center">
                                             <input 
                                                 type="checkbox" 

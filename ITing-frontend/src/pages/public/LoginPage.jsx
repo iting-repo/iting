@@ -35,6 +35,7 @@ const LoginPage = () => {
   const navigate = useNavigate();
   const { isLoading, error, currentUser } = useSelector((state) => state.auth);
   const [showPassword, setShowPassword] = useState(false);
+  const [formErrors, setFormErrors] = useState({});
   const [stats, setStats] = useState({ totalJobs: 0, totalCandidates: 0, totalCompanies: 0 });
 
   useEffect(() => {
@@ -78,6 +79,21 @@ const LoginPage = () => {
 
   const handleLogin = (e) => {
     e.preventDefault();
+    const errors = {};
+    if (!email) {
+      errors.email = "Vui lòng nhập email";
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      errors.email = "Email không hợp lệ";
+    }
+    if (!password) {
+      errors.password = "Vui lòng nhập mật khẩu";
+    }
+    
+    if (Object.keys(errors).length > 0) {
+      setFormErrors(errors);
+      return;
+    }
+    setFormErrors({});
     dispatch(loginRequest({ email, password, navigate }));
   }
 
@@ -112,8 +128,9 @@ const LoginPage = () => {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="Nhập email của bạn"
-                className="w-full px-5 py-3.5 bg-[#F0F5FA] border border-transparent rounded-lg text-gray-700 focus:outline-none focus:bg-white focus:border-[#3AB4E6] focus:ring-2 focus:ring-blue-100 transition-all"
+                className={`w-full px-5 py-3.5 bg-[#F0F5FA] border ${formErrors.email ? 'border-red-500' : 'border-transparent'} rounded-lg text-gray-700 focus:outline-none focus:bg-white focus:border-[#3AB4E6] focus:ring-2 focus:ring-blue-100 transition-all`}
               />
+              {formErrors.email && <span className="text-red-500 text-sm mt-1 block">* {formErrors.email}</span>}
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Mật khẩu</label>
@@ -124,7 +141,7 @@ const LoginPage = () => {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="•••••••••"
-                  className="w-full px-5 py-3.5 bg-[#F0F5FA] border border-transparent rounded-lg text-gray-700 focus:outline-none focus:bg-white focus:border-[#3AB4E6] focus:ring-2 focus:ring-blue-100 transition-all"
+                  className={`w-full px-5 py-3.5 bg-[#F0F5FA] border ${formErrors.password ? 'border-red-500' : 'border-transparent'} rounded-lg text-gray-700 focus:outline-none focus:bg-white focus:border-[#3AB4E6] focus:ring-2 focus:ring-blue-100 transition-all`}
                 />
                 <button
                   type="button"
@@ -134,6 +151,7 @@ const LoginPage = () => {
                   {showPassword ? <FaEyeSlash size={18} /> : <FaEye size={18} />}
                 </button>
               </div>
+              {formErrors.password && <span className="text-red-500 text-sm mt-1 block">* {formErrors.password}</span>}
             </div>
             <div className="flex justify-between items-center text-sm mt-2">
               <label className="flex items-center text-gray-500 cursor-pointer select-none">

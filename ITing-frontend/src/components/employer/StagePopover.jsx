@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { FaChevronDown, FaCheck, FaTimes } from 'react-icons/fa';
 import { toast } from 'sonner';
 import pipelineService from '../../services/pipelineService';
@@ -15,8 +16,14 @@ export const STAGES = [
 export const stageMeta = (value) =>
    STAGES.find(s => s.value === value) || { value, label: value, color: 'bg-gray-100 text-gray-700 border-gray-200' };
 
+const POPOVER_W = 288;   // 18rem
+const POPOVER_H = 400;   // estimated max
+const GAP = 8;
+
 /**
- * Inline stage selector — badge bấm vào → popover dropdown + textarea note + toggle email.
+ * Inline stage selector — badge bấm vào → popover render qua portal tới
+ * document.body để KHÔNG bị clip bởi parent overflow (ví dụ table scroll).
+ * Vị trí tính bằng getBoundingClientRect của trigger button.
  *
  * @param {{
  *   applyFormId: number,
@@ -31,20 +38,66 @@ const StagePopover = ({ applyFormId, jobId, currentStage, onMoved }) => {
    const [note, setNote] = useState('');
    const [sendEmail, setSendEmail] = useState(false);
    const [saving, setSaving] = useState(false);
-   const wrapRef = useRef(null);
+   const [pos, setPos] = useState({ top: 0, left: 0 });
+   const triggerRef = useRef(null);
+   const popoverRef = useRef(null);
 
    useEffect(() => {
       setSelectedStage(currentStage || 'SCREENING');
    }, [currentStage]);
 
-   // Close on outside click
+   // Tính vị trí popover dựa vào trigger button rect — luôn hiện trong viewport
+   const recalcPosition = () => {
+      const btn = triggerRef.current;
+      if (!btn) return;
+      const rect = btn.getBoundingClientRect();
+      const vw = window.innerWidth;
+      const vh = window.innerHeight;
+      // Mặc định align right edge với trigger right
+      let left = rect.right - POPOVER_W;
+      let top = rect.bottom + GAP;
+      // Đảm bảo trong viewport
+      if (left < GAP) left = GAP;
+      if (left + POPOVER_W > vw - GAP) left = vw - POPOVER_W - GAP;
+      // Nếu thiếu chỗ dưới → mở lên trên
+      if (top + POPOVER_H > vh - GAP) {
+         top = rect.top - POPOVER_H - GAP;
+         if (top < GAP) top = GAP;
+      }
+      setPos({ top, left });
+   };
+
+   // Recalc khi mở + scroll/resize
+   useEffect(() => {
+      if (!open) return;
+      recalcPosition();
+      const handler = () => recalcPosition();
+      window.addEventListener('scroll', handler, true); // capture để bắt mọi scroll container
+      window.addEventListener('resize', handler);
+      return () => {
+         window.removeEventListener('scroll', handler, true);
+         window.removeEventListener('resize', handler);
+      };
+   }, [open]);
+
+   // Close on outside click — check cả trigger + popover (popover render ngoài tree nên không phải descendant)
    useEffect(() => {
       if (!open) return;
       const handler = (e) => {
-         if (wrapRef.current && !wrapRef.current.contains(e.target)) setOpen(false);
+         if (triggerRef.current?.contains(e.target)) return;
+         if (popoverRef.current?.contains(e.target)) return;
+         setOpen(false);
       };
       document.addEventListener('mousedown', handler);
       return () => document.removeEventListener('mousedown', handler);
+   }, [open]);
+
+   // Close on Escape
+   useEffect(() => {
+      if (!open) return;
+      const handler = (e) => { if (e.key === 'Escape') setOpen(false); };
+      document.addEventListener('keydown', handler);
+      return () => document.removeEventListener('keydown', handler);
    }, [open]);
 
    const meta = stageMeta(currentStage);
@@ -75,8 +128,9 @@ const StagePopover = ({ applyFormId, jobId, currentStage, onMoved }) => {
    };
 
    return (
-      <div ref={wrapRef} className="relative inline-block">
+      <>
          <button
+            ref={triggerRef}
             type="button"
             onClick={() => setOpen(o => !o)}
             className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold border ${meta.color} hover:ring-2 hover:ring-offset-1 hover:ring-[#3AB4E6]/40 transition-all`}
@@ -85,8 +139,13 @@ const StagePopover = ({ applyFormId, jobId, currentStage, onMoved }) => {
             <FaChevronDown size={9} className="opacity-70" />
          </button>
 
-         {open && (
-            <div className="absolute z-50 mt-2 right-0 w-72 bg-white rounded-xl shadow-2xl border border-gray-100 p-4 animate-fade-in">
+         {open && createPortal(
+            <div
+               ref={popoverRef}
+               className="fixed z-[9999] bg-white rounded-xl shadow-2xl border border-gray-100 p-4 animate-fade-in"
+               style={{ top: pos.top, left: pos.left, width: POPOVER_W }}
+               onClick={(e) => e.stopPropagation()}
+            >
                <div className="flex items-center justify-between mb-3">
                   <p className="text-sm font-bold text-gray-800">Chuyển giai đoạn</p>
                   <button type="button" onClick={() => setOpen(false)} className="text-gray-400 hover:text-gray-600">
@@ -138,9 +197,10 @@ const StagePopover = ({ applyFormId, jobId, currentStage, onMoved }) => {
                >
                   {saving ? 'Đang lưu…' : 'Lưu'}
                </button>
-            </div>
+            </div>,
+            document.body
          )}
-      </div>
+      </>
    );
 };
 

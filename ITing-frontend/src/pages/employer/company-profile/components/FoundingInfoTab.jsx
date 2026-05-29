@@ -407,24 +407,24 @@ const FoundingInfoTab = ({ onTabChange }) => {
     const newErrors = {};
 
     if (!requestForm.companyName.trim()) {
-      newErrors.companyName = "Vui lòng nhập tên công ty";
+      newErrors.companyName = "* Vui lòng nhập tên công ty";
     }
     if (!requestForm.taxCode.trim()) {
-      newErrors.taxCode = "Vui lòng nhập mã số thuế";
+      newErrors.taxCode = "* Vui lòng nhập mã số thuế";
     }
     if (!requestForm.phone.trim()) {
-      newErrors.phone = "Vui lòng nhập số điện thoại";
+      newErrors.phone = "* Vui lòng nhập số điện thoại";
     } else if (!/^(\+84|0)(3|5|7|8|9)[0-9]{8}$/.test(requestForm.phone.replace(/\s+/g, ''))) {
-      newErrors.phone = "Số điện thoại không hợp lệ (VD: 0912345678)";
+      newErrors.phone = "* Số điện thoại không hợp lệ (VD: 0912345678)";
     }
     if (!requestForm.email.trim()) {
-      newErrors.email = "Vui lòng nhập email công ty";
+      newErrors.email = "* Vui lòng nhập email công ty";
     }
     if (!requestForm.address.trim()) {
-      newErrors.address = "Vui lòng nhập địa chỉ công ty";
+      newErrors.address = "* Vui lòng nhập địa chỉ công ty";
     }
     if (!requestForm.website.trim()) {
-      newErrors.website = "Vui lòng nhập website";
+      newErrors.website = "* Vui lòng nhập website";
     }
 
     return newErrors;

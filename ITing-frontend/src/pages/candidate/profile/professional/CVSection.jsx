@@ -12,6 +12,7 @@ const CVSection = () => {
     const [isUploading, setIsUploading] = useState(false);
     const [confirm, askConfirm, resetConfirm] = useConfirm();
     const [selectedFile, setSelectedFile] = useState(null);
+    const [formErrors, setFormErrors] = useState({});
     
     const [formData, setFormData] = useState({
         title: '',
@@ -41,10 +42,28 @@ const CVSection = () => {
 
     const handleAddSubmit = async (e) => {
         e.preventDefault();
+        
         if (!selectedFile) {
-            toast.error("Vui lòng chọn file CV!");
+            setFormErrors({ file: "Vui lòng chọn file CV!" });
             return;
         }
+
+        const allowedTypes = [
+            'application/pdf', 
+            'application/msword', 
+            'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+        ];
+        if (!allowedTypes.includes(selectedFile.type)) {
+            setFormErrors({ file: "Chỉ hỗ trợ định dạng PDF, DOC, DOCX" });
+            return;
+        }
+
+        if (selectedFile.size > 5 * 1024 * 1024) {
+            setFormErrors({ file: "Kích thước file không được vượt quá 5MB" });
+            return;
+        }
+        
+        setFormErrors({});
         
         const uploadData = new FormData();
         uploadData.append('file', selectedFile);
@@ -131,12 +150,14 @@ const CVSection = () => {
                                         <label className="block text-xs font-medium text-gray-700 mb-1">Tên CV (Tùy chọn)</label>
                                         <Input name="title" value={formData.title} onChange={handleChange} placeholder="VD: Backend Developer CV" />
                                     </div>
-                                    
-                                    <div className="border-2 border-dashed border-gray-200 rounded-xl p-6 flex flex-col items-center justify-center text-center hover:bg-gray-50 transition-colors cursor-pointer relative">
+                                    <div className={`border-2 border-dashed ${formErrors.file ? 'border-red-500' : 'border-gray-200'} rounded-xl p-6 flex flex-col items-center justify-center text-center hover:bg-gray-50 transition-colors cursor-pointer relative`}>
                                         <input 
                                             type="file" 
                                             accept=".pdf,.doc,.docx" 
-                                            onChange={(e) => setSelectedFile(e.target.files[0])}
+                                            onChange={(e) => {
+                                                setSelectedFile(e.target.files[0]);
+                                                setFormErrors({});
+                                            }}
                                             className="absolute inset-0 opacity-0 cursor-pointer"
                                             required
                                         />
@@ -148,6 +169,7 @@ const CVSection = () => {
                                         </p>
                                         <p className="text-xs text-gray-400 mt-1">Hỗ trợ PDF, DOC, DOCX (Tối đa 5MB)</p>
                                     </div>
+                                    {formErrors.file && <span className="text-red-500 text-sm mt-1 block">* {formErrors.file}</span>}
                                 </div>
                                 <div className="flex gap-3 justify-end mt-6 pt-4 border-t border-gray-100">
                                     <Button type="button" variant="outline" onClick={() => setIsAdding(false)} disabled={isUploading}>Hủy</Button>

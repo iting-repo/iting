@@ -180,12 +180,31 @@ const LocationPicker = ({ value, onChange }) => {
     // Update position when opening or window changes
     const updatePosition = () => {
         if (triggerRef.current) {
-            const rect = triggerRef.current.getBoundingClientRect();
-            setCoords({
-                top: rect.bottom + window.scrollY,
-                left: rect.left + window.scrollX,
-                width: 480
-            });
+            const smallContainer = triggerRef.current.closest('.px-5') || triggerRef.current;
+            const outerContainer = triggerRef.current.closest('.max-w-5xl') || smallContainer;
+            
+            const smallRect = smallContainer.getBoundingClientRect();
+            const outerRect = outerContainer.getBoundingClientRect();
+            
+            const isMobile = window.innerWidth < 768; // Tablet (>=768) và Desktop
+            
+            if (isMobile) {
+                setCoords({
+                    top: smallRect.bottom + window.scrollY,
+                    left: smallRect.left + window.scrollX,
+                    width: smallRect.width
+                });
+            } else {
+                const computed = window.getComputedStyle(outerContainer);
+                const pl = parseFloat(computed.paddingLeft) || 0;
+                const pr = parseFloat(computed.paddingRight) || 0;
+                
+                setCoords({
+                    top: smallRect.bottom + window.scrollY,
+                    left: outerRect.left + pl + window.scrollX,
+                    width: outerRect.width - pl - pr
+                });
+            }
         }
     };
 
@@ -339,7 +358,7 @@ const LocationPicker = ({ value, onChange }) => {
                         style={{
                             position: 'fixed',
                             top: coords.top - window.scrollY + 12,
-                            left: Math.min(coords.left, window.innerWidth - coords.width - 20),
+                            left: coords.left - window.scrollX,
                             width: coords.width,
                             zIndex: 10050
                         }}

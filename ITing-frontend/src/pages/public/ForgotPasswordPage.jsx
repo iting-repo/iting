@@ -21,6 +21,7 @@ const ForgotPasswordPage = () => {
   // State hiện/ẩn pass
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [formErrors, setFormErrors] = useState({});
   const [stats, setStats] = useState({ totalJobs: 0, totalCandidates: 0, totalCompanies: 0 });
 
   React.useEffect(() => {
@@ -38,6 +39,16 @@ const ForgotPasswordPage = () => {
   // Xử lý gửi Email (Bước 1)
   const handleSendEmail = async (e) => {
     e.preventDefault();
+    const errors = {};
+    if (!email) errors.email = "Vui lòng nhập email";
+    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) errors.email = "Email không hợp lệ";
+    
+    if (Object.keys(errors).length > 0) {
+      setFormErrors(errors);
+      return;
+    }
+    setFormErrors({});
+
     try {
       await authService.forgotPassword(email);
       setStep(2);
@@ -49,15 +60,18 @@ const ForgotPasswordPage = () => {
   // Xử lý Đổi mật khẩu (Bước 2)
   const handleResetPassword = async (e) => {
     e.preventDefault();
-    if (password !== confirmPassword) {
-      alert("Mật khẩu không khớp!");
-      return;
-    }
+    const errors = {};
+    if (!otp || otp.length < 6) errors.otp = "Vui lòng nhập mã OTP 6 chữ số";
+    if (!password) errors.password = "Vui lòng nhập mật khẩu mới";
+    else if (password.length < 6) errors.password = "Mật khẩu tối thiểu 6 ký tự";
+    if (!confirmPassword) errors.confirmPassword = "Vui lòng xác nhận mật khẩu";
+    else if (password !== confirmPassword) errors.confirmPassword = "Mật khẩu xác nhận không khớp!";
     
-    if (!otp || otp.length < 6) {
-      alert("Vui lòng nhập mã OTP 6 chữ số");
+    if (Object.keys(errors).length > 0) {
+      setFormErrors(errors);
       return;
     }
+    setFormErrors({});
 
     try {
         await authService.resetPassword(email, otp, password);
@@ -101,8 +115,9 @@ const ForgotPasswordPage = () => {
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       placeholder="Nhập email tài khoản" 
-                      className="w-full px-5 py-3.5 bg-[#F0F5FA] border border-transparent rounded-lg text-gray-700 placeholder-gray-400 focus:outline-none focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all"
+                      className={`w-full px-5 py-3.5 bg-[#F0F5FA] border ${formErrors.email ? 'border-red-500' : 'border-transparent'} rounded-lg text-gray-700 placeholder-gray-400 focus:outline-none focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all`}
                     />
+                    {formErrors.email && <span className="text-red-500 text-sm mt-1 block">* {formErrors.email}</span>}
                   </div>
                   <button 
                     type="submit" 
@@ -139,8 +154,9 @@ const ForgotPasswordPage = () => {
                        value={otp}
                        onChange={(e) => setOtp(e.target.value)}
                        placeholder="Nhập mã xác nhận (OTP) 6 chữ số" 
-                       className="w-full px-5 py-3.5 bg-[#F0F5FA] rounded-lg focus:outline-none focus:border-[#3AB4E6] border border-transparent font-bold tracking-widest text-center"
+                       className={`w-full px-5 py-3.5 bg-[#F0F5FA] rounded-lg focus:outline-none focus:border-[#3AB4E6] border ${formErrors.otp ? 'border-red-500' : 'border-transparent'} font-bold tracking-widest text-center`}
                      />
+                     {formErrors.otp && <span className="text-red-500 text-sm mt-1 block">* {formErrors.otp}</span>}
                    </div> 
                   
 
@@ -152,7 +168,7 @@ const ForgotPasswordPage = () => {
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       placeholder="Nhập mật khẩu mới" 
-                      className="w-full px-5 py-3.5 bg-[#F0F5FA] border border-transparent rounded-lg text-gray-700 placeholder-gray-400 focus:outline-none focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all"
+                      className={`w-full px-5 py-3.5 bg-[#F0F5FA] border ${formErrors.password ? 'border-red-500' : 'border-transparent'} rounded-lg text-gray-700 placeholder-gray-400 focus:outline-none focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all`}
                     />
                     <button
                       type="button"
@@ -162,6 +178,7 @@ const ForgotPasswordPage = () => {
                       {showPassword ? <FaEyeSlash size={18} /> : <FaEye size={18} />}
                     </button>
                   </div>
+                  {formErrors.password && <span className="text-red-500 text-sm mt-1 block">* {formErrors.password}</span>}
 
                   {/* Nhập lại mật khẩu mới */}
                   <div className="relative">
@@ -171,7 +188,7 @@ const ForgotPasswordPage = () => {
                       value={confirmPassword}
                       onChange={(e) => setConfirmPassword(e.target.value)}
                       placeholder="Nhập lại mật khẩu mới" 
-                      className="w-full px-5 py-3.5 bg-[#F0F5FA] border border-transparent rounded-lg text-gray-700 placeholder-gray-400 focus:outline-none focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all"
+                      className={`w-full px-5 py-3.5 bg-[#F0F5FA] border ${formErrors.confirmPassword ? 'border-red-500' : 'border-transparent'} rounded-lg text-gray-700 placeholder-gray-400 focus:outline-none focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all`}
                     />
                     <button
                       type="button"
@@ -181,6 +198,7 @@ const ForgotPasswordPage = () => {
                       {showConfirmPassword ? <FaEyeSlash size={18} /> : <FaEye size={18} />}
                     </button>
                   </div>
+                  {formErrors.confirmPassword && <span className="text-red-500 text-sm mt-1 block">* {formErrors.confirmPassword}</span>}
 
                   <button 
                     type="submit" 

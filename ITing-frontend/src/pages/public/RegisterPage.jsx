@@ -84,6 +84,7 @@ const RegisterPage = () => {
   // Thông tin doanh nghiệp (taxCode, address, phone, website, industries…) được
   // xác thực sau khi login qua FoundingInfoTab (affiliation init + admin duyệt).
   const [formData, setFormData] = useState({ fullName: "", email: "", password: "", confirmPassword: "" });
+  const [formErrors, setFormErrors] = useState({});
   const [stats, setStats] = useState({ totalJobs: 0, totalCandidates: 0, totalCompanies: 0 });
 
   useEffect(() => {
@@ -106,7 +107,21 @@ const RegisterPage = () => {
 
   const handleRegister = (e) => {
     e.preventDefault();
-    if (formData.password !== formData.confirmPassword) { alert("Mật khẩu xác nhận không khớp!"); return; }
+    const errors = {};
+    if (!formData.fullName) errors.fullName = isEmployer ? "Vui lòng nhập tên công ty/doanh nghiệp" : "Vui lòng nhập họ tên";
+    if (!formData.email) errors.email = "Vui lòng nhập email";
+    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) errors.email = "Email không hợp lệ";
+    if (!formData.password) errors.password = "Vui lòng nhập mật khẩu";
+    else if (formData.password.length < 6) errors.password = "Mật khẩu tối thiểu 6 ký tự";
+    if (!formData.confirmPassword) errors.confirmPassword = "Vui lòng xác nhận mật khẩu";
+    else if (formData.password !== formData.confirmPassword) errors.confirmPassword = "Mật khẩu xác nhận không khớp!";
+    
+    if (Object.keys(errors).length > 0) {
+      setFormErrors(errors);
+      return;
+    }
+    setFormErrors({});
+
     dispatch(registerRequest({
       email: formData.email,
       password: formData.password,
@@ -138,15 +153,27 @@ const RegisterPage = () => {
           </p>
           <form onSubmit={handleRegister} className="space-y-4">
             {error && <div className="p-3 bg-red-50 border border-red-200 text-red-600 rounded-lg text-sm mb-4">{error}</div>}
-            <input type="text" name="fullName" value={formData.fullName} onChange={handleChange} required placeholder={isEmployer ? "Tên công ty/doanh nghiệp" : "Họ và tên"} className="w-full px-5 py-3.5 bg-[#F0F5FA] border border-transparent rounded-lg text-gray-700 focus:outline-none focus:bg-white focus:border-blue-500 transition-all" />
-            <input type="email" name="email" value={formData.email} onChange={handleChange} required placeholder={isEmployer ? "Email công ty" : "Nhập email"} className="w-full px-5 py-3.5 bg-[#F0F5FA] border border-transparent rounded-lg text-gray-700 focus:outline-none focus:bg-white focus:border-blue-500 transition-all" />
-            <div className="relative">
-              <input type={showPassword ? "text" : "password"} name="password" value={formData.password} onChange={handleChange} required placeholder="Nhập mật khẩu" className="w-full px-5 py-3.5 bg-[#F0F5FA] border border-transparent rounded-lg text-gray-700 focus:outline-none focus:bg-white focus:border-blue-500 transition-all" />
-              <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400">{showPassword ? <FaEyeSlash size={18} /> : <FaEye size={18} />}</button>
+            <div>
+              <input type="text" name="fullName" value={formData.fullName} onChange={handleChange} required placeholder={isEmployer ? "Tên công ty/doanh nghiệp" : "Họ và tên"} className={`w-full px-5 py-3.5 bg-[#F0F5FA] border ${formErrors.fullName ? 'border-red-500' : 'border-transparent'} rounded-lg text-gray-700 focus:outline-none focus:bg-white focus:border-blue-500 transition-all`} />
+              {formErrors.fullName && <span className="text-red-500 text-sm mt-1 block">* {formErrors.fullName}</span>}
             </div>
-            <div className="relative">
-              <input type={showConfirmPassword ? "text" : "password"} name="confirmPassword" value={formData.confirmPassword} onChange={handleChange} required placeholder="Nhập lại mật khẩu" className="w-full px-5 py-3.5 bg-[#F0F5FA] border border-transparent rounded-lg text-gray-700 focus:outline-none focus:bg-white focus:border-blue-500 transition-all" />
-              <button type="button" onClick={() => setShowConfirmPassword(!showConfirmPassword)} className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400">{showConfirmPassword ? <FaEyeSlash size={18} /> : <FaEye size={18} />}</button>
+            <div>
+              <input type="email" name="email" value={formData.email} onChange={handleChange} required placeholder={isEmployer ? "Email công ty" : "Nhập email"} className={`w-full px-5 py-3.5 bg-[#F0F5FA] border ${formErrors.email ? 'border-red-500' : 'border-transparent'} rounded-lg text-gray-700 focus:outline-none focus:bg-white focus:border-blue-500 transition-all`} />
+              {formErrors.email && <span className="text-red-500 text-sm mt-1 block">* {formErrors.email}</span>}
+            </div>
+            <div>
+              <div className="relative">
+                <input type={showPassword ? "text" : "password"} name="password" value={formData.password} onChange={handleChange} required placeholder="Nhập mật khẩu" className={`w-full px-5 py-3.5 bg-[#F0F5FA] border ${formErrors.password ? 'border-red-500' : 'border-transparent'} rounded-lg text-gray-700 focus:outline-none focus:bg-white focus:border-blue-500 transition-all`} />
+                <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400">{showPassword ? <FaEyeSlash size={18} /> : <FaEye size={18} />}</button>
+              </div>
+              {formErrors.password && <span className="text-red-500 text-sm mt-1 block">* {formErrors.password}</span>}
+            </div>
+            <div>
+              <div className="relative">
+                <input type={showConfirmPassword ? "text" : "password"} name="confirmPassword" value={formData.confirmPassword} onChange={handleChange} required placeholder="Nhập lại mật khẩu" className={`w-full px-5 py-3.5 bg-[#F0F5FA] border ${formErrors.confirmPassword ? 'border-red-500' : 'border-transparent'} rounded-lg text-gray-700 focus:outline-none focus:bg-white focus:border-blue-500 transition-all`} />
+                <button type="button" onClick={() => setShowConfirmPassword(!showConfirmPassword)} className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400">{showConfirmPassword ? <FaEyeSlash size={18} /> : <FaEye size={18} />}</button>
+              </div>
+              {formErrors.confirmPassword && <span className="text-red-500 text-sm mt-1 block">* {formErrors.confirmPassword}</span>}
             </div>
             {isEmployer && (
               <div className="p-4 bg-blue-50 rounded-lg border border-blue-100 text-sm text-blue-700">

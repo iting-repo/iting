@@ -35,24 +35,31 @@ const CategoryPicker = ({ value, onChange }) => {
 
     const updatePosition = () => {
         if (triggerRef.current) {
-            const rect = triggerRef.current.getBoundingClientRect();
-            const modalWidth = Math.min(480, window.innerWidth - 32);
-            let leftPos = rect.left + window.scrollX;
-
-            // Adjust left position to prevent overflowing right edge
-            if (leftPos + modalWidth > window.innerWidth) {
-                leftPos = window.innerWidth - modalWidth - 16;
+            const smallContainer = triggerRef.current.closest('.px-5') || triggerRef.current;
+            const outerContainer = triggerRef.current.closest('.max-w-5xl') || smallContainer;
+            
+            const smallRect = smallContainer.getBoundingClientRect();
+            const outerRect = outerContainer.getBoundingClientRect();
+            
+            const isMobile = window.innerWidth < 768; // Tablet (>=768) và Desktop
+            
+            if (isMobile) {
+                setCoords({
+                    top: smallRect.bottom + window.scrollY,
+                    left: smallRect.left + window.scrollX,
+                    width: smallRect.width
+                });
+            } else {
+                const computed = window.getComputedStyle(outerContainer);
+                const pl = parseFloat(computed.paddingLeft) || 0;
+                const pr = parseFloat(computed.paddingRight) || 0;
+                
+                setCoords({
+                    top: smallRect.bottom + window.scrollY,
+                    left: outerRect.left + pl + window.scrollX,
+                    width: outerRect.width - pl - pr
+                });
             }
-            // Adjust left position to prevent overflowing left edge
-            if (leftPos < 16) {
-                leftPos = 16;
-            }
-
-            setCoords({
-                top: rect.bottom + window.scrollY,
-                left: leftPos,
-                width: modalWidth
-            });
         }
     };
 
@@ -139,7 +146,7 @@ const CategoryPicker = ({ value, onChange }) => {
                         style={{
                             position: 'fixed',
                             top: coords.top - window.scrollY + 12,
-                            left: coords.left,
+                            left: coords.left - window.scrollX,
                             width: coords.width,
                             zIndex: 10000
                         }}

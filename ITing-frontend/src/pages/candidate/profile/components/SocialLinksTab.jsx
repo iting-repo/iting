@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { FaLinkedin, FaGithub, FaFacebook, FaTwitter, FaGlobe, FaSave } from 'react-icons/fa';
 import axiosInstance from '../../../../utils/axiosInstance';
+import { toast } from 'sonner';
 
 const SocialLinksTab = () => {
     const socialPlatforms = [
@@ -14,6 +15,7 @@ const SocialLinksTab = () => {
     const [links, setLinks] = useState({});
     const [originalLinks, setOriginalLinks] = useState({});
     const [isSaving, setIsSaving] = useState(false);
+    const [formErrors, setFormErrors] = useState({});
 
     useEffect(() => {
         fetchLinks();
@@ -42,6 +44,21 @@ const SocialLinksTab = () => {
 
     const handleSave = async (e) => {
         e.preventDefault();
+        
+        const errors = {};
+        for (const platform of socialPlatforms) {
+            const currentUrl = links[platform.id] || "";
+            if (currentUrl.trim() !== "" && !/^https?:\/\/.+/.test(currentUrl.trim())) {
+                errors[platform.id] = "URL không hợp lệ, phải bắt đầu bằng http:// hoặc https://";
+            }
+        }
+        
+        if (Object.keys(errors).length > 0) {
+            setFormErrors(errors);
+            return;
+        }
+        setFormErrors({});
+
         setIsSaving(true);
         try {
             for (const platform of socialPlatforms) {
@@ -71,11 +88,11 @@ const SocialLinksTab = () => {
                     }
                 }
             }
-            alert("Cập nhật tất cả liên kết thành công!");
+            toast.success("Cập nhật tất cả liên kết thành công!");
             fetchLinks();
         } catch (error) {
             console.error("Failed to update social links", error);
-            alert("Có lỗi xảy ra khi cập nhật!");
+            toast.error("Có lỗi xảy ra khi cập nhật!");
         } finally {
             setIsSaving(false);
         }
@@ -100,10 +117,11 @@ const SocialLinksTab = () => {
                                 type="text"
                                 value={links[platform.id] || ""}
                                 onChange={(e) => handleChange(platform.id, e.target.value)}
-                                className="block w-full pl-11 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:bg-white focus:border-transparent outline-none transition-all placeholder:text-gray-400 text-sm"
+                                className={`block w-full pl-11 pr-4 py-2.5 bg-gray-50 border ${formErrors[platform.id] ? 'border-red-500' : 'border-gray-200'} rounded-xl focus:ring-2 focus:ring-blue-500 focus:bg-white focus:border-transparent outline-none transition-all placeholder:text-gray-400 text-sm`}
                                 placeholder={platform.placeholder}
                             />
                         </div>
+                        {formErrors[platform.id] && <span className="text-red-500 text-sm mt-1 block">* {formErrors[platform.id]}</span>}
                     </div>
                 ))}
 

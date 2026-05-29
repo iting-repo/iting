@@ -19,7 +19,9 @@ public interface JobRepository extends JpaRepository<Job, Long>, JpaSpecificatio
     Page<Job> findAllByStatus(@Param("status") JobStatus status, Pageable pageable);
 
     // Lấy jobs hot (sắp xếp theo lượt ứng tuyển + view) VÀ công ty đang hoạt động VÀ chưa hết hạn
-    @Query("SELECT j FROM Job j JOIN j.company c WHERE j.status = :status AND c.active = true AND (j.dueDate IS NULL OR j.dueDate >= CURRENT_DATE) ORDER BY j.applicationCount DESC, j.viewCount DESC")
+    // JOIN FETCH c để eagerly load Company trong cùng SQL — admin dashboard
+    // render company.name + logo ngoài tx; không có FETCH → LazyInit.
+    @Query("SELECT j FROM Job j JOIN FETCH j.company c WHERE j.status = :status AND c.active = true AND (j.dueDate IS NULL OR j.dueDate >= CURRENT_DATE) ORDER BY j.applicationCount DESC, j.viewCount DESC")
     Page<Job> findHotJobs(@Param("status") JobStatus status, Pageable pageable);
 
     @Query("SELECT j FROM Job j WHERE j.status = :status AND (j.dueDate IS NULL OR j.dueDate >= CURRENT_DATE) ORDER BY j.createdAt DESC")

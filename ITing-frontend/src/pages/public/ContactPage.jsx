@@ -1,8 +1,33 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { FaPhoneAlt, FaEnvelope, FaClock, FaMapMarkerAlt } from 'react-icons/fa';
 import { SiZoom, SiTinder, SiDribbble, SiAsana } from 'react-icons/si'; // Import logo các đối tác
+import { toast } from 'sonner';
 
 const ContactPage = () => {
+    const [formData, setFormData] = useState({ firstName: '', lastName: '', email: '', message: '' });
+    const [formErrors, setFormErrors] = useState({});
+
+    const handleChange = (e) => {
+        setFormData({ ...formData, [e.target.name]: e.target.value });
+    };
+
+    const handleSubmit = (e) => {
+        e.preventDefault();
+        const errors = {};
+        if (!formData.firstName) errors.firstName = "Vui lòng nhập tên";
+        if (!formData.lastName) errors.lastName = "Vui lòng nhập họ";
+        if (!formData.email) errors.email = "Vui lòng nhập email";
+        else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) errors.email = "Email không hợp lệ";
+        if (!formData.message) errors.message = "Vui lòng nhập nội dung";
+
+        if (Object.keys(errors).length > 0) {
+            setFormErrors(errors);
+            return;
+        }
+        setFormErrors({});
+        toast.success("Gửi tin nhắn thành công!");
+        setFormData({ firstName: '', lastName: '', email: '', message: '' });
+    };
     return (
         <div className="bg-white min-h-screen font-sans text-gray-700">
 
@@ -67,23 +92,31 @@ const ContactPage = () => {
                             <p className="text-sm text-gray-500 mt-1">Thông tin chúng tôi có thể liên hệ</p>
                         </div>
 
-                        <form className="space-y-5">
+                        <form onSubmit={handleSubmit} className="space-y-5">
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                                 <div className="space-y-1.5">
                                     <label className="text-xs font-bold text-gray-700 ml-1">Tên</label>
                                     <input
                                         type="text"
+                                        name="firstName"
+                                        value={formData.firstName}
+                                        onChange={handleChange}
                                         placeholder="Nhập tên của bạn"
-                                        className="w-full p-3.5 rounded-xl border-none focus:ring-2 focus:ring-[#3AB4E6] outline-none text-sm placeholder-gray-400 shadow-sm"
+                                        className={`w-full p-3.5 rounded-xl border ${formErrors.firstName ? 'border-red-500' : 'border-none'} focus:ring-2 focus:ring-[#3AB4E6] outline-none text-sm placeholder-gray-400 shadow-sm`}
                                     />
+                                    {formErrors.firstName && <span className="text-red-500 text-sm mt-1 block">* {formErrors.firstName}</span>}
                                 </div>
                                 <div className="space-y-1.5">
                                     <label className="text-xs font-bold text-gray-700 ml-1">Họ</label>
                                     <input
                                         type="text"
+                                        name="lastName"
+                                        value={formData.lastName}
+                                        onChange={handleChange}
                                         placeholder="Nhập họ của bạn"
-                                        className="w-full p-3.5 rounded-xl border-none focus:ring-2 focus:ring-[#3AB4E6] outline-none text-sm placeholder-gray-400 shadow-sm"
+                                        className={`w-full p-3.5 rounded-xl border ${formErrors.lastName ? 'border-red-500' : 'border-none'} focus:ring-2 focus:ring-[#3AB4E6] outline-none text-sm placeholder-gray-400 shadow-sm`}
                                     />
+                                    {formErrors.lastName && <span className="text-red-500 text-sm mt-1 block">* {formErrors.lastName}</span>}
                                 </div>
                             </div>
 
@@ -91,22 +124,30 @@ const ContactPage = () => {
                                 <label className="text-xs font-bold text-gray-700 ml-1">Địa chỉ email</label>
                                 <input
                                     type="email"
+                                    name="email"
+                                    value={formData.email}
+                                    onChange={handleChange}
                                     placeholder="Nhập Địa chỉ email"
-                                    className="w-full p-3.5 rounded-xl border-none focus:ring-2 focus:ring-[#3AB4E6] outline-none text-sm placeholder-gray-400 shadow-sm"
+                                    className={`w-full p-3.5 rounded-xl border ${formErrors.email ? 'border-red-500' : 'border-none'} focus:ring-2 focus:ring-[#3AB4E6] outline-none text-sm placeholder-gray-400 shadow-sm`}
                                 />
+                                {formErrors.email && <span className="text-red-500 text-sm mt-1 block">* {formErrors.email}</span>}
                             </div>
 
                             <div className="space-y-1.5">
                                 <label className="text-xs font-bold text-gray-700 ml-1">Nội dung tin nhắn</label>
                                 <textarea
                                     rows="4"
+                                    name="message"
+                                    value={formData.message}
+                                    onChange={handleChange}
                                     placeholder="Nhập nội dung tin nhắn"
-                                    className="w-full p-3.5 rounded-xl border-none focus:ring-2 focus:ring-[#3AB4E6] outline-none text-sm placeholder-gray-400 shadow-sm resize-none"
+                                    className={`w-full p-3.5 rounded-xl border ${formErrors.message ? 'border-red-500' : 'border-none'} focus:ring-2 focus:ring-[#3AB4E6] outline-none text-sm placeholder-gray-400 shadow-sm resize-none`}
                                 ></textarea>
+                                {formErrors.message && <span className="text-red-500 text-sm mt-1 block">* {formErrors.message}</span>}
                             </div>
 
                             <button
-                                type="button"
+                                type="submit"
                                 className="w-full py-3.5 bg-[#4DB6E8] hover:bg-[#3da1d1] text-white font-bold rounded-xl transition-colors shadow-lg mt-4"
                             >
                                 Gửi Tin Nhắn

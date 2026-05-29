@@ -1,22 +1,22 @@
 import React, { useEffect, useMemo, useState } from "react";
 import adminCompanyService from '../../../services/adminCompanyService';
 import {
-  Button, Badge, Input, PageHeader, Card, Table, Td, StatsCard, Pagination, GlobalLoading
+  Button, Badge, Input, PageHeader, Card, StatsCard, GlobalLoading
 } from "../../../components";
 import { RowActionMenu } from "../../../components/admin/RowActionMenu";
 import { CompanyDetailDialog } from "../../../components/admin/CompanyDetailDialog";
 import { ActionDialog } from "../../../components/admin/ActionDialog";
+import DataTable from "../../../components/admin/DataTable";
+import BulkActionBar from "../../../components/admin/BulkActionBar";
 import {
   FaBuilding,
   FaUsers,
   FaUserCheck,
   FaUserTimes,
-  FaFileAlt,
   FaShieldAlt,
   FaSearch,
   FaDownload,
   FaUpload,
-  FaCheckSquare,
   FaTrashAlt,
   FaBan,
   FaTimesCircle,
@@ -26,6 +26,44 @@ import ImportExcelModal from "../../../components/admin/ImportExcelModal";
 import { ConfirmModal } from "../../../components/common";
 import useConfirm from "../../../hooks/useConfirm";
 import { toast } from "sonner";
+
+const STATUS_COLOR = {
+  PENDING_REVIEW: "warning",
+  UNDER_REVIEW: "info",
+  APPROVED: "success",
+  REJECTED: "danger",
+  NEEDS_RESUBMISSION: "amber",
+  SUSPENDED: "danger",
+  MISSING: "slate",
+  UPLOADED: "info",
+};
+
+const VERIFICATION_COLOR = {
+  BASIC: "slate",
+  ADVANCED: "emerald",
+  VERIFIED: "success",
+};
+
+const STATUS_LABEL = {
+  PENDING_REVIEW: "CHỜ DUYỆT",
+  APPROVED: "ĐÃ DUYỆT",
+  REJECTED: "BỊ TỪ CHỐI",
+  SUSPENDED: "BỊ ĐÌNH CHỈ",
+};
+
+const DOC_LABEL = {
+  MISSING: "THIẾU",
+  UPLOADED: "ĐÃ TẢI LÊN",
+  PENDING_REVIEW: "CHỜ DUYỆT",
+  APPROVED: "ĐÃ DUYỆT",
+  REJECTED: "BỊ TỪ CHỐI",
+};
+
+const VERIFICATION_LABEL = {
+  BASIC: "CƠ BẢN",
+  ADVANCED: "NÂNG CAO",
+  VERIFIED: "XÁC THỰC",
+};
 
 const CompanyManagement = () => {
   const [companies, setCompanies] = useState([]);
@@ -38,8 +76,6 @@ const CompanyManagement = () => {
   const [showImportModal, setShowImportModal] = useState(false);
   const [selectedIds, setSelectedIds] = useState([]);
   const [confirmBulk, askBulkConfirm, resetBulkConfirm] = useConfirm();
-
-  const isAllSelected = companies.length > 0 && selectedIds.length === companies.length;
 
   const downloadBlob = (blob, filename) => {
     const url = window.URL.createObjectURL(new Blob([blob]));
@@ -81,55 +117,29 @@ const CompanyManagement = () => {
   const [size] = useState(10);
   const [totalPages, setTotalPages] = useState(0);
 
-  const statusColorMap = {
-    PENDING_REVIEW: "warning",
-    UNDER_REVIEW: "info",
-    APPROVED: "success",
-    REJECTED: "danger",
-    NEEDS_RESUBMISSION: "amber",
-    SUSPENDED: "danger",
-    MISSING: "slate",
-    UPLOADED: "info"
-  };
-
-  const verificationColorMap = {
-    BASIC: "slate",
-    ADVANCED: "emerald",
-    VERIFIED: "success"
-  };
-
   useEffect(() => {
     fetchCompanies();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [page, size, search, statusFilter]);
-
-
 
   const fetchCompanies = async () => {
     try {
       setLoading(true);
-
       const params = {
         page,
         size,
         keyword: search || undefined,
         status: statusFilter !== "ALL" ? statusFilter : undefined,
       };
-
       const data = await adminCompanyService.getCompanies(params);
-
-      console.log("API response:", data);
-
       setCompanies(data?.content || []);
       setTotalPages(data?.totalPages || 0);
-
     } catch (error) {
       console.error("Lỗi lấy danh sách công ty:", error);
     } finally {
       setLoading(false);
     }
   };
-
-
 
   const filteredCompanies = useMemo(() => {
     return companies.filter((company) => {
@@ -140,43 +150,36 @@ const CompanyManagement = () => {
         String(company.id).toLowerCase().includes(q) ||
         (company.taxCode || "").toLowerCase().includes(q) ||
         (company.companyEmail || "").toLowerCase().includes(q);
-
       const currentStatus = company.companyInfoUpdateStatus || company.status;
       const matchesStatus = statusFilter === "ALL" || currentStatus === statusFilter;
       return matchesSearch && matchesStatus;
     });
   }, [companies, search, statusFilter]);
 
-  const stats = useMemo(() => {
-    return {
-      total: totalPages * size || companies.length,
-      pending: companies.filter((c) =>
-        (c.companyInfoUpdateStatus || c.status) === "PENDING_REVIEW" ||
-        (c.companyInfoUpdateStatus || c.status) === "PENDING"
-      ).length,
-      approved: companies.filter((c) =>
-        (c.companyInfoUpdateStatus || c.status) === "APPROVED"
-      ).length,
-      suspended: companies.filter((c) =>
-        (c.companyInfoUpdateStatus || c.status) === "SUSPENDED"
-      ).length,
-    };
-  }, [companies, totalPages, size]);
+  const stats = useMemo(() => ({
+    total: totalPages * size || companies.length,
+    pending: companies.filter((c) =>
+      (c.companyInfoUpdateStatus || c.status) === "PENDING_REVIEW" ||
+      (c.companyInfoUpdateStatus || c.status) === "PENDING"
+    ).length,
+    approved: companies.filter((c) =>
+      (c.companyInfoUpdateStatus || c.status) === "APPROVED"
+    ).length,
+    suspended: companies.filter((c) =>
+      (c.companyInfoUpdateStatus || c.status) === "SUSPENDED"
+    ).length,
+  }), [companies, totalPages, size]);
 
   const handleAction = (company, action) => {
     setActionDialog({ company, action });
     setActionNote("");
   };
 
-
-
   const [isProcessing, setIsProcessing] = useState(false);
 
   const confirmAction = async () => {
     if (!actionDialog) return;
-
     const { company, action } = actionDialog;
-
     setIsProcessing(true);
     try {
       if (action === "approve") {
@@ -204,7 +207,6 @@ const CompanyManagement = () => {
       } else if (action === "delete") {
         await adminCompanyService.deleteCompany(company.id);
       }
-
       setActionDialog(null);
       setActionNote("");
       await fetchCompanies();
@@ -215,20 +217,6 @@ const CompanyManagement = () => {
     } finally {
       setIsProcessing(false);
     }
-  };
-
-  const handleSelectAll = (e) => {
-    if (e.target.checked) {
-      setSelectedIds(companies.map(c => c.id));
-    } else {
-      setSelectedIds([]);
-    }
-  };
-
-  const handleSelectOne = (id) => {
-    setSelectedIds(prev =>
-      prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]
-    );
   };
 
   const handleBulkAction = (action) => {
@@ -245,15 +233,10 @@ const CompanyManagement = () => {
         resetBulkConfirm();
         try {
           setLoading(true);
-          if (action === 'approve') {
-            await adminCompanyService.bulkApprove(selectedIds, "BASIC", "Duyệt hàng loạt");
-          } else if (action === 'reject') {
-            await adminCompanyService.bulkReject(selectedIds, "Từ chối hàng loạt");
-          } else if (action === 'suspend') {
-            await adminCompanyService.bulkSuspend(selectedIds, "Đình chỉ hàng loạt");
-          } else if (action === 'delete') {
-            await adminCompanyService.bulkDelete(selectedIds);
-          }
+          if (action === 'approve') await adminCompanyService.bulkApprove(selectedIds, "BASIC", "Duyệt hàng loạt");
+          else if (action === 'reject') await adminCompanyService.bulkReject(selectedIds, "Từ chối hàng loạt");
+          else if (action === 'suspend') await adminCompanyService.bulkSuspend(selectedIds, "Đình chỉ hàng loạt");
+          else if (action === 'delete') await adminCompanyService.bulkDelete(selectedIds);
           toast.success(`Đã thực hiện ${actionLabels[action]} cho ${selectedIds.length} mục`);
           setSelectedIds([]);
           fetchCompanies();
@@ -266,9 +249,95 @@ const CompanyManagement = () => {
       }
     });
   };
+
+  // ── Cấu hình columns cho DataTable ──
+  const columns = [
+    { key: "id", label: "Mã công ty", render: (c) => <span className="font-medium text-slate-500">{c.id}</span> },
+    {
+      key: "logo", label: "Logo", className: "w-20",
+      render: (c) => (
+        <div className="h-10 w-10 overflow-hidden rounded-lg bg-slate-100 border border-slate-200">
+          {c.logoUrl ? (
+            <img src={c.logoUrl} alt="" className="h-full w-full object-cover" />
+          ) : (
+            <div className="flex h-full w-full items-center justify-center text-slate-400">
+              <FaBuilding className="h-5 w-5" />
+            </div>
+          )}
+        </div>
+      ),
+    },
+    { key: "name", label: "Tên công ty", render: (c) => <span className="font-bold text-slate-700">{c.name || "N/A"}</span> },
+    {
+      key: "verification", label: "Xác thực",
+      render: (c) => (
+        <Badge variant={VERIFICATION_COLOR[c.verificationLevel || c.verificationStatus] || "default"}>
+          {VERIFICATION_LABEL[c.verificationLevel] || c.verificationLevel || "CƠ BẢN"}
+        </Badge>
+      ),
+    },
+    {
+      key: "infoStatus", label: "T.Thái Thông Tin", className: "whitespace-nowrap", cellClassName: "whitespace-nowrap",
+      render: (c) => (
+        <Badge variant={STATUS_COLOR[c.companyInfoUpdateStatus] || "default"}>
+          {STATUS_LABEL[c.companyInfoUpdateStatus] || c.companyInfoUpdateStatus || "CHƯA XÁC ĐỊNH"}
+        </Badge>
+      ),
+    },
+    {
+      key: "docStatus", label: "T.Thái Giấy Tờ", className: "whitespace-nowrap", cellClassName: "whitespace-nowrap",
+      render: (c) => (
+        <Badge variant={STATUS_COLOR[c.documentReviewStatus] || "default"}>
+          {DOC_LABEL[c.documentReviewStatus] || c.documentReviewStatus || "THIẾU"}
+        </Badge>
+      ),
+    },
+    {
+      key: "active", label: "Hoạt động", className: "w-32 whitespace-nowrap", cellClassName: "whitespace-nowrap",
+      render: (c) => c.active
+        ? <Badge variant="success">Hoạt động</Badge>
+        : <Badge variant="danger">Khóa</Badge>,
+    },
+    {
+      key: "lastUpdate", label: "Ngày cập nhật",
+      render: (c) => <span className="text-slate-500 text-xs whitespace-nowrap">{c.lastUpdateRequestDate || "---"}</span>,
+    },
+    {
+      key: "actions", label: "Trạng thái", className: "text-right", cellClassName: "text-right",
+      render: (c) => (
+        <RowActionMenu
+          company={c}
+          openMenuId={openMenuId}
+          setOpenMenuId={setOpenMenuId}
+          onViewDetail={async (company) => {
+            try {
+              const [detail, logs] = await Promise.all([
+                adminCompanyService.getCompanyDetail(company.id),
+                adminCompanyService.getCompanyAuditLogs(company.id),
+              ]);
+              detail.reviewHistory = logs || [];
+              setDetailCompany(detail);
+            } catch (error) {
+              console.error("Lỗi lấy chi tiết công ty:", error);
+            }
+          }}
+          onAction={handleAction}
+        />
+      ),
+    },
+  ];
+
+  const bulkActions = [
+    { key: "approve", label: "Duyệt",   icon: <FaCheckCircle className="h-4 w-4" />, variant: "success", onClick: () => handleBulkAction("approve") },
+    { key: "reject",  label: "Từ chối", icon: <FaTimesCircle className="h-4 w-4" />, variant: "warning", onClick: () => handleBulkAction("reject")  },
+    { key: "suspend", label: "Đình chỉ", icon: <FaBan className="h-4 w-4" />,         variant: "slate",   onClick: () => handleBulkAction("suspend") },
+    { key: "delete",  label: "Xóa",     icon: <FaTrashAlt className="h-4 w-4" />,    variant: "danger",  onClick: () => handleBulkAction("delete")  },
+  ];
+
   return (
     <div className="space-y-6 pb-60">
       {isProcessing && <GlobalLoading fullScreen={true} message="Đang xử lý tác vụ..." />}
+
       <PageHeader
         title="Quản lý Công ty"
         description="Duyệt hồ sơ đăng ký doanh nghiệp và quản lý trạng thái hoạt động."
@@ -278,52 +347,25 @@ const CompanyManagement = () => {
           className="flex items-center gap-2 border-slate-200 text-slate-600 hover:bg-slate-50"
           onClick={() => setShowImportModal(true)}
         >
-          <FaUpload className="h-4 w-4 text-slate-500" />
-          Nhập Excel
+          <FaUpload className="h-4 w-4 text-slate-500" /> Nhập Excel
         </Button>
         <Button
           variant="outline"
           className="flex items-center gap-2 border-[#1967D2] text-[#1967D2] hover:bg-blue-50"
           onClick={handleExportExcel}
         >
-          <FaDownload className="h-4 w-4" />
-          Xuất Excel
+          <FaDownload className="h-4 w-4" /> Xuất Excel
         </Button>
         <Button className="bg-[#1967D2] hover:bg-[#1452A8]">
-          <FaShieldAlt className="mr-2 h-4 w-4" />
-          Duyệt nhanh
+          <FaShieldAlt className="mr-2 h-4 w-4" /> Duyệt nhanh
         </Button>
       </PageHeader>
 
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
-        <StatsCard
-          title="Tổng công ty"
-          value={stats.total}
-          icon={<FaBuilding />}
-          percentage="12"
-          isIncrease={true}
-        />
-        <StatsCard
-          title="Chờ duyệt"
-          value={stats.pending}
-          icon={<FaUsers />}
-          percentage="5"
-          isIncrease={true}
-        />
-        <StatsCard
-          title="Đã duyệt"
-          value={stats.approved}
-          icon={<FaUserCheck />}
-          percentage="8"
-          isIncrease={true}
-        />
-        <StatsCard
-          title="Bị khóa"
-          value={stats.suspended}
-          icon={<FaUserTimes />}
-          percentage="2"
-          isIncrease={false}
-        />
+        <StatsCard title="Tổng công ty" value={stats.total} icon={<FaBuilding />} percentage="12" isIncrease={true} />
+        <StatsCard title="Chờ duyệt" value={stats.pending} icon={<FaUsers />} percentage="5" isIncrease={true} />
+        <StatsCard title="Đã duyệt" value={stats.approved} icon={<FaUserCheck />} percentage="8" isIncrease={true} />
+        <StatsCard title="Bị khóa" value={stats.suspended} icon={<FaUserTimes />} percentage="2" isIncrease={false} />
       </div>
 
       <Card className="!p-4">
@@ -353,133 +395,17 @@ const CompanyManagement = () => {
         </div>
       </Card>
 
-      <Card className="!p-0 overflow-hidden shadow-sm">
-        <Table
-          headers={[
-            {
-              label: (
-                <input
-                  type="checkbox"
-                  checked={isAllSelected}
-                  onChange={handleSelectAll}
-                  className="h-4 w-4 rounded border-slate-300 text-sky-600 focus:ring-sky-500"
-                />
-              ),
-              className: "w-10"
-            },
-            { label: "Mã công ty" },
-            { label: "Logo", className: "w-20" },
-            { label: "Tên công ty" },
-            { label: "Xác thực" },
-            { label: "T.Thái Thông Tin", className: "whitespace-nowrap" },
-            { label: "T.Thái Giấy Tờ", className: "whitespace-nowrap" },
-            { label: "Hoạt động", className: "w-32 whitespace-nowrap" },
-            { label: "Ngày cập nhật" },
-            { label: "Trạng thái", className: "text-right" }
-          ]}
-        >
-          {loading ? (
-            <tr>
-              <Td colSpan={10}>
-                <GlobalLoading fullScreen={false} message="Đang nạp dữ liệu..." />
-              </Td>
-            </tr>
-          ) : filteredCompanies.length > 0 ? (
-            filteredCompanies.map((company) => (
-              <tr
-                key={company.id}
-                className={`hover:bg-slate-50/50 transition-colors ${selectedIds.includes(company.id) ? 'bg-sky-50/50' : ''}`}
-              >
-                <Td>
-                  <input
-                    type="checkbox"
-                    checked={selectedIds.includes(company.id)}
-                    onChange={() => handleSelectOne(company.id)}
-                    className="h-4 w-4 rounded border-slate-300 text-sky-600 focus:ring-sky-500"
-                  />
-                </Td>
-                <Td className="font-medium text-slate-500">{company.id}</Td>
-                <Td>
-                  <div className="h-10 w-10 overflow-hidden rounded-lg bg-slate-100 border border-slate-200">
-                    {company.logoUrl ? (
-                      <img src={company.logoUrl} alt="" className="h-full w-full object-cover" />
-                    ) : (
-                      <div className="flex h-full w-full items-center justify-center text-slate-400">
-                        <FaBuilding className="h-5 w-5" />
-                      </div>
-                    )}
-                  </div>
-                </Td>
-                <Td className="font-bold text-slate-700">{company.name || "N/A"}</Td>
-                <Td>
-                  <Badge variant={verificationColorMap[company.verificationLevel || company.verificationStatus] || "default"}>
-                    {company.verificationLevel === "BASIC" ? "CƠ BẢN" : company.verificationLevel === "ADVANCED" ? "NÂNG CAO" : company.verificationLevel || "CƠ BẢN"}
-                  </Badge>
-                </Td>
-                <Td className="whitespace-nowrap">
-                  <Badge variant={statusColorMap[company.companyInfoUpdateStatus] || "default"}>
-                    {company.companyInfoUpdateStatus === "PENDING_REVIEW" ? "CHỜ DUYỆT" : 
-                     company.companyInfoUpdateStatus === "APPROVED" ? "ĐÃ DUYỆT" :
-                     company.companyInfoUpdateStatus === "REJECTED" ? "BỊ TỪ CHỐI" :
-                     company.companyInfoUpdateStatus === "SUSPENDED" ? "BỊ ĐÌNH CHỈ" :
-                     company.companyInfoUpdateStatus || "CHƯA XÁC ĐỊNH"}
-                  </Badge>
-                </Td>
-                <Td className="whitespace-nowrap">
-                  <Badge variant={statusColorMap[company.documentReviewStatus] || "default"}>
-                    {company.documentReviewStatus === "MISSING" ? "THIẾU" :
-                     company.documentReviewStatus === "UPLOADED" ? "ĐÃ TẢI LÊN" :
-                     company.documentReviewStatus === "PENDING_REVIEW" ? "CHỜ DUYỆT" :
-                     company.documentReviewStatus === "APPROVED" ? "ĐÃ DUYỆT" :
-                     company.documentReviewStatus === "REJECTED" ? "BỊ TỪ CHỐI" :
-                     company.documentReviewStatus || "THIẾU"}
-                  </Badge>
-                </Td>
-                <Td className="whitespace-nowrap">
-                  {company.active ? (
-                    <Badge variant="success">Hoạt động</Badge>
-                  ) : (
-                    <Badge variant="danger">Khóa</Badge>
-                  )}
-                </Td>
-                <Td className="text-slate-500 text-xs whitespace-nowrap">{company.lastUpdateRequestDate || "---"}</Td>
-                <Td className="text-right">
-                  <RowActionMenu
-                    company={company}
-                    openMenuId={openMenuId}
-                    setOpenMenuId={setOpenMenuId}
-                    onViewDetail={async (company) => {
-                      try {
-                        const [detail, logs] = await Promise.all([
-                          adminCompanyService.getCompanyDetail(company.id),
-                          adminCompanyService.getCompanyAuditLogs(company.id)
-                        ]);
-                        detail.reviewHistory = logs || [];
-                        setDetailCompany(detail);
-                      } catch (error) {
-                        console.error("Lỗi lấy chi tiết công ty:", error);
-                      }
-                    }}
-                    onAction={(company, action) => handleAction(company, action)}
-                  />
-                </Td>
-              </tr>
-            ))
-          ) : (
-            <tr>
-              <Td colSpan={9} className="text-center py-10 text-slate-400 italic">
-                Không tìm thấy dữ liệu phù hợp
-              </Td>
-            </tr>
-          )}
-        </Table>
-
-        <Pagination
-          currentPage={page + 1}
-          totalPages={totalPages}
-          onPageChange={(p) => setPage(p - 1)}
-        />
-      </Card>
+      <DataTable
+        columns={columns}
+        data={filteredCompanies}
+        loading={loading}
+        selectable
+        selectedIds={selectedIds}
+        onSelectedChange={setSelectedIds}
+        page={page}
+        totalPages={totalPages}
+        onPageChange={setPage}
+      />
 
       <CompanyDetailDialog
         company={detailCompany}
@@ -496,59 +422,11 @@ const CompanyManagement = () => {
         onConfirm={confirmAction}
       />
 
-      {/* Bulk Action Bar */}
-      {selectedIds.length > 0 && (
-        <div className="fixed bottom-6 left-1/2 z-[60] flex -translate-x-1/2 items-center gap-6 rounded-2xl border border-sky-100 bg-white px-6 py-4 shadow-2xl animate-in fade-in slide-in-from-bottom-4">
-          <div className="flex items-center gap-3 border-r border-slate-100 pr-6">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-sky-100 text-sky-600">
-              <FaCheckSquare className="h-5 w-5" />
-            </div>
-            <div>
-              <p className="text-sm font-bold text-slate-800">Đã chọn {selectedIds.length} mục</p>
-              <button
-                onClick={() => setSelectedIds([])}
-                className="text-xs font-medium text-sky-600 hover:underline"
-              >
-                Bỏ chọn tất cả
-              </button>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => handleBulkAction('approve')}
-              className="flex items-center gap-2 rounded-xl bg-emerald-500 px-4 py-2.5 text-sm font-bold text-white shadow-lg shadow-emerald-100 transition-all hover:bg-emerald-600 hover:scale-105 active:scale-95"
-            >
-              <FaCheckCircle className="h-4 w-4" />
-              Duyệt
-            </button>
-
-            <button
-              onClick={() => handleBulkAction('reject')}
-              className="flex items-center gap-2 rounded-xl bg-amber-500 px-4 py-2.5 text-sm font-bold text-white shadow-lg shadow-amber-100 transition-all hover:bg-amber-600 hover:scale-105 active:scale-95"
-            >
-              <FaTimesCircle className="h-4 w-4" />
-              Từ chối
-            </button>
-
-            <button
-              onClick={() => handleBulkAction('suspend')}
-              className="flex items-center gap-2 rounded-xl bg-slate-700 px-4 py-2.5 text-sm font-bold text-white shadow-lg shadow-slate-100 transition-all hover:bg-slate-800 hover:scale-105 active:scale-95"
-            >
-              <FaBan className="h-4 w-4" />
-              Đình chỉ
-            </button>
-
-            <button
-              onClick={() => handleBulkAction('delete')}
-              className="flex items-center gap-2 rounded-xl bg-red-500 px-4 py-2.5 text-sm font-bold text-white shadow-lg shadow-red-100 transition-all hover:bg-red-600 hover:scale-105 active:scale-95"
-            >
-              <FaTrashAlt className="h-4 w-4" />
-              Xóa
-            </button>
-          </div>
-        </div>
-      )}
+      <BulkActionBar
+        selectedCount={selectedIds.length}
+        onClear={() => setSelectedIds([])}
+        actions={bulkActions}
+      />
 
       <ImportExcelModal
         isOpen={showImportModal}
@@ -559,7 +437,16 @@ const CompanyManagement = () => {
         onImport={handleImportExcel}
       />
 
-      <ConfirmModal isOpen={confirmBulk.isOpen} onClose={resetBulkConfirm} onConfirm={confirmBulk.onConfirm} title={confirmBulk.title} message={confirmBulk.message} warning={confirmBulk.warning} confirmText={confirmBulk.confirmText} variant={confirmBulk.variant} />
+      <ConfirmModal
+        isOpen={confirmBulk.isOpen}
+        onClose={resetBulkConfirm}
+        onConfirm={confirmBulk.onConfirm}
+        title={confirmBulk.title}
+        message={confirmBulk.message}
+        warning={confirmBulk.warning}
+        confirmText={confirmBulk.confirmText}
+        variant={confirmBulk.variant}
+      />
     </div>
   );
 };

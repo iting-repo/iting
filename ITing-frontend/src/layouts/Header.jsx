@@ -523,7 +523,7 @@ const Header = () => {
                       ) : null}
                     </button>
                     {isMessagesOpen && (
-                      <div className="fixed top-20 left-4 right-4 mx-auto w-auto max-w-[360px] md:mx-0 md:absolute md:top-14 md:left-auto md:-right-2 md:w-[360px] md:max-w-none max-h-[80vh] flex flex-col bg-white text-gray-800 rounded-2xl border border-gray-100 shadow-2xl overflow-hidden z-[120]">
+                      <div className="fixed top-20 left-1/2 -translate-x-1/2 w-[calc(100vw-32px)] max-w-[260px] sm:left-auto sm:right-4 sm:translate-x-0 sm:max-w-[320px] md:absolute md:top-14 md:-right-2 md:w-[360px] md:max-w-none max-h-[calc(100vh-120px)] md:max-h-[80vh] flex flex-col bg-white text-gray-800 rounded-2xl border border-gray-100 shadow-2xl overflow-hidden z-[120]">
                         <div className="px-4 py-3 border-b border-gray-100 shrink-0">
                           <p className="font-bold text-gray-900">Tin nhắn gần đây</p>
                           <p className="text-xs text-gray-500 mt-0.5">Ưu tiên cuộc trò chuyện chưa đọc</p>
@@ -599,7 +599,7 @@ const Header = () => {
                     </button>
 
                     {isNotifOpen && (
-                      <div className="fixed top-20 left-4 right-4 mx-auto w-auto max-w-[360px] md:mx-0 md:absolute md:top-full md:mt-3 md:left-auto md:-right-2 md:w-96 md:max-w-none max-h-[80vh] flex flex-col bg-white text-gray-800 rounded-xl shadow-2xl py-2 border border-gray-100 animate-fade-in origin-top md:origin-top-right overflow-hidden z-[120]">
+                      <div className="fixed top-20 left-1/2 -translate-x-1/2 w-[calc(100vw-32px)] max-w-[260px] sm:left-auto sm:right-4 sm:translate-x-0 sm:max-w-[320px] md:absolute md:top-full md:mt-3 md:-right-2 md:w-96 md:max-w-none max-h-[calc(100vh-120px)] md:max-h-[80vh] flex flex-col bg-white text-gray-800 rounded-xl shadow-2xl py-2 border border-gray-100 animate-fade-in origin-top md:origin-top-right overflow-hidden z-[120]">
                         <div className="px-4 py-3 flex items-center justify-between border-b border-gray-100 shrink-0">
                           <div className="text-sm font-semibold">Thông báo</div>
                           <button onClick={handleMarkAllRead} className="text-xs text-gray-500 hover:underline">Đánh dấu tất cả</button>
@@ -652,7 +652,7 @@ const Header = () => {
                   </button>
 
                   {isDropdownOpen && (
-                    <div className="fixed top-20 left-4 right-4 mx-auto w-auto max-w-[280px] md:mx-0 md:absolute md:top-full md:mt-3 md:left-auto md:right-0 md:w-64 md:max-w-none max-h-[80vh] flex flex-col bg-white text-gray-800 rounded-xl shadow-2xl py-2 border border-gray-100 animate-fade-in origin-top md:origin-top-right overflow-hidden z-[120]">
+                    <div className="fixed top-20 left-1/2 -translate-x-1/2 w-[calc(100vw-32px)] max-w-[260px] sm:left-auto sm:right-4 sm:translate-x-0 sm:max-w-[280px] md:absolute md:top-full md:mt-3 md:right-0 md:w-64 md:max-w-none max-h-[calc(100vh-120px)] md:max-h-[80vh] flex flex-col bg-white text-gray-800 rounded-xl shadow-2xl py-2 border border-gray-100 animate-fade-in origin-top md:origin-top-right overflow-hidden z-[120]">
                       <div className="px-4 py-3 border-b border-gray-100 bg-gray-50/50 shrink-0">
                         <p className="text-sm font-bold text-gray-900 truncate">{displayName}</p>
                         <p className="text-xs text-gray-500 truncate mt-0.5">{role === 'CANDIDATE' ? 'Ứng viên' : 'Nhà tuyển dụng'}</p>
