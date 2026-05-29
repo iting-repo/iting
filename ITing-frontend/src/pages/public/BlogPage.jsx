@@ -94,7 +94,7 @@ export default function BlogPage() {
               className="bg-transparent text-sm outline-none flex-1 text-gray-700 placeholder-gray-400"
             />
           </div>
-          <button aria-label="Tìm kiếm" className="md:hidden bg-gray-100 p-2 rounded-full hover:bg-gray-200"><Search className="h-4 w-4" /></button>
+          <button type="button" aria-label="Tìm kiếm" onClick={() => handleSearch({ key: 'Enter' })} className="md:hidden bg-gray-100 p-2 rounded-full hover:bg-gray-200"><Search className="h-4 w-4" /></button>
         </div>
       </header>
 
@@ -237,7 +237,7 @@ export default function BlogPage() {
                 <img src="/cv-removebg-preview.png" alt="" className="absolute right-0 bottom-0 w-40 h-40 object-contain opacity-[0.12] blur-[1px]" />
                 <h3 className="text-xl md:text-2xl font-extrabold mb-2 relative z-10">Tạo CV<br/>Nổi Bật</h3>
                 <p className="text-sm text-white/60 mb-5 relative z-10">Gây ấn tượng với nhà tuyển dụng.</p>
-                <button className="relative z-10 inline-flex items-center gap-2 bg-white text-gray-900 font-bold py-2.5 px-6 rounded-full hover:shadow-lg transition-all text-sm">Tạo CV Miễn Phí <ArrowRight className="h-4 w-4" /></button>
+                <button type="button" onClick={() => navigate('/candidate/profile')} className="relative z-10 inline-flex items-center gap-2 bg-white text-gray-900 font-bold py-2.5 px-6 rounded-full hover:shadow-lg transition-all text-sm">Tạo CV Miễn Phí <ArrowRight className="h-4 w-4" /></button>
               </div>
             </div>
           </div>
@@ -310,7 +310,10 @@ export default function BlogPage() {
           </div>
           <div className="border-t border-gray-800 pt-6 flex flex-col sm:flex-row justify-between items-center gap-4">
             <p className="text-xs text-gray-500">© 2026 iTing Corporation. All rights reserved.</p>
-            <div className="flex gap-3"><button className="bg-gray-800 text-white px-4 py-2 rounded-lg text-xs font-bold hover:bg-gray-700 transition-colors">App Store</button><button className="bg-gray-800 text-white px-4 py-2 rounded-lg text-xs font-bold hover:bg-gray-700 transition-colors">Google Play</button></div>
+            <div className="flex gap-3">
+              <button type="button" disabled title="App mobile sắp ra mắt" className="bg-gray-800 text-white px-4 py-2 rounded-lg text-xs font-bold opacity-50 cursor-not-allowed">App Store</button>
+              <button type="button" disabled title="App mobile sắp ra mắt" className="bg-gray-800 text-white px-4 py-2 rounded-lg text-xs font-bold opacity-50 cursor-not-allowed">Google Play</button>
+            </div>
           </div>
         </div>
       </footer>
@@ -318,7 +321,7 @@ export default function BlogPage() {
       {/* ─── MOBILE BOTTOM BAR ─── */}
       <div className="fixed bottom-0 left-0 right-0 md:hidden bg-white/90 backdrop-blur-md p-2 shadow-[0_-2px_12px_rgba(0,0,0,.08)] flex gap-2 z-50 border-t border-gray-100">
         <Link to="/jobs" className="flex-1 bg-[#3AB4E6] text-white font-bold py-3 rounded-xl text-sm flex items-center justify-center gap-2"><Briefcase className="h-4 w-4" />Tìm việc ngay</Link>
-        <button className="flex-1 bg-gray-900 text-white font-bold py-3 rounded-xl text-sm flex items-center justify-center gap-2"><FileText className="h-4 w-4" />Tạo CV</button>
+        <button type="button" onClick={() => navigate('/candidate/profile')} className="flex-1 bg-gray-900 text-white font-bold py-3 rounded-xl text-sm flex items-center justify-center gap-2"><FileText className="h-4 w-4" />Tạo CV</button>
       </div>
       <div className="h-16 md:hidden" />
     </div>

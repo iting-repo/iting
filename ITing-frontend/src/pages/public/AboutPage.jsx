@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import {
     FaRegUser, FaFileAlt, FaSearch, FaCheckCircle,
     FaPlay, FaChevronDown, FaChevronUp, FaArrowRight,
@@ -130,9 +131,10 @@ const AboutPage = () => {
 
                 {/* Content */}
                 <div className="relative z-10 text-center px-4">
-                    <button className="w-20 h-20 bg-[#3AB4E6] rounded-full flex items-center justify-center text-white text-3xl mb-8 mx-auto hover:scale-110 transition-transform shadow-[0_0_30px_rgba(58,180,230,0.6)]">
+                    {/* Section heading — bỏ play button vì video chưa có; thay bằng icon decorative non-interactive. */}
+                    <div aria-hidden="true" className="w-20 h-20 bg-[#3AB4E6] rounded-full flex items-center justify-center text-white text-3xl mb-8 mx-auto shadow-[0_0_30px_rgba(58,180,230,0.6)]">
                         <FaPlay className="pl-1" />
-                    </button>
+                    </div>
                     <h2 className="text-3xl md:text-5xl font-bold text-white max-w-3xl mx-auto leading-tight mb-12">
                         Cuộc sống tốt đẹp bắt đầu từ một công ty tốt
                     </h2>
@@ -144,21 +146,21 @@ const AboutPage = () => {
                                 <span className="bg-[#3AB4E6] text-white w-6 h-6 rounded flex items-center justify-center font-bold text-sm">1</span>
                                 <h4 className="text-white font-bold">Cơ hội nghề nghiệp đa dạng</h4>
                             </div>
-                            <a href="#" className="text-[#3AB4E6] text-xs hover:underline">Learn more</a>
+                            <Link to="/jobs" className="text-[#3AB4E6] text-xs hover:underline">Khám phá việc làm →</Link>
                         </div>
                         <div>
                             <div className="flex items-center gap-3 mb-2">
                                 <span className="bg-[#3AB4E6] text-white w-6 h-6 rounded flex items-center justify-center font-bold text-sm">2</span>
                                 <h4 className="text-white font-bold">Kết nối với nhà tuyển dụng uy tín</h4>
                             </div>
-                            <a href="#" className="text-[#3AB4E6] text-xs hover:underline">Learn more</a>
+                            <Link to="/companies" className="text-[#3AB4E6] text-xs hover:underline">Xem doanh nghiệp →</Link>
                         </div>
                         <div>
                             <div className="flex items-center gap-3 mb-2">
                                 <span className="bg-[#3AB4E6] text-white w-6 h-6 rounded flex items-center justify-center font-bold text-sm">3</span>
                                 <h4 className="text-white font-bold">Phát triển sự nghiệp lâu dài</h4>
                             </div>
-                            <a href="#" className="text-[#3AB4E6] text-xs hover:underline">Learn more</a>
+                            <Link to="/blogs" className="text-[#3AB4E6] text-xs hover:underline">Đọc cẩm nang →</Link>
                         </div>
                     </div>
                 </div>
@@ -275,8 +277,8 @@ const AboutPage = () => {
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                    {/* Card 1 */}
-                    <div className="group cursor-pointer">
+                    {/* Card 1 — demo cards, link tới blog list (chưa có blog detail tương ứng) */}
+                    <Link to="/blogs" className="group cursor-pointer block">
                         <div className="rounded-2xl overflow-hidden h-[300px] mb-4 relative">
                             <span className="absolute top-4 left-4 bg-[#3AB4E6] text-white text-xs font-bold px-3 py-1 rounded-full z-10">News</span>
                             <img src="https://images.unsplash.com/photo-1521737604893-d14cc237f11d?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80" alt="Blog 1" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
@@ -286,14 +288,14 @@ const AboutPage = () => {
                             <h3 className="text-xl font-bold text-gray-900 mb-3 group-hover:text-[#3AB4E6] transition-colors">
                                 Khơi Dậy Tinh Thần Làm Việc: Chiến Lược Nâng Cao Sự Gắn Kết Của Nhân Viên Năm 2024
                             </h3>
-                            <button className="text-[#3AB4E6] text-sm font-bold flex items-center gap-1 group-hover:gap-2 transition-all">
+                            <span className="text-[#3AB4E6] text-sm font-bold flex items-center gap-1 group-hover:gap-2 transition-all">
                                 Đọc thêm <FaArrowRight size={12} />
-                            </button>
+                            </span>
                         </div>
-                    </div>
+                    </Link>
 
                     {/* Card 2 */}
-                    <div className="group cursor-pointer">
+                    <Link to="/blogs" className="group cursor-pointer block">
                         <div className="rounded-2xl overflow-hidden h-[300px] mb-4 relative">
                             <span className="absolute top-4 left-4 bg-[#3AB4E6] text-white text-xs font-bold px-3 py-1 rounded-full z-10">Blog</span>
                             <img src="https://images.unsplash.com/photo-1551434678-e076c223a692?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80" alt="Blog 2" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
@@ -303,11 +305,11 @@ const AboutPage = () => {
                             <h3 className="text-xl font-bold text-gray-900 mb-3 group-hover:text-[#3AB4E6] transition-colors">
                                 Cách Tránh 6 Lỗi Phổ Biến Nhất Khi Phỏng Vấn Xin Việc
                             </h3>
-                            <button className="text-[#3AB4E6] text-sm font-bold flex items-center gap-1 group-hover:gap-2 transition-all">
+                            <span className="text-[#3AB4E6] text-sm font-bold flex items-center gap-1 group-hover:gap-2 transition-all">
                                 Đọc thêm <FaArrowRight size={12} />
-                            </button>
+                            </span>
                         </div>
-                    </div>
+                    </Link>
                 </div>
             </div>
 

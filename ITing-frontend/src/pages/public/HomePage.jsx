@@ -79,6 +79,17 @@ const HomePage = () => {
     const [banners, setBanners] = useState([]);
     const [currentBannerIndex, setCurrentBannerIndex] = useState(0);
 
+    // Tip "Đưa chuột vào tiêu đề..." — user có thể đóng. Lưu sessionStorage
+    // để khôi phục khi reload trong cùng session, reset khi tab đóng.
+    const [tipDismissed, setTipDismissed] = useState(() => {
+        if (typeof window === 'undefined') return false;
+        return sessionStorage.getItem('iting_tip_preview_dismissed') === '1';
+    });
+    const dismissTip = () => {
+        setTipDismissed(true);
+        try { sessionStorage.setItem('iting_tip_preview_dismissed', '1'); } catch { /* sessionStorage blocked */ }
+    };
+
     const handleCardEnter = (job, el) => {
         if (leaveTimerRef.current) clearTimeout(leaveTimerRef.current);
         if (enterTimerRef.current) clearTimeout(enterTimerRef.current);
@@ -1022,16 +1033,18 @@ const HomePage = () => {
                     </div>
 
                     {/* 3. TIP BAR: Làm mềm mại hơn */}
-                    <div className="mb-10 p-3 rounded-xl bg-blue-50/60 border border-blue-100 flex items-center gap-3">
-                        <div className="p-1.5 bg-white rounded-full text-[#3AB4E6] shadow-sm">
-                            {/* Dùng icon Magic thay cho Sparkles */}
-                            <FaMagic size={14} />
+                    {!tipDismissed && (
+                        <div className="mb-10 p-3 rounded-xl bg-blue-50/60 border border-blue-100 flex items-center gap-3">
+                            <div className="p-1.5 bg-white rounded-full text-[#3AB4E6] shadow-sm">
+                                {/* Dùng icon Magic thay cho Sparkles */}
+                                <FaMagic size={14} />
+                            </div>
+                            <div className="flex-1 text-xs md:text-sm text-gray-600">
+                                <span className="font-bold text-[#0E7BAA]">Gợi ý:</span> Đưa chuột vào tiêu đề công việc để xem trước thông tin chi tiết nhanh.
+                            </div>
+                            <button type="button" aria-label="Đóng gợi ý" onClick={dismissTip} className="text-gray-400 hover:text-gray-600 px-2">✕</button>
                         </div>
-                        <div className="flex-1 text-xs md:text-sm text-gray-600">
-                            <span className="font-bold text-[#0E7BAA]">Gợi ý:</span> Đưa chuột vào tiêu đề công việc để xem trước thông tin chi tiết nhanh.
-                        </div>
-                        <button type="button" aria-label="Đóng gợi ý" className="text-gray-400 hover:text-gray-600 px-2">✕</button>
-                    </div>
+                    )}
 
                     {/* 4. JOB LIST: Thêm hiệu ứng hover xịn & bo góc mềm */}
                     <div className="space-y-5 mb-12 min-h-[800px] relative">
@@ -1118,8 +1131,12 @@ const HomePage = () => {
                                             <span className="text-xs text-gray-600 font-medium bg-gray-50 px-2 py-1 rounded">
                                                 {timeAgo(job.createdAt)}
                                             </span>
-                                            {/* Nút Chi Tiết style mới */}
-                                            <button className="w-auto md:w-full bg-[#EAF6FF] text-[#0E7BAA] hover:bg-[#0E7BAA] hover:text-white text-xs font-bold px-5 py-2.5 rounded-xl transition-all duration-300">
+                                            {/* Nút Chi Tiết — explicit navigate, không phụ thuộc bubble từ card wrapper */}
+                                            <button
+                                                type="button"
+                                                onClick={(e) => { e.stopPropagation(); handleJobClick(job); }}
+                                                className="w-auto md:w-full bg-[#EAF6FF] text-[#0E7BAA] hover:bg-[#0E7BAA] hover:text-white text-xs font-bold px-5 py-2.5 rounded-xl transition-all duration-300"
+                                            >
                                                 Chi Tiết
                                             </button>
                                         </div>
