@@ -2,10 +2,13 @@ import React, { useState, useEffect } from "react";
 import logoIting from '../../assets/logo-iting.png';
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
-import { registerRequest } from "../../store/auth/authSlice";
+import { useGoogleLogin } from '@react-oauth/google';
+import { toast } from 'sonner';
+import { registerRequest, googleLoginRequest, facebookLoginRequest } from "../../store/auth/authSlice";
 import { FaEye, FaEyeSlash, FaArrowRight } from "react-icons/fa";
 import { BsBriefcaseFill, BsBuilding, BsPeopleFill } from "react-icons/bs";
 import publicService from "../../services/publicService";
+import useFacebookLogin from "../../hooks/useFacebookLogin";
 import { useModalEscape } from "../../hooks/useModalEscape";
 import { validatePassword, firstPasswordError } from "../../utils/passwordPolicy";
 
@@ -101,6 +104,29 @@ const RegisterPage = () => {
       .then((data) => setStats((prev) => ({ ...prev, ...(data || {}) })))
       .catch(() => { /* silent — UI vẫn render với 0 */ });
   }, []);
+
+  // Social login dùng pattern chung với LoginPage: cùng saga, cùng store.
+  // Đăng nhập thành công → backend tự tạo account nếu chưa tồn tại (xem
+  // AuthServiceImpl.loginWithGoogle/Facebook) → user vào thẳng dashboard.
+  const handleGoogleLogin = useGoogleLogin({
+    onSuccess: (tokenResponse) => {
+      dispatch(googleLoginRequest({ tokenId: tokenResponse.access_token, navigate }));
+    },
+    onError: (err) => {
+      console.error("Lỗi đăng nhập Google:", err);
+      toast.error("Đăng nhập Google thất bại");
+    },
+  });
+
+  const { login: handleFacebookLogin, loading: fbLoading, configured: fbConfigured } = useFacebookLogin({
+    onSuccess: ({ accessToken }) => {
+      dispatch(facebookLoginRequest({ accessToken, navigate }));
+    },
+    onError: (err) => {
+      console.error("Lỗi đăng nhập Facebook:", err);
+      toast.error(err?.message || "Đăng nhập Facebook thất bại");
+    },
+  });
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -223,8 +249,22 @@ const RegisterPage = () => {
             <span className="relative bg-white px-4 text-xs text-gray-400 uppercase">Hoặc đăng nhập bằng</span>
           </div>
           <div className="grid grid-cols-2 gap-4">
-            <button className="flex items-center justify-center gap-3 border border-gray-200 py-3 rounded-lg hover:bg-gray-50 transition"><FacebookIcon /><span className="text-sm">Facebook</span></button>
-            <button className="flex items-center justify-center gap-3 border border-gray-200 py-3 rounded-lg hover:bg-gray-50 transition"><GoogleIcon /><span className="text-sm">Google</span></button>
+            <button
+              type="button"
+              onClick={handleFacebookLogin}
+              disabled={fbLoading || !fbConfigured}
+              title={!fbConfigured ? 'REACT_APP_FACEBOOK_APP_ID chưa cấu hình' : ''}
+              className="flex items-center justify-center gap-3 border border-gray-200 py-3 rounded-lg hover:bg-gray-50 transition disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <FacebookIcon /><span className="text-sm">{fbLoading ? 'Đang xử lý...' : 'Facebook'}</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => handleGoogleLogin()}
+              className="flex items-center justify-center gap-3 border border-gray-200 py-3 rounded-lg hover:bg-gray-50 transition"
+            >
+              <GoogleIcon /><span className="text-sm">Google</span>
+            </button>
           </div>
         </div>
       </div>
