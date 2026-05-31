@@ -1,6 +1,7 @@
 package com.iting.jobportal.messaging.controller;
 
 import com.iting.jobportal.job.controller.CurrentUser;
+import com.iting.jobportal.messaging.dto.request.EditMessageRequest;
 import com.iting.jobportal.messaging.dto.request.SendMessageRequest;
 import com.iting.jobportal.messaging.dto.response.ConversationListResponse;
 import com.iting.jobportal.messaging.dto.response.ConversationResponse;
@@ -91,6 +92,32 @@ public class MessageController {
       @Parameter(hidden = true) @CurrentUser Long userId, @PathVariable Long messageId) {
     messageService.markMessageAsRead(messageId, userId);
     return ResponseEntity.ok(Map.of("message", "Message marked as read"));
+  }
+
+  @PutMapping("/{messageId}")
+  @Operation(summary = "Edit message content (sender only, trong 24h)")
+  public ResponseEntity<MessageResponse> editMessage(
+      @Parameter(hidden = true) @CurrentUser Long userId,
+      @PathVariable Long messageId,
+      @Valid @RequestBody EditMessageRequest request) {
+    MessageResponse updated = messageService.editMessage(messageId, userId, request.getContent());
+    // Broadcast cùng channel /topic/conversation/{id} — frontend check id trùng
+    // trong state để update tại chỗ (thay vì append).
+    messagingTemplate.convertAndSend(
+        "/topic/conversation/" + updated.getConversationId(), updated);
+    return ResponseEntity.ok(updated);
+  }
+
+  @DeleteMapping("/{messageId}")
+  @Operation(summary = "Soft-delete a message (sender only)")
+  public ResponseEntity<MessageResponse> deleteMessage(
+      @Parameter(hidden = true) @CurrentUser Long userId, @PathVariable Long messageId) {
+    messageService.deleteMessage(messageId, userId);
+    MessageResponse updated = messageService.getMessageById(messageId);
+    // Broadcast để clients khác trong cuộc trò chuyện thấy "Tin nhắn đã thu hồi".
+    messagingTemplate.convertAndSend(
+        "/topic/conversation/" + updated.getConversationId(), updated);
+    return ResponseEntity.ok(updated);
   }
 
   @PatchMapping("/conversations/{conversationId}/read")

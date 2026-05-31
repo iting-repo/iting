@@ -30,4 +30,9 @@ public class MessageResponse {
   private Boolean isRead;
   private LocalDateTime readAt;
   private LocalDateTime createdAt;
+  // Edit/delete tracking — UI hiển thị "(đã sửa)" hoặc "Tin nhắn đã thu hồi"
+  private Boolean isEdited;
+  private LocalDateTime editedAt;
+  private Boolean isDeleted;
+  private LocalDateTime deletedAt;
 }

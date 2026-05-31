@@ -48,6 +48,23 @@ public class Message {
   @Column(name = "created_at", nullable = false)
   private LocalDateTime createdAt;
 
+  // Soft delete: giữ message trong DB nhưng UI hiển thị "Tin nhắn đã thu hồi".
+  // Lý do soft delete: WebSocket có thể đã broadcast id này ra client khác,
+  // hard delete sẽ làm họ thấy missing message ngẫu nhiên.
+  @Builder.Default
+  @Column(name = "is_deleted", nullable = false)
+  private Boolean isDeleted = false;
+
+  @Column(name = "deleted_at")
+  private LocalDateTime deletedAt;
+
+  @Builder.Default
+  @Column(name = "is_edited", nullable = false)
+  private Boolean isEdited = false;
+
+  @Column(name = "edited_at")
+  private LocalDateTime editedAt;
+
   @PrePersist
   protected void onCreate() {
     if (createdAt == null) {
@@ -55,6 +72,12 @@ public class Message {
     }
     if (isRead == null) {
       isRead = false;
+    }
+    if (isDeleted == null) {
+      isDeleted = false;
+    }
+    if (isEdited == null) {
+      isEdited = false;
     }
   }
 }

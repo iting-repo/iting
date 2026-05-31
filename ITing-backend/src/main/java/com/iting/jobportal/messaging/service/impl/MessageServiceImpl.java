@@ -231,12 +231,49 @@ public class MessageServiceImpl implements MessageService {
             .findById(messageId)
             .orElseThrow(() -> new RuntimeException("Message not found"));
 
-    // Verify user is the sender
     if (!message.getSenderId().equals(userId)) {
-      throw new RuntimeException("Unauthorized: You can only delete your own messages");
+      throw new RuntimeException("Bạn chỉ có thể thu hồi tin nhắn của chính mình");
+    }
+    if (Boolean.TRUE.equals(message.getIsDeleted())) {
+      return; // Idempotent — đã thu hồi rồi
     }
 
-    messageRepository.delete(message);
+    // Soft delete: giữ row trong DB nhưng đánh dấu, UI hiển thị "Tin nhắn đã thu hồi".
+    // Content vẫn giữ để audit/admin xem được (xóa cứng chỉ khi user xóa tài khoản).
+    message.setIsDeleted(true);
+    message.setDeletedAt(LocalDateTime.now());
+    messageRepository.save(message);
+  }
+
+  @Override
+  @Transactional
+  public MessageResponse editMessage(Long messageId, Long userId, String newContent) {
+    if (newContent == null || newContent.isBlank()) {
+      throw new RuntimeException("Nội dung tin nhắn không được trống");
+    }
+    Message message =
+        messageRepository
+            .findById(messageId)
+            .orElseThrow(() -> new RuntimeException("Không tìm thấy tin nhắn"));
+
+    if (!message.getSenderId().equals(userId)) {
+      throw new RuntimeException("Bạn chỉ có thể sửa tin nhắn của chính mình");
+    }
+    if (Boolean.TRUE.equals(message.getIsDeleted())) {
+      throw new RuntimeException("Tin nhắn đã bị thu hồi, không thể sửa");
+    }
+    // Window 24h: Messenger/Zalo cho phép edit trong giới hạn này. Sau đó tin
+    // nhắn coi như "định hình", tránh user lén sửa context lịch sử.
+    if (message.getCreatedAt() != null
+        && message.getCreatedAt().isBefore(LocalDateTime.now().minusHours(24))) {
+      throw new RuntimeException("Chỉ có thể sửa tin nhắn trong vòng 24 giờ");
+    }
+
+    message.setContent(newContent.trim());
+    message.setIsEdited(true);
+    message.setEditedAt(LocalDateTime.now());
+    Message saved = messageRepository.save(message);
+    return convertToMessageResponse(saved);
   }
 
   @Override
@@ -271,6 +308,10 @@ public class MessageServiceImpl implements MessageService {
             .isRead(message.getIsRead())
             .readAt(message.getReadAt())
             .createdAt(message.getCreatedAt())
+            .isEdited(Boolean.TRUE.equals(message.getIsEdited()))
+            .editedAt(message.getEditedAt())
+            .isDeleted(Boolean.TRUE.equals(message.getIsDeleted()))
+            .deletedAt(message.getDeletedAt())
             .build();
 
     // Fetch sender name and avatar

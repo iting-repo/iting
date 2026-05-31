@@ -658,7 +658,11 @@ const Header = () => {
                     <div className="w-9 h-9 rounded-full overflow-hidden border border-gray-600 p-0.5 bg-gray-800">
                       <CompanyLogo
                         logoUrl={displayAvatar}
-                        companyId={role === 'EMPLOYER' ? (currentUser?.companyId || currentUser?.userId) : currentUser?.userId}
+                        /* Candidate không có entity company — nếu pass userId thì
+                           CompanyLogo fetch /companies/{userId} → 404 vô ích. Chỉ
+                           pass companyId cho EMPLOYER. Fallback ui-avatars hiển
+                           thị initials với background brand. */
+                        companyId={role === 'EMPLOYER' ? (currentUser?.companyId || currentUser?.userId) : null}
                         companyName={displayName}
                         className="w-full h-full object-contain"
                       />

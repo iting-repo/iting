@@ -63,12 +63,25 @@ const authSlice = createSlice({
     // 6. Action Check Auth (Khôi phục session)
     checkAuth: (state) => {
       // Chỉ để kích hoạt saga, có thể set loading nếu muốn
-    }
+    },
+
+    // 7. Merge field mới vào currentUser (vd: avatar sau khi upload, fullName sau khi sửa profile).
+    // Persist xuống storage để giữ sau reload — phải làm trong reducer vì storage.setUserInfo
+    // không tự fire từ middleware nào khác.
+    updateUserProfile: (state, action) => {
+      if (!state.currentUser) return;
+      const next = { ...state.currentUser, ...(action.payload || {}) };
+      // Đồng bộ field alias: nếu payload có avatarUrl mà chưa có avatar → set cả 2.
+      if (action.payload?.avatarUrl && !action.payload?.avatar) next.avatar = action.payload.avatarUrl;
+      if (action.payload?.avatar && !action.payload?.avatarUrl) next.avatarUrl = action.payload.avatar;
+      state.currentUser = next;
+      try { storage.setUserInfo(next); } catch { /* storage không khả dụng */ }
+    },
   }
 });
 
 export const {
   loginRequest, loginSuccess, loginFailure, googleLoginRequest, facebookLoginRequest, logout,
-  registerRequest, registerSuccess, registerFailure, checkAuth
+  registerRequest, registerSuccess, registerFailure, checkAuth, updateUserProfile
 } = authSlice.actions;
 export default authSlice.reducer;

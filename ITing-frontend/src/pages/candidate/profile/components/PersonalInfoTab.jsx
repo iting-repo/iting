@@ -1,9 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { FaUserCircle, FaCamera, FaSave, FaEnvelope, FaSpinner } from 'react-icons/fa';
+import { useDispatch } from 'react-redux';
 import axiosInstance from '../../../../utils/axiosInstance';
+import { updateUserProfile } from '../../../../store/auth/authSlice';
 import { toast } from 'sonner';
 
 const PersonalInfoTab = () => {
+    const dispatch = useDispatch();
 
     const [formData, setFormData] = useState({
         fullName: '',
@@ -66,6 +69,15 @@ const PersonalInfoTab = () => {
                 phoneNum: formData.phoneNum,
                 avatarUrl: formData.avatarUrl
             });
+            // Sync về Redux để Header (greeting "Xin chào, ...") và sidebar
+            // (displayName) update ngay sau khi save profile.
+            dispatch(updateUserProfile({
+                fullName: formData.fullName,
+                name: formData.fullName,
+                phoneNum: formData.phoneNum,
+                avatar: formData.avatarUrl,
+                avatarUrl: formData.avatarUrl,
+            }));
             toast.success("Cập nhật thông tin thành công!");
         } catch (error) {
             console.error("Failed to update personal info", error);
@@ -102,6 +114,11 @@ const PersonalInfoTab = () => {
 
             const newAvatarUrl = response.avatarUrl || response.data?.avatarUrl;
             setFormData(prev => ({ ...prev, avatarUrl: newAvatarUrl }));
+            // Đồng bộ avatar vào Redux ngay → Header + Sidebar update tức thì,
+            // không cần reload page. Persist trong updateUserProfile reducer.
+            if (newAvatarUrl) {
+                dispatch(updateUserProfile({ avatar: newAvatarUrl, avatarUrl: newAvatarUrl }));
+            }
             toast.success("Tải ảnh đại diện lên thành công!");
         } catch (error) {
             console.error("Failed to upload avatar", error);

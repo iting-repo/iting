@@ -67,12 +67,24 @@ public interface MessageService {
   List<MessageResponse> getUnreadMessages(Long userId);
 
   /**
-   * Delete a message (soft delete or actual delete)
+   * Soft-delete a message — set isDeleted=true. UI hiển thị "Tin nhắn đã thu hồi".
+   * Lý do soft: WebSocket đã broadcast id, hard delete làm clients thấy missing.
    *
    * @param messageId Message ID
-   * @param userId User ID (to verify ownership)
+   * @param userId User ID (must equal senderId)
    */
   void deleteMessage(Long messageId, Long userId);
+
+  /**
+   * Edit message content. Chỉ sender mới được edit, không edit được message
+   * đã isDeleted, và phải trong window thời gian (vd: 24h).
+   *
+   * @param messageId Message ID
+   * @param userId User ID (must equal senderId)
+   * @param newContent New content
+   * @return Updated message response (đã isEdited=true, editedAt=now)
+   */
+  MessageResponse editMessage(Long messageId, Long userId, String newContent);
 
   /**
    * Get message by ID
