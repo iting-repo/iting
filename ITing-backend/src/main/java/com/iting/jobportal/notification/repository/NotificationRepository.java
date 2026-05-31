@@ -82,6 +82,20 @@ public interface NotificationRepository extends JpaRepository<Notification, Inte
       @Param("recipientType") RecipientType recipientType,
       @Param("readAt") LocalDateTime readAt);
 
+  /** Đánh dấu notification về chưa đọc — set isRead=false và xoá readAt. */
+  @Modifying
+  @Query("UPDATE Notification n SET n.isRead = false, n.readAt = null WHERE n.id = :notificationId")
+  void markAsUnread(@Param("notificationId") Integer notificationId);
+
+  /** Bulk đánh dấu tất cả notifications của recipient về chưa đọc. */
+  @Modifying
+  @Query(
+      "UPDATE Notification n SET n.isRead = false, n.readAt = null WHERE n.recipientId ="
+          + " :recipientId AND n.recipientType = :recipientType AND n.isRead = true")
+  void markAllAsUnreadForRecipient(
+      @Param("recipientId") Long recipientId,
+      @Param("recipientType") RecipientType recipientType);
+
   /** Delete old read notifications (cleanup) */
   @Modifying
   @Query("DELETE FROM Notification n WHERE n.isRead = true AND n.readAt < :cutoffDate")

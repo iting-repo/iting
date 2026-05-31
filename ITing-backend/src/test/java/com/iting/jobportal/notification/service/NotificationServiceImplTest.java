@@ -415,6 +415,66 @@ class NotificationServiceImplTest {
   }
 
   @Nested
+  @DisplayName("markAsUnread tests (CRUD bổ sung)")
+  class MarkAsUnreadTests {
+
+    @Test
+    @DisplayName("Should mark read notification back to unread + broadcast new count")
+    void markAsUnread_success() {
+      testNotification.setIsRead(true);
+      when(notificationRepository.findById(1)).thenReturn(Optional.of(testNotification));
+      when(notificationRepository.countUnreadByRecipientIdAndRecipientType(1L, RecipientType.USER))
+          .thenReturn(3L);
+
+      notificationService.markAsUnread(1, 1L, RecipientType.USER);
+
+      verify(notificationRepository).markAsUnread(1);
+      verify(webSocketNotificationService).sendUnreadCount(1L, RecipientType.USER, 3L);
+    }
+
+    @Test
+    @DisplayName("Should skip if already unread (no-op, no broadcast)")
+    void markAsUnread_alreadyUnread_skips() {
+      testNotification.setIsRead(false);
+      when(notificationRepository.findById(1)).thenReturn(Optional.of(testNotification));
+
+      notificationService.markAsUnread(1, 1L, RecipientType.USER);
+
+      verify(notificationRepository, never()).markAsUnread(anyInt());
+      verify(webSocketNotificationService, never()).sendUnreadCount(anyLong(), any(), anyLong());
+    }
+
+    @Test
+    @DisplayName("Should reject when recipientId mismatch — unauthorized")
+    void markAsUnread_wrongRecipient_throws() {
+      when(notificationRepository.findById(1)).thenReturn(Optional.of(testNotification));
+
+      RuntimeException ex =
+          assertThrows(
+              RuntimeException.class,
+              () -> notificationService.markAsUnread(1, 999L, RecipientType.USER));
+      assertEquals("Unauthorized to update this notification", ex.getMessage());
+    }
+  }
+
+  @Nested
+  @DisplayName("markAllAsUnread tests (CRUD bổ sung)")
+  class MarkAllAsUnreadTests {
+
+    @Test
+    @DisplayName("Should bulk mark all notifications back to unread + broadcast count")
+    void markAllAsUnread_success() {
+      when(notificationRepository.countUnreadByRecipientIdAndRecipientType(1L, RecipientType.USER))
+          .thenReturn(10L);
+
+      notificationService.markAllAsUnread(1L, RecipientType.USER);
+
+      verify(notificationRepository).markAllAsUnreadForRecipient(1L, RecipientType.USER);
+      verify(webSocketNotificationService).sendUnreadCount(1L, RecipientType.USER, 10L);
+    }
+  }
+
+  @Nested
   @DisplayName("deleteNotification tests")
   class DeleteNotificationTests {
 

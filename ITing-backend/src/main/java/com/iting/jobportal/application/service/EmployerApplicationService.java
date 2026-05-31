@@ -2,6 +2,7 @@ package com.iting.jobportal.application.service;
 
 import com.iting.jobportal.application.dto.request.ApplicationSearchRequest;
 import com.iting.jobportal.application.dto.request.ApplicationStats;
+import com.iting.jobportal.application.dto.request.CreateManualApplicationRequest;
 import com.iting.jobportal.application.dto.request.UpdateApplicationStatusRequest;
 import com.iting.jobportal.application.dto.response.ApplicationResponse;
 import java.util.List;
@@ -40,4 +41,18 @@ public interface EmployerApplicationService {
   /** Lấy danh sách ứng viên đã apply cho 1 job, xếp hạng theo AI match score giảm dần. */
   Page<ApplicationResponse> getApplicationsRankedByMatch(
       Long employerId, Long jobId, int page, int size);
+
+  /**
+   * HR tạo application thủ công (offline submission). Tạo:
+   *   - ApplyForm với userId=null (manual entry) + candidateName/email lưu vào field tạm
+   *   - ApplyFormSentToJob với status=PENDING
+   * Auth: chỉ HR sở hữu job mới tạo được. Trả về ApplicationResponse.
+   */
+  ApplicationResponse createManualApplication(Long employerId, CreateManualApplicationRequest request);
+
+  /**
+   * HR xóa application (vd: spam, duplicate, candidate yêu cầu rút). Hard delete.
+   * Auth: chỉ HR sở hữu job mới xóa được.
+   */
+  void deleteApplication(Long employerId, Long applicationId);
 }

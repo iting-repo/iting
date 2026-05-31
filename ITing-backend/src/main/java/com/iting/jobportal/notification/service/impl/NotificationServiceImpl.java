@@ -328,6 +328,40 @@ public class NotificationServiceImpl implements NotificationService {
 
   @Override
   @Transactional
+  public void markAsUnread(Integer notificationId, Long recipientId, RecipientType recipientType) {
+    Notification notification =
+        notificationRepository
+            .findById(notificationId)
+            .orElseThrow(() -> new RuntimeException("Notification not found"));
+
+    if (!notification.getRecipientId().equals(recipientId)
+        || notification.getRecipientType() != recipientType) {
+      throw new RuntimeException("Unauthorized to update this notification");
+    }
+
+    if (Boolean.TRUE.equals(notification.getIsRead())) {
+      notificationRepository.markAsUnread(notificationId);
+      Long unreadCount =
+          notificationRepository.countUnreadByRecipientIdAndRecipientType(
+              recipientId, recipientType);
+      // +1 vì query countUnread chạy trước commit của markAsUnread trong cùng tx;
+      // tuy nhiên Spring có flush ngầm khi gọi count → an toàn dùng nguyên giá trị.
+      webSocketNotificationService.sendUnreadCount(recipientId, recipientType, unreadCount);
+    }
+  }
+
+  @Override
+  @Transactional
+  public void markAllAsUnread(Long recipientId, RecipientType recipientType) {
+    notificationRepository.markAllAsUnreadForRecipient(recipientId, recipientType);
+    Long unreadCount =
+        notificationRepository.countUnreadByRecipientIdAndRecipientType(
+            recipientId, recipientType);
+    webSocketNotificationService.sendUnreadCount(recipientId, recipientType, unreadCount);
+  }
+
+  @Override
+  @Transactional
   public void deleteNotification(
       Integer notificationId, Long recipientId, RecipientType recipientType) {
     Notification notification =

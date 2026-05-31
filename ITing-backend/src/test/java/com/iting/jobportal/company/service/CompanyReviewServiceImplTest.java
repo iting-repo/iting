@@ -6,6 +6,7 @@ import static org.mockito.Mockito.*;
 
 import com.iting.jobportal.auth.entity.Account;
 import com.iting.jobportal.auth.repository.AccountRepository;
+import com.iting.jobportal.company.dto.request.UpdateCompanyReviewRequest;
 import com.iting.jobportal.company.entity.Company;
 import com.iting.jobportal.company.entity.CompanyReview;
 import com.iting.jobportal.company.repository.CompanyRepository;
@@ -114,5 +115,90 @@ class CompanyReviewServiceImplTest {
     // Impl coalesces null → 0.0 for UI display.
     assertEquals(0.0, stats.get("averageRating"));
     assertEquals(0L, stats.get("reviewCount"));
+  }
+
+  // ───────── updateReview tests (CRUD bổ sung) ─────────
+
+  private CompanyReview buildExistingReview(Long reviewId, Long authorId, String status) {
+    Account author = Account.builder().id(authorId).build();
+    return CompanyReview.builder()
+        .id(reviewId)
+        .account(author)
+        .rating(3)
+        .title("Old title")
+        .content("Old content")
+        .moderationStatus(status)
+        .build();
+  }
+
+  @Test
+  void updateReview_byAuthor_pendingStatus_appliesPartialUpdate_andResetsToPending() {
+    CompanyReview existing = buildExistingReview(10L, 5L, "PENDING");
+    when(reviewRepository.findById(10L)).thenReturn(Optional.of(existing));
+    when(reviewRepository.save(any(CompanyReview.class))).thenAnswer(inv -> inv.getArgument(0));
+
+    UpdateCompanyReviewRequest req =
+        UpdateCompanyReviewRequest.builder()
+            .rating(5)
+            .title("New title")
+            .content("Updated content")
+            .build();
+
+    CompanyReview updated = service.updateReview(10L, 5L, req);
+
+    assertEquals(5, updated.getRating());
+    assertEquals("New title", updated.getTitle());
+    assertEquals("Updated content", updated.getContent());
+    assertEquals("PENDING", updated.getModerationStatus());
+  }
+
+  @Test
+  void updateReview_byAuthor_partialNullFields_keepsExistingValues() {
+    CompanyReview existing = buildExistingReview(10L, 5L, "PENDING");
+    when(reviewRepository.findById(10L)).thenReturn(Optional.of(existing));
+    when(reviewRepository.save(any(CompanyReview.class))).thenAnswer(inv -> inv.getArgument(0));
+
+    UpdateCompanyReviewRequest req =
+        UpdateCompanyReviewRequest.builder().title("Only title changed").build();
+
+    CompanyReview updated = service.updateReview(10L, 5L, req);
+
+    assertEquals("Only title changed", updated.getTitle());
+    assertEquals("Old content", updated.getContent()); // unchanged
+    assertEquals(3, updated.getRating()); // unchanged
+  }
+
+  @Test
+  void updateReview_byDifferentUser_throwsUnauthorized() {
+    CompanyReview existing = buildExistingReview(10L, 5L, "PENDING");
+    when(reviewRepository.findById(10L)).thenReturn(Optional.of(existing));
+
+    UpdateCompanyReviewRequest req = UpdateCompanyReviewRequest.builder().title("x").build();
+
+    RuntimeException ex =
+        assertThrows(RuntimeException.class, () -> service.updateReview(10L, 999L, req));
+    assertTrue(ex.getMessage().contains("tác giả"));
+    verify(reviewRepository, never()).save(any());
+  }
+
+  @Test
+  void updateReview_whenAlreadyApproved_throwsBlocked() {
+    CompanyReview existing = buildExistingReview(10L, 5L, "APPROVED");
+    when(reviewRepository.findById(10L)).thenReturn(Optional.of(existing));
+
+    UpdateCompanyReviewRequest req = UpdateCompanyReviewRequest.builder().title("x").build();
+
+    RuntimeException ex =
+        assertThrows(RuntimeException.class, () -> service.updateReview(10L, 5L, req));
+    assertTrue(ex.getMessage().contains("duyệt"));
+    verify(reviewRepository, never()).save(any());
+  }
+
+  @Test
+  void updateReview_whenNotFound_throws() {
+    when(reviewRepository.findById(99L)).thenReturn(Optional.empty());
+    assertThrows(
+        RuntimeException.class,
+        () -> service.updateReview(99L, 5L, UpdateCompanyReviewRequest.builder().build()));
   }
 }

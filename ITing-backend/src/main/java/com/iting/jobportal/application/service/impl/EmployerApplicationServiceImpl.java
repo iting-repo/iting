@@ -2,7 +2,11 @@ package com.iting.jobportal.application.service.impl;
 
 import com.iting.jobportal.application.dto.request.ApplicationSearchRequest;
 import com.iting.jobportal.application.dto.request.ApplicationStats;
+import com.iting.jobportal.application.dto.request.CreateManualApplicationRequest;
 import com.iting.jobportal.application.dto.request.UpdateApplicationStatusRequest;
+import com.iting.jobportal.auth.entity.Account;
+import com.iting.jobportal.auth.repository.AccountRepository;
+import java.util.Optional;
 import com.iting.jobportal.application.dto.response.ApplicationResponse;
 import com.iting.jobportal.application.entity.ApplyForm;
 import com.iting.jobportal.application.entity.ApplyFormSentToJob;
@@ -44,6 +48,7 @@ public class EmployerApplicationServiceImpl implements EmployerApplicationServic
   private final ApplicationMapperUtil applicationMapperUtil;
   private final NotificationService notificationService;
   private final MessageService messageService;
+  private final AccountRepository accountRepository;
 
   private Job verifyJobOwnership(Long employerId, Long jobId) {
     Job job =
@@ -340,5 +345,79 @@ public class EmployerApplicationServiceImpl implements EmployerApplicationServic
             Sort.by(Sort.Order.desc("matchScore").nullsLast(), Sort.Order.desc("timeSent")));
 
     return employerApplicationRepository.findByJobId(jobId, pageable).map(this::toResponse);
+  }
+
+  @Override
+  @Transactional
+  public ApplicationResponse createManualApplication(
+      Long employerId, CreateManualApplicationRequest request) {
+    Job job = verifyJobOwnership(employerId, request.getJobId());
+
+    // Tìm account theo email. Yêu cầu candidate phải đã có account ITing —
+    // tránh tạo ghost user gây phình DB + có thể vi phạm policy (gửi message
+    // cho người chưa đồng ý nhận từ HR).
+    Optional<Account> accountOpt =
+        accountRepository.findByEmail(request.getCandidateEmail().trim().toLowerCase());
+    if (accountOpt.isEmpty()) {
+      throw new ResponseStatusException(
+          HttpStatus.BAD_REQUEST,
+          "Email '" + request.getCandidateEmail() + "' chưa có tài khoản ITing. "
+              + "Vui lòng mời ứng viên đăng ký trước, hoặc dùng flow Invite Candidate.");
+    }
+    Account candidateAccount = accountOpt.get();
+    Long candidateUserId = candidateAccount.getId();
+
+    // Idempotent: nếu candidate này đã ứng tuyển job rồi → trả về app cũ thay
+    // vì tạo duplicate. Tránh HR vô tình tạo nhiều entry cho cùng user-job.
+    Optional<ApplyFormSentToJob> existing =
+        employerApplicationRepository.findFirstByIdJobIdAndUserId(
+            request.getJobId(), candidateUserId);
+    if (existing.isPresent()) {
+      return toResponse(existing.get());
+    }
+
+    ApplyForm applyForm =
+        ApplyForm.builder()
+            .userId(candidateUserId)
+            .applicantName(
+                request.getCandidateName() != null
+                    ? request.getCandidateName().trim()
+                    : candidateAccount.getFullName())
+            .introduction(request.getIntroduction())
+            .build();
+    ApplyForm savedForm = applyFormRepository.save(applyForm);
+
+    ApplyFormSentToJob sent =
+        ApplyFormSentToJob.builder()
+            .id(new ApplyFormSentToJob.ApplyFormSentToJobId(job.getId(), savedForm.getId()))
+            .userId(candidateUserId)
+            .status(ApplicationStatus.PENDING)
+            .employerNote(request.getInternalNote())
+            .build();
+    ApplyFormSentToJob savedSent = employerApplicationRepository.save(sent);
+
+    jobRepository.incrementApplicationCount(job.getId());
+
+    return toResponse(savedSent);
+  }
+
+  @Override
+  @Transactional
+  public void deleteApplication(Long employerId, Long applicationId) {
+    ApplyFormSentToJob sent =
+        employerApplicationRepository
+            .findByIdApplyFormId(applicationId)
+            .orElseThrow(
+                () ->
+                    new ResponseStatusException(
+                        HttpStatus.NOT_FOUND, "Không tìm thấy đơn ứng tuyển: " + applicationId));
+    verifyJobOwnership(employerId, sent.getId().getJobId());
+
+    employerApplicationRepository.delete(sent);
+    // Xoá luôn ApplyForm nếu không còn job nào liên kết — tránh dangling row.
+    long remaining = employerApplicationRepository.countByApplyFormId(applicationId);
+    if (remaining == 0) {
+      applyFormRepository.deleteById(applicationId);
+    }
   }
 }

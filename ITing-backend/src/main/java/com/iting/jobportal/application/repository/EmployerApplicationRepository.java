@@ -60,4 +60,15 @@ public interface EmployerApplicationRepository
   long countByIdJobIdIn(@Param("jobIds") List<Long> jobIds);
 
   Optional<ApplyFormSentToJob> findByIdApplyFormId(Long applyFormId);
+
+  /** Dùng cho idempotency của HR manual create — 1 candidate chỉ 1 app/job. */
+  @Query(
+      "SELECT s FROM ApplyFormSentToJob s WHERE s.id.jobId = :jobId AND s.userId = :userId AND"
+          + " s.status <> com.iting.jobportal.application.entity.enums.ApplicationStatus.WITHDRAWN")
+  Optional<ApplyFormSentToJob> findFirstByIdJobIdAndUserId(
+      @Param("jobId") Long jobId, @Param("userId") Long userId);
+
+  /** Đếm số job-link còn lại cho applyFormId — dùng để quyết định xóa ApplyForm gốc. */
+  @Query("SELECT COUNT(s) FROM ApplyFormSentToJob s WHERE s.id.applyFormId = :applyFormId")
+  long countByApplyFormId(@Param("applyFormId") Long applyFormId);
 }

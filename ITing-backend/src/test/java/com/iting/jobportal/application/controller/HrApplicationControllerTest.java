@@ -10,6 +10,7 @@ import static org.mockito.Mockito.when;
 
 import com.iting.jobportal.application.dto.request.ApplicationSearchRequest;
 import com.iting.jobportal.application.dto.request.ApplicationStats;
+import com.iting.jobportal.application.dto.request.CreateManualApplicationRequest;
 import com.iting.jobportal.application.dto.request.UpdateApplicationStatusRequest;
 import com.iting.jobportal.application.dto.response.ApplicationResponse;
 import com.iting.jobportal.application.entity.enums.ApplicationStatus;
@@ -186,5 +187,34 @@ class HrApplicationControllerTest {
     when(service.getApplicationsRankedByMatch(99L, 42L, 0, 20)).thenReturn(page);
 
     assertSame(page, controller.getApplicationsRankedByMatch(99L, 42L, 0, 20).getBody());
+  }
+
+  // ───────── CRUD bổ sung: manual create + delete ─────────
+
+  @Test
+  void createManualApplication_delegatesToService_andReturns200() {
+    CreateManualApplicationRequest req =
+        CreateManualApplicationRequest.builder()
+            .jobId(42L)
+            .candidateName("Nguyễn Văn A")
+            .candidateEmail("a@example.com")
+            .internalNote("Walk-in 2026-05-31")
+            .build();
+    ApplicationResponse expected = new ApplicationResponse();
+    when(service.createManualApplication(99L, req)).thenReturn(expected);
+
+    ResponseEntity<ApplicationResponse> resp = controller.createManualApplication(99L, req);
+
+    assertEquals(HttpStatus.OK, resp.getStatusCode());
+    assertSame(expected, resp.getBody());
+    verify(service).createManualApplication(99L, req);
+  }
+
+  @Test
+  void deleteApplication_delegatesToService_andReturns204() {
+    ResponseEntity<Void> resp = controller.deleteApplication(99L, 123L);
+
+    assertEquals(HttpStatus.NO_CONTENT, resp.getStatusCode());
+    verify(service).deleteApplication(99L, 123L);
   }
 }

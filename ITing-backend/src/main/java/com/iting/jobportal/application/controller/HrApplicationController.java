@@ -2,6 +2,7 @@ package com.iting.jobportal.application.controller;
 
 import com.iting.jobportal.application.dto.request.ApplicationSearchRequest;
 import com.iting.jobportal.application.dto.request.ApplicationStats;
+import com.iting.jobportal.application.dto.request.CreateManualApplicationRequest;
 import com.iting.jobportal.application.dto.request.UpdateApplicationStatusRequest;
 import com.iting.jobportal.application.dto.response.ApplicationResponse;
 import com.iting.jobportal.application.entity.enums.ApplicationStatus;
@@ -148,5 +149,27 @@ public class HrApplicationController {
       @RequestParam(defaultValue = "20") int size) {
     return ResponseEntity.ok(
         employerApplicationService.getApplicationsRankedByMatch(employerId, jobId, page, size));
+  }
+
+  @PostMapping
+  @Operation(
+      summary = "Tạo đơn ứng tuyển thủ công (HR backfill cho walk-in / offline submission)",
+      description =
+          "Yêu cầu candidate đã có account ITing (lookup theo email). Idempotent: 1 candidate"
+              + " chỉ 1 application/job — gọi lại trả về app cũ.")
+  public ResponseEntity<ApplicationResponse> createManualApplication(
+      @CurrentUser Long employerId, @Valid @RequestBody CreateManualApplicationRequest request) {
+    return ResponseEntity.ok(
+        employerApplicationService.createManualApplication(employerId, request));
+  }
+
+  @DeleteMapping("/{applicationId}")
+  @Operation(
+      summary = "HR xóa application (vd: spam, duplicate, theo yêu cầu rút của candidate)",
+      description = "Hard delete. Chỉ HR sở hữu job mới xóa được.")
+  public ResponseEntity<Void> deleteApplication(
+      @CurrentUser Long employerId, @PathVariable Long applicationId) {
+    employerApplicationService.deleteApplication(employerId, applicationId);
+    return ResponseEntity.noContent().build();
   }
 }

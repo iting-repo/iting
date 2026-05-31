@@ -9,7 +9,9 @@ import com.iting.jobportal.company.entity.CompanyReviewVote;
 import com.iting.jobportal.company.repository.CompanyRepository;
 import com.iting.jobportal.company.repository.CompanyReviewRepository;
 import com.iting.jobportal.company.repository.CompanyReviewVoteRepository;
+import com.iting.jobportal.company.service.CompanyReviewService;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.validation.Valid;
 import java.math.BigDecimal;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -43,6 +45,7 @@ public class CompanyReviewController {
   private final CompanyRepository companyRepository;
   private final AccountRepository accountRepository;
   private final JwtTokenUtil jwtTokenUtil;
+  private final CompanyReviewService companyReviewService;
 
   /** Public: rating stats summary cho company (shape khớp frontend cũ). */
   @GetMapping("/api/public/companies/{companyId}/rating-stats")
@@ -196,6 +199,25 @@ public class CompanyReviewController {
     }
     reviewRepository.save(review);
     return ResponseEntity.ok(Map.of("message", "Cảm ơn bạn đã báo cáo."));
+  }
+
+  /**
+   * Update review (author-only, status gate). User có thể sửa typo / nội dung
+   * trước khi moderator approve. Sau update, status reset về PENDING.
+   */
+  @PutMapping("/api/reviews/{reviewId}")
+  public ResponseEntity<Map<String, Object>> updateReview(
+      @PathVariable Long reviewId,
+      @Valid @RequestBody
+          com.iting.jobportal.company.dto.request.UpdateCompanyReviewRequest body,
+      HttpServletRequest request) {
+    Long userId = requireUser(request);
+    CompanyReview updated = companyReviewService.updateReview(reviewId, userId, body);
+    return ResponseEntity.ok(
+        Map.of(
+            "id", updated.getId(),
+            "status", updated.getModerationStatus(),
+            "message", "Đã cập nhật review. Đang chờ moderator duyệt lại."));
   }
 
   /** Delete review. Author OR admin có quyền xóa (moderation). */

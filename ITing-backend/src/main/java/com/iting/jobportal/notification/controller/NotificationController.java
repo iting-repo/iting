@@ -84,6 +84,25 @@ public class NotificationController {
     return ResponseEntity.ok(Map.of("message", "All notifications marked as read"));
   }
 
+  @PatchMapping("/{notificationId}/unread")
+  @Operation(summary = "Mark one notification as unread (undo accidental click)")
+  public ResponseEntity<Map<String, String>> markAsUnread(
+      @Parameter(hidden = true) @CurrentUser Long userId,
+      @PathVariable Integer notificationId,
+      @RequestParam(defaultValue = "USER") RecipientType recipientType) {
+    notificationService.markAsUnread(notificationId, userId, recipientType);
+    return ResponseEntity.ok(Map.of("message", "Notification marked as unread"));
+  }
+
+  @PatchMapping("/unread-all")
+  @Operation(summary = "Bulk mark all notifications as unread")
+  public ResponseEntity<Map<String, String>> markAllAsUnread(
+      @Parameter(hidden = true) @CurrentUser Long userId,
+      @RequestParam(defaultValue = "USER") RecipientType recipientType) {
+    notificationService.markAllAsUnread(userId, recipientType);
+    return ResponseEntity.ok(Map.of("message", "All notifications marked as unread"));
+  }
+
   @DeleteMapping("/{notificationId}")
   @Operation(summary = "Delete a notification")
   public ResponseEntity<Map<String, String>> deleteNotification(

@@ -25,5 +25,11 @@ public interface NotificationService {
 
   void markAllAsRead(Long recipientId, RecipientType recipientType);
 
+  /** Đảo trạng thái về chưa đọc (user lỡ click read → undo). */
+  void markAsUnread(Integer notificationId, Long recipientId, RecipientType recipientType);
+
+  /** Bulk đánh dấu tất cả notification về unread cho recipient. */
+  void markAllAsUnread(Long recipientId, RecipientType recipientType);
+
   void deleteNotification(Integer notificationId, Long recipientId, RecipientType recipientType);
 }
