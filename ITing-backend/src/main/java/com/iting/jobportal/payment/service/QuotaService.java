@@ -102,6 +102,27 @@ public class QuotaService {
     }
   }
 
+  /**
+   * Gate "Talent pool search" — chỉ PRO + ENTERPRISE. FREE và BASIC throw 402.
+   *
+   * <p>Khác với requireJobQuota/Boost (count-based), gate này là tier-based: tính năng cao cấp
+   * cho phép HR search direct database ứng viên đang openToWork, không cần đăng job chờ apply.
+   */
+  public void requireTalentPoolAccess(Long hrAccountId) {
+    SubscriptionTier tier = resolveActiveTier(hrAccountId).orElse(null);
+    if (tier == SubscriptionTier.PRO || tier == SubscriptionTier.ENTERPRISE) {
+      return; // allowed
+    }
+    String currentLabel = tier == null ? "FREE" : tier.name();
+    log.info("[QUOTA] HR {} blocked talent-pool search (tier={})", hrAccountId, currentLabel);
+    throw new ResponseStatusException(
+        HttpStatus.PAYMENT_REQUIRED,
+        "Tính năng Tìm kiếm ứng viên (Talent Pool) chỉ dành cho gói PRO trở lên. "
+            + "Bạn đang dùng gói "
+            + currentLabel
+            + ". Vui lòng nâng cấp để sử dụng.");
+  }
+
   /** Lookup tier subscription ACTIVE chưa expire của HR. */
   private Optional<SubscriptionTier> resolveActiveTier(Long hrAccountId) {
     Optional<HrSubscription> sub =

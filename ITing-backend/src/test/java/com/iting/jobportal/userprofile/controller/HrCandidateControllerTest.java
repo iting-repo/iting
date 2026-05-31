@@ -13,6 +13,7 @@ import com.iting.jobportal.company.service.AuthorizationService;
 import com.iting.jobportal.job.entity.Job;
 import com.iting.jobportal.job.repository.JobRepository;
 import com.iting.jobportal.payment.service.CreditService;
+import com.iting.jobportal.payment.service.QuotaService;
 import com.iting.jobportal.userprofile.dto.request.EmployerCandidateSearchRequest;
 import com.iting.jobportal.userprofile.dto.request.MatchByJobRequest;
 import com.iting.jobportal.userprofile.dto.response.CandidateFullProfileResponse;
@@ -39,6 +40,7 @@ class HrCandidateControllerTest {
   @Mock private JobRepository jobRepository;
   @Mock private CreditService creditService;
   @Mock private AuthorizationService authorizationService;
+  @Mock private QuotaService quotaService;
 
   @InjectMocks private HrCandidateController controller;
 

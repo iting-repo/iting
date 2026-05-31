@@ -32,6 +32,7 @@ public class CandidateDashboardStats {
   @Builder
   public static class RecentApplicationResponse {
     private Long id;
+    private Long jobId;
     private String companyName;
     private String companyLogo;
     private String jobPosition;

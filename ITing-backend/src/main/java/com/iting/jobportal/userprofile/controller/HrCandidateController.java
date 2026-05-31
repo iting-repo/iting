@@ -5,6 +5,7 @@ import com.iting.jobportal.job.controller.CurrentUser;
 import com.iting.jobportal.job.entity.Job;
 import com.iting.jobportal.job.repository.JobRepository;
 import com.iting.jobportal.payment.service.CreditService;
+import com.iting.jobportal.payment.service.QuotaService;
 import com.iting.jobportal.userprofile.dto.request.EmployerCandidateSearchRequest;
 import com.iting.jobportal.userprofile.dto.request.MatchByJobRequest;
 import com.iting.jobportal.userprofile.dto.response.CandidateFullProfileResponse;
@@ -37,16 +38,18 @@ public class HrCandidateController {
   private final JobRepository jobRepository;
   private final CreditService creditService;
   private final AuthorizationService authorizationService;
+  private final QuotaService quotaService;
 
   @PostMapping("/search")
   @PreAuthorize("hasRole('EMPLOYER')")
   @Operation(summary = "Tìm kiếm ứng viên (AI embedding similarity + filters)")
   public ResponseEntity<Page<EmployerCandidateSearchResponse>> search(
       @CurrentUser Long accountId, @RequestBody EmployerCandidateSearchRequest request) {
-    // Gate: HR phải có affiliation APPROVED + company.active=true mới search được.
-    // Throw 403 với message tiếng Việt nếu chưa đủ điều kiện — frontend bắt
-    // status 403 → redirect /employer/verification để user hoàn tất hồ sơ.
+    // Gate 1: HR phải có affiliation APPROVED + company.active=true (403).
     authorizationService.requireApprovedCompanyOf(accountId);
+    // Gate 2: tier PRO+ mới được dùng Talent Pool Search (402 nếu FREE/BASIC).
+    // Frontend bắt 402 → toast + redirect /employer/subscriptions upgrade.
+    quotaService.requireTalentPoolAccess(accountId);
     return ResponseEntity.ok(employerCandidateSearchService.search(request));
   }
 
@@ -56,6 +59,7 @@ public class HrCandidateController {
   public ResponseEntity<CandidateFullProfileResponse> getCandidateFullProfile(
       @CurrentUser Long accountId, @PathVariable Long candidateId) {
     authorizationService.requireApprovedCompanyOf(accountId);
+    quotaService.requireTalentPoolAccess(accountId);
     return ResponseEntity.ok(employerCandidateSearchService.getCandidateFullProfile(candidateId));
   }
 

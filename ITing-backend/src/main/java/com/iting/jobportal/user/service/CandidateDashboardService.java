@@ -81,6 +81,7 @@ public class CandidateDashboardService {
       recentApplications.add(
           CandidateDashboardStats.RecentApplicationResponse.builder()
               .id(formId)
+              .jobId(jobId)
               .companyName(company != null ? company.getName() : "Công ty ẩn danh")
               .companyLogo(company != null ? company.getLogoUrl() : null)
               .jobPosition(job != null ? job.getTitle() : "Không rõ vị trí")

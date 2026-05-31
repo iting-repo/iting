@@ -107,6 +107,8 @@ Thumbs.db
 !CHANGELOG.md
 !CONTRIBUTING.md
 !*-README.md
+# Local-only notes giữ ignored ngay cả khi nằm trong docs/
+**/*.local.md
 # Subfolder docs cụ thể (UML/, instructions/, ...)
 !UML/**/*.md
 !ITing-backend/instructions/*.md

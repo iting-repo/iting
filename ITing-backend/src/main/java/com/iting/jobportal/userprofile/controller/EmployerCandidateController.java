@@ -2,6 +2,7 @@ package com.iting.jobportal.userprofile.controller;
 
 import com.iting.jobportal.company.service.AuthorizationService;
 import com.iting.jobportal.job.controller.CurrentUser;
+import com.iting.jobportal.payment.service.QuotaService;
 import com.iting.jobportal.userprofile.dto.request.EmployerCandidateSearchRequest;
 import com.iting.jobportal.userprofile.dto.response.CandidateFullProfileResponse;
 import com.iting.jobportal.userprofile.dto.response.EmployerCandidateSearchResponse;
@@ -29,15 +30,16 @@ public class EmployerCandidateController {
 
   private final EmployerCandidateSearchService employerCandidateSearchService;
   private final AuthorizationService authorizationService;
+  private final QuotaService quotaService;
 
   @PostMapping("/search")
   @PreAuthorize("hasRole('EMPLOYER')")
   @Operation(summary = "Tìm kiếm ứng viên (AI embedding similarity + filters)")
   public ResponseEntity<Page<EmployerCandidateSearchResponse>> search(
       @CurrentUser Long accountId, @RequestBody EmployerCandidateSearchRequest request) {
-    // Gate: chỉ HR đã APPROVED affiliation mới search được — chống new account
-    // không xác thực truy cập database ứng viên (vi phạm policy + GDPR-like).
+    // Gate 1: HR APPROVED affiliation (403). Gate 2: tier PRO+ (402).
     authorizationService.requireApprovedCompanyOf(accountId);
+    quotaService.requireTalentPoolAccess(accountId);
     return ResponseEntity.ok(employerCandidateSearchService.search(request));
   }
 
@@ -47,6 +49,7 @@ public class EmployerCandidateController {
   public ResponseEntity<CandidateFullProfileResponse> getCandidateFullProfile(
       @CurrentUser Long accountId, @PathVariable Long candidateId) {
     authorizationService.requireApprovedCompanyOf(accountId);
+    quotaService.requireTalentPoolAccess(accountId);
     return ResponseEntity.ok(employerCandidateSearchService.getCandidateFullProfile(candidateId));
   }
 }
