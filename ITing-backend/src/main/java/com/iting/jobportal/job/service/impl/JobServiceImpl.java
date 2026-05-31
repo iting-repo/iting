@@ -65,6 +65,7 @@ public class JobServiceImpl implements JobService {
   private final JobRepository jobRepository;
   private final CompanyRepository companyRepository;
   private final AuthorizationService authz;
+  private final com.iting.jobportal.payment.service.QuotaService quotaService;
   private final FileUploadService fileUploadService;
   private final ApplicationEventPublisher eventPublisher;
   private final GeminiService geminiService;
@@ -415,6 +416,10 @@ public class JobServiceImpl implements JobService {
   @Override
   @Transactional
   public JobResponse createJob(Long employerId, CreateJobRequest request) {
+    // Enforce subscription quota: throw 402 nếu HR đã đăng đủ N job/30 ngày.
+    // Tier-based: BASIC=10, PRO=50, ENTERPRISE=unlimited, FREE=3 (chưa subscribe).
+    quotaService.requireJobQuota(employerId);
+
     Company company = findCompanyOrThrow(employerId);
 
     JobStatus initialStatus = JobStatus.PENDING;

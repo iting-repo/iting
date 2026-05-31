@@ -87,6 +87,7 @@ public class SepayPaymentService {
   private final AccountRepository accountRepository;
   private final AuthorizationService authorizationService;
   private final SubscriptionService subscriptionService;
+  private final QuotaService quotaService;
 
   private static final SecureRandom RANDOM = new SecureRandom();
   private static final String CODE_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
@@ -105,6 +106,11 @@ public class SepayPaymentService {
    */
   @Transactional
   public Map<String, Object> createBoostOrder(Long hrId, Long jobId, BoostTier tier) {
+    // Enforce subscription quota: throw 402 nếu HR đã dùng đủ N boost/30 ngày.
+    // Check TRƯỚC khi tạo order — tránh tạo PENDING order rồi block ở activation.
+    // Quota tính theo activated_at (PAID + activated) — order PENDING không count.
+    quotaService.requireBoostQuota(hrId);
+
     // Verify HR owns this job (via approved company affiliation)
     Long hrCompanyId = authorizationService.requireApprovedCompanyOf(hrId);
     Job job =

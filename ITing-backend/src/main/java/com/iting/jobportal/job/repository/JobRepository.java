@@ -80,6 +80,9 @@ public interface JobRepository extends JpaRepository<Job, Long>, JpaSpecificatio
 
   long countByStatus(JobStatus status);
 
+  /** Count jobs HR đã đăng từ thời điểm given — dùng cho subscription monthly quota. */
+  long countByPostedByHrIdAndCreatedAtAfter(Long postedByHrId, java.time.LocalDateTime since);
+
   long countByCompany_IdAndStatus(Long companyId, JobStatus status);
 
   long countByStatusAndCreatedAtAfter(JobStatus status, java.time.LocalDateTime dateTime);
