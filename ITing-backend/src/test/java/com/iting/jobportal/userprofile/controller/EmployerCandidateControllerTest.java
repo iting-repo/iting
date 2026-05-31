@@ -2,8 +2,10 @@ package com.iting.jobportal.userprofile.controller;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.iting.jobportal.company.service.AuthorizationService;
 import com.iting.jobportal.userprofile.dto.request.EmployerCandidateSearchRequest;
 import com.iting.jobportal.userprofile.dto.response.CandidateFullProfileResponse;
 import com.iting.jobportal.userprofile.dto.response.EmployerCandidateSearchResponse;
@@ -23,6 +25,7 @@ import org.springframework.http.ResponseEntity;
 class EmployerCandidateControllerTest {
 
   @Mock private EmployerCandidateSearchService service;
+  @Mock private AuthorizationService authorizationService;
   @InjectMocks private EmployerCandidateController controller;
 
   @Test
@@ -31,10 +34,11 @@ class EmployerCandidateControllerTest {
     Page<EmployerCandidateSearchResponse> page = new PageImpl<>(List.of());
     when(service.search(req)).thenReturn(page);
 
-    ResponseEntity<Page<EmployerCandidateSearchResponse>> resp = controller.search(req);
+    ResponseEntity<Page<EmployerCandidateSearchResponse>> resp = controller.search(99L, req);
 
     assertEquals(HttpStatus.OK, resp.getStatusCode());
     assertSame(page, resp.getBody());
+    verify(authorizationService).requireApprovedCompanyOf(99L);
   }
 
   @Test
@@ -42,6 +46,7 @@ class EmployerCandidateControllerTest {
     CandidateFullProfileResponse expected = new CandidateFullProfileResponse();
     when(service.getCandidateFullProfile(5L)).thenReturn(expected);
 
-    assertSame(expected, controller.getCandidateFullProfile(5L).getBody());
+    assertSame(expected, controller.getCandidateFullProfile(99L, 5L).getBody());
+    verify(authorizationService).requireApprovedCompanyOf(99L);
   }
 }

@@ -9,6 +9,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.iting.jobportal.company.service.AuthorizationService;
 import com.iting.jobportal.job.entity.Job;
 import com.iting.jobportal.job.repository.JobRepository;
 import com.iting.jobportal.payment.service.CreditService;
@@ -37,6 +38,7 @@ class HrCandidateControllerTest {
   @Mock private EmployerCandidateSearchService service;
   @Mock private JobRepository jobRepository;
   @Mock private CreditService creditService;
+  @Mock private AuthorizationService authorizationService;
 
   @InjectMocks private HrCandidateController controller;
 
@@ -48,10 +50,11 @@ class HrCandidateControllerTest {
     Page<EmployerCandidateSearchResponse> page = new PageImpl<>(List.of());
     when(service.search(req)).thenReturn(page);
 
-    ResponseEntity<Page<EmployerCandidateSearchResponse>> resp = controller.search(req);
+    ResponseEntity<Page<EmployerCandidateSearchResponse>> resp = controller.search(99L, req);
 
     assertEquals(HttpStatus.OK, resp.getStatusCode());
     assertSame(page, resp.getBody());
+    verify(authorizationService).requireApprovedCompanyOf(99L);
   }
 
   @Test
@@ -59,7 +62,8 @@ class HrCandidateControllerTest {
     CandidateFullProfileResponse expected = new CandidateFullProfileResponse();
     when(service.getCandidateFullProfile(5L)).thenReturn(expected);
 
-    assertSame(expected, controller.getCandidateFullProfile(5L).getBody());
+    assertSame(expected, controller.getCandidateFullProfile(99L, 5L).getBody());
+    verify(authorizationService).requireApprovedCompanyOf(99L);
   }
 
   // ── matchByJob: ownership + credits + service call ─────────────────
