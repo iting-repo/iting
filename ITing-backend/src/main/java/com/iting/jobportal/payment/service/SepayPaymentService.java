@@ -86,6 +86,7 @@ public class SepayPaymentService {
   private final JobRepository jobRepository;
   private final AccountRepository accountRepository;
   private final AuthorizationService authorizationService;
+  private final SubscriptionService subscriptionService;
 
   private static final SecureRandom RANDOM = new SecureRandom();
   private static final String CODE_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
@@ -303,8 +304,18 @@ public class SepayPaymentService {
 
   /** Apply the boost (or other purchase) to the target entity. */
   private void activatePurchase(PaymentOrder order) {
-    if (!"BOOST_JOB".equals(order.getItemType())) {
-      log.warn("Unknown item_type {}, skipping activation", order.getItemType());
+    String itemType = order.getItemType();
+
+    // Dispatch theo item_type — mỗi loại có service xử lý riêng. Subscription
+    // activation đã có sẵn trong SubscriptionService.activateAfterPayment (tạo
+    // HrSubscription, cộng credits, gửi email welcome).
+    if ("PREMIUM_SUBSCRIPTION".equals(itemType)) {
+      subscriptionService.activateAfterPayment(order);
+      return;
+    }
+
+    if (!"BOOST_JOB".equals(itemType)) {
+      log.warn("Unknown item_type {}, skipping activation", itemType);
       return;
     }
     Job job = jobRepository.findById(order.getItemId()).orElse(null);
