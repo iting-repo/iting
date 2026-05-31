@@ -34,8 +34,8 @@ const Header = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const isActive = (path) => {
-    if (path === '/') return location.pathname === '/' ? 'text-[#3AB4E6] font-bold block md:inline' : 'text-white hover:text-[#3AB4E6] transition-colors block md:inline';
-    return location.pathname.startsWith(path) ? 'text-[#3AB4E6] font-bold block md:inline' : 'text-white hover:text-[#3AB4E6] transition-colors block md:inline';
+    if (path === '/') return location.pathname === '/' ? 'text-[#3AB4E6] font-bold block md:inline' : 'text-gray-700 hover:text-[#3AB4E6] transition-colors block md:inline';
+    return location.pathname.startsWith(path) ? 'text-[#3AB4E6] font-bold block md:inline' : 'text-gray-700 hover:text-[#3AB4E6] transition-colors block md:inline';
   };
 
   const [isNotifOpen, setIsNotifOpen] = useState(false);
@@ -466,7 +466,10 @@ const Header = () => {
 
   return (
     <>
-      <header className="bg-black text-white h-20 sticky top-0 z-40 shadow-md">
+      {/* Header: bg-white minimal — text gray-800 (đậm đủ contrast WCAG AA), border
+          dưới phân biệt với content. Nav links + login text giữ tone gray-700 link
+          style, accent #3AB4E6 cho active/hover giữ tính brand. */}
+      <header className="bg-white text-gray-800 h-20 sticky top-0 z-40 shadow-sm border-b border-gray-200">
         <div className="container mx-auto px-4 lg:px-8 xl:px-12 h-full flex items-center justify-between gap-4">
           <Link to={role === 'EMPLOYER' ? '/employer/dashboard' : '/'} className="flex items-center gap-2 select-none group shrink-0">
             <img
@@ -491,11 +494,11 @@ const Header = () => {
                   to="/register?role=employer"
                   className="hidden md:flex flex-col items-end leading-tight group whitespace-nowrap shrink-0"
                 >
-                  <span className="text-[11px] text-gray-400 group-hover:text-gray-300 transition-colors">Bạn là nhà tuyển dụng?</span>
+                  <span className="text-[11px] text-gray-500 group-hover:text-gray-700 transition-colors">Bạn là nhà tuyển dụng?</span>
                   <span className="text-sm font-bold text-[#3AB4E6] group-hover:underline">Đăng tuyển ngay »</span>
                 </Link>
-                <div className="hidden md:block w-px h-10 bg-gray-700 shrink-0" aria-hidden />
-                <Link to="/login" className="hidden md:block text-white font-medium hover:text-gray-300 transition-colors whitespace-nowrap shrink-0">
+                <div className="hidden md:block w-px h-10 bg-gray-200 shrink-0" aria-hidden />
+                <Link to="/login" className="hidden md:block text-gray-700 font-medium hover:text-[#3AB4E6] transition-colors whitespace-nowrap shrink-0">
                   Đăng nhập
                 </Link>
                 <Link to="/register" className="hidden md:block bg-[#3AB4E6] hover:bg-blue-600 text-white px-5 py-2.5 rounded-lg font-bold transition-all shadow-lg shadow-blue-500/20 text-sm whitespace-nowrap shrink-0">
@@ -505,7 +508,7 @@ const Header = () => {
                   type="button"
                   aria-label={isMobileMenuOpen ? 'Đóng menu' : 'Mở menu'}
                   aria-expanded={isMobileMenuOpen}
-                  className="md:hidden text-white hover:text-[#3AB4E6] p-2 transition-transform duration-300 transform"
+                  className="md:hidden text-gray-800 hover:text-[#3AB4E6] p-2 transition-transform duration-300 transform"
                   onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
                 >
                   {isMobileMenuOpen ? <FaTimes size={24} className="animate-spin-slow" aria-hidden="true" /> : <FaBars size={24} aria-hidden="true" />}
@@ -526,7 +529,7 @@ const Header = () => {
                         setIsNotifOpen(false);
                         setIsDropdownOpen(false);
                       }}
-                      className="w-10 h-10 rounded-full bg-gray-800 hover:bg-gray-700 flex items-center justify-center transition-colors relative"
+                      className="w-10 h-10 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-700 flex items-center justify-center transition-colors relative"
                     >
                       <BsEnvelope className="text-lg" aria-hidden="true" />
                       {unreadMessageCount > 0 ? (
@@ -607,7 +610,7 @@ const Header = () => {
                         setIsMessagesOpen(false);
                         setIsDropdownOpen(false);
                       }}
-                      className="w-10 h-10 rounded-full bg-gray-800 hover:bg-gray-700 flex items-center justify-center transition-colors relative"
+                      className="w-10 h-10 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-700 flex items-center justify-center transition-colors relative"
                     >
                       <BsBell className="text-lg" aria-hidden="true" />
                       {unreadCount > 0 ? <span className="absolute -top-1 -right-1 min-w-[18px] h-5 px-1 rounded-full bg-red-500 text-xs text-white flex items-center justify-center font-semibold">{unreadCount}</span> : null}
@@ -653,9 +656,9 @@ const Header = () => {
                       setIsMessagesOpen(false);
                       setIsNotifOpen(false);
                     }}
-                    className="flex items-center gap-2 hover:bg-gray-900 py-1 px-2 rounded-lg transition-colors border border-transparent focus:border-gray-700"
+                    className="flex items-center gap-2 hover:bg-gray-100 py-1 px-2 rounded-lg transition-colors border border-transparent focus:border-gray-300"
                   >
-                    <div className="w-9 h-9 rounded-full overflow-hidden border border-gray-600 p-0.5 bg-gray-800">
+                    <div className="w-9 h-9 rounded-full overflow-hidden border border-gray-300 p-0.5 bg-gray-100">
                       <CompanyLogo
                         logoUrl={displayAvatar}
                         /* Candidate không có entity company — nếu pass userId thì
@@ -667,7 +670,7 @@ const Header = () => {
                         className="w-full h-full object-contain"
                       />
                     </div>
-                    <FaChevronDown className={`text-xs text-gray-400 transition-transform duration-200 ${isDropdownOpen ? 'rotate-180' : ''}`} />
+                    <FaChevronDown className={`text-xs text-gray-500 transition-transform duration-200 ${isDropdownOpen ? 'rotate-180' : ''}`} />
                   </button>
 
                   {isDropdownOpen && (
@@ -715,7 +718,7 @@ const Header = () => {
                 </div>
 
                 <button
-                  className="md:hidden text-white hover:text-[#3AB4E6] p-2 ml-2 transition-transform duration-300 transform"
+                  className="md:hidden text-gray-800 hover:text-[#3AB4E6] p-2 ml-2 transition-transform duration-300 transform"
                   onClick={() => {
                     setIsMobileMenuOpen(!isMobileMenuOpen);
                     setIsMessagesOpen(false);
@@ -730,9 +733,9 @@ const Header = () => {
           </div>
         </div>
 
-        {/* MOBILE MENU DROPDOWN */}
+        {/* MOBILE MENU DROPDOWN — white theme đồng bộ với header */}
         <div
-          className={`md:hidden absolute top-20 left-0 w-full bg-[#0a0a0a]/95 backdrop-blur-xl border-t border-gray-800 shadow-2xl z-50 transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] origin-top ${isMobileMenuOpen
+          className={`md:hidden absolute top-20 left-0 w-full bg-white/98 backdrop-blur-xl border-t border-gray-200 shadow-2xl z-50 transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] origin-top ${isMobileMenuOpen
             ? 'opacity-100 translate-y-0 pointer-events-auto'
             : 'opacity-0 -translate-y-4 pointer-events-none'
             }`}
@@ -743,19 +746,19 @@ const Header = () => {
             </div>
 
             {!currentUser && (
-              <div className="flex flex-col gap-4 flex-1 border-l border-gray-800/60 pl-4">
+              <div className="flex flex-col gap-4 flex-1 border-l border-gray-200 pl-4">
                 <Link
                   to="/register?role=employer"
                   onClick={() => setIsMobileMenuOpen(false)}
-                  className="bg-gray-800/50 hover:bg-gray-700/80 text-white py-2.5 px-2 rounded-xl transition-colors text-center border border-gray-700/50 flex flex-col items-center justify-center leading-tight group"
+                  className="bg-gray-50 hover:bg-gray-100 text-gray-800 py-2.5 px-2 rounded-xl transition-colors text-center border border-gray-200 flex flex-col items-center justify-center leading-tight group"
                 >
-                  <span className="text-[10px] text-gray-400 group-hover:text-gray-300 transition-colors">Nhà tuyển dụng?</span>
+                  <span className="text-[10px] text-gray-500 group-hover:text-gray-700 transition-colors">Nhà tuyển dụng?</span>
                   <span className="text-xs font-bold text-[#3AB4E6] group-hover:underline mt-0.5">Đăng tuyển</span>
                 </Link>
                 <Link
                   to="/login"
                   onClick={() => setIsMobileMenuOpen(false)}
-                  className="text-white text-sm font-medium hover:text-[#3AB4E6] transition-colors text-center py-2.5 border border-gray-700/50 hover:border-[#3AB4E6]/50 rounded-xl bg-white/5"
+                  className="text-gray-800 text-sm font-medium hover:text-[#3AB4E6] transition-colors text-center py-2.5 border border-gray-200 hover:border-[#3AB4E6]/50 rounded-xl bg-white"
                 >
                   Đăng nhập
                 </Link>
