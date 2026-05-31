@@ -1,5 +1,7 @@
 package com.iting.jobportal.userprofile.controller;
 
+import com.iting.jobportal.company.service.AuthorizationService;
+import com.iting.jobportal.job.controller.CurrentUser;
 import com.iting.jobportal.userprofile.dto.request.EmployerCandidateSearchRequest;
 import com.iting.jobportal.userprofile.dto.response.CandidateFullProfileResponse;
 import com.iting.jobportal.userprofile.dto.response.EmployerCandidateSearchResponse;
@@ -26,12 +28,16 @@ import org.springframework.web.bind.annotation.*;
 public class EmployerCandidateController {
 
   private final EmployerCandidateSearchService employerCandidateSearchService;
+  private final AuthorizationService authorizationService;
 
   @PostMapping("/search")
   @PreAuthorize("hasRole('EMPLOYER')")
   @Operation(summary = "Tìm kiếm ứng viên (AI embedding similarity + filters)")
   public ResponseEntity<Page<EmployerCandidateSearchResponse>> search(
-      @RequestBody EmployerCandidateSearchRequest request) {
+      @CurrentUser Long accountId, @RequestBody EmployerCandidateSearchRequest request) {
+    // Gate: chỉ HR đã APPROVED affiliation mới search được — chống new account
+    // không xác thực truy cập database ứng viên (vi phạm policy + GDPR-like).
+    authorizationService.requireApprovedCompanyOf(accountId);
     return ResponseEntity.ok(employerCandidateSearchService.search(request));
   }
 
@@ -39,7 +45,8 @@ public class EmployerCandidateController {
   @PreAuthorize("hasRole('EMPLOYER')")
   @Operation(summary = "Lấy toàn bộ hồ sơ chi tiết của ứng viên")
   public ResponseEntity<CandidateFullProfileResponse> getCandidateFullProfile(
-      @PathVariable Long candidateId) {
+      @CurrentUser Long accountId, @PathVariable Long candidateId) {
+    authorizationService.requireApprovedCompanyOf(accountId);
     return ResponseEntity.ok(employerCandidateSearchService.getCandidateFullProfile(candidateId));
   }
 }

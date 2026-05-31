@@ -1,5 +1,6 @@
 package com.iting.jobportal.userprofile.controller;
 
+import com.iting.jobportal.company.service.AuthorizationService;
 import com.iting.jobportal.job.controller.CurrentUser;
 import com.iting.jobportal.job.entity.Job;
 import com.iting.jobportal.job.repository.JobRepository;
@@ -35,12 +36,17 @@ public class HrCandidateController {
   private final EmployerCandidateSearchService employerCandidateSearchService;
   private final JobRepository jobRepository;
   private final CreditService creditService;
+  private final AuthorizationService authorizationService;
 
   @PostMapping("/search")
   @PreAuthorize("hasRole('EMPLOYER')")
   @Operation(summary = "Tìm kiếm ứng viên (AI embedding similarity + filters)")
   public ResponseEntity<Page<EmployerCandidateSearchResponse>> search(
-      @RequestBody EmployerCandidateSearchRequest request) {
+      @CurrentUser Long accountId, @RequestBody EmployerCandidateSearchRequest request) {
+    // Gate: HR phải có affiliation APPROVED + company.active=true mới search được.
+    // Throw 403 với message tiếng Việt nếu chưa đủ điều kiện — frontend bắt
+    // status 403 → redirect /employer/verification để user hoàn tất hồ sơ.
+    authorizationService.requireApprovedCompanyOf(accountId);
     return ResponseEntity.ok(employerCandidateSearchService.search(request));
   }
 
@@ -48,7 +54,8 @@ public class HrCandidateController {
   @PreAuthorize("hasRole('EMPLOYER')")
   @Operation(summary = "Lấy toàn bộ hồ sơ chi tiết của ứng viên")
   public ResponseEntity<CandidateFullProfileResponse> getCandidateFullProfile(
-      @PathVariable Long candidateId) {
+      @CurrentUser Long accountId, @PathVariable Long candidateId) {
+    authorizationService.requireApprovedCompanyOf(accountId);
     return ResponseEntity.ok(employerCandidateSearchService.getCandidateFullProfile(candidateId));
   }
 
