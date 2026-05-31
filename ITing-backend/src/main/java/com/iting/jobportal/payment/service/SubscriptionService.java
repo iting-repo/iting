@@ -157,6 +157,18 @@ public class SubscriptionService {
         subscriptionRepository.findFirstByAccount_IdAndStatusOrderByExpiresAtDesc(
             accountId, "ACTIVE");
 
+    // Idempotency guard: nếu đã có subscription gắn với chính order này (qua
+    // lastPaymentOrderId) → đã activate rồi, skip. Tránh double credits/expiry
+    // khi SePay retry webhook hoặc khi giao dịch đã PAID được reactivate.
+    if (existing.isPresent()
+        && order.getId().equals(existing.get().getLastPaymentOrderId())) {
+      log.info(
+          "[Subscription] Order {} already activated → skip (subscriptionId={})",
+          order.getOrderCode(),
+          existing.get().getId());
+      return;
+    }
+
     HrSubscription sub;
     if (existing.isPresent() && existing.get().getExpiresAt().isAfter(now)) {
       // Extend: add period to current expiry

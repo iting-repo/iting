@@ -247,7 +247,12 @@ public class SepayPaymentService {
     }
 
     if (order.getStatus() == PaymentStatus.PAID) {
-      log.info("[SEPAY] Order {} already paid — idempotent skip", orderCode);
+      // Order đã PAID từ trước nhưng có thể activation chưa chạy (vd: bug cũ
+      // không handle item_type, deploy mới fix → retry webhook để catch-up).
+      // activatePurchase phải idempotent — subscription guard bằng
+      // lastPaymentOrderId, boost guard bằng featured_until expiry.
+      log.info("[SEPAY] Order {} already paid — retry activation idempotently", orderCode);
+      activatePurchase(order);
       return true;
     }
 
@@ -304,38 +309,51 @@ public class SepayPaymentService {
 
   /** Apply the boost (or other purchase) to the target entity. */
   private void activatePurchase(PaymentOrder order) {
-    String itemType = order.getItemType();
+    // Idempotency guard chính: activated_at IS NOT NULL → đã activate, skip
+    // toàn bộ. Webhook retry/replay sẽ no-op an toàn.
+    if (order.getActivatedAt() != null) {
+      log.info(
+          "[SEPAY] Order {} already activated at {} — skip",
+          order.getOrderCode(),
+          order.getActivatedAt());
+      return;
+    }
 
-    // Dispatch theo item_type — mỗi loại có service xử lý riêng. Subscription
-    // activation đã có sẵn trong SubscriptionService.activateAfterPayment (tạo
-    // HrSubscription, cộng credits, gửi email welcome).
+    String itemType = order.getItemType();
+    boolean activated = false;
+
+    // Dispatch theo item_type. Subscription activation đã có sẵn trong
+    // SubscriptionService.activateAfterPayment (tạo HrSubscription, cộng
+    // credits, gửi email welcome). Inner method còn check lastPaymentOrderId
+    // làm second-line idempotency.
     if ("PREMIUM_SUBSCRIPTION".equals(itemType)) {
       subscriptionService.activateAfterPayment(order);
-      return;
-    }
-
-    if (!"BOOST_JOB".equals(itemType)) {
+      activated = true;
+    } else if ("BOOST_JOB".equals(itemType)) {
+      Job job = jobRepository.findById(order.getItemId()).orElse(null);
+      if (job == null) {
+        log.error("[SEPAY] BOOST_JOB activated but job {} not found", order.getItemId());
+        return;
+      }
+      BoostTier tier = BoostTier.valueOf(order.getTier());
+      LocalDateTime now = LocalDateTime.now();
+      LocalDateTime baseline =
+          (job.getFeaturedUntil() != null && job.getFeaturedUntil().isAfter(now))
+              ? job.getFeaturedUntil()
+              : now;
+      job.setFeaturedUntil(baseline.plus(tier.getDuration()));
+      job.setFeaturedTier(tier.name());
+      jobRepository.save(job);
+      log.info("[SEPAY] Job {} boosted until {}", job.getId(), job.getFeaturedUntil());
+      activated = true;
+    } else {
       log.warn("Unknown item_type {}, skipping activation", itemType);
-      return;
-    }
-    Job job = jobRepository.findById(order.getItemId()).orElse(null);
-    if (job == null) {
-      log.error("[SEPAY] BOOST_JOB activated but job {} not found", order.getItemId());
-      return;
     }
 
-    BoostTier tier = BoostTier.valueOf(order.getTier());
-    LocalDateTime now = LocalDateTime.now();
-    // Extend existing boost (cumulative) instead of overriding
-    LocalDateTime baseline =
-        (job.getFeaturedUntil() != null && job.getFeaturedUntil().isAfter(now))
-            ? job.getFeaturedUntil()
-            : now;
-    job.setFeaturedUntil(baseline.plus(tier.getDuration()));
-    job.setFeaturedTier(tier.name());
-    jobRepository.save(job);
-
-    log.info("[SEPAY] Job {} boosted until {}", job.getId(), job.getFeaturedUntil());
+    if (activated) {
+      order.setActivatedAt(LocalDateTime.now());
+      orderRepository.save(order);
+    }
   }
 
   private long parseLong(Object o) {

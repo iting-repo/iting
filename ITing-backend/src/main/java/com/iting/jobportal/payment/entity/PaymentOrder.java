@@ -68,6 +68,12 @@ public class PaymentOrder {
   @Column(name = "paid_at")
   private LocalDateTime paidAt;
 
+  // Track activation độc lập với paid_at — order có thể PAID nhưng activation
+  // chưa chạy (vd: bug item_type chưa handle ở deploy cũ, deploy mới retry).
+  // Idempotency guard: chỉ activate khi activated_at IS NULL.
+  @Column(name = "activated_at")
+  private LocalDateTime activatedAt;
+
   @Column(name = "raw_webhook_payload", columnDefinition = "TEXT")
   private String rawWebhookPayload;
 
