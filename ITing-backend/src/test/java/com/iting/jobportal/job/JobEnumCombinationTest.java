@@ -3,8 +3,10 @@ package com.iting.jobportal.job;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import com.iting.jobportal.admin.service.AdminNotificationService;
 import com.iting.jobportal.company.entity.Company;
 import com.iting.jobportal.company.entity.enums.CompanyReviewStatus;
 import com.iting.jobportal.company.repository.CompanyRepository;
@@ -16,6 +18,7 @@ import com.iting.jobportal.job.entity.enums.JobType;
 import com.iting.jobportal.job.entity.enums.SalaryType;
 import com.iting.jobportal.job.repository.JobRepository;
 import com.iting.jobportal.job.service.impl.JobServiceImpl;
+import com.iting.jobportal.payment.service.QuotaService;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.Query;
 import java.math.BigDecimal;
@@ -28,30 +31,49 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
 import org.springframework.test.util.ReflectionTestUtils;
 
 class JobEnumCombinationTest {
 
-  @Mock private JobRepository jobRepository;
-
-  @Mock private CompanyRepository companyRepository;
-
-  @Mock private AuthorizationService authz;
-
-  @Mock private EntityManager entityManager;
-
-  @Mock private Query query;
-
-  @InjectMocks private JobServiceImpl jobService;
+  private JobRepository jobRepository;
+  private CompanyRepository companyRepository;
+  private AuthorizationService authz;
+  private QuotaService quotaService;
+  private EntityManager entityManager;
+  private Query query;
+  private AdminNotificationService adminNotificationService;
+  private JobServiceImpl jobService;
 
   @BeforeEach
   void setUp() {
-    MockitoAnnotations.openMocks(this);
+    jobRepository = mock(JobRepository.class);
+    companyRepository = mock(CompanyRepository.class);
+    authz = mock(AuthorizationService.class);
+    quotaService = mock(QuotaService.class);
+    entityManager = mock(EntityManager.class);
+    query = mock(Query.class);
+    adminNotificationService = mock(AdminNotificationService.class);
+
+    jobService =
+        new JobServiceImpl(
+            jobRepository,
+            companyRepository,
+            authz,
+            quotaService,
+            mock(com.iting.jobportal.file.FileUploadService.class),
+            mock(org.springframework.context.ApplicationEventPublisher.class),
+            mock(com.iting.jobportal.common.service.GeminiService.class),
+            mock(com.iting.jobportal.common.service.KnowledgeGraphService.class),
+            mock(com.iting.jobportal.job.service.VectorSearchService.class),
+            mock(com.iting.jobportal.common.service.MlServiceClient.class),
+            mock(com.iting.jobportal.notification.service.NotificationService.class),
+            adminNotificationService,
+            Optional.empty(),
+            mock(com.iting.jobportal.common.event.KafkaTopics.class),
+            mock(com.iting.jobportal.userprofile.service.embedding.HuggingFaceCvExtractionClient.class),
+            mock(com.iting.jobportal.recommendation.service.RecommendationService.class));
+
     ReflectionTestUtils.setField(jobService, "entityManager", entityManager);
-    ReflectionTestUtils.setField(jobService, "outboxAppender", Optional.empty());
   }
 
   static Stream<Arguments> provideEnumCombinations() {

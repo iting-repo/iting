@@ -6,6 +6,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.iting.jobportal.company.service.AuthorizationService;
+import com.iting.jobportal.payment.service.QuotaService;
 import com.iting.jobportal.userprofile.dto.request.EmployerCandidateSearchRequest;
 import com.iting.jobportal.userprofile.dto.response.CandidateFullProfileResponse;
 import com.iting.jobportal.userprofile.dto.response.EmployerCandidateSearchResponse;
@@ -22,10 +23,12 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
 @ExtendWith(MockitoExtension.class)
+@SuppressWarnings("deprecation") // EmployerCandidateController marked Phase 4 deprecated
 class EmployerCandidateControllerTest {
 
   @Mock private EmployerCandidateSearchService service;
   @Mock private AuthorizationService authorizationService;
+  @Mock private QuotaService quotaService;
   @InjectMocks private EmployerCandidateController controller;
 
   @Test
@@ -39,6 +42,7 @@ class EmployerCandidateControllerTest {
     assertEquals(HttpStatus.OK, resp.getStatusCode());
     assertSame(page, resp.getBody());
     verify(authorizationService).requireApprovedCompanyOf(99L);
+    verify(quotaService).requireTalentPoolAccess(99L);
   }
 
   @Test
@@ -48,5 +52,6 @@ class EmployerCandidateControllerTest {
 
     assertSame(expected, controller.getCandidateFullProfile(99L, 5L).getBody());
     verify(authorizationService).requireApprovedCompanyOf(99L);
+    verify(quotaService).requireTalentPoolAccess(99L);
   }
 }

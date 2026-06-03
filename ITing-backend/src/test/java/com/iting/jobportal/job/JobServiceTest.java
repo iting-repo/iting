@@ -2,8 +2,10 @@ package com.iting.jobportal.job;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
 
+import com.iting.jobportal.admin.service.AdminNotificationService;
 import com.iting.jobportal.common.service.GeminiService;
 import com.iting.jobportal.company.entity.Company;
 import com.iting.jobportal.company.entity.enums.CompanyReviewStatus;
@@ -16,46 +18,61 @@ import com.iting.jobportal.job.entity.Job;
 import com.iting.jobportal.job.entity.enums.JobStatus;
 import com.iting.jobportal.job.repository.JobRepository;
 import com.iting.jobportal.job.service.impl.JobServiceImpl;
+import com.iting.jobportal.payment.service.QuotaService;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.Query;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.web.server.ResponseStatusException;
 
-@ExtendWith(MockitoExtension.class)
 class JobServiceTest {
 
-  @Mock private JobRepository jobRepository;
-
-  @Mock private CompanyRepository companyRepository;
-
-  @Mock private AuthorizationService authz;
-
-  @Mock private EntityManager entityManager;
-
-  @Mock private Query query;
-
-  @Mock private GeminiService geminiService;
-
-  @InjectMocks private JobServiceImpl jobService;
-
-  private Company testCompany;
-  private Job testJob;
-  private Long employerId = 1L;
+  private JobRepository jobRepository;
+  private CompanyRepository companyRepository;
+  private AuthorizationService authz;
+  private QuotaService quotaService;
+  private EntityManager entityManager;
+  private Query query;
+  private GeminiService geminiService;
+  private AdminNotificationService adminNotificationService;
+  private JobServiceImpl jobService;
 
   @BeforeEach
   void setUp() {
-    // entityManager is injected via @PersistenceContext, not @Autowired,
-    // so @InjectMocks can't reach it. Inject manually.
+    jobRepository = mock(JobRepository.class);
+    companyRepository = mock(CompanyRepository.class);
+    authz = mock(AuthorizationService.class);
+    quotaService = mock(QuotaService.class);
+    entityManager = mock(EntityManager.class);
+    query = mock(Query.class);
+    geminiService = mock(GeminiService.class);
+    adminNotificationService = mock(AdminNotificationService.class);
+
+    jobService =
+        new JobServiceImpl(
+            jobRepository,
+            companyRepository,
+            authz,
+            quotaService,
+            mock(com.iting.jobportal.file.FileUploadService.class),
+            mock(org.springframework.context.ApplicationEventPublisher.class),
+            geminiService,
+            mock(com.iting.jobportal.common.service.KnowledgeGraphService.class),
+            mock(com.iting.jobportal.job.service.VectorSearchService.class),
+            mock(com.iting.jobportal.common.service.MlServiceClient.class),
+            mock(com.iting.jobportal.notification.service.NotificationService.class),
+            adminNotificationService,
+            Optional.empty(),
+            mock(com.iting.jobportal.common.event.KafkaTopics.class),
+            mock(
+                com.iting.jobportal.userprofile.service.embedding.HuggingFaceCvExtractionClient
+                    .class),
+            mock(com.iting.jobportal.recommendation.service.RecommendationService.class));
+
+    // entityManager is injected via @PersistenceContext, not constructor, so wire it manually.
     ReflectionTestUtils.setField(jobService, "entityManager", entityManager);
-    // Optional<T> fields are left null by @InjectMocks; default to empty.
-    ReflectionTestUtils.setField(jobService, "outboxAppender", java.util.Optional.empty());
 
     testCompany = new Company();
     testCompany.setId(employerId);
@@ -72,6 +89,10 @@ class JobServiceTest {
             .status(JobStatus.PENDING)
             .build();
   }
+
+  private Company testCompany;
+  private Job testJob;
+  private Long employerId = 1L;
 
   @Test
   void createJob_shouldReturnJobResponse() {
@@ -101,7 +122,7 @@ class JobServiceTest {
     assertNotNull(response);
     assertEquals("Developer", response.getPosition());
     // Có thể save nhiều lần (lần đầu khi tạo + lần sau cập nhật AI review status).
-    verify(jobRepository, org.mockito.Mockito.atLeastOnce()).save(any());
+    verify(jobRepository, atLeastOnce()).save(any());
     verify(query, times(1)).executeUpdate();
   }
 

@@ -414,13 +414,34 @@ class MessageServiceImplTest {
   class DeleteTests {
 
     @Test
-    @DisplayName("Should delete message when user is sender")
-    void deleteMessage_validSender_deletes() {
+    @DisplayName("Should soft-delete message (set isDeleted=true) when user is sender")
+    void deleteMessage_validSender_softDeletes() {
       when(messageRepository.findById(1L)).thenReturn(Optional.of(testMessage));
 
       messageService.deleteMessage(1L, 1L);
 
-      verify(messageRepository).delete(testMessage);
+      // Service dùng SOFT delete (giữ row để audit + tránh client WebSocket
+      // thấy missing message) — phải save lại với isDeleted=true, KHÔNG gọi delete().
+      ArgumentCaptor<Message> captor = ArgumentCaptor.forClass(Message.class);
+      verify(messageRepository).save(captor.capture());
+      verify(messageRepository, never()).delete(any(Message.class));
+      Message saved = captor.getValue();
+      assertTrue(Boolean.TRUE.equals(saved.getIsDeleted()));
+      assertNotNull(saved.getDeletedAt());
+    }
+
+    @Test
+    @DisplayName("Should be idempotent when message already soft-deleted")
+    void deleteMessage_alreadyDeleted_isNoOp() {
+      testMessage.setIsDeleted(true);
+      testMessage.setDeletedAt(LocalDateTime.now().minusMinutes(5));
+      when(messageRepository.findById(1L)).thenReturn(Optional.of(testMessage));
+
+      messageService.deleteMessage(1L, 1L);
+
+      // Idempotent: không save lại, không delete cứng.
+      verify(messageRepository, never()).save(any(Message.class));
+      verify(messageRepository, never()).delete(any(Message.class));
     }
 
     @Test
@@ -431,7 +452,11 @@ class MessageServiceImplTest {
       RuntimeException exception =
           assertThrows(RuntimeException.class, () -> messageService.deleteMessage(1L, 999L));
 
-      assertEquals("Unauthorized: You can only delete your own messages", exception.getMessage());
+      // Service thống nhất tiếng Việt với phần còn lại của messaging module.
+      assertEquals("Bạn chỉ có thể thu hồi tin nhắn của chính mình", exception.getMessage());
+      // Không ghi DB khi throw.
+      verify(messageRepository, never()).save(any(Message.class));
+      verify(messageRepository, never()).delete(any(Message.class));
     }
   }
 
