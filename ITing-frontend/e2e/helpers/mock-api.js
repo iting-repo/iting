@@ -34,6 +34,7 @@ async function mockCommonApis(page) {
     await fulfillJson(route, primaryJob);
   });
 
+  // Legacy: /companies/me (used by some flows before HR refactor)
   await page.route('**/api/companies/me', async (route) => {
     if (route.request().method() === 'GET') {
       await fulfillJson(route, companyProfile);
@@ -42,10 +43,52 @@ async function mockCommonApis(page) {
 
     await route.fallback();
   });
+
+  // HR refactor: affiliation resolves getMyCompany() through /hr/affiliations/me first
+  await page.route('**/api/hr/affiliations/me', async (route) => {
+    if (route.request().method() === 'GET') {
+      // Return an active affiliation so getMyCompany() can resolve to /hr/companies/10
+      await fulfillJson(route, {
+        affiliationId: 1,
+        companyId: 10,
+        isInfoSource: true,
+        status: 'APPROVED',
+        submissionStatus: 'APPROVED',
+      });
+      return;
+    }
+    await route.fallback();
+  });
+
+  await page.route('**/api/hr/companies/10', async (route) => {
+    if (route.request().method() === 'GET') {
+      await fulfillJson(route, companyProfile);
+      return;
+    }
+    await route.fallback();
+  });
+
+  // Employer dashboard stats + jobs listing (uses /hr/* endpoints, not /employer/*)
+  await page.route('**/api/hr/applications/stats', async (route) => {
+    await fulfillJson(route, { total: 3 });
+  });
+
+  await page.route('**/api/hr/jobs/my-jobs**', async (route) => {
+    await fulfillJson(route, employerJobsPage);
+  });
+
+  // Also keep the legacy employer path for any code path still hitting it
+  await page.route('**/api/employer/jobs/my-jobs**', async (route) => {
+    await fulfillJson(route, employerJobsPage);
+  });
 }
 
 async function mockEmployerApis(page) {
   await page.route('**/api/employer/jobs/my-jobs**', async (route) => {
+    await fulfillJson(route, employerJobsPage);
+  });
+
+  await page.route('**/api/hr/jobs/my-jobs**', async (route) => {
     await fulfillJson(route, employerJobsPage);
   });
 
@@ -289,6 +332,20 @@ async function mockAuthApis(page, role = 'CANDIDATE') {
       email: 'playwright@example.com',
       role,
       name: role === 'ADMIN' ? 'Playwright Admin' : 'Playwright User',
+    });
+  });
+
+  // Mock user profile endpoints used by hydrateUserProfile in authSaga
+  // (sau khi login, saga gọi /user/profile cho CANDIDATE hoặc /companies/me cho
+  // EMPLOYER để enrich currentUser). Nếu không mock, request sẽ fail và saga
+  // vẫn tiếp tục nhưng cảnh báo console + tăng latency → test login CANDIDATE
+  // có thể miss redirect timing. Mock để saga chạy mượt.
+  await page.route('**/api/user/profile**', async (route) => {
+    await fulfillJson(route, {
+      userId: 20,
+      fullName: 'Playwright Candidate',
+      avatarUrl: '',
+      phoneNum: '',
     });
   });
 }

@@ -31,13 +31,11 @@ test.describe('Đăng tin tuyển dụng - kiểm tra ràng buộc form', () => 
 
     await form.locator('button[type="submit"]').click();
 
-    // PostJob.jsx có thể render error theo 2 dạng:
-    //   1. Inline: <p class="text-red-500 text-xs">Bắt buộc</p> cho mỗi field
-    //   2. Toast:  <div data-sonner-toast>...</div> thông báo chung
-    // Một số trường dùng native HTML5 required (browser popup). Đếm tổng số
-    // visible error ở cả 2 dạng; nếu inline không có, fallback sang toast.
-    const inlineErrors = page.locator('p.text-red-500.text-xs', { hasText: /B.t bu.c/i });
-    const toastErrors = page.locator('[data-sonner-toast]', { hasText: /bắt buộc|required/i });
+    // PostJob.jsx render error inline dạng <p class="text-red-500 text-xs">* Vui lòng...</p>
+    // cho từng field. Khi submit rỗng → nhiều field có error. Đếm tổng số inline
+    // error; nếu inline không có, fallback sang toast.
+    const inlineErrors = page.locator('p.text-red-500.text-xs', { hasText: /Vui lòng|B.t bu.c/i });
+    const toastErrors = page.locator('[data-sonner-toast]', { hasText: /bắt buộc|required|error/i });
 
     await expect.poll(async () => {
       const inline = await inlineErrors.count();
@@ -103,8 +101,15 @@ test.describe('Đăng tin tuyển dụng - kiểm tra ràng buộc form', () => 
       await blockingToast.waitFor({ state: 'hidden', timeout: 8_000 }).catch(() => {});
     }
 
-    // Header has a close button with FaTimes icon — last button in sticky header
-    await page.locator('.sticky button').first().click();
+    // Modal "Đăng công việc" là PostJob component, header là <div class="sticky top-0 z-10 bg-white ...">
+    // chứa title bên trái và close button (FaTimes) bên phải.
+    // Nút X có class "w-10 h-10 rounded-full ..." và chứa FaTimes icon.
+    // Cách chính xác: target theo form cha (PostJob modal chứa form) rồi tìm sticky header button.
+    const modalHeader = form.locator('xpath=ancestor::div[contains(@class, "fixed")][1]')
+      .locator('.sticky.top-0').first();
+    await expect(modalHeader).toBeVisible();
+    const closeBtn = modalHeader.locator('button').last();
+    await closeBtn.click();
 
     await expect(form).not.toBeVisible();
   });

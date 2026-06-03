@@ -11,7 +11,22 @@ test.describe('Hồ sơ công ty nhà tuyển dụng', () => {
   test('tạo yêu cầu cập nhật thông tin công ty đúng payload', async ({ page }) => {
     let updatePayload = null;
 
-    await page.route('**/api/companies/me', async (route) => {
+    // getMyCompany() resolve qua /hr/affiliations/me → /hr/companies/{id}
+    await page.route('**/api/hr/affiliations/me', async (route) => {
+      if (route.request().method() === 'GET') {
+        await fulfillJson(route, {
+          affiliationId: 1,
+          companyId: 10,
+          isInfoSource: true,
+          status: 'APPROVED',
+          submissionStatus: 'APPROVED',
+        });
+        return;
+      }
+      await route.fallback();
+    });
+
+    await page.route('**/api/hr/companies/10', async (route) => {
       if (route.request().method() === 'GET') {
         await fulfillJson(route, {
           ...companyProfile,
@@ -23,12 +38,24 @@ test.describe('Hồ sơ công ty nhà tuyển dụng', () => {
       await route.fallback();
     });
 
-    await page.route('**/api/companies/me/basic-info', async (route) => {
-      updatePayload = JSON.parse(route.request().postData() || '{}');
-      await fulfillJson(route, {
-        ...companyProfile,
-        ...updatePayload,
-      });
+    // FoundingInfoTab.handleSubmitUpdateRequest gọi
+    // affiliationService.updateBasicInfo → PUT /hr/affiliations/me/basic-info
+    await page.route('**/api/hr/affiliations/me/basic-info', async (route) => {
+      const method = route.request().method();
+      if (method === 'PUT' || method === 'POST') {
+        updatePayload = JSON.parse(route.request().postData() || '{}');
+        await fulfillJson(route, {
+          ...companyProfile,
+          ...updatePayload,
+        });
+        return;
+      }
+      await route.fallback();
+    });
+
+    // submitReview() — gọi sau khi update
+    await page.route('**/api/hr/affiliations/me/submit-review', async (route) => {
+      await fulfillJson(route, { success: true });
     });
 
     await page.goto('/employer/company-profile');
@@ -40,11 +67,15 @@ test.describe('Hồ sơ công ty nhà tuyển dụng', () => {
     if ((await companyName.count()) > 0) {
       await expect(companyName).toBeVisible();
     }
-    await page.getByRole('button', { name: /Ch.*nh s.*a|Chinh sua/i }).click();
+    // FoundingInfoTab: button text đổi theo companyInfoUpdateStatus
+    //   APPROVED → "Tạo yêu cầu thay đổi"
+    //   DRAFT/REJECTED/NEEDS_RESUBMISSION → "Chỉnh sửa thông tin"
+    await page.getByRole('button', { name: /Ch.*nh s.*a|T.o y.u c.u/i }).click();
 
     const modal = page.locator('.fixed.inset-0').last();
     await expect(modal).toBeVisible();
 
+    // Form thứ tự input: Tên công ty, Mã số thuế, Số điện thoại, Email, Website, Địa chỉ
     const inputs = modal.locator('input[type="text"]');
     await inputs.nth(0).fill('ITing Software JSC');
     await inputs.nth(3).fill('talent@iting.vn');

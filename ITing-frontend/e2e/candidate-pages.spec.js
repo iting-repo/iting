@@ -13,7 +13,9 @@ test.describe('Trang ứng viên', () => {
   });
 
   test('trang việc đã ứng tuyển mở được chi tiết việc', async ({ page }) => {
-    await page.goto('/candidate/applied-jobs');
+    // waitUntil: 'domcontentloaded' tránh trường hợp page.goto chờ 'load' event
+    // quá lâu do API requests pending (mocked request giữ connection mở).
+    await page.goto('/candidate/applied-jobs', { waitUntil: 'domcontentloaded' });
 
     // AppliedJobs.jsx render "Xem Chi Tiết" là <Link> (a tag), không phải <button>.
     // Dùng getByRole('link') thay vì getByRole('button').
@@ -24,16 +26,17 @@ test.describe('Trang ứng viên', () => {
   });
 
   test('trang thông báo việc làm mở được chi tiết việc', async ({ page }) => {
-    await page.goto('/candidate/job-alerts');
+    await page.goto('/candidate/job-alerts', { waitUntil: 'domcontentloaded' });
 
-    // Tương tự — CTA đến job detail có thể là <Link>. Dùng getByRole('link') hoặc
-    // click trực tiếp vào job title để tránh strict mode.
-    const firstJobLink = page.getByRole('link', { name: /Tuy|Ứng|Ung/i }).first();
-    if ((await firstJobLink.count()) > 0) {
-      await firstJobLink.click();
+    // JobAlerts.jsx: tiêu đề job là <h3> có onClick navigate; CTA "Ứng Tuyển"
+    // cũng navigate. Tìm theo text job title (đã có data fixture) hoặc theo
+    // button "Ứng Tuyển" để tránh strict mode của getByRole('link').
+    const applyBtn = page.getByRole('button', { name: /Ứng Tuyển|Ứng tuyển|Ung tuyen/i }).first();
+    if ((await applyBtn.count()) > 0) {
+      await applyBtn.click();
     } else {
-      // Fallback: click job title text
-      await page.locator('a').filter({ hasText: /Kỹ sư|Developer|Engineer/i }).first().click();
+      // Fallback: click job title heading
+      await page.locator('h3').filter({ hasText: /Kỹ sư|Developer|Engineer/i }).first().click();
     }
 
     await expect(page).toHaveURL(/\/viec-lam\/.+\/.+\.html$/);
