@@ -58,7 +58,28 @@ test.describe('Hồ sơ công ty nhà tuyển dụng', () => {
       await fulfillJson(route, { success: true });
     });
 
-    await page.goto('/employer/company-profile');
+    // Mock các endpoint phụ mà FoundingInfoTab gọi thêm (categories, presigned URL...)
+    // Nếu không mock, request sẽ pending → page có thể không render button.
+    await page.route('**/api/public/categories/industries**', async (route) => {
+      await fulfillJson(route, []);
+    });
+    await page.route('**/api/hr/affiliations/me/license-presigned-url**', async (route) => {
+      await fulfillJson(route, { url: '' });
+    });
+    await page.route('**/api/companies/me/business-license-presigned-url**', async (route) => {
+      await fulfillJson(route, { url: '' });
+    });
+    await page.route('**/api/hr/affiliations/me/representative**', async (route) => {
+      await fulfillJson(route, {});
+    });
+    await page.route('**/api/companies/me/representative**', async (route) => {
+      await fulfillJson(route, {});
+    });
+    await page.route('**/api/companies/me/verify-phone**', async (route) => {
+      await fulfillJson(route, { success: true });
+    });
+
+    await page.goto('/employer/company-profile', { waitUntil: 'domcontentloaded' });
 
     // CompanyProfile.jsx hiển thị tên công ty ở header (heading). Một số layout
     // render tên ở nhiều chỗ (sidebar, header, breadcrumb) → dùng .first() cho
@@ -75,11 +96,17 @@ test.describe('Hồ sơ công ty nhà tuyển dụng', () => {
     const modal = page.locator('.fixed.inset-0').last();
     await expect(modal).toBeVisible();
 
-    // Form thứ tự input: Tên công ty, Mã số thuế, Số điện thoại, Email, Website, Địa chỉ
+    // Form thứ tự input[type="text"] trong modal (FoundingInfoTab.jsx):
+    //   nth(0) = Tên công ty
+    //   nth(1) = Mã số thuế
+    //   (Số điện thoại là input[type="tel"] nên BỊ LOẠI khỏi input[type="text"])
+    //   nth(2) = Email công ty
+    //   nth(3) = Website
+    //   nth(4) = Địa chỉ
     const inputs = modal.locator('input[type="text"]');
     await inputs.nth(0).fill('ITing Software JSC');
-    await inputs.nth(3).fill('talent@iting.vn');
-    await inputs.nth(4).fill('https://jobs.iting.vn');
+    await inputs.nth(2).fill('talent@iting.vn');
+    await inputs.nth(3).fill('https://jobs.iting.vn');
 
     await modal.getByRole('button', { name: /G.*i admin duy.*t|Gui admin duyet/i }).click();
 
