@@ -90,13 +90,24 @@ jobs:
         # NVD_API_KEY tăng tốc 10× — đăng ký free tại
         # https://nvd.nist.gov/developers/request-an-api-key
         # Thêm secret repo: Settings → Secrets → Actions → NVD_API_KEY
-        run: mvn -B org.owasp:dependency-check-maven:12.2.2:check
-              -DfailBuildOnCVSS=9
-              -DsuppressionFile=.dependency-check-suppressions.xml
-              -DskipProvidedScope=true
-              -DknownExploitedEnabled=false
-              -DnvdApiDelay=2000
-              ${{ secrets.NVD_API_KEY != '' && format('-DnvdApiKey={0}', secrets.NVD_API_KEY) || '' }}
+        env:
+          NVD_API_KEY: ${{ secrets.NVD_API_KEY }}
+        run: |
+          EXTRA_NVD_ARG=""
+          if [ -n "${NVD_API_KEY}" ]; then
+            EXTRA_NVD_ARG="-DnvdApiKey=${NVD_API_KEY}"
+            echo "Using NVD API key for faster feed updates."
+          else
+            echo "NVD_API_KEY is empty. Feed updates may be slow."
+          fi
+
+          mvn -B org.owasp:dependency-check-maven:12.2.2:check \
+            -DfailBuildOnCVSS=9 \
+            -DsuppressionFile=.dependency-check-suppressions.xml \
+            -DskipProvidedScope=true \
+            -DknownExploitedEnabled=false \
+            -DnvdApiDelay=2000 \
+            ${EXTRA_NVD_ARG}
         continue-on-error: true
 
       - name: Upload Dependency-Check report

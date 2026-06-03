@@ -5,6 +5,7 @@ import com.iting.jobportal.common.ratelimit.RateLimited;
 import com.iting.jobportal.common.service.S3Service;
 import com.iting.jobportal.job.controller.CurrentUser;
 import com.iting.jobportal.userprofile.dto.response.CVResponse;
+import com.iting.jobportal.userprofile.dto.response.CvScoreResponse;
 import com.iting.jobportal.userprofile.entity.CV;
 import com.iting.jobportal.userprofile.repository.CVRepository;
 import com.iting.jobportal.userprofile.service.CVService;
@@ -183,4 +184,22 @@ public class CVController {
         .orElseGet(
             () -> ResponseEntity.status(502).body(Map.of("error", "HF AI service unavailable")));
   }
+
+    @PostMapping("/{id}/score")
+    @Operation(summary = "Chấm điểm CV bằng AI (hỗ trợ tiếng Việt / English)",
+               description = "Đánh giá chất lượng CV theo 5 tiêu chí. Ngôn ngữ đầu ra: ?lang=vi (mặc định) hoặc ?lang=en")
+    @RateLimited(policy = RateLimitPolicy.AI_CV_SCORE, subject = "user")
+    public ResponseEntity<?> scoreCv(
+            @Parameter(hidden = true) @CurrentUser Long userId,
+            @PathVariable Long id,
+            @RequestParam(value = "lang", defaultValue = "vi") String language) {
+        if (userId == null) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Chưa đăng nhập");
+        }
+        CvScoreResponse result = cvService.scoreCv(userId, id, language);
+        if (result == null) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "CV không tồn tại");
+        }
+        return ResponseEntity.ok(result);
+    }
 }

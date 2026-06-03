@@ -102,6 +102,13 @@ jobs:
             docker image prune -a -f --filter "until=24h"
             docker image prune -f
 
+            # Inject/rotate Gemini API key in .env.prod (idempotent, no duplicate lines)
+            if grep -q '^GEMINI_API_KEY=' /opt/iting/.env.prod; then
+              sed -i "s|^GEMINI_API_KEY=.*|GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }}|" /opt/iting/.env.prod
+            else
+              echo "GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }}" >> /opt/iting/.env.prod
+            fi
+
             # Pull latest images
             BACKEND_IMAGE="${{ env.BACKEND_IMAGE }}" FRONTEND_IMAGE="${{ env.FRONTEND_IMAGE }}" docker compose \
               -f docker-compose.yml \

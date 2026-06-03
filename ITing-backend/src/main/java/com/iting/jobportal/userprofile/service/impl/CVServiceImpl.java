@@ -5,11 +5,13 @@ import com.iting.jobportal.common.service.S3Service;
 import com.iting.jobportal.user.entity.User;
 import com.iting.jobportal.user.repository.UserRepository;
 import com.iting.jobportal.userprofile.dto.response.CVResponse;
+import com.iting.jobportal.userprofile.dto.response.CvScoreResponse;
 import com.iting.jobportal.userprofile.entity.CV;
 import com.iting.jobportal.userprofile.entity.UserProfile;
 import com.iting.jobportal.userprofile.repository.CVRepository;
 import com.iting.jobportal.userprofile.repository.UserProfileRepository;
 import com.iting.jobportal.userprofile.service.CVService;
+import com.iting.jobportal.userprofile.service.CvScoringService;
 import com.iting.jobportal.userprofile.service.embedding.HuggingFaceCvExtractionClient;
 import jakarta.persistence.EntityManager;
 import java.io.IOException;
@@ -28,13 +30,14 @@ import org.springframework.web.multipart.MultipartFile;
 @Slf4j
 public class CVServiceImpl implements CVService {
 
-  private final CVRepository cvRepository;
-  private final UserProfileRepository userProfileRepository;
-  private final UserRepository userRepository;
-  private final S3Service s3Service;
-  private final EntityManager entityManager;
-  private final HuggingFaceCvExtractionClient hfCvExtractionClient;
-  private final ObjectMapper objectMapper;
+    private final CVRepository cvRepository;
+    private final UserProfileRepository userProfileRepository;
+    private final UserRepository userRepository;
+    private final S3Service s3Service;
+    private final EntityManager entityManager;
+    private final HuggingFaceCvExtractionClient hfCvExtractionClient;
+    private final ObjectMapper objectMapper;
+    private final CvScoringService cvScoringService;
 
   private static final int MAX_CVS_PER_USER = 3;
 
@@ -166,15 +169,18 @@ public class CVServiceImpl implements CVService {
     }
   }
 
-  private CVResponse convertToResponse(CV cv) {
-    return CVResponse.builder()
-        .id(cv.getId())
-        .title(cv.getTitle())
-        .fileName(cv.getFileName())
-        .fileUrl(cv.getFileUrl())
-        .uploadedAt(cv.getUploadedAt())
-        .build();
-  }
+    private CVResponse convertToResponse(CV cv) {
+        return CVResponse.builder()
+                .id(cv.getId())
+                .title(cv.getTitle())
+                .fileName(cv.getFileName())
+                .fileUrl(cv.getFileUrl())
+                .uploadedAt(cv.getUploadedAt())
+                .isDefault(cv.getIsDefault())
+                .overallScore(cv.getOverallScore())
+                .scoredAt(cv.getScoredAt())
+                .build();
+    }
 
   private UserProfile getOrCreateProfile(Long userId) {
     UserProfile existingProfile = userProfileRepository.findById(userId).orElse(null);
@@ -191,9 +197,19 @@ public class CVServiceImpl implements CVService {
     profile.setUser(userRef);
     userProfileRepository.saveAndFlush(profile);
 
-    return userProfileRepository
-        .findById(userId)
-        .orElseThrow(
-            () -> new RuntimeException("Failed to initialize user profile with id: " + userId));
-  }
+        return userProfileRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("Failed to initialize user profile with id: " + userId));
+    }
+
+    @Override
+    public CvScoreResponse scoreCv(Long userId, Long cvId, String language) {
+        CV cv = cvRepository.findById(cvId).orElse(null);
+        if (cv == null) return null;
+        if (cv.getProfile() == null || !userId.equals(cv.getProfile().getId())) {
+            throw new org.springframework.web.server.ResponseStatusException(
+                    org.springframework.http.HttpStatus.FORBIDDEN, "CV không thuộc về bạn");
+        }
+        String lang = ("en".equalsIgnoreCase(language)) ? "en" : "vi";
+        return cvScoringService.scoreCv(cvId, lang);
+    }
 }

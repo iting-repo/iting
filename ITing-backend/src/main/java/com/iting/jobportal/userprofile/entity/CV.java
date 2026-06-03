@@ -38,8 +38,9 @@ public class CV {
   @Column(name = "Cv_status", length = 50)
   private CvStatus cvStatus;
 
-  @Column(name = "Is_default")
-  private Boolean isDefault = false;
+    @Column(name = "Is_default")
+    @Builder.Default
+    private Boolean isDefault = false;
 
   @Column(name = "Upload_time")
   private LocalDateTime uploadedAt;
@@ -55,10 +56,27 @@ public class CV {
   @Column(name = "embedding_updated_at")
   private LocalDateTime embeddingUpdatedAt;
 
-  /**
-   * JSON output của HF /extract-cv: skills, experience, education, personal info đã được AI parse
-   * từ file CV. Dùng để pre-fill UserProfile form hoặc hiển thị tóm tắt. NULL nếu chưa parse.
-   */
-  @Column(name = "extracted_data_json", columnDefinition = "TEXT")
-  private String extractedDataJson;
+    /**
+     * JSON output của HF /extract-cv: skills, experience, education,
+     * personal info đã được AI parse từ file CV. Dùng để pre-fill
+     * UserProfile form hoặc hiển thị tóm tắt. NULL nếu chưa parse.
+     */
+    @Column(name = "extracted_data_json", columnDefinition = "TEXT")
+    private String extractedDataJson;
+
+    /** LLM-evaluated CV quality score (0–100), NULL if not yet scored. */
+    @Column(name = "overall_score")
+    private Integer overallScore;
+
+    /**
+     * Full rubric breakdown as JSON string.
+     * Keys: overall_score, score_breakdown (5 dims), strengths, improvement_areas,
+     * critical_issues, recommendations, evaluation_summary.
+     */
+    @Column(name = "score_json", columnDefinition = "TEXT")
+    private String scoreJson;
+
+    /** Timestamp when the score was computed. */
+    @Column(name = "scored_at")
+    private LocalDateTime scoredAt;
 }

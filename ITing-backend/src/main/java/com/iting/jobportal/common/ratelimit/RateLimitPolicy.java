@@ -13,6 +13,7 @@ public enum RateLimitPolicy {
   APPLY_JOB(30, Duration.ofMinutes(10), FailMode.FAIL_OPEN),
   WITHDRAW_APP(5, Duration.ofMinutes(5), FailMode.FAIL_CLOSED),
   AI_REVIEW(15, Duration.ofMinutes(10), FailMode.FAIL_CLOSED),
+    AI_CV_SCORE  (10, Duration.ofMinutes(10), FailMode.FAIL_CLOSED),
   FILE_UPLOAD(20, Duration.ofMinutes(10), FailMode.FAIL_OPEN),
   PUBLIC_SEARCH(60, Duration.ofMinutes(1), FailMode.FAIL_OPEN),
   ADMIN(60, Duration.ofMinutes(1), FailMode.FAIL_OPEN);
