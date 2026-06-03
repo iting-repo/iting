@@ -73,6 +73,12 @@ public class CvScoringServiceImpl implements CvScoringService {
                 }
                 return result;
             } catch (Exception e) {
+                // extractedDataJson parse fail (CV có format lạ) → fallback raw title.
+                // Đây KHÔNG phải lỗi "AI service down" nên chỉ log warn và tiếp tục fallback.
+                if (e.getMessage() != null && e.getMessage().contains("AI service temporarily")) {
+                    // Lỗi từ Gemini → propagate lên để controller trả 502 thay vì 404.
+                    throw e;
+                }
                 log.warn("Failed to use extractedDataJson for cvId={}, falling back to raw: {}",
                         cv.getId(), e.getMessage());
             }
@@ -131,39 +137,88 @@ public class CvScoringServiceImpl implements CvScoringService {
     private CvScoreResponse callGeminiWithPrompt(String cvText, String cvTitle, String language) {
         String prompt = buildScoringPrompt(cvText, cvTitle, language);
 
+        // generationConfig ép Gemini chỉ trả về JSON thuần (không kèm giải thích markdown).
+        // Giải quyết triệt để lỗi "Unrecognized token 'HR'..." trước đây.
         Map<String, Object> payload = Map.of(
                 "contents", List.of(Map.of(
                         "parts", List.of(Map.of("text", prompt))
-                ))
+                )),
+                "generationConfig", Map.of(
+                        "responseMimeType", "application/json",
+                        "temperature", 0.2
+                )
         );
 
-        try {
-            org.springframework.http.HttpEntity<Map<String, Object>> entity =
-                    new org.springframework.http.HttpEntity<>(payload,
-                            new org.springframework.http.HttpHeaders() {{
-                                setContentType(org.springframework.http.MediaType.APPLICATION_JSON);
-                            }});
+        org.springframework.http.HttpHeaders headers = new org.springframework.http.HttpHeaders();
+        headers.setContentType(org.springframework.http.MediaType.APPLICATION_JSON);
 
-            String url = geminiApiUrl + "?key=" + geminiApiKey;
-            String raw = new org.springframework.web.client.RestTemplate()
-                    .postForObject(url, entity, String.class);
+        org.springframework.http.HttpEntity<Map<String, Object>> entity =
+                new org.springframework.http.HttpEntity<>(payload, headers);
 
-            JsonNode root = objectMapper.readTree(raw);
-            String text = root.path("candidates").get(0).path("content").path("parts").get(0).path("text").asText();
+        String url = geminiApiUrl + "?key=" + geminiApiKey;
+        org.springframework.web.client.RestTemplate restTemplate =
+                new org.springframework.web.client.RestTemplate();
 
-            String cleaned = text.trim();
-            if (cleaned.startsWith("```json")) cleaned = cleaned.substring(7);
-            else if (cleaned.startsWith("```")) cleaned = cleaned.substring(3);
-            if (cleaned.endsWith("```")) cleaned = cleaned.substring(0, cleaned.length() - 3);
-            cleaned = cleaned.trim();
+        // Retry tối đa 3 lần với exponential backoff cho 5xx / IO errors (Google service tạm thời lỗi).
+        // Sau 3 lần fail, throw RuntimeException để controller phân biệt "lỗi AI" vs "CV không tồn tại".
+        int maxAttempts = 3;
+        long backoffMs = 800;
+        Exception lastException = null;
 
-            JsonNode node = objectMapper.readTree(cleaned);
-            return parseScoringResponse(node);
+        for (int attempt = 1; attempt <= maxAttempts; attempt++) {
+            try {
+                String raw = restTemplate.postForObject(url, entity, String.class);
+                JsonNode root = objectMapper.readTree(raw);
 
-        } catch (Exception e) {
-            log.error("Gemini scoring call failed: {}", e.getMessage());
-            return null;
+                // Check if Gemini trả error response (5xx wrapped trong body)
+                if (root.has("error")) {
+                    int code = root.path("error").path("code").asInt(500);
+                    if (code >= 500) {
+                        throw new org.springframework.web.client.HttpServerErrorException(
+                                org.springframework.http.HttpStatus.valueOf(code),
+                                "Gemini API error: " + root.path("error").toString());
+                    }
+                }
+
+                String text = root.path("candidates").get(0).path("content").path("parts").get(0).path("text").asText();
+
+                String cleaned = text.trim();
+                if (cleaned.startsWith("```json")) cleaned = cleaned.substring(7);
+                else if (cleaned.startsWith("```")) cleaned = cleaned.substring(3);
+                if (cleaned.endsWith("```")) cleaned = cleaned.substring(0, cleaned.length() - 3);
+                cleaned = cleaned.trim();
+
+                JsonNode node = objectMapper.readTree(cleaned);
+                return parseScoringResponse(node);
+
+            } catch (org.springframework.web.client.HttpServerErrorException e) {
+                // 5xx → retry với backoff
+                lastException = e;
+                log.warn("Gemini scoring 5xx attempt {}/{}: {}", attempt, maxAttempts, e.getStatusCode());
+            } catch (org.springframework.web.client.ResourceAccessException e) {
+                // Network/IO error → retry
+                lastException = e;
+                log.warn("Gemini scoring IO attempt {}/{}: {}", attempt, maxAttempts, e.getMessage());
+            } catch (Exception e) {
+                // Parse error hoặc lỗi khác → không retry, fail ngay (thường do prompt hoặc model)
+                log.error("Gemini scoring non-retryable error: {}", e.getMessage());
+                throw new RuntimeException("AI scoring failed: " + e.getMessage(), e);
+            }
+
+            if (attempt < maxAttempts) {
+                try {
+                    Thread.sleep(backoffMs);
+                } catch (InterruptedException ie) {
+                    Thread.currentThread().interrupt();
+                    throw new RuntimeException("AI scoring interrupted", ie);
+                }
+                backoffMs *= 2;
+            }
         }
+
+        log.error("Gemini scoring failed after {} attempts: {}", maxAttempts,
+                lastException != null ? lastException.getMessage() : "unknown");
+        throw new RuntimeException("AI service temporarily unavailable, please retry", lastException);
     }
 
     private String buildScoringPrompt(String cvText, String cvTitle, String language) {

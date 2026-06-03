@@ -138,17 +138,20 @@ const CVSection = () => {
             fetchCVs();
         } catch (error) {
             console.error("Failed to score CV", error);
-            // Khi backend trả 404 "CV không tồn tại" thường là do CV đã bị xóa
-            // bởi logic auto-delete oldest khi user upload CV thứ 4 từ tab/window khác.
-            // Refetch danh sách CV để UI đồng bộ với DB (CV stale sẽ tự biến mất).
             const status = error?.httpStatus || error?.status;
             const errMsg = error?.error || error?.message || '';
+
+            // 404 → CV đã bị xóa (auto-delete oldest khi upload CV thứ 4).
+            // Refetch danh sách để UI đồng bộ với DB, CV stale sẽ tự biến mất.
             if (status === 404 || /không tồn tại|not found/i.test(errMsg)) {
                 toast.error('CV này đã bị xóa. Danh sách CV đang được làm mới...', { duration: 4000 });
-                // Đóng modal score nếu đang mở (CV id trong modal có thể stale)
                 setScoreModalCvId(null);
                 setScoreResult(null);
                 await fetchCVs();
+            } else if (status === 502 || /tạm thời không khả dụng|temporarily unavailable|AI service/i.test(errMsg)) {
+                // 502 → Gemini AI service tạm thời lỗi (Google 500 / network).
+                // Khuyến khích user thử lại sau vài giây.
+                toast.error(errMsg || 'AI chấm điểm tạm thời không khả dụng, vui lòng thử lại sau ít phút.', { duration: 5000 });
             } else {
                 toast.error("Có lỗi khi chấm điểm CV. Vui lòng thử lại.");
             }

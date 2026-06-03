@@ -18,6 +18,7 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -29,6 +30,7 @@ import org.springframework.web.server.ResponseStatusException;
 @RestController
 @RequestMapping("/api/candidates/cvs")
 @RequiredArgsConstructor
+@Slf4j
 public class CVController {
 
   private final CVService cvService;
@@ -196,10 +198,26 @@ public class CVController {
         if (userId == null) {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Chưa đăng nhập");
         }
-        CvScoreResponse result = cvService.scoreCv(userId, id, language);
-        if (result == null) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "CV không tồn tại");
+        try {
+            CvScoreResponse result = cvService.scoreCv(userId, id, language);
+            if (result == null) {
+                throw new ResponseStatusException(HttpStatus.NOT_FOUND, "CV không tồn tại");
+            }
+            return ResponseEntity.ok(result);
+        } catch (org.springframework.web.server.ResponseStatusException e) {
+            // Ownership check fail hoặc CV không tồn tại (từ service layer)
+            throw e;
+        } catch (RuntimeException e) {
+            // Phân biệt lỗi "AI service down" vs các lỗi khác.
+            // Lỗi AI → 502 Bad Gateway. Lỗi khác → 500 Internal Server Error.
+            if (e.getMessage() != null && e.getMessage().contains("AI service temporarily")) {
+                log.warn("AI scoring failed for cvId={}: {}", id, e.getMessage());
+                throw new ResponseStatusException(HttpStatus.BAD_GATEWAY,
+                        "AI service tạm thời không khả dụng, vui lòng thử lại sau");
+            }
+            log.error("Unexpected error scoring cvId={}: {}", id, e.getMessage(), e);
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
+                    "Đã có lỗi xảy ra khi chấm điểm CV");
         }
-        return ResponseEntity.ok(result);
     }
 }
