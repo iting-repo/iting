@@ -138,7 +138,20 @@ const CVSection = () => {
             fetchCVs();
         } catch (error) {
             console.error("Failed to score CV", error);
-            toast.error("Có lỗi khi chấm điểm CV. Vui lòng thử lại.");
+            // Khi backend trả 404 "CV không tồn tại" thường là do CV đã bị xóa
+            // bởi logic auto-delete oldest khi user upload CV thứ 4 từ tab/window khác.
+            // Refetch danh sách CV để UI đồng bộ với DB (CV stale sẽ tự biến mất).
+            const status = error?.httpStatus || error?.status;
+            const errMsg = error?.error || error?.message || '';
+            if (status === 404 || /không tồn tại|not found/i.test(errMsg)) {
+                toast.error('CV này đã bị xóa. Danh sách CV đang được làm mới...', { duration: 4000 });
+                // Đóng modal score nếu đang mở (CV id trong modal có thể stale)
+                setScoreModalCvId(null);
+                setScoreResult(null);
+                await fetchCVs();
+            } else {
+                toast.error("Có lỗi khi chấm điểm CV. Vui lòng thử lại.");
+            }
         } finally {
             setScoringCvId(null);
         }
