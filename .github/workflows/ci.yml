@@ -199,8 +199,10 @@ jobs:
       # pom.xml để xây dependency graph cho Java multi-module project.
       # Mitigation:
       #   - Bỏ --scanners secret (vuln-only) — secret scan là bottleneck 429.
-      #   - Tránh scan pom.xml dependency tree (đã có OWASP dependency-check
-      #     ở job backend làm việc này chuyên dụng hơn với NVD API key).
+      #   - Bỏ qua toàn bộ ITing-backend: dependency-check ở job backend đã
+      #     scan Java dependency graph chuyên dụng hơn (NVD API + cache).
+      #     Nếu để Trivy scan pom.xml, nó sẽ bị Maven Central throttle 429
+      #     như log: "remote Maven repository returned 429 Too Many Requests".
       #   - Dùng --skip-dirs để giảm footprint.
       # Kết quả: scan fs còn ~1-2 phút thay vì 5+ phút + 429.
       - name: Trivy filesystem scan (vuln only)
@@ -212,7 +214,7 @@ jobs:
           output: "trivy-results.sarif"
           severity: "CRITICAL,HIGH"
           scanners: "vuln"
-          skip-dirs: "node_modules,target,build,dist,.gradle,ITing-frontend/dist"
+          skip-dirs: "node_modules,target,build,dist,.gradle,ITing-frontend/dist,ITing-backend"
           ignorefile: ".trivyignore"
 
       - name: Upload Trivy results
