@@ -72,26 +72,40 @@ public class CvScoringServiceImpl implements CvScoringService {
                     persist(cv, result);
                 }
                 return result;
-            } catch (Exception e) {
+            } catch (java.io.IOException e) {
                 // extractedDataJson parse fail (CV có format lạ) → fallback raw title.
                 // Đây KHÔNG phải lỗi "AI service down" nên chỉ log warn và tiếp tục fallback.
+                log.warn("Failed to use extractedDataJson for cvId={}, falling back to raw: {}",
+                        cv.getId(), e.getMessage());
+            } catch (RuntimeException e) {
+                // Lỗi runtime từ callGeminiWithPrompt (vd "AI service temporarily").
+                // Propagate lên để controller trả 502 thay vì 404.
                 if (e.getMessage() != null && e.getMessage().contains("AI service temporarily")) {
-                    // Lỗi từ Gemini → propagate lên để controller trả 502 thay vì 404.
                     throw e;
                 }
-                log.warn("Failed to use extractedDataJson for cvId={}, falling back to raw: {}",
+                log.warn("Unexpected runtime error for cvId={}, falling back to raw: {}",
                         cv.getId(), e.getMessage());
             }
         }
-        CvScoreResponse result = callGeminiWithPrompt(
-                cv.getTitle() != null ? cv.getTitle() : "",
-                cv.getTitle(),
-                language
-        );
-        if (result != null) {
-            persist(cv, result);
+        // callGeminiWithPrompt đã wrap mọi checked exception bên trong,
+        // nên chỉ cần xử lý RuntimeException ở đây (vd "AI service temporarily").
+        try {
+            CvScoreResponse result = callGeminiWithPrompt(
+                    cv.getTitle() != null ? cv.getTitle() : "",
+                    cv.getTitle(),
+                    language
+            );
+            if (result != null) {
+                persist(cv, result);
+            }
+            return result;
+        } catch (RuntimeException e) {
+            if (e.getMessage() != null && e.getMessage().contains("AI service temporarily")) {
+                throw e;
+            }
+            log.error("Fallback Gemini call failed for cvId={}: {}", cv.getId(), e.getMessage());
+            return null;
         }
-        return result;
     }
 
     private String reconstructTextFromExtracted(JsonNode node) {
@@ -168,7 +182,12 @@ public class CvScoringServiceImpl implements CvScoringService {
         for (int attempt = 1; attempt <= maxAttempts; attempt++) {
             try {
                 String raw = restTemplate.postForObject(url, entity, String.class);
-                JsonNode root = objectMapper.readTree(raw);
+                JsonNode root;
+                try {
+                    root = objectMapper.readTree(raw);
+                } catch (com.fasterxml.jackson.core.JsonProcessingException e) {
+                    throw new RuntimeException("Failed to parse Gemini response: " + e.getMessage(), e);
+                }
 
                 // Check if Gemini trả error response (5xx wrapped trong body)
                 if (root.has("error")) {
@@ -188,7 +207,12 @@ public class CvScoringServiceImpl implements CvScoringService {
                 if (cleaned.endsWith("```")) cleaned = cleaned.substring(0, cleaned.length() - 3);
                 cleaned = cleaned.trim();
 
-                JsonNode node = objectMapper.readTree(cleaned);
+                JsonNode node;
+                try {
+                    node = objectMapper.readTree(cleaned);
+                } catch (com.fasterxml.jackson.core.JsonProcessingException e) {
+                    throw new RuntimeException("Failed to parse Gemini scoring JSON: " + e.getMessage(), e);
+                }
                 return parseScoringResponse(node);
 
             } catch (org.springframework.web.client.HttpServerErrorException e) {
@@ -199,10 +223,10 @@ public class CvScoringServiceImpl implements CvScoringService {
                 // Network/IO error → retry
                 lastException = e;
                 log.warn("Gemini scoring IO attempt {}/{}: {}", attempt, maxAttempts, e.getMessage());
-            } catch (Exception e) {
+            } catch (RuntimeException e) {
                 // Parse error hoặc lỗi khác → không retry, fail ngay (thường do prompt hoặc model)
                 log.error("Gemini scoring non-retryable error: {}", e.getMessage());
-                throw new RuntimeException("AI scoring failed: " + e.getMessage(), e);
+                throw e;
             }
 
             if (attempt < maxAttempts) {
