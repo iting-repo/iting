@@ -21,7 +21,9 @@ test.describe('Đăng nhập', () => {
     await mockAuthApis(page, 'ADMIN');
 
     await page.goto('/login');
-    await page.locator('button[type="button"]').nth(1).click();
+    // Không click OAuth button (Facebook bị disabled nếu REACT_APP_FACEBOOK_APP_ID
+    // chưa config; Google hook trigger OAuth flow thật khó mock trong test).
+    // Test đăng nhập admin qua form thường, sau đó kiểm tra redirect về dashboard.
     await page.locator('input[type="email"]').fill('admin@example.com');
     await page.locator('input[type="password"]').fill('secret123');
     await page.locator('button[type="submit"]').click();

@@ -83,7 +83,8 @@ test.describe("Nhà tuyển dụng đăng tin tuyển dụng", () => {
     await form.locator("select").nth(1).selectOption("NodeJS");
     await form.locator('select[name="workType"]').selectOption("FULL_TIME");
     await form.locator('select[name="experienceLevel"]').selectOption("SENIOR");
-    await form.locator('input[name="workingDays"]').fill("Monday - Friday");
+    // workingDays là <select> (dropdown) trong PostJob.jsx, dùng selectOption thay vì fill
+    await form.locator('select[name="workingDays"]').selectOption("MON_TO_FRI");
     await form.locator('input[name="quantity"]').fill("2");
     await form.locator('input[name="deadline"]').fill("2026-12-31");
 

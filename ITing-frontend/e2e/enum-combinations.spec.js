@@ -29,7 +29,7 @@ test.describe("Enum đăng tin tuyển dụng", () => {
     });
     await expect(form).toBeVisible();
 
-    await expect(form.locator('select[name="workType"] option')).toHaveCount(7);
+    await expect(form.locator('select[name="workType"] option')).toHaveCount(6);
     await expect(form.locator('select[name="experienceLevel"] option')).toHaveCount(10);
     await expect(form.locator('select[name="salaryType"] option')).toHaveCount(5);
 

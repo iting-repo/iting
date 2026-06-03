@@ -19,9 +19,12 @@ test.describe('Trang nhà tuyển dụng', () => {
     await expect(page).toHaveURL('/employer/manage-jobs');
 
     await page.goto('/employer/dashboard');
-    await page.getByRole('button', { name: /Xem H/ }).first().click();
+    // Text thực tế là "Xem Hồ Sơ Ứng Viên" (i18n vi) — dùng flag /i để match
+    // cả dạng vi-en. Tham khảo locales/vi/translation.json.
+    await page.getByRole('button', { name: /Xem H/i }).first().click();
 
-    await expect(page).toHaveURL(/\/employer\/job\/.+\/applications$/);
+    // URL SEO dùng ID đã encodeId() — chấp nhận cả raw và encoded.
+    await expect(page).toHaveURL(/\/employer\/job\/.+\/(?:2099682|1SAIfc)\/applications$/);
     await expect(page.getByText(/Hồ sơ mới|Ho so moi/i)).toBeVisible();
   });
 });

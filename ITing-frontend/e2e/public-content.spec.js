@@ -92,8 +92,10 @@ test.describe('Nội dung công khai', () => {
 
   test('trang blogs liệt kê bài viết', async ({ page }) => {
     await page.goto('/blogs');
-    await expect(page.getByText(/5 b. quy.t vi.t CV/)).toBeVisible();
-    await expect(page.getByText(/Ph.ng v.n Backend Engineer/)).toBeVisible();
+    // Tiêu đề blog xuất hiện ở 3 nơi: hero card lớn (h2) + featured card (h4) +
+    // sidebar "Bài viết mới" (h3). Dùng .first() để tránh strict mode violation.
+    await expect(page.getByText(/5 b. quy.t vi.t CV/).first()).toBeVisible();
+    await expect(page.getByText(/Ph.ng v.n Backend Engineer/).first()).toBeVisible();
   });
 
   test('trang companies liệt kê công ty', async ({ page }) => {
@@ -119,6 +121,11 @@ test.describe('Nội dung công khai', () => {
 
   test('trang chủ render được khi chưa đăng nhập', async ({ page }) => {
     await page.goto('/');
-    await expect(page.getByRole('heading', { name: /Vi.c L.m T.t Nh.t/ })).toBeVisible();
+    // Trang chủ hiển thị heading "Việc làm nổi bật" (cho user chưa đăng nhập)
+    // hoặc "Dành cho bạn" (đã đăng nhập) — xem HomePage.jsx. Dùng .first() phòng
+    // trường hợp có nhiều heading match.
+    await expect(
+      page.getByRole('heading', { name: /Vi.c l.m n.i b.t|D.nh cho b.n/i }).first(),
+    ).toBeVisible();
   });
 });

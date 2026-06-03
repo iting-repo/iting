@@ -26,7 +26,9 @@ test.describe('Admin duyệt tin tuyển dụng', () => {
 
     await expect(page.getByText('AI đạt').first()).toBeVisible();
     await page.getByText('Backend Engineer').click();
-    await expect(page.getByText('AI đề xuất phê duyệt')).toBeVisible();
+    // Text "AI đề xuất phê duyệt..." xuất hiện ở 2 chỗ: badge ngắn + paragraph đầy đủ
+    // trong JobPreviewDialog. Dùng .first() để tránh strict mode violation.
+    await expect(page.getByText('AI đề xuất phê duyệt').first()).toBeVisible();
     await expect(page.getByText('Build backend services')).toBeVisible();
     await page.getByRole('button', { name: /Duy|Ph/i }).click();
     await page.locator('.fixed.inset-0').last().locator('button').last().click();

@@ -20,7 +20,9 @@ test.describe('Trang admin duyệt dữ liệu', () => {
 
     await expect(page.getByText('ITing Software')).toBeVisible();
     await expect(page.getByText(/CHỜ DUYỆT|CHO DUYET/i).first()).toBeVisible();
-    await expect(page.locator('table tbody tr')).toHaveCount(2);
+    // Fixture adminCompaniesPage có 3 công ty: ITing Software, VNG Corporation, Another Tech
+    // (CMP-001, id 12, CMP-002) — xem helpers/job-fixtures.js.
+    await expect(page.locator('table tbody tr')).toHaveCount(3);
   });
 
   test('cho phép mở hành động duyệt tin tuyển dụng', async ({ page }) => {

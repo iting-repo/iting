@@ -25,8 +25,11 @@ test.describe('Luồng ứng viên', () => {
 
     await page.getByText(/C\/C\+\+ Java Golang Python/).first().click();
 
+    // Chấp nhận cả public_id thô (2099682) lẫn ID đã obfuscate (1SAIfc) — xem
+    // src/utils/jobUrl.js#buildJobDetailPath. Frontend chuyển sang Base62 XOR-Knuth
+    // để ẩn ID trong URL.
     await expect(page).toHaveURL(
-      /\/viec-lam\/ky-su-phat-trien-phan-mem-c-c-java-golang-python\/2099682\.html$/,
+      /\/viec-lam\/ky-su-phat-trien-phan-mem-c-c-java-golang-python\/(?:2099682|1SAIfc)\.html$/,
     );
     await expect(page.getByRole('heading', { name: /C\/C\+\+ Java Golang Python/ })).toBeVisible();
   });

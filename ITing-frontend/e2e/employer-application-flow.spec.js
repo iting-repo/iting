@@ -54,7 +54,7 @@ const baseApplications = [
   },
 ];
 
-const jobApplicationsUrl = '/employer/job/test-job/1/applications';
+const jobApplicationsUrl = '/employer/job/ky-su-phat-trien-phan-mem-c-c-java-golang-python/1SAIfc/applications';
 
 async function mockApplicationListingApis(page, opts = {}) {
   const captured = {
@@ -198,8 +198,9 @@ test.describe('Nhà tuyển dụng quản lý ứng viên cho một công việc
     const captured = await mockApplicationListingApis(page);
     await page.goto(jobApplicationsUrl);
 
-    // Click candidate name to open detail modal
-    await page.getByRole('button', { name: 'Nguyễn Văn A' }).click();
+    // Candidate name trong JobApplications.jsx là <div> có onClick (không phải button).
+    // Click trực tiếp vào text để mở detail modal.
+    await page.getByText('Nguyễn Văn A').first().click();
     await expect(page.getByRole('button', { name: /Ch.p nh.n|.ang x. l/i })).toBeVisible();
 
     await page.getByRole('button', { name: /Ch.p nh.n/i }).click();
@@ -211,7 +212,8 @@ test.describe('Nhà tuyển dụng quản lý ứng viên cho một công việc
     const captured = await mockApplicationListingApis(page);
     await page.goto(jobApplicationsUrl);
 
-    await page.getByRole('button', { name: 'Nguyễn Văn A' }).click();
+    // Candidate name trong JobApplications.jsx là <div> có onClick.
+    await page.getByText('Nguyễn Văn A').first().click();
 
     // Open reject modal
     await page.getByRole('button', { name: /^T. ch.i$/i }).click();

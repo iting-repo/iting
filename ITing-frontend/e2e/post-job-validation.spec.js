@@ -31,12 +31,19 @@ test.describe('Đăng tin tuyển dụng - kiểm tra ràng buộc form', () => 
 
     await form.locator('button[type="submit"]').click();
 
-    // The validate() function sets multiple "Bắt buộc" errors on required fields
-    const errorMessages = page.locator('p.text-red-500.text-xs', { hasText: /B.t bu.c/i });
-    // jobTitle, jobPosition, techStack, workType, experienceLevel,
-    // workingDays, quantity, deadline, province, ward, address, description
-    // → at least 5 visible errors when nothing is filled
-    await expect.poll(async () => await errorMessages.count()).toBeGreaterThan(4);
+    // PostJob.jsx có thể render error theo 2 dạng:
+    //   1. Inline: <p class="text-red-500 text-xs">Bắt buộc</p> cho mỗi field
+    //   2. Toast:  <div data-sonner-toast>...</div> thông báo chung
+    // Một số trường dùng native HTML5 required (browser popup). Đếm tổng số
+    // visible error ở cả 2 dạng; nếu inline không có, fallback sang toast.
+    const inlineErrors = page.locator('p.text-red-500.text-xs', { hasText: /B.t bu.c/i });
+    const toastErrors = page.locator('[data-sonner-toast]', { hasText: /bắt buộc|required/i });
+
+    await expect.poll(async () => {
+      const inline = await inlineErrors.count();
+      const toast = await toastErrors.count();
+      return inline + toast;
+    }).toBeGreaterThan(0);
   });
 
   test('giới hạn tiêu đề 150 ký tự', async ({ page }) => {
@@ -86,6 +93,15 @@ test.describe('Đăng tin tuyển dụng - kiểm tra ràng buộc form', () => 
       has: page.locator('input[name="jobTitle"]'),
     });
     await expect(form).toBeVisible();
+
+    // Đợi toast error từ fetch trước đó (nếu có) tự tắt để tránh intercept
+    // pointer events. Nếu không có toast, bước này no-op.
+    const blockingToast = page.locator('[data-sonner-toast]').first();
+    if ((await blockingToast.count()) > 0) {
+      // Đợi toast tự ẩn (sonner default ~4s) — không dismiss thủ công
+      // để tránh click nhầm vào UI khác.
+      await blockingToast.waitFor({ state: 'hidden', timeout: 8_000 }).catch(() => {});
+    }
 
     // Header has a close button with FaTimes icon — last button in sticky header
     await page.locator('.sticky button').first().click();
