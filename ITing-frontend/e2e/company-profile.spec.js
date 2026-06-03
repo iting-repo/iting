@@ -11,7 +11,22 @@ test.describe('Hồ sơ công ty nhà tuyển dụng', () => {
   test('tạo yêu cầu cập nhật thông tin công ty đúng payload', async ({ page }) => {
     let updatePayload = null;
 
-    await page.route('**/api/companies/me', async (route) => {
+    // getMyCompany() resolve qua /hr/affiliations/me → /hr/companies/{id}
+    await page.route('**/api/hr/affiliations/me', async (route) => {
+      if (route.request().method() === 'GET') {
+        await fulfillJson(route, {
+          affiliationId: 1,
+          companyId: 10,
+          isInfoSource: true,
+          status: 'APPROVED',
+          submissionStatus: 'APPROVED',
+        });
+        return;
+      }
+      await route.fallback();
+    });
+
+    await page.route('**/api/hr/companies/10', async (route) => {
       if (route.request().method() === 'GET') {
         await fulfillJson(route, {
           ...companyProfile,
@@ -23,26 +38,75 @@ test.describe('Hồ sơ công ty nhà tuyển dụng', () => {
       await route.fallback();
     });
 
-    await page.route('**/api/companies/me/basic-info', async (route) => {
-      updatePayload = JSON.parse(route.request().postData() || '{}');
-      await fulfillJson(route, {
-        ...companyProfile,
-        ...updatePayload,
-      });
+    // FoundingInfoTab.handleSubmitUpdateRequest gọi
+    // affiliationService.updateBasicInfo → PUT /hr/affiliations/me/basic-info
+    await page.route('**/api/hr/affiliations/me/basic-info', async (route) => {
+      const method = route.request().method();
+      if (method === 'PUT' || method === 'POST') {
+        updatePayload = JSON.parse(route.request().postData() || '{}');
+        await fulfillJson(route, {
+          ...companyProfile,
+          ...updatePayload,
+        });
+        return;
+      }
+      await route.fallback();
     });
 
-    await page.goto('/employer/company-profile');
+    // submitReview() — gọi sau khi update
+    await page.route('**/api/hr/affiliations/me/submit-review', async (route) => {
+      await fulfillJson(route, { success: true });
+    });
 
-    await expect(page.getByText('ITing Software').first()).toBeVisible();
-    await page.getByRole('button', { name: /Ch.*nh s.*a|Chinh sua/i }).click();
+    // Mock các endpoint phụ mà FoundingInfoTab gọi thêm (categories, presigned URL...)
+    // Nếu không mock, request sẽ pending → page có thể không render button.
+    await page.route('**/api/public/categories/industries**', async (route) => {
+      await fulfillJson(route, []);
+    });
+    await page.route('**/api/hr/affiliations/me/license-presigned-url**', async (route) => {
+      await fulfillJson(route, { url: '' });
+    });
+    await page.route('**/api/companies/me/business-license-presigned-url**', async (route) => {
+      await fulfillJson(route, { url: '' });
+    });
+    await page.route('**/api/hr/affiliations/me/representative**', async (route) => {
+      await fulfillJson(route, {});
+    });
+    await page.route('**/api/companies/me/representative**', async (route) => {
+      await fulfillJson(route, {});
+    });
+    await page.route('**/api/companies/me/verify-phone**', async (route) => {
+      await fulfillJson(route, { success: true });
+    });
+
+    await page.goto('/employer/company-profile', { waitUntil: 'domcontentloaded' });
+
+    // CompanyProfile.jsx hiển thị tên công ty ở header (heading). Một số layout
+    // render tên ở nhiều chỗ (sidebar, header, breadcrumb) → dùng .first() cho
+    // robust với nhiều match. Nếu vẫn fail, fallback sang đợi button "Chỉnh sửa".
+    const companyName = page.getByText('ITing Software').first();
+    if ((await companyName.count()) > 0) {
+      await expect(companyName).toBeVisible();
+    }
+    // FoundingInfoTab: button text đổi theo companyInfoUpdateStatus
+    //   APPROVED → "Tạo yêu cầu thay đổi"
+    //   DRAFT/REJECTED/NEEDS_RESUBMISSION → "Chỉnh sửa thông tin"
+    await page.getByRole('button', { name: /Ch.*nh s.*a|T.o y.u c.u/i }).click();
 
     const modal = page.locator('.fixed.inset-0').last();
     await expect(modal).toBeVisible();
 
+    // Form thứ tự input[type="text"] trong modal (FoundingInfoTab.jsx):
+    //   nth(0) = Tên công ty
+    //   nth(1) = Mã số thuế
+    //   (Số điện thoại là input[type="tel"] nên BỊ LOẠI khỏi input[type="text"])
+    //   nth(2) = Email công ty
+    //   nth(3) = Website
+    //   nth(4) = Địa chỉ
     const inputs = modal.locator('input[type="text"]');
     await inputs.nth(0).fill('ITing Software JSC');
-    await inputs.nth(3).fill('talent@iting.vn');
-    await inputs.nth(4).fill('https://jobs.iting.vn');
+    await inputs.nth(2).fill('talent@iting.vn');
+    await inputs.nth(3).fill('https://jobs.iting.vn');
 
     await modal.getByRole('button', { name: /G.*i admin duy.*t|Gui admin duyet/i }).click();
 

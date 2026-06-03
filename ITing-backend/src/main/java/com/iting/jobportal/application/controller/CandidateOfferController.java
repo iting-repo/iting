@@ -8,12 +8,11 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import java.util.List;
+import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
-import java.util.Map;
 
 @Tag(name = "08.3 Candidate Offer Letter", description = "Candidate-side offer letter access")
 @RestController
@@ -21,45 +20,43 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class CandidateOfferController {
 
-    private final OfferService offerService;
+  private final OfferService offerService;
 
-    @GetMapping
-    @Operation(summary = "Danh sách offer candidate đang login đã nhận.")
-    public ResponseEntity<List<OfferResponse>> listMyOffers(
-            @Parameter(hidden = true) @CurrentUser Long candidateAccountId) {
-        return ResponseEntity.ok(offerService.listMyOffers(candidateAccountId));
-    }
+  @GetMapping
+  @Operation(summary = "Danh sách offer candidate đang login đã nhận.")
+  public ResponseEntity<List<OfferResponse>> listMyOffers(
+      @Parameter(hidden = true) @CurrentUser Long candidateAccountId) {
+    return ResponseEntity.ok(offerService.listMyOffers(candidateAccountId));
+  }
 
-    @GetMapping("/{offerId}")
-    @Operation(summary = "Chi tiết 1 offer (chỉ candidate sở hữu).")
-    public ResponseEntity<OfferResponse> get(
-            @Parameter(hidden = true) @CurrentUser Long candidateAccountId,
-            @PathVariable Long offerId) {
-        return ResponseEntity.ok(offerService.getById(candidateAccountId, offerId, false));
-    }
+  @GetMapping("/{offerId}")
+  @Operation(summary = "Chi tiết 1 offer (chỉ candidate sở hữu).")
+  public ResponseEntity<OfferResponse> get(
+      @Parameter(hidden = true) @CurrentUser Long candidateAccountId, @PathVariable Long offerId) {
+    return ResponseEntity.ok(offerService.getById(candidateAccountId, offerId, false));
+  }
 
-    @GetMapping("/{offerId}/pdf/view")
-    @Operation(summary = "Presigned URL xem PDF (15 phút).")
-    public ResponseEntity<Map<String, String>> viewPdf(
-            @Parameter(hidden = true) @CurrentUser Long candidateAccountId,
-            @PathVariable Long offerId) {
-        return ResponseEntity.ok(Map.of("url", offerService.getPdfPresignedUrl(candidateAccountId, offerId, false)));
-    }
+  @GetMapping("/{offerId}/pdf/view")
+  @Operation(summary = "Presigned URL xem PDF (15 phút).")
+  public ResponseEntity<Map<String, String>> viewPdf(
+      @Parameter(hidden = true) @CurrentUser Long candidateAccountId, @PathVariable Long offerId) {
+    return ResponseEntity.ok(
+        Map.of("url", offerService.getPdfPresignedUrl(candidateAccountId, offerId, false)));
+  }
 
-    @PostMapping("/{offerId}/accept")
-    @Operation(summary = "Candidate chấp nhận offer → application tự move pipeline sang HIRED.")
-    public ResponseEntity<OfferResponse> accept(
-            @Parameter(hidden = true) @CurrentUser Long candidateAccountId,
-            @PathVariable Long offerId) {
-        return ResponseEntity.ok(offerService.acceptByCandidate(candidateAccountId, offerId));
-    }
+  @PostMapping("/{offerId}/accept")
+  @Operation(summary = "Candidate chấp nhận offer → application tự move pipeline sang HIRED.")
+  public ResponseEntity<OfferResponse> accept(
+      @Parameter(hidden = true) @CurrentUser Long candidateAccountId, @PathVariable Long offerId) {
+    return ResponseEntity.ok(offerService.acceptByCandidate(candidateAccountId, offerId));
+  }
 
-    @PostMapping("/{offerId}/decline")
-    @Operation(summary = "Candidate từ chối offer (có lý do tuỳ chọn).")
-    public ResponseEntity<OfferResponse> decline(
-            @Parameter(hidden = true) @CurrentUser Long candidateAccountId,
-            @PathVariable Long offerId,
-            @Valid @RequestBody(required = false) DeclineOfferRequest body) {
-        return ResponseEntity.ok(offerService.declineByCandidate(candidateAccountId, offerId, body));
-    }
+  @PostMapping("/{offerId}/decline")
+  @Operation(summary = "Candidate từ chối offer (có lý do tuỳ chọn).")
+  public ResponseEntity<OfferResponse> decline(
+      @Parameter(hidden = true) @CurrentUser Long candidateAccountId,
+      @PathVariable Long offerId,
+      @Valid @RequestBody(required = false) DeclineOfferRequest body) {
+    return ResponseEntity.ok(offerService.declineByCandidate(candidateAccountId, offerId, body));
+  }
 }

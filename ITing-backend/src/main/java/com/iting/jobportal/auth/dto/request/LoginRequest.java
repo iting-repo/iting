@@ -15,13 +15,13 @@ import lombok.Setter;
 @Builder
 public class LoginRequest {
 
-    @Email(message = "Email is invalid")
-    @NotBlank(message = "Email is required")
-    private String email;
+  @Email(message = "Email is invalid")
+  @NotBlank(message = "Email is required")
+  private String email;
 
-    @NotBlank(message = "Password is required")
-    private String password;
+  @NotBlank(message = "Password is required")
+  private String password;
 
-    private String deviceInfo;
-    private String ipAddress;
+  private String deviceInfo;
+  private String ipAddress;
 }

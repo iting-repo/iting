@@ -12,6 +12,6 @@ import lombok.Setter;
 @AllArgsConstructor
 public class FollowCompanyRequest {
 
-    @NotNull(message = "Company ID is required")
-    private Long companyId;
+  @NotNull(message = "Company ID is required")
+  private Long companyId;
 }

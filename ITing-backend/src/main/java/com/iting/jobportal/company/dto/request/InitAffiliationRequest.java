@@ -7,7 +7,7 @@ import lombok.Data;
 @Data
 public class InitAffiliationRequest {
 
-    @NotBlank(message = "Mã số thuế không được để trống")
-    @Size(max = 50, message = "Mã số thuế không được vượt quá 50 ký tự")
-    private String taxCode;
+  @NotBlank(message = "Mã số thuế không được để trống")
+  @Size(max = 50, message = "Mã số thuế không được vượt quá 50 ký tự")
+  private String taxCode;
 }

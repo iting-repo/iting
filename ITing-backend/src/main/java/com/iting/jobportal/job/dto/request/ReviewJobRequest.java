@@ -7,6 +7,6 @@ import lombok.Setter;
 @Getter
 @Setter
 public class ReviewJobRequest {
-    @NotBlank(message = "Lý do không được để trống")
-    private String reason;
+  @NotBlank(message = "Lý do không được để trống")
+  private String reason;
 }

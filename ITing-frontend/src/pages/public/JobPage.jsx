@@ -26,7 +26,9 @@ const defaultFilters = {
     size: 10, // Default for non-DOM environments, overridden later
     sortBy: 'lastUpdate',
     sortOrder: 'desc',
-    isAiSearch: false,
+    // Semantic search ON theo mặc định — backend tự fallback nếu ML service down.
+    // Khi có keyword, BE: KG expand (always) + vector search + cross-encoder rerank.
+    isAiSearch: true,
 };
 
 const normalizeSort = (value) => {

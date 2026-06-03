@@ -1,0 +1,75 @@
+# =====================================================
+# OWASP ZAP Baseline Scan — chạy weekly
+# =====================================================
+# Baseline = passive scan (không exploit). An toàn cho prod.
+# Để full active scan (exploit thực sự) → đổi action = zaproxy/action-full-scan
+# CHỈ chạy active scan trên môi trường staging, KHÔNG production.
+
+name: Security Deep Scan
+
+on:
+  schedule:
+    - cron: "0 20 * * 0"   # 20:00 UTC Chủ nhật = 03:00 thứ 2 GMT+7
+  workflow_dispatch:
+    inputs:
+      target_url:
+        description: "URL test"
+        required: false
+        default: "https://datnhk252iting.dpdns.org"
+
+jobs:
+  zap-baseline:
+    name: OWASP ZAP Baseline
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: ZAP Baseline Scan
+        uses: zaproxy/action-baseline@v0.12.0
+        with:
+          target: ${{ github.event.inputs.target_url || 'https://datnhk252iting.dpdns.org' }}
+          rules_file_name: ".zap/rules.tsv"
+          cmd_options: "-a -j -T 5"
+          # -a  = include alpha-quality passive rules
+          # -j  = JSON report
+          # -T  = max scan time = 5 phút
+
+      - name: Upload ZAP report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: zap-baseline-report
+          path: |
+            report_html.html
+            report_json.json
+            report_md.md
+          retention-days: 30
+
+  zap-api-scan:
+    name: OWASP ZAP API Scan (OpenAPI)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: ZAP API Scan
+        uses: zaproxy/action-api-scan@v0.9.0
+        continue-on-error: true
+        with:
+          target: ${{ github.event.inputs.target_url || 'https://datnhk252iting.dpdns.org' }}/v3/api-docs
+          format: openapi
+          rules_file_name: ".zap/rules.tsv"
+          cmd_options: "-a -j -T 10"
+
+      - name: Upload API scan report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: zap-api-report
+          path: |
+            report_html.html
+            report_json.json
+          retention-days: 30

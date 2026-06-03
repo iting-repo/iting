@@ -2,9 +2,8 @@ package com.iting.jobportal.company.entity;
 
 import com.iting.jobportal.company.entity.enums.CompanyAuditAction;
 import jakarta.persistence.*;
-import lombok.*;
-
 import java.time.LocalDateTime;
+import lombok.*;
 
 @Entity
 @Table(name = "company_audit_log")
@@ -15,28 +14,28 @@ import java.time.LocalDateTime;
 @Builder
 public class CompanyAuditLog {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+  @Id
+  @GeneratedValue(strategy = GenerationType.IDENTITY)
+  private Long id;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "company_id", nullable = false)
-    private Company company;
+  @ManyToOne(fetch = FetchType.LAZY, optional = false)
+  @JoinColumn(name = "company_id", nullable = false)
+  private Company company;
 
-    @Enumerated(EnumType.STRING)
-    private CompanyAuditAction action;
+  @Enumerated(EnumType.STRING)
+  private CompanyAuditAction action;
 
-    private String fromStatus;
-    private String toStatus;
+  private String fromStatus;
+  private String toStatus;
 
-    @Column(columnDefinition = "TEXT")
-    private String reason;
+  @Column(columnDefinition = "TEXT")
+  private String reason;
 
-    @Column(columnDefinition = "TEXT")
-    private String note;
+  @Column(columnDefinition = "TEXT")
+  private String note;
 
-    private String actor;
-    private Long actorId;
+  private String actor;
+  private Long actorId;
 
-    private LocalDateTime createdAt;
+  private LocalDateTime createdAt;
 }

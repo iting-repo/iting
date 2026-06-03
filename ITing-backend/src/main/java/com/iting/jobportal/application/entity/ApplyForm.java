@@ -13,24 +13,24 @@ import lombok.*;
 @Builder
 public class ApplyForm {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "Id")
-    private Long id;
+  @Id
+  @GeneratedValue(strategy = GenerationType.IDENTITY)
+  @Column(name = "Id")
+  private Long id;
 
-    @Column(name = "User_id", nullable = false)
-    private Long userId;
+  @Column(name = "User_id", nullable = false)
+  private Long userId;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "Cv_id")
-    private CV cv;
+  @ManyToOne(fetch = FetchType.LAZY)
+  @JoinColumn(name = "Cv_id")
+  private CV cv;
 
-    @Column(name = "Cv_title", length = 255)
-    private String cvTitle;
+  @Column(name = "Cv_title", length = 255)
+  private String cvTitle;
 
-    @Column(name = "Applicant_name", length = 255)
-    private String applicantName;
+  @Column(name = "Applicant_name", length = 255)
+  private String applicantName;
 
-    @Column(name = "Introduction", columnDefinition = "TEXT")
-    private String introduction;
+  @Column(name = "Introduction", columnDefinition = "TEXT")
+  private String introduction;
 }

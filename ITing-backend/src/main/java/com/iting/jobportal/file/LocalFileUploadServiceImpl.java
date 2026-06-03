@@ -1,113 +1,112 @@
 package com.iting.jobportal.file;
 
-import lombok.RequiredArgsConstructor;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.stereotype.Service;
-import org.springframework.web.multipart.MultipartFile;
-
-import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import lombok.RequiredArgsConstructor;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
 @Service
 @RequiredArgsConstructor
 @ConditionalOnProperty(name = "aws.enabled", havingValue = "false", matchIfMissing = true)
 public class LocalFileUploadServiceImpl implements FileUploadService {
 
-    private final String UPLOAD_DIR = "uploads/";
+  private final String UPLOAD_DIR = "uploads/";
 
-    @Override
-    public String uploadPortfolio(MultipartFile file) {
-        return saveFile(file, "portfolio");
+  @Override
+  public String uploadPortfolio(MultipartFile file) {
+    return saveFile(file, "portfolio");
+  }
+
+  @Override
+  public String uploadCV(MultipartFile file) {
+    return saveFile(file, "cv");
+  }
+
+  @Override
+  public String uploadAvatar(MultipartFile file) {
+    return saveFile(file, "avatar");
+  }
+
+  @Override
+  public String uploadBusinessLicense(MultipartFile file) {
+    return saveFile(file, "business-license");
+  }
+
+  @Override
+  public void deleteByUrl(String fileUrl) {
+    if (fileUrl == null || fileUrl.isBlank()) return;
+
+    try {
+      String relativePath = fileUrl.startsWith("/") ? fileUrl.substring(1) : fileUrl;
+      Path filePath = Paths.get(relativePath);
+      Files.deleteIfExists(filePath);
+
+    } catch (IOException e) {
+      throw new RuntimeException("Cannot delete file", e);
     }
+  }
 
-    @Override
-    public String uploadCV(MultipartFile file) {
-        return saveFile(file, "cv");
+  @Override
+  public String uploadConsentDocument(MultipartFile file) {
+    return saveFile(file, "consent-document");
+  }
+
+  @Override
+  public String uploadBlogImage(MultipartFile file) {
+    return saveFile(file, "blog");
+  }
+
+  @Override
+  public String uploadLogo(MultipartFile file) {
+    return saveFile(file, "company-logo");
+  }
+
+  @Override
+  public String generatePresignedUrl(String fileUrl, int minutes) {
+    // Local thì không cần presigned, trả luôn URL
+    return fileUrl;
+  }
+
+  @Override
+  public String uploadBytes(byte[] bytes, String key, String contentType) {
+    try {
+      Path filePath = Paths.get(UPLOAD_DIR + key);
+      Path parent = filePath.getParent();
+      if (parent != null && !Files.exists(parent)) {
+        Files.createDirectories(parent);
+      }
+      Files.write(filePath, bytes);
+      return "/" + UPLOAD_DIR + key;
+    } catch (IOException e) {
+      throw new RuntimeException("Cannot write bytes to " + key, e);
     }
+  }
 
-    @Override
-    public String uploadAvatar(MultipartFile file) {
-        return saveFile(file, "avatar");
+  private String saveFile(MultipartFile file, String folder) {
+    try {
+      Path uploadPath = Paths.get(UPLOAD_DIR + folder);
+      if (!Files.exists(uploadPath)) {
+        Files.createDirectories(uploadPath);
+      }
+
+      String originalName =
+          file.getOriginalFilename() != null ? file.getOriginalFilename() : "file";
+      String ext =
+          originalName.contains(".") ? originalName.substring(originalName.lastIndexOf(".")) : "";
+      String fileName = System.currentTimeMillis() + "_" + java.util.UUID.randomUUID() + ext;
+
+      Path filePath = uploadPath.resolve(fileName);
+
+      file.transferTo(filePath.toFile());
+
+      return "/" + UPLOAD_DIR + folder + "/" + fileName;
+
+    } catch (IOException e) {
+      throw new RuntimeException("Cannot save file", e);
     }
-
-    @Override
-    public String uploadBusinessLicense(MultipartFile file) {
-        return saveFile(file, "business-license");
-    }
-
-    @Override
-    public void deleteByUrl(String fileUrl) {
-        if (fileUrl == null || fileUrl.isBlank())
-            return;
-
-        try {
-            String relativePath = fileUrl.startsWith("/") ? fileUrl.substring(1) : fileUrl;
-            Path filePath = Paths.get(relativePath);
-            Files.deleteIfExists(filePath);
-
-        } catch (IOException e) {
-            throw new RuntimeException("Cannot delete file", e);
-        }
-    }
-
-    @Override
-    public String uploadConsentDocument(MultipartFile file) {
-        return saveFile(file, "consent-document");
-    }
-
-    @Override
-    public String uploadBlogImage(MultipartFile file) {
-        return saveFile(file, "blog");
-    }
-
-    @Override
-    public String uploadLogo(MultipartFile file) {
-        return saveFile(file, "company-logo");
-    }
-
-    @Override
-    public String generatePresignedUrl(String fileUrl, int minutes) {
-        // Local thì không cần presigned, trả luôn URL
-        return fileUrl;
-    }
-
-    @Override
-    public String uploadBytes(byte[] bytes, String key, String contentType) {
-        try {
-            Path filePath = Paths.get(UPLOAD_DIR + key);
-            Path parent = filePath.getParent();
-            if (parent != null && !Files.exists(parent)) {
-                Files.createDirectories(parent);
-            }
-            Files.write(filePath, bytes);
-            return "/" + UPLOAD_DIR + key;
-        } catch (IOException e) {
-            throw new RuntimeException("Cannot write bytes to " + key, e);
-        }
-    }
-
-    private String saveFile(MultipartFile file, String folder) {
-        try {
-            Path uploadPath = Paths.get(UPLOAD_DIR + folder);
-            if (!Files.exists(uploadPath)) {
-                Files.createDirectories(uploadPath);
-            }
-
-            String originalName = file.getOriginalFilename() != null ? file.getOriginalFilename() : "file";
-            String ext = originalName.contains(".") ? originalName.substring(originalName.lastIndexOf(".")) : "";
-            String fileName = System.currentTimeMillis() + "_" + java.util.UUID.randomUUID() + ext;
-
-            Path filePath = uploadPath.resolve(fileName);
-
-            file.transferTo(filePath.toFile());
-
-            return "/" + UPLOAD_DIR + folder + "/" + fileName;
-
-        } catch (IOException e) {
-            throw new RuntimeException("Cannot save file", e);
-        }
-    }
+  }
 }

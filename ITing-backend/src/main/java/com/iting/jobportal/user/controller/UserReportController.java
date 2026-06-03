@@ -15,14 +15,13 @@ import org.springframework.web.bind.annotation.*;
 @RequiredArgsConstructor
 public class UserReportController {
 
-    private final AdminReportService reportService;
+  private final AdminReportService reportService;
 
-    @PostMapping
-    public ResponseEntity<ApiResponse<UserReport>> createReport(
-            @RequestBody ReportRequest request,
-            @AuthenticationPrincipal AuthUser authUser) {
+  @PostMapping
+  public ResponseEntity<ApiResponse<UserReport>> createReport(
+      @RequestBody ReportRequest request, @AuthenticationPrincipal AuthUser authUser) {
 
-        UserReport report = reportService.createReport(authUser.getId(), request);
-        return ResponseEntity.ok(ApiResponse.success(report));
-    }
+    UserReport report = reportService.createReport(authUser.getId(), request);
+    return ResponseEntity.ok(ApiResponse.success(report));
+  }
 }

@@ -6,6 +6,6 @@ import lombok.Data;
 @Data
 public class AffiliationRejectRequest {
 
-    @NotBlank(message = "Lý do reject không được để trống")
-    private String reason;
+  @NotBlank(message = "Lý do reject không được để trống")
+  private String reason;
 }

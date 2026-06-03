@@ -22,7 +22,7 @@ test.describe("Admin quản lý tin tuyển dụng", () => {
     await approveDialog.locator("textarea").fill("Tin hợp lệ, đã phê duyệt bởi Admin.");
     await approveDialog.locator("button").last().click();
 
-    await expect(page.locator("[data-sonner-toast]")).toBeVisible();
+    await expect(page.locator("[data-sonner-toast]").first()).toBeVisible();
     await expect(targetRow).toContainText(/Đang hoạt động|Dang hoat dong/i);
 
     await targetRow.locator("button").last().click();
@@ -33,7 +33,7 @@ test.describe("Admin quản lý tin tuyển dụng", () => {
     await suspendDialog.locator("textarea").fill("Phát hiện nội dung không phù hợp.");
     await suspendDialog.locator("button").last().click();
 
-    await expect(page.locator("[data-sonner-toast]")).toBeVisible();
+    await expect(page.locator("[data-sonner-toast]").first()).toBeVisible();
     await expect(targetRow).toContainText(/Bị đình chỉ|Bi dinh chi/i);
   });
 });

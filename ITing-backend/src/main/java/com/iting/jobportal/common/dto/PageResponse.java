@@ -1,4 +1,3 @@
 package com.iting.jobportal.common.dto;
 
-public class PageResponse {
-}
+public class PageResponse {}

@@ -4,8 +4,10 @@ import MainLayout from '../layouts/MainLayout';
 import AdminLayout from '../layouts/AdminLayout';
 import PrivateRoute from './PrivateRoute';
 import { GlobalLoading } from '../components/common';
-
-const HomePage = lazy(() => import('../pages/public/HomePage'));
+// HomePage import eagerly để cải thiện LCP — đây là landing page chính, lazy-load
+// tạo waterfall (main bundle → chunk fetch → render) làm LCP element render delay
+// >1s trên simulated mobile.
+import HomePage from '../pages/public/HomePage';
 const Login = lazy(() => import('../pages/public/LoginPage'));
 const Register = lazy(() => import('../pages/public/RegisterPage'));
 const JobPage = lazy(() => import('../pages/public/JobPage'));
@@ -61,6 +63,7 @@ const AnnouncementManagement = lazy(() => import('../pages/admin/announcements/A
 const BlogManagement = lazy(() => import('../pages/admin/blog/BlogManagement'));
 const FaqManagement = lazy(() => import('../pages/admin/faq/FaqManagement'));
 const RoleManagement = lazy(() => import('../pages/admin/roles/RoleManagement'));
+const AdminProfilePage = lazy(() => import('../pages/admin/profile/AdminProfilePage'));
 const CompaniesPage = lazy(() => import('../pages/public/CompaniesPage'));
 const CompanyDetailPage = lazy(() => import('../pages/public/CompanyDetailPage'));
 const SalaryLookupPage = lazy(() => import('../pages/public/SalaryLookupPage'));
@@ -109,6 +112,7 @@ const AppRoutes = () => {
             <Route path="blog" element={<BlogManagement />} />
             <Route path="faq" element={<FaqManagement />} />
             <Route path="roles" element={<RoleManagement />} />
+            <Route path="profile" element={<AdminProfilePage />} />
           </Route>
         </Route>
 

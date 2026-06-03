@@ -4,6 +4,7 @@ import { toast } from 'sonner';
 
 import companyService from '../../../../services/companyService';
 import authService from '../../../../services/authService';
+import { firstPasswordError } from '../../../../utils/passwordPolicy';
 
 const PHONE_REGEX = /^(\+84|0)(3|5|7|8|9)[0-9]{8}$/;
 const OTP_RESEND_SECONDS = 60;
@@ -96,7 +97,12 @@ const SettingsTab = () => {
    const handleChangePassword = async () => {
       const errs = {};
       if (!oldPassword) errs.oldPassword = '* Vui lòng nhập mật khẩu hiện tại.';
-      if (!newPassword || newPassword.length < 8) errs.newPassword = '* Mật khẩu mới phải có ít nhất 8 ký tự.';
+      if (!newPassword) {
+         errs.newPassword = '* Vui lòng nhập mật khẩu mới.';
+      } else {
+         const pwErr = firstPasswordError(newPassword);
+         if (pwErr) errs.newPassword = '* ' + pwErr;
+      }
       if (newPassword && confirmPassword && newPassword !== confirmPassword) errs.confirmPassword = '* Mật khẩu xác nhận không khớp.';
       if (newPassword && oldPassword && newPassword === oldPassword) errs.newPassword = '* Mật khẩu mới phải khác mật khẩu hiện tại.';
 

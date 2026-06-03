@@ -1,16 +1,15 @@
 package com.iting.jobportal.application.dto.response;
 
-import com.iting.jobportal.userprofile.entity.CV;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.Setter;
-import lombok.NoArgsConstructor;
-import lombok.AllArgsConstructor;
-import java.time.LocalDateTime;
-
 import com.iting.jobportal.application.entity.ApplyForm;
 import com.iting.jobportal.application.entity.ApplyFormSentToJob;
 import com.iting.jobportal.application.entity.enums.ApplicationStatus;
+import com.iting.jobportal.userprofile.entity.CV;
+import java.time.LocalDateTime;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 @Getter
 @Setter
@@ -18,85 +17,85 @@ import com.iting.jobportal.application.entity.enums.ApplicationStatus;
 @NoArgsConstructor
 @AllArgsConstructor
 public class ApplicationResponse {
-    private Long id;
-    private Long userId;
-    private Long jobId;
-    private Long companyId;
-    private String companyName;
-    private String applicantName;
-    private String avatarUrl;
-    private String jobTitle;
-    private String companyLogo;
-    private Boolean companyActive;
-    private String introduction;
+  private Long id;
+  private Long userId;
+  private Long jobId;
+  private Long companyId;
+  private String companyName;
+  private String applicantName;
+  private String avatarUrl;
+  private String jobTitle;
+  private String companyLogo;
+  private Boolean companyActive;
+  private String introduction;
 
-    // CV Info
-    private String cvFileName;
-    private String cvFileType;
-    private String cvUrl;
+  // CV Info
+  private String cvFileName;
+  private String cvFileType;
+  private String cvUrl;
 
-    // Contact Info
-    private String phoneNumber;
-    private String email;
+  // Contact Info
+  private String phoneNumber;
+  private String email;
 
-    // Professional Profile
-    private Integer yearsExperience;
-    private String education;
+  // Professional Profile
+  private Integer yearsExperience;
+  private String education;
 
-    private LocalDateTime timeSent;
-    private ApplicationStatus status;
-    private String employerNote;
+  private LocalDateTime timeSent;
+  private ApplicationStatus status;
+  private String employerNote;
 
-    /** Điểm phù hợp CV ↔ Job (0–100%). Null nếu chưa tính. */
-    private Double matchScore;
+  /** Điểm phù hợp CV ↔ Job (0–100%). Null nếu chưa tính. */
+  private Double matchScore;
 
-    /** Giai đoạn pipeline tuyển dụng: SCREENING / PHONE_SCREEN / INTERVIEW / OFFER / HIRED / REJECTED. */
-    private String pipelineStage;
-    private LocalDateTime stageUpdatedAt;
+  /**
+   * Giai đoạn pipeline tuyển dụng: SCREENING / PHONE_SCREEN / INTERVIEW / OFFER / HIRED / REJECTED.
+   */
+  private String pipelineStage;
 
-    public static ApplicationResponse fromEntities(
-            ApplyForm form,
-            ApplyFormSentToJob sent,
-            CV cv) {
-        String fileName = null;
-        String fileType = null;
-        String fileUrl = null;
+  private LocalDateTime stageUpdatedAt;
 
-        if (cv != null) {
-            fileUrl = cv.getFileUrl();
+  public static ApplicationResponse fromEntities(ApplyForm form, ApplyFormSentToJob sent, CV cv) {
+    String fileName = null;
+    String fileType = null;
+    String fileUrl = null;
 
-            // fileName
-            if (cv.getTitle() != null && !cv.getTitle().isBlank()) {
-                fileName = cv.getTitle();
-            } else if (fileUrl != null) {
-                String path = fileUrl.substring(fileUrl.lastIndexOf("/") + 1);
-                int dot = path.lastIndexOf(".");
-                fileName = dot > 0 ? path.substring(0, dot) : path;
-            }
+    if (cv != null) {
+      fileUrl = cv.getFileUrl();
 
-            // fileType
-            if (fileUrl != null) {
-                String path = fileUrl.substring(fileUrl.lastIndexOf("/") + 1);
-                int dot = path.lastIndexOf(".");
-                fileType = dot > 0 ? path.substring(dot + 1).toUpperCase() : null;
-            }
-        }
+      // fileName
+      if (cv.getTitle() != null && !cv.getTitle().isBlank()) {
+        fileName = cv.getTitle();
+      } else if (fileUrl != null) {
+        String path = fileUrl.substring(fileUrl.lastIndexOf("/") + 1);
+        int dot = path.lastIndexOf(".");
+        fileName = dot > 0 ? path.substring(0, dot) : path;
+      }
 
-        return ApplicationResponse.builder()
-                .id(form.getId())
-                .userId(form.getUserId())
-                .jobId(sent.getId().getJobId())
-                .companyId(null)
-                .companyName(null)
-                .applicantName(form.getApplicantName())
-                .introduction(form.getIntroduction())
-                .cvFileName(fileName)
-                .cvFileType(fileType)
-                .cvUrl(fileUrl)
-                .timeSent(sent.getTimeSent())
-                .status(sent.getStatus() != null ? sent.getStatus() : ApplicationStatus.PENDING)
-                .employerNote(sent.getEmployerNote())
-                .matchScore(sent.getMatchScore())
-                .build();
+      // fileType
+      if (fileUrl != null) {
+        String path = fileUrl.substring(fileUrl.lastIndexOf("/") + 1);
+        int dot = path.lastIndexOf(".");
+        fileType = dot > 0 ? path.substring(dot + 1).toUpperCase() : null;
+      }
     }
+
+    return ApplicationResponse.builder()
+        .id(form.getId())
+        .userId(form.getUserId())
+        .jobId(sent.getId().getJobId())
+        .companyId(null)
+        .companyName(null)
+        .applicantName(form.getApplicantName())
+        .introduction(form.getIntroduction())
+        .cvFileName(fileName)
+        .cvFileType(fileType)
+        .cvUrl(fileUrl)
+        .timeSent(sent.getTimeSent())
+        .status(sent.getStatus() != null ? sent.getStatus() : ApplicationStatus.PENDING)
+        .employerNote(sent.getEmployerNote())
+        .matchScore(sent.getMatchScore())
+        .build();
+  }
 }

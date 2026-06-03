@@ -22,8 +22,22 @@ import recommendationService from '../../services/recommendationService';
 import JobCard from '../../components/JobCard';
 import JobPreviewPane from '../../components/JobPreviewModal';
 
-// Import hình nền
-const heroBg = '/homepage-page.png';
+// Hero background: AVIF 72KB (resize 1920×1080, quality 50) — vs PNG gốc 1.6MB (-23×).
+// Sinh bởi: node scripts/convert-banners-avif.js
+const heroBg = '/jobportal_banner.avif';
+
+// Defer non-critical work tới sau lần paint đầu — dùng requestIdleCallback nếu có,
+// fallback setTimeout. Mục tiêu: giảm TBT bằng cách không block main thread cho
+// các API call (banners, recommendations, blogs, stats) ngay khi mount.
+const deferIdle = (fn, timeout = 1500) => {
+    if (typeof window === 'undefined') return () => {};
+    if ('requestIdleCallback' in window) {
+        const id = window.requestIdleCallback(fn, { timeout });
+        return () => window.cancelIdleCallback?.(id);
+    }
+    const id = setTimeout(fn, 200);
+    return () => clearTimeout(id);
+};
 
 const HomePage = () => {
     const dispatch = useDispatch();
@@ -60,6 +74,21 @@ const HomePage = () => {
     // Search overlay state
     const [isSearchOverlayOpen, setIsSearchOverlayOpen] = useState(false);
     const [searchType, setSearchType] = useState('job');
+
+    // Banner CMS State
+    const [banners, setBanners] = useState([]);
+    const [currentBannerIndex, setCurrentBannerIndex] = useState(0);
+
+    // Tip "Đưa chuột vào tiêu đề..." — user có thể đóng. Lưu sessionStorage
+    // để khôi phục khi reload trong cùng session, reset khi tab đóng.
+    const [tipDismissed, setTipDismissed] = useState(() => {
+        if (typeof window === 'undefined') return false;
+        return sessionStorage.getItem('iting_tip_preview_dismissed') === '1';
+    });
+    const dismissTip = () => {
+        setTipDismissed(true);
+        try { sessionStorage.setItem('iting_tip_preview_dismissed', '1'); } catch { /* sessionStorage blocked */ }
+    };
 
     const handleCardEnter = (job, el) => {
         if (leaveTimerRef.current) clearTimeout(leaveTimerRef.current);
@@ -108,28 +137,29 @@ const HomePage = () => {
     }, [dispatch]);
 
     useEffect(() => {
-        fetch('https://provinces.open-api.vn/api/v2/p/')
-            .then((res) => res.json())
-            .then((data) => {
-                if (Array.isArray(data)) {
-                    setProvinces(data);
-                }
-            })
-            .catch(() => {
-                setProvinces([]);
-            });
+        return deferIdle(() => {
+            fetch('https://provinces.open-api.vn/api/v2/p/')
+                .then((res) => res.json())
+                .then((data) => {
+                    if (Array.isArray(data)) {
+                        setProvinces(data);
+                    }
+                })
+                .catch(() => {
+                    setProvinces([]);
+                });
+        });
     }, []);
 
     useEffect(() => {
-        const fetchStats = async () => {
+        return deferIdle(async () => {
             try {
                 const data = await publicService.getHomeStats();
                 setStats({ totalJobs: 0, totalCandidates: 0, totalCompanies: 0, ...(data || {}) });
             } catch (error) {
                 console.error("Failed to fetch home stats:", error);
             }
-        };
-        fetchStats();
+        });
     }, []);
 
     useEffect(() => {
@@ -150,8 +180,8 @@ const HomePage = () => {
     }, [currentUser]);
 
     useEffect(() => {
-        const fetchRecommendations = async () => {
-            setIsRecommending(true);
+        setIsRecommending(true);
+        return deferIdle(async () => {
             try {
                 const data = await recommendationService.getHomepageRecommendations(8);
                 setRecommendedJobs(Array.isArray(data) ? data : []);
@@ -160,12 +190,11 @@ const HomePage = () => {
             } finally {
                 setIsRecommending(false);
             }
-        };
-        fetchRecommendations();
+        });
     }, [currentUser]);
 
     useEffect(() => {
-        const fetchBlogs = async () => {
+        return deferIdle(async () => {
             try {
                 const response = await publicService.getBlogs({ page: 0, size: 2 });
                 const data = response.data || response;
@@ -177,9 +206,27 @@ const HomePage = () => {
             } catch (error) {
                 console.error("Failed to fetch blogs:", error);
             }
-        };
-        fetchBlogs();
+        });
     }, []);
+
+    useEffect(() => {
+        return deferIdle(async () => {
+            try {
+                const data = await publicService.getBanners('homepage_main');
+                setBanners(Array.isArray(data) ? data : []);
+            } catch (error) {
+                console.error("Failed to fetch active banners:", error);
+            }
+        });
+    }, []);
+
+    useEffect(() => {
+        if (banners.length <= 1) return;
+        const interval = setInterval(() => {
+            setCurrentBannerIndex((prev) => (prev + 1) % banners.length);
+        }, 5000);
+        return () => clearInterval(interval);
+    }, [banners]);
 
     const handleToggleSave = async (e, jobId) => {
         e.stopPropagation();
@@ -440,7 +487,7 @@ const HomePage = () => {
             {/* PHẦN 1: HERO SEARCH */}
             <section className="relative z-10 bg-[#0B1B3D] pt-6 md:pt-10 pb-64 overflow-visible">
                 <div className="absolute inset-0 z-0">
-                    <img src={heroBg} alt="Background" className="w-full h-full object-cover opacity-30 mix-blend-overlay" />
+                    <img src={heroBg} alt="" aria-hidden="true" width="1600" height="900" fetchpriority="high" decoding="async" className="w-full h-full object-cover opacity-30 mix-blend-overlay" />
                     <div className="absolute inset-0 bg-gradient-to-b from-[#0B1B3D]/50 via-[#0B1B3D]/80 to-[#0B1B3D]"></div>
                     {/* Glowing Orbs */}
                     <div className="absolute top-0 left-1/4 w-96 h-96 bg-[#3AB4E6] rounded-full mix-blend-screen filter blur-[120px] opacity-20"></div>
@@ -455,8 +502,9 @@ const HomePage = () => {
                         Tiếp cận {(stats.totalJobs ?? 0).toLocaleString('vi-VN')}+ tin tuyển dụng việc làm mỗi ngày từ hàng nghìn doanh nghiệp uy tín tại Việt Nam
                     </p>
 
-                    {/* Search Box */}
-                    <div className="bg-white/10 backdrop-blur-md p-3 lg:p-3 rounded-2xl max-w-5xl mx-auto shadow-2xl border border-white/20">
+                    {/* Search Box — z-30 để dropdown SearchOverlay/LocationPicker/CategoryPicker
+                        đè lên banner carousel (sibling sau trong DOM, cùng container z-10). */}
+                    <div className="bg-white/10 backdrop-blur-md p-3 lg:p-3 rounded-2xl max-w-5xl mx-auto shadow-2xl border border-white/20 relative z-30">
                         <div className="flex flex-col lg:flex-row items-stretch gap-3 lg:gap-0 lg:bg-white lg:rounded-xl">
 
                             {/* 1. Category Picker */}
@@ -533,6 +581,79 @@ const HomePage = () => {
                         </div>
                     </div>
 
+                    {/* Banners Carousel (Desktop & Tablet only, hidden on Mobile) */}
+                    {banners.length > 0 && (
+                        <div className="hidden md:block max-w-5xl mx-auto mt-8 relative z-0 group overflow-hidden rounded-2xl border border-white/10 shadow-2xl transition-all duration-300 hover:border-white/20">
+                            <div className="relative aspect-[31/10] w-full overflow-hidden bg-slate-950">
+                                {banners.map((banner, index) => {
+                                    const isActive = index === currentBannerIndex;
+                                    return (
+                                        <div
+                                            key={banner.id || index}
+                                            className={`absolute inset-0 transition-opacity duration-1000 ease-in-out ${
+                                                isActive ? "opacity-100 z-10 pointer-events-auto" : "opacity-0 z-0 pointer-events-none"
+                                            }`}
+                                        >
+                                            {banner.link ? (
+                                                <a href={banner.link} target="_blank" rel="noopener noreferrer" className="block w-full h-full">
+                                                    <img
+                                                        src={banner.imageDesktop}
+                                                        alt={banner.title}
+                                                        className="w-full h-full object-cover select-none transition-transform duration-700 hover:scale-105"
+                                                    />
+                                                </a>
+                                            ) : (
+                                                <img
+                                                    src={banner.imageDesktop}
+                                                    alt={banner.title}
+                                                    className="w-full h-full object-cover select-none"
+                                                />
+                                            )}
+                                        </div>
+                                    );
+                                })}
+
+                                {/* Controls: Left & Right Arrows */}
+                                {banners.length > 1 && (
+                                    <>
+                                        <button
+                                            type="button"
+                                            aria-label="Banner trước"
+                                            onClick={() => setCurrentBannerIndex((prev) => (prev - 1 + banners.length) % banners.length)}
+                                            className="absolute left-4 top-1/2 -translate-y-1/2 z-20 w-10 h-10 rounded-full bg-black/40 backdrop-blur-sm text-white flex items-center justify-center hover:bg-[#3AB4E6] hover:text-white transition-all opacity-0 group-hover:opacity-100 border border-white/10"
+                                        >
+                                            <FaArrowLeft size={12} aria-hidden="true" />
+                                        </button>
+                                        <button
+                                            type="button"
+                                            aria-label="Banner kế tiếp"
+                                            onClick={() => setCurrentBannerIndex((prev) => (prev + 1) % banners.length)}
+                                            className="absolute right-4 top-1/2 -translate-y-1/2 z-20 w-10 h-10 rounded-full bg-black/40 backdrop-blur-sm text-white flex items-center justify-center hover:bg-[#3AB4E6] hover:text-white transition-all opacity-0 group-hover:opacity-100 border border-white/10"
+                                        >
+                                            <FaArrowRight size={12} aria-hidden="true" />
+                                        </button>
+                                    </>
+                                )}
+
+                                {/* Dot Indicators */}
+                                {banners.length > 1 && (
+                                    <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-20 flex gap-2">
+                                        {banners.map((_, index) => (
+                                            <button
+                                                key={index}
+                                                type="button"
+                                                onClick={() => setCurrentBannerIndex(index)}
+                                                className={`w-2.5 h-2.5 rounded-full transition-all duration-300 ${
+                                                    index === currentBannerIndex ? "bg-[#3AB4E6] w-6" : "bg-white/40 hover:bg-white/60"
+                                                }`}
+                                            />
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    )}
+
                     <div className="mt-8 flex flex-wrap justify-center gap-3 items-center">
                         <span className="text-gray-300 text-base font-medium">Gợi ý:</span>
                         {['Intern', 'Thực tập sinh IT', 'Senior Frontend', 'Junior', 'Java Developer'].map((tag, i) => (
@@ -608,8 +729,12 @@ const HomePage = () => {
 
                         {/* Yêu cầu người dùng lưu ảnh với tên tech-fox.png trong thư mục public */}
                         <img
-                            src="/tech-fox.png"
+                            src="/tech-fox.avif"
                             alt="Cáo Công Nghệ AI"
+                            width="320"
+                            height="320"
+                            loading="lazy"
+                            decoding="async"
                             className="relative z-10 w-full max-w-[320px] object-contain drop-shadow-[0_0_25px_rgba(58,180,230,0.4)] animate-[bounce_4s_ease-in-out_infinite] hover:scale-105 transition-transform duration-500"
                         />
                     </div>
@@ -659,11 +784,11 @@ const HomePage = () => {
 
                     <div className="relative group">
                         {/* Scroll buttons overlay */}
-                        <button onClick={() => recommendationScrollRef.current?.scrollBy({ left: -300, behavior: 'smooth' })} className="absolute left-0 top-1/2 -translate-y-[calc(50%+8px)] -translate-x-2 md:-translate-x-4 w-10 h-10 bg-white/90 backdrop-blur rounded-full shadow-lg text-gray-600 flex items-center justify-center hover:bg-[#3AB4E6] hover:text-white transition-all z-10 opacity-100 md:opacity-0 md:group-hover:opacity-100 border border-gray-200">
-                            <FaArrowLeft size={14} />
+                        <button type="button" aria-label="Cuộn sang trái" onClick={() => recommendationScrollRef.current?.scrollBy({ left: -300, behavior: 'smooth' })} className="absolute left-0 top-1/2 -translate-y-[calc(50%+8px)] -translate-x-2 md:-translate-x-4 w-10 h-10 bg-white/90 backdrop-blur rounded-full shadow-lg text-gray-600 flex items-center justify-center hover:bg-[#3AB4E6] hover:text-white transition-all z-10 opacity-100 md:opacity-0 md:group-hover:opacity-100 border border-gray-200">
+                            <FaArrowLeft size={14} aria-hidden="true" />
                         </button>
-                        <button onClick={() => recommendationScrollRef.current?.scrollBy({ left: 300, behavior: 'smooth' })} className="absolute right-0 top-1/2 -translate-y-[calc(50%+8px)] translate-x-2 md:translate-x-4 w-10 h-10 bg-white/90 backdrop-blur rounded-full shadow-lg text-gray-600 flex items-center justify-center hover:bg-[#3AB4E6] hover:text-white transition-all z-10 opacity-100 md:opacity-0 md:group-hover:opacity-100 border border-gray-200">
-                            <FaArrowRight size={14} />
+                        <button type="button" aria-label="Cuộn sang phải" onClick={() => recommendationScrollRef.current?.scrollBy({ left: 300, behavior: 'smooth' })} className="absolute right-0 top-1/2 -translate-y-[calc(50%+8px)] translate-x-2 md:translate-x-4 w-10 h-10 bg-white/90 backdrop-blur rounded-full shadow-lg text-gray-600 flex items-center justify-center hover:bg-[#3AB4E6] hover:text-white transition-all z-10 opacity-100 md:opacity-0 md:group-hover:opacity-100 border border-gray-200">
+                            <FaArrowRight size={14} aria-hidden="true" />
                         </button>
 
                         <div ref={recommendationScrollRef} className="flex gap-4 md:gap-6 overflow-x-auto pb-6 pt-2 snap-x snap-mandatory no-scrollbar scroll-smooth px-1">
@@ -698,10 +823,13 @@ const HomePage = () => {
                                                     className="w-10 h-10 rounded-xl object-contain bg-gray-50 p-1"
                                                 />
                                                 <button
+                                                    type="button"
+                                                    aria-label={isSaved ? 'Bỏ lưu việc làm' : 'Lưu việc làm'}
+                                                    aria-pressed={isSaved}
                                                     onClick={(e) => handleToggleSave(e, job.id)}
                                                     className={`w-8 h-8 rounded-lg flex items-center justify-center transition-all ${isSaved ? 'bg-blue-500 text-white shadow-md' : 'bg-gray-50 text-gray-400 group-hover:bg-blue-50'}`}
                                                 >
-                                                    {isSaved ? <FaBookmark size={12} /> : <FaRegBookmark size={12} />}
+                                                    {isSaved ? <FaBookmark size={12} aria-hidden="true" /> : <FaRegBookmark size={12} aria-hidden="true" />}
                                                 </button>
                                             </div>
 
@@ -714,7 +842,7 @@ const HomePage = () => {
                                             </h3>
                                             <p className="text-xs text-gray-500 font-medium mb-4 truncate">{job.companyName}</p>
 
-                                            <div className="flex items-center gap-4 text-[11px] text-gray-400 mb-4 pt-4 border-t border-gray-50">
+                                            <div className="flex items-center gap-4 text-[11px] text-gray-600 mb-4 pt-4 border-t border-gray-50">
                                                 <span className="flex items-center gap-1">
                                                     <FaMapMarkerAlt className="text-red-400" /> {job.province || "Việt Nam"}
                                                 </span>
@@ -724,7 +852,7 @@ const HomePage = () => {
                                             </div>
 
                                             <div className="flex items-center justify-between">
-                                                <span className="text-sm font-bold text-blue-500">
+                                                <span className="text-sm font-bold text-blue-700">
                                                     {job.minSalary || job.maxSalary ? formatSalary(job.minSalary, job.maxSalary) : "Thỏa thuận"}
                                                 </span>
                                                 <div className="w-8 h-8 rounded-full bg-gray-50 group-hover:bg-blue-500 group-hover:text-white flex items-center justify-center transition-all">
@@ -774,8 +902,8 @@ const HomePage = () => {
                             <button
                                 onClick={() => setFilterMode('location')}
                                 className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all ${filterMode === 'location'
-                                    ? 'bg-[#3AB4E6] text-white shadow-sm'
-                                    : 'text-gray-500 hover:bg-gray-50'
+                                    ? 'bg-[#0E7BAA] text-white shadow-sm'
+                                    : 'text-gray-700 hover:bg-gray-50'
                                     }`}
                             >
                                 <FaMapMarkerAlt className="inline mr-1" size={10} />Địa điểm
@@ -783,8 +911,8 @@ const HomePage = () => {
                             <button
                                 onClick={() => setFilterMode('category')}
                                 className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all ${filterMode === 'category'
-                                    ? 'bg-[#3AB4E6] text-white shadow-sm'
-                                    : 'text-gray-500 hover:bg-gray-50'
+                                    ? 'bg-[#0E7BAA] text-white shadow-sm'
+                                    : 'text-gray-700 hover:bg-gray-50'
                                     }`}
                             >
                                 <FaBriefcase className="inline mr-1" size={10} />Ngành nghề
@@ -905,16 +1033,18 @@ const HomePage = () => {
                     </div>
 
                     {/* 3. TIP BAR: Làm mềm mại hơn */}
-                    <div className="mb-10 p-3 rounded-xl bg-blue-50/60 border border-blue-100 flex items-center gap-3">
-                        <div className="p-1.5 bg-white rounded-full text-[#3AB4E6] shadow-sm">
-                            {/* Dùng icon Magic thay cho Sparkles */}
-                            <FaMagic size={14} />
+                    {!tipDismissed && (
+                        <div className="mb-10 p-3 rounded-xl bg-blue-50/60 border border-blue-100 flex items-center gap-3">
+                            <div className="p-1.5 bg-white rounded-full text-[#3AB4E6] shadow-sm">
+                                {/* Dùng icon Magic thay cho Sparkles */}
+                                <FaMagic size={14} />
+                            </div>
+                            <div className="flex-1 text-xs md:text-sm text-gray-600">
+                                <span className="font-bold text-[#0E7BAA]">Gợi ý:</span> Đưa chuột vào tiêu đề công việc để xem trước thông tin chi tiết nhanh.
+                            </div>
+                            <button type="button" aria-label="Đóng gợi ý" onClick={dismissTip} className="text-gray-400 hover:text-gray-600 px-2">✕</button>
                         </div>
-                        <div className="flex-1 text-xs md:text-sm text-gray-600">
-                            <span className="font-bold text-[#3AB4E6]">Gợi ý:</span> Đưa chuột vào tiêu đề công việc để xem trước thông tin chi tiết nhanh.
-                        </div>
-                        <button className="text-gray-400 hover:text-gray-600 px-2">✕</button>
-                    </div>
+                    )}
 
                     {/* 4. JOB LIST: Thêm hiệu ứng hover xịn & bo góc mềm */}
                     <div className="space-y-5 mb-12 min-h-[800px] relative">
@@ -966,9 +1096,12 @@ const HomePage = () => {
                                                     <p className="text-xs md:text-sm text-gray-500 font-medium mt-1 truncate">{job.companyName}</p>
                                                 </div>
                                                 <button
+                                                    type="button"
+                                                    aria-label={isSaved ? 'Bỏ lưu việc làm' : 'Lưu việc làm'}
+                                                    aria-pressed={isSaved}
                                                     onClick={(e) => handleToggleSave(e, job.id)}
                                                     className={`w-8 h-8 md:w-9 md:h-9 shrink-0 rounded-full flex items-center justify-center transition-all ${isSaved ? 'bg-[#3AB4E6] text-white shadow-md shadow-blue-200' : 'bg-gray-50 text-gray-400 hover:bg-[#3AB4E6] hover:text-white'}`}>
-                                                    {isSaved ? <FaBookmark size={12} /> : <FaRegBookmark size={12} />}
+                                                    {isSaved ? <FaBookmark size={12} aria-hidden="true" /> : <FaRegBookmark size={12} aria-hidden="true" />}
                                                 </button>
                                             </div>
 
@@ -995,11 +1128,15 @@ const HomePage = () => {
 
                                         {/* Nút hành động */}
                                         <div className="flex flex-row md:flex-col justify-between items-center md:items-end gap-3 mt-4 md:mt-0 min-w-0 md:min-w-[100px] border-t md:border-t-0 border-gray-100 pt-4 md:pt-0">
-                                            <span className="text-xs text-gray-400 font-medium bg-gray-50 px-2 py-1 rounded">
+                                            <span className="text-xs text-gray-600 font-medium bg-gray-50 px-2 py-1 rounded">
                                                 {timeAgo(job.createdAt)}
                                             </span>
-                                            {/* Nút Chi Tiết style mới */}
-                                            <button className="w-auto md:w-full bg-[#EAF6FF] text-[#3AB4E6] hover:bg-[#3AB4E6] hover:text-white text-xs font-bold px-5 py-2.5 rounded-xl transition-all duration-300">
+                                            {/* Nút Chi Tiết — explicit navigate, không phụ thuộc bubble từ card wrapper */}
+                                            <button
+                                                type="button"
+                                                onClick={(e) => { e.stopPropagation(); handleJobClick(job); }}
+                                                className="w-auto md:w-full bg-[#EAF6FF] text-[#0E7BAA] hover:bg-[#0E7BAA] hover:text-white text-xs font-bold px-5 py-2.5 rounded-xl transition-all duration-300"
+                                            >
                                                 Chi Tiết
                                             </button>
                                         </div>
@@ -1013,10 +1150,12 @@ const HomePage = () => {
                     {totalJobs > 0 && (
                         <div className="flex justify-center items-center gap-2">
                             <button
+                                type="button"
+                                aria-label="Trang trước"
                                 onClick={() => currentPage > 1 && handlePageChange(currentPage - 1)}
                                 disabled={currentPage === 1}
                                 className={`w-10 h-10 rounded-full flex items-center justify-center border transition-all ${currentPage === 1 ? 'border-gray-100 text-gray-300 bg-gray-50 cursor-not-allowed' : 'border-gray-200 text-gray-400 hover:border-[#3AB4E6] hover:text-[#3AB4E6] bg-white'}`}>
-                                <FaArrowLeft size={12} />
+                                <FaArrowLeft size={12} aria-hidden="true" />
                             </button>
 
                             {Array.from({ length: Math.ceil(totalJobs / searchForm.size) }, (_, i) => i + 1)
@@ -1040,10 +1179,12 @@ const HomePage = () => {
                             }
 
                             <button
+                                type="button"
+                                aria-label="Trang sau"
                                 onClick={() => currentPage < Math.ceil(totalJobs / searchForm.size) && handlePageChange(currentPage + 1)}
                                 disabled={currentPage === Math.ceil(totalJobs / searchForm.size)}
                                 className={`w-10 h-10 rounded-full flex items-center justify-center border transition-all ${currentPage === Math.ceil(totalJobs / searchForm.size) ? 'border-gray-100 text-gray-300 bg-gray-50 cursor-not-allowed' : 'border-gray-200 text-gray-400 hover:border-[#3AB4E6] hover:text-[#3AB4E6] bg-white'}`}>
-                                <FaArrowRight size={12} />
+                                <FaArrowRight size={12} aria-hidden="true" />
                             </button>
                         </div>
                     )}
@@ -1088,8 +1229,12 @@ const HomePage = () => {
                             <div className="relative rounded-2xl overflow-hidden bg-gradient-to-br from-[#112240] to-[#0a192f] border border-blue-800/60 flex items-end justify-center pt-4 h-52">
                                 <div className="absolute inset-0 bg-gradient-to-t from-[#3AB4E6]/10 to-transparent"></div>
                                 <img
-                                    src="/tech-fox-dashboard.png"
+                                    src="/tech-fox-dashboard.avif"
                                     alt="Cáo Công Nghệ ITing"
+                                    width="200"
+                                    height="200"
+                                    loading="lazy"
+                                    decoding="async"
                                     className="relative z-10 h-44 object-contain drop-shadow-[0_0_20px_rgba(58,180,230,0.5)]"
                                 />
                             </div>
@@ -1256,11 +1401,11 @@ const HomePage = () => {
 
                     <div className="relative group">
                         {/* Scroll buttons overlay */}
-                        <button onClick={() => featuredCategoryScrollRef.current?.scrollBy({ left: -300, behavior: 'smooth' })} className="absolute left-0 top-1/2 -translate-y-[calc(50%+8px)] -translate-x-2 md:-translate-x-4 w-10 h-10 bg-white/90 backdrop-blur rounded-full shadow-lg text-gray-600 flex items-center justify-center hover:bg-[#3AB4E6] hover:text-white transition-all z-10 opacity-100 md:opacity-0 md:group-hover:opacity-100 border border-gray-200">
-                            <FaArrowLeft size={14} />
+                        <button type="button" aria-label="Cuộn sang trái" onClick={() => featuredCategoryScrollRef.current?.scrollBy({ left: -300, behavior: 'smooth' })} className="absolute left-0 top-1/2 -translate-y-[calc(50%+8px)] -translate-x-2 md:-translate-x-4 w-10 h-10 bg-white/90 backdrop-blur rounded-full shadow-lg text-gray-600 flex items-center justify-center hover:bg-[#3AB4E6] hover:text-white transition-all z-10 opacity-100 md:opacity-0 md:group-hover:opacity-100 border border-gray-200">
+                            <FaArrowLeft size={14} aria-hidden="true" />
                         </button>
-                        <button onClick={() => featuredCategoryScrollRef.current?.scrollBy({ left: 300, behavior: 'smooth' })} className="absolute right-0 top-1/2 -translate-y-[calc(50%+8px)] translate-x-2 md:translate-x-4 w-10 h-10 bg-white/90 backdrop-blur rounded-full shadow-lg text-gray-600 flex items-center justify-center hover:bg-[#3AB4E6] hover:text-white transition-all z-10 opacity-100 md:opacity-0 md:group-hover:opacity-100 border border-gray-200">
-                            <FaArrowRight size={14} />
+                        <button type="button" aria-label="Cuộn sang phải" onClick={() => featuredCategoryScrollRef.current?.scrollBy({ left: 300, behavior: 'smooth' })} className="absolute right-0 top-1/2 -translate-y-[calc(50%+8px)] translate-x-2 md:translate-x-4 w-10 h-10 bg-white/90 backdrop-blur rounded-full shadow-lg text-gray-600 flex items-center justify-center hover:bg-[#3AB4E6] hover:text-white transition-all z-10 opacity-100 md:opacity-0 md:group-hover:opacity-100 border border-gray-200">
+                            <FaArrowRight size={14} aria-hidden="true" />
                         </button>
 
                         <div ref={featuredCategoryScrollRef} className="flex gap-4 md:gap-6 overflow-x-auto pb-6 pt-2 snap-x snap-mandatory no-scrollbar scroll-smooth px-1">
@@ -1291,7 +1436,7 @@ const HomePage = () => {
                             <p className="text-gray-500 text-sm">Cập nhật tin tức mới nhất về công nghệ và thị trường tuyển dụng</p>
                         </div>
                         {/* FIX: Thay BsArrowRight bằng FaArrowRight */}
-                        <Link to="/blogs" className="text-[#3AB4E6] font-medium hover:underline flex items-center gap-1">
+                        <Link to="/blogs" className="text-[#0E7BAA] font-medium hover:underline flex items-center gap-1">
                             View all <FaArrowRight />
                         </Link>
                     </div>
@@ -1305,7 +1450,7 @@ const HomePage = () => {
                                         {blog.category || 'Tin tức'}
                                     </span>
                                 </div>
-                                <div className="text-gray-400 text-xs mb-2">{timeAgo(blog.createdAt)}</div>
+                                <div className="text-gray-600 text-xs mb-2">{timeAgo(blog.createdAt)}</div>
                                 <h3 className="text-xl font-bold text-gray-800 mb-3 group-hover:text-[#3AB4E6] transition-colors leading-snug line-clamp-2 min-h-[3.5rem]">
                                     {blog.title}
                                 </h3>
@@ -1377,7 +1522,7 @@ const HomePage = () => {
                                         placeholder="Ví dụ: Tôi là lập trình viên Java có 3 năm kinh nghiệm, thành thạo Spring Boot, React và AWS..."
                                         className="w-full h-64 p-4 bg-gray-50 border-2 border-gray-100 rounded-xl focus:border-[#3AB4E6] focus:ring-0 outline-none transition-all resize-none text-gray-700 placeholder-gray-400"
                                     />
-                                    <div className="absolute bottom-3 right-3 text-gray-400 text-xs font-medium">
+                                    <div className="absolute bottom-3 right-3 text-gray-600 text-xs font-medium">
                                         {cvText.length} ký tự
                                     </div>
                                 </div>
@@ -1387,7 +1532,7 @@ const HomePage = () => {
                                         <>
                                             <FaCloudUploadAlt size={48} className="text-gray-300 mb-3" />
                                             <p className="text-sm font-bold text-gray-700 mb-1">Chọn file CV để AI phân tích</p>
-                                            <p className="text-xs text-gray-400 mb-4">PDF hoặc ảnh, tối đa 5MB</p>
+                                            <p className="text-xs text-gray-600 mb-4">PDF hoặc ảnh, tối đa 5MB</p>
                                             <label className="px-5 py-2.5 bg-white border border-gray-300 rounded-lg text-sm font-bold text-gray-700 hover:bg-gray-100 cursor-pointer shadow-sm transition-colors">
                                                 Chọn file
                                                 <input
@@ -1404,7 +1549,7 @@ const HomePage = () => {
                                                 <FaFilePdf size={28} className="text-red-500 shrink-0" />
                                                 <div className="truncate">
                                                     <p className="text-sm font-bold text-gray-800 truncate">{cvFile.name}</p>
-                                                    <p className="text-xs text-gray-400">
+                                                    <p className="text-xs text-gray-600">
                                                         {(cvFile.size / 1024 / 1024).toFixed(2)} MB
                                                     </p>
                                                 </div>

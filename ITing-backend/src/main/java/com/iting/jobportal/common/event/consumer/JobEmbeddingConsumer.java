@@ -9,8 +9,8 @@ import org.springframework.kafka.support.Acknowledgment;
 import org.springframework.stereotype.Service;
 
 /**
- * Consumes embedding requests and delegates to the ML microservice.
- * On unrecoverable error: bubble up — DefaultErrorHandler routes to {topic}.DLT.
+ * Consumes embedding requests and delegates to the ML microservice. On unrecoverable error: bubble
+ * up — DefaultErrorHandler routes to {topic}.DLT.
  */
 @Service
 @RequiredArgsConstructor
@@ -18,22 +18,24 @@ import org.springframework.stereotype.Service;
 @Slf4j
 public class JobEmbeddingConsumer {
 
-    // Inject your existing JobEmbeddingService here when wiring this up:
-    // private final JobEmbeddingService jobEmbeddingService;
+  // Inject your existing JobEmbeddingService here when wiring this up:
+  // private final JobEmbeddingService jobEmbeddingService;
 
-    @KafkaListener(
-            topics = "${app.kafka.topics.job-embedding-requested}",
-            containerFactory = "kafkaListenerContainerFactory",
-            groupId = "${spring.kafka.consumer.group-id}-embedding"
-    )
-    public void onMessage(JobEmbeddingRequestedEvent event, Acknowledgment ack) {
-        log.info("Processing JobEmbeddingRequested jobId={} eventId={}", event.getJobId(), event.getEventId());
-        try {
-            // jobEmbeddingService.computeAndPersist(event.getJobId());
-            ack.acknowledge();
-        } catch (RuntimeException ex) {
-            log.error("Embedding failed for jobId={}: {}", event.getJobId(), ex.getMessage());
-            throw ex;
-        }
+  @KafkaListener(
+      topics = "${app.kafka.topics.job-embedding-requested}",
+      containerFactory = "kafkaListenerContainerFactory",
+      groupId = "${spring.kafka.consumer.group-id}-embedding")
+  public void onMessage(JobEmbeddingRequestedEvent event, Acknowledgment ack) {
+    log.info(
+        "Processing JobEmbeddingRequested jobId={} eventId={}",
+        event.getJobId(),
+        event.getEventId());
+    try {
+      // jobEmbeddingService.computeAndPersist(event.getJobId());
+      ack.acknowledge();
+    } catch (RuntimeException ex) {
+      log.error("Embedding failed for jobId={}: {}", event.getJobId(), ex.getMessage());
+      throw ex;
     }
+  }
 }

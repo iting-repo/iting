@@ -15,8 +15,9 @@ COPY . .
 # Inject build-time env for production bundle (webpack reads .env.production)
 ARG VITE_API_BASE=https://datnhk252iting.dpdns.org
 ARG REACT_APP_GOOGLE_CLIENT_ID
-RUN printf "VITE_API_BASE=%s\nREACT_APP_GOOGLE_CLIENT_ID=%s\n" \
-    "$VITE_API_BASE" "$REACT_APP_GOOGLE_CLIENT_ID" > .env.production
+ARG REACT_APP_FACEBOOK_APP_ID
+RUN printf "VITE_API_BASE=%s\nREACT_APP_GOOGLE_CLIENT_ID=%s\nREACT_APP_FACEBOOK_APP_ID=%s\n" \
+    "$VITE_API_BASE" "$REACT_APP_GOOGLE_CLIENT_ID" "$REACT_APP_FACEBOOK_APP_ID" > .env.production
 
 # Build with webpack production mode
 RUN npm run build -- --env APP_ENV=production

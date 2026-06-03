@@ -6,13 +6,13 @@ import org.springframework.data.domain.Page;
 
 public interface AdminBlogService {
 
-    Page<Blog> getBlogs(String keyword, String status, int page, int size);
+  Page<Blog> getBlogs(String keyword, String status, int page, int size);
 
-    Blog getBlogById(Long id);
+  Blog getBlogById(Long id);
 
-    Blog createBlog(BlogRequest request);
+  Blog createBlog(BlogRequest request);
 
-    Blog updateBlog(Long id, BlogRequest request);
+  Blog updateBlog(Long id, BlogRequest request);
 
-    void deleteBlog(Long id);
+  void deleteBlog(Long id);
 }

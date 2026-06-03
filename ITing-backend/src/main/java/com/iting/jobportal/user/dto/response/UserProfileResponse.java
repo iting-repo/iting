@@ -1,8 +1,7 @@
 package com.iting.jobportal.user.dto.response;
 
-import lombok.*;
-
 import java.time.LocalDateTime;
+import lombok.*;
 
 @Getter
 @Setter
@@ -10,11 +9,11 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @Builder
 public class UserProfileResponse {
-    private Long userId;
-    private String fullName;
-    private String email;
-    private String phoneNum;
-    private Long locId;
-    private String avatarUrl;
-    private LocalDateTime lastUpdate;
+  private Long userId;
+  private String fullName;
+  private String email;
+  private String phoneNum;
+  private Long locId;
+  private String avatarUrl;
+  private LocalDateTime lastUpdate;
 }

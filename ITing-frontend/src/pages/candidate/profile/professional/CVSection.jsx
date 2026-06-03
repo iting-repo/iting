@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { FileText, Upload, CheckCircle, MoreVertical, Trash2, Star, Plus, Loader2 } from 'lucide-react';
-import { Button, Card, Input, ConfirmModal } from "../../../../components/common";
+import { FileText, Upload, CheckCircle, MoreVertical, Trash2, Star, Plus, Loader2, BarChart3, X } from 'lucide-react';
+import { Button, Card, Input, ConfirmModal, Badge } from "../../../../components/common";
 import axiosInstance from "../../../../utils/axiosInstance";
 import cvService from "../../../../services/cvService";
 import useConfirm from "../../../../hooks/useConfirm";
@@ -18,6 +18,12 @@ const CVSection = () => {
         title: '',
         isDefault: false
     });
+
+    // Per-row scoring state
+    const [scoringCvId, setScoringCvId] = useState(null);
+    const [scoreResult, setScoreResult] = useState(null);
+    const [scoreModalCvId, setScoreModalCvId] = useState(null);
+    const [scoreLanguage, setScoreLanguage] = useState('vi');
 
     useEffect(() => {
         fetchCVs();
@@ -122,6 +128,42 @@ const CVSection = () => {
         }
     };
 
+    const handleScore = async (cvId, language = 'vi') => {
+        try {
+            setScoringCvId(cvId);
+            setScoreLanguage(language);
+            const result = await cvService.scoreCV(cvId, language);
+            setScoreResult(result);
+            setScoreModalCvId(cvId);
+            fetchCVs();
+        } catch (error) {
+            console.error("Failed to score CV", error);
+            toast.error("Có lỗi khi chấm điểm CV. Vui lòng thử lại.");
+        } finally {
+            setScoringCvId(null);
+        }
+    };
+
+    const closeScoreModal = () => {
+        setScoreModalCvId(null);
+        setScoreResult(null);
+    };
+
+    const getScoreVariant = (score) => {
+        if (score == null) return 'default';
+        if (score >= 80) return 'success';
+        if (score >= 60) return 'warning';
+        return 'danger';
+    };
+
+    const getScoreLabel = (score) => {
+        if (score == null) return null;
+        if (score >= 80) return scoreLanguage === 'en' ? 'Excellent' : 'Xuất sắc';
+        if (score >= 60) return scoreLanguage === 'en' ? 'Good' : 'Khá';
+        if (score >= 40) return scoreLanguage === 'en' ? 'Average' : 'Trung bình';
+        return scoreLanguage === 'en' ? 'Needs improvement' : 'Cần cải thiện';
+    };
+
     return (
         <Card className="p-6">
             <div className="flex items-center justify-between mb-6">
@@ -195,12 +237,17 @@ const CVSection = () => {
                             <FileText className="w-6 h-6" />
                         </div>
                         <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2">
+                            <div className="flex items-center gap-2 flex-wrap">
                                 <a href={cv.fileUrl} target="_blank" rel="noopener noreferrer" className="font-bold text-gray-800 hover:text-blue-600 hover:underline truncate">
                                     {cv.title}
                                 </a>
                                 {cv.isDefault && (
                                     <span className="px-2 py-0.5 bg-green-100 text-green-700 text-[10px] font-bold rounded-full uppercase tracking-tighter">Mặc định</span>
+                                )}
+                                {cv.overallScore != null && (
+                                    <Badge variant={getScoreVariant(cv.overallScore)}>
+                                        {cv.overallScore}/100
+                                    </Badge>
                                 )}
                             </div>
                             <p className="text-xs text-gray-500">
@@ -213,6 +260,18 @@ const CVSection = () => {
                                     <Star className="w-4 h-4" />
                                 </button>
                             )}
+                            <button
+                                onClick={() => handleScore(cv.id)}
+                                title="Chấm điểm CV"
+                                disabled={scoringCvId === cv.id}
+                                className="p-2 text-gray-400 hover:text-blue-600 transition-colors disabled:opacity-50"
+                            >
+                                {scoringCvId === cv.id ? (
+                                    <Loader2 className="w-4 h-4 animate-spin" />
+                                ) : (
+                                    <BarChart3 className="w-4 h-4" />
+                                )}
+                            </button>
                             <button onClick={() => handleDelete(cv.id)} title="Xóa" className="p-2 text-gray-400 hover:text-red-500 transition-colors">
                                 <Trash2 className="w-4 h-4" />
                             </button>
@@ -237,6 +296,175 @@ const CVSection = () => {
                     Sử dụng CV mặc định giúp nhà tuyển dụng tìm thấy bạn nhanh hơn trong các bộ lọc tìm kiếm.
                 </p>
             </div>
+
+            {/* Score Result Modal */}
+            {scoreModalCvId && scoreResult && (
+                <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+                    <div className="bg-white rounded-2xl shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+                        <div className="p-4 md:p-6 border-b border-gray-100 flex justify-between items-center sticky top-0 bg-white rounded-t-2xl">
+                            <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
+                                    <BarChart3 className="w-5 h-5 text-blue-600" />
+                                </div>
+                                <div>
+                                    <h4 className="text-lg font-bold text-gray-900">
+                                        {scoreLanguage === 'en' ? 'CV Scoring Result' : 'Kết quả chấm điểm CV'}
+                                    </h4>
+                                    <p className="text-xs text-gray-500">
+                                        {scoreLanguage === 'en' ? 'Overall score: ' : 'Điểm tổng: '}
+                                        {scoreResult.overallScore}/100
+                                    </p>
+                                </div>
+                            </div>
+                            <div className="flex items-center gap-3">
+                                {/* Language toggle */}
+                                <div className="flex gap-1 bg-gray-100 rounded-full p-1">
+                                    <button
+                                        onClick={() => handleScore(scoreModalCvId, 'vi')}
+                                        className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${scoreLanguage === 'vi' ? 'bg-blue-600 text-white' : 'text-gray-500 hover:text-gray-700'}`}
+                                    >
+                                        Tiếng Việt
+                                    </button>
+                                    <button
+                                        onClick={() => handleScore(scoreModalCvId, 'en')}
+                                        className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${scoreLanguage === 'en' ? 'bg-blue-600 text-white' : 'text-gray-500 hover:text-gray-700'}`}
+                                    >
+                                        English
+                                    </button>
+                                </div>
+                                <button onClick={closeScoreModal} className="text-gray-400 hover:text-gray-600 p-2 rounded-full hover:bg-gray-100">
+                                    <X className="w-5 h-5" />
+                                </button>
+                            </div>
+                        </div>
+
+                        <div className="p-4 md:p-6 space-y-6">
+                            {/* Overall Score Banner */}
+                            <div className={`rounded-xl p-4 text-center ${scoreResult.overallScore >= 80 ? 'bg-emerald-50 border border-emerald-200' : scoreResult.overallScore >= 60 ? 'bg-amber-50 border border-amber-200' : 'bg-red-50 border border-red-200'}`}>
+                                <div className="text-4xl font-black mb-1" style={{ color: scoreResult.overallScore >= 80 ? '#059669' : scoreResult.overallScore >= 60 ? '#d97706' : '#dc2626' }}>
+                                    {scoreResult.overallScore}/100
+                                </div>
+                                <Badge variant={getScoreVariant(scoreResult.overallScore)}>
+                                    {getScoreLabel(scoreResult.overallScore)}
+                                </Badge>
+                            </div>
+
+                            {/* Dimension Breakdown */}
+                            {scoreResult.scoreBreakdown && (
+                                <div>
+                                    <h5 className="text-sm font-semibold text-gray-800 mb-3">
+                                        {scoreLanguage === 'en' ? 'Score Breakdown' : 'Điểm chi tiết theo tiêu chí'}
+                                    </h5>
+                                    <div className="space-y-3">
+                                        {[
+                                            { key: 'formatAndReadability', labelVi: 'Format & Khả năng đọc', labelEn: 'Format & Readability' },
+                                            { key: 'contentQuality', labelVi: 'Chất lượng nội dung', labelEn: 'Content Quality' },
+                                            { key: 'skillAlignment', labelVi: 'Kỹ năng phù hợp', labelEn: 'Skill Alignment' },
+                                            { key: 'experienceNarrative', labelVi: 'Kinh nghiệm & Tiến triển', labelEn: 'Experience Narrative' },
+                                            { key: 'atsCompatibility', labelVi: 'Tương thích ATS', labelEn: 'ATS Compatibility' },
+                                        ].map(({ key, labelVi, labelEn }) => {
+                                            const dim = scoreResult.scoreBreakdown[key];
+                                            if (!dim) return null;
+                                            return (
+                                                <div key={key} className="border border-gray-100 rounded-lg p-3">
+                                                    <div className="flex items-center justify-between mb-1">
+                                                        <span className="text-sm font-medium text-gray-700">
+                                                            {scoreLanguage === 'en' ? labelEn : labelVi}
+                                                        </span>
+                                                        <Badge variant={getScoreVariant(dim.score)}>{dim.score}/100</Badge>
+                                                    </div>
+                                                    <p className="text-xs text-gray-500">{dim.feedback}</p>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Strengths */}
+                            {scoreResult.strengths?.length > 0 && (
+                                <div>
+                                    <h5 className="text-sm font-semibold text-emerald-700 mb-2">
+                                        {scoreLanguage === 'en' ? 'Strengths' : 'Điểm mạnh'}
+                                    </h5>
+                                    <ul className="space-y-1">
+                                        {scoreResult.strengths.map((s, i) => (
+                                            <li key={i} className="text-xs text-gray-600 flex items-start gap-2">
+                                                <span className="text-emerald-500 mt-0.5">✓</span>{s}
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </div>
+                            )}
+
+                            {/* Improvement Areas */}
+                            {scoreResult.improvementAreas?.length > 0 && (
+                                <div>
+                                    <h5 className="text-sm font-semibold text-amber-700 mb-2">
+                                        {scoreLanguage === 'en' ? 'Areas for Improvement' : 'Cần cải thiện'}
+                                    </h5>
+                                    <ul className="space-y-1">
+                                        {scoreResult.improvementAreas.map((s, i) => (
+                                            <li key={i} className="text-xs text-gray-600 flex items-start gap-2">
+                                                <span className="text-amber-500 mt-0.5">→</span>{s}
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </div>
+                            )}
+
+                            {/* Critical Issues */}
+                            {scoreResult.criticalIssues?.length > 0 && (
+                                <div className="bg-red-50 border border-red-100 rounded-lg p-3">
+                                    <h5 className="text-sm font-semibold text-red-700 mb-2">
+                                        {scoreLanguage === 'en' ? 'Critical Issues' : 'Vấn đề nghiêm trọng'}
+                                    </h5>
+                                    <ul className="space-y-1">
+                                        {scoreResult.criticalIssues.map((s, i) => (
+                                            <li key={i} className="text-xs text-red-600 flex items-start gap-2">
+                                                <span className="text-red-500 mt-0.5">⚠</span>{s}
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </div>
+                            )}
+
+                            {/* Recommendations */}
+                            {scoreResult.recommendations?.length > 0 && (
+                                <div>
+                                    <h5 className="text-sm font-semibold text-blue-700 mb-2">
+                                        {scoreLanguage === 'en' ? 'Recommendations' : 'Khuyến nghị'}
+                                    </h5>
+                                    <ul className="space-y-1">
+                                        {scoreResult.recommendations.map((s, i) => (
+                                            <li key={i} className="text-xs text-gray-600 flex items-start gap-2">
+                                                <span className="text-blue-500 mt-0.5">•</span>{s}
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </div>
+                            )}
+
+                            {/* Summary */}
+                            {scoreResult.evaluationSummary && (
+                                <div className="bg-gray-50 border border-gray-200 rounded-lg p-3">
+                                    <h5 className="text-xs font-semibold text-gray-600 mb-1">
+                                        {scoreLanguage === 'en' ? 'Summary' : 'Tổng kết'}
+                                    </h5>
+                                    <p className="text-sm text-gray-700">{scoreResult.evaluationSummary}</p>
+                                </div>
+                            )}
+                        </div>
+
+                        <div className="p-4 md:p-6 border-t border-gray-100 flex justify-end">
+                            <Button variant="outline" onClick={closeScoreModal}>
+                                {scoreLanguage === 'en' ? 'Close' : 'Đóng'}
+                            </Button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             <ConfirmModal isOpen={confirm.isOpen} onClose={resetConfirm} onConfirm={confirm.onConfirm} title={confirm.title} message={confirm.message} warning={confirm.warning} confirmText={confirm.confirmText} variant={confirm.variant} />
         </Card>
     );

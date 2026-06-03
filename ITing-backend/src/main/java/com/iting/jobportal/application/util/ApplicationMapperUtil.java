@@ -3,11 +3,11 @@ package com.iting.jobportal.application.util;
 import com.iting.jobportal.application.dto.response.ApplicationResponse;
 import com.iting.jobportal.application.entity.ApplyForm;
 import com.iting.jobportal.application.entity.ApplyFormSentToJob;
+import com.iting.jobportal.auth.entity.Account;
+import com.iting.jobportal.common.service.S3Service;
 import com.iting.jobportal.company.entity.Company;
 import com.iting.jobportal.job.entity.Job;
 import com.iting.jobportal.job.repository.JobRepository;
-import com.iting.jobportal.auth.entity.Account;
-import com.iting.jobportal.common.service.S3Service;
 import com.iting.jobportal.user.entity.User;
 import com.iting.jobportal.user.repository.UserRepository;
 import com.iting.jobportal.userprofile.entity.CV;
@@ -16,205 +16,212 @@ import com.iting.jobportal.userprofile.entity.Experience;
 import com.iting.jobportal.userprofile.repository.CVRepository;
 import com.iting.jobportal.userprofile.repository.EducationRepository;
 import com.iting.jobportal.userprofile.repository.ExperienceRepository;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Component;
-
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Component;
 
 @Component
 @RequiredArgsConstructor
 @Slf4j
 public class ApplicationMapperUtil {
-    private final JobRepository jobRepository;
-    private final UserRepository userRepository;
-    private final CVRepository cvRepository;
-    private final ExperienceRepository experienceRepository;
-    private final EducationRepository educationRepository;
-    private final S3Service s3Service;
+  private final JobRepository jobRepository;
+  private final UserRepository userRepository;
+  private final CVRepository cvRepository;
+  private final ExperienceRepository experienceRepository;
+  private final EducationRepository educationRepository;
+  private final S3Service s3Service;
 
-    public ApplicationResponse buildFullResponse(ApplyForm applyForm, ApplyFormSentToJob sent) {
-        Long jobId = sent.getId().getJobId();
-        Long userId = applyForm.getUserId();
+  public ApplicationResponse buildFullResponse(ApplyForm applyForm, ApplyFormSentToJob sent) {
+    Long jobId = sent.getId().getJobId();
+    Long userId = applyForm.getUserId();
 
-        String jobTitle = null;
-        Long companyId = null;
-        String companyName = null;
-        String companyLogo = null;
-        Boolean companyActive = null;
+    String jobTitle = null;
+    Long companyId = null;
+    String companyName = null;
+    String companyLogo = null;
+    Boolean companyActive = null;
 
-        Optional<Job> jobOpt = jobRepository.findById(jobId);
-        if (jobOpt.isPresent()) {
-            Job job = jobOpt.get();
-            jobTitle = job.getPosition();
-            Company company = job.getCompany();
-            if (company != null) {
-                companyId = company.getId();
-                companyName = company.getName();
-                companyLogo = company.getLogoUrl();
-                companyActive = company.getActive();
-            }
-        }
-        Account account = userRepository.findById(userId)
-                .map(User::getAccount)
-                .orElse(null);
-        String avatarUrl = account != null ? account.getAvatarUrl() : null;
+    Optional<Job> jobOpt = jobRepository.findById(jobId);
+    if (jobOpt.isPresent()) {
+      Job job = jobOpt.get();
+      jobTitle = job.getPosition();
+      Company company = job.getCompany();
+      if (company != null) {
+        companyId = company.getId();
+        companyName = company.getName();
+        companyLogo = company.getLogoUrl();
+        companyActive = company.getActive();
+      }
+    }
+    Account account = userRepository.findById(userId).map(User::getAccount).orElse(null);
+    String avatarUrl = account != null ? account.getAvatarUrl() : null;
 
-        String cvFileName = null;
-        String cvFileType = null;
-        String cvUrl = null;
-        if (applyForm.getCv() != null) {
-            CV cv = applyForm.getCv();
-            cvUrl = freshCvUrl(cv); // re-presign, tránh 403 hết hạn
-            String original = cv.getFileUrl();
-            if (original != null) {
-                String path = original.contains("/") ? original.substring(original.lastIndexOf('/') + 1) : original;
-                int qIdx = path.indexOf('?');
-                if (qIdx > 0) path = path.substring(0, qIdx); // bỏ query của presigned URL
-                int dotIdx = path.lastIndexOf('.');
-                if (dotIdx > 0) {
-                    cvFileName = path.substring(0, dotIdx);
-                    cvFileType = path.substring(dotIdx + 1).toUpperCase();
-                } else {
-                    cvFileName = path;
-                    cvFileType = "PDF";
-                }
-            }
-            if (cvFileName == null) {
-                cvFileName = cv.getTitle() != null ? cv.getTitle() : applyForm.getCvTitle();
-            }
-        } else if (applyForm.getCvTitle() != null && applyForm.getCvTitle().startsWith("CV_")) {
-            try {
-                Long cvId = Long.parseLong(applyForm.getCvTitle().substring(3));
-                Optional<CV> cvOpt = cvRepository.findById(cvId);
-                if (cvOpt.isPresent()) {
-                    CV cv = cvOpt.get();
-                    cvUrl = freshCvUrl(cv);
-                    String original = cv.getFileUrl();
-                    if (original != null) {
-                        String path = original.contains("/") ? original.substring(original.lastIndexOf('/') + 1) : original;
-                        int qIdx = path.indexOf('?');
-                        if (qIdx > 0) path = path.substring(0, qIdx);
-                        int dotIdx = path.lastIndexOf('.');
-                        if (dotIdx > 0) {
-                            cvFileName = path.substring(0, dotIdx);
-                            cvFileType = path.substring(dotIdx + 1).toUpperCase();
-                        } else {
-                            cvFileName = path;
-                            cvFileType = "PDF";
-                        }
-                    }
-                }
-            } catch (NumberFormatException ignored) {
-                cvFileName = applyForm.getCvTitle();
-            }
+    String cvFileName = null;
+    String cvFileType = null;
+    String cvUrl = null;
+    if (applyForm.getCv() != null) {
+      CV cv = applyForm.getCv();
+      cvUrl = freshCvUrl(cv); // re-presign, tránh 403 hết hạn
+      String original = cv.getFileUrl();
+      if (original != null) {
+        String path =
+            original.contains("/") ? original.substring(original.lastIndexOf('/') + 1) : original;
+        int qIdx = path.indexOf('?');
+        if (qIdx > 0) path = path.substring(0, qIdx); // bỏ query của presigned URL
+        int dotIdx = path.lastIndexOf('.');
+        if (dotIdx > 0) {
+          cvFileName = path.substring(0, dotIdx);
+          cvFileType = path.substring(dotIdx + 1).toUpperCase();
         } else {
-            cvFileName = applyForm.getCvTitle();
+          cvFileName = path;
+          cvFileType = "PDF";
         }
-
-        String phoneNumber = account != null ? account.getPhone() : null;
-        String email = account != null && account.getEmail() != null && !account.getEmail().isBlank()
-                ? account.getEmail()
-                : String.valueOf(userId);
-
-        List<Experience> experiences = experienceRepository.findByProfile_Id(userId);
-        int totalMonths = 0;
-        LocalDate now = LocalDate.now();
-        for (Experience exp : experiences) {
-            LocalDate start = exp.getStartDate();
-            LocalDate end = exp.getEndDate() != null ? exp.getEndDate() : now;
-            if (start != null) {
-                totalMonths += (int) ChronoUnit.MONTHS.between(start, end);
+      }
+      if (cvFileName == null) {
+        cvFileName = cv.getTitle() != null ? cv.getTitle() : applyForm.getCvTitle();
+      }
+    } else if (applyForm.getCvTitle() != null && applyForm.getCvTitle().startsWith("CV_")) {
+      try {
+        Long cvId = Long.parseLong(applyForm.getCvTitle().substring(3));
+        Optional<CV> cvOpt = cvRepository.findById(cvId);
+        if (cvOpt.isPresent()) {
+          CV cv = cvOpt.get();
+          cvUrl = freshCvUrl(cv);
+          String original = cv.getFileUrl();
+          if (original != null) {
+            String path =
+                original.contains("/")
+                    ? original.substring(original.lastIndexOf('/') + 1)
+                    : original;
+            int qIdx = path.indexOf('?');
+            if (qIdx > 0) path = path.substring(0, qIdx);
+            int dotIdx = path.lastIndexOf('.');
+            if (dotIdx > 0) {
+              cvFileName = path.substring(0, dotIdx);
+              cvFileType = path.substring(dotIdx + 1).toUpperCase();
+            } else {
+              cvFileName = path;
+              cvFileType = "PDF";
             }
+          }
         }
-        Integer yearsExperience = totalMonths > 0 ? Math.max(1, totalMonths / 12) : null;
+      } catch (NumberFormatException ignored) {
+        cvFileName = applyForm.getCvTitle();
+      }
+    } else {
+      cvFileName = applyForm.getCvTitle();
+    }
 
-        // Học vấn: pick bản ghi mới nhất, format = "degree - school" hoặc fallback school/major.
-        // Trước đây filter degree!=null làm rớt cả record có school+major khi CV không ghi học vị.
-        List<Education> educations = educationRepository.findByProfile_Id(userId);
-        String education = educations.stream()
-                .max(Comparator.comparing(e -> e.getEndDate() != null ? e.getEndDate() : LocalDate.MIN))
-                .map(e -> {
-                    String degree = e.getDegree();
-                    String school = e.getSchoolName();
-                    String major  = e.getMajor();
-                    if (degree != null && !degree.isBlank() && school != null && !school.isBlank())
-                        return degree + " - " + school;
-                    if (degree != null && !degree.isBlank()) return degree;
-                    if (school != null && !school.isBlank() && major != null && !major.isBlank())
-                        return school + " (" + major + ")";
-                    if (school != null && !school.isBlank()) return school;
-                    return (major != null && !major.isBlank()) ? major : null;
+    String phoneNumber = account != null ? account.getPhone() : null;
+    String email =
+        account != null && account.getEmail() != null && !account.getEmail().isBlank()
+            ? account.getEmail()
+            : String.valueOf(userId);
+
+    List<Experience> experiences = experienceRepository.findByProfile_Id(userId);
+    int totalMonths = 0;
+    LocalDate now = LocalDate.now();
+    for (Experience exp : experiences) {
+      LocalDate start = exp.getStartDate();
+      LocalDate end = exp.getEndDate() != null ? exp.getEndDate() : now;
+      if (start != null) {
+        totalMonths += (int) ChronoUnit.MONTHS.between(start, end);
+      }
+    }
+    Integer yearsExperience = totalMonths > 0 ? Math.max(1, totalMonths / 12) : null;
+
+    // Học vấn: pick bản ghi mới nhất, format = "degree - school" hoặc fallback school/major.
+    // Trước đây filter degree!=null làm rớt cả record có school+major khi CV không ghi học vị.
+    List<Education> educations = educationRepository.findByProfile_Id(userId);
+    String education =
+        educations.stream()
+            .max(Comparator.comparing(e -> e.getEndDate() != null ? e.getEndDate() : LocalDate.MIN))
+            .map(
+                e -> {
+                  String degree = e.getDegree();
+                  String school = e.getSchoolName();
+                  String major = e.getMajor();
+                  if (degree != null && !degree.isBlank() && school != null && !school.isBlank())
+                    return degree + " - " + school;
+                  if (degree != null && !degree.isBlank()) return degree;
+                  if (school != null && !school.isBlank() && major != null && !major.isBlank())
+                    return school + " (" + major + ")";
+                  if (school != null && !school.isBlank()) return school;
+                  return (major != null && !major.isBlank()) ? major : null;
                 })
-                .orElse(null);
+            .orElse(null);
 
-        return ApplicationResponse.builder()
-                .id(applyForm.getId())
-                .userId(userId)
-                .jobId(jobId)
-                .companyId(companyId)
-                .companyName(companyName)
-                .applicantName(applyForm.getApplicantName())
-                .avatarUrl(avatarUrl)
-                .jobTitle(jobTitle)
-                .companyLogo(companyLogo)
-                .companyActive(companyActive)
-                .introduction(applyForm.getIntroduction())
-                .cvFileName(cvFileName)
-                .cvFileType(cvFileType)
-                .cvUrl(cvUrl)
-                .phoneNumber(phoneNumber)
-                .email(email)
-                .yearsExperience(yearsExperience)
-                .education(education)
-                .timeSent(sent.getTimeSent())
-                .status(sent.getStatus() != null ? sent.getStatus()
-                        : com.iting.jobportal.application.entity.enums.ApplicationStatus.PENDING)
-                .employerNote(sent.getEmployerNote())
-                .pipelineStage(sent.getPipelineStage() != null ? sent.getPipelineStage() : "SCREENING")
-                .stageUpdatedAt(sent.getStageUpdatedAt())
-                .build();
-    }
+    return ApplicationResponse.builder()
+        .id(applyForm.getId())
+        .userId(userId)
+        .jobId(jobId)
+        .companyId(companyId)
+        .companyName(companyName)
+        .applicantName(applyForm.getApplicantName())
+        .avatarUrl(avatarUrl)
+        .jobTitle(jobTitle)
+        .companyLogo(companyLogo)
+        .companyActive(companyActive)
+        .introduction(applyForm.getIntroduction())
+        .cvFileName(cvFileName)
+        .cvFileType(cvFileType)
+        .cvUrl(cvUrl)
+        .phoneNumber(phoneNumber)
+        .email(email)
+        .yearsExperience(yearsExperience)
+        .education(education)
+        .timeSent(sent.getTimeSent())
+        .status(
+            sent.getStatus() != null
+                ? sent.getStatus()
+                : com.iting.jobportal.application.entity.enums.ApplicationStatus.PENDING)
+        .employerNote(sent.getEmployerNote())
+        .pipelineStage(sent.getPipelineStage() != null ? sent.getPipelineStage() : "SCREENING")
+        .stageUpdatedAt(sent.getStageUpdatedAt())
+        .build();
+  }
 
-    /**
-     * Sinh presigned URL TƯƠI cho CV (1h) — ưu tiên s3Key, fallback parse từ fileUrl.
-     * Trả fileUrl gốc nếu không phải S3 hoặc S3 lỗi.
-     */
-    private String freshCvUrl(CV cv) {
-        if (cv == null) return null;
-        try {
-            String key = (cv.getS3Key() != null && !cv.getS3Key().isBlank())
-                    ? cv.getS3Key()
-                    : extractS3KeyFromUrl(cv.getFileUrl());
-            if (key == null || key.isBlank()) {
-                return cv.getFileUrl(); // local path / non-S3
-            }
-            return s3Service.getPreSignedUrl(key);
-        } catch (Exception e) {
-            log.warn("Re-presign CV {} failed: {}", cv.getId(), e.getMessage());
-            return cv.getFileUrl();
-        }
+  /**
+   * Sinh presigned URL TƯƠI cho CV (1h) — ưu tiên s3Key, fallback parse từ fileUrl. Trả fileUrl gốc
+   * nếu không phải S3 hoặc S3 lỗi.
+   */
+  private String freshCvUrl(CV cv) {
+    if (cv == null) return null;
+    try {
+      String key =
+          (cv.getS3Key() != null && !cv.getS3Key().isBlank())
+              ? cv.getS3Key()
+              : extractS3KeyFromUrl(cv.getFileUrl());
+      if (key == null || key.isBlank()) {
+        return cv.getFileUrl(); // local path / non-S3
+      }
+      return s3Service.getPreSignedUrl(key);
+    } catch (Exception e) {
+      log.warn("Re-presign CV {} failed: {}", cv.getId(), e.getMessage());
+      return cv.getFileUrl();
     }
+  }
 
-    /** Extract S3 object key từ URL S3 (virtual-host hoặc path-style). */
-    private static String extractS3KeyFromUrl(String url) {
-        if (url == null || url.isBlank() || !url.contains("amazonaws.com")) return null;
-        try {
-            String noQuery = url.split("\\?", 2)[0];
-            java.net.URI uri = java.net.URI.create(noQuery);
-            String path = uri.getPath();
-            if (path == null || path.isBlank()) return null;
-            String key = path.startsWith("/") ? path.substring(1) : path;
-            if (uri.getHost() != null && uri.getHost().startsWith("s3.") && key.contains("/")) {
-                key = key.substring(key.indexOf('/') + 1);
-            }
-            return key.isBlank() ? null : key;
-        } catch (Exception e) {
-            return null;
-        }
+  /** Extract S3 object key từ URL S3 (virtual-host hoặc path-style). */
+  private static String extractS3KeyFromUrl(String url) {
+    if (url == null || url.isBlank() || !url.contains("amazonaws.com")) return null;
+    try {
+      String noQuery = url.split("\\?", 2)[0];
+      java.net.URI uri = java.net.URI.create(noQuery);
+      String path = uri.getPath();
+      if (path == null || path.isBlank()) return null;
+      String key = path.startsWith("/") ? path.substring(1) : path;
+      if (uri.getHost() != null && uri.getHost().startsWith("s3.") && key.contains("/")) {
+        key = key.substring(key.indexOf('/') + 1);
+      }
+      return key.isBlank() ? null : key;
+    } catch (Exception e) {
+      return null;
     }
+  }
 }

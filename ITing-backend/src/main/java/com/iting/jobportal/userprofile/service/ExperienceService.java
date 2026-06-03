@@ -1,4 +1,3 @@
 package com.iting.jobportal.userprofile.service;
 
-public interface ExperienceService {
-}
+public interface ExperienceService {}

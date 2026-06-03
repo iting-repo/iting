@@ -12,29 +12,30 @@ import org.springframework.context.annotation.Configuration;
 @ConditionalOnProperty(prefix = "app.redis", name = "enabled", havingValue = "true")
 public class RedissonConfig {
 
-    @Value("${spring.data.redis.host:localhost}")
-    private String host;
+  @Value("${spring.data.redis.host:localhost}")
+  private String host;
 
-    @Value("${spring.data.redis.port:6379}")
-    private int port;
+  @Value("${spring.data.redis.port:6379}")
+  private int port;
 
-    @Value("${spring.data.redis.password:}")
-    private String password;
+  @Value("${spring.data.redis.password:}")
+  private String password;
 
-    @Value("${spring.data.redis.database:0}")
-    private int database;
+  @Value("${spring.data.redis.database:0}")
+  private int database;
 
-    @Bean(destroyMethod = "shutdown")
-    public RedissonClient redissonClient() {
-        Config config = new Config();
-        config.useSingleServer()
-                .setAddress("redis://" + host + ":" + port)
-                .setDatabase(database)
-                .setPassword(password.isBlank() ? null : password)
-                .setConnectionPoolSize(32)
-                .setConnectionMinimumIdleSize(8)
-                .setRetryAttempts(3)
-                .setTimeout(2000);
-        return Redisson.create(config);
-    }
+  @Bean(destroyMethod = "shutdown")
+  public RedissonClient redissonClient() {
+    Config config = new Config();
+    config
+        .useSingleServer()
+        .setAddress("redis://" + host + ":" + port)
+        .setDatabase(database)
+        .setPassword(password.isBlank() ? null : password)
+        .setConnectionPoolSize(32)
+        .setConnectionMinimumIdleSize(8)
+        .setRetryAttempts(3)
+        .setTimeout(2000);
+    return Redisson.create(config);
+  }
 }

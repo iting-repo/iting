@@ -7,201 +7,194 @@ import java.util.List;
 
 public class CompanyUpdateRequest {
 
-    // ===== Thông tin cơ bản =====
+  // ===== Thông tin cơ bản =====
 
-    @NotBlank(message = "Company name must not be blank")
-    private String name;
+  @NotBlank(message = "Company name must not be blank")
+  private String name;
 
-    @Size(max = 1000, message = "Logo URL must be at most 1000 characters")
-    private String logoUrl;
+  @Size(max = 1000, message = "Logo URL must be at most 1000 characters")
+  private String logoUrl;
 
-    @Size(max = 500, message = "Address must be at most 500 characters")
-    private String address;
+  @Size(max = 500, message = "Address must be at most 500 characters")
+  private String address;
 
-    @Size(max = 2000, message = "Description must be at most 2000 characters")
-    private String description;
+  @Size(max = 2000, message = "Description must be at most 2000 characters")
+  private String description;
 
-    @Size(max = 255, message = "Website link must be at most 255 characters")
-    private String website;
+  @Size(max = 255, message = "Website link must be at most 255 characters")
+  private String website;
 
-    private List<Industry> industries;
+  private List<Industry> industries;
 
-    @Size(max = 50, message = "Company size must be at most 50 characters")
-    private String companySize;
+  @Size(max = 50, message = "Company size must be at most 50 characters")
+  private String companySize;
 
-    // ===== Người đại diện =====
+  // ===== Người đại diện =====
 
-    @Size(max = 255, message = "Representative name must be at most 255 characters")
-    private String representativeName;
+  @Size(max = 255, message = "Representative name must be at most 255 characters")
+  private String representativeName;
 
-    @Size(max = 20, message = "Gender must be at most 20 characters")
-    private String representativeGender;
+  @Size(max = 20, message = "Gender must be at most 20 characters")
+  private String representativeGender;
 
-    @Size(max = 20, message = "Phone number must be at most 20 characters")
-    private String representativePhone;
+  @Size(max = 20, message = "Phone number must be at most 20 characters")
+  private String representativePhone;
 
+  // ===== Pháp lý =====
 
+  @Size(max = 100, message = "Tax code must be at most 100 characters")
+  private String taxCode;
 
-    // ===== Pháp lý =====
+  @Size(max = 1000, message = "Business license file URL must be at most 1000 characters")
+  private String businessLicenseFileUrl;
 
-    @Size(max = 100, message = "Tax code must be at most 100 characters")
-    private String taxCode;
+  @Size(max = 1000, message = "Consent document file URL must be at most 1000 characters")
+  private String consentDocumentFileUrl;
 
-    @Size(max = 1000, message = "Business license file URL must be at most 1000 characters")
-    private String businessLicenseFileUrl;
+  // ===== Xác thực =====
 
-    @Size(max = 1000, message = "Consent document file URL must be at most 1000 characters")
-    private String consentDocumentFileUrl;
+  private Integer verificationLevel;
 
-    // ===== Xác thực =====
+  @Size(max = 255, message = "Update status must be at most 255 characters")
+  private String companyReviewStatus;
 
-    private Integer verificationLevel;
+  private Boolean active;
 
-    @Size(max = 255, message = "Update status must be at most 255 characters")
-    private String companyReviewStatus;
+  public CompanyUpdateRequest() {}
 
-    private Boolean active;
+  // ======================
+  // GETTERS
+  // ======================
 
-    public CompanyUpdateRequest() {
-    }
+  public String getName() {
+    return name;
+  }
 
-    // ======================
-    // GETTERS
-    // ======================
+  public String getLogoUrl() {
+    return logoUrl;
+  }
 
-    public String getName() {
-        return name;
-    }
+  public String getAddress() {
+    return address;
+  }
 
-    public String getLogoUrl() {
-        return logoUrl;
-    }
+  public String getDescription() {
+    return description;
+  }
 
-    public String getAddress() {
-        return address;
-    }
+  public String getWebsite() {
+    return website;
+  }
 
-    public String getDescription() {
-        return description;
-    }
+  public List<Industry> getIndustries() {
+    return industries;
+  }
 
-    public String getWebsite() {
-        return website;
-    }
+  public String getCompanySize() {
+    return companySize;
+  }
 
-    public List<Industry> getIndustries() {
-        return industries;
-    }
+  public String getRepresentativeName() {
+    return representativeName;
+  }
 
-    public String getCompanySize() {
-        return companySize;
-    }
+  public String getRepresentativeGender() {
+    return representativeGender;
+  }
 
-    public String getRepresentativeName() {
-        return representativeName;
-    }
+  public String getRepresentativePhone() {
+    return representativePhone;
+  }
 
-    public String getRepresentativeGender() {
-        return representativeGender;
-    }
+  public String getTaxCode() {
+    return taxCode;
+  }
 
-    public String getRepresentativePhone() {
-        return representativePhone;
-    }
+  public String getBusinessLicenseFileUrl() {
+    return businessLicenseFileUrl;
+  }
 
+  public String getConsentDocumentFileUrl() {
+    return consentDocumentFileUrl;
+  }
 
+  public Integer getVerificationLevel() {
+    return verificationLevel;
+  }
 
-    public String getTaxCode() {
-        return taxCode;
-    }
+  public String getCompanyReviewStatus() {
+    return companyReviewStatus;
+  }
 
-    public String getBusinessLicenseFileUrl() {
-        return businessLicenseFileUrl;
-    }
+  public Boolean getActive() {
+    return active;
+  }
 
-    public String getConsentDocumentFileUrl() {
-        return consentDocumentFileUrl;
-    }
+  // ======================
+  // SETTERS
+  // ======================
 
-    public Integer getVerificationLevel() {
-        return verificationLevel;
-    }
+  public void setName(String name) {
+    this.name = name;
+  }
 
-    public String getCompanyReviewStatus() {
-        return companyReviewStatus;
-    }
+  public void setLogoUrl(String logoUrl) {
+    this.logoUrl = logoUrl;
+  }
 
-    public Boolean getActive() {
-        return active;
-    }
+  public void setAddress(String address) {
+    this.address = address;
+  }
 
-    // ======================
-    // SETTERS
-    // ======================
+  public void setDescription(String description) {
+    this.description = description;
+  }
 
-    public void setName(String name) {
-        this.name = name;
-    }
+  public void setWebsite(String website) {
+    this.website = website;
+  }
 
-    public void setLogoUrl(String logoUrl) {
-        this.logoUrl = logoUrl;
-    }
+  public void setIndustries(List<Industry> industries) {
+    this.industries = industries;
+  }
 
-    public void setAddress(String address) {
-        this.address = address;
-    }
+  public void setCompanySize(String companySize) {
+    this.companySize = companySize;
+  }
 
-    public void setDescription(String description) {
-        this.description = description;
-    }
+  public void setRepresentativeName(String representativeName) {
+    this.representativeName = representativeName;
+  }
 
-    public void setWebsite(String website) {
-        this.website = website;
-    }
+  public void setRepresentativeGender(String representativeGender) {
+    this.representativeGender = representativeGender;
+  }
 
-    public void setIndustries(List<Industry> industries) {
-        this.industries = industries;
-    }
+  public void setRepresentativePhone(String representativePhone) {
+    this.representativePhone = representativePhone;
+  }
 
-    public void setCompanySize(String companySize) {
-        this.companySize = companySize;
-    }
+  public void setTaxCode(String taxCode) {
+    this.taxCode = taxCode;
+  }
 
-    public void setRepresentativeName(String representativeName) {
-        this.representativeName = representativeName;
-    }
+  public void setBusinessLicenseFileUrl(String businessLicenseFileUrl) {
+    this.businessLicenseFileUrl = businessLicenseFileUrl;
+  }
 
-    public void setRepresentativeGender(String representativeGender) {
-        this.representativeGender = representativeGender;
-    }
+  public void setConsentDocumentFileUrl(String consentDocumentFileUrl) {
+    this.consentDocumentFileUrl = consentDocumentFileUrl;
+  }
 
-    public void setRepresentativePhone(String representativePhone) {
-        this.representativePhone = representativePhone;
-    }
+  public void setVerificationLevel(Integer verificationLevel) {
+    this.verificationLevel = verificationLevel;
+  }
 
+  public void setCompanyReviewStatus(String companyReviewStatus) {
+    this.companyReviewStatus = companyReviewStatus;
+  }
 
-
-    public void setTaxCode(String taxCode) {
-        this.taxCode = taxCode;
-    }
-
-    public void setBusinessLicenseFileUrl(String businessLicenseFileUrl) {
-        this.businessLicenseFileUrl = businessLicenseFileUrl;
-    }
-
-    public void setConsentDocumentFileUrl(String consentDocumentFileUrl) {
-        this.consentDocumentFileUrl = consentDocumentFileUrl;
-    }
-
-    public void setVerificationLevel(Integer verificationLevel) {
-        this.verificationLevel = verificationLevel;
-    }
-
-    public void setCompanyReviewStatus(String companyReviewStatus) {
-        this.companyReviewStatus = companyReviewStatus;
-    }
-
-    public void setActive(Boolean active) {
-        this.active = active;
-    }
+  public void setActive(Boolean active) {
+    this.active = active;
+  }
 }

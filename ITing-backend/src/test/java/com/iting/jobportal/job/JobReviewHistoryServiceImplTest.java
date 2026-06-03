@@ -1,5 +1,9 @@
 package com.iting.jobportal.job;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.mockito.Mockito.verify;
+
 import com.iting.jobportal.job.entity.Job;
 import com.iting.jobportal.job.entity.JobReviewHistory;
 import com.iting.jobportal.job.entity.enums.JobReviewAction;
@@ -12,32 +16,26 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.mockito.Mockito.verify;
-
 @ExtendWith(MockitoExtension.class)
 class JobReviewHistoryServiceImplTest {
 
-    @Mock
-    private JobReviewHistoryRepository jobReviewHistoryRepository;
+  @Mock private JobReviewHistoryRepository jobReviewHistoryRepository;
 
-    @InjectMocks
-    private JobReviewHistoryServiceImpl service;
+  @InjectMocks private JobReviewHistoryServiceImpl service;
 
-    @Test
-    void log_shouldPersistHistoryWithProvidedFields() {
-        Job job = new Job();
-        job.setId(5L);
+  @Test
+  void log_shouldPersistHistoryWithProvidedFields() {
+    Job job = new Job();
+    job.setId(5L);
 
-        service.log(job, JobReviewAction.APPROVED, "admin@test.com", "ok");
+    service.log(job, JobReviewAction.APPROVED, "admin@test.com", "ok");
 
-        ArgumentCaptor<JobReviewHistory> captor = ArgumentCaptor.forClass(JobReviewHistory.class);
-        verify(jobReviewHistoryRepository).save(captor.capture());
-        assertEquals(job, captor.getValue().getJob());
-        assertEquals(JobReviewAction.APPROVED, captor.getValue().getAction());
-        assertEquals("admin@test.com", captor.getValue().getActor());
-        assertEquals("ok", captor.getValue().getNote());
-        assertNotNull(captor.getValue().getTimestamp());
-    }
+    ArgumentCaptor<JobReviewHistory> captor = ArgumentCaptor.forClass(JobReviewHistory.class);
+    verify(jobReviewHistoryRepository).save(captor.capture());
+    assertEquals(job, captor.getValue().getJob());
+    assertEquals(JobReviewAction.APPROVED, captor.getValue().getAction());
+    assertEquals("admin@test.com", captor.getValue().getActor());
+    assertEquals("ok", captor.getValue().getNote());
+    assertNotNull(captor.getValue().getTimestamp());
+  }
 }

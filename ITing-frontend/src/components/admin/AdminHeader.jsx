@@ -154,19 +154,36 @@ const AdminHeader = ({ onToggleSidebar }) => {
                 ))}
               </div>
               <div className="border-t px-3 py-2 text-center">
-                <button onClick={() => { navigate('/admin/notifications'); setIsNotifOpen(false); }} className="text-sm text-[#3AB4E6] hover:underline">Xem tất cả</button>
+                <button
+                  onClick={() => {
+                    // Truyền state.ts để useLocation re-trigger refetch khi
+                    // user đã ở /admin/notifications (navigate cùng path
+                    // không tự re-render — phải đổi location.key).
+                    navigate('/admin/notifications', { state: { ts: Date.now() } });
+                    setIsNotifOpen(false);
+                  }}
+                  className="text-sm text-[#3AB4E6] hover:underline"
+                >
+                  Xem tất cả
+                </button>
               </div>
             </div>
           )}
         </div>
         <div className="flex items-center gap-3 pl-4 border-l border-white/20">
-          <div className="w-8 h-8 rounded-full bg-white/30 flex items-center justify-center text-white text-xs font-bold border-2 border-white/50">
-            {user.name ? user.name.charAt(0).toUpperCase() : 'SA'}
-          </div>
-          <div className="text-right mr-2 hidden sm:block">
-            <p className="text-white text-sm font-medium">{user.name || "Quản trị viên cấp cao"}</p>
-            <p className="text-white/80 text-xs">{user.email || "admin@iting.vn"}</p>
-          </div>
+          <button
+            onClick={() => navigate('/admin/profile')}
+            className="flex items-center gap-3 hover:bg-white/10 rounded-lg px-2 py-1 -mx-2 transition-colors"
+            title="Xem hồ sơ của tôi"
+          >
+            <div className="w-8 h-8 rounded-full bg-white/30 flex items-center justify-center text-white text-xs font-bold border-2 border-white/50">
+              {user.name ? user.name.charAt(0).toUpperCase() : 'SA'}
+            </div>
+            <div className="text-right mr-2 hidden sm:block">
+              <p className="text-white text-sm font-medium">{user.name || "Quản trị viên cấp cao"}</p>
+              <p className="text-white/80 text-xs">{user.email || "admin@iting.vn"}</p>
+            </div>
+          </button>
           <button
             onClick={handleLogout}
             className="p-1.5 text-white/80 hover:text-white hover:bg-white/20 rounded-lg transition-colors ml-1"

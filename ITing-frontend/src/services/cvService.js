@@ -28,6 +28,14 @@ const cvService = {
       },
     });
   },
+
+  scoreCV: async (id, language = 'vi') => {
+    return axiosInstance.post(`/candidates/cvs/${id}/score?lang=${language}`);
+  },
+
+  getViewUrl: async (id) => {
+    return axiosInstance.get(`/candidates/cvs/${id}/view-url`);
+  },
 };
 
 export default cvService;

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useLocation } from "react-router-dom";
 import {
   Card,
   CardContent,
@@ -55,6 +56,7 @@ const getNotiTypeInfo = (type) => {
 };
 
 const NotificationManagement = () => {
+  const location = useLocation();
   const [notifications, setNotifications] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -116,9 +118,14 @@ const NotificationManagement = () => {
     }
   };
 
+  // Refetch khi mount VÀ khi điều hướng từ "Xem tất cả" (AdminHeader) trong
+  // lúc user đang ở chính trang này — location.key đổi mỗi lần navigate.
   useEffect(() => {
     fetchNotifications();
-  }, []);
+    setActiveTab("all");
+    setCurrentPage(1);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }, [location.key]);
 
   const toggleSelect = (id) => {
     setSelected((prev) => {

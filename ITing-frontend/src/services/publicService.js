@@ -22,6 +22,10 @@ const publicService = {
       await axiosInstance.post(`/public/v2/blogs/${id}/view`);
     } catch { /* fire-and-forget */ }
   },
+
+  getBanners: async (position) => {
+    return axiosInstance.get("/public/banners", { params: { position } });
+  },
 };
 
 export default publicService;

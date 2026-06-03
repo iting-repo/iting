@@ -96,11 +96,28 @@ services:
       # Google OAuth
       SPRING_SECURITY_OAUTH2_CLIENT_REGISTRATION_GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
       SPRING_SECURITY_OAUTH2_CLIENT_REGISTRATION_GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET}
+      # Facebook OAuth — App ID + Secret từ https://developers.facebook.com/apps
+      # Backend dùng /debug_token để verify access token thuộc về app, chống forged token.
+      FACEBOOK_APP_ID: ${FACEBOOK_APP_ID:-}
+      FACEBOOK_APP_SECRET: ${FACEBOOK_APP_SECRET:-}
       # AI
       GEMINI_API_KEY: ${GEMINI_API_KEY}
       OPENAI_API_KEY: ${OPENAI_API_KEY}
       OPENAI_BASE_URL: ${OPENAI_BASE_URL}
       OPENAI_EMBEDDING_MODEL: ${OPENAI_EMBEDDING_MODEL}
+      # Sepay payment gateway (VietQR generator + webhook)
+      # Webhook URL register trên dashboard: https://api.datnhk252iting.dpdns.org/api/public/payments/sepay-webhook
+      # webhook-api-key phải IDENTICAL giữa Sepay dashboard Authorization header và env này
+      # — backend reject request nếu mismatch (chống forged webhook).
+      # Default ":-" cho phép boot khi chưa cấu hình (boost/subscribe feature sẽ
+      # disabled gracefully thay vì crash backend).
+      SEPAY_BANK_CODE: ${SEPAY_BANK_CODE:-}
+      SEPAY_ACCOUNT_NUMBER: ${SEPAY_ACCOUNT_NUMBER:-}
+      SEPAY_ACCOUNT_NAME: ${SEPAY_ACCOUNT_NAME:-}
+      SEPAY_WEBHOOK_API_KEY: ${SEPAY_WEBHOOK_API_KEY:-}
+      SEPAY_QR_TEMPLATE: ${SEPAY_QR_TEMPLATE:-compact2}
+      SEPAY_ORDER_PREFIX: ${SEPAY_ORDER_PREFIX:-ITI}
+      SEPAY_ORDER_TTL_MINUTES: ${SEPAY_ORDER_TTL_MINUTES:-30}
       # Actuator
       MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE: health,info,metrics,prometheus
       MANAGEMENT_ENDPOINT_HEALTH_SHOW_DETAILS: when-authorized

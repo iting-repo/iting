@@ -10,10 +10,10 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class UserMeResponse {
-    private Long id;
-    private String email;
-    private String role;
-    private String fullName;
-    private String avatarUrl;
-    private String phone;
+  private Long id;
+  private String email;
+  private String role;
+  private String fullName;
+  private String avatarUrl;
+  private String phone;
 }

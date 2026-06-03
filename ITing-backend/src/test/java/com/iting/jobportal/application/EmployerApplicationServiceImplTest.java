@@ -1,5 +1,12 @@
 package com.iting.jobportal.application;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
 import com.iting.jobportal.application.dto.request.UpdateApplicationStatusRequest;
 import com.iting.jobportal.application.dto.response.ApplicationResponse;
 import com.iting.jobportal.application.entity.ApplyForm;
@@ -13,129 +20,124 @@ import com.iting.jobportal.company.entity.Company;
 import com.iting.jobportal.job.entity.Job;
 import com.iting.jobportal.job.repository.JobRepository;
 import com.iting.jobportal.notification.service.NotificationService;
+import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
-
-import java.util.List;
-import java.util.Optional;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertSame;
-import static org.mockito.Mockito.never;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class EmployerApplicationServiceImplTest {
 
-    @Mock private EmployerApplicationRepository employerApplicationRepository;
-    @Mock private ApplyFormRepository applyFormRepository;
-    @Mock private JobRepository jobRepository;
-    @Mock private ApplicationMapperUtil applicationMapperUtil;
-    @Mock private NotificationService notificationService;
+  @Mock private EmployerApplicationRepository employerApplicationRepository;
+  @Mock private ApplyFormRepository applyFormRepository;
+  @Mock private JobRepository jobRepository;
+  @Mock private ApplicationMapperUtil applicationMapperUtil;
+  @Mock private NotificationService notificationService;
 
-    @InjectMocks
-    private EmployerApplicationServiceImpl service;
+  @InjectMocks private EmployerApplicationServiceImpl service;
 
-    @Test
-    void getAllApplicationsForEmployer_withoutJobs_shouldReturnEmptyPage() {
-        when(jobRepository.findByCompany_Id(1L, PageRequest.of(0, 1000))).thenReturn(Page.empty());
+  @Test
+  void getAllApplicationsForEmployer_withoutJobs_shouldReturnEmptyPage() {
+    when(jobRepository.findByCompany_Id(1L, PageRequest.of(0, 1000))).thenReturn(Page.empty());
 
-        Page<ApplicationResponse> result = service.getAllApplicationsForEmployer(1L, 0, 10);
+    Page<ApplicationResponse> result = service.getAllApplicationsForEmployer(1L, 0, 10);
 
-        assertEquals(0, result.getTotalElements());
-    }
+    assertEquals(0, result.getTotalElements());
+  }
 
-    @Test
-    void markApplicationAsViewed_shouldMarkPendingApplicationAsViewed() {
-        Company company = new Company();
-        company.setId(1L);
-        Job job = new Job();
-        job.setId(5L);
-        job.setCompany(company);
-        ApplyFormSentToJob sent = ApplyFormSentToJob.builder()
-                .id(new ApplyFormSentToJob.ApplyFormSentToJobId(5L, 10L))
-                .status(ApplicationStatus.PENDING)
-                .build();
-        ApplyForm form = ApplyForm.builder().id(10L).build();
-        ApplicationResponse response = ApplicationResponse.builder().id(10L).status(ApplicationStatus.VIEWED).build();
+  @Test
+  void markApplicationAsViewed_shouldMarkPendingApplicationAsViewed() {
+    Company company = new Company();
+    company.setId(1L);
+    Job job = new Job();
+    job.setId(5L);
+    job.setCompany(company);
+    ApplyFormSentToJob sent =
+        ApplyFormSentToJob.builder()
+            .id(new ApplyFormSentToJob.ApplyFormSentToJobId(5L, 10L))
+            .status(ApplicationStatus.PENDING)
+            .build();
+    ApplyForm form = ApplyForm.builder().id(10L).build();
+    ApplicationResponse response =
+        ApplicationResponse.builder().id(10L).status(ApplicationStatus.VIEWED).build();
 
-        when(employerApplicationRepository.findByIdApplyFormId(10L)).thenReturn(Optional.of(sent));
-        when(jobRepository.findById(5L)).thenReturn(Optional.of(job));
-        when(applyFormRepository.findById(10L)).thenReturn(Optional.of(form));
-        when(applicationMapperUtil.buildFullResponse(form, sent)).thenReturn(response);
+    when(employerApplicationRepository.findByIdApplyFormId(10L)).thenReturn(Optional.of(sent));
+    when(jobRepository.findById(5L)).thenReturn(Optional.of(job));
+    when(applyFormRepository.findById(10L)).thenReturn(Optional.of(form));
+    when(applicationMapperUtil.buildFullResponse(form, sent)).thenReturn(response);
 
-        ApplicationResponse result = service.markApplicationAsViewed(1L, 10L);
+    ApplicationResponse result = service.markApplicationAsViewed(1L, 10L);
 
-        assertEquals(ApplicationStatus.VIEWED, sent.getStatus());
-        assertSame(response, result);
-        verify(employerApplicationRepository).save(sent);
-    }
+    assertEquals(ApplicationStatus.VIEWED, sent.getStatus());
+    assertSame(response, result);
+    verify(employerApplicationRepository).save(sent);
+  }
 
-    @Test
-    void viewApplication_shouldReturnDetailWithoutChangingStatus() {
-        Company company = new Company();
-        company.setId(1L);
-        Job job = new Job();
-        job.setId(5L);
-        job.setCompany(company);
-        ApplyFormSentToJob sent = ApplyFormSentToJob.builder()
-                .id(new ApplyFormSentToJob.ApplyFormSentToJobId(5L, 10L))
-                .status(ApplicationStatus.PENDING)
-                .build();
-        ApplyForm form = ApplyForm.builder().id(10L).build();
-        ApplicationResponse response = ApplicationResponse.builder().id(10L).status(ApplicationStatus.PENDING).build();
+  @Test
+  void viewApplication_shouldReturnDetailWithoutChangingStatus() {
+    Company company = new Company();
+    company.setId(1L);
+    Job job = new Job();
+    job.setId(5L);
+    job.setCompany(company);
+    ApplyFormSentToJob sent =
+        ApplyFormSentToJob.builder()
+            .id(new ApplyFormSentToJob.ApplyFormSentToJobId(5L, 10L))
+            .status(ApplicationStatus.PENDING)
+            .build();
+    ApplyForm form = ApplyForm.builder().id(10L).build();
+    ApplicationResponse response =
+        ApplicationResponse.builder().id(10L).status(ApplicationStatus.PENDING).build();
 
-        when(employerApplicationRepository.findByIdApplyFormId(10L)).thenReturn(Optional.of(sent));
-        when(jobRepository.findById(5L)).thenReturn(Optional.of(job));
-        when(applyFormRepository.findById(10L)).thenReturn(Optional.of(form));
-        when(applicationMapperUtil.buildFullResponse(form, sent)).thenReturn(response);
+    when(employerApplicationRepository.findByIdApplyFormId(10L)).thenReturn(Optional.of(sent));
+    when(jobRepository.findById(5L)).thenReturn(Optional.of(job));
+    when(applyFormRepository.findById(10L)).thenReturn(Optional.of(form));
+    when(applicationMapperUtil.buildFullResponse(form, sent)).thenReturn(response);
 
-        ApplicationResponse result = service.viewApplication(1L, 10L);
+    ApplicationResponse result = service.viewApplication(1L, 10L);
 
-        assertEquals(ApplicationStatus.PENDING, sent.getStatus());
-        assertSame(response, result);
-        verify(employerApplicationRepository, never()).save(any());
-    }
+    assertEquals(ApplicationStatus.PENDING, sent.getStatus());
+    assertSame(response, result);
+    verify(employerApplicationRepository, never()).save(any());
+  }
 
-    @Test
-    void updateApplicationStatus_shouldPersistRequestedStatus() {
-        Company company = new Company();
-        company.setId(1L);
-        Job job = new Job();
-        job.setId(5L);
-        job.setCompany(company);
-        ApplyFormSentToJob sent = ApplyFormSentToJob.builder()
-                .id(new ApplyFormSentToJob.ApplyFormSentToJobId(5L, 10L))
-                .status(ApplicationStatus.PENDING)
-                .build();
-        ApplyForm form = ApplyForm.builder().id(10L).build();
-        ApplicationResponse response = ApplicationResponse.builder().id(10L).status(ApplicationStatus.ACCEPTED).build();
-        UpdateApplicationStatusRequest request = new UpdateApplicationStatusRequest();
-        request.setStatus(ApplicationStatus.ACCEPTED);
+  @Test
+  void updateApplicationStatus_shouldPersistRequestedStatus() {
+    Company company = new Company();
+    company.setId(1L);
+    Job job = new Job();
+    job.setId(5L);
+    job.setCompany(company);
+    ApplyFormSentToJob sent =
+        ApplyFormSentToJob.builder()
+            .id(new ApplyFormSentToJob.ApplyFormSentToJobId(5L, 10L))
+            .status(ApplicationStatus.PENDING)
+            .build();
+    ApplyForm form = ApplyForm.builder().id(10L).build();
+    ApplicationResponse response =
+        ApplicationResponse.builder().id(10L).status(ApplicationStatus.ACCEPTED).build();
+    UpdateApplicationStatusRequest request = new UpdateApplicationStatusRequest();
+    request.setStatus(ApplicationStatus.ACCEPTED);
 
-        when(employerApplicationRepository.findByIdApplyFormId(10L)).thenReturn(Optional.of(sent));
-        when(jobRepository.findById(5L)).thenReturn(Optional.of(job));
-        when(applyFormRepository.findById(10L)).thenReturn(Optional.of(form));
-        when(applicationMapperUtil.buildFullResponse(form, sent)).thenReturn(response);
+    when(employerApplicationRepository.findByIdApplyFormId(10L)).thenReturn(Optional.of(sent));
+    when(jobRepository.findById(5L)).thenReturn(Optional.of(job));
+    when(applyFormRepository.findById(10L)).thenReturn(Optional.of(form));
+    when(applicationMapperUtil.buildFullResponse(form, sent)).thenReturn(response);
 
-        ApplicationResponse result = service.updateApplicationStatus(1L, 10L, request);
+    ApplicationResponse result = service.updateApplicationStatus(1L, 10L, request);
 
-        assertEquals(ApplicationStatus.ACCEPTED, sent.getStatus());
-        assertSame(response, result);
-    }
+    assertEquals(ApplicationStatus.ACCEPTED, sent.getStatus());
+    assertSame(response, result);
+  }
 
-    @Test
-    void getStatsForJob_shouldUseRepositoryCount() {
-        when(employerApplicationRepository.countByIdJobId(5L)).thenReturn(4L);
+  @Test
+  void getStatsForJob_shouldUseRepositoryCount() {
+    when(employerApplicationRepository.countByIdJobId(5L)).thenReturn(4L);
 
-        assertEquals(4L, service.getStatsForJob(5L).getTotal());
-    }
+    assertEquals(4L, service.getStatsForJob(5L).getTotal());
+  }
 }

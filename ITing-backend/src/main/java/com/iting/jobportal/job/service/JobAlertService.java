@@ -5,5 +5,5 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
 public interface JobAlertService {
-    Page<FollowedCompanyJobResponse> getJobsFromFollowedCompanies(Long userId, Pageable pageable);
+  Page<FollowedCompanyJobResponse> getJobsFromFollowedCompanies(Long userId, Pageable pageable);
 }

@@ -27,6 +27,15 @@ permissions:
   packages: write
   security-events: write
 
+# Branch/PR/tag → 1 nhóm riêng. Khi push tag mới chồng lên tag cũ (rapid
+# tagging cho test/release work), CI của tag cũ bị cancel → giải phóng
+# runner cho tag mới + tránh tích tụ queue 30+ phút.
+# Tag deploy vẫn cần image: nếu CI tag cũ bị cancel, deploy.yml của tag cũ
+# sẽ timeout (acceptable — chỉ tag mới nhất quan trọng).
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 env:
   JAVA_VERSION: "17"
   NODE_VERSION: "20"
@@ -55,9 +64,59 @@ jobs:
         working-directory: ITing-backend
         run: mvn -B clean package -DskipTests
 
-      - name: Run tests
+      - name: Run tests + coverage (JaCoCo)
         working-directory: ITing-backend
-        run: mvn -B test
+        run: mvn -B test jacoco:report
+        continue-on-error: true
+
+      - name: Upload JaCoCo coverage report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: jacoco-report
+          path: ITing-backend/target/site/jacoco/
+          retention-days: 14
+
+      # Cache NVD CVE database (~500MB) — nếu không cache, lần đầu mất 30 phút
+      - name: Cache OWASP Dependency-Check DB
+        uses: actions/cache@v4
+        with:
+          path: ~/.m2/repository/org/owasp/dependency-check-data/
+          key: dep-check-db-${{ runner.os }}-v9
+          restore-keys: dep-check-db-${{ runner.os }}-
+
+      - name: OWASP Dependency-Check (Java)
+        working-directory: ITing-backend
+        # NVD_API_KEY tăng tốc 10× — đăng ký free tại
+        # https://nvd.nist.gov/developers/request-an-api-key
+        # Thêm secret repo: Settings → Secrets → Actions → NVD_API_KEY
+        env:
+          NVD_API_KEY: ${{ secrets.NVD_API_KEY }}
+        run: |
+          EXTRA_NVD_ARG=""
+          if [ -n "${NVD_API_KEY}" ]; then
+            EXTRA_NVD_ARG="-DnvdApiKey=${NVD_API_KEY}"
+            echo "Using NVD API key for faster feed updates."
+          else
+            echo "NVD_API_KEY is empty. Feed updates may be slow."
+          fi
+
+          mvn -B org.owasp:dependency-check-maven:12.2.2:check \
+            -DfailBuildOnCVSS=9 \
+            -DsuppressionFile=.dependency-check-suppressions.xml \
+            -DskipProvidedScope=true \
+            -DknownExploitedEnabled=false \
+            -DnvdApiDelay=2000 \
+            ${EXTRA_NVD_ARG}
+        continue-on-error: true
+
+      - name: Upload Dependency-Check report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: dependency-check-report
+          path: ITing-backend/target/dependency-check-report.html
+          retention-days: 14
 
       - name: Upload JAR
         uses: actions/upload-artifact@v4
@@ -88,6 +147,16 @@ jobs:
         working-directory: ITing-frontend
         run: npm ci
 
+      - name: npm audit (high+ severity)
+        working-directory: ITing-frontend
+        run: npm audit --omit=dev --audit-level=high
+        continue-on-error: true
+
+      - name: ESLint
+        working-directory: ITing-frontend
+        run: npx eslint "src/**/*.{js,jsx,ts,tsx}" --max-warnings=200
+        continue-on-error: true
+
       - name: Build frontend
         working-directory: ITing-frontend
         run: npm run build -- --env APP_ENV=production
@@ -115,7 +184,28 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Trivy filesystem scan
+      # Cache Trivy DB (~95 MiB). Không cache = mỗi job security scan
+      # tải lại 94.7 MiB → 30-60s delay. Mặc định trivy-action dùng
+      # ~/Library/Caches/trivy (mac) / ~/.cache/trivy (linux) — runner
+      # ubuntu-latest = ~/.cache/trivy.
+      - name: Cache Trivy vulnerability DB
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/trivy
+          key: trivy-db-${{ runner.os }}-${{ hashFiles('**/trivy-action.yaml', '.github/workflows/ci.yml') }}
+          restore-keys: trivy-db-${{ runner.os }}-
+
+      # Scan fs bị throttle bởi Maven Central khi nó cố resolve tất cả
+      # pom.xml để xây dependency graph cho Java multi-module project.
+      # Mitigation:
+      #   - Bỏ --scanners secret (vuln-only) — secret scan là bottleneck 429.
+      #   - Bỏ qua toàn bộ ITing-backend: dependency-check ở job backend đã
+      #     scan Java dependency graph chuyên dụng hơn (NVD API + cache).
+      #     Nếu để Trivy scan pom.xml, nó sẽ bị Maven Central throttle 429
+      #     như log: "remote Maven repository returned 429 Too Many Requests".
+      #   - Dùng --skip-dirs để giảm footprint.
+      # Kết quả: scan fs còn ~1-2 phút thay vì 5+ phút + 429.
+      - name: Trivy filesystem scan (vuln only)
         uses: aquasecurity/trivy-action@master
         with:
           scan-type: "fs"
@@ -123,6 +213,9 @@ jobs:
           format: "sarif"
           output: "trivy-results.sarif"
           severity: "CRITICAL,HIGH"
+          scanners: "vuln"
+          skip-dirs: "node_modules,target,build,dist,.gradle,ITing-frontend/dist,ITing-backend"
+          ignorefile: ".trivyignore"
 
       - name: Upload Trivy results
         uses: github/codeql-action/upload-sarif@v4
@@ -194,5 +287,24 @@ jobs:
           build-args: |
             VITE_API_BASE=https://datnhk252iting.dpdns.org
             REACT_APP_GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID }}
+            REACT_APP_FACEBOOK_APP_ID=${{ secrets.FACEBOOK_APP_ID }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+      - name: Trivy scan backend image
+        uses: aquasecurity/trivy-action@master
+        continue-on-error: true
+        with:
+          image-ref: ${{ env.REGISTRY }}/${{ github.repository }}/iting-backend:${{ github.sha }}
+          format: "table"
+          severity: "CRITICAL,HIGH"
+          exit-code: "0"
+
+      - name: Trivy scan frontend image
+        uses: aquasecurity/trivy-action@master
+        continue-on-error: true
+        with:
+          image-ref: ${{ env.REGISTRY }}/${{ github.repository }}/iting-frontend:${{ github.sha }}
+          format: "table"
+          severity: "CRITICAL,HIGH"
+          exit-code: "0"

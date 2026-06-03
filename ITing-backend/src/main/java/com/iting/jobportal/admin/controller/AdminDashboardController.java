@@ -13,10 +13,10 @@ import org.springframework.web.bind.annotation.RestController;
 @RequiredArgsConstructor
 public class AdminDashboardController {
 
-    private final AdminDashboardService adminDashboardService;
+  private final AdminDashboardService adminDashboardService;
 
-    @GetMapping("/stats")
-    public ResponseEntity<DashboardStats> getStats() {
-        return ResponseEntity.ok(adminDashboardService.getDashboardStats());
-    }
+  @GetMapping("/stats")
+  public ResponseEntity<DashboardStats> getStats() {
+    return ResponseEntity.ok(adminDashboardService.getDashboardStats());
+  }
 }

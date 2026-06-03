@@ -173,31 +173,53 @@ const DEFAULT_TECH_OPTIONS = [
   "Tailwind CSS",
 ];
 
-function EditorToolbar() {
+// EditorToolbar nhận textareaRef để insert markdown vào vị trí con trỏ.
+// Textarea bên dưới là plain text — markdown sẽ được render khi JobDetail
+// hiển thị description (nếu có ReactMarkdown), hoặc giữ nguyên ký tự nếu
+// raw text. Người dùng vẫn diễn đạt được ý định format.
+function EditorToolbar({ textareaRef }) {
+  // Helper: wrap selection (hoặc insert) bằng prefix/suffix.
+  const wrap = (prefix, suffix = prefix, placeholder = '') => {
+    const ta = textareaRef?.current;
+    if (!ta) return;
+    const { selectionStart: s, selectionEnd: e, value } = ta;
+    const sel = value.slice(s, e) || placeholder;
+    const next = value.slice(0, s) + prefix + sel + suffix + value.slice(e);
+    ta.value = next;
+    // Trigger React onChange qua synthetic input event để state sync.
+    ta.dispatchEvent(new Event('input', { bubbles: true }));
+    // Đặt lại vị trí con trỏ sau wrap.
+    const newPos = s + prefix.length + sel.length;
+    requestAnimationFrame(() => { ta.focus(); ta.setSelectionRange(newPos, newPos); });
+  };
+  const insertLine = (prefix) => {
+    const ta = textareaRef?.current;
+    if (!ta) return;
+    const { selectionStart: s, value } = ta;
+    const lineStart = value.lastIndexOf('\n', s - 1) + 1;
+    const next = value.slice(0, lineStart) + prefix + value.slice(lineStart);
+    ta.value = next;
+    ta.dispatchEvent(new Event('input', { bubbles: true }));
+    const newPos = s + prefix.length;
+    requestAnimationFrame(() => { ta.focus(); ta.setSelectionRange(newPos, newPos); });
+  };
+  const insertLink = () => {
+    const url = window.prompt('URL liên kết:');
+    if (!url) return;
+    wrap('[', `](${url})`, 'liên kết');
+  };
+
+  const btn = "hover:text-black p-1 md:p-0";
   return (
     <div className="bg-gray-50 border-b border-gray-200 px-2 md:px-3 py-2 flex flex-wrap gap-2 md:gap-4 text-gray-500 mb-2 items-center">
-      <button type="button" className="hover:text-black p-1 md:p-0">
-        <FaBold />
-      </button>
-      <button type="button" className="hover:text-black p-1 md:p-0">
-        <FaItalic />
-      </button>
-      <button type="button" className="hover:text-black p-1 md:p-0">
-        <FaUnderline />
-      </button>
-      <button type="button" className="hover:text-black p-1 md:p-0">
-        <FaStrikethrough />
-      </button>
+      <button type="button" aria-label="In đậm" title="**bold**" onClick={() => wrap('**', '**', 'in đậm')} className={btn}><FaBold /></button>
+      <button type="button" aria-label="In nghiêng" title="*italic*" onClick={() => wrap('*', '*', 'in nghiêng')} className={btn}><FaItalic /></button>
+      <button type="button" aria-label="Gạch chân" title="<u>underline</u>" onClick={() => wrap('<u>', '</u>', 'gạch chân')} className={btn}><FaUnderline /></button>
+      <button type="button" aria-label="Gạch ngang" title="~~strike~~" onClick={() => wrap('~~', '~~', 'gạch ngang')} className={btn}><FaStrikethrough /></button>
       <div className="w-px bg-gray-300 mx-1 h-4"></div>
-      <button type="button" className="hover:text-black p-1 md:p-0">
-        <FaLink />
-      </button>
-      <button type="button" className="hover:text-black p-1 md:p-0">
-        <FaListUl />
-      </button>
-      <button type="button" className="hover:text-black p-1 md:p-0">
-        <FaListOl />
-      </button>
+      <button type="button" aria-label="Chèn liên kết" title="[text](url)" onClick={insertLink} className={btn}><FaLink /></button>
+      <button type="button" aria-label="Danh sách" title="- item" onClick={() => insertLine('- ')} className={btn}><FaListUl /></button>
+      <button type="button" aria-label="Danh sách có số" title="1. item" onClick={() => insertLine('1. ')} className={btn}><FaListOl /></button>
     </div>
   );
 }
@@ -360,6 +382,10 @@ const PostJob = ({
 
   const [formData, setFormData] = useState(initialFormState);
   const [errors, setErrors] = useState({});
+  // Refs cho 2 textarea description + responsibilities — EditorToolbar dùng để
+  // wrap selection với markdown (** bold ** / * italic * / [link](url) / - list).
+  const descriptionRef = useRef(null);
+  const responsibilitiesRef = useRef(null);
   const [provinces, setProvinces] = useState([]);
   const [wards, setWards] = useState([]);
   const [loadingWards, setLoadingWards] = useState(false);
@@ -602,8 +628,11 @@ const PostJob = ({
     >
       {/* ── AI Warning Modal ──────────────────────────────────────────── */}
       {aiWarning && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-sm px-4" onClick={() => {}}>
-          <div className="w-full max-w-lg bg-white rounded-2xl shadow-2xl overflow-hidden animate-fade-in">
+        <div
+          className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-sm px-4"
+          onClick={(e) => { if (e.target === e.currentTarget) setAiWarning(null); }}
+        >
+          <div className="w-full max-w-lg bg-white rounded-2xl shadow-2xl overflow-hidden animate-fade-in" onClick={(e) => e.stopPropagation()}>
             {/* Header */}
             <div className={`px-6 py-5 flex items-center gap-3 ${
               aiWarning.riskLevel === 'CRITICAL' || aiWarning.riskLevel === 'HIGH'
@@ -1102,8 +1131,9 @@ const PostJob = ({
                       Mô tả
                     </label>
                     <div className="border border-gray-200 rounded-lg overflow-hidden focus-within:border-[#3AB4E6] transition-colors">
-                      <EditorToolbar />
+                      <EditorToolbar textareaRef={descriptionRef} />
                       <textarea
+                        ref={descriptionRef}
                         name="description"
                         value={formData.description}
                         className="w-full p-4 h-40 focus:outline-none resize-none text-sm text-gray-600"
@@ -1123,8 +1153,9 @@ const PostJob = ({
                       Trách nhiệm
                     </label>
                     <div className="border border-gray-200 rounded-lg overflow-hidden focus-within:border-[#3AB4E6] transition-colors">
-                      <EditorToolbar />
+                      <EditorToolbar textareaRef={responsibilitiesRef} />
                       <textarea
+                        ref={responsibilitiesRef}
                         name="responsibilities"
                         value={formData.responsibilities}
                         className="w-full p-4 h-40 focus:outline-none resize-none text-sm text-gray-600"

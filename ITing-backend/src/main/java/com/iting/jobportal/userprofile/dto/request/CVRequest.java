@@ -5,11 +5,11 @@ import lombok.Data;
 
 @Data
 public class CVRequest {
-    @NotBlank(message = "Title is required")
-    private String title;
+  @NotBlank(message = "Title is required")
+  private String title;
 
-    @NotBlank(message = "File URL is required")
-    private String fileUrl;
+  @NotBlank(message = "File URL is required")
+  private String fileUrl;
 
-    private Boolean isDefault = false;
+  private Boolean isDefault = false;
 }

@@ -1,4 +1,3 @@
 package com.iting.jobportal.webinfo.entity;
 
-public class ImageSlider {
-}
+public class ImageSlider {}

@@ -1,12 +1,12 @@
 package com.iting.jobportal.admin.dto.request;
 
-import lombok.Data;
 import jakarta.validation.constraints.NotBlank;
+import lombok.Data;
 
 @Data
 public class BanUserRequest {
-    @NotBlank(message = "Lý do không được để trống")
-    private String reason;
+  @NotBlank(message = "Lý do không được để trống")
+  private String reason;
 
-    private Integer banDays; // null = vĩnh viễn
+  private Integer banDays; // null = vĩnh viễn
 }

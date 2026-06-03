@@ -6,7 +6,7 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface AnnouncementAckRepository
-        extends JpaRepository<AnnouncementAck, AnnouncementAck.AnnouncementAckId> {
+    extends JpaRepository<AnnouncementAck, AnnouncementAck.AnnouncementAckId> {
 
-    boolean existsByUserIdAndAnnouncementId(Long userId, Long announcementId);
+  boolean existsByUserIdAndAnnouncementId(Long userId, Long announcementId);
 }

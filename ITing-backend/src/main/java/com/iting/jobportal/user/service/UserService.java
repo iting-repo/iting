@@ -6,16 +6,16 @@ import com.iting.jobportal.user.dto.response.UserProfileResponse;
 import org.springframework.web.multipart.MultipartFile;
 
 public interface UserService {
-    // Thay String userId thành Long id để khớp với Account Id
-    UserProfileResponse getProfile(Long id);
+  // Thay String userId thành Long id để khớp với Account Id
+  UserProfileResponse getProfile(Long id);
 
-    void updateBasic(Long id, UpdateUserRequest req);
+  void updateBasic(Long id, UpdateUserRequest req);
 
-    void updatePersonal(Long id, PersonalUpdateDto dto);
+  void updatePersonal(Long id, PersonalUpdateDto dto);
 
-    void updateAvatar(Long id, String url);
+  void updateAvatar(Long id, String url);
 
-    void deleteAvatar(Long id);
+  void deleteAvatar(Long id);
 
-    String uploadAvatar(Long id, MultipartFile file);
+  String uploadAvatar(Long id, MultipartFile file);
 }

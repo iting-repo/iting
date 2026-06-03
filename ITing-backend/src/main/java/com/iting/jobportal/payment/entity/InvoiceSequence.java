@@ -12,11 +12,11 @@ import lombok.*;
 @Builder
 public class InvoiceSequence {
 
-    @Id
-    @Column(name = "year")
-    private Integer year;
+  @Id
+  @Column(name = "year")
+  private Integer year;
 
-    @Column(name = "last_number", nullable = false)
-    @Builder.Default
-    private Integer lastNumber = 0;
+  @Column(name = "last_number", nullable = false)
+  @Builder.Default
+  private Integer lastNumber = 0;
 }

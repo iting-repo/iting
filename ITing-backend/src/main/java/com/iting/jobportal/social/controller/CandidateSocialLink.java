@@ -1,4 +1,3 @@
 package com.iting.jobportal.social.controller;
 
-public class CandidateSocialLink {
-}
+public class CandidateSocialLink {}

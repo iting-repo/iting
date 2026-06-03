@@ -103,6 +103,7 @@ const adminUsersPage = {
     },
     {
       id: 102,
+      fullName: 'Tran Thi B',
       companyName: 'ITing Employer',
       email: 'employer@example.com',
       role: 'COMPANY',
@@ -110,8 +111,17 @@ const adminUsersPage = {
       createdAt: '2026-03-25T08:00:00.000Z',
       lastLoginAt: '2026-04-02T16:00:00.000Z',
     },
+    {
+      id: 103,
+      fullName: 'Le Van C',
+      email: 'levanc@example.com',
+      role: 'COMPANY',
+      status: 'BANNED',
+      createdAt: '2026-03-20T08:00:00.000Z',
+      lastLoginAt: '2026-04-01T12:00:00.000Z',
+    },
   ],
-  totalElements: 2,
+  totalElements: 3,
   totalPages: 1,
 };
 
@@ -180,6 +190,22 @@ const adminCompaniesPage = {
       lastUpdateRequestDate: '2026-04-02T14:05:50.596Z',
     },
     {
+      id: 12,
+      name: 'VNG Corporation',
+      taxCode: '0305661962',
+      companyEmail: 'contact@vng.com.vn',
+      representativeName: 'Le Hong Minh',
+      representativePhone: '0909555666',
+      verificationLevel: 'VERIFIED',
+      companyInfoUpdateStatus: 'SUSPENDED',
+      active: false,
+      businessLicenseFileUrl: 'https://files.example.com/license-vng.pdf',
+      description: 'VNG Corporation is a technology company',
+      industry: 'Software',
+      companySize: '1000+',
+      lastUpdateRequestDate: '2026-03-15T10:05:50.596Z',
+    },
+    {
       id: 'CMP-002',
       name: 'Another Tech',
       taxCode: '0399999999',
@@ -196,7 +222,7 @@ const adminCompaniesPage = {
       lastUpdateRequestDate: '2026-04-01T10:05:50.596Z',
     },
   ],
-  totalElements: 2,
+  totalElements: 3,
   totalPages: 1,
 };
 

@@ -5,7 +5,7 @@ import {
   FaSignOutAlt, FaCheckCircle, FaFileSignature
 } from 'react-icons/fa';
 import { useDispatch, useSelector } from 'react-redux';
-import { logout } from '../../store/auth/authSlice';
+import { logout, updateUserProfile } from '../../store/auth/authSlice';
 import axiosInstance from '../../utils/axiosInstance';
 import { API_ORIGIN } from '../../config';
 import { storage } from '../../utils/storage';
@@ -27,22 +27,38 @@ const CandidateSidebar = ({ isMobile = false, onClose }) => {
     return currentUser?.email?.split('@')[0] || 'Ứng viên';
   }, [currentUser]);
 
+  // Fallback chain: avatar → avatarUrl → logoUrl. Backend trả về `avatarUrl` từ
+  // /candidate/profile nhưng authSaga.hydrateUserProfile set cả 2 field; tuy nhiên
+  // nếu user upload avatar mà chưa relogin, chỉ field nào được dispatch sau cùng
+  // mới có. Chain qua hết để robust.
   const avatarUrl = useMemo(() => {
-    if (!currentUser?.avatar) return null;
-    if (currentUser.avatar.startsWith('http')) return currentUser.avatar;
-    return `${API_ORIGIN}${currentUser.avatar}`;
+    const raw =
+      currentUser?.avatar ||
+      currentUser?.avatarUrl ||
+      currentUser?.logoUrl ||
+      null;
+    if (!raw) return null;
+    if (raw.startsWith('http') || raw.startsWith('data:') || raw.startsWith('blob:')) return raw;
+    return `${API_ORIGIN}${raw}`;
   }, [currentUser]);
 
-  // ── Fetch initial Open-to-Work status ──
+  // ── Fetch initial profile (Open-to-Work status + avatar sync) ──
   useEffect(() => {
     const fetchProfile = async () => {
       try {
         const token = storage.getToken();
         if (!token) return;
-        const res = await axiosInstance.get(
-          '/candidate/profile'
-        );
+        const res = await axiosInstance.get('/candidate/profile');
         setOpenToWork(res?.openToWork ?? false);
+        // Sync avatar/fullName về Redux nếu backend có. Header + chỗ khác đọc
+        // currentUser nên fix được "avatar không hiển thị" sau khi user upload.
+        if (res?.avatarUrl || res?.fullName) {
+          dispatch(updateUserProfile({
+            avatarUrl: res.avatarUrl || undefined,
+            avatar: res.avatarUrl || undefined,
+            fullName: res.fullName || undefined,
+          }));
+        }
       } catch {
         /* silent */
       } finally {
@@ -50,7 +66,7 @@ const CandidateSidebar = ({ isMobile = false, onClose }) => {
       }
     };
     fetchProfile();
-  }, []);
+  }, [dispatch]);
 
   // ── Toggle handler ──
   const handleToggleOpenToWork = useCallback(async () => {

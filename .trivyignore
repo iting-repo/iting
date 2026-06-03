@@ -1,0 +1,14 @@
+# Trivy ignore file (root).
+# Format: one rule per line, comment starts with '#'.
+# Syntax: https://aquasecurity.github.io/trivy/latest/docs/suppression/
+#
+# File này dùng cho `trivy-action scan-type=fs` ở .github/workflows/ci.yml.
+# CVE cho thư viện Java được xử lý riêng bởi OWASP dependency-check
+# (job backend) với NVD API key — KHÔNG ignore ở đây.
+
+# ----- Backend build artifacts (false-positive do trivy scan cả target/) -----
+# Đã được skip qua --skip-dirs ở workflow, giữ comment để document.
+
+# ----- Trivy DB self-update transient warning -----
+# Trivy tự check DB mỗi 12h, đôi lúc in warning "update is slow" nhưng
+# không phải lỗi thật. Đã handle bằng cache step phía trên.

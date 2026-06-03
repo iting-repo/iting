@@ -5,6 +5,6 @@ import lombok.Data;
 
 @Data
 public class DeclineOfferRequest {
-    @Size(max = 2000)
-    private String reason;
+  @Size(max = 2000)
+  private String reason;
 }
