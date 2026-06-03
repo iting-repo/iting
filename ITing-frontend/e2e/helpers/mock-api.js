@@ -162,6 +162,10 @@ async function mockAdminApis(page) {
     await fulfillJson(route, { success: true });
   });
 
+  await page.route('**/api/admin/users/103/unban', async (route) => {
+    await fulfillJson(route, { success: true });
+  });
+
   await page.route('**/api/admin/users/101', async (route) => {
     if (route.request().method() === 'DELETE') {
       await fulfillJson(route, { success: true });
@@ -173,6 +177,10 @@ async function mockAdminApis(page) {
 
   await page.route('**/api/admin/users/102', async (route) => {
     await fulfillJson(route, adminUsersPage.content[1]);
+  });
+
+  await page.route('**/api/admin/users/103', async (route) => {
+    await fulfillJson(route, adminUsersPage.content[2]);
   });
 
   await page.route('**/api/admin/jobs**', async (route) => {
@@ -228,8 +236,12 @@ async function mockAdminApis(page) {
     await fulfillJson(route, adminCompaniesPage.content[0]);
   });
 
-  await page.route('**/api/admin/companies/CMP-002', async (route) => {
+  await page.route('**/api/admin/companies/12', async (route) => {
     await fulfillJson(route, adminCompaniesPage.content[1]);
+  });
+
+  await page.route('**/api/admin/companies/CMP-002', async (route) => {
+    await fulfillJson(route, adminCompaniesPage.content[2]);
   });
 
   await page.route('**/api/admin/companies/CMP-001/approve', async (route) => {
@@ -245,6 +257,10 @@ async function mockAdminApis(page) {
   });
 
   await page.route('**/api/admin/companies/CMP-002/unsuspend', async (route) => {
+    await fulfillJson(route, { success: true });
+  });
+
+  await page.route('**/api/admin/companies/12/unsuspend', async (route) => {
     await fulfillJson(route, { success: true });
   });
 
