@@ -116,7 +116,12 @@ test.describe("Nhà tuyển dụng đăng tin tuyển dụng", () => {
 
     await form.locator('button[type="submit"]').click();
 
-    await expect(page.locator("[data-sonner-toast]")).toBeVisible();
+    // Sonner có thể hiển thị 2 toast đồng thời: success "Đăng bài thành công"
+    // + loading "AI đang kiểm tra nội dung". Dùng .first() để tránh strict mode
+    // violation, hoặc filter theo text cụ thể của success toast.
+    await expect(
+      page.locator("[data-sonner-toast]").filter({ hasText: /Đăng bài|thành công|Thành công/i }),
+    ).toBeVisible();
 
     const jobRow = page.locator("tr").filter({ hasText: uniqueTitle });
     await expect(jobRow).toBeVisible();
