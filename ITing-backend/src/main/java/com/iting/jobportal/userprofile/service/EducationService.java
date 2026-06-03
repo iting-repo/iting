@@ -1,4 +1,3 @@
 package com.iting.jobportal.userprofile.service;
 
-public interface EducationService {
-}
+public interface EducationService {}

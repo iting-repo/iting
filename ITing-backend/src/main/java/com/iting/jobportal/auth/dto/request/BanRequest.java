@@ -10,6 +10,6 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class BanRequest {
-    private String reason;
-    private Integer durationDays; // NULL nếu ban vĩnh viễn
+  private String reason;
+  private Integer durationDays; // NULL nếu ban vĩnh viễn
 }

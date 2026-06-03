@@ -12,9 +12,7 @@ import lombok.Setter;
 @AllArgsConstructor
 public class TypingEventRequest {
 
-    @NotNull
-    private Long conversationId;
+  @NotNull private Long conversationId;
 
-    @NotNull
-    private Boolean typing;
+  @NotNull private Boolean typing;
 }

@@ -14,39 +14,37 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 @Configuration
 public class WebConfig implements WebMvcConfigurer {
 
-    @Autowired(required = false)
-    private RateLimitInterceptor rateLimitInterceptor;
+  @Autowired(required = false)
+  private RateLimitInterceptor rateLimitInterceptor;
 
-    @Autowired
-    private DeprecatedPathInterceptor deprecatedPathInterceptor;
+  @Autowired private DeprecatedPathInterceptor deprecatedPathInterceptor;
 
-    @Autowired
-    private MaintenanceModeInterceptor maintenanceModeInterceptor;
+  @Autowired private MaintenanceModeInterceptor maintenanceModeInterceptor;
 
-    @Override
-    public void addInterceptors(InterceptorRegistry registry) {
-        if (rateLimitInterceptor != null) {
-            registry.addInterceptor(rateLimitInterceptor)
-                    .addPathPatterns("/api/**");
-        }
-        registry.addInterceptor(deprecatedPathInterceptor)
-                .addPathPatterns("/api/**");
-        registry.addInterceptor(maintenanceModeInterceptor)
-                .addPathPatterns("/api/**")
-                .excludePathPatterns("/api/admin/**", "/api/public/**", "/api/auth/**");
+  @Override
+  public void addInterceptors(InterceptorRegistry registry) {
+    if (rateLimitInterceptor != null) {
+      registry.addInterceptor(rateLimitInterceptor).addPathPatterns("/api/**");
     }
+    registry.addInterceptor(deprecatedPathInterceptor).addPathPatterns("/api/**");
+    registry
+        .addInterceptor(maintenanceModeInterceptor)
+        .addPathPatterns("/api/**")
+        .excludePathPatterns("/api/admin/**", "/api/public/**", "/api/auth/**");
+  }
 
-    @Override
-    public void addCorsMappings(CorsRegistry registry) {
-        registry.addMapping("/**") // Allow CORS for all endpoints
-                .allowedOrigins("http://localhost:3000") // Frontend URL
-                .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS") // Allowed HTTP methods
-                .allowedHeaders("*") // Allow all headers
-                .allowCredentials(true); // Allow cookies/auth headers
-    }
+  @Override
+  public void addCorsMappings(CorsRegistry registry) {
+    registry
+        .addMapping("/**") // Allow CORS for all endpoints
+        .allowedOrigins("http://localhost:3000") // Frontend URL
+        .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS") // Allowed HTTP methods
+        .allowedHeaders("*") // Allow all headers
+        .allowCredentials(true); // Allow cookies/auth headers
+  }
 
-    @Bean
-    public RestTemplate restTemplate() {
-        return new RestTemplate();
-    }
+  @Bean
+  public RestTemplate restTemplate() {
+    return new RestTemplate();
+  }
 }

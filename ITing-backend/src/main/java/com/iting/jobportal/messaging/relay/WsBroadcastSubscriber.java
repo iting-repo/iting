@@ -16,8 +16,8 @@ import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Component;
 
 /**
- * Receives {@link WsBroadcastEnvelope} from Redis Pub/Sub and re-emits to the local
- * STOMP broker. Only active when both cluster messaging and Redis infra are enabled.
+ * Receives {@link WsBroadcastEnvelope} from Redis Pub/Sub and re-emits to the local STOMP broker.
+ * Only active when both cluster messaging and Redis infra are enabled.
  */
 @Component
 @RequiredArgsConstructor
@@ -26,33 +26,37 @@ import org.springframework.stereotype.Component;
 @Slf4j
 public class WsBroadcastSubscriber implements MessageListener {
 
-    private final RedisMessageListenerContainer container;
-    private final SimpMessagingTemplate local;
-    private final GenericJackson2JsonRedisSerializer redisJsonSerializer;
-    private final ClusterMessagingTemplate.RelayPublisher publisher;
+  private final RedisMessageListenerContainer container;
+  private final SimpMessagingTemplate local;
+  private final GenericJackson2JsonRedisSerializer redisJsonSerializer;
+  private final ClusterMessagingTemplate.RelayPublisher publisher;
 
-    @Value("${app.cluster.messaging.channel:iting:ws:broadcast}")
-    private String channel;
+  @Value("${app.cluster.messaging.channel:iting:ws:broadcast}")
+  private String channel;
 
-    @PostConstruct
-    void subscribe() {
-        Topic topic = new ChannelTopic(channel);
-        container.addMessageListener(this, topic);
-        log.info("WsBroadcastSubscriber listening on Redis channel '{}', originId={}", channel, publisher.originId());
+  @PostConstruct
+  void subscribe() {
+    Topic topic = new ChannelTopic(channel);
+    container.addMessageListener(this, topic);
+    log.info(
+        "WsBroadcastSubscriber listening on Redis channel '{}', originId={}",
+        channel,
+        publisher.originId());
+  }
+
+  @Override
+  public void onMessage(Message message, byte[] pattern) {
+    try {
+      WsBroadcastEnvelope env =
+          (WsBroadcastEnvelope) redisJsonSerializer.deserialize(message.getBody());
+      if (env == null) return;
+      if ("user".equals(env.getType())) {
+        local.convertAndSendToUser(env.getUserId(), env.getDestination(), env.getPayload());
+      } else {
+        local.convertAndSend(env.getDestination(), env.getPayload());
+      }
+    } catch (Exception e) {
+      log.warn("Failed to dispatch WS broadcast: {}", e.getMessage());
     }
-
-    @Override
-    public void onMessage(Message message, byte[] pattern) {
-        try {
-            WsBroadcastEnvelope env = (WsBroadcastEnvelope) redisJsonSerializer.deserialize(message.getBody());
-            if (env == null) return;
-            if ("user".equals(env.getType())) {
-                local.convertAndSendToUser(env.getUserId(), env.getDestination(), env.getPayload());
-            } else {
-                local.convertAndSend(env.getDestination(), env.getPayload());
-            }
-        } catch (Exception e) {
-            log.warn("Failed to dispatch WS broadcast: {}", e.getMessage());
-        }
-    }
+  }
 }

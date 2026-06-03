@@ -140,7 +140,7 @@ const AuditLogPage = () => {
           />
         </div>
         <div className="w-full md:w-64">
-          <Select value={category} onValueChange={(v) => { setCategory(v); setPage(0); }}>
+          <Select value={category} onChange={(e) => { setCategory(e.target.value); setPage(0); }}>
             <option value="all">Tất cả danh mục</option>
             {Object.entries(CATEGORY_MAP).map(([key, item]) => (
               <option key={key} value={key}>{item.label}</option>

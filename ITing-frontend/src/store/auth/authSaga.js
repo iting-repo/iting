@@ -1,10 +1,11 @@
 import { call, put, takeLatest } from 'redux-saga/effects';
 import authService from '../../services/authService';
 import googleAuthService from '../../services/googleAuthService';
+import facebookAuthService from '../../services/facebookAuthService';
 import axiosInstance from '../../utils/axiosInstance';
 import { storage } from '../../utils/storage';
 import {
-    loginRequest, loginSuccess, loginFailure, googleLoginRequest,
+    loginRequest, loginSuccess, loginFailure, googleLoginRequest, facebookLoginRequest,
     registerRequest, registerSuccess, registerFailure,
     checkAuth
 } from './authSlice';
@@ -134,6 +135,35 @@ function* handleGoogleLogin(action) {
     }
 }
 
+// Worker Saga: Facebook Login
+function* handleFacebookLogin(action) {
+    try {
+        const { accessToken, navigate } = action.payload;
+        console.log("Starting Facebook login request...");
+
+        const data = yield call(facebookAuthService.loginWithFacebook, accessToken);
+        console.log("Facebook Login success:", data);
+
+        const token = data.token || data.accessToken;
+        if (token) {
+            data.token = token;
+            const hydratedUser = yield call(hydrateUserProfile, data);
+            storage.setAuth(token, data.role, hydratedUser);
+            yield put(loginSuccess(hydratedUser));
+
+            if (data.role === 'EMPLOYER') {
+                navigate('/employer/dashboard');
+            } else {
+                navigate('/');
+            }
+        }
+    } catch (error) {
+        console.error("Facebook Login saga error:", error);
+        const message = error.error || error.message || "Đăng nhập Facebook thất bại";
+        yield put(loginFailure(message));
+    }
+}
+
 // Worker Saga: Login
 function* handleLogin(action) {
     try {
@@ -170,6 +200,7 @@ function* handleLogin(action) {
 export default function* authSaga() {
     yield takeLatest(loginRequest.type, handleLogin);
     yield takeLatest(googleLoginRequest.type, handleGoogleLogin);
+    yield takeLatest(facebookLoginRequest.type, handleFacebookLogin);
     yield takeLatest(registerRequest.type, handleRegister);
     yield takeLatest(checkAuth.type, handleCheckAuth);
 }

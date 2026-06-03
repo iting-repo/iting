@@ -7,11 +7,11 @@ import lombok.*;
 @AllArgsConstructor
 @Builder
 public class PermissionDTO {
-    private Long id;
-    private String code;
-    private String name;
-    private String description;
-    private String module;
-    private String action;
-    private Boolean active;
+  private Long id;
+  private String code;
+  private String name;
+  private String description;
+  private String module;
+  private String action;
+  private Boolean active;
 }

@@ -1,0 +1,213 @@
+{
+    "metrics": {
+        "group_duration": {
+            "max": 476.6104,
+            "p(90)": 114.85178000000003,
+            "p(95)": 167.34661499999984,
+            "avg": 45.0799451106353,
+            "min": 0,
+            "med": 15.3138
+        },
+        "http_req_duration{group:::jobs}": {
+            "avg": 28.745596454913148,
+            "min": 1.5781,
+            "med": 17.8841,
+            "max": 280.0618,
+            "p(90)": 57.84612000000001,
+            "p(95)": 105.66630999999997,
+            "thresholds": {
+                "p(95)<2000": false
+            }
+        },
+        "api_duration_ms": {
+            "avg": 22.120423197715922,
+            "min": 0,
+            "med": 13.080200000000001,
+            "max": 280.0618,
+            "p(90)": 46.92207999999999,
+            "p(95)": 81.18983499999973
+        },
+        "http_req_duration": {
+            "p(95)": 81.18983499999973,
+            "avg": 22.120423197715922,
+            "min": 0,
+            "med": 13.080200000000001,
+            "max": 280.0618,
+            "p(90)": 46.92207999999999
+        },
+        "errors": {
+            "passes": 0,
+            "fails": 0,
+            "thresholds": {
+                "rate<0.01": false
+            },
+            "value": 0
+        },
+        "http_req_blocked": {
+            "max": 10.427,
+            "p(90)": 0,
+            "p(95)": 0,
+            "avg": 0.06170562098501076,
+            "min": 0,
+            "med": 0
+        },
+        "data_sent": {
+            "count": 540786,
+            "rate": 17657.5405707027
+        },
+        "data_received": {
+            "count": 70269506,
+            "rate": 2294413.4150629574
+        },
+        "http_req_duration{group:::companies}": {
+            "avg": 2.2449034261241922,
+            "min": 0,
+            "med": 1.523,
+            "max": 55.3179,
+            "p(90)": 4.5046,
+            "p(95)": 6.0354,
+            "thresholds": {
+                "p(95)<2000": false
+            }
+        },
+        "http_reqs": {
+            "count": 5604,
+            "rate": 182.97969503318856
+        },
+        "vus_max": {
+            "max": 50,
+            "value": 50,
+            "min": 50
+        },
+        "http_req_sending": {
+            "p(90)": 0,
+            "p(95)": 0.2634149999998309,
+            "avg": 0.061815703069236304,
+            "min": 0,
+            "med": 0,
+            "max": 14.6022
+        },
+        "http_req_waiting": {
+            "avg": 21.475788704496853,
+            "min": 0,
+            "med": 12.454699999999999,
+            "max": 278.8867,
+            "p(90)": 45.87109999999999,
+            "p(95)": 79.77014499999997
+        },
+        "http_req_tls_handshaking": {
+            "med": 0,
+            "max": 0,
+            "p(90)": 0,
+            "p(95)": 0,
+            "avg": 0,
+            "min": 0
+        },
+        "vus": {
+            "value": 50,
+            "min": 50,
+            "max": 50
+        },
+        "http_req_receiving": {
+            "p(95)": 2.11507,
+            "avg": 0.5828187901498925,
+            "min": 0,
+            "med": 0,
+            "max": 53.4284,
+            "p(90)": 1.2167399999999993
+        },
+        "iteration_duration": {
+            "p(90)": 1171.7789,
+            "p(95)": 1219.9951,
+            "avg": 1091.679786295503,
+            "min": 1015.3353,
+            "med": 1068.251,
+            "max": 1486.5842
+        },
+        "iterations": {
+            "count": 1401,
+            "rate": 45.74492375829714
+        },
+        "http_req_connecting": {
+            "min": 0,
+            "med": 0,
+            "max": 5.2264,
+            "p(90)": 0,
+            "p(95)": 0,
+            "avg": 0.012713847251962881
+        },
+        "http_req_failed": {
+            "passes": 0,
+            "fails": 5604,
+            "thresholds": {
+                "rate<0.01": false
+            },
+            "value": 0
+        },
+        "http_req_duration{expected_response:true}": {
+            "min": 0,
+            "med": 13.080200000000001,
+            "max": 280.0618,
+            "p(90)": 46.92207999999999,
+            "p(95)": 81.18983499999973,
+            "avg": 22.120423197715922
+        },
+        "checks": {
+            "passes": 5604,
+            "fails": 0,
+            "value": 1
+        }
+    },
+    "root_group": {
+        "path": "",
+        "id": "d41d8cd98f00b204e9800998ecf8427e",
+        "groups": {
+            "jobs": {
+                "groups": {},
+                "checks": {
+                        "search 200": {
+                            "name": "search 200",
+                            "path": "::jobs::search 200",
+                            "id": "61e6de0c8e134ea0ea6d09a544e65353",
+                            "passes": 1401,
+                            "fails": 0
+                        },
+                        "latest 200": {
+                            "id": "a4ac59e63006cb6b523c568bb3a07ec1",
+                            "passes": 1401,
+                            "fails": 0,
+                            "name": "latest 200",
+                            "path": "::jobs::latest 200"
+                        },
+                        "hot 200": {
+                            "name": "hot 200",
+                            "path": "::jobs::hot 200",
+                            "id": "05697456b55a315b29e84eeeac3d1b15",
+                            "passes": 1401,
+                            "fails": 0
+                        }
+                    },
+                "name": "jobs",
+                "path": "::jobs",
+                "id": "2181f7f86f441ade36304f63db561658"
+            },
+            "companies": {
+                "name": "companies",
+                "path": "::companies",
+                "id": "759569d8325273b16dcb9f244fe855cf",
+                "groups": {},
+                "checks": {
+                        "tiers 200": {
+                            "name": "tiers 200",
+                            "path": "::companies::tiers 200",
+                            "id": "2496b2f5516a3361e1cab576fb5f1de3",
+                            "passes": 1401,
+                            "fails": 0
+                        }
+                    }
+            }
+        },
+        "checks": {},
+        "name": ""
+    }
+}

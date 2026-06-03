@@ -9,7 +9,7 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface ApplyFormRepository extends JpaRepository<ApplyForm, Long> {
 
-    Page<ApplyForm> findByUserIdOrderByIdDesc(Long userId, Pageable pageable);
+  Page<ApplyForm> findByUserIdOrderByIdDesc(Long userId, Pageable pageable);
 
-    boolean existsByUserIdAndId(Long userId, Long id);
+  boolean existsByUserIdAndId(Long userId, Long id);
 }

@@ -15,18 +15,18 @@ import lombok.Setter;
 @AllArgsConstructor
 public class SendMessageRequest {
 
-    @NotNull(message = "Receiver ID is required")
-    private Long receiverId;
+  @NotNull(message = "Receiver ID is required")
+  private Long receiverId;
 
-    @NotNull(message = "Receiver type is required")
-    private ReceiverType receiverType;
+  @NotNull(message = "Receiver type is required")
+  private ReceiverType receiverType;
 
-    @NotNull(message = "Sender type is required")
-    private SenderType senderType;
+  @NotNull(message = "Sender type is required")
+  private SenderType senderType;
 
-    @NotBlank(message = "Message content cannot be empty")
-    private String content;
+  @NotBlank(message = "Message content cannot be empty")
+  private String content;
 
-    // Optional: for creating new conversations
-    private Long conversationId;
+  // Optional: for creating new conversations
+  private Long conversationId;
 }

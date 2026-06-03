@@ -6,7 +6,7 @@ import lombok.Data;
 
 @Data
 public class UpdateUserRequest {
-    private Role role;
-    private AccountStatus status;
-    private String note; // Ghi chú lý do thay đổi
+  private Role role;
+  private AccountStatus status;
+  private String note; // Ghi chú lý do thay đổi
 }

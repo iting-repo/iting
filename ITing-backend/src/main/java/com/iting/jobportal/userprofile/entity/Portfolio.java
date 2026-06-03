@@ -12,16 +12,16 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class Portfolio {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+  @Id
+  @GeneratedValue(strategy = GenerationType.IDENTITY)
+  private Long id;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "profile_id", nullable = false)
-    @com.fasterxml.jackson.annotation.JsonIgnore
-    private UserProfile profile;
+  @ManyToOne(fetch = FetchType.LAZY)
+  @JoinColumn(name = "profile_id", nullable = false)
+  @com.fasterxml.jackson.annotation.JsonIgnore
+  private UserProfile profile;
 
-    private String title;
-    private String url;
-    private String description;
+  private String title;
+  private String url;
+  private String description;
 }

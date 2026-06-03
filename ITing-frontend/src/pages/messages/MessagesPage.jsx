@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { FaPaperPlane, FaSearch, FaSignOutAlt } from 'react-icons/fa';
+import { FaPaperPlane, FaSearch, FaSignOutAlt, FaEllipsisH, FaPen, FaTrash, FaCheck, FaTimes } from 'react-icons/fa';
+import { toast } from 'sonner';
 import { CompanyLogo } from '../../components/common';
 import { useSearchParams, useNavigate, useLocation } from 'react-router-dom';
 import messageService from '../../services/messageService';
@@ -25,6 +26,23 @@ const MessagesPage = () => {
   const messagesRef = useRef(null);
   const typingStopTimeoutRef = useRef(null);
   const [targetUser, setTargetUser] = useState(null); // For when we initiate from userId param
+
+  // CRUD edit/delete state cho message bubble.
+  // menuOpenId: id của message đang hiện 3-dot menu (click outside → close)
+  // editingId/editingDraft: id message đang được edit + nội dung tạm
+  const [menuOpenId, setMenuOpenId] = useState(null);
+  const [editingId, setEditingId] = useState(null);
+  const [editingDraft, setEditingDraft] = useState('');
+
+  // Click bất kỳ chỗ nào ngoài 3-dot menu → close. Listener gắn ở document
+  // để bắt được click trong message scroll area cũng như outside.
+  useEffect(() => {
+    if (menuOpenId == null) return;
+    const close = () => setMenuOpenId(null);
+    // Delay 1 tick để click "..." mở menu không bị listener này close ngay.
+    const t = setTimeout(() => document.addEventListener('click', close), 0);
+    return () => { clearTimeout(t); document.removeEventListener('click', close); };
+  }, [menuOpenId]);
 
   useEffect(() => {
     try {
@@ -122,14 +140,20 @@ const MessagesPage = () => {
         if (!incoming?.id) return;
 
         setMessages((prev) => {
-          // If we already have this exact message (from HTTP response), ignore
-          if (prev.some((m) => m.id === incoming.id)) return prev;
-          
+          // Nếu id đã có trong state → có thể là edit/delete broadcast. Update in-place
+          // để UI phản ánh isEdited / isDeleted / content mới mà không append duplicate.
+          const existingIdx = prev.findIndex((m) => m.id === incoming.id);
+          if (existingIdx >= 0) {
+            const next = prev.slice();
+            next[existingIdx] = { ...prev[existingIdx], ...incoming };
+            return next;
+          }
+
           // If we have an optimistic message from this sender with the same content,
           // ignore the websocket echo and wait for HTTP replacement to avoid duplicates.
-          const isOwnOptimistic = prev.some(m => 
-            m._optimistic && 
-            m.senderId === incoming.senderId && 
+          const isOwnOptimistic = prev.some(m =>
+            m._optimistic &&
+            m.senderId === incoming.senderId &&
             m.content === incoming.content
           );
           if (isOwnOptimistic) return prev;
@@ -317,6 +341,44 @@ const MessagesPage = () => {
       setDraft(content); // restore draft so user can retry
     } finally {
       setSending(false);
+    }
+  };
+
+  // CRUD: edit / delete tin nhắn của chính mình.
+  // WebSocket sẽ broadcast tin nhắn updated qua /topic/conversation/{id} →
+  // setMessages handler (logic findIndex ở trên) update in-place tự động.
+  const handleStartEdit = (msg) => {
+    setEditingId(msg.id);
+    setEditingDraft(msg.content);
+    setMenuOpenId(null);
+  };
+  const handleCancelEdit = () => {
+    setEditingId(null);
+    setEditingDraft('');
+  };
+  const handleSaveEdit = async () => {
+    const id = editingId;
+    const content = editingDraft.trim();
+    if (!id || !content) { handleCancelEdit(); return; }
+    try {
+      const updated = await messageService.editMessage(id, content);
+      // Update tại chỗ ngay (không đợi WebSocket echo) để UI responsive.
+      setMessages((prev) => prev.map((m) => m.id === id ? { ...m, ...updated } : m));
+      handleCancelEdit();
+    } catch (err) {
+      console.error('Edit failed', err);
+      toast.error(err?.message || 'Không thể sửa tin nhắn');
+    }
+  };
+  const handleDeleteMsg = async (msg) => {
+    if (!window.confirm('Thu hồi tin nhắn này? Người nhận sẽ thấy "Tin nhắn đã thu hồi".')) return;
+    try {
+      const updated = await messageService.deleteMessage(msg.id);
+      setMessages((prev) => prev.map((m) => m.id === msg.id ? { ...m, ...updated, isDeleted: true } : m));
+      setMenuOpenId(null);
+    } catch (err) {
+      console.error('Delete failed', err);
+      toast.error(err?.message || 'Không thể thu hồi tin nhắn');
     }
   };
 
@@ -571,12 +633,77 @@ const MessagesPage = () => {
                         <div className="w-7 flex-shrink-0"></div>
                       )}
 
-                      <div className={`
-                        px-3.5 py-2 text-[15px] shadow-sm
-                        ${mine ? 'bg-[#0084FF] text-white' : 'bg-[#E4E6EB] text-slate-900'}
-                        ${roundedClasses}
-                      `}>
-                        <p className="whitespace-pre-wrap break-words leading-relaxed">{msg.content}</p>
+                      {/* Wrap để hover hiển thị 3-dot menu (chỉ cho tin nhắn của mình, chưa bị xóa) */}
+                      <div className="group/msg relative flex items-center gap-1">
+                        {/* 3-dot menu trigger — hover hoặc click → open menu */}
+                        {mine && !msg.isDeleted && !msg._optimistic && editingId !== msg.id && (
+                          <div className="relative opacity-0 group-hover/msg:opacity-100 transition-opacity">
+                            <button
+                              type="button"
+                              aria-label="Tuỳ chọn tin nhắn"
+                              onClick={() => setMenuOpenId(menuOpenId === msg.id ? null : msg.id)}
+                              className="w-7 h-7 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-slate-600"
+                            >
+                              <FaEllipsisH size={11} />
+                            </button>
+                            {menuOpenId === msg.id && (
+                              <div className="absolute right-0 bottom-full mb-1 bg-white shadow-xl border border-slate-100 rounded-lg overflow-hidden z-10 min-w-[120px]">
+                                <button type="button" onClick={() => handleStartEdit(msg)} className="w-full text-left px-3 py-2 text-sm text-slate-700 hover:bg-slate-50 flex items-center gap-2">
+                                  <FaPen size={11} /> Sửa
+                                </button>
+                                <button type="button" onClick={() => handleDeleteMsg(msg)} className="w-full text-left px-3 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center gap-2 border-t border-slate-100">
+                                  <FaTrash size={11} /> Thu hồi
+                                </button>
+                              </div>
+                            )}
+                          </div>
+                        )}
+
+                        {/* Bubble content */}
+                        {editingId === msg.id ? (
+                          /* Edit mode — inline textarea + save/cancel */
+                          <div className={`px-3.5 py-2 text-[15px] shadow-sm bg-white border border-[#0084FF] ${roundedClasses}`}>
+                            <textarea
+                              value={editingDraft}
+                              onChange={(e) => setEditingDraft(e.target.value)}
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSaveEdit(); }
+                                if (e.key === 'Escape') handleCancelEdit();
+                              }}
+                              autoFocus
+                              rows={2}
+                              className="w-full min-w-[200px] resize-none outline-none text-slate-900"
+                            />
+                            <div className="flex items-center gap-2 mt-1 pt-1 border-t border-slate-100">
+                              <button type="button" onClick={handleSaveEdit} className="text-xs font-semibold text-[#0084FF] hover:underline flex items-center gap-1">
+                                <FaCheck size={10} /> Lưu
+                              </button>
+                              <button type="button" onClick={handleCancelEdit} className="text-xs font-semibold text-slate-500 hover:underline flex items-center gap-1">
+                                <FaTimes size={10} /> Huỷ
+                              </button>
+                              <span className="text-[10px] text-slate-400 ml-auto">Enter để lưu, Esc để huỷ</span>
+                            </div>
+                          </div>
+                        ) : msg.isDeleted ? (
+                          /* Deleted bubble — italic, faded, không có content */
+                          <div className={`px-3.5 py-2 text-[14px] italic shadow-sm border border-dashed ${mine ? 'border-[#0084FF]/30 text-[#0084FF]/70 bg-[#0084FF]/5' : 'border-slate-300 text-slate-500 bg-slate-50'} ${roundedClasses}`}>
+                            Tin nhắn đã thu hồi
+                          </div>
+                        ) : (
+                          /* Normal bubble */
+                          <div className={`
+                            px-3.5 py-2 text-[15px] shadow-sm
+                            ${mine ? 'bg-[#0084FF] text-white' : 'bg-[#E4E6EB] text-slate-900'}
+                            ${roundedClasses}
+                          `}>
+                            <p className="whitespace-pre-wrap break-words leading-relaxed">{msg.content}</p>
+                            {msg.isEdited && (
+                              <span className={`text-[10px] ${mine ? 'text-white/60' : 'text-slate-400'} block mt-0.5`}>
+                                (đã sửa)
+                              </span>
+                            )}
+                          </div>
+                        )}
                       </div>
                     </div>
                   </div>

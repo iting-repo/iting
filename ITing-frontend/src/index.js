@@ -7,7 +7,7 @@
 // const root = createRoot(container);
 // root.render(<App />);
 
-import React from 'react';
+import React, { lazy, Suspense } from 'react';
 import ReactDOM from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
 // 1. Import Provider và store
@@ -29,7 +29,10 @@ import App from './App';
 import './i18n';
 import './index.css';
 
-import { Toaster } from 'sonner';
+// Lazy: sonner Toaster — không cần cho first paint, load sau khi main thread idle
+// để giảm TBT + unused JS trên hero. toast() calls trước khi Toaster mount sẽ
+// queue trong sonner store, hiển thị khi Toaster sẵn sàng.
+const Toaster = lazy(() => import('sonner').then(m => ({ default: m.Toaster })));
 
 import { GoogleOAuthProvider } from '@react-oauth/google';
 
@@ -38,7 +41,9 @@ root.render(
   <GoogleOAuthProvider clientId={process.env.REACT_APP_GOOGLE_CLIENT_ID}>
     <Provider store={store}>
       <BrowserRouter>
-        <Toaster position="top-right" richColors closeButton />
+        <Suspense fallback={null}>
+          <Toaster position="top-right" richColors closeButton />
+        </Suspense>
         <App />
       </BrowserRouter>
     </Provider>

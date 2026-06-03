@@ -10,36 +10,60 @@ import { toast } from "sonner";
 import companyService from "../../services/companyService";
 import { Breadcrumb, CompanyLogo } from "../../components/common";
 
+// 34 tỉnh/thành VN sau sáp nhập 2025 (Nghị quyết 60-NQ/TW). Sắp theo
+// thứ tự dân số/IT job density để các vùng IT hub lên đầu dropdown.
 const PROVINCES = [
-  "Hồ Chí Minh", "Hà Nội", "Đà Nẵng", "Bình Dương", "Đồng Nai", "Cần Thơ", "Hải Phòng"
+  // IT hubs trước
+  "Hồ Chí Minh", "Hà Nội", "Đà Nẵng", "Hải Phòng", "Cần Thơ", "Huế",
+  // Vùng phụ cận hub
+  "Đồng Nai", "Tây Ninh", "Hưng Yên", "Bắc Ninh", "Quảng Ninh",
+  // Còn lại — alphabet
+  "An Giang", "Cao Bằng", "Cà Mau", "Điện Biên", "Đắk Lắk", "Đồng Tháp",
+  "Gia Lai", "Hà Tĩnh", "Khánh Hòa", "Lai Châu", "Lâm Đồng", "Lạng Sơn",
+  "Lào Cai", "Nghệ An", "Ninh Bình", "Phú Thọ", "Quảng Ngãi", "Quảng Trị",
+  "Sơn La", "Thanh Hóa", "Thái Nguyên", "Tuyên Quang", "Vĩnh Long"
 ];
 
-const INDUSTRY_MAP = {
-  "SOFTWARE_DEVELOPMENT": "Phát triển phần mềm",
-  "WEB_DEVELOPMENT": "Phát triển Web",
-  "MOBILE_DEVELOPMENT": "Phát triển di động",
-  "CLOUD_COMPUTING": "Điện toán đám mây",
-  "DEVOPS": "Quản trị vận hành (DevOps)",
-  "DATA_SCIENCE": "Khoa học dữ liệu",
-  "AI": "Trí tuệ nhân tạo (AI)",
-  "CYBERSECURITY": "An ninh mạng",
-  "BLOCKCHAIN": "Blockchain",
-  "GAME_DEVELOPMENT": "Phát triển Game",
-  "QA_TESTING": "Kiểm thử phần mềm (QA/QC)",
-  "IT_SOFTWARE": "Phần mềm CNTT"
-};
+// Industries dùng đúng string value lưu trong DB (xem V2/V35/V91 migrations).
+// Backend search dùng cb.equal() exact-match — không thể dùng enum key
+// SOFTWARE_DEVELOPMENT vì DB lưu raw text "IT Outsourcing"/"Fintech"/etc.
+const INDUSTRY_OPTIONS = [
+  { value: "Technology", label: "Công nghệ" },
+  { value: "IT Outsourcing", label: "Gia công CNTT (IT Outsourcing)" },
+  { value: "Internet Services", label: "Dịch vụ Internet" },
+  { value: "Telecommunications", label: "Viễn thông" },
+  { value: "Fintech", label: "Công nghệ tài chính (Fintech)" },
+  { value: "E-commerce", label: "Thương mại điện tử" },
+  { value: "Multi-industry", label: "Đa ngành" },
+  { value: "Software Development", label: "Phát triển phần mềm" },
+  { value: "Mobile Development", label: "Phát triển ứng dụng di động" },
+  { value: "Cloud Computing", label: "Điện toán đám mây" },
+  { value: "DevOps", label: "Quản trị vận hành (DevOps)" },
+  { value: "Data Science", label: "Khoa học dữ liệu" },
+  { value: "AI / Machine Learning", label: "Trí tuệ nhân tạo (AI/ML)" },
+  { value: "Cybersecurity", label: "An ninh mạng" },
+  { value: "Blockchain", label: "Blockchain" },
+  { value: "Game Development", label: "Phát triển Game" },
+  { value: "QA / Testing", label: "Kiểm thử phần mềm (QA/QC)" },
+];
 
-const INDUSTRIES = Object.keys(INDUSTRY_MAP);
-
+// Sizes match exact string trong DB (Company_size column). Backend cb.equal().
+// Phân nhóm: nhỏ vừa (range) → lớn (open ended với +).
 const COMPANY_SIZES = [
   { value: "1-10", label: "1-10 nhân viên" },
   { value: "11-50", label: "11-50 nhân viên" },
   { value: "51-100", label: "51-100 nhân viên" },
   { value: "100-500", label: "100-500 nhân viên" },
   { value: "500-1000", label: "500-1000 nhân viên" },
-  { value: "100+", label: "100+ nhân viên" },
-  { value: "1000+", label: "1000+ nhân viên" },
+  { value: "1,000+", label: "1,000+ nhân viên" },
+  { value: "2,000+", label: "2,000+ nhân viên" },
+  { value: "3,000+", label: "3,000+ nhân viên" },
   { value: "5,000+", label: "5,000+ nhân viên" },
+  { value: "10,000+", label: "10,000+ nhân viên" },
+  { value: "20,000+", label: "20,000+ nhân viên" },
+  { value: "30,000+", label: "30,000+ nhân viên" },
+  { value: "50,000+", label: "50,000+ nhân viên" },
+  { value: "100,000+", label: "100,000+ nhân viên" },
 ];
 
 const CompaniesPage = () => {
@@ -201,25 +225,37 @@ const CompaniesPage = () => {
               </div>
               
               <div className="flex flex-col md:flex-row gap-2 md:w-auto">
-                <select 
-                  className="px-4 py-4 md:py-4 bg-gray-50 border border-transparent rounded-xl text-sm font-medium text-gray-700 outline-none hover:bg-gray-100 focus:ring-2 focus:ring-[#3AB4E6]/20 transition-all cursor-pointer flex-1"
+                <select
+                  className="px-4 py-4 md:py-4 bg-gray-50 border border-transparent rounded-xl text-sm font-medium text-gray-700 outline-none hover:bg-gray-100 focus:ring-2 focus:ring-[#3AB4E6]/20 transition-all cursor-pointer flex-1 min-w-[160px]"
                   value={selectedLocation}
                   onChange={(e) => setSelectedLocation(e.target.value)}
                 >
-                  <option value="all">Tất cả địa điểm</option>
+                  <option value="all">📍 Tất cả địa điểm</option>
                   {PROVINCES.map(p => <option key={p} value={p}>{p}</option>)}
                 </select>
 
-                <select 
-                  className="px-4 py-4 md:py-4 bg-gray-50 border border-transparent rounded-xl text-sm font-medium text-gray-700 outline-none hover:bg-gray-100 focus:ring-2 focus:ring-[#3AB4E6]/20 transition-all cursor-pointer flex-1"
+                <select
+                  className="px-4 py-4 md:py-4 bg-gray-50 border border-transparent rounded-xl text-sm font-medium text-gray-700 outline-none hover:bg-gray-100 focus:ring-2 focus:ring-[#3AB4E6]/20 transition-all cursor-pointer flex-1 min-w-[180px]"
                   value={selectedIndustry}
                   onChange={(e) => setSelectedIndustry(e.target.value)}
                 >
-                  <option value="all">Tất cả lĩnh vực</option>
-                  {INDUSTRIES.map(i => <option key={i} value={i}>{INDUSTRY_MAP[i]}</option>)}
+                  <option value="all">🏢 Tất cả lĩnh vực</option>
+                  {INDUSTRY_OPTIONS.map(opt => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
                 </select>
 
-                <button 
+                {/* Size filter: dùng ở dưới (separate widget) nhưng cũng add ở đây
+                    cho dễ access. Tránh duplicate state — chỉ 1 dropdown gắn vào
+                    selectedSize. */}
+                <select
+                  className="px-4 py-4 md:py-4 bg-gray-50 border border-transparent rounded-xl text-sm font-medium text-gray-700 outline-none hover:bg-gray-100 focus:ring-2 focus:ring-[#3AB4E6]/20 transition-all cursor-pointer flex-1 min-w-[170px]"
+                  value={selectedSize}
+                  onChange={(e) => setSelectedSize(e.target.value)}
+                >
+                  <option value="all">👥 Mọi quy mô</option>
+                  {COMPANY_SIZES.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
+                </select>
+
+                <button
                   type="submit"
                   className="bg-[#3AB4E6] hover:bg-[#2fa0cf] text-white px-8 py-4 rounded-xl font-bold transition-all shadow-lg shadow-[#3AB4E6]/20 flex items-center justify-center gap-2 w-full md:w-auto"
                 >
@@ -227,6 +263,44 @@ const CompaniesPage = () => {
                 </button>
               </div>
             </div>
+
+            {/* Active filter chips + reset — chỉ hiện khi có filter nào active */}
+            {(selectedLocation !== "all" || selectedIndustry !== "all" || selectedSize !== "all" || keyword) && (
+              <div className="flex flex-wrap items-center gap-2 mt-4 pt-4 border-t border-gray-100">
+                <span className="text-xs text-gray-500 font-medium">Đang lọc:</span>
+                {keyword && (
+                  <span className="inline-flex items-center gap-1 px-3 py-1 bg-blue-50 text-blue-700 rounded-full text-xs font-medium">
+                    🔍 "{keyword}"
+                    <button type="button" onClick={() => setKeyword("")} className="hover:text-blue-900"><X className="w-3 h-3" /></button>
+                  </span>
+                )}
+                {selectedLocation !== "all" && (
+                  <span className="inline-flex items-center gap-1 px-3 py-1 bg-green-50 text-green-700 rounded-full text-xs font-medium">
+                    📍 {selectedLocation}
+                    <button type="button" onClick={() => setSelectedLocation("all")} className="hover:text-green-900"><X className="w-3 h-3" /></button>
+                  </span>
+                )}
+                {selectedIndustry !== "all" && (
+                  <span className="inline-flex items-center gap-1 px-3 py-1 bg-purple-50 text-purple-700 rounded-full text-xs font-medium">
+                    🏢 {INDUSTRY_OPTIONS.find(o => o.value === selectedIndustry)?.label || selectedIndustry}
+                    <button type="button" onClick={() => setSelectedIndustry("all")} className="hover:text-purple-900"><X className="w-3 h-3" /></button>
+                  </span>
+                )}
+                {selectedSize !== "all" && (
+                  <span className="inline-flex items-center gap-1 px-3 py-1 bg-orange-50 text-orange-700 rounded-full text-xs font-medium">
+                    👥 {COMPANY_SIZES.find(s => s.value === selectedSize)?.label || selectedSize}
+                    <button type="button" onClick={() => setSelectedSize("all")} className="hover:text-orange-900"><X className="w-3 h-3" /></button>
+                  </span>
+                )}
+                <button
+                  type="button"
+                  onClick={() => { setKeyword(""); setSelectedLocation("all"); setSelectedIndustry("all"); setSelectedSize("all"); }}
+                  className="ml-auto text-xs text-gray-500 hover:text-[#3AB4E6] font-medium underline"
+                >
+                  Xóa tất cả bộ lọc
+                </button>
+              </div>
+            )}
           </form>
         </div>
       </div>

@@ -16,19 +16,20 @@ import org.springframework.web.bind.annotation.*;
 @Tag(name = "Audit Management", description = "Admin APIs for system-wide activity logging")
 public class AdminAuditController {
 
-    private final AdminActivityLogService adminActivityLogService;
+  private final AdminActivityLogService adminActivityLogService;
 
-    @GetMapping
-    @PreAuthorize("hasRole('ADMIN')")
-    @Operation(summary = "Get system audit logs")
-    public ResponseEntity<Page<AuditLogResponse>> getAuditLogs(
-            @RequestParam(required = false) String category,
-            @RequestParam(required = false) Long performerId,
-            @RequestParam(required = false) String action,
-            @RequestParam(required = false) String search,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size) {
-        
-        return ResponseEntity.ok(adminActivityLogService.getAuditLogs(category, performerId, action, search, page, size));
-    }
+  @GetMapping
+  @PreAuthorize("hasRole('ADMIN')")
+  @Operation(summary = "Get system audit logs")
+  public ResponseEntity<Page<AuditLogResponse>> getAuditLogs(
+      @RequestParam(required = false) String category,
+      @RequestParam(required = false) Long performerId,
+      @RequestParam(required = false) String action,
+      @RequestParam(required = false) String search,
+      @RequestParam(defaultValue = "0") int page,
+      @RequestParam(defaultValue = "10") int size) {
+
+    return ResponseEntity.ok(
+        adminActivityLogService.getAuditLogs(category, performerId, action, search, page, size));
+  }
 }

@@ -10,6 +10,7 @@ import {
 import adminJobService from "../../../../services/adminJobService";
 import { toast } from "sonner";
 import { FaRobot, FaSpinner } from "react-icons/fa";
+import { Users } from "lucide-react";
 
 const getJobStatusLabel = (status) => {
   const map = {
@@ -95,19 +96,20 @@ export const JobTable = ({
         { label: "Tên công ty", className: "whitespace-nowrap min-w-[150px]" },
         { label: "Địa điểm", className: "w-48 min-w-[150px]" },
         { label: "Trạng thái", className: "w-40 whitespace-nowrap" },
+        { label: "Ứng viên", className: "w-28 whitespace-nowrap text-center" },
         { label: "AI kiểm duyệt", className: "w-56 min-w-[200px]" },
         { label: "Thao tác", className: "text-right whitespace-nowrap" },
       ]}
     >
       {loading ? (
         <tr>
-          <Td colSpan="8" className="text-center py-10 text-gray-500 italic">
+          <Td colSpan="9" className="text-center py-10 text-gray-500 italic">
             Đang tải danh sách công việc...
           </Td>
         </tr>
       ) : jobs.length === 0 ? (
         <tr>
-          <Td colSpan="8" className="text-center py-10 text-gray-500 italic">
+          <Td colSpan="9" className="text-center py-10 text-gray-500 italic">
             Không tìm thấy công việc nào.
           </Td>
         </tr>
@@ -165,6 +167,18 @@ export const JobTable = ({
                     </Badge>
                   )}
                 </div>
+              </Td>
+
+              <Td className="text-center whitespace-nowrap">
+                <button
+                  type="button"
+                  onClick={() => onViewApplicants && onViewApplicants(job)}
+                  title="Xem danh sách ứng viên đã ứng tuyển"
+                  className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-sky-50 hover:bg-sky-100 text-sky-700 font-bold text-sm border border-sky-100 transition-colors"
+                >
+                  <Users className="w-3.5 h-3.5" />
+                  {job.applicationCount ?? 0}
+                </button>
               </Td>
 
               <Td className="whitespace-nowrap">

@@ -1,37 +1,40 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import {
     FaRegUser, FaFileAlt, FaSearch, FaCheckCircle,
     FaPlay, FaChevronDown, FaChevronUp, FaArrowRight,
     FaMedal, FaUserTie, FaBuilding, FaTools
 } from 'react-icons/fa';
+import publicContentService from '../../services/publicContentService';
+
+// Fallback khi API lỗi / chưa có FAQ nào published — giữ trải nghiệm
+// không vỡ. Admin có thể tạo FAQ qua /admin/faq để override list này.
+const FALLBACK_FAQS = [
+    { title: "Tôi có thể tải lên CV không?", content: "Có, bạn có thể tải CV của mình trực tiếp lên hệ thống để nhà tuyển dụng dễ dàng xem và liên hệ." },
+    { title: "Quy trình tuyển dụng mất bao lâu?", content: "Thời gian tuyển dụng phụ thuộc vào từng công ty và vị trí cụ thể. Thông thường quy trình kéo dài từ 1-3 tuần." },
+    { title: "Quy trình tuyển chọn ứng viên bao gồm những bước nào?", content: "Thường bao gồm: Sàng lọc hồ sơ → Phỏng vấn sơ bộ → Phỏng vấn chuyên môn → Deal lương → Onboarding." },
+    { title: "Nền tảng có tuyển dụng cho sinh viên mới ra trường hoặc thực tập sinh?", content: "Có, ITing có rất nhiều vị trí Internship và Fresher dành cho các bạn sinh viên mới ra trường." },
+    { title: "Tôi có thể nhận thông báo khi có công việc mới phù hợp không?", content: "Có, bạn hãy bật tính năng 'Nhận thông báo việc làm' trong phần cài đặt tài khoản." },
+];
 
 const AboutPage = () => {
-    // State cho phần FAQ (Câu hỏi thường gặp)
     const [openFaqIndex, setOpenFaqIndex] = useState(0);
+    const [faqs, setFaqs] = useState(FALLBACK_FAQS);
 
-    // Dữ liệu FAQ
-    const faqs = [
-        {
-            question: "Tôi có thể tải lên CV không?",
-            answer: "Có, bạn có thể tải CV của mình trực tiếp lên hệ thống để nhà tuyển dụng dễ dàng xem và liên hệ. Nếu bạn dùng AI matching, có thể thêm: 'Hệ thống sẽ tự động gợi ý việc làm phù hợp dựa trên nội dung CV của bạn'."
-        },
-        {
-            question: "Quy trình tuyển dụng mất bao lâu?",
-            answer: "Thời gian tuyển dụng phụ thuộc vào từng công ty và vị trí cụ thể. Thông thường quy trình kéo dài từ 1-3 tuần."
-        },
-        {
-            question: "Quy trình tuyển chọn ứng viên bao gồm những bước nào?",
-            answer: "Thường bao gồm: Sàng lọc hồ sơ -> Phỏng vấn sơ bộ -> Phỏng vấn chuyên môn -> Deal lương -> Onboarding."
-        },
-        {
-            question: "Nền tảng có tuyển dụng cho sinh viên mới ra trường hoặc thực tập sinh?",
-            answer: "Có, ITing có rất nhiều vị trí Internship và Fresher dành cho các bạn sinh viên mới ra trường."
-        },
-        {
-            question: "Tôi có thể nhận thông báo khi có công việc mới phù hợp không?",
-            answer: "Có, bạn hãy bật tính năng 'Nhận thông báo việc làm' trong phần cài đặt tài khoản."
-        }
-    ];
+    useEffect(() => {
+        let alive = true;
+        publicContentService
+            .getFaqs()
+            .then((data) => {
+                if (!alive) return;
+                const list = Array.isArray(data) ? data : [];
+                if (list.length > 0) setFaqs(list);
+            })
+            .catch(() => {
+                // giữ FALLBACK_FAQS
+            });
+        return () => { alive = false; };
+    }, []);
 
     return (
         <div className="bg-white min-h-screen font-sans text-gray-700">
@@ -128,9 +131,10 @@ const AboutPage = () => {
 
                 {/* Content */}
                 <div className="relative z-10 text-center px-4">
-                    <button className="w-20 h-20 bg-[#3AB4E6] rounded-full flex items-center justify-center text-white text-3xl mb-8 mx-auto hover:scale-110 transition-transform shadow-[0_0_30px_rgba(58,180,230,0.6)]">
+                    {/* Section heading — bỏ play button vì video chưa có; thay bằng icon decorative non-interactive. */}
+                    <div aria-hidden="true" className="w-20 h-20 bg-[#3AB4E6] rounded-full flex items-center justify-center text-white text-3xl mb-8 mx-auto shadow-[0_0_30px_rgba(58,180,230,0.6)]">
                         <FaPlay className="pl-1" />
-                    </button>
+                    </div>
                     <h2 className="text-3xl md:text-5xl font-bold text-white max-w-3xl mx-auto leading-tight mb-12">
                         Cuộc sống tốt đẹp bắt đầu từ một công ty tốt
                     </h2>
@@ -142,21 +146,21 @@ const AboutPage = () => {
                                 <span className="bg-[#3AB4E6] text-white w-6 h-6 rounded flex items-center justify-center font-bold text-sm">1</span>
                                 <h4 className="text-white font-bold">Cơ hội nghề nghiệp đa dạng</h4>
                             </div>
-                            <a href="#" className="text-[#3AB4E6] text-xs hover:underline">Learn more</a>
+                            <Link to="/jobs" className="text-[#3AB4E6] text-xs hover:underline">Khám phá việc làm →</Link>
                         </div>
                         <div>
                             <div className="flex items-center gap-3 mb-2">
                                 <span className="bg-[#3AB4E6] text-white w-6 h-6 rounded flex items-center justify-center font-bold text-sm">2</span>
                                 <h4 className="text-white font-bold">Kết nối với nhà tuyển dụng uy tín</h4>
                             </div>
-                            <a href="#" className="text-[#3AB4E6] text-xs hover:underline">Learn more</a>
+                            <Link to="/companies" className="text-[#3AB4E6] text-xs hover:underline">Xem doanh nghiệp →</Link>
                         </div>
                         <div>
                             <div className="flex items-center gap-3 mb-2">
                                 <span className="bg-[#3AB4E6] text-white w-6 h-6 rounded flex items-center justify-center font-bold text-sm">3</span>
                                 <h4 className="text-white font-bold">Phát triển sự nghiệp lâu dài</h4>
                             </div>
-                            <a href="#" className="text-[#3AB4E6] text-xs hover:underline">Learn more</a>
+                            <Link to="/blogs" className="text-[#3AB4E6] text-xs hover:underline">Đọc cẩm nang →</Link>
                         </div>
                     </div>
                 </div>
@@ -170,31 +174,37 @@ const AboutPage = () => {
                 </div>
 
                 <div className="space-y-4">
-                    {faqs.map((item, index) => (
-                        <div key={index} className="rounded-xl overflow-hidden transition-all duration-300">
-                            <button
-                                onClick={() => setOpenFaqIndex(openFaqIndex === index ? -1 : index)}
-                                className={`w-full flex items-center justify-between p-6 text-left transition-colors ${openFaqIndex === index ? 'bg-[#89CFF0]/20' : 'bg-white hover:bg-gray-50'
-                                    }`}
-                            >
-                                <span className={`font-bold text-lg ${openFaqIndex === index ? 'text-gray-900' : 'text-gray-600'}`}>
-                                    <span className="mr-4 text-[#3AB4E6] opacity-50">0{index + 1}</span>
-                                    {item.question}
-                                </span>
-                                {openFaqIndex === index ?
-                                    <FaChevronUp className="text-[#3AB4E6]" /> :
-                                    <FaChevronDown className="text-gray-400" />
-                                }
-                            </button>
+                    {faqs.map((item, index) => {
+                        const key = item.id ?? index;
+                        const num = String(index + 1).padStart(2, '0');
+                        const isOpen = openFaqIndex === index;
+                        return (
+                            <div key={key} className="rounded-xl overflow-hidden transition-all duration-300">
+                                <button
+                                    onClick={() => setOpenFaqIndex(isOpen ? -1 : index)}
+                                    className={`w-full flex items-center justify-between p-6 text-left transition-colors ${isOpen ? 'bg-[#89CFF0]/20' : 'bg-white hover:bg-gray-50'}`}
+                                >
+                                    <span className={`font-bold text-lg ${isOpen ? 'text-gray-900' : 'text-gray-600'}`}>
+                                        <span className="mr-4 text-[#3AB4E6] opacity-50">{num}</span>
+                                        {item.title}
+                                    </span>
+                                    {isOpen
+                                        ? <FaChevronUp className="text-[#3AB4E6]" />
+                                        : <FaChevronDown className="text-gray-400" />}
+                                </button>
 
-                            {openFaqIndex === index && (
-                                <div className="bg-[#89CFF0]/20 px-6 pb-6 pl-14 text-gray-600 text-sm leading-relaxed">
-                                    {item.answer}
-                                </div>
-                            )}
-                            <div className="h-[1px] bg-gray-100 w-full"></div>
-                        </div>
-                    ))}
+                                {isOpen && (
+                                    <div
+                                        className="bg-[#89CFF0]/20 px-6 pb-6 pl-14 text-gray-600 text-sm leading-relaxed faq-content"
+                                        // content do admin nhập qua ReactQuill → HTML.
+                                        // ReactQuill sanitize trước khi lưu, BE chỉ proxy.
+                                        dangerouslySetInnerHTML={{ __html: item.content || '' }}
+                                    />
+                                )}
+                                <div className="h-[1px] bg-gray-100 w-full"></div>
+                            </div>
+                        );
+                    })}
                 </div>
             </div>
 
@@ -267,8 +277,8 @@ const AboutPage = () => {
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                    {/* Card 1 */}
-                    <div className="group cursor-pointer">
+                    {/* Card 1 — demo cards, link tới blog list (chưa có blog detail tương ứng) */}
+                    <Link to="/blogs" className="group cursor-pointer block">
                         <div className="rounded-2xl overflow-hidden h-[300px] mb-4 relative">
                             <span className="absolute top-4 left-4 bg-[#3AB4E6] text-white text-xs font-bold px-3 py-1 rounded-full z-10">News</span>
                             <img src="https://images.unsplash.com/photo-1521737604893-d14cc237f11d?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80" alt="Blog 1" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
@@ -278,14 +288,14 @@ const AboutPage = () => {
                             <h3 className="text-xl font-bold text-gray-900 mb-3 group-hover:text-[#3AB4E6] transition-colors">
                                 Khơi Dậy Tinh Thần Làm Việc: Chiến Lược Nâng Cao Sự Gắn Kết Của Nhân Viên Năm 2024
                             </h3>
-                            <button className="text-[#3AB4E6] text-sm font-bold flex items-center gap-1 group-hover:gap-2 transition-all">
+                            <span className="text-[#3AB4E6] text-sm font-bold flex items-center gap-1 group-hover:gap-2 transition-all">
                                 Đọc thêm <FaArrowRight size={12} />
-                            </button>
+                            </span>
                         </div>
-                    </div>
+                    </Link>
 
                     {/* Card 2 */}
-                    <div className="group cursor-pointer">
+                    <Link to="/blogs" className="group cursor-pointer block">
                         <div className="rounded-2xl overflow-hidden h-[300px] mb-4 relative">
                             <span className="absolute top-4 left-4 bg-[#3AB4E6] text-white text-xs font-bold px-3 py-1 rounded-full z-10">Blog</span>
                             <img src="https://images.unsplash.com/photo-1551434678-e076c223a692?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80" alt="Blog 2" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
@@ -295,11 +305,11 @@ const AboutPage = () => {
                             <h3 className="text-xl font-bold text-gray-900 mb-3 group-hover:text-[#3AB4E6] transition-colors">
                                 Cách Tránh 6 Lỗi Phổ Biến Nhất Khi Phỏng Vấn Xin Việc
                             </h3>
-                            <button className="text-[#3AB4E6] text-sm font-bold flex items-center gap-1 group-hover:gap-2 transition-all">
+                            <span className="text-[#3AB4E6] text-sm font-bold flex items-center gap-1 group-hover:gap-2 transition-all">
                                 Đọc thêm <FaArrowRight size={12} />
-                            </button>
+                            </span>
                         </div>
-                    </div>
+                    </Link>
                 </div>
             </div>
 

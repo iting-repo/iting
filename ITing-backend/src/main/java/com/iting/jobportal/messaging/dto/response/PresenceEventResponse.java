@@ -13,6 +13,6 @@ import lombok.Setter;
 @Builder
 public class PresenceEventResponse {
 
-    private Long userId;
-    private Boolean online;
+  private Long userId;
+  private Boolean online;
 }

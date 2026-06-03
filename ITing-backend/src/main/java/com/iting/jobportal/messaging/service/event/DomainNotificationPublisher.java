@@ -11,31 +11,43 @@ import org.springframework.stereotype.Component;
 @RequiredArgsConstructor
 public class DomainNotificationPublisher {
 
-    private final NotificationService notificationService;
+  private final NotificationService notificationService;
 
-    public void notifyUser(Long userId, NotificationType type, String content, String entityType, Long entityId,
-            String actionUrl) {
-        notificationService.createNotification(CreateNotificationRequest.builder()
-                .recipientId(userId)
-                .recipientType(RecipientType.USER)
-                .type(type)
-                .content(content)
-                .entityType(entityType)
-                .entityId(entityId)
-                .actionUrl(actionUrl)
-                .build());
-    }
+  public void notifyUser(
+      Long userId,
+      NotificationType type,
+      String content,
+      String entityType,
+      Long entityId,
+      String actionUrl) {
+    notificationService.createNotification(
+        CreateNotificationRequest.builder()
+            .recipientId(userId)
+            .recipientType(RecipientType.USER)
+            .type(type)
+            .content(content)
+            .entityType(entityType)
+            .entityId(entityId)
+            .actionUrl(actionUrl)
+            .build());
+  }
 
-    public void notifyCompany(Long companyId, NotificationType type, String content, String entityType, Long entityId,
-            String actionUrl) {
-        notificationService.createNotification(CreateNotificationRequest.builder()
-                .recipientId(companyId)
-                .recipientType(RecipientType.COMPANY)
-                .type(type)
-                .content(content)
-                .entityType(entityType)
-                .entityId(entityId)
-                .actionUrl(actionUrl)
-                .build());
-    }
+  public void notifyCompany(
+      Long companyId,
+      NotificationType type,
+      String content,
+      String entityType,
+      Long entityId,
+      String actionUrl) {
+    notificationService.createNotification(
+        CreateNotificationRequest.builder()
+            .recipientId(companyId)
+            .recipientType(RecipientType.COMPANY)
+            .type(type)
+            .content(content)
+            .entityType(entityType)
+            .entityId(entityId)
+            .actionUrl(actionUrl)
+            .build());
+  }
 }

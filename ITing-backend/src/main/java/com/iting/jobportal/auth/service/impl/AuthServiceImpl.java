@@ -1,381 +1,483 @@
 package com.iting.jobportal.auth.service.impl;
 
-import com.iting.jobportal.auth.dto.request.LoginRequest;
-import com.iting.jobportal.auth.dto.response.LoginResponse;
+import com.iting.jobportal.admin.service.AdminNotificationService;
 import com.iting.jobportal.auth.dto.request.ChangePasswordRequest;
+import com.iting.jobportal.auth.dto.request.LoginRequest;
 import com.iting.jobportal.auth.dto.request.RegisterRequest;
+import com.iting.jobportal.auth.dto.response.LoginResponse;
 import com.iting.jobportal.auth.dto.response.UserMeResponse;
 import com.iting.jobportal.auth.entity.Account;
 import com.iting.jobportal.auth.entity.Enum.AccountStatus;
 import com.iting.jobportal.auth.entity.Enum.Role;
+import com.iting.jobportal.auth.entity.OtpCode;
 import com.iting.jobportal.auth.repository.AccountRepository;
+import com.iting.jobportal.auth.repository.OtpCodeRepository;
 import com.iting.jobportal.auth.security.JwtTokenUtil;
 import com.iting.jobportal.auth.service.AuthService;
 import com.iting.jobportal.auth.service.GoogleAuthService;
 import com.iting.jobportal.auth.service.RefreshTokenService;
+import com.iting.jobportal.common.service.EmailService;
+import com.iting.jobportal.common.service.EmailTemplateService;
 import com.iting.jobportal.company.entity.Company;
-import com.iting.jobportal.company.entity.enums.CompanyReviewStatus;
-import com.iting.jobportal.company.entity.enums.VerificationLevel;
 import com.iting.jobportal.company.repository.CompanyRepository;
 import com.iting.jobportal.user.entity.User;
 import com.iting.jobportal.user.repository.UserRepository;
-import com.iting.jobportal.auth.repository.OtpCodeRepository;
-import com.iting.jobportal.auth.entity.OtpCode;
-import com.iting.jobportal.common.service.EmailService;
-import com.iting.jobportal.common.service.EmailTemplateService;
-import com.iting.jobportal.admin.service.AdminNotificationService;
+import java.time.LocalDateTime;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
-
 @Service
 @RequiredArgsConstructor
 @Slf4j
 public class AuthServiceImpl implements AuthService {
 
-    private final AccountRepository accountRepository;
-    private final UserRepository userRepository;
-    private final PasswordEncoder passwordEncoder;
-    private final JwtTokenUtil jwtTokenUtil;
-    private final RefreshTokenService refreshTokenService;
-    private final CompanyRepository companyRepository;
-    private final GoogleAuthService googleAuthService;
-    private final OtpCodeRepository otpCodeRepository;
-    private final EmailService emailService;
-    private final EmailTemplateService emailTemplateService;
-    private final AdminNotificationService adminNotificationService;
+  private final AccountRepository accountRepository;
+  private final UserRepository userRepository;
+  private final PasswordEncoder passwordEncoder;
+  private final JwtTokenUtil jwtTokenUtil;
+  private final RefreshTokenService refreshTokenService;
+  private final CompanyRepository companyRepository;
+  private final GoogleAuthService googleAuthService;
+  private final com.iting.jobportal.auth.service.FacebookAuthService facebookAuthService;
+  private final OtpCodeRepository otpCodeRepository;
+  private final EmailService emailService;
+  private final EmailTemplateService emailTemplateService;
+  private final AdminNotificationService adminNotificationService;
 
-    @Override
-    @Transactional
-    public LoginResponse loginWithGoogle(String accessToken) {
-        try {
-            var payload = googleAuthService.getUserInfo(accessToken);
-            String email = (String) payload.get("email");
-            String name = (String) payload.get("name");
-            String pictureUrl = (String) payload.get("picture");
+  @Override
+  @Transactional
+  public LoginResponse loginWithGoogle(String accessToken) {
+    try {
+      var payload = googleAuthService.getUserInfo(accessToken);
+      String email = (String) payload.get("email");
+      String name = (String) payload.get("name");
+      String pictureUrl = (String) payload.get("picture");
 
-            if (email == null) {
-                throw new RuntimeException("Could not retrieve email from Google");
-            }
+      if (email == null) {
+        throw new RuntimeException("Could not retrieve email from Google");
+      }
 
-            Account account = accountRepository.findByEmail(email).orElseGet(() -> {
-                Account newAccount = Account.builder()
-                        .email(email)
-                        .passwordHash(passwordEncoder.encode("SOCIAL_LOGIN_" + System.currentTimeMillis()))
-                        .fullName(name != null && !name.isBlank() ? name.trim() : email)
-                        .role(Role.CANDIDATE)
-                        .status(AccountStatus.ACTIVE)
-                        .build();
-                Account saved = accountRepository.save(newAccount);
-                createUserIfNeeded(saved, RegisterRequest.builder().fullName(name).build());
-                return saved;
-            });
+      Account account =
+          accountRepository
+              .findByEmail(email)
+              .orElseGet(
+                  () -> {
+                    Account newAccount =
+                        Account.builder()
+                            .email(email)
+                            .passwordHash(
+                                passwordEncoder.encode(
+                                    "SOCIAL_LOGIN_" + System.currentTimeMillis()))
+                            .fullName(name != null && !name.isBlank() ? name.trim() : email)
+                            .role(Role.CANDIDATE)
+                            .status(AccountStatus.ACTIVE)
+                            .build();
+                    Account saved = accountRepository.save(newAccount);
+                    createUserIfNeeded(saved, RegisterRequest.builder().fullName(name).build());
+                    return saved;
+                  });
 
-            if (account.getStatus() == AccountStatus.BANNED) {
-                throw new RuntimeException("Tài khoản của bạn đã bị khóa.");
-            }
+      if (account.getStatus() == AccountStatus.BANNED) {
+        throw new RuntimeException("Tài khoản của bạn đã bị khóa.");
+      }
 
-            account.setLastLoginAt(LocalDateTime.now());
-            accountRepository.save(account);
+      account.setLastLoginAt(LocalDateTime.now());
+      accountRepository.save(account);
 
-            String primaryRole = account.getRole().normalizedName();
-            String jwtToken = jwtTokenUtil.generateToken(account.getId(), account.getEmail(), primaryRole);
-            
-            var refreshToken = refreshTokenService.createRefreshToken(
-                    account.getId(), 
-                    account.getEmail(), 
-                    "Google Social Login", 
-                    "Unknown"
-            );
+      String primaryRole = account.getRole().normalizedName();
+      String jwtToken =
+          jwtTokenUtil.generateToken(account.getId(), account.getEmail(), primaryRole);
 
-            return LoginResponse.builder()
-                    .userId(account.getId())
-                    .email(account.getEmail())
-                    .role(primaryRole)
-                    .accessToken(jwtToken)
-                    .refreshToken(refreshToken.getToken())
-                    .tokenType("Bearer")
-                    .expiresIn(86400L)
-                    .build();
+      var refreshToken =
+          refreshTokenService.createRefreshToken(
+              account.getId(), account.getEmail(), "Google Social Login", "Unknown");
 
-        } catch (Exception e) {
-            throw new RuntimeException("Xác thực Google thất bại: " + e.getMessage());
+      return LoginResponse.builder()
+          .userId(account.getId())
+          .email(account.getEmail())
+          .role(primaryRole)
+          .accessToken(jwtToken)
+          .refreshToken(refreshToken.getToken())
+          .tokenType("Bearer")
+          .expiresIn(86400L)
+          .build();
+
+    } catch (Exception e) {
+      throw new RuntimeException("Xác thực Google thất bại: " + e.getMessage());
+    }
+  }
+
+  @Override
+  @Transactional
+  public LoginResponse loginWithFacebook(String accessToken) {
+    try {
+      var payload = facebookAuthService.getUserInfo(accessToken);
+      String email = (String) payload.get("email");
+      String name = (String) payload.get("name");
+      // payload.get("picture") reserved cho avatar sync sau này.
+
+      // Facebook không bắt buộc public email — nếu user chưa cấp quyền email
+      // hoặc đã ẩn email, fallback sang Facebook ID làm phần local của email
+      // để vẫn tạo được account (user có thể đổi email sau).
+      if (email == null || email.isBlank()) {
+        Object fbId = payload.get("id");
+        if (fbId == null) {
+          throw new RuntimeException(
+              "Không lấy được email từ Facebook. Vui lòng cấp quyền email hoặc đăng nhập bằng"
+                  + " Google.");
         }
+        email = "fb_" + fbId + "@facebook.local";
+      }
+
+      final String finalEmail = email;
+      final String finalName = name;
+      Account account =
+          accountRepository
+              .findByEmail(finalEmail)
+              .orElseGet(
+                  () -> {
+                    Account newAccount =
+                        Account.builder()
+                            .email(finalEmail)
+                            .passwordHash(
+                                passwordEncoder.encode(
+                                    "SOCIAL_LOGIN_" + System.currentTimeMillis()))
+                            .fullName(
+                                finalName != null && !finalName.isBlank()
+                                    ? finalName.trim()
+                                    : finalEmail)
+                            .role(Role.CANDIDATE)
+                            .status(AccountStatus.ACTIVE)
+                            .build();
+                    Account saved = accountRepository.save(newAccount);
+                    createUserIfNeeded(
+                        saved, RegisterRequest.builder().fullName(finalName).build());
+                    return saved;
+                  });
+
+      if (account.getStatus() == AccountStatus.BANNED) {
+        throw new RuntimeException("Tài khoản của bạn đã bị khóa.");
+      }
+
+      account.setLastLoginAt(LocalDateTime.now());
+      accountRepository.save(account);
+
+      String primaryRole = account.getRole().normalizedName();
+      String jwtToken =
+          jwtTokenUtil.generateToken(account.getId(), account.getEmail(), primaryRole);
+
+      var refreshToken =
+          refreshTokenService.createRefreshToken(
+              account.getId(), account.getEmail(), "Facebook Social Login", "Unknown");
+
+      return LoginResponse.builder()
+          .userId(account.getId())
+          .email(account.getEmail())
+          .role(primaryRole)
+          .accessToken(jwtToken)
+          .refreshToken(refreshToken.getToken())
+          .tokenType("Bearer")
+          .expiresIn(86400L)
+          .build();
+
+    } catch (Exception e) {
+      throw new RuntimeException("Xác thực Facebook thất bại: " + e.getMessage());
+    }
+  }
+
+  @Override
+  @Transactional
+  public Account register(RegisterRequest request) {
+    if (request == null) {
+      throw new RuntimeException("Register request must not be null");
     }
 
-    @Override
-    @Transactional
-    public Account register(RegisterRequest request) {
-        if (request == null) {
-            throw new RuntimeException("Register request must not be null");
-        }
-
-        if (request.getEmail() == null || request.getEmail().isBlank()) {
-            throw new RuntimeException("Email must not be blank");
-        }
-
-        if (request.getPassword() == null || request.getPassword().isBlank()) {
-            throw new RuntimeException("Password must not be blank");
-        }
-
-        if (request.getRole() == null) {
-            throw new RuntimeException("Role must not be null");
-        }
-
-        String normalizedEmail = request.getEmail().trim().toLowerCase();
-        Account account = accountRepository.findByEmail(normalizedEmail).orElse(null);
-        
-        if (account != null) {
-            boolean isPending = account.getStatus() == AccountStatus.PENDING;
-            boolean neverLoggedIn = account.getLastLoginAt() == null;
-            
-            if (!isPending && !neverLoggedIn) {
-                Role requestedRole = request.getRole().normalize();
-                Role existingRoleNormalized = account.getRole().normalize();
-                
-                if (existingRoleNormalized != requestedRole) {
-                    String roleName = existingRoleNormalized == Role.CANDIDATE ? "Ứng viên" : "Nhà tuyển dụng";
-                    throw new RuntimeException("Email này đã được đăng ký với vai trò " + roleName + ". Vui lòng sử dụng email khác hoặc đăng nhập.");
-                }
-                throw new RuntimeException("Email này đã được sử dụng. Vui lòng sử dụng email khác.");
-            }
-            
-            // Cập nhật thông tin mới cho tài khoản cũ
-            account.setPasswordHash(passwordEncoder.encode(request.getPassword()));
-            account.setFullName(request.getFullName());
-            account.setRole(request.getRole().normalize());
-            account.setStatus(AccountStatus.PENDING);
-            if (request.getFullName() != null && !request.getFullName().isBlank()
-                    && (account.getFullName() == null || account.getFullName().isBlank())) {
-                account.setFullName(request.getFullName().trim());
-            }
-            if (account.getFullName() == null || account.getFullName().isBlank()) {
-                account.setFullName(normalizedEmail);
-            }
-        } else {
-            // Tạo tài khoản mới
-            String name = (request.getFullName() != null && !request.getFullName().isBlank())
-                    ? request.getFullName().trim()
-                    : normalizedEmail; // fallback: dùng email nếu thiếu tên
-            account = Account.builder()
-                    .email(normalizedEmail)
-                    .fullName(request.getFullName())
-                    .passwordHash(passwordEncoder.encode(request.getPassword()))
-                    .fullName(name)
-                    .role(request.getRole().normalize())
-                    .status(AccountStatus.PENDING)
-                    .build();
-        }
-
-        Account savedAccount = accountRepository.save(account);
-
-        // Đảm bảo Profile cũng được tạo/cập nhật.
-        // Sau Phase 2: EMPLOYER cũng có entity User (như CANDIDATE) — Company KHÔNG còn
-        // được tạo tự động lúc đăng ký, mà phải qua POST /api/hr/affiliations/me/init (Phase 3).
-        switch (savedAccount.getRole()) {
-            case CANDIDATE, EMPLOYER -> createUserIfNeeded(savedAccount, request);
-            default -> {}
-        }
-
-        // Gửi OTP mới
-        sendVerificationOtp(savedAccount.getEmail());
-        return savedAccount;
+    if (request.getEmail() == null || request.getEmail().isBlank()) {
+      throw new RuntimeException("Email must not be blank");
     }
 
-    private void sendVerificationOtp(String email) {
-        String otp = String.format("%06d", (int) (Math.random() * 1000000));
-        
-        // Save to DB
-        otpCodeRepository.deleteByEmail(email);
-        OtpCode otpCode = OtpCode.builder()
-                .email(email)
-                .code(otp)
-                .expiryTime(LocalDateTime.now().plusMinutes(5))
-                .isVerification(true)
-                .build();
-        otpCodeRepository.save(otpCode);
-
-        // Send Email
-        String html = emailTemplateService.getOtpTemplate(email, otp, "VERIFY_ACCOUNT");
-        emailService.sendHtmlEmail(email, "[ITing] Mã xác thực đăng ký tài khoản", html);
+    if (request.getPassword() == null || request.getPassword().isBlank()) {
+      throw new RuntimeException("Password must not be blank");
     }
 
-    @Override
-    @Transactional
-    public void verifyOtp(String email, String code) {
-        String normalizedEmail = email != null ? email.trim().toLowerCase() : "";
-        String normalizedCode = code != null ? code.trim() : "";
-
-        OtpCode otpCode = otpCodeRepository.findTopByEmailAndIsVerificationOrderByExpiryTimeDesc(normalizedEmail, true)
-                .orElseThrow(() -> new RuntimeException("Không tìm thấy mã xác thực cho email: " + normalizedEmail));
-
-        if (!otpCode.getCode().equals(normalizedCode)) {
-            throw new RuntimeException("Mã xác thực không chính xác");
-        }
-
-        if (otpCode.getExpiryTime().isBefore(LocalDateTime.now())) {
-            throw new RuntimeException("Mã xác thực đã hết hạn");
-        }
-
-        Account account = accountRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("Không tìm thấy tài khoản"));
-
-        account.setStatus(AccountStatus.ACTIVE);
-        accountRepository.save(account);
-        
-        // Sử dụng normalizedEmail để xóa sạch mã OTP
-        otpCodeRepository.deleteByEmail(normalizedEmail);
-
-        log.info("Account verified successfully and activated: {}", normalizedEmail);
+    if (request.getRole() == null) {
+      throw new RuntimeException("Role must not be null");
     }
 
-    @Override
-    public void resendOtp(String email) {
-        String normalizedEmail = email != null ? email.trim().toLowerCase() : "";
-        Account account = accountRepository.findByEmail(normalizedEmail)
-                .orElseThrow(() -> new RuntimeException("Tài khoản không tồn tại: " + normalizedEmail));
-        
-        if (account.getStatus() == AccountStatus.ACTIVE) {
-            throw new RuntimeException("Tài khoản đã được kích hoạt");
-        }
+    String normalizedEmail = request.getEmail().trim().toLowerCase();
+    Account account = accountRepository.findByEmail(normalizedEmail).orElse(null);
 
-        sendVerificationOtp(normalizedEmail);
+    if (account != null) {
+      boolean isPending = account.getStatus() == AccountStatus.PENDING;
+      boolean neverLoggedIn = account.getLastLoginAt() == null;
+
+      if (!isPending && !neverLoggedIn) {
+        Role requestedRole = request.getRole().normalize();
+        Role existingRoleNormalized = account.getRole().normalize();
+
+        if (existingRoleNormalized != requestedRole) {
+          String roleName =
+              existingRoleNormalized == Role.CANDIDATE ? "Ứng viên" : "Nhà tuyển dụng";
+          throw new RuntimeException(
+              "Email này đã được đăng ký với vai trò "
+                  + roleName
+                  + ". Vui lòng sử dụng email khác hoặc đăng nhập.");
+        }
+        throw new RuntimeException("Email này đã được sử dụng. Vui lòng sử dụng email khác.");
+      }
+
+      // Cập nhật thông tin mới cho tài khoản cũ
+      account.setPasswordHash(passwordEncoder.encode(request.getPassword()));
+      account.setFullName(request.getFullName());
+      account.setRole(request.getRole().normalize());
+      account.setStatus(AccountStatus.PENDING);
+      if (request.getFullName() != null
+          && !request.getFullName().isBlank()
+          && (account.getFullName() == null || account.getFullName().isBlank())) {
+        account.setFullName(request.getFullName().trim());
+      }
+      if (account.getFullName() == null || account.getFullName().isBlank()) {
+        account.setFullName(normalizedEmail);
+      }
+    } else {
+      // Tạo tài khoản mới
+      String name =
+          (request.getFullName() != null && !request.getFullName().isBlank())
+              ? request.getFullName().trim()
+              : normalizedEmail; // fallback: dùng email nếu thiếu tên
+      account =
+          Account.builder()
+              .email(normalizedEmail)
+              .fullName(request.getFullName())
+              .passwordHash(passwordEncoder.encode(request.getPassword()))
+              .fullName(name)
+              .role(request.getRole().normalize())
+              .status(AccountStatus.PENDING)
+              .build();
     }
 
-    private void createUserIfNeeded(Account account, RegisterRequest request) {
-        boolean userExists = userRepository.existsById(account.getId());
-        if (userExists) {
-            return;
-        }
+    Account savedAccount = accountRepository.save(account);
 
-        // Resolve fullName: request → account → email fallback
-        String resolvedName = null;
-        if (request.getFullName() != null && !request.getFullName().isBlank()) {
-            resolvedName = request.getFullName().trim();
-        } else if (account.getFullName() != null && !account.getFullName().isBlank()) {
-            resolvedName = account.getFullName();
-        } else {
-            resolvedName = account.getEmail();
-        }
-
-        // Ghi fullName lên Account (source of truth)
-        if (account.getFullName() == null || account.getFullName().isBlank()) {
-            account.setFullName(resolvedName);
-            accountRepository.save(account);
-        }
-
-        User user = new User();
-        user.setAccount(account);
-        user.setLastUpdate(LocalDateTime.now());
-
-        userRepository.save(user);
+    // Đảm bảo Profile cũng được tạo/cập nhật.
+    // Sau Phase 2: EMPLOYER cũng có entity User (như CANDIDATE) — Company KHÔNG còn
+    // được tạo tự động lúc đăng ký, mà phải qua POST /api/hr/affiliations/me/init (Phase 3).
+    switch (savedAccount.getRole()) {
+      case CANDIDATE, EMPLOYER -> createUserIfNeeded(savedAccount, request);
+      default -> {}
     }
 
-    // NOTE: createCompanyIfNeeded() đã bị bỏ. Trước đây mỗi Account COMPANY/EMPLOYER
-    // được auto-create 1 Company shared-PK lúc đăng ký. Sau Phase 2, Company được
-    // tạo lazy qua endpoint POST /api/hr/affiliations/me/init (Phase 3) khi HR điền
-    // taxCode lần đầu trong FoundingInfoTab.
-    //
-    // adminNotificationService.notifyNewCompany() sẽ được gọi ở init service mới.
+    // Gửi OTP mới
+    sendVerificationOtp(savedAccount.getEmail());
+    return savedAccount;
+  }
 
-    @Transactional
-    @Override
-    public LoginResponse login(LoginRequest request) {
+  private void sendVerificationOtp(String email) {
+    String otp = String.format("%06d", (int) (Math.random() * 1000000));
 
-        Account account = accountRepository
-                .findByEmail(request.getEmail())
-                .orElseThrow(() -> new RuntimeException("Sai mật khẩu hoặc tài khoản"));
+    // Save to DB
+    otpCodeRepository.deleteByEmail(email);
+    OtpCode otpCode =
+        OtpCode.builder()
+            .email(email)
+            .code(otp)
+            .expiryTime(LocalDateTime.now().plusMinutes(5))
+            .isVerification(true)
+            .build();
+    otpCodeRepository.save(otpCode);
 
-        if (!passwordEncoder.matches(request.getPassword(), account.getPasswordHash())) {
-            throw new RuntimeException("Sai mật khẩu hoặc tài khoản");
-        }
+    // Send Email
+    String html = emailTemplateService.getOtpTemplate(email, otp, "VERIFY_ACCOUNT");
+    emailService.sendHtmlEmail(email, "[ITing] Mã xác thực đăng ký tài khoản", html);
+  }
 
-        if (account.getStatus() == com.iting.jobportal.auth.entity.Enum.AccountStatus.BANNED) {
-            throw new RuntimeException("Tài khoản của bạn đã bị khóa. Vui lòng kiểm tra email để biết thêm chi tiết.");
-        }
+  @Override
+  @Transactional
+  public void verifyOtp(String email, String code) {
+    String normalizedEmail = email != null ? email.trim().toLowerCase() : "";
+    String normalizedCode = code != null ? code.trim() : "";
 
-        account.setLastLoginAt(LocalDateTime.now());
-        accountRepository.save(account);
+    OtpCode otpCode =
+        otpCodeRepository
+            .findTopByEmailAndIsVerificationOrderByExpiryTimeDesc(normalizedEmail, true)
+            .orElseThrow(
+                () ->
+                    new RuntimeException(
+                        "Không tìm thấy mã xác thực cho email: " + normalizedEmail));
 
-        String primaryRole = account.getRole() != null
-                ? account.getRole().normalizedName()
-                : "CANDIDATE";
-
-        // 🔥 Tạo JWT Access Token
-        String accessToken = jwtTokenUtil.generateToken(
-                account.getId(),
-                account.getEmail(),
-                primaryRole);
-
-        // 🔥 Tạo Refresh Token
-        var refreshToken = refreshTokenService.createRefreshToken(
-                account.getId(),
-                account.getEmail(),
-                request.getDeviceInfo() != null ? request.getDeviceInfo() : "Unknown",
-                request.getIpAddress() != null ? request.getIpAddress() : "Unknown"
-        );
-
-        return LoginResponse.builder()
-                .userId(account.getId())
-                .email(account.getEmail())
-                .role(primaryRole)
-                .accessToken(accessToken)
-                .refreshToken(refreshToken.getToken())
-                .tokenType("Bearer")
-                .expiresIn(86400L) // 24 hours in seconds
-                .build();
+    if (!otpCode.getCode().equals(normalizedCode)) {
+      throw new RuntimeException("Mã xác thực không chính xác");
     }
 
-    @Override
-    public void changePassword(Long accountId, ChangePasswordRequest request) {
-        Account account = accountRepository.findById(accountId)
-                .orElseThrow(() -> new RuntimeException("Account not found"));
-
-        if (!passwordEncoder.matches(request.getOldPassword(), account.getPasswordHash())) {
-            throw new RuntimeException("Wrong old password");
-        }
-
-        account.setPasswordHash(passwordEncoder.encode(request.getNewPassword()));
-        accountRepository.save(account);
+    if (otpCode.getExpiryTime().isBefore(LocalDateTime.now())) {
+      throw new RuntimeException("Mã xác thực đã hết hạn");
     }
 
-    @Override
-    public Account getAccountByEmail(String email) {
-        return accountRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("Account not found"));
+    Account account =
+        accountRepository
+            .findByEmail(email)
+            .orElseThrow(() -> new RuntimeException("Không tìm thấy tài khoản"));
+
+    account.setStatus(AccountStatus.ACTIVE);
+    accountRepository.save(account);
+
+    // Sử dụng normalizedEmail để xóa sạch mã OTP
+    otpCodeRepository.deleteByEmail(normalizedEmail);
+
+    log.info("Account verified successfully and activated: {}", normalizedEmail);
+  }
+
+  @Override
+  public void resendOtp(String email) {
+    String normalizedEmail = email != null ? email.trim().toLowerCase() : "";
+    Account account =
+        accountRepository
+            .findByEmail(normalizedEmail)
+            .orElseThrow(() -> new RuntimeException("Tài khoản không tồn tại: " + normalizedEmail));
+
+    if (account.getStatus() == AccountStatus.ACTIVE) {
+      throw new RuntimeException("Tài khoản đã được kích hoạt");
     }
 
-    @Override
-    public UserMeResponse getMeResponse(Long accountId) {
-        Account account = accountRepository.findById(accountId)
-                .orElseThrow(() -> new RuntimeException("Account not found"));
+    sendVerificationOtp(normalizedEmail);
+  }
 
-        // Identity (fullName + avatarUrl) đã được hợp nhất về Account sau V83.
-        // Với EMPLOYER vẫn fallback sang company logo/name nếu Account chưa set.
-        String fullName = account.getFullName() != null ? account.getFullName() : account.getEmail();
-        String avatarUrl = account.getAvatarUrl();
-
-        Role role = account.getRole().normalize();
-
-        if (role == Role.EMPLOYER) {
-            Company company = companyRepository.findById(accountId).orElse(null);
-            if (company != null) {
-                fullName = company.getName();
-                avatarUrl = company.getLogoUrl();
-            }
-        }
-
-        return UserMeResponse.builder()
-                .id(account.getId())
-                .email(account.getEmail())
-                .role(account.getRole().normalizedName())
-                .fullName(fullName)
-                .avatarUrl(avatarUrl)
-                .phone(account.getPhone())
-                .build();
+  private void createUserIfNeeded(Account account, RegisterRequest request) {
+    boolean userExists = userRepository.existsById(account.getId());
+    if (userExists) {
+      return;
     }
+
+    // Resolve fullName: request → account → email fallback
+    String resolvedName = null;
+    if (request.getFullName() != null && !request.getFullName().isBlank()) {
+      resolvedName = request.getFullName().trim();
+    } else if (account.getFullName() != null && !account.getFullName().isBlank()) {
+      resolvedName = account.getFullName();
+    } else {
+      resolvedName = account.getEmail();
+    }
+
+    // Ghi fullName lên Account (source of truth)
+    if (account.getFullName() == null || account.getFullName().isBlank()) {
+      account.setFullName(resolvedName);
+      accountRepository.save(account);
+    }
+
+    User user = new User();
+    user.setAccount(account);
+    user.setLastUpdate(LocalDateTime.now());
+
+    userRepository.save(user);
+  }
+
+  // NOTE: createCompanyIfNeeded() đã bị bỏ. Trước đây mỗi Account COMPANY/EMPLOYER
+  // được auto-create 1 Company shared-PK lúc đăng ký. Sau Phase 2, Company được
+  // tạo lazy qua endpoint POST /api/hr/affiliations/me/init (Phase 3) khi HR điền
+  // taxCode lần đầu trong FoundingInfoTab.
+  //
+  // adminNotificationService.notifyNewCompany() sẽ được gọi ở init service mới.
+
+  @Transactional
+  @Override
+  public LoginResponse login(LoginRequest request) {
+
+    Account account =
+        accountRepository
+            .findByEmail(request.getEmail())
+            .orElseThrow(() -> new RuntimeException("Sai mật khẩu hoặc tài khoản"));
+
+    if (!passwordEncoder.matches(request.getPassword(), account.getPasswordHash())) {
+      throw new RuntimeException("Sai mật khẩu hoặc tài khoản");
+    }
+
+    if (account.getStatus() == com.iting.jobportal.auth.entity.Enum.AccountStatus.BANNED) {
+      throw new RuntimeException(
+          "Tài khoản của bạn đã bị khóa. Vui lòng kiểm tra email để biết thêm chi tiết.");
+    }
+
+    account.setLastLoginAt(LocalDateTime.now());
+    accountRepository.save(account);
+
+    String primaryRole =
+        account.getRole() != null ? account.getRole().normalizedName() : "CANDIDATE";
+
+    // 🔥 Tạo JWT Access Token
+    String accessToken =
+        jwtTokenUtil.generateToken(account.getId(), account.getEmail(), primaryRole);
+
+    // 🔥 Tạo Refresh Token
+    var refreshToken =
+        refreshTokenService.createRefreshToken(
+            account.getId(),
+            account.getEmail(),
+            request.getDeviceInfo() != null ? request.getDeviceInfo() : "Unknown",
+            request.getIpAddress() != null ? request.getIpAddress() : "Unknown");
+
+    return LoginResponse.builder()
+        .userId(account.getId())
+        .email(account.getEmail())
+        .role(primaryRole)
+        .accessToken(accessToken)
+        .refreshToken(refreshToken.getToken())
+        .tokenType("Bearer")
+        .expiresIn(86400L) // 24 hours in seconds
+        .build();
+  }
+
+  @Override
+  public void changePassword(Long accountId, ChangePasswordRequest request) {
+    Account account =
+        accountRepository
+            .findById(accountId)
+            .orElseThrow(() -> new RuntimeException("Account not found"));
+
+    if (!passwordEncoder.matches(request.getOldPassword(), account.getPasswordHash())) {
+      throw new RuntimeException("Wrong old password");
+    }
+
+    account.setPasswordHash(passwordEncoder.encode(request.getNewPassword()));
+    accountRepository.save(account);
+  }
+
+  @Override
+  public Account getAccountByEmail(String email) {
+    return accountRepository
+        .findByEmail(email)
+        .orElseThrow(() -> new RuntimeException("Account not found"));
+  }
+
+  @Override
+  public UserMeResponse getMeResponse(Long accountId) {
+    Account account =
+        accountRepository
+            .findById(accountId)
+            .orElseThrow(() -> new RuntimeException("Account not found"));
+
+    // Identity (fullName + avatarUrl) đã được hợp nhất về Account sau V83.
+    // Với EMPLOYER vẫn fallback sang company logo/name nếu Account chưa set.
+    String fullName = account.getFullName() != null ? account.getFullName() : account.getEmail();
+    String avatarUrl = account.getAvatarUrl();
+
+    Role role = account.getRole().normalize();
+
+    if (role == Role.EMPLOYER) {
+      Company company = companyRepository.findById(accountId).orElse(null);
+      if (company != null) {
+        fullName = company.getName();
+        avatarUrl = company.getLogoUrl();
+      }
+    }
+
+    return UserMeResponse.builder()
+        .id(account.getId())
+        .email(account.getEmail())
+        .role(account.getRole().normalizedName())
+        .fullName(fullName)
+        .avatarUrl(avatarUrl)
+        .phone(account.getPhone())
+        .build();
+  }
 }

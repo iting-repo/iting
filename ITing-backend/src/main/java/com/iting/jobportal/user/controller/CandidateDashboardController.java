@@ -17,11 +17,11 @@ import org.springframework.web.bind.annotation.RestController;
 @RequiredArgsConstructor
 public class CandidateDashboardController {
 
-    private final CandidateDashboardService candidateDashboardService;
+  private final CandidateDashboardService candidateDashboardService;
 
-    @GetMapping("/stats")
-    @Operation(summary = "Get candidate dashboard statistics")
-    public ResponseEntity<CandidateDashboardStats> getDashboardStats(@CurrentUser Long userId) {
-        return ResponseEntity.ok(candidateDashboardService.getDashboardStats(userId));
-    }
+  @GetMapping("/stats")
+  @Operation(summary = "Get candidate dashboard statistics")
+  public ResponseEntity<CandidateDashboardStats> getDashboardStats(@CurrentUser Long userId) {
+    return ResponseEntity.ok(candidateDashboardService.getDashboardStats(userId));
+  }
 }

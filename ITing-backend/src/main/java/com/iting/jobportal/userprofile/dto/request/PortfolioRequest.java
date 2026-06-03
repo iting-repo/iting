@@ -5,11 +5,11 @@ import lombok.Data;
 
 @Data
 public class PortfolioRequest {
-    @NotBlank(message = "Title is required")
-    private String title;
+  @NotBlank(message = "Title is required")
+  private String title;
 
-    @NotBlank(message = "URL is required")
-    private String url;
+  @NotBlank(message = "URL is required")
+  private String url;
 
-    private String description;
+  private String description;
 }

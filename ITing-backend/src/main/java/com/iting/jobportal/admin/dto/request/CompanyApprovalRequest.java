@@ -5,6 +5,6 @@ import lombok.Data;
 
 @Data
 public class CompanyApprovalRequest {
-    private VerificationLevel verificationLevel;
-    private String note;
+  private VerificationLevel verificationLevel;
+  private String note;
 }

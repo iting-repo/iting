@@ -4,6 +4,7 @@ import { FaBookmark, FaBell, FaArrowRight, FaCheck, FaCompass } from 'react-icon
 import { useNavigate } from 'react-router-dom';
 import JobCard from '../../components/JobCard';
 import recommendationService from '../../services/recommendationService';
+import { buildJobDetailPath } from '../../utils/jobUrl';
 
 const CandidateDashboard = () => {
   const navigate = useNavigate();
@@ -219,7 +220,16 @@ const CandidateDashboard = () => {
                            })()}
                         </td>
                         <td className="p-4 text-right">
-                           <button className="bg-gray-100 hover:bg-[#3AB4E6] hover:text-white text-gray-600 text-xs font-bold px-4 py-2.5 rounded-lg transition-all shadow-sm">
+                           <button
+                              onClick={() => {
+                                 if (app.jobId) {
+                                    navigate(buildJobDetailPath({ id: app.jobId, title: app.jobPosition }));
+                                 } else {
+                                    navigate('/candidate/applications');
+                                 }
+                              }}
+                              className="bg-gray-100 hover:bg-[#3AB4E6] hover:text-white text-gray-600 text-xs font-bold px-4 py-2.5 rounded-lg transition-all shadow-sm cursor-pointer"
+                           >
                               Xem Chi Tiết
                            </button>
                         </td>

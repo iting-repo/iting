@@ -13,7 +13,7 @@ import lombok.Setter;
 @Builder
 public class TypingEventResponse {
 
-    private Long conversationId;
-    private Long userId;
-    private Boolean typing;
+  private Long conversationId;
+  private Long userId;
+  private Boolean typing;
 }

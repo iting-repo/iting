@@ -7,5 +7,5 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface CreditTransactionRepository extends JpaRepository<CreditTransaction, Long> {
 
-    Page<CreditTransaction> findByAccount_IdOrderByCreatedAtDesc(Long accountId, Pageable pageable);
+  Page<CreditTransaction> findByAccount_IdOrderByCreatedAtDesc(Long accountId, Pageable pageable);
 }

@@ -1,8 +1,7 @@
 package com.iting.jobportal.company.entity;
 
-import lombok.*;
-
 import java.io.Serializable;
+import lombok.*;
 
 @Getter
 @Setter
@@ -10,6 +9,6 @@ import java.io.Serializable;
 @AllArgsConstructor
 @EqualsAndHashCode
 public class UserFollowCompanyId implements Serializable {
-    private Long userId;
-    private Long companyId;
+  private Long userId;
+  private Long companyId;
 }

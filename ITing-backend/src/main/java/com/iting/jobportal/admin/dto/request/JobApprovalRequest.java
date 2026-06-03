@@ -1,12 +1,11 @@
 package com.iting.jobportal.admin.dto.request;
 
-import lombok.Data;
 import jakarta.validation.constraints.NotNull;
+import lombok.Data;
 
 @Data
 public class JobApprovalRequest {
-    @NotNull
-    private Boolean approved;
+  @NotNull private Boolean approved;
 
-    private String rejectReason; // Nếu từ chối
+  private String rejectReason; // Nếu từ chối
 }

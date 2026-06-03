@@ -1,4 +1,3 @@
 package com.iting.jobportal.common.entity;
 
-public class AuditableEntity {
-}
+public class AuditableEntity {}

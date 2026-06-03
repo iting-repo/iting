@@ -4,45 +4,38 @@ import jakarta.validation.constraints.Size;
 
 public class CompanyRepresentativeRequest {
 
-    @Size(max = 255, message = "Representative name must be at most 255 characters")
-    private String representativeName;
+  @Size(max = 255, message = "Representative name must be at most 255 characters")
+  private String representativeName;
 
-    @Size(max = 20, message = "Gender must be at most 20 characters")
-    private String representativeGender;
+  @Size(max = 20, message = "Gender must be at most 20 characters")
+  private String representativeGender;
 
-    @Size(max = 20, message = "Phone number must be at most 20 characters")
-    private String representativePhone;
+  @Size(max = 20, message = "Phone number must be at most 20 characters")
+  private String representativePhone;
 
+  public CompanyRepresentativeRequest() {}
 
+  public String getRepresentativeName() {
+    return representativeName;
+  }
 
-    public CompanyRepresentativeRequest() {
-    }
+  public void setRepresentativeName(String representativeName) {
+    this.representativeName = representativeName;
+  }
 
-    public String getRepresentativeName() {
-        return representativeName;
-    }
+  public String getRepresentativeGender() {
+    return representativeGender;
+  }
 
-    public void setRepresentativeName(String representativeName) {
-        this.representativeName = representativeName;
-    }
+  public void setRepresentativeGender(String representativeGender) {
+    this.representativeGender = representativeGender;
+  }
 
-    public String getRepresentativeGender() {
-        return representativeGender;
-    }
+  public String getRepresentativePhone() {
+    return representativePhone;
+  }
 
-    public void setRepresentativeGender(String representativeGender) {
-        this.representativeGender = representativeGender;
-    }
-
-    public String getRepresentativePhone() {
-        return representativePhone;
-    }
-
-    public void setRepresentativePhone(String representativePhone) {
-        this.representativePhone = representativePhone;
-    }
-
-
-
-
+  public void setRepresentativePhone(String representativePhone) {
+    this.representativePhone = representativePhone;
+  }
 }

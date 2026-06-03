@@ -8,9 +8,9 @@ import lombok.Data;
 @Data
 @AllArgsConstructor
 public class BusinessLicenseFormResponse {
-    private Long companyId;
-    private BusinessDocumentType documentType;
-    private String businessLicenseFileUrl;
-    private String businessLicensePreviewUrl;
-    private CompanyReviewStatus companyInfoUpdateStatus;
+  private Long companyId;
+  private BusinessDocumentType documentType;
+  private String businessLicenseFileUrl;
+  private String businessLicensePreviewUrl;
+  private CompanyReviewStatus companyInfoUpdateStatus;
 }

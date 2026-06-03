@@ -7,15 +7,20 @@ import org.springframework.data.domain.Page;
 
 public interface AdminReportService {
 
-    Page<UserReport> getReports(String status, String type, String targetType, String priority, String search, int page,
-            int size);
+  Page<UserReport> getReports(
+      String status,
+      String type,
+      String targetType,
+      String priority,
+      String search,
+      int page,
+      int size);
 
-    UserReport createReport(Long reporterId, ReportRequest request);
+  UserReport createReport(Long reporterId, ReportRequest request);
 
-    UserReport handleReport(Long adminId, Long reportId, String status, String note);
+  UserReport handleReport(Long adminId, Long reportId, String status, String note);
 
-    ReportStatsResponse getReportStats();
+  ReportStatsResponse getReportStats();
 
-    UserReport getReportById(Long id);
-
+  UserReport getReportById(Long id);
 }

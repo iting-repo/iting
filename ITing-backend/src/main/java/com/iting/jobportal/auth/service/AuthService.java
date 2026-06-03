@@ -1,26 +1,28 @@
 package com.iting.jobportal.auth.service;
 
+import com.iting.jobportal.auth.dto.request.ChangePasswordRequest;
 import com.iting.jobportal.auth.dto.request.LoginRequest;
+import com.iting.jobportal.auth.dto.request.RegisterRequest;
 import com.iting.jobportal.auth.dto.response.LoginResponse;
 import com.iting.jobportal.auth.entity.Account;
-import com.iting.jobportal.auth.dto.request.ChangePasswordRequest;
-import com.iting.jobportal.auth.dto.request.RegisterRequest;
 
 public interface AuthService {
 
-    LoginResponse login(LoginRequest request);
+  LoginResponse login(LoginRequest request);
 
-    LoginResponse loginWithGoogle(String tokenId);
+  LoginResponse loginWithGoogle(String tokenId);
 
-    void changePassword(Long accountId, ChangePasswordRequest request);
+  LoginResponse loginWithFacebook(String accessToken);
 
-    Account getAccountByEmail(String email);
+  void changePassword(Long accountId, ChangePasswordRequest request);
 
-    Account register(RegisterRequest request);
+  Account getAccountByEmail(String email);
 
-    void verifyOtp(String email, String code);
+  Account register(RegisterRequest request);
 
-    void resendOtp(String email);
+  void verifyOtp(String email, String code);
 
-    com.iting.jobportal.auth.dto.response.UserMeResponse getMeResponse(Long accountId);
+  void resendOtp(String email);
+
+  com.iting.jobportal.auth.dto.response.UserMeResponse getMeResponse(Long accountId);
 }

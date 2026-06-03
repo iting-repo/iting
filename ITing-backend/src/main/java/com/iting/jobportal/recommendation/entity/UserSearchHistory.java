@@ -4,10 +4,9 @@ import com.iting.jobportal.auth.entity.Account;
 import com.iting.jobportal.common.entity.AuditEntity;
 import com.iting.jobportal.job.entity.enums.JobType;
 import jakarta.persistence.*;
+import java.math.BigDecimal;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
-
-import java.math.BigDecimal;
 
 @Entity
 @Table(name = "user_search_history")
@@ -18,27 +17,27 @@ import java.math.BigDecimal;
 @SuperBuilder
 public class UserSearchHistory extends AuditEntity {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+  @Id
+  @GeneratedValue(strategy = GenerationType.IDENTITY)
+  private Long id;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id", nullable = false)
-    private Account account;
+  @ManyToOne(fetch = FetchType.LAZY)
+  @JoinColumn(name = "user_id", nullable = false)
+  private Account account;
 
-    @Column(name = "keyword")
-    private String keyword;
+  @Column(name = "keyword")
+  private String keyword;
 
-    @Column(name = "location")
-    private String location;
+  @Column(name = "location")
+  private String location;
 
-    @Column(name = "salary_min")
-    private BigDecimal salaryMin;
+  @Column(name = "salary_min")
+  private BigDecimal salaryMin;
 
-    @Column(name = "salary_max")
-    private BigDecimal salaryMax;
+  @Column(name = "salary_max")
+  private BigDecimal salaryMax;
 
-    @Enumerated(EnumType.STRING)
-    @Column(name = "job_type")
-    private JobType jobType;
+  @Enumerated(EnumType.STRING)
+  @Column(name = "job_type")
+  private JobType jobType;
 }

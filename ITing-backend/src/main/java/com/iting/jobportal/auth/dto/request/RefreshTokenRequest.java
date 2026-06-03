@@ -10,9 +10,9 @@ import lombok.*;
 @Builder
 public class RefreshTokenRequest {
 
-    @NotBlank(message = "Refresh token is required")
-    private String refreshToken;
+  @NotBlank(message = "Refresh token is required")
+  private String refreshToken;
 
-    private String deviceInfo;
-    private String ipAddress;
+  private String deviceInfo;
+  private String ipAddress;
 }

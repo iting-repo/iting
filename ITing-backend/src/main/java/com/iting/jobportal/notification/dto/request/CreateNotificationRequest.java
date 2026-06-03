@@ -17,20 +17,20 @@ import lombok.Setter;
 @Builder
 public class CreateNotificationRequest {
 
-    @NotNull(message = "Recipient ID is required")
-    private Long recipientId;
+  @NotNull(message = "Recipient ID is required")
+  private Long recipientId;
 
-    @NotNull(message = "Recipient type is required")
-    private RecipientType recipientType;
+  @NotNull(message = "Recipient type is required")
+  private RecipientType recipientType;
 
-    @NotNull(message = "Notification type is required")
-    private NotificationType type;
+  @NotNull(message = "Notification type is required")
+  private NotificationType type;
 
-    @NotBlank(message = "Content cannot be empty")
-    private String content;
+  @NotBlank(message = "Content cannot be empty")
+  private String content;
 
-    // Optional fields
-    private String entityType;
-    private Long entityId;
-    private String actionUrl;
+  // Optional fields
+  private String entityType;
+  private Long entityId;
+  private String actionUrl;
 }

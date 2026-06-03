@@ -1,4 +1,3 @@
 package com.iting.jobportal.config;
 
-public class S3Client {
-}
+public class S3Client {}

@@ -7,9 +7,9 @@ import lombok.Data;
 
 @Data
 public class SocialLinkRequest {
-    @NotNull(message = "Platform is required")
-    private SocialPlatform platform;
+  @NotNull(message = "Platform is required")
+  private SocialPlatform platform;
 
-    @NotBlank(message = "URL is required")
-    private String url;
+  @NotBlank(message = "URL is required")
+  private String url;
 }

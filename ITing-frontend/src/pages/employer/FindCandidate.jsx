@@ -1,14 +1,16 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
+import { Link } from "react-router-dom";
 import { Search, Filter, MapPin, GraduationCap, Briefcase, ChevronDown, ChevronUp, X, User, Mail, Award, Star, Zap, ArrowRight, ExternalLink } from "lucide-react";
-import { 
-    FaTimes, FaEnvelope, FaPhone, FaDownload, 
-    FaStar, FaRegStar, FaCheckCircle, FaUserTie, 
-    FaExclamationTriangle, FaExternalLinkAlt 
+import {
+    FaTimes, FaEnvelope, FaPhone, FaDownload,
+    FaStar, FaRegStar, FaCheckCircle, FaUserTie,
+    FaExclamationTriangle, FaExternalLinkAlt, FaShieldAlt, FaClock, FaBuilding
 } from 'react-icons/fa';
 import { Button, Badge, Breadcrumb } from "../../components/common";
 import { toast } from "sonner";
 import { employerCandidateService } from "../../services/employerCandidateService";
 import companyService from "../../services/companyService";
+import affiliationService from "../../services/affiliationService";
 import ReviewCandidateModal from "../../components/employer/ReviewCandidateModal";
 import MatchCandidatesDrawer from "../../components/employer/MatchCandidatesDrawer";
 import { FaMagic } from "react-icons/fa";
@@ -83,6 +85,26 @@ const FindCandidate = () => {
   // AI Match-by-job state
   const [myJobs, setMyJobs] = useState([]);
   const [matchDrawer, setMatchDrawer] = useState({ open: false, jobId: null, jobTitle: "" });
+
+  // Affiliation gate state — HR phải APPROVED mới truy cập tìm ứng viên.
+  // Backend cũng guard endpoint (AuthorizationService.requireApprovedCompanyOf)
+  // nhưng UI gate trước cho UX rõ ràng + tránh fail-with-403 toast khó hiểu.
+  // null = chưa fetch xong → render loading; object có status field sau khi fetch.
+  const [affiliation, setAffiliation] = useState(null);
+  const [affiliationChecked, setAffiliationChecked] = useState(false);
+  // Tier-gated: backend trả 402 khi tier < PRO. UI riêng (CTA nâng cấp gói)
+  // tách biệt với affiliation gate (CTA xác thực doanh nghiệp).
+  const [tierGated, setTierGated] = useState(false);
+  const [tierGateMessage, setTierGateMessage] = useState("");
+  useEffect(() => {
+    let cancelled = false;
+    affiliationService.getMe()
+      .then((data) => { if (!cancelled) setAffiliation(data || { status: 'NONE' }); })
+      .catch(() => { if (!cancelled) setAffiliation({ status: 'NONE' }); })
+      .finally(() => { if (!cancelled) setAffiliationChecked(true); });
+    return () => { cancelled = true; };
+  }, []);
+  const isApproved = affiliation?.status === 'APPROVED';
 
   // Fetch employer's company profile on mount:
   //  - employerLocation → used for location proximity scoring in KG
@@ -164,7 +186,14 @@ const FindCandidate = () => {
         setCandidates([]);
         setTotalElements(0);
         setTotalPages(1);
-        toast.error(err?.message || "Không thể tải danh sách ứng viên");
+        // 402 → tier gate (interceptor đã toast). Hiện gate UI thay vì empty list.
+        if (err?.httpStatus === 402 || err?.status === 402) {
+          setTierGated(true);
+          setTierGateMessage(err?.message || "");
+        } else {
+          setTierGated(false);
+          toast.error(err?.message || "Không thể tải danh sách ứng viên");
+        }
       } finally {
         if (reqId === reqIdRef.current) setLoading(false);
       }
@@ -201,6 +230,122 @@ const FindCandidate = () => {
   const filteredSkillOptions = PROGRAMMING_SKILLS.filter(
     (s) => s.toLowerCase().includes(skillSearch.toLowerCase()) && !selectedSkills.includes(s)
   ).slice(0, 12);
+
+  // ─── Gate: chưa fetch xong affiliation → loading skeleton ───
+  if (!affiliationChecked) {
+    return (
+      <div className="space-y-6 animate-fade-in pb-20">
+        <Breadcrumb rootLabel="Tổng quan" rootLink="/employer/dashboard" items={[{ label: 'Tìm kiếm ứng viên' }]} />
+        <div className="bg-white rounded-2xl border border-gray-100 p-12 flex items-center justify-center">
+          <div className="text-center text-gray-500 text-sm">
+            <div className="inline-block w-8 h-8 border-2 border-[#3AB4E6] border-t-transparent rounded-full animate-spin mb-3" />
+            <div>Đang kiểm tra trạng thái xác thực...</div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ─── Gate: chưa APPROVED → block UI + CTA xác thực ───
+  if (!isApproved) {
+    const submissionStatus = affiliation?.submissionStatus; // DRAFT/PENDING_REVIEW/APPROVED/REJECTED
+    const status = affiliation?.status || 'NONE'; // INCOMPLETE/PENDING/APPROVED/REJECTED/REVOKED/NONE
+    let icon = <FaShieldAlt className="text-[#3AB4E6]" />;
+    let title = "Cần xác thực doanh nghiệp";
+    let desc = "Tài khoản nhà tuyển dụng cần được xác thực trước khi tìm kiếm ứng viên. Vui lòng hoàn tất hồ sơ doanh nghiệp.";
+    let cta = "Bắt đầu xác thực";
+    let badge = { text: "Chưa xác thực", color: "bg-amber-50 text-amber-700 border-amber-200" };
+
+    if (status === 'PENDING' || submissionStatus === 'PENDING_REVIEW') {
+      icon = <FaClock className="text-blue-500 animate-pulse" />;
+      title = "Hồ sơ đang chờ admin duyệt";
+      desc = "Bạn đã gửi hồ sơ doanh nghiệp. Admin sẽ duyệt trong vòng 1-3 ngày làm việc. Sau khi được duyệt, bạn có thể tìm kiếm và liên hệ ứng viên.";
+      cta = "Xem trạng thái hồ sơ";
+      badge = { text: "Chờ duyệt", color: "bg-blue-50 text-blue-700 border-blue-200" };
+    } else if (status === 'REJECTED' || submissionStatus === 'REJECTED') {
+      icon = <FaExclamationTriangle className="text-red-500" />;
+      title = "Hồ sơ bị từ chối";
+      desc = "Admin yêu cầu chỉnh sửa hồ sơ. Vui lòng kiểm tra ghi chú từ admin và cập nhật lại thông tin doanh nghiệp.";
+      cta = "Cập nhật hồ sơ";
+      badge = { text: "Bị từ chối", color: "bg-red-50 text-red-700 border-red-200" };
+    } else if (status === 'INCOMPLETE' || submissionStatus === 'DRAFT') {
+      icon = <FaBuilding className="text-amber-500" />;
+      title = "Hồ sơ doanh nghiệp chưa đầy đủ";
+      desc = "Vui lòng cập nhật đầy đủ thông tin doanh nghiệp (mã số thuế, logo, giấy phép, v.v.) và gửi cho admin duyệt.";
+      cta = "Hoàn thiện hồ sơ";
+      badge = { text: "Chưa hoàn thiện", color: "bg-amber-50 text-amber-700 border-amber-200" };
+    }
+
+    return (
+      <div className="space-y-6 animate-fade-in pb-20">
+        <Breadcrumb rootLabel="Tổng quan" rootLink="/employer/dashboard" items={[{ label: 'Tìm kiếm ứng viên' }]} />
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-8 md:p-12 max-w-3xl mx-auto">
+          <div className="flex flex-col items-center text-center">
+            <div className="w-20 h-20 rounded-full bg-gradient-to-br from-blue-50 to-cyan-50 flex items-center justify-center text-4xl mb-5 shadow-inner">
+              {icon}
+            </div>
+            <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold border ${badge.color} mb-3`}>
+              {badge.text}
+            </span>
+            <h2 className="text-2xl font-bold text-gray-900 mb-3">{title}</h2>
+            <p className="text-gray-600 text-sm max-w-lg leading-relaxed mb-8">{desc}</p>
+
+            <Link
+              to="/employer/verification"
+              className="inline-flex items-center gap-2 bg-[#3AB4E6] hover:bg-[#2fa0cf] text-white px-8 py-3 rounded-xl font-bold shadow-lg shadow-[#3AB4E6]/30 transition-all"
+            >
+              {cta} <ArrowRight className="w-4 h-4" />
+            </Link>
+
+            <div className="mt-8 pt-6 border-t border-gray-100 w-full">
+              <p className="text-xs text-gray-500 mb-3">Vì sao cần xác thực?</p>
+              <ul className="text-xs text-gray-600 space-y-2 max-w-md mx-auto text-left">
+                <li className="flex items-start gap-2"><FaCheckCircle className="text-green-500 mt-0.5 shrink-0" /> Bảo vệ ứng viên khỏi spam và lừa đảo</li>
+                <li className="flex items-start gap-2"><FaCheckCircle className="text-green-500 mt-0.5 shrink-0" /> Tăng độ tin cậy cho tin tuyển dụng của bạn</li>
+                <li className="flex items-start gap-2"><FaCheckCircle className="text-green-500 mt-0.5 shrink-0" /> Tuân thủ chính sách bảo mật thông tin cá nhân</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (tierGated) {
+    return (
+      <div className="space-y-6 animate-fade-in pb-20">
+        <Breadcrumb rootLabel="Tổng quan" rootLink="/employer/dashboard" items={[{ label: 'Tìm kiếm ứng viên' }]} />
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-8 md:p-12 max-w-3xl mx-auto">
+          <div className="flex flex-col items-center text-center">
+            <div className="w-20 h-20 rounded-full bg-gradient-to-br from-amber-50 to-orange-50 flex items-center justify-center text-4xl mb-5 shadow-inner">
+              <Zap className="text-amber-500" />
+            </div>
+            <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold border bg-amber-50 text-amber-700 border-amber-200 mb-3">
+              Cần nâng cấp gói
+            </span>
+            <h2 className="text-2xl font-bold text-gray-900 mb-3">Tính năng Talent Pool — chỉ gói PRO trở lên</h2>
+            <p className="text-gray-600 text-sm max-w-lg leading-relaxed mb-8">
+              {tierGateMessage || "Tìm kiếm ứng viên trực tiếp trong kho hồ sơ là tính năng cao cấp. Nâng cấp gói PRO hoặc ENTERPRISE để mở khóa."}
+            </p>
+            <Link
+              to="/employer/subscriptions"
+              className="inline-flex items-center gap-2 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white px-8 py-3 rounded-xl font-bold shadow-lg shadow-amber-500/30 transition-all"
+            >
+              Nâng cấp gói ngay <ArrowRight className="w-4 h-4" />
+            </Link>
+            <div className="mt-8 pt-6 border-t border-gray-100 w-full">
+              <p className="text-xs text-gray-500 mb-3">Lợi ích khi nâng cấp PRO:</p>
+              <ul className="text-xs text-gray-600 space-y-2 max-w-md mx-auto text-left">
+                <li className="flex items-start gap-2"><FaCheckCircle className="text-green-500 mt-0.5 shrink-0" /> Search trực tiếp hồ sơ ứng viên openToWork</li>
+                <li className="flex items-start gap-2"><FaCheckCircle className="text-green-500 mt-0.5 shrink-0" /> 50 job posting + 20 lượt boost / 30 ngày</li>
+                <li className="flex items-start gap-2"><FaCheckCircle className="text-green-500 mt-0.5 shrink-0" /> AI match-by-job (5 credits/lần)</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6 animate-fade-in pb-20">

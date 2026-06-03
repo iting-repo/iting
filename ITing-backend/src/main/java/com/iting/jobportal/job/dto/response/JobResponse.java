@@ -2,168 +2,156 @@ package com.iting.jobportal.job.dto.response;
 
 import com.iting.jobportal.job.entity.Job;
 import com.iting.jobportal.job.entity.enums.*;
-import lombok.Builder;
-import lombok.Data;
-
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
+import lombok.Builder;
+import lombok.Data;
 
 @Data
 @Builder
 public class JobResponse {
 
-    private Long id;
+  private Long id;
 
-    // Company
-    private Long companyId;
-    private String companyName;
-    private String companyLogo;
-    private String logo; // Alias for companyLogo
-    private String logoUrl; // Alias for companyLogo
-    private Boolean companyActive; // Trạng thái hoạt động của công ty
+  // Company
+  private Long companyId;
+  private String companyName;
+  private String companyLogo;
+  private String logo; // Alias for companyLogo
+  private String logoUrl; // Alias for companyLogo
+  private Boolean companyActive; // Trạng thái hoạt động của công ty
 
-    // Basic
-    private String title;
-    private String position;
-    private List<String> skills;
+  // Basic
+  private String title;
+  private String position;
+  private List<String> skills;
 
-    private JobType jobType;
-    private ExperienceLevel experienceLevel;
-    private String workingDays;
-    private CvLanguage cvLanguage;
+  private JobType jobType;
+  private ExperienceLevel experienceLevel;
+  private String workingDays;
+  private CvLanguage cvLanguage;
 
-    // Salary
-    private BigDecimal minSalary;
-    private BigDecimal maxSalary;
-    private SalaryType salaryType;
+  // Salary
+  private BigDecimal minSalary;
+  private BigDecimal maxSalary;
+  private SalaryType salaryType;
 
-    // Quantity
-    private Integer maxAccept;
-    private Integer currentAccepted;
+  // Quantity
+  private Integer maxAccept;
+  private Integer currentAccepted;
 
-    // Deadline
-    private LocalDate dueDate;
+  // Deadline
+  private LocalDate dueDate;
 
-    // Location
-    private String province;
-    private String ward;
-    private String address;
-    private String location;
-    private Long locId; // ✅ GIỮ
+  // Location
+  private String province;
+  private String ward;
+  private String address;
+  private String location;
+  private Long locId; // ✅ GIỮ
 
-    // Content
-    private String description;
-    private String responsibilities;
-    private String requirements;
-    private String benefits;
+  // Content
+  private String description;
+  private String responsibilities;
+  private String requirements;
+  private String benefits;
 
-    // System
-    private Integer viewCount;
-    private Integer applicationCount;
-    private Boolean featured;
-    private JobStatus status;
-    private Boolean isAiSuggested;
+  // System
+  private Integer viewCount;
+  private Integer applicationCount;
+  private Boolean featured;
+  private JobStatus status;
+  private Boolean isAiSuggested;
 
-    /** AI match score (0–100%) — chỉ có khi trả từ /recommended endpoint. */
-    private Double matchScore;
+  /** AI match score (0–100%) — chỉ có khi trả từ /recommended endpoint. */
+  private Double matchScore;
 
-    // Review
-    private String reviewReason;
-    private Long reviewedBy;
-    private LocalDateTime reviewedAt;
+  // Review
+  private String reviewReason;
+  private Long reviewedBy;
+  private LocalDateTime reviewedAt;
 
-    private String aiReviewStatus;
-    private String aiReviewReason;
+  private String aiReviewStatus;
+  private String aiReviewReason;
 
-    // Audit
-    private LocalDateTime createdAt;
-    private LocalDateTime lastUpdate;
+  // Audit
+  private LocalDateTime createdAt;
+  private LocalDateTime lastUpdate;
 
-    private List<JobReviewHistoryResponse> reviewHistories;
+  private List<JobReviewHistoryResponse> reviewHistories;
 
-    public static JobResponse fromEntity(Job job) {
-        String companyName = null;
-        String companyLogo = null;
-        Boolean companyActive = null;
+  public static JobResponse fromEntity(Job job) {
+    String companyName = null;
+    String companyLogo = null;
+    Boolean companyActive = null;
 
-        try {
-            if (job.getCompany() != null) {
-                companyName = job.getCompany().getName();
-                companyLogo = job.getCompany().getLogoUrl();
-                companyActive = job.getCompany().getActive();
-            }
-        } catch (Exception e) {
-            // Handle cases where company proxy exists but the underlying record is missing
-            // (e.g., stale data)
-            // We use the ID if we can't get the name
-        }
-
-        return fromEntityWithCompany(job, companyName, companyLogo, companyActive);
+    try {
+      if (job.getCompany() != null) {
+        companyName = job.getCompany().getName();
+        companyLogo = job.getCompany().getLogoUrl();
+        companyActive = job.getCompany().getActive();
+      }
+    } catch (Exception e) {
+      // Handle cases where company proxy exists but the underlying record is missing
+      // (e.g., stale data)
+      // We use the ID if we can't get the name
     }
 
-    public static JobResponse fromEntityWithCompany(Job job, String companyName, String companyLogo) {
-        return fromEntityWithCompany(job, companyName, companyLogo, null);
-    }
+    return fromEntityWithCompany(job, companyName, companyLogo, companyActive);
+  }
 
-    public static JobResponse fromEntityWithCompany(Job job, String companyName, String companyLogo,
-            Boolean companyActive) {
-        return JobResponse.builder()
-                .id(job.getId())
+  public static JobResponse fromEntityWithCompany(Job job, String companyName, String companyLogo) {
+    return fromEntityWithCompany(job, companyName, companyLogo, null);
+  }
 
-                .companyId(job.getCompany() != null ? job.getCompany().getId() : null)
-                .companyName(companyName)
-                .companyLogo(companyLogo)
-                .logo(companyLogo)
-                .logoUrl(companyLogo)
-                .companyActive(companyActive != null ? companyActive : true)
-
-                .title(job.getTitle())
-                .position(job.getPosition())
-                .skills(job.getSkills())
-                .jobType(job.getJobType())
-                .experienceLevel(job.getExperienceLevel())
-                .workingDays(job.getWorkingDays() != null ? job.getWorkingDays().name() : null)
-                .cvLanguage(job.getCvLanguage())
-
-                .minSalary(job.getMinSalary())
-                .maxSalary(job.getMaxSalary())
-                .salaryType(job.getSalaryType())
-
-                .maxAccept(job.getMaxAccept())
-                .currentAccepted(job.getCurrentAccepted())
-
-                .dueDate(job.getDueDate())
-
-                .province(job.getProvince())
-                .ward(job.getWard())
-                .address(job.getAddress())
-                .location(job.getLocation())
-                .locId(job.getLocId()) // ✅ GIỮ
-
-                .description(job.getDescription())
-                .responsibilities(job.getResponsibilities())
-                .requirements(job.getRequirements())
-                .benefits(job.getBenefits())
-
-                .viewCount(job.getViewCount())
-                .applicationCount(job.getApplicationCount())
-                .featured(job.getFeatured())
-                .status(job.getStatus())
-
-                .reviewReason(
-                        job.getStatus() == JobStatus.REJECTED || job.getStatus() == JobStatus.SUSPENDED
-                                ? job.getReviewReason()
-                                : null)
-                .reviewedBy(job.getReviewedBy())
-                .reviewedAt(job.getReviewedAt())
-
-                .aiReviewStatus(job.getAiReviewStatus())
-                .aiReviewReason(job.getAiReviewReason())
-
-                .createdAt(job.getCreatedAt())
-                .lastUpdate(job.getLastUpdate())
-                .build();
-    }
+  public static JobResponse fromEntityWithCompany(
+      Job job, String companyName, String companyLogo, Boolean companyActive) {
+    return JobResponse.builder()
+        .id(job.getId())
+        .companyId(job.getCompany() != null ? job.getCompany().getId() : null)
+        .companyName(companyName)
+        .companyLogo(companyLogo)
+        .logo(companyLogo)
+        .logoUrl(companyLogo)
+        .companyActive(companyActive != null ? companyActive : true)
+        .title(job.getTitle())
+        .position(job.getPosition())
+        .skills(job.getSkills())
+        .jobType(job.getJobType())
+        .experienceLevel(job.getExperienceLevel())
+        .workingDays(job.getWorkingDays() != null ? job.getWorkingDays().name() : null)
+        .cvLanguage(job.getCvLanguage())
+        .minSalary(job.getMinSalary())
+        .maxSalary(job.getMaxSalary())
+        .salaryType(job.getSalaryType())
+        .maxAccept(job.getMaxAccept())
+        .currentAccepted(job.getCurrentAccepted())
+        .dueDate(job.getDueDate())
+        .province(job.getProvince())
+        .ward(job.getWard())
+        .address(job.getAddress())
+        .location(job.getLocation())
+        .locId(job.getLocId()) // ✅ GIỮ
+        .description(job.getDescription())
+        .responsibilities(job.getResponsibilities())
+        .requirements(job.getRequirements())
+        .benefits(job.getBenefits())
+        .viewCount(job.getViewCount())
+        .applicationCount(job.getApplicationCount())
+        .featured(job.getFeatured())
+        .status(job.getStatus())
+        .reviewReason(
+            job.getStatus() == JobStatus.REJECTED || job.getStatus() == JobStatus.SUSPENDED
+                ? job.getReviewReason()
+                : null)
+        .reviewedBy(job.getReviewedBy())
+        .reviewedAt(job.getReviewedAt())
+        .aiReviewStatus(job.getAiReviewStatus())
+        .aiReviewReason(job.getAiReviewReason())
+        .createdAt(job.getCreatedAt())
+        .lastUpdate(job.getLastUpdate())
+        .build();
+  }
 }

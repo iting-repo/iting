@@ -17,22 +17,22 @@ import lombok.experimental.SuperBuilder;
 @SuperBuilder
 public class UserJobInteraction extends AuditEntity {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+  @Id
+  @GeneratedValue(strategy = GenerationType.IDENTITY)
+  private Long id;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id", nullable = false)
-    private Account account;
+  @ManyToOne(fetch = FetchType.LAZY)
+  @JoinColumn(name = "user_id", nullable = false)
+  private Account account;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "job_id", nullable = false)
-    private Job job;
+  @ManyToOne(fetch = FetchType.LAZY)
+  @JoinColumn(name = "job_id", nullable = false)
+  private Job job;
 
-    @Enumerated(EnumType.STRING)
-    @Column(name = "interaction_type", nullable = false)
-    private InteractionType interactionType;
+  @Enumerated(EnumType.STRING)
+  @Column(name = "interaction_type", nullable = false)
+  private InteractionType interactionType;
 
-    @Column(name = "weight", nullable = false)
-    private Integer weight;
+  @Column(name = "weight", nullable = false)
+  private Integer weight;
 }

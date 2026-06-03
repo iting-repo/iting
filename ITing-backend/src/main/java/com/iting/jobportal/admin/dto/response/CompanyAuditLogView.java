@@ -1,25 +1,24 @@
 package com.iting.jobportal.admin.dto.response;
 
 import com.iting.jobportal.company.entity.enums.CompanyAuditAction;
-
 import java.time.LocalDateTime;
 
 public interface CompanyAuditLogView {
-    LocalDateTime getCreatedAt();
+  LocalDateTime getCreatedAt();
 
-    String getCompanyName();
+  String getCompanyName();
 
-    CompanyAuditAction getAction();
+  CompanyAuditAction getAction();
 
-    String getFromStatus();
+  String getFromStatus();
 
-    String getToStatus();
+  String getToStatus();
 
-    String getReason();
+  String getReason();
 
-    String getNote();
+  String getNote();
 
-    String getActor();
+  String getActor();
 
-    Long getActorId();
+  Long getActorId();
 }

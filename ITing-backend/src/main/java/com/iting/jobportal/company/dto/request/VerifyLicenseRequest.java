@@ -6,27 +6,26 @@ import jakarta.validation.constraints.Size;
 
 public class VerifyLicenseRequest {
 
-    private VerificationLevel verificationLevel;
+  private VerificationLevel verificationLevel;
 
-    @Size(max = 255, message = "Update status must be at most 255 characters")
-    private CompanyReviewStatus companyReviewStatus;
+  @Size(max = 255, message = "Update status must be at most 255 characters")
+  private CompanyReviewStatus companyReviewStatus;
 
-    public VerifyLicenseRequest() {
-    }
+  public VerifyLicenseRequest() {}
 
-    public VerificationLevel getVerificationLevel() {
-        return verificationLevel;
-    }
+  public VerificationLevel getVerificationLevel() {
+    return verificationLevel;
+  }
 
-    public void setVerificationLevel(VerificationLevel verificationLevel) {
-        this.verificationLevel = verificationLevel;
-    }
+  public void setVerificationLevel(VerificationLevel verificationLevel) {
+    this.verificationLevel = verificationLevel;
+  }
 
-    public CompanyReviewStatus getCompanyReviewStatus() {
-        return companyReviewStatus;
-    }
+  public CompanyReviewStatus getCompanyReviewStatus() {
+    return companyReviewStatus;
+  }
 
-    public void setCompanyReviewStatus(CompanyReviewStatus companyReviewStatus) {
-        this.companyReviewStatus = companyReviewStatus;
-    }
+  public void setCompanyReviewStatus(CompanyReviewStatus companyReviewStatus) {
+    this.companyReviewStatus = companyReviewStatus;
+  }
 }

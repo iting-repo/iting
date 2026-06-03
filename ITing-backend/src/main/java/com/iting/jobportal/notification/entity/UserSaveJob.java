@@ -1,4 +1,3 @@
 package com.iting.jobportal.notification.entity;
 
-public class UserSaveJob {
-}
+public class UserSaveJob {}

@@ -8,7 +8,6 @@ import lombok.Setter;
 @Setter
 public class CreateKybNoteRequest {
 
-    @NotBlank(message = "Nội dung ghi chú không được để trống")
-    private String content;
-
+  @NotBlank(message = "Nội dung ghi chú không được để trống")
+  private String content;
 }

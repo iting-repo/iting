@@ -320,7 +320,7 @@ const SystemConfig = () => {
                 ))}
                 <div className="pt-4 space-y-2">
                   <label className="text-sm font-bold text-slate-700">Email tổng hợp (Digest)</label>
-                  <Select value={config.emailDigest} onValueChange={(v) => updateConfig("emailDigest", v)}>
+                  <Select value={config.emailDigest} onChange={(e) => updateConfig("emailDigest", e.target.value)}>
                        <option value="realtime">Thời gian thực</option>
                        <option value="daily">Hàng ngày</option>
                        <option value="weekly">Hàng tuần</option>
@@ -449,7 +449,7 @@ const SystemConfig = () => {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-in slide-in-from-top-2 duration-300">
                       <div className="space-y-2">
                         <label className="text-sm font-bold text-slate-700">Tần suất</label>
-                        <Select value={config.backupFrequency} onValueChange={(v) => updateConfig("backupFrequency", v)}>
+                        <Select value={config.backupFrequency} onChange={(e) => updateConfig("backupFrequency", e.target.value)}>
                              <option value="hourly">Mỗi giờ</option>
                              <option value="daily">Hàng ngày</option>
                              <option value="weekly">Hàng tuần</option>

@@ -5,10 +5,10 @@ import lombok.Data;
 
 @Data
 public class PersonalUpdateDto {
-    @NotBlank(message = "Full name is required")
-    private String fullName;
+  @NotBlank(message = "Full name is required")
+  private String fullName;
 
-    private String phoneNum;
+  private String phoneNum;
 
-    private String avatarUrl;
+  private String avatarUrl;
 }
