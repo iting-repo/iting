@@ -57,7 +57,8 @@ ssh -i key.pem ubuntu@IP
 |------|----------|------------|
 | `.env.example` | `deploy/` | ✅ Yes |
 | `.env` | `/opt/iting/.env` on EC2 | ❌ No |
-| `.env.prod` | `deploy/` + `/opt/iting/.env.prod` | ✅ Yes (no secrets) |
+| `.env.prod.example` | `deploy/` | ✅ Yes (template, no real secrets) |
+| `.env.prod` | `/opt/iting/.env.prod` on EC2 | ❌ No (auto-injected by deploy.yml from GitHub secrets, chmod 600) |
 | `.env.local.example` | `deploy/` | ✅ Yes |
 | `.env.local` | `deploy/` | ❌ No |
 
@@ -70,10 +71,47 @@ ssh -i key.pem ubuntu@IP
 
 ## Required GitHub Secrets
 
-| Secret | Description |
-|--------|-------------|
-| `EC2_HOST` | EC2 public IP |
-| `EC2_SSH_KEY` | SSH private key |
-| `GHCR_USERNAME` | GitHub username with package read access |
-| `GHCR_TOKEN` | GitHub token/PAT with `read:packages` |
-| `DISCORD_WEBHOOK_URL` | Discord notifications |
+| Secret | Required | Description |
+|--------|----------|-------------|
+| `EC2_HOST` | ✅ Yes | EC2 public IP |
+| `EC2_SSH_KEY` | ✅ Yes | SSH private key |
+| `GHCR_USERNAME` | ✅ Yes | GitHub username with package read access |
+| `GHCR_TOKEN` | ✅ Yes | GitHub token/PAT with `read:packages` |
+| `GHCR_PAT` | ✅ Yes | GitHub PAT for image manifest inspect (separate from deploy login) |
+| `DISCORD_WEBHOOK_URL` | ✅ Yes | Discord notifications |
+| `GEMINI_API_KEY` | ✅ Yes | Google AI Studio API key (https://aistudio.google.com/apikey). Used by CvScoringServiceImpl + GeminiCVParserService. |
+| `GEMINI_API_URL` | ⬜ Optional | Override Gemini endpoint (default: `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent`) |
+| `GEMINI_API_MODEL` | ⬜ Optional | Override model name (default: `gemini-2.5-flash`) |
+
+### Cách set secrets
+
+1. Vào repo GitHub: `https://github.com/iting-repo/iting/settings/secrets/actions`
+2. Click **"New repository secret"**
+3. Name: `GEMINI_API_KEY` (hoặc tên khác theo bảng trên)
+4. Value: paste secret value
+5. Click **"Add secret"**
+
+### Auto-rotation flow
+
+Mỗi lần push tag `v*` lên GitHub, workflow `deploy.yml` sẽ:
+
+1. SSH vào EC2
+2. Đọc secret từ GitHub Actions context (encrypted, không log)
+3. Inject/rotate giá trị vào `/opt/iting/.env.prod` (idempotent — `sed` thay dòng cũ hoặc append dòng mới)
+4. `chmod 600` để chỉ owner đọc được
+5. `docker compose pull` images mới
+6. `docker compose up -d` restart containers
+7. Verify Gemini key injected (sanity check key length, không echo value)
+
+Lần đầu deploy, file `.env.prod` chưa tồn tại → workflow sẽ `touch` tạo file rỗng, sau đó append. Idempotent nên chạy nhiều lần không gây duplicate.
+
+### Test trước khi deploy
+
+Sau khi inject key, có thể verify nhanh trong container:
+
+```bash
+ssh -i key.pem ubuntu@IP
+docker exec -it iting-backend sh -c 'env | grep GEMINI'
+```
+
+Nếu thấy `GEMINI_API_KEY=...` (length > 0) → OK.
