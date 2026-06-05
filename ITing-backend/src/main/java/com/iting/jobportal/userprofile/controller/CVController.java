@@ -8,6 +8,7 @@ import com.iting.jobportal.userprofile.dto.response.CVResponse;
 import com.iting.jobportal.userprofile.dto.response.CvScoreResponse;
 import com.iting.jobportal.userprofile.entity.CV;
 import com.iting.jobportal.userprofile.repository.CVRepository;
+import com.iting.jobportal.userprofile.service.CVScoringWithPdfService;
 import com.iting.jobportal.userprofile.service.CVService;
 import com.iting.jobportal.userprofile.service.GeminiCVParserService;
 import com.iting.jobportal.userprofile.service.embedding.HuggingFaceCvExtractionClient;
@@ -34,6 +35,7 @@ import org.springframework.web.server.ResponseStatusException;
 public class CVController {
 
   private final CVService cvService;
+  private final CVScoringWithPdfService cvScoringWithPdfService;
   private final GeminiCVParserService geminiCVParserService;
   private final HuggingFaceCvExtractionClient hfCvExtractionClient;
   private final CVRepository cvRepository;
@@ -189,7 +191,9 @@ public class CVController {
 
     @PostMapping("/{id}/score")
     @Operation(summary = "Chấm điểm CV bằng AI (hỗ trợ tiếng Việt / English)",
-               description = "Đánh giá chất lượng CV theo 5 tiêu chí. Ngôn ngữ đầu ra: ?lang=vi (mặc định) hoặc ?lang=en")
+               description = "Đánh giá chất lượng CV theo 5 tiêu chí. Ngôn ngữ đầu ra: ?lang=vi (mặc định) hoặc ?lang=en. "
+                       + "Service đọc trực tiếp PDF từ S3 và gửi tới Gemini 2.5 Flash dạng multimodal (PDF + prompt) "
+                       + "để phân tích đầy đủ cả content lẫn layout.")
     @RateLimited(policy = RateLimitPolicy.AI_CV_SCORE, subject = "user")
     public ResponseEntity<?> scoreCv(
             @Parameter(hidden = true) @CurrentUser Long userId,
@@ -199,9 +203,13 @@ public class CVController {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Chưa đăng nhập");
         }
         try {
-            CvScoreResponse result = cvService.scoreCv(userId, id, language);
+            // Dùng service tách biệt: đọc PDF trực tiếp → multimodal Gemini → đánh giá đầy đủ
+            // 7 sections (career objectives, work experience, projects, education, skills,
+            // certifications, languages) thay vì chỉ 3 sections từ HF extraction.
+            CvScoreResponse result = cvScoringWithPdfService.scoreCvWithPdf(userId, id, language);
             if (result == null) {
-                throw new ResponseStatusException(HttpStatus.NOT_FOUND, "CV không tồn tại");
+                throw new ResponseStatusException(HttpStatus.NOT_FOUND,
+                        "CV không tồn tại hoặc không thể đọc file");
             }
             return ResponseEntity.ok(result);
         } catch (org.springframework.web.server.ResponseStatusException e) {

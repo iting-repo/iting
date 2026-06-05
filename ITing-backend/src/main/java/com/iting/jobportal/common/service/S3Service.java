@@ -15,4 +15,14 @@ public interface S3Service {
 
   /** Generate S3 key for CV file */
   String generateCvS3Key(Long userId, String originalFilename);
+
+  /**
+   * Download file bytes from S3 by key.
+   * Dùng cho server-side processing (vd CV scoring với multimodal AI).
+   * Không nên dùng để serve file cho user — dùng {@link #getPreSignedUrl} cho case đó.
+   *
+   * @param s3Key S3 object key
+   * @return file content as byte array
+   */
+  byte[] downloadFile(String s3Key);
 }
