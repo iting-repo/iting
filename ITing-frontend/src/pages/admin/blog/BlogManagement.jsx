@@ -285,8 +285,15 @@ const BlogManagement = () => {
       )}
 
       {/* ── Create/Edit Dialog ── */}
-      <Dialog open={dialogOpen} onClose={() => setDialogOpen(false)} title={editingBlog ? "Chỉnh sửa bài viết" : "Tạo bài viết mới"}>
-        <div className="space-y-4 max-h-[70vh] overflow-y-auto pr-1">
+      <Dialog widthClass="max-w-5xl" open={dialogOpen} onClose={() => setDialogOpen(false)} title={editingBlog ? "Chỉnh sửa bài viết" : "Tạo bài viết mới"}>
+        <div className="space-y-4 max-h-[80vh] overflow-y-auto pr-1">
+          <div className="space-y-1.5">
+            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Nội dung bài viết</label>
+            <div className="border border-slate-200 rounded-lg [&_.ql-toolbar]:sticky [&_.ql-toolbar]:top-0 [&_.ql-toolbar]:z-20 [&_.ql-toolbar]:bg-white [&_.ql-toolbar]:rounded-t-lg [&_.ql-toolbar]:border-slate-200 [&_.ql-container]:border-0 [&_.ql-container]:rounded-b-lg [&_.ql-editor]:min-h-[420px]">
+              <ReactQuill ref={quillRef} theme="snow" value={form.content} onChange={(v) => setForm({ ...form, content: v })} modules={quillModules} placeholder="Viết nội dung bài viết tại đây..." />
+            </div>
+          </div>
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-1.5">
               <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Tiêu đề *</label>
@@ -319,13 +326,6 @@ const BlogManagement = () => {
           <div className="space-y-1.5">
             <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Tóm tắt</label>
             <Textarea value={form.summary} onChange={(e) => setForm({ ...form, summary: e.target.value })} rows={2} placeholder="Mô tả ngắn gọn nội dung bài viết..." />
-          </div>
-
-          <div className="space-y-1.5">
-            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Nội dung bài viết</label>
-            <div className="border border-slate-200 rounded-lg overflow-hidden [&_.ql-toolbar]:border-slate-200 [&_.ql-container]:border-0 [&_.ql-editor]:min-h-[180px]">
-              <ReactQuill ref={quillRef} theme="snow" value={form.content} onChange={(v) => setForm({ ...form, content: v })} modules={quillModules} placeholder="Viết nội dung bài viết tại đây..." />
-            </div>
           </div>
 
           <div className="space-y-1.5">
@@ -369,9 +369,9 @@ const BlogManagement = () => {
       </Dialog>
 
       {/* ── Preview Dialog ── */}
-      <Dialog open={previewOpen} onClose={() => setPreviewOpen(false)} title="Xem trước bài viết">
+      <Dialog widthClass="max-w-4xl" open={previewOpen} onClose={() => setPreviewOpen(false)} title="Xem trước bài viết">
         {previewBlog && (
-          <div className="space-y-5 max-h-[70vh] overflow-y-auto pr-1">
+          <div className="space-y-5 max-h-[80vh] overflow-y-auto pr-1">
             {previewBlog.thumbnailUrl && (
               <div className="w-full h-52 bg-slate-100 rounded-xl overflow-hidden border border-slate-200">
                 <img src={previewBlog.thumbnailUrl} alt="" className="w-full h-full object-cover" />

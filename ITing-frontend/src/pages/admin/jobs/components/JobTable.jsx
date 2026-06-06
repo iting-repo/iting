@@ -6,11 +6,30 @@ import {
   getAiReview,
   getAiReviewLabel,
   getAiReviewVariant,
+  getAiReviewIconName,
 } from "../../../../utils/jobModeration";
 import adminJobService from "../../../../services/adminJobService";
 import { toast } from "sonner";
-import { FaRobot, FaSpinner } from "react-icons/fa";
-import { Users } from "lucide-react";
+import {
+  Users,
+  Sparkles,
+  Loader2,
+  RefreshCw,
+  ShieldCheck,
+  AlertTriangle,
+  Ban,
+  CircleHelp,
+} from "lucide-react";
+
+// Resolver: tên icon (string) → component lucide. Giữ ở đây để tránh thêm
+// dependency "JSX trong util file".
+const AI_ICON_MAP = {
+  ShieldCheck,
+  Sparkles,
+  AlertTriangle,
+  Ban,
+  CircleHelp,
+};
 
 const getJobStatusLabel = (status) => {
   const map = {
@@ -78,7 +97,8 @@ export const JobTable = ({
 
   return (
     <Table
-      className="overflow-x-auto custom-scrollbar sm:!overflow-visible"
+      className="overflow-x-auto custom-scrollbar"
+      tableClassName="[&_th]:!p-3 [&_td]:!p-3 text-[13px]"
       headers={[
         {
           label: (
@@ -183,9 +203,17 @@ export const JobTable = ({
 
               <Td className="whitespace-nowrap">
                 <div className="flex flex-col items-start gap-1.5">
-                  <Badge variant={getAiReviewVariant(aiReview.status)}>
-                    {getAiReviewLabel(aiReview.status)}
-                  </Badge>
+                  {(() => {
+                    const IconCmp = AI_ICON_MAP[getAiReviewIconName(aiReview.status)] || CircleHelp;
+                    return (
+                      <Badge variant={getAiReviewVariant(aiReview.status)}>
+                        <span className="inline-flex items-center gap-1">
+                          <IconCmp className="w-3 h-3" />
+                          {getAiReviewLabel(aiReview.status)}
+                        </span>
+                      </Badge>
+                    );
+                  })()}
 
                   {typeof aiReview.score === "number" && (
                     <span className={`text-[11px] font-bold ${aiReview.score > 0.7 ? "text-red-500" : aiReview.score > 0.4 ? "text-amber-500" : "text-emerald-500"}`}>
@@ -202,19 +230,21 @@ export const JobTable = ({
                   <button
                     onClick={() => handleRunAi(job.id)}
                     disabled={isRunning}
-                    className={`flex items-center gap-1 text-[10px] font-bold px-2 py-1 rounded-md transition-all
+                    className={`inline-flex items-center gap-1.5 text-[11px] font-bold px-2.5 py-1 rounded-md border transition-all
                       ${isRunning
-                        ? "bg-slate-100 text-slate-400 cursor-not-allowed"
+                        ? "bg-slate-50 text-slate-400 border-slate-200 cursor-not-allowed"
                         : hasBeenReviewed
-                          ? "bg-slate-100 text-slate-500 hover:bg-slate-200"
-                          : "bg-blue-50 text-blue-600 hover:bg-blue-100"
+                          ? "bg-white text-[#3AB4E6] border-[#3AB4E6]/30 hover:bg-[#3AB4E6]/10"
+                          : "bg-[#3AB4E6]/10 text-[#3AB4E6] border-[#3AB4E6]/30 hover:bg-[#3AB4E6]/20"
                       }`}
                     title={hasBeenReviewed ? "Chạy lại AI kiểm tra" : "Chạy AI kiểm tra ngay"}
                   >
                     {isRunning ? (
-                      <FaSpinner className="animate-spin w-3 h-3" />
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    ) : hasBeenReviewed ? (
+                      <RefreshCw className="w-3.5 h-3.5" />
                     ) : (
-                      <FaRobot className="w-3 h-3" />
+                      <Sparkles className="w-3.5 h-3.5" />
                     )}
                     {isRunning ? "Đang kiểm tra..." : hasBeenReviewed ? "Chạy lại AI" : "Chạy AI kiểm tra"}
                   </button>

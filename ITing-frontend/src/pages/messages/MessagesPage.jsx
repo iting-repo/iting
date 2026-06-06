@@ -1,7 +1,8 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { FaPaperPlane, FaSearch, FaSignOutAlt, FaEllipsisH, FaPen, FaTrash, FaCheck, FaTimes } from 'react-icons/fa';
 import { toast } from 'sonner';
-import { CompanyLogo } from '../../components/common';
+import { CompanyLogo, ConfirmModal } from '../../components/common';
+import useConfirm from '../../hooks/useConfirm';
 import { useSearchParams, useNavigate, useLocation } from 'react-router-dom';
 import messageService from '../../services/messageService';
 import applicationService from '../../services/applicationService';
@@ -33,6 +34,7 @@ const MessagesPage = () => {
   const [menuOpenId, setMenuOpenId] = useState(null);
   const [editingId, setEditingId] = useState(null);
   const [editingDraft, setEditingDraft] = useState('');
+  const [confirmDelMsg, askConfirmDelMsg, resetConfirmDelMsg] = useConfirm();
 
   // Click bất kỳ chỗ nào ngoài 3-dot menu → close. Listener gắn ở document
   // để bắt được click trong message scroll area cũng như outside.
@@ -370,16 +372,24 @@ const MessagesPage = () => {
       toast.error(err?.message || 'Không thể sửa tin nhắn');
     }
   };
-  const handleDeleteMsg = async (msg) => {
-    if (!window.confirm('Thu hồi tin nhắn này? Người nhận sẽ thấy "Tin nhắn đã thu hồi".')) return;
-    try {
-      const updated = await messageService.deleteMessage(msg.id);
-      setMessages((prev) => prev.map((m) => m.id === msg.id ? { ...m, ...updated, isDeleted: true } : m));
-      setMenuOpenId(null);
-    } catch (err) {
-      console.error('Delete failed', err);
-      toast.error(err?.message || 'Không thể thu hồi tin nhắn');
-    }
+  const handleDeleteMsg = (msg) => {
+    askConfirmDelMsg({
+      title: 'Thu hồi tin nhắn',
+      message: 'Người nhận sẽ thấy "Tin nhắn đã thu hồi". Bạn có chắc muốn thu hồi tin nhắn này?',
+      confirmText: 'Thu hồi',
+      variant: 'danger',
+      onConfirm: async () => {
+        resetConfirmDelMsg();
+        try {
+          const updated = await messageService.deleteMessage(msg.id);
+          setMessages((prev) => prev.map((m) => m.id === msg.id ? { ...m, ...updated, isDeleted: true } : m));
+          setMenuOpenId(null);
+        } catch (err) {
+          console.error('Delete failed', err);
+          toast.error(err?.message || 'Không thể thu hồi tin nhắn');
+        }
+      },
+    });
   };
 
   const handleDraftChange = (value) => {
@@ -749,6 +759,16 @@ const MessagesPage = () => {
           </div>
         )}
       </section>
+
+      <ConfirmModal
+        isOpen={confirmDelMsg.isOpen}
+        onClose={resetConfirmDelMsg}
+        onConfirm={confirmDelMsg.onConfirm}
+        title={confirmDelMsg.title}
+        message={confirmDelMsg.message}
+        confirmText={confirmDelMsg.confirmText}
+        variant={confirmDelMsg.variant}
+      />
     </div>
   );
 };

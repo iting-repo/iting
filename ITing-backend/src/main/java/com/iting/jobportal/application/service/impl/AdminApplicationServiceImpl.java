@@ -12,6 +12,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
@@ -22,6 +23,7 @@ public class AdminApplicationServiceImpl implements AdminApplicationService {
   private final ApplicationMapperUtil applicationMapperUtil;
 
   @Override
+  @Transactional(readOnly = true)
   public Page<ApplicationResponse> getAllSystemApplications(int page, int size) {
     Pageable pageable = PageRequest.of(page, size, Sort.by("timeSent").descending());
     return adminApplicationRepository
@@ -45,6 +47,7 @@ public class AdminApplicationServiceImpl implements AdminApplicationService {
   }
 
   @Override
+  @Transactional(readOnly = true)
   public Page<ApplicationResponse> getApplicationsByJob(Long jobId, int page, int size) {
     Pageable pageable = PageRequest.of(page, size);
     return adminApplicationRepository

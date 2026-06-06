@@ -152,14 +152,28 @@ export const getAiReview = (job = {}) => {
 
 export const getAiReviewLabel = (status) => {
   const labels = {
-    [AI_REVIEW_STATUS.APPROVED]: "✅ AI đạt",
-    [AI_REVIEW_STATUS.CLEANED]: "🧹 AI đã làm sạch",
-    [AI_REVIEW_STATUS.NEEDS_REVIEW]: "⚠️ Cần admin kiểm tra",
-    [AI_REVIEW_STATUS.REJECTED]: "🚫 AI chặn",
+    [AI_REVIEW_STATUS.APPROVED]: "AI đạt",
+    [AI_REVIEW_STATUS.CLEANED]: "AI đã làm sạch",
+    [AI_REVIEW_STATUS.NEEDS_REVIEW]: "Cần admin kiểm tra",
+    [AI_REVIEW_STATUS.REJECTED]: "AI chặn",
     [AI_REVIEW_STATUS.NOT_REVIEWED]: "Chưa kiểm tra AI",
   };
 
   return labels[status] || "Chưa kiểm tra AI";
+};
+
+// Map AI review status → tên icon trong lucide-react. Caller import icon trực
+// tiếp từ "lucide-react" để tránh ràng buộc util file vào React/JSX.
+export const getAiReviewIconName = (status) => {
+  const icons = {
+    [AI_REVIEW_STATUS.APPROVED]: "ShieldCheck",
+    [AI_REVIEW_STATUS.CLEANED]: "Sparkles",
+    [AI_REVIEW_STATUS.NEEDS_REVIEW]: "AlertTriangle",
+    [AI_REVIEW_STATUS.REJECTED]: "Ban",
+    [AI_REVIEW_STATUS.NOT_REVIEWED]: "CircleHelp",
+  };
+
+  return icons[status] || "CircleHelp";
 };
 
 export const getAiReviewVariant = (status) => {

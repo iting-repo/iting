@@ -9,11 +9,11 @@ import {
     FaUsers,
     FaEllipsisV,
     FaUpload,
-    FaCheckSquare,
     FaBan as FaBanIcon,
     FaTrashAlt,
 } from "react-icons/fa";
 import ImportExcelModal from "../../../components/admin/ImportExcelModal";
+import BulkActionBar from "../../../components/admin/BulkActionBar";
 import { toast } from "sonner";
 import {
     Pagination,
@@ -702,51 +702,15 @@ const UserManagement = () => {
                 onImport={handleImportExcel}
             />
 
-            {/* Bulk Action Bar */}
-            {selectedIds.length > 0 && (
-                <div className="fixed bottom-6 left-1/2 z-[60] flex -translate-x-1/2 items-center gap-6 rounded-2xl border border-sky-100 bg-white px-6 py-4 shadow-2xl animate-in fade-in slide-in-from-bottom-4">
-                    <div className="flex items-center gap-3 border-r border-slate-100 pr-6">
-                        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-sky-100 text-sky-600">
-                            <FaCheckSquare className="h-4 w-4" />
-                        </div>
-                        <div>
-                            <p className="text-sm font-bold text-slate-800">Đã chọn {selectedIds.length} mục</p>
-                            <button 
-                                onClick={() => setSelectedIds([])}
-                                className="text-xs font-medium text-sky-600 hover:underline"
-                            >
-                                Bỏ chọn tất cả
-                            </button>
-                        </div>
-                    </div>
-
-                    <div className="flex items-center gap-2">
-                        <button
-                            onClick={() => handleBulkAction('ban')}
-                            className="flex items-center gap-2 rounded-xl bg-orange-500 px-4 py-2.5 text-sm font-bold text-white shadow-lg shadow-orange-100 transition-all hover:bg-orange-600 hover:scale-105 active:scale-95"
-                        >
-                            <FaBanIcon className="h-3.5 w-3.5" />
-                            Khóa hàng loạt
-                        </button>
-                        
-                        <button
-                            onClick={() => handleBulkAction('unban')}
-                            className="flex items-center gap-2 rounded-xl bg-green-500 px-4 py-2.5 text-sm font-bold text-white shadow-lg shadow-green-100 transition-all hover:bg-green-600 hover:scale-105 active:scale-95"
-                        >
-                            <FaUnlock className="h-3.5 w-3.5" />
-                            Mở khóa hàng loạt
-                        </button>
-
-                        <button
-                            onClick={() => handleBulkAction('delete')}
-                            className="flex items-center gap-2 rounded-xl bg-red-500 px-4 py-2.5 text-sm font-bold text-white shadow-lg shadow-red-100 transition-all hover:bg-red-600 hover:scale-105 active:scale-95"
-                        >
-                            <FaTrashAlt className="h-3.5 w-3.5" />
-                            Xóa hàng loạt
-                        </button>
-                    </div>
-                </div>
-            )}
+            <BulkActionBar
+                selectedCount={selectedIds.length}
+                onClear={() => setSelectedIds([])}
+                actions={[
+                    { key: 'ban',    label: 'Khóa hàng loạt',    icon: <FaBanIcon className="h-4 w-4" />,  variant: 'orange',  onClick: () => handleBulkAction('ban') },
+                    { key: 'unban',  label: 'Mở khóa hàng loạt', icon: <FaUnlock className="h-4 w-4" />,   variant: 'success', onClick: () => handleBulkAction('unban') },
+                    { key: 'delete', label: 'Xóa hàng loạt',     icon: <FaTrashAlt className="h-4 w-4" />, variant: 'danger',  onClick: () => handleBulkAction('delete') },
+                ]}
+            />
 
             <ConfirmModal isOpen={confirmBulk.isOpen} onClose={resetBulkConfirm} onConfirm={confirmBulk.onConfirm} title={confirmBulk.title} message={confirmBulk.message} warning={confirmBulk.warning} confirmText={confirmBulk.confirmText} variant={confirmBulk.variant} />
         </div>

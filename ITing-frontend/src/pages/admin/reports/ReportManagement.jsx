@@ -16,6 +16,9 @@ import { ActionMenuPortal } from "../../../components/admin/ActionMenuPortal";
 import { UserDetailDialog } from "../../../components/admin/UserDetailDialog";
 import { CompanyDetailDialog } from "../../../components/admin/CompanyDetailDialog";
 import { JobDetailDialog } from "../../../components/admin/JobDetailDialog";
+import BulkActionBar from "../../../components/admin/BulkActionBar";
+import { ConfirmModal } from "../../../components/common";
+import useConfirm from "../../../hooks/useConfirm";
 import adminReportService from "../../../services/adminReportService";
 import adminUserService from "../../../services/adminUserService";
 import adminCompanyService from "../../../services/adminCompanyService";
@@ -169,6 +172,47 @@ const ReportManagement = () => {
 
   const [selectedReport, setSelectedReport] = useState(null);
   const [openMenuId, setOpenMenuId] = useState(null);
+  const [selectedIds, setSelectedIds] = useState([]);
+  const [confirmBulk, askBulkConfirm, resetBulkConfirm] = useConfirm();
+  const isAllSelected = reports.length > 0 && selectedIds.length === reports.length;
+  const handleSelectAll = (e) => {
+    if (e.target.checked) setSelectedIds(reports.map((r) => r.id));
+    else setSelectedIds([]);
+  };
+  const handleSelectOne = (id) => {
+    setSelectedIds((prev) => (prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id]));
+  };
+
+  const handleBulkAction = (action) => {
+    if (selectedIds.length === 0) return;
+    const label = action === "RESOLVED" ? "duyệt" : "bác bỏ";
+    askBulkConfirm({
+      title: `Xác nhận ${label} hàng loạt`,
+      message: `Bạn có chắc muốn ${label} ${selectedIds.length} báo cáo đã chọn?`,
+      confirmText: label.charAt(0).toUpperCase() + label.slice(1),
+      variant: action === "RESOLVED" ? "info" : "danger",
+      onConfirm: async () => {
+        resetBulkConfirm();
+        try {
+          // BE chưa có bulk endpoint — gọi handleReport song song cho từng id.
+          const note = `Admin xử lý hàng loạt (${label}).`;
+          const results = await Promise.allSettled(
+            selectedIds.map((id) => adminReportService.handleReport(id, action, note))
+          );
+          const failed = results.filter((r) => r.status === "rejected").length;
+          const ok = results.length - failed;
+          if (failed === 0) toast.success(`Đã ${label} ${ok} báo cáo`);
+          else toast.warning(`Thành công ${ok}, thất bại ${failed}`);
+          setSelectedIds([]);
+          fetchReports();
+          fetchStats();
+        } catch (e) {
+          console.error("Bulk handleReport error:", e);
+          toast.error("Thao tác hàng loạt thất bại");
+        }
+      },
+    });
+  };
 
   // States for target detail
   const [detailTarget, setDetailTarget] = useState({ type: null, data: null });
@@ -426,6 +470,17 @@ const ReportManagement = () => {
             <div className="overflow-x-auto custom-scrollbar">
               <Table
                 headers={[
+                  {
+                    label: (
+                      <input
+                        type="checkbox"
+                        checked={isAllSelected}
+                        onChange={handleSelectAll}
+                        className="h-4 w-4 rounded border-slate-300 text-sky-600 focus:ring-sky-500"
+                      />
+                    ),
+                    className: "w-10",
+                  },
                   { label: "ID", className: "w-[80px] whitespace-nowrap" },
                   { label: "Đối tượng", className: "min-w-[200px]" },
                   { label: "Loại vi phạm", className: "whitespace-nowrap min-w-[150px]" },
@@ -436,12 +491,22 @@ const ReportManagement = () => {
                 ]}
               >
               {reports.length === 0 && !loading ? (
-                <tr><Td colSpan={7} className="text-center py-12 text-slate-400 italic">Không tìm thấy báo cáo nào</Td></tr>
+                <tr><Td colSpan={8} className="text-center py-12 text-slate-400 italic">Không tìm thấy báo cáo nào</Td></tr>
               ) : reports.map((r) => {
                 const cat = CATEGORY_MAP[r.type] || CATEGORY_MAP.OTHER;
                 const CatIcon = cat.icon;
                 return (
-                  <tr key={r.id} className="hover:bg-slate-50 transition-colors group cursor-pointer" onClick={() => setSelectedReport(r)}>
+                  <tr key={r.id} className={`hover:bg-slate-50 transition-colors group cursor-pointer ${selectedIds.includes(r.id) ? 'bg-sky-50/50' : ''}`} onClick={() => setSelectedReport(r)}>
+                    <Td>
+                      <span onClick={(e) => e.stopPropagation()} className="inline-flex">
+                        <input
+                          type="checkbox"
+                          checked={selectedIds.includes(r.id)}
+                          onChange={() => handleSelectOne(r.id)}
+                          className="h-4 w-4 rounded border-slate-300 text-sky-600 focus:ring-sky-500"
+                        />
+                      </span>
+                    </Td>
                     <Td className="font-mono text-xs text-slate-400">#{r.id}</Td>
                     <Td>
                       <div className="flex flex-col gap-1.5" onClick={(e) => e.stopPropagation()}>
@@ -647,6 +712,26 @@ const ReportManagement = () => {
         open={detailTarget.type === "JOB"}
         job={detailTarget.data}
         onClose={() => setDetailTarget({ type: null, data: null })}
+      />
+
+      <BulkActionBar
+        selectedCount={selectedIds.length}
+        onClear={() => setSelectedIds([])}
+        actions={[
+          { key: 'resolve', label: 'Duyệt báo cáo', icon: <CircleCheck className="h-4 w-4" />, variant: 'success', onClick: () => handleBulkAction('RESOLVED') },
+          { key: 'dismiss', label: 'Bác bỏ',       icon: <CircleX className="h-4 w-4" />,     variant: 'danger',  onClick: () => handleBulkAction('DISMISSED') },
+        ]}
+      />
+
+      <ConfirmModal
+        isOpen={confirmBulk.isOpen}
+        onClose={resetBulkConfirm}
+        onConfirm={confirmBulk.onConfirm}
+        title={confirmBulk.title}
+        message={confirmBulk.message}
+        warning={confirmBulk.warning}
+        confirmText={confirmBulk.confirmText}
+        variant={confirmBulk.variant}
       />
     </div>
   );

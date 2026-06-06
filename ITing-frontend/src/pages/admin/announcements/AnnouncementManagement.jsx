@@ -2,6 +2,8 @@ import React, { useEffect, useState } from "react";
 import { FaPlus, FaEdit, FaTrash, FaTimes, FaBullhorn } from "react-icons/fa";
 import { toast } from "sonner";
 import announcementService from "../../../services/announcementService";
+import { ConfirmModal } from "../../../components/common";
+import useConfirm from "../../../hooks/useConfirm";
 
 const DISPLAY_MODES = [
   { value: "MODAL_BLOCKING", label: "Modal — Buộc đọc & accept" },
@@ -32,6 +34,7 @@ const AnnouncementManagement = () => {
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(null); // null = closed, {} = new, {id,...} = edit
   const [saving, setSaving] = useState(false);
+  const [confirmDel, askConfirmDel, resetConfirmDel] = useConfirm();
 
   const fetchList = async () => {
     try {
@@ -59,15 +62,24 @@ const AnnouncementManagement = () => {
   });
   const closeForm = () => setEditing(null);
 
-  const handleDelete = async (id) => {
-    if (!window.confirm("Xoá announcement này?")) return;
-    try {
-      await announcementService.adminDelete(id);
-      toast.success("Đã xoá");
-      fetchList();
-    } catch {
-      toast.error("Xoá thất bại");
-    }
+  const handleDelete = (id) => {
+    askConfirmDel({
+      title: "Xoá announcement",
+      message: "Bạn có chắc muốn xoá announcement này không?",
+      warning: "Hành động này không thể hoàn tác.",
+      confirmText: "Xoá",
+      variant: "danger",
+      onConfirm: async () => {
+        resetConfirmDel();
+        try {
+          await announcementService.adminDelete(id);
+          toast.success("Đã xoá");
+          fetchList();
+        } catch {
+          toast.error("Xoá thất bại");
+        }
+      },
+    });
   };
 
   const handleSave = async () => {
@@ -374,6 +386,17 @@ const AnnouncementManagement = () => {
           </div>
         </div>
       )}
+
+      <ConfirmModal
+        isOpen={confirmDel.isOpen}
+        onClose={resetConfirmDel}
+        onConfirm={confirmDel.onConfirm}
+        title={confirmDel.title}
+        message={confirmDel.message}
+        warning={confirmDel.warning}
+        confirmText={confirmDel.confirmText}
+        variant={confirmDel.variant}
+      />
     </div>
   );
 };

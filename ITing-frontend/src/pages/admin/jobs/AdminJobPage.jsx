@@ -2,21 +2,21 @@ import React, { useState } from "react";
 import { PageHeader } from "../../../components/common/PageHeader";
 import Pagination from "../../../components/common/Pagination";
 import Button from "../../../components/common/Button";
-import { 
-  FaDownload, 
-  FaUpload, 
-  FaCheckSquare, 
-  FaCheckCircle, 
-  FaTimesCircle, 
-  FaBan, 
-  FaTrashAlt, 
+import {
+  FaDownload,
+  FaUpload,
+  FaCheckCircle,
+  FaTimesCircle,
+  FaBan,
+  FaTrashAlt,
   FaClock,
   FaRobot,
   FaSpinner,
 } from "react-icons/fa";
 import ImportExcelModal from "../../../components/admin/ImportExcelModal";
-import { ConfirmModal } from "../../../components/common";
+import { ConfirmModal, PromptModal } from "../../../components/common";
 import useConfirm from "../../../hooks/useConfirm";
+import usePrompt from "../../../hooks/usePrompt";
 import adminJobService from "../../../services/adminJobService";
 import { toast } from "sonner";
 
@@ -27,6 +27,7 @@ import { JobPreviewDialog } from "./components/JobPreviewDialog";
 import { JobDetailDialog } from "../../../components/admin/JobDetailDialog";
 import { ActionDialog } from "../../../components/admin/ActionDialog";
 import { JobApplicantsDialog } from "../../../components/admin/JobApplicantsDialog";
+import BulkActionBar from "../../../components/admin/BulkActionBar";
 
 import { useAdminJobs } from "../../../hooks/useAdminJobs";
 
@@ -57,6 +58,7 @@ const AdminJobPage = () => {
   const [showImportModal, setShowImportModal] = useState(false);
   const [selectedIds, setSelectedIds] = useState([]);
   const [confirmBulk, askBulkConfirm, resetBulkConfirm] = useConfirm();
+  const [promptState, askPrompt, resetPrompt] = usePrompt();
   const [bulkAiRunning, setBulkAiRunning] = useState(false);
   const [bulkAiProgress, setBulkAiProgress] = useState({ done: 0, total: 0 });
 
@@ -151,36 +153,53 @@ const AdminJobPage = () => {
     if (selectedIds.length === 0) return;
     const actionLabels = { approve: 'duyệt', reject: 'từ chối', suspend: 'đình chỉ', close: 'đóng', delete: 'xóa' };
     const actionVariants = { approve: 'info', reject: 'warning', suspend: 'warning', close: 'warning', delete: 'danger' };
+
+    // Helper thực thi action sau khi đã có reason (nếu cần).
+    const execute = async (reason) => {
+      try {
+        if (action === 'approve') {
+          await adminJobService.bulkApprove(selectedIds);
+        } else if (action === 'reject') {
+          await adminJobService.bulkReject(selectedIds, reason || "Không đạt yêu cầu");
+        } else if (action === 'suspend') {
+          await adminJobService.bulkSuspend(selectedIds, reason || "Vi phạm quy định");
+        } else if (action === 'close') {
+          await adminJobService.bulkClose(selectedIds);
+        } else if (action === 'delete') {
+          await adminJobService.bulkDelete(selectedIds);
+        }
+        toast.success(`Thành công cho ${selectedIds.length} mục`);
+        setSelectedIds([]);
+        window.location.reload();
+      } catch (error) {
+        console.error("Bulk action error:", error);
+        toast.error("Thao tác hàng loạt thất bại");
+      }
+    };
+
     askBulkConfirm({
       title: `${actionLabels[action]?.charAt(0).toUpperCase() + actionLabels[action]?.slice(1)} hàng loạt`,
       message: `Bạn có chắc muốn ${actionLabels[action]} ${selectedIds.length} mục đã chọn?`,
       warning: action === 'delete' ? 'Hành động này không thể hoàn tác.' : undefined,
       confirmText: actionLabels[action]?.charAt(0).toUpperCase() + actionLabels[action]?.slice(1),
       variant: actionVariants[action],
-      onConfirm: async () => {
+      onConfirm: () => {
         resetBulkConfirm();
-        try {
-          if (action === 'approve') {
-            await adminJobService.bulkApprove(selectedIds);
-          } else if (action === 'reject') {
-            const reason = window.prompt("Nhập lý do từ chối hàng loạt:");
-            if (reason === null) return;
-            await adminJobService.bulkReject(selectedIds, reason || "Không đạt yêu cầu");
-          } else if (action === 'suspend') {
-            const reason = window.prompt("Nhập lý do đình chỉ hàng loạt:");
-            if (reason === null) return;
-            await adminJobService.bulkSuspend(selectedIds, reason || "Vi phạm quy định");
-          } else if (action === 'close') {
-            await adminJobService.bulkClose(selectedIds);
-          } else if (action === 'delete') {
-            await adminJobService.bulkDelete(selectedIds);
-          }
-          toast.success(`Thành công cho ${selectedIds.length} mục`);
-          setSelectedIds([]);
-          window.location.reload();
-        } catch (error) {
-          console.error("Bulk action error:", error);
-          toast.error("Thao tác hàng loạt thất bại");
+        // Reject / Suspend cần thêm lý do — mở PromptModal trước khi gọi execute.
+        if (action === 'reject' || action === 'suspend') {
+          askPrompt({
+            title: action === 'reject' ? 'Lý do từ chối hàng loạt' : 'Lý do đình chỉ hàng loạt',
+            label: 'Lý do',
+            placeholder: action === 'reject' ? 'Không đạt yêu cầu...' : 'Vi phạm quy định...',
+            multiline: true,
+            variant: 'warning',
+            onSubmit: (reason) => {
+              resetPrompt();
+              execute(reason);
+            },
+          });
+        } else {
+          execute();
         }
       }
     });
@@ -218,16 +237,11 @@ const AdminJobPage = () => {
     }
   };
 
-  const pendingCount = jobs.filter((j) => j.status === "PENDING").length;
-
   return (
     <>
 
       <div className="space-y-6 pb-60">
-      <PageHeader
-        title="Quản lý Công việc"
-        description={`${pendingCount} công việc đang chờ duyệt`}
-      >
+      <PageHeader title="Quản lý Công việc">
         <div className="flex gap-2 flex-wrap">
           <Button
             variant="outline"
@@ -343,69 +357,34 @@ const AdminJobPage = () => {
         onImport={handleImportExcel}
       />
 
-      {/* Bulk Action Bar */}
-      {selectedIds.length > 0 && (
-        <div className="fixed bottom-6 left-1/2 z-[60] flex -translate-x-1/2 items-center gap-4 sm:gap-6 w-[95%] sm:w-auto max-w-[95vw] overflow-x-auto custom-scrollbar rounded-2xl border border-sky-100 bg-white px-4 sm:px-6 py-3 sm:py-4 shadow-2xl animate-in fade-in slide-in-from-bottom-4">
-          <div className="flex items-center gap-2 sm:gap-3 border-r border-slate-100 pr-4 sm:pr-6 shrink-0">
-            <div className="flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-xl bg-sky-100 text-sky-600 shrink-0">
-              <FaCheckSquare className="h-4 w-4 sm:h-5 sm:w-5" />
-            </div>
-            <div className="shrink-0">
-              <p className="text-sm font-bold text-slate-800">Đã chọn {selectedIds.length} mục</p>
-              <button 
-                onClick={() => setSelectedIds([])}
-                className="text-xs font-medium text-sky-600 hover:underline"
-              >
-                Bỏ chọn tất cả
-              </button>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-2 shrink-0">
-            <button
-               onClick={() => handleBulkAction('approve')}
-               className="flex items-center gap-1.5 sm:gap-2 whitespace-nowrap rounded-xl bg-emerald-500 px-3 sm:px-5 py-2 sm:py-2.5 text-xs sm:text-sm font-bold text-white shadow-lg shadow-emerald-100 transition-all hover:bg-emerald-600 hover:scale-105 active:scale-95"
-            >
-              <FaCheckCircle className="h-4 w-4" />
-              Duyệt
-            </button>
-            
-            <button
-               onClick={() => handleBulkAction('reject')}
-               className="flex items-center gap-1.5 sm:gap-2 whitespace-nowrap rounded-xl bg-amber-500 px-3 sm:px-5 py-2 sm:py-2.5 text-xs sm:text-sm font-bold text-white shadow-lg shadow-amber-100 transition-all hover:bg-amber-600 hover:scale-105 active:scale-95"
-            >
-              <FaTimesCircle className="h-4 w-4" />
-              Từ chối
-            </button>
-
-            <button
-               onClick={() => handleBulkAction('suspend')}
-               className="flex items-center gap-1.5 sm:gap-2 whitespace-nowrap rounded-xl bg-orange-600 px-3 sm:px-5 py-2 sm:py-2.5 text-xs sm:text-sm font-bold text-white shadow-lg shadow-orange-100 transition-all hover:bg-orange-700 hover:scale-105 active:scale-95"
-            >
-              <FaBan className="h-4 w-4" />
-              Đình chỉ
-            </button>
-
-            <button
-               onClick={() => handleBulkAction('close')}
-               className="flex items-center gap-1.5 sm:gap-2 whitespace-nowrap rounded-xl bg-slate-700 px-3 sm:px-5 py-2 sm:py-2.5 text-xs sm:text-sm font-bold text-white shadow-lg shadow-slate-100 transition-all hover:bg-slate-800 hover:scale-105 active:scale-95"
-            >
-              <FaClock className="h-4 w-4" />
-              Đóng
-            </button>
-
-            <button
-               onClick={() => handleBulkAction('delete')}
-               className="flex items-center gap-1.5 sm:gap-2 whitespace-nowrap rounded-xl bg-red-500 px-3 sm:px-5 py-2 sm:py-2.5 text-xs sm:text-sm font-bold text-white shadow-lg shadow-red-100 transition-all hover:bg-red-600 hover:scale-105 active:scale-95"
-            >
-              <FaTrashAlt className="h-4 w-4" />
-              Xóa
-            </button>
-          </div>
-        </div>
-      )}
+      <BulkActionBar
+        selectedCount={selectedIds.length}
+        onClear={() => setSelectedIds([])}
+        actions={[
+          { key: 'approve', label: 'Duyệt',   icon: <FaCheckCircle className="h-4 w-4" />, variant: 'success', onClick: () => handleBulkAction('approve') },
+          { key: 'reject',  label: 'Từ chối', icon: <FaTimesCircle className="h-4 w-4" />, variant: 'warning', onClick: () => handleBulkAction('reject') },
+          { key: 'suspend', label: 'Đình chỉ', icon: <FaBan className="h-4 w-4" />,         variant: 'orange',  onClick: () => handleBulkAction('suspend') },
+          { key: 'close',   label: 'Đóng',    icon: <FaClock className="h-4 w-4" />,       variant: 'slate',   onClick: () => handleBulkAction('close') },
+          { key: 'delete',  label: 'Xóa',     icon: <FaTrashAlt className="h-4 w-4" />,    variant: 'danger',  onClick: () => handleBulkAction('delete') },
+        ]}
+      />
 
       <ConfirmModal isOpen={confirmBulk.isOpen} onClose={resetBulkConfirm} onConfirm={confirmBulk.onConfirm} title={confirmBulk.title} message={confirmBulk.message} warning={confirmBulk.warning} confirmText={confirmBulk.confirmText} variant={confirmBulk.variant} />
+      <PromptModal
+        isOpen={promptState.isOpen}
+        onClose={resetPrompt}
+        onSubmit={promptState.onSubmit}
+        title={promptState.title}
+        message={promptState.message}
+        label={promptState.label}
+        placeholder={promptState.placeholder}
+        defaultValue={promptState.defaultValue}
+        confirmText={promptState.confirmText}
+        cancelText={promptState.cancelText}
+        required={promptState.required}
+        multiline={promptState.multiline}
+        variant={promptState.variant}
+      />
     </>
   );
 };

@@ -20,6 +20,8 @@ import { toast } from "sonner";
 import companyService from "../../services/companyService";
 import axiosInstance from "../../utils/axiosInstance";
 import { moderateJobWithGemini } from "../../services/geminiModerationService";
+import { PromptModal } from "../../components/common";
+import usePrompt from "../../hooks/usePrompt";
 
 // const PROVINCE_API_BASE = "https://provinces.open-api.vn/api/v2";
 
@@ -178,6 +180,8 @@ const DEFAULT_TECH_OPTIONS = [
 // hiển thị description (nếu có ReactMarkdown), hoặc giữ nguyên ký tự nếu
 // raw text. Người dùng vẫn diễn đạt được ý định format.
 function EditorToolbar({ textareaRef }) {
+  const [linkPrompt, askLinkPrompt, resetLinkPrompt] = usePrompt();
+
   // Helper: wrap selection (hoặc insert) bằng prefix/suffix.
   const wrap = (prefix, suffix = prefix, placeholder = '') => {
     const ta = textareaRef?.current;
@@ -204,23 +208,43 @@ function EditorToolbar({ textareaRef }) {
     requestAnimationFrame(() => { ta.focus(); ta.setSelectionRange(newPos, newPos); });
   };
   const insertLink = () => {
-    const url = window.prompt('URL liên kết:');
-    if (!url) return;
-    wrap('[', `](${url})`, 'liên kết');
+    askLinkPrompt({
+      title: 'Chèn liên kết',
+      label: 'URL',
+      placeholder: 'https://...',
+      onSubmit: (url) => {
+        resetLinkPrompt();
+        if (!url) return;
+        wrap('[', `](${url})`, 'liên kết');
+      },
+    });
   };
 
   const btn = "hover:text-black p-1 md:p-0";
   return (
-    <div className="bg-gray-50 border-b border-gray-200 px-2 md:px-3 py-2 flex flex-wrap gap-2 md:gap-4 text-gray-500 mb-2 items-center">
-      <button type="button" aria-label="In đậm" title="**bold**" onClick={() => wrap('**', '**', 'in đậm')} className={btn}><FaBold /></button>
-      <button type="button" aria-label="In nghiêng" title="*italic*" onClick={() => wrap('*', '*', 'in nghiêng')} className={btn}><FaItalic /></button>
-      <button type="button" aria-label="Gạch chân" title="<u>underline</u>" onClick={() => wrap('<u>', '</u>', 'gạch chân')} className={btn}><FaUnderline /></button>
-      <button type="button" aria-label="Gạch ngang" title="~~strike~~" onClick={() => wrap('~~', '~~', 'gạch ngang')} className={btn}><FaStrikethrough /></button>
-      <div className="w-px bg-gray-300 mx-1 h-4"></div>
-      <button type="button" aria-label="Chèn liên kết" title="[text](url)" onClick={insertLink} className={btn}><FaLink /></button>
-      <button type="button" aria-label="Danh sách" title="- item" onClick={() => insertLine('- ')} className={btn}><FaListUl /></button>
-      <button type="button" aria-label="Danh sách có số" title="1. item" onClick={() => insertLine('1. ')} className={btn}><FaListOl /></button>
-    </div>
+    <>
+      <div className="bg-gray-50 border-b border-gray-200 px-2 md:px-3 py-2 flex flex-wrap gap-2 md:gap-4 text-gray-500 mb-2 items-center">
+        <button type="button" aria-label="In đậm" title="**bold**" onClick={() => wrap('**', '**', 'in đậm')} className={btn}><FaBold /></button>
+        <button type="button" aria-label="In nghiêng" title="*italic*" onClick={() => wrap('*', '*', 'in nghiêng')} className={btn}><FaItalic /></button>
+        <button type="button" aria-label="Gạch chân" title="<u>underline</u>" onClick={() => wrap('<u>', '</u>', 'gạch chân')} className={btn}><FaUnderline /></button>
+        <button type="button" aria-label="Gạch ngang" title="~~strike~~" onClick={() => wrap('~~', '~~', 'gạch ngang')} className={btn}><FaStrikethrough /></button>
+        <div className="w-px bg-gray-300 mx-1 h-4"></div>
+        <button type="button" aria-label="Chèn liên kết" title="[text](url)" onClick={insertLink} className={btn}><FaLink /></button>
+        <button type="button" aria-label="Danh sách" title="- item" onClick={() => insertLine('- ')} className={btn}><FaListUl /></button>
+        <button type="button" aria-label="Danh sách có số" title="1. item" onClick={() => insertLine('1. ')} className={btn}><FaListOl /></button>
+      </div>
+      <PromptModal
+        isOpen={linkPrompt.isOpen}
+        onClose={resetLinkPrompt}
+        onSubmit={linkPrompt.onSubmit}
+        title={linkPrompt.title}
+        label={linkPrompt.label}
+        placeholder={linkPrompt.placeholder}
+        confirmText={linkPrompt.confirmText}
+        cancelText={linkPrompt.cancelText}
+        required={linkPrompt.required}
+      />
+    </>
   );
 }
 

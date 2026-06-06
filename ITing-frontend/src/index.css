@@ -3,8 +3,12 @@
 @tailwind utilities;
 
 @layer base {
+  html {
+    overflow-x: hidden;
+  }
   body {
     font-family: 'Inter', sans-serif;
+    overflow-x: hidden;
   }
   /* WCAG AA: default placeholder #9CA3AF (gray-400) fail 3.27:1 trên trắng → bump lên gray-600 (#4B5563 = 7:1). */
   input::placeholder,

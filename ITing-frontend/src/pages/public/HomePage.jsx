@@ -482,10 +482,10 @@ const HomePage = () => {
         : recommendedJobs;
 
     return (
-        <div className="bg-white font-sans">
+        <div className="bg-white font-sans overflow-x-hidden">
 
             {/* PHẦN 1: HERO SEARCH */}
-            <section className="relative z-10 bg-[#0B1B3D] pt-6 md:pt-10 pb-64 overflow-visible">
+            <section className="relative z-10 bg-[#0B1B3D] pt-6 md:pt-10 pb-64 overflow-x-clip overflow-y-visible">
                 <div className="absolute inset-0 z-0">
                     <img src={heroBg} alt="" aria-hidden="true" width="1600" height="900" fetchpriority="high" decoding="async" className="w-full h-full object-cover opacity-30 mix-blend-overlay" />
                     <div className="absolute inset-0 bg-gradient-to-b from-[#0B1B3D]/50 via-[#0B1B3D]/80 to-[#0B1B3D]"></div>
@@ -674,7 +674,7 @@ const HomePage = () => {
                         ))}
                     </div>
 
-                    <div className="mt-16 flex flex-wrap justify-center gap-10 md:gap-24">
+                    <div className="mt-16 flex flex-wrap justify-center gap-6 md:gap-24">
                         <div className="flex items-center gap-4 text-left group">
                             <div className="w-14 h-14 md:w-16 md:h-16 rounded-2xl bg-white/10 group-hover:bg-[#3AB4E6] flex items-center justify-center transition-all border border-white/10 group-hover:border-[#3AB4E6] shadow-lg">
                                 <FaBriefcase className="text-[#3AB4E6] group-hover:text-white text-2xl md:text-3xl transition-colors" />
@@ -784,10 +784,10 @@ const HomePage = () => {
 
                     <div className="relative group">
                         {/* Scroll buttons overlay */}
-                        <button type="button" aria-label="Cuộn sang trái" onClick={() => recommendationScrollRef.current?.scrollBy({ left: -300, behavior: 'smooth' })} className="absolute left-0 top-1/2 -translate-y-[calc(50%+8px)] -translate-x-2 md:-translate-x-4 w-10 h-10 bg-white/90 backdrop-blur rounded-full shadow-lg text-gray-600 flex items-center justify-center hover:bg-[#3AB4E6] hover:text-white transition-all z-10 opacity-100 md:opacity-0 md:group-hover:opacity-100 border border-gray-200">
+                        <button type="button" aria-label="Cuộn sang trái" onClick={() => recommendationScrollRef.current?.scrollBy({ left: -300, behavior: 'smooth' })} className="absolute left-0 top-1/2 -translate-y-[calc(50%+8px)] md:-translate-x-4 w-10 h-10 bg-white/90 backdrop-blur rounded-full shadow-lg text-gray-600 flex items-center justify-center hover:bg-[#3AB4E6] hover:text-white transition-all z-10 opacity-100 md:opacity-0 md:group-hover:opacity-100 border border-gray-200">
                             <FaArrowLeft size={14} aria-hidden="true" />
                         </button>
-                        <button type="button" aria-label="Cuộn sang phải" onClick={() => recommendationScrollRef.current?.scrollBy({ left: 300, behavior: 'smooth' })} className="absolute right-0 top-1/2 -translate-y-[calc(50%+8px)] translate-x-2 md:translate-x-4 w-10 h-10 bg-white/90 backdrop-blur rounded-full shadow-lg text-gray-600 flex items-center justify-center hover:bg-[#3AB4E6] hover:text-white transition-all z-10 opacity-100 md:opacity-0 md:group-hover:opacity-100 border border-gray-200">
+                        <button type="button" aria-label="Cuộn sang phải" onClick={() => recommendationScrollRef.current?.scrollBy({ left: 300, behavior: 'smooth' })} className="absolute right-0 top-1/2 -translate-y-[calc(50%+8px)] md:translate-x-4 w-10 h-10 bg-white/90 backdrop-blur rounded-full shadow-lg text-gray-600 flex items-center justify-center hover:bg-[#3AB4E6] hover:text-white transition-all z-10 opacity-100 md:opacity-0 md:group-hover:opacity-100 border border-gray-200">
                             <FaArrowRight size={14} aria-hidden="true" />
                         </button>
 
@@ -875,7 +875,7 @@ const HomePage = () => {
                     </div>
                 </div>
             </section>
-            <section id="best-jobs-section" className="py-10 px-8 bg-white">
+            <section id="best-jobs-section" className="py-10 px-4 md:px-8 bg-white">
                 <div className="container mx-auto px-4">
 
                     {/* 1. HEADER: Loại bỏ nút đen, dùng nút viền mảnh tinh tế */}
@@ -1390,7 +1390,7 @@ const HomePage = () => {
 
             {/* PHẦN 2: JOB CATEGORIES */}
 
-            <section className="py-10 px-8 bg-[#F0F5FA]">
+            <section className="py-10 px-4 md:px-8 bg-[#F0F5FA]">
                 <div className="container mx-auto px-4 relative">
                     <div className="flex justify-between items-end mb-8 md:mb-12">
                         <div className="text-left">
@@ -1401,10 +1401,10 @@ const HomePage = () => {
 
                     <div className="relative group">
                         {/* Scroll buttons overlay */}
-                        <button type="button" aria-label="Cuộn sang trái" onClick={() => featuredCategoryScrollRef.current?.scrollBy({ left: -300, behavior: 'smooth' })} className="absolute left-0 top-1/2 -translate-y-[calc(50%+8px)] -translate-x-2 md:-translate-x-4 w-10 h-10 bg-white/90 backdrop-blur rounded-full shadow-lg text-gray-600 flex items-center justify-center hover:bg-[#3AB4E6] hover:text-white transition-all z-10 opacity-100 md:opacity-0 md:group-hover:opacity-100 border border-gray-200">
+                        <button type="button" aria-label="Cuộn sang trái" onClick={() => featuredCategoryScrollRef.current?.scrollBy({ left: -300, behavior: 'smooth' })} className="absolute left-0 top-1/2 -translate-y-[calc(50%+8px)] md:-translate-x-4 w-10 h-10 bg-white/90 backdrop-blur rounded-full shadow-lg text-gray-600 flex items-center justify-center hover:bg-[#3AB4E6] hover:text-white transition-all z-10 opacity-100 md:opacity-0 md:group-hover:opacity-100 border border-gray-200">
                             <FaArrowLeft size={14} aria-hidden="true" />
                         </button>
-                        <button type="button" aria-label="Cuộn sang phải" onClick={() => featuredCategoryScrollRef.current?.scrollBy({ left: 300, behavior: 'smooth' })} className="absolute right-0 top-1/2 -translate-y-[calc(50%+8px)] translate-x-2 md:translate-x-4 w-10 h-10 bg-white/90 backdrop-blur rounded-full shadow-lg text-gray-600 flex items-center justify-center hover:bg-[#3AB4E6] hover:text-white transition-all z-10 opacity-100 md:opacity-0 md:group-hover:opacity-100 border border-gray-200">
+                        <button type="button" aria-label="Cuộn sang phải" onClick={() => featuredCategoryScrollRef.current?.scrollBy({ left: 300, behavior: 'smooth' })} className="absolute right-0 top-1/2 -translate-y-[calc(50%+8px)] md:translate-x-4 w-10 h-10 bg-white/90 backdrop-blur rounded-full shadow-lg text-gray-600 flex items-center justify-center hover:bg-[#3AB4E6] hover:text-white transition-all z-10 opacity-100 md:opacity-0 md:group-hover:opacity-100 border border-gray-200">
                             <FaArrowRight size={14} aria-hidden="true" />
                         </button>
 
@@ -1428,7 +1428,7 @@ const HomePage = () => {
 
 
             {/* PHẦN 4: BLOGS */}
-            <section className="py-10 px-8 bg-white border-t border-gray-100">
+            <section className="py-10 px-4 md:px-8 bg-white border-t border-gray-100">
                 <div className="container mx-auto px-4">
                     <div className="flex justify-between items-end mb-8">
                         <div>

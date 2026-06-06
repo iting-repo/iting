@@ -2,37 +2,51 @@ import React from "react";
 import Dialog from "../common/Dialog";
 import Badge from "../common/Badge";
 import {
-  Briefcase, 
-  MapPin, 
-  DollarSign, 
-  Calendar, 
-  Target, 
-  Users, 
-  ArrowRight,
+  Briefcase,
+  MapPin,
+  DollarSign,
+  Calendar,
+  Target,
+  Users,
   ShieldCheck,
   ClipboardList,
   Gift,
   CheckCircle2,
   XCircle,
-  Clock,
   Layout,
-  Layers
+  Layers,
+  Eye,
+  Sparkles,
+  AlertTriangle,
+  Ban,
+  CircleHelp,
 } from "lucide-react";
 import {
   getAiReview,
   getAiReviewLabel,
   getAiReviewSummary,
   getAiReviewVariant,
+  getAiReviewIconName,
 } from "../../utils/jobModeration";
 
-const InfoItem = ({ icon: Icon, label, value, color = "sky" }) => (
-  <div className="flex items-center gap-3 rounded-xl border border-slate-100 bg-white p-3.5 transition-all hover:border-sky-100 hover:shadow-sm">
-    <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-${color}-50 text-${color}-600`}>
-      <Icon className="h-5 w-5" />
+const AI_ICON_MAP = {
+  ShieldCheck,
+  Sparkles,
+  AlertTriangle,
+  Ban,
+  CircleHelp,
+};
+
+const BRAND = "#3AB4E6";
+
+const InfoItem = ({ icon: Icon, label, value }) => (
+  <div className="flex items-center gap-2.5 rounded-xl border border-slate-100 bg-white px-3 py-2.5 transition-all hover:border-[#3AB4E6]/40 hover:shadow-sm">
+    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#3AB4E6]/10 text-[#3AB4E6]">
+      <Icon className="h-4 w-4" />
     </div>
-    <div>
-      <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">{label}</p>
-      <p className="text-sm font-semibold text-slate-700">{value || "N/A"}</p>
+    <div className="min-w-0">
+      <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 leading-tight">{label}</p>
+      <p className="text-[13px] font-semibold text-slate-700 truncate">{value || "—"}</p>
     </div>
   </div>
 );
@@ -40,38 +54,36 @@ const InfoItem = ({ icon: Icon, label, value, color = "sky" }) => (
 const ContentSection = ({ icon: Icon, title, content }) => {
   if (!content) return null;
   return (
-    <div className="space-y-3 rounded-2xl border border-slate-100 bg-slate-50/30 p-5 lg:p-6">
-      <div className="flex items-center gap-2 border-b border-slate-100 pb-3">
-        <Icon className="h-4 w-4 text-sky-500" />
-        <h4 className="text-sm font-bold uppercase tracking-wide text-slate-800">{title}</h4>
+    <div className="rounded-xl border border-slate-100 bg-white p-4">
+      <div className="flex items-center gap-2 mb-2">
+        <Icon className="h-4 w-4 text-[#3AB4E6]" />
+        <h4 className="text-[11px] font-bold uppercase tracking-wider text-slate-700">{title}</h4>
       </div>
-      <div className="text-sm leading-relaxed text-slate-600 whitespace-pre-line">
+      <div className="text-[13px] leading-relaxed text-slate-600 whitespace-pre-line">
         {content}
       </div>
     </div>
   );
 };
 
-const getJobStatusLabel = (status) => {
-  const map = {
-    ACTIVE: "Đang hoạt động",
-    PENDING: "Chờ duyệt",
-    REJECTED: "Bị từ chối",
-    CLOSED: "Đã đóng",
-    EXPIRED: "Hết hạn",
-    NEEDS_REVISION: "Cần chỉnh sửa",
-    SUSPENDED: "Bị đình chỉ",
-  };
-
-  return map[status] || status || "Chưa cập nhật";
+const STATUS_META = {
+  ACTIVE: { label: "Đang hoạt động", cls: "bg-emerald-50 text-emerald-700 border-emerald-200" },
+  PENDING: { label: "Chờ duyệt", cls: "bg-amber-50 text-amber-700 border-amber-200" },
+  REJECTED: { label: "Bị từ chối", cls: "bg-red-50 text-red-700 border-red-200" },
+  CLOSED: { label: "Đã đóng", cls: "bg-slate-100 text-slate-600 border-slate-200" },
+  EXPIRED: { label: "Hết hạn", cls: "bg-slate-100 text-slate-600 border-slate-200" },
+  NEEDS_REVISION: { label: "Cần chỉnh sửa", cls: "bg-orange-50 text-orange-700 border-orange-200" },
+  SUSPENDED: { label: "Bị đình chỉ", cls: "bg-red-50 text-red-700 border-red-200" },
 };
 
 export const JobDetailDialog = ({ job, open, onClose, onAction }) => {
   if (!job) return null;
 
-  const techList = Array.isArray(job.skills) 
-    ? job.skills 
-    : (typeof job.skills === 'string' ? job.skills.split(',').map(t => t.trim()) : []);
+  const techList = Array.isArray(job.skills)
+    ? job.skills
+    : typeof job.skills === "string"
+      ? job.skills.split(",").map((t) => t.trim()).filter(Boolean)
+      : [];
 
   const formatSalary = () => {
     if (job.salaryType === "NEGOTIABLE" || (!job.minSalary && !job.maxSalary)) return "Thỏa thuận";
@@ -79,175 +91,198 @@ export const JobDetailDialog = ({ job, open, onClose, onAction }) => {
     const max = job.maxSalary ? `${job.maxSalary.toLocaleString()}đ` : "?";
     return `${min} - ${max}`;
   };
+
   const aiReview = getAiReview(job);
+  const statusMeta = STATUS_META[job.status] || { label: job.status || "Chưa cập nhật", cls: "bg-slate-100 text-slate-600 border-slate-200" };
+
+  // Risk color
+  const riskClass =
+    typeof aiReview.score === "number"
+      ? aiReview.score > 0.7
+        ? "bg-red-50 text-red-600 border-red-200"
+        : aiReview.score > 0.4
+          ? "bg-amber-50 text-amber-700 border-amber-200"
+          : "bg-emerald-50 text-emerald-700 border-emerald-200"
+      : "bg-slate-50 text-slate-600 border-slate-200";
 
   return (
-    <Dialog open={open} onClose={onClose} title="Chi tiết tuyển dụng" maxWidth="3xl">
-      <div className="space-y-8 py-2">
-        {/* Header Section */}
-        <div className="relative">
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-            <div className="space-y-1.5">
+    <Dialog open={open} onClose={onClose} title="Chi tiết tuyển dụng">
+      <div className="space-y-4">
+        {/* Header — compact, brand-aligned */}
+        <div className="relative overflow-hidden rounded-2xl border border-[#3AB4E6]/20 bg-gradient-to-br from-[#3AB4E6]/5 via-white to-white p-5">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+            <div className="space-y-1.5 min-w-0">
               <div className="flex flex-wrap items-center gap-2">
-                <Badge variant={job.status === "ACTIVE" ? "success" : job.status === "PENDING" ? "warning" : "danger"} className="px-3 py-1 text-[10px] font-bold tracking-widest uppercase">
-                  {getJobStatusLabel(job.status)}
-                </Badge>
+                <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider border ${statusMeta.cls}`}>
+                  {statusMeta.label}
+                </span>
                 {job.featured && (
-                  <Badge variant="sky" className="bg-amber-50 text-amber-600 border-amber-100 px-3 py-1 text-[10px] font-bold tracking-widest uppercase">
-                    FEATURED
-                  </Badge>
+                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider border bg-amber-50 text-amber-700 border-amber-200">
+                    Nổi bật
+                  </span>
                 )}
               </div>
-              <h3 className="text-2xl font-black tracking-tight text-slate-900 lg:text-3xl">{job.position}</h3>
-              <p className="flex items-center gap-2 text-sm font-semibold text-sky-600">
+              <h3 className="text-xl md:text-2xl font-black tracking-tight text-slate-900 leading-tight">
+                {job.position || job.title}
+              </h3>
+              <p className="flex items-center gap-1.5 text-sm font-semibold text-[#3AB4E6]">
                 <Briefcase className="h-3.5 w-3.5" />
-                {job.companyName || job.company}
+                {job.companyName || job.company || "—"}
               </p>
             </div>
-            
-            <div className="flex flex-col gap-2 shrink-0 sm:text-right">
-              <div className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Ngày đăng</div>
-              <div className="flex items-center gap-2 text-sm font-bold text-slate-700 sm:justify-end">
-                <Calendar className="h-4 w-4 text-sky-500" />
-                {job.createdAt ? new Date(job.createdAt).toLocaleDateString('vi-VN') : "---"}
+
+            <div className="flex flex-row sm:flex-col gap-3 sm:gap-1 sm:text-right shrink-0">
+              <div>
+                <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Ngày đăng</div>
+                <div className="text-sm font-bold text-slate-700">
+                  {job.createdAt ? new Date(job.createdAt).toLocaleDateString("vi-VN") : "—"}
+                </div>
               </div>
             </div>
           </div>
         </div>
 
-        <div className="rounded-2xl border border-slate-100 bg-slate-50/60 p-5">
-          <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+        {/* AI Review — compact card */}
+        <div className="rounded-2xl border border-slate-100 bg-white p-4">
+          <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
             <div className="flex items-center gap-2">
-              <Badge variant={getAiReviewVariant(aiReview.status)}>
-                {getAiReviewLabel(aiReview.status)}
-              </Badge>
+              {(() => {
+                const AiIcon = AI_ICON_MAP[getAiReviewIconName(aiReview.status)] || CircleHelp;
+                return (
+                  <Badge variant={getAiReviewVariant(aiReview.status)}>
+                    <span className="inline-flex items-center gap-1">
+                      <AiIcon className="w-3 h-3" />
+                      {getAiReviewLabel(aiReview.status)}
+                    </span>
+                  </Badge>
+                );
+              })()}
               {typeof aiReview.score === "number" && (
-                <span className="text-xs font-bold text-slate-500">
-                  Điểm rủi ro: {Math.round(aiReview.score * 100)}%
+                <span className={`text-[11px] font-bold px-2 py-0.5 rounded-full border ${riskClass}`}>
+                  Rủi ro: {Math.round(aiReview.score * 100)}%
+                </span>
+              )}
+              {aiReview._isFake && (
+                <span className="text-[10px] font-bold bg-slate-100 text-slate-500 px-2 py-0.5 rounded-full uppercase tracking-wide">
+                  Demo
                 </span>
               )}
             </div>
-            <div className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-widest text-slate-400">
-              <ShieldCheck className="h-4 w-4 text-sky-500" />
+            <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-widest text-slate-400">
+              <ShieldCheck className="h-3.5 w-3.5 text-[#3AB4E6]" />
               Kết quả AI
             </div>
           </div>
 
-          <div className="relative overflow-hidden rounded-xl bg-white p-4 shadow-sm border border-slate-100">
-            <div className="absolute top-0 right-0 p-2 opacity-5">
-              <ShieldCheck className="h-12 w-12" />
-            </div>
-            
-            <p className="text-sm leading-relaxed text-slate-700 whitespace-pre-line font-medium italic">
+          <div className="rounded-xl bg-slate-50 px-3 py-2.5 border border-slate-100">
+            <p className="text-[13px] leading-relaxed text-slate-700 whitespace-pre-line">
               {getAiReviewSummary(job)}
             </p>
-
-            {aiReview.sensitiveTerms.length > 0 && (
-              <div className="mt-3 flex flex-wrap gap-2">
-                {aiReview.sensitiveTerms.map((term) => (
-                  <Badge key={term} variant="danger" className="rounded-md">
-                    {term}
-                  </Badge>
-                ))}
-              </div>
-            )}
           </div>
 
+          {aiReview.sensitiveTerms?.length > 0 && (
+            <div className="mt-3">
+              <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-1.5">Từ khóa bị gắn cờ</p>
+              <div className="flex flex-wrap gap-1.5">
+                {aiReview.sensitiveTerms.map((term) => (
+                  <span key={term} className="px-2 py-0.5 rounded-md bg-red-50 text-red-600 border border-red-200 text-[11px] font-semibold">
+                    {term}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+
           {(aiReview.cleanedTitle || aiReview.cleanedDescription) && (
-            <div className="mt-4 rounded-xl bg-emerald-50/30 p-4 text-sm text-slate-600 border border-emerald-100">
-              <p className="mb-1 font-bold text-emerald-800 flex items-center gap-2">
-                <CheckCircle2 className="h-4 w-4" />
-                Bản AI đề xuất sau khi làm sạch
+            <div className="mt-3 rounded-xl border border-emerald-100 bg-emerald-50/40 px-3 py-2.5">
+              <p className="text-[10px] font-bold uppercase tracking-widest text-emerald-700 mb-1 flex items-center gap-1">
+                <CheckCircle2 className="h-3 w-3" />
+                Bản AI đề xuất
               </p>
-              {aiReview.cleanedTitle && <p className="font-semibold">{aiReview.cleanedTitle}</p>}
+              {aiReview.cleanedTitle && <p className="text-[13px] font-semibold text-slate-700">{aiReview.cleanedTitle}</p>}
               {aiReview.cleanedDescription && (
-                <p className="mt-2 whitespace-pre-line text-slate-600 italic">"{aiReview.cleanedDescription}"</p>
+                <p className="text-[12px] text-slate-600 italic mt-1 whitespace-pre-line">"{aiReview.cleanedDescription}"</p>
               )}
             </div>
           )}
         </div>
 
-        {/* Info Grid */}
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          <InfoItem icon={DollarSign} label="Mức lương" value={formatSalary()} color="emerald" />
-          <InfoItem icon={Target} label="Cấp bậc" value={job.experienceLevel} color="indigo" />
-          <InfoItem icon={Briefcase} label="Hình thức" value={job.jobType} color="orange" />
-          <InfoItem icon={MapPin} label="Địa điểm" value={job.location} color="sky" />
-          <InfoItem icon={Calendar} label="Hạn nộp" value={job.dueDate ? new Date(job.dueDate).toLocaleDateString('vi-VN') : "Không giới hạn"} color="rose" />
-          <InfoItem icon={Users} label="Số lượng" value={job.maxAccept ? `${job.currentAccepted || 0} / ${job.maxAccept}` : "Không giới hạn"} color="slate" />
+        {/* Info Grid — compact, brand-uniform */}
+        <div className="grid grid-cols-2 lg:grid-cols-3 gap-2">
+          <InfoItem icon={DollarSign} label="Mức lương" value={formatSalary()} />
+          <InfoItem icon={Target} label="Cấp bậc" value={job.experienceLevel} />
+          <InfoItem icon={Briefcase} label="Hình thức" value={job.jobType} />
+          <InfoItem icon={MapPin} label="Địa điểm" value={job.location} />
+          <InfoItem icon={Calendar} label="Hạn nộp" value={job.dueDate ? new Date(job.dueDate).toLocaleDateString("vi-VN") : "Không giới hạn"} />
+          <InfoItem icon={Users} label="Số lượng" value={job.maxAccept ? `${job.currentAccepted || 0} / ${job.maxAccept}` : "Không giới hạn"} />
         </div>
 
         {/* Tech Stack */}
-        <div className="space-y-3">
-          <div className="flex items-center gap-2">
-            <Layers className="h-4 w-4 text-slate-400" />
-            <h4 className="text-[11px] font-bold uppercase tracking-widest text-slate-500">Tech Stack & Skills</h4>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            {techList.length > 0 ? (
-              techList.map((tech, index) => (
-                <Badge key={index} variant="sky" className="rounded-lg bg-sky-50/50 px-3 py-1.5 text-xs font-bold text-sky-700 hover:bg-sky-100 transition-colors">
+        {techList.length > 0 && (
+          <div className="rounded-xl border border-slate-100 bg-white p-4">
+            <div className="flex items-center gap-2 mb-2">
+              <Layers className="h-4 w-4 text-[#3AB4E6]" />
+              <h4 className="text-[11px] font-bold uppercase tracking-wider text-slate-700">Tech Stack & Kỹ năng</h4>
+            </div>
+            <div className="flex flex-wrap gap-1.5">
+              {techList.map((tech, index) => (
+                <span
+                  key={index}
+                  className="px-2.5 py-1 rounded-md bg-[#3AB4E6]/10 text-[#3AB4E6] border border-[#3AB4E6]/20 text-[11px] font-bold hover:bg-[#3AB4E6]/20 transition-colors"
+                >
                   {tech}
-                </Badge>
-              ))
-            ) : (
-              <span className="text-xs text-slate-400 italic">Không có yêu cầu kỹ thuật cụ thể</span>
-            )}
+                </span>
+              ))}
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Content sections */}
-        <div className="grid grid-cols-1 gap-6">
+        <div className="space-y-3">
           <ContentSection icon={Layout} title="Mô tả công việc" content={job.description} />
           <ContentSection icon={ClipboardList} title="Trách nhiệm chính" content={job.responsibilities} />
-          <ContentSection icon={ArrowRight} title="Yêu cầu ứng viên" content={job.requirements} />
+          <ContentSection icon={Target} title="Yêu cầu ứng viên" content={job.requirements} />
           <ContentSection icon={Gift} title="Quyền lợi & Phúc lợi" content={job.benefits} />
         </div>
 
-        {/* Statistics info */}
-        <div className="flex flex-wrap items-center gap-6 rounded-2xl bg-slate-900 p-6 text-white">
-          <div className="flex items-center gap-4 border-r border-white/10 pr-6">
-            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-white/10 text-sky-400">
-              <Users className="h-6 w-6" />
+        {/* Statistics — brand color, compact */}
+        <div className="grid grid-cols-2 gap-2">
+          <div className="flex items-center gap-3 rounded-xl bg-gradient-to-br from-[#3AB4E6] to-[#1F8FC9] px-4 py-3 text-white shadow-sm">
+            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-white/15">
+              <Users className="h-4 w-4" />
             </div>
             <div>
-              <p className="text-[10px] font-bold uppercase tracking-widest text-white/40">Ứng tuyển</p>
-              <p className="text-xl font-black">{job.applicationCount || 0}</p>
+              <p className="text-[10px] font-bold uppercase tracking-widest text-white/70">Ứng tuyển</p>
+              <p className="text-lg font-black leading-tight">{job.applicationCount || 0}</p>
             </div>
           </div>
-          <div className="flex items-center gap-4">
-            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-white/10 text-rose-400">
-              <Target className="h-6 w-6" />
+          <div className="flex items-center gap-3 rounded-xl bg-gradient-to-br from-slate-700 to-slate-800 px-4 py-3 text-white shadow-sm">
+            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-white/15">
+              <Eye className="h-4 w-4" />
             </div>
             <div>
-              <p className="text-[10px] font-bold uppercase tracking-widest text-white/40">Lượt xem</p>
-              <p className="text-xl font-black">{job.viewCount || 0}</p>
+              <p className="text-[10px] font-bold uppercase tracking-widest text-white/70">Lượt xem</p>
+              <p className="text-lg font-black leading-tight">{job.viewCount || 0}</p>
             </div>
           </div>
         </div>
 
         {/* Admin Actions */}
         {job.status === "PENDING" && onAction && (
-          <div className="sticky bottom-0 -mx-6 -mb-6 flex gap-3 bg-white/80 p-6 backdrop-blur-md border-t border-slate-100">
+          <div className="sticky bottom-0 -mx-6 -mb-6 flex gap-2 bg-white/95 px-6 py-4 backdrop-blur-md border-t border-slate-100">
             <button
-              onClick={() => {
-                onClose();
-                onAction(job, "approve");
-              }}
-              className="flex flex-1 items-center justify-center gap-2 rounded-2xl bg-emerald-500 py-4 text-sm font-black uppercase tracking-widest text-white shadow-xl shadow-emerald-200 transition-all hover:bg-emerald-600 hover:scale-[1.02] active:scale-[0.98]"
+              onClick={() => { onClose(); onAction(job, "approve"); }}
+              className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-emerald-500 py-3 text-sm font-bold text-white shadow-sm transition-all hover:bg-emerald-600"
             >
-              <CheckCircle2 className="h-5 w-5" />
-              Phê duyệt ngay
+              <CheckCircle2 className="h-4 w-4" />
+              Phê duyệt
             </button>
             <button
-              onClick={() => {
-                onClose();
-                onAction(job, "reject");
-              }}
-              className="flex flex-1 items-center justify-center gap-2 rounded-2xl bg-red-500 py-4 text-sm font-black uppercase tracking-widest text-white shadow-xl shadow-red-200 transition-all hover:bg-red-600 hover:scale-[1.02] active:scale-[0.98]"
+              onClick={() => { onClose(); onAction(job, "reject"); }}
+              className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-red-500 py-3 text-sm font-bold text-white shadow-sm transition-all hover:bg-red-600"
             >
-              <XCircle className="h-5 w-5" />
-              Từ chối Job
+              <XCircle className="h-4 w-4" />
+              Từ chối
             </button>
           </div>
         )}

@@ -173,7 +173,9 @@ const SearchOverlay = ({
         };
     }, [isOpen]);
 
-    const handleKeywordClick = useCallback((keyword) => {
+    const handleKeywordClick = useCallback((e, keyword) => {
+        e.preventDefault();
+        e.stopPropagation();
         searchHistoryService.saveLocal(keyword); // optimistic local; server tracks on actual /jobs/search call
         onSearch?.(keyword);
         onClose?.();
@@ -181,6 +183,7 @@ const SearchOverlay = ({
 
     const handleRemoveKeyword = useCallback(async (e, item) => {
         e.stopPropagation();
+        e.preventDefault();
         await searchHistoryService.removeOne({ id: item.id, keyword: item.keyword });
         setHistory((prev) => prev.filter((h) => h.keyword !== item.keyword));
     }, []);
@@ -190,9 +193,13 @@ const SearchOverlay = ({
         setHistory([]);
     }, []);
 
-    const handleJobClick = useCallback((job) => {
-        navigate(buildJobDetailPath(job));
+    const handleJobClick = useCallback((e, job) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const path = buildJobDetailPath(job);
         onClose?.();
+        // Use setTimeout to ensure overlay closes before navigation
+        setTimeout(() => navigate(path), 0);
     }, [navigate, onClose]);
 
     if (!isOpen) return null;
@@ -231,8 +238,9 @@ const SearchOverlay = ({
             <div className="search-overlay-scrollbar" style={{ maxHeight: '70vh', overflowY: 'auto' }}>
                 {/* Search Type Radio Section */}
                 <div className="px-5 pt-4 pb-3 border-b border-gray-100 bg-gray-50/60">
-                    <div className="flex items-center gap-1 flex-wrap">
-                        <span className="text-gray-500 text-xs font-medium mr-2">Tìm kiếm theo:</span>
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-1 flex-wrap">
+                        <span className="text-gray-500 text-xs font-medium mr-0 sm:mr-2">Tìm kiếm theo:</span>
+                        <div className="flex items-center gap-0.5">
                         {[
                             { key: 'job', label: 'Tên việc làm' },
                             { key: 'company', label: 'Tên công ty' },
@@ -260,6 +268,7 @@ const SearchOverlay = ({
                                 </span>
                             </label>
                         ))}
+                        </div>
                     </div>
                 </div>
 
@@ -291,7 +300,7 @@ const SearchOverlay = ({
                                 {history.map((item, i) => (
                                     <div
                                         key={`${item.keyword}-${item.id ?? i}`}
-                                        onClick={() => handleKeywordClick(item.keyword)}
+                                        onMouseDown={(e) => handleKeywordClick(e, item.keyword)}
                                         className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-gray-50 cursor-pointer group transition-colors"
                                     >
                                         <FaClock className="text-gray-300 group-hover:text-gray-400 shrink-0" size={12} />
@@ -299,7 +308,7 @@ const SearchOverlay = ({
                                             {item.keyword}
                                         </span>
                                         <button
-                                            onClick={(e) => handleRemoveKeyword(e, item)}
+                                            onMouseDown={(e) => handleRemoveKeyword(e, item)}
                                             className="opacity-0 group-hover:opacity-100 text-gray-300 hover:text-red-400 transition-all p-1"
                                             title="Xóa"
                                         >
@@ -340,7 +349,7 @@ const SearchOverlay = ({
                                 {suggestedJobs.map((job) => (
                                     <div
                                         key={job.id}
-                                        onClick={() => handleJobClick(job)}
+                                        onMouseDown={(e) => handleJobClick(e, job)}
                                         className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-blue-50/60 cursor-pointer group transition-colors"
                                     >
                                         <CompanyLogo

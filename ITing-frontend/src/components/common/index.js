@@ -15,6 +15,7 @@ export { default as Separator } from './Separator';
 export { default as LoadingSpinner } from './LoadingSpinner';
 export { default as ConfirmDialog } from './ConfirmDialog';
 export { default as ConfirmModal } from './ConfirmModal';
+export { default as PromptModal } from './PromptModal';
 export { default as Breadcrumb } from './Breadcrumb';
 export { default as CompanyLogo } from './CompanyLogo';
 export { default as LocationPicker } from './LocationPicker';

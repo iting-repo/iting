@@ -2,27 +2,41 @@ import React from "react";
 import Dialog from "../../../../components/common/Dialog";
 import Badge from "../../../../components/common/Badge";
 import Button from "../../../../components/common/Button";
-import { 
-  Briefcase, 
-  MapPin, 
-  DollarSign, 
-  Calendar, 
-  Target, 
-  Users, 
+import {
+  Briefcase,
+  MapPin,
+  DollarSign,
+  Calendar,
+  Target,
+  Users,
   ArrowRight,
   ClipboardList,
   Gift,
   CheckCircle2,
   XCircle,
   Layout,
-  Layers
+  Layers,
+  ShieldCheck,
+  Sparkles,
+  AlertTriangle,
+  Ban,
+  CircleHelp,
 } from "lucide-react";
 import {
   getAiReview,
   getAiReviewLabel,
   getAiReviewSummary,
   getAiReviewVariant,
+  getAiReviewIconName,
 } from "../../../../utils/jobModeration";
+
+const AI_ICON_MAP = {
+  ShieldCheck,
+  Sparkles,
+  AlertTriangle,
+  Ban,
+  CircleHelp,
+};
 
 const InfoItem = ({ icon: Icon, label, value, color = "sky" }) => (
   <div className="flex items-center gap-3 rounded-xl border border-slate-100 bg-white p-3.5 transition-all hover:border-sky-100 hover:shadow-sm">
@@ -105,9 +119,17 @@ export const JobPreviewDialog = ({ job, open, onClose, onAction }) => {
           borderColor: aiReview.status === 'APPROVED' ? '#d1fae5' : aiReview.status === 'REJECTED' ? '#fee2e2' : aiReview.status === 'NEEDS_REVIEW' ? '#fef3c7' : '#e0f2fe'
         }}>
           <div className="mb-3 flex flex-wrap items-center gap-2">
-            <Badge variant={getAiReviewVariant(aiReview.status)}>
-              {getAiReviewLabel(aiReview.status)}
-            </Badge>
+            {(() => {
+              const AiIcon = AI_ICON_MAP[getAiReviewIconName(aiReview.status)] || CircleHelp;
+              return (
+                <Badge variant={getAiReviewVariant(aiReview.status)}>
+                  <span className="inline-flex items-center gap-1">
+                    <AiIcon className="w-3 h-3" />
+                    {getAiReviewLabel(aiReview.status)}
+                  </span>
+                </Badge>
+              );
+            })()}
             {typeof aiReview.score === "number" && (
               <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${
                 aiReview.score > 0.7 ? 'bg-red-100 text-red-600' :
