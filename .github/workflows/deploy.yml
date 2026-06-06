@@ -102,6 +102,52 @@ jobs:
             docker image prune -a -f --filter "until=24h"
             docker image prune -f
 
+            # Inject/rotate Gemini API key in .env.prod (idempotent, no duplicate lines).
+            # Source: GitHub Actions secret GEMINI_API_KEY (repo Settings → Secrets → Actions).
+            # Set this in: https://github.com/iting-repo/iting/settings/secrets/actions
+            # Value: Google AI Studio API key from https://aistudio.google.com/apikey
+            if [ -z "${{ secrets.GEMINI_API_KEY }}" ]; then
+              echo "::error::GEMINI_API_KEY secret is not set in GitHub repo settings"
+              echo "::error::Go to Settings → Secrets and variables → Actions → New repository secret"
+              exit 1
+            fi
+
+            # Ensure .env.prod exists (first-time deploy may not have it).
+            # .env (base) is created by bootstrap, .env.prod is for prod-only overrides + secrets.
+            touch /opt/iting/.env.prod
+            chmod 600 /opt/iting/.env.prod
+
+            if grep -q '^GEMINI_API_KEY=' /opt/iting/.env.prod; then
+              sed -i "s|^GEMINI_API_KEY=.*|GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }}|" /opt/iting/.env.prod
+            else
+              echo "GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }}" >> /opt/iting/.env.prod
+            fi
+
+            # Also inject/rotate other Gemini-related envs from GitHub secrets (optional overrides)
+            if [ -n "${{ secrets.GEMINI_API_URL }}" ]; then
+              if grep -q '^GEMINI_API_URL=' /opt/iting/.env.prod; then
+                sed -i "s|^GEMINI_API_URL=.*|GEMINI_API_URL=${{ secrets.GEMINI_API_URL }}|" /opt/iting/.env.prod
+              else
+                echo "GEMINI_API_URL=${{ secrets.GEMINI_API_URL }}" >> /opt/iting/.env.prod
+              fi
+            fi
+
+            if [ -n "${{ secrets.GEMINI_API_MODEL }}" ]; then
+              if grep -q '^GEMINI_API_MODEL=' /opt/iting/.env.prod; then
+                sed -i "s|^GEMINI_API_MODEL=.*|GEMINI_API_MODEL=${{ secrets.GEMINI_API_MODEL }}|" /opt/iting/.env.prod
+              else
+                echo "GEMINI_API_MODEL=${{ secrets.GEMINI_API_MODEL }}" >> /opt/iting/.env.prod
+              fi
+            fi
+
+            # Verify Gemini key was injected (sanity check, don't echo the key)
+            if grep -q '^GEMINI_API_KEY=.\+' /opt/iting/.env.prod; then
+              echo "✓ GEMINI_API_KEY injected successfully (key length: $(grep '^GEMINI_API_KEY=' /opt/iting/.env.prod | sed 's/^GEMINI_API_KEY=//' | wc -c))"
+            else
+              echo "::error::GEMINI_API_KEY injection failed — key is empty in .env.prod"
+              exit 1
+            fi
+
             # Pull latest images
             BACKEND_IMAGE="${{ env.BACKEND_IMAGE }}" FRONTEND_IMAGE="${{ env.FRONTEND_IMAGE }}" docker compose \
               -f docker-compose.yml \

@@ -194,7 +194,9 @@ test.describe('Admin - các thao tác phức tạp', () => {
     });
 
     await page.goto('/admin/jobs');
-    await expect(page.getByText('Backend Engineer')).toBeVisible();
+    // Mock /admin/jobs/filter trả về chỉ job ACTIVE → trong fixture chỉ có
+    // Frontend Engineer (Backend Engineer = PENDING) nên đợi nó thay vì Backend.
+    await expect(page.getByText('Frontend Engineer')).toBeVisible();
 
     // Find the status filter select and change to "Đang hoạt động"
     const statusSelect = page.locator('select').filter({ hasText: /T.t c.|.ang ho.t .ng/i }).first();

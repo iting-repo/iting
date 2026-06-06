@@ -105,6 +105,23 @@ public class S3ServiceImpl implements S3Service {
     return String.format("cvs/user_%d/%s_%s.%s", userId, timestamp, uniqueId, fileExtension);
   }
 
+  @Override
+  public byte[] downloadFile(String s3Key) {
+    try {
+      GetObjectRequest getObjectRequest =
+          GetObjectRequest.builder().bucket(bucketName).key(s3Key).build();
+
+      return s3Client.getObjectAsBytes(getObjectRequest).asByteArray();
+
+    } catch (NoSuchKeyException e) {
+      log.error("S3 object not found: {}", s3Key);
+      throw new RuntimeException("File not found in S3: " + s3Key, e);
+    } catch (S3Exception e) {
+      log.error("Error downloading file from S3: {}", e.getMessage());
+      throw new RuntimeException("Failed to download file from S3", e);
+    }
+  }
+
   private String getFileExtension(String filename) {
     if (filename == null || !filename.contains(".")) {
       return "pdf";

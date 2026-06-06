@@ -90,13 +90,24 @@ jobs:
         # NVD_API_KEY tăng tốc 10× — đăng ký free tại
         # https://nvd.nist.gov/developers/request-an-api-key
         # Thêm secret repo: Settings → Secrets → Actions → NVD_API_KEY
-        run: mvn -B org.owasp:dependency-check-maven:12.2.2:check
-              -DfailBuildOnCVSS=9
-              -DsuppressionFile=.dependency-check-suppressions.xml
-              -DskipProvidedScope=true
-              -DknownExploitedEnabled=false
-              -DnvdApiDelay=2000
-              ${{ secrets.NVD_API_KEY != '' && format('-DnvdApiKey={0}', secrets.NVD_API_KEY) || '' }}
+        env:
+          NVD_API_KEY: ${{ secrets.NVD_API_KEY }}
+        run: |
+          EXTRA_NVD_ARG=""
+          if [ -n "${NVD_API_KEY}" ]; then
+            EXTRA_NVD_ARG="-DnvdApiKey=${NVD_API_KEY}"
+            echo "Using NVD API key for faster feed updates."
+          else
+            echo "NVD_API_KEY is empty. Feed updates may be slow."
+          fi
+
+          mvn -B org.owasp:dependency-check-maven:12.2.2:check \
+            -DfailBuildOnCVSS=9 \
+            -DsuppressionFile=.dependency-check-suppressions.xml \
+            -DskipProvidedScope=true \
+            -DknownExploitedEnabled=false \
+            -DnvdApiDelay=2000 \
+            ${EXTRA_NVD_ARG}
         continue-on-error: true
 
       - name: Upload Dependency-Check report
@@ -173,7 +184,28 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Trivy filesystem scan
+      # Cache Trivy DB (~95 MiB). Không cache = mỗi job security scan
+      # tải lại 94.7 MiB → 30-60s delay. Mặc định trivy-action dùng
+      # ~/Library/Caches/trivy (mac) / ~/.cache/trivy (linux) — runner
+      # ubuntu-latest = ~/.cache/trivy.
+      - name: Cache Trivy vulnerability DB
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/trivy
+          key: trivy-db-${{ runner.os }}-${{ hashFiles('**/trivy-action.yaml', '.github/workflows/ci.yml') }}
+          restore-keys: trivy-db-${{ runner.os }}-
+
+      # Scan fs bị throttle bởi Maven Central khi nó cố resolve tất cả
+      # pom.xml để xây dependency graph cho Java multi-module project.
+      # Mitigation:
+      #   - Bỏ --scanners secret (vuln-only) — secret scan là bottleneck 429.
+      #   - Bỏ qua toàn bộ ITing-backend: dependency-check ở job backend đã
+      #     scan Java dependency graph chuyên dụng hơn (NVD API + cache).
+      #     Nếu để Trivy scan pom.xml, nó sẽ bị Maven Central throttle 429
+      #     như log: "remote Maven repository returned 429 Too Many Requests".
+      #   - Dùng --skip-dirs để giảm footprint.
+      # Kết quả: scan fs còn ~1-2 phút thay vì 5+ phút + 429.
+      - name: Trivy filesystem scan (vuln only)
         uses: aquasecurity/trivy-action@master
         with:
           scan-type: "fs"
@@ -181,6 +213,9 @@ jobs:
           format: "sarif"
           output: "trivy-results.sarif"
           severity: "CRITICAL,HIGH"
+          scanners: "vuln"
+          skip-dirs: "node_modules,target,build,dist,.gradle,ITing-frontend/dist,ITing-backend"
+          ignorefile: ".trivyignore"
 
       - name: Upload Trivy results
         uses: github/codeql-action/upload-sarif@v4

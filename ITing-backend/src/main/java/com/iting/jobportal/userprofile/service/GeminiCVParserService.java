@@ -30,8 +30,18 @@ public class GeminiCVParserService {
   @Value("${gemini.api.url}")
   private String geminiApiUrl;
 
-  private final RestTemplate restTemplate = new RestTemplate();
+  // RestTemplate với timeout 50s (parse CV dài hơn score CV vì phải xử lý PDF text + reasoning).
+  // Default RestTemplate timeout = -1 (infinite) → dễ vượt nginx 504.
+  private final RestTemplate restTemplate = buildRestTemplate();
   private final ObjectMapper objectMapper = new ObjectMapper();
+
+  private static RestTemplate buildRestTemplate() {
+    org.springframework.http.client.SimpleClientHttpRequestFactory factory =
+            new org.springframework.http.client.SimpleClientHttpRequestFactory();
+    factory.setConnectTimeout(10_000);  // 10s cho TCP connect
+    factory.setReadTimeout(50_000);     // 50s cho response (parse CV dài)
+    return new RestTemplate(factory);
+  }
 
   public String parseCV(MultipartFile file) throws Exception {
     if (file.isEmpty()) {
@@ -98,6 +108,14 @@ public class GeminiCVParserService {
 
     Map<String, Object> requestBody = new HashMap<>();
     requestBody.put("contents", List.of(content));
+
+    // Gemini 2.5 Flash hỗ trợ responseMimeType="application/json" → output JSON thuần,
+    // không cần manual strip markdown code fences.
+    requestBody.put("generationConfig", Map.of(
+            "responseMimeType", "application/json",
+            "temperature", 0.1,
+            "maxOutputTokens", 8192
+    ));
 
     // Create headers
     HttpHeaders headers = new HttpHeaders();

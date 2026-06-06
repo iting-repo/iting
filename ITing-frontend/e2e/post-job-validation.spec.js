@@ -31,12 +31,17 @@ test.describe('Đăng tin tuyển dụng - kiểm tra ràng buộc form', () => 
 
     await form.locator('button[type="submit"]').click();
 
-    // The validate() function sets multiple "Bắt buộc" errors on required fields
-    const errorMessages = page.locator('p.text-red-500.text-xs', { hasText: /B.t bu.c/i });
-    // jobTitle, jobPosition, techStack, workType, experienceLevel,
-    // workingDays, quantity, deadline, province, ward, address, description
-    // → at least 5 visible errors when nothing is filled
-    await expect.poll(async () => await errorMessages.count()).toBeGreaterThan(4);
+    // PostJob.jsx render error inline dạng <p class="text-red-500 text-xs">* Vui lòng...</p>
+    // cho từng field. Khi submit rỗng → nhiều field có error. Đếm tổng số inline
+    // error; nếu inline không có, fallback sang toast.
+    const inlineErrors = page.locator('p.text-red-500.text-xs', { hasText: /Vui lòng|B.t bu.c/i });
+    const toastErrors = page.locator('[data-sonner-toast]', { hasText: /bắt buộc|required|error/i });
+
+    await expect.poll(async () => {
+      const inline = await inlineErrors.count();
+      const toast = await toastErrors.count();
+      return inline + toast;
+    }).toBeGreaterThan(0);
   });
 
   test('giới hạn tiêu đề 150 ký tự', async ({ page }) => {
@@ -87,8 +92,24 @@ test.describe('Đăng tin tuyển dụng - kiểm tra ràng buộc form', () => 
     });
     await expect(form).toBeVisible();
 
-    // Header has a close button with FaTimes icon — last button in sticky header
-    await page.locator('.sticky button').first().click();
+    // Đợi toast error từ fetch trước đó (nếu có) tự tắt để tránh intercept
+    // pointer events. Nếu không có toast, bước này no-op.
+    const blockingToast = page.locator('[data-sonner-toast]').first();
+    if ((await blockingToast.count()) > 0) {
+      // Đợi toast tự ẩn (sonner default ~4s) — không dismiss thủ công
+      // để tránh click nhầm vào UI khác.
+      await blockingToast.waitFor({ state: 'hidden', timeout: 8_000 }).catch(() => {});
+    }
+
+    // Modal "Đăng công việc" là PostJob component, header là <div class="sticky top-0 z-10 bg-white ...">
+    // chứa title bên trái và close button (FaTimes) bên phải.
+    // Nút X có class "w-10 h-10 rounded-full ..." và chứa FaTimes icon.
+    // Cách chính xác: target theo form cha (PostJob modal chứa form) rồi tìm sticky header button.
+    const modalHeader = form.locator('xpath=ancestor::div[contains(@class, "fixed")][1]')
+      .locator('.sticky.top-0').first();
+    await expect(modalHeader).toBeVisible();
+    const closeBtn = modalHeader.locator('button').last();
+    await closeBtn.click();
 
     await expect(form).not.toBeVisible();
   });

@@ -3,6 +3,7 @@ package com.iting.jobportal.common.service.impl;
 import com.iting.jobportal.common.service.S3Service;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.LocalDateTime;
@@ -67,6 +68,24 @@ public class LocalFileS3Service implements S3Service {
     String timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss"));
     String uniqueId = UUID.randomUUID().toString().substring(0, 8);
     return String.format("cvs/user_%d/%s_%s.%s", userId, timestamp, uniqueId, fileExtension);
+  }
+
+  @Override
+  public byte[] downloadFile(String s3Key) {
+    try {
+      Path filePath = Paths.get(UPLOAD_DIR, s3Key);
+      if (!Files.exists(filePath)) {
+        log.error("Local file not found: {}", filePath);
+        throw new RuntimeException("File not found in local storage: " + s3Key);
+      }
+      return Files.readAllBytes(filePath);
+    } catch (NoSuchFileException e) {
+      log.error("Local file not found: {}", s3Key);
+      throw new RuntimeException("File not found in local storage: " + s3Key, e);
+    } catch (IOException e) {
+      log.error("Failed to read local file: {}", s3Key, e);
+      throw new RuntimeException("Failed to read local file: " + s3Key, e);
+    }
   }
 
   private String getFileExtension(String filename) {

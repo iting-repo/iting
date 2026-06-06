@@ -26,7 +26,7 @@ import com.iting.jobportal.notification.dto.request.CreateNotificationRequest;
 import com.iting.jobportal.notification.enums.NotificationType;
 import com.iting.jobportal.notification.enums.RecipientType;
 import com.iting.jobportal.notification.service.NotificationService;
-import jakarta.transaction.Transactional;
+import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
@@ -36,6 +36,7 @@ import org.springframework.stereotype.Service;
 
 @Service
 @RequiredArgsConstructor
+@Transactional(readOnly = true)
 public class AdminCompanyServiceImpl implements AdminCompanyService {
 
   private final CompanyRepository companyRepository;
@@ -50,14 +51,14 @@ public class AdminCompanyServiceImpl implements AdminCompanyService {
   private final Optional<DistributedLockService> lockService;
 
   @Override
-  @org.springframework.transaction.annotation.Transactional(readOnly = true)
+  @Transactional(readOnly = true)
   public Page<CompanyResponse> getAllCompanies(int page, int size) {
     Pageable pageable = PageRequest.of(page, size);
     return companyRepository.findAll(pageable).map(companyMapper::toResponse);
   }
 
   @Override
-  @org.springframework.transaction.annotation.Transactional(readOnly = true)
+  @Transactional(readOnly = true)
   public CompanyResponse getCompanyDetail(Long companyId) {
     Company company =
         companyRepository
@@ -67,7 +68,7 @@ public class AdminCompanyServiceImpl implements AdminCompanyService {
   }
 
   @Override
-  @org.springframework.transaction.annotation.Transactional(readOnly = true)
+  @Transactional(readOnly = true)
   public Page<CompanyResponse> filterCompanies(
       CompanyReviewStatus status,
       VerificationLevel verificationLevel,
@@ -80,7 +81,7 @@ public class AdminCompanyServiceImpl implements AdminCompanyService {
   }
 
   @Override
-  @org.springframework.transaction.annotation.Transactional(readOnly = true)
+  @Transactional(readOnly = true)
   public Page<CompanyResponse> getPendingReviewCompanies(int page, int size) {
     Pageable pageable =
         PageRequest.of(page, size, Sort.by(Sort.Direction.ASC, "lastUpdateRequestDate"));

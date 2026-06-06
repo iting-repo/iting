@@ -5,8 +5,10 @@ import com.iting.jobportal.common.ratelimit.RateLimited;
 import com.iting.jobportal.common.service.S3Service;
 import com.iting.jobportal.job.controller.CurrentUser;
 import com.iting.jobportal.userprofile.dto.response.CVResponse;
+import com.iting.jobportal.userprofile.dto.response.CvScoreResponse;
 import com.iting.jobportal.userprofile.entity.CV;
 import com.iting.jobportal.userprofile.repository.CVRepository;
+import com.iting.jobportal.userprofile.service.CVScoringWithPdfService;
 import com.iting.jobportal.userprofile.service.CVService;
 import com.iting.jobportal.userprofile.service.GeminiCVParserService;
 import com.iting.jobportal.userprofile.service.embedding.HuggingFaceCvExtractionClient;
@@ -17,6 +19,7 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -28,9 +31,11 @@ import org.springframework.web.server.ResponseStatusException;
 @RestController
 @RequestMapping("/api/candidates/cvs")
 @RequiredArgsConstructor
+@Slf4j
 public class CVController {
 
   private final CVService cvService;
+  private final CVScoringWithPdfService cvScoringWithPdfService;
   private final GeminiCVParserService geminiCVParserService;
   private final HuggingFaceCvExtractionClient hfCvExtractionClient;
   private final CVRepository cvRepository;
@@ -183,4 +188,44 @@ public class CVController {
         .orElseGet(
             () -> ResponseEntity.status(502).body(Map.of("error", "HF AI service unavailable")));
   }
+
+    @PostMapping("/{id}/score")
+    @Operation(summary = "Chấm điểm CV bằng AI (hỗ trợ tiếng Việt / English)",
+               description = "Đánh giá chất lượng CV theo 5 tiêu chí. Ngôn ngữ đầu ra: ?lang=vi (mặc định) hoặc ?lang=en. "
+                       + "Service đọc trực tiếp PDF từ S3 và gửi tới Gemini 2.5 Flash dạng multimodal (PDF + prompt) "
+                       + "để phân tích đầy đủ cả content lẫn layout.")
+    @RateLimited(policy = RateLimitPolicy.AI_CV_SCORE, subject = "user")
+    public ResponseEntity<?> scoreCv(
+            @Parameter(hidden = true) @CurrentUser Long userId,
+            @PathVariable Long id,
+            @RequestParam(value = "lang", defaultValue = "vi") String language) {
+        if (userId == null) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Chưa đăng nhập");
+        }
+        try {
+            // Dùng service tách biệt: đọc PDF trực tiếp → multimodal Gemini → đánh giá đầy đủ
+            // 7 sections (career objectives, work experience, projects, education, skills,
+            // certifications, languages) thay vì chỉ 3 sections từ HF extraction.
+            CvScoreResponse result = cvScoringWithPdfService.scoreCvWithPdf(userId, id, language);
+            if (result == null) {
+                throw new ResponseStatusException(HttpStatus.NOT_FOUND,
+                        "CV không tồn tại hoặc không thể đọc file");
+            }
+            return ResponseEntity.ok(result);
+        } catch (org.springframework.web.server.ResponseStatusException e) {
+            // Ownership check fail hoặc CV không tồn tại (từ service layer)
+            throw e;
+        } catch (RuntimeException e) {
+            // Phân biệt lỗi "AI service down" vs các lỗi khác.
+            // Lỗi AI → 502 Bad Gateway. Lỗi khác → 500 Internal Server Error.
+            if (e.getMessage() != null && e.getMessage().contains("AI service temporarily")) {
+                log.warn("AI scoring failed for cvId={}: {}", id, e.getMessage());
+                throw new ResponseStatusException(HttpStatus.BAD_GATEWAY,
+                        "AI service tạm thời không khả dụng, vui lòng thử lại sau");
+            }
+            log.error("Unexpected error scoring cvId={}: {}", id, e.getMessage(), e);
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
+                    "Đã có lỗi xảy ra khi chấm điểm CV");
+        }
+    }
 }

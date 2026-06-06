@@ -3,7 +3,7 @@
 .env.*
 !.env.example
 !.env.local.example
-!.env.prod
+!.env.prod.example
 
 # Local RDS tunnel secrets / keys (see scripts/rds-tunnel.env.example)
 scripts/rds-tunnel.env

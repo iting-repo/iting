@@ -29,9 +29,11 @@ test.describe("Enum đăng tin tuyển dụng", () => {
     });
     await expect(form).toBeVisible();
 
-    await expect(form.locator('select[name="workType"] option')).toHaveCount(7);
-    await expect(form.locator('select[name="experienceLevel"] option')).toHaveCount(10);
-    await expect(form.locator('select[name="salaryType"] option')).toHaveCount(5);
+    await expect(form.locator('select[name="workType"] option')).toHaveCount(6);
+    // EXPERIENCE_LEVEL_OPTIONS trong PostJob.jsx hiện có 7 mục + 1 placeholder = 8 option
+    await expect(form.locator('select[name="experienceLevel"] option')).toHaveCount(8);
+    // SALARY_TYPE_OPTIONS trong PostJob.jsx hiện có 4 mục (Thỏa thuận, Theo tháng, Theo dự án, Theo giờ)
+    await expect(form.locator('select[name="salaryType"] option')).toHaveCount(4);
 
     await form.locator('select[name="workType"]').selectOption("FULL_TIME");
     await form.locator('select[name="experienceLevel"]').selectOption("SENIOR");
