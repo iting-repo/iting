@@ -119,21 +119,19 @@ const Verification = () => {
   const handleSubmitReview = async () => {
     try {
       setSubmitting(true);
-      
-      // Nếu có file mới được chọn, tải lên trước
+
+      // CHỈ lưu giấy phép vào snapshot (không tự gửi duyệt). Việc gửi duyệt gom cả
+      // thông tin + giấy phép + thỏa thuận được thực hiện 1 lần ở tab "Thông tin chung".
       if (file) {
         await companyService.uploadBusinessLicense(file);
         setFile(null);
         setFilePreviewUrl(null);
       }
-
-      // Gửi duyệt GPKD độc lập
-      await companyService.submitBusinessLicenseReview();
-      toast.success("Giấy phép kinh doanh đã được gửi đi xét duyệt!");
+      toast.success('Đã lưu giấy phép kinh doanh. Vào tab "Thông tin chung" và bấm "Gửi duyệt hồ sơ" khi đã đủ hồ sơ.');
       await fetchCompany();
     } catch (err) {
-      console.error("Lỗi gửi duyệt:", err);
-      toast.error(err?.error || err?.message || err?.response?.data?.error || err?.response?.data?.message || "Không thể gửi duyệt. Vui lòng thử lại.");
+      console.error("Lỗi lưu giấy phép:", err);
+      toast.error(err?.error || err?.message || err?.response?.data?.error || err?.response?.data?.message || "Không thể lưu. Vui lòng thử lại.");
     } finally {
       setSubmitting(false);
     }
@@ -351,8 +349,8 @@ const Verification = () => {
                 : !file && !hasUploadedLicense
                   ? "Vui lòng upload trước"
                   : file
-                    ? "Tải lên & Gửi xét duyệt"
-                    : "Gửi hồ sơ xét duyệt"}
+                    ? "Lưu giấy phép"
+                    : "Đã lưu — Lưu lại"}
           </Button>
         </div>
       </div>

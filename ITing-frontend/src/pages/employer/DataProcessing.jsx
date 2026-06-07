@@ -84,19 +84,17 @@ const DataProcessing = () => {
     try {
       setSubmitting(true);
 
-      // Upload consent vào snapshot affiliation (nếu có file mới)
+      // CHỈ lưu thỏa thuận + cam đoan vào snapshot (không tự gửi duyệt). Việc gửi duyệt
+      // gom cả thông tin + giấy phép + thỏa thuận làm 1 lần ở tab "Thông tin chung".
       if (file) {
         await affiliationService.uploadConsent(file, agreed);
       }
-
-      // Gửi duyệt — cùng 1 endpoint với license + basic info
-      await affiliationService.submitReview();
-      toast.success("Đã gửi hồ sơ (gồm văn bản thỏa thuận) cho admin xét duyệt!");
+      toast.success('Đã lưu văn bản thỏa thuận. Vào tab "Thông tin chung" và bấm "Gửi duyệt hồ sơ" khi đã đủ hồ sơ.');
       setFile(null);
       await fetchAffiliation();
     } catch (err) {
-      console.error("Lỗi:", err);
-      toast.error(err?.error || err?.message || err?.response?.data?.error || err?.response?.data?.message || "Gửi duyệt thất bại. Vui lòng thử lại.");
+      console.error("Lỗi lưu thỏa thuận:", err);
+      toast.error(err?.error || err?.message || err?.response?.data?.error || err?.response?.data?.message || "Lưu thất bại. Vui lòng thử lại.");
     } finally {
       setSubmitting(false);
     }
@@ -290,10 +288,10 @@ const DataProcessing = () => {
                 : !file && !hasUploadedConsent
                   ? "Vui lòng upload trước"
                   : !agreed
-                    ? "Tick cam đoan để gửi"
+                    ? "Tick cam đoan để lưu"
                     : file
-                      ? "Tải lên & Gửi xét duyệt"
-                      : "Gửi xét duyệt"}
+                      ? "Lưu thỏa thuận"
+                      : "Đã lưu — Lưu lại"}
           </Button>
         </div>
       </div>

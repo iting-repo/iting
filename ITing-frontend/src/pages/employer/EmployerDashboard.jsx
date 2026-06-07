@@ -7,7 +7,6 @@ import { buildEmployerJobApplicationsPath } from '../../utils/jobUrl';
 import { Breadcrumb } from '../../components/common';
 import companyService from '../../services/companyService';
 import applicationService from '../../services/applicationService';
-import { toast } from 'sonner';
 
 const EmployerDashboard = () => {
     const { t } = useTranslation();
@@ -22,31 +21,29 @@ const EmployerDashboard = () => {
 
     useEffect(() => {
         const fetchDashboardData = async () => {
-            try {
-                setLoading(true);
+            setLoading(true);
 
-                // Fetch company info, app stats, and recent jobs in parallel
-                const [companyRes, statsRes, jobsRes] = await Promise.all([
-                    companyService.getMyCompany(),
-                    applicationService.getEmployerStats(),
-                    companyService.getMyJobs(0, 5) // Get first 5 jobs for "Recent"
-                ]);
+            // HR mới chưa xác thực company → một số endpoint trả 403 (chưa có company
+            // approved) là BÌNH THƯỜNG. Dùng allSettled để 1 call lỗi không kéo sập cả
+            // dashboard và KHÔNG hiện toast lỗi — chỉ render trạng thái trống.
+            const [companyRes, statsRes, jobsRes] = await Promise.allSettled([
+                companyService.getMyCompany(),
+                applicationService.getEmployerStats(),
+                companyService.getMyJobs(0, 5), // Get first 5 jobs for "Recent"
+            ]);
 
-                console.log("Dashboard Data Loaded:", { companyRes, statsRes, jobsRes });
-
-                if (companyRes) setCompanyInfo(companyRes);
-                if (statsRes) setAppStats(statsRes);
-                if (jobsRes) {
-                    setRecentJobs(jobsRes.content || []);
-                    setTotalJobs(jobsRes.totalElements || 0);
-                }
-
-            } catch (error) {
-                console.error("Error fetching dashboard data:", error);
-                toast.error(t('manage_jobs.messages.fetch_error'));
-            } finally {
-                setLoading(false);
+            if (companyRes.status === "fulfilled" && companyRes.value) {
+                setCompanyInfo(companyRes.value);
             }
+            if (statsRes.status === "fulfilled" && statsRes.value) {
+                setAppStats(statsRes.value);
+            }
+            if (jobsRes.status === "fulfilled" && jobsRes.value) {
+                setRecentJobs(jobsRes.value.content || []);
+                setTotalJobs(jobsRes.value.totalElements || 0);
+            }
+
+            setLoading(false);
         };
 
         fetchDashboardData();

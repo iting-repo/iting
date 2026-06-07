@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { FaUser, FaGlobe, FaCog, FaPlus, FaRocket, FaSpinner, FaShieldAlt, FaFileContract, FaCheckCircle, FaArrowRight } from 'react-icons/fa';
+import { FaUser, FaGlobe, FaPlus, FaRocket, FaSpinner, FaShieldAlt, FaFileContract, FaCheckCircle, FaArrowRight } from 'react-icons/fa';
 import FoundingInfoTab from './components/FoundingInfoTab';
 import SocialMediaTab from './components/SocialMediaTab';
 import SettingsTab from './components/SettingsTab';
@@ -196,60 +196,68 @@ const CompanyProfile = () => {
     );
   }
 
+  // Tab "settings" mở từ mục "Thiết lập" ở sidebar — ẩn header/tab của Hồ sơ công ty
+  // vì nó là khu vực riêng, không thuộc luồng hồ sơ doanh nghiệp.
+  const isSettings = activeTab === 'settings';
+
   return (
     <div className="bg-white rounded-xl p-4 md:p-8 shadow-sm border border-gray-100 min-h-screen">
-      <Breadcrumb
-        rootLabel="Tổng quan"
-        rootLink="/employer/dashboard"
-        items={[{ label: 'Hồ sơ công ty' }]}
-      />
-      <h2 className="text-2xl font-bold text-gray-900 mb-1">
-        {t('company_profile.title')}
-      </h2>
-      <p className="text-gray-500 text-sm mb-6">Quản lý và cập nhật thông tin doanh nghiệp của bạn</p>
+      {!isSettings && (
+        <>
+          <Breadcrumb
+            rootLabel="Tổng quan"
+            rootLink="/employer/dashboard"
+            items={[{ label: 'Hồ sơ công ty' }]}
+          />
+          <h2 className="text-2xl font-bold text-gray-900 mb-1">
+            {t('company_profile.title')}
+          </h2>
+          <p className="text-gray-500 text-sm mb-6">Quản lý và cập nhật thông tin doanh nghiệp của bạn</p>
 
-      {/* TABS NAVIGATION */}
-      <div className="flex border-b border-gray-200 mb-8 overflow-x-auto custom-scrollbar scrollbar-hide">
-        <button
-          onClick={() => setActiveTab('founding')}
-          className={`flex items-center gap-2 px-6 py-3 font-medium text-sm transition-all border-b-2 whitespace-nowrap ${activeTab === 'founding'
-            ? 'border-[#3AB4E6] text-[#3AB4E6]'
-            : 'border-transparent text-gray-500 hover:text-gray-700'
-            }`}
-        >
-          <FaUser /> {t('company_profile.tabs.founding')}
-        </button>
+          {/* TABS NAVIGATION */}
+          <div className="flex border-b border-gray-200 mb-8 overflow-x-auto custom-scrollbar scrollbar-hide">
+            <button
+              onClick={() => setActiveTab('founding')}
+              className={`flex items-center gap-2 px-6 py-3 font-medium text-sm transition-all border-b-2 whitespace-nowrap ${activeTab === 'founding'
+                ? 'border-[#3AB4E6] text-[#3AB4E6]'
+                : 'border-transparent text-gray-500 hover:text-gray-700'
+                }`}
+            >
+              <FaUser /> {t('company_profile.tabs.founding')}
+            </button>
 
-        <button
-          onClick={() => setActiveTab('verification')}
-          className={`flex items-center gap-2 px-6 py-3 font-medium text-sm transition-all border-b-2 whitespace-nowrap ${activeTab === 'verification'
-            ? 'border-[#3AB4E6] text-[#3AB4E6]'
-            : 'border-transparent text-gray-500 hover:text-gray-700'
-            }`}
-        >
-          <FaShieldAlt /> Xác thực tài khoản
-        </button>
+            <button
+              onClick={() => setActiveTab('verification')}
+              className={`flex items-center gap-2 px-6 py-3 font-medium text-sm transition-all border-b-2 whitespace-nowrap ${activeTab === 'verification'
+                ? 'border-[#3AB4E6] text-[#3AB4E6]'
+                : 'border-transparent text-gray-500 hover:text-gray-700'
+                }`}
+            >
+              <FaShieldAlt /> Xác thực tài khoản
+            </button>
 
-        <button
-          onClick={() => setActiveTab('data-processing')}
-          className={`flex items-center gap-2 px-6 py-3 font-medium text-sm transition-all border-b-2 whitespace-nowrap ${activeTab === 'data-processing'
-            ? 'border-[#3AB4E6] text-[#3AB4E6]'
-            : 'border-transparent text-gray-500 hover:text-gray-700'
-            }`}
-        >
-          <FaFileContract /> Thỏa thuận dữ liệu
-        </button>
+            <button
+              onClick={() => setActiveTab('data-processing')}
+              className={`flex items-center gap-2 px-6 py-3 font-medium text-sm transition-all border-b-2 whitespace-nowrap ${activeTab === 'data-processing'
+                ? 'border-[#3AB4E6] text-[#3AB4E6]'
+                : 'border-transparent text-gray-500 hover:text-gray-700'
+                }`}
+            >
+              <FaFileContract /> Thỏa thuận dữ liệu
+            </button>
 
-        <button
-          onClick={() => setActiveTab('social')}
-          className={`flex items-center gap-2 px-6 py-3 font-medium text-sm transition-all border-b-2 whitespace-nowrap ${activeTab === 'social'
-            ? 'border-[#3AB4E6] text-[#3AB4E6]'
-            : 'border-transparent text-gray-500 hover:text-gray-700'
-            }`}
-        >
-          <FaGlobe /> {t('company_profile.tabs.social')}
-        </button>
-      </div>
+            <button
+              onClick={() => setActiveTab('social')}
+              className={`flex items-center gap-2 px-6 py-3 font-medium text-sm transition-all border-b-2 whitespace-nowrap ${activeTab === 'social'
+                ? 'border-[#3AB4E6] text-[#3AB4E6]'
+                : 'border-transparent text-gray-500 hover:text-gray-700'
+                }`}
+            >
+              <FaGlobe /> {t('company_profile.tabs.social')}
+            </button>
+          </div>
+        </>
+      )}
 
       {/* TAB CONTENT */}
       <div className="animate-fade-in">

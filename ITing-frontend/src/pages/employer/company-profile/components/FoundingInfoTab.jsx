@@ -22,6 +22,14 @@ import axiosInstance from "../../../../utils/axiosInstance";
 import { Upload, AlertTriangle as LuAlertTriangle, FileText, CheckCircle as LuCheckCircle, Download } from "lucide-react";
 
 const STATUS_CONFIG = {
+  NONE: {
+    label: "Chưa gửi duyệt",
+    className: "bg-gray-50 text-gray-600 border-gray-200",
+  },
+  INCOMPLETE: {
+    label: "Đang chuẩn bị hồ sơ",
+    className: "bg-blue-50 text-blue-600 border-blue-200",
+  },
   PENDING_REVIEW: {
     label: "Đang chờ admin duyệt",
     className: "bg-amber-50 text-amber-700 border-amber-200",
@@ -324,36 +332,37 @@ const FoundingInfoTab = ({ onTabChange }) => {
     fetchData();
   }, []);
 
+  // Tiến độ xác thực dựa trên TRẠNG THÁI ĐƠN của HR (affiliation), không dùng
+  // verificationLevel làm proxy — nếu không bước "info" sẽ tự tick xanh khi company
+  // đang BASIC dù đơn của HR mới tạo và chưa được admin duyệt.
+  //   'done'    = admin đã duyệt (xác thực chính thức)
+  //   'pending' = HR đã cung cấp, đang chờ admin duyệt
+  //   'todo'    = HR chưa cung cấp
   const verificationSteps = useMemo(() => {
-    return [
-      {
-        id: 'phone',
-        label: "Xác thực số điện thoại",
-        done: company?.phone && (
-          verificationLevel === "BASIC" ||
-          verificationLevel === "ADVANCED" ||
-          verificationLevel === "VERIFIED"
-        ),
-      },
-      {
-        id: 'info',
-        label: "Cập nhật thông tin công ty",
-        done: company?.companyInfoUpdateStatus === 'APPROVED' ||
-          verificationLevel === "BASIC" ||
-          verificationLevel === "ADVANCED" ||
-          verificationLevel === "VERIFIED",
-      },
-      {
-        id: 'license',
-        label: "Xác thực Giấy đăng ký doanh nghiệp",
-        done: company?.documentReviewStatus === 'APPROVED' ||
-          verificationLevel === "ADVANCED" ||
-          verificationLevel === "VERIFIED",
-      },
-    ];
-  }, [verificationLevel, company]);
+    const affApproved =
+      affiliation?.status === 'APPROVED' && affiliation?.submissionStatus === 'APPROVED';
 
-  const completedCount = verificationSteps.filter((item) => item.done).length;
+    const infoSubmitted = !!(
+      affiliation?.submittedName &&
+      affiliation?.submittedCompanyEmail &&
+      affiliation?.submittedPhone &&
+      affiliation?.submittedAddress
+    );
+    const licenseSubmitted = !!affiliation?.submittedLicenseUrl;
+    const consentSubmitted =
+      !!affiliation?.submittedConsentUrl && !!affiliation?.submittedConsentConfirmed;
+
+    const stateOf = (submitted) =>
+      submitted && affApproved ? 'done' : submitted ? 'pending' : 'todo';
+
+    return [
+      { id: 'info', label: "Cập nhật thông tin công ty", state: stateOf(infoSubmitted) },
+      { id: 'license', label: "Xác thực Giấy đăng ký doanh nghiệp", state: stateOf(licenseSubmitted) },
+      { id: 'consent', label: "Thỏa thuận xử lý dữ liệu cá nhân", state: stateOf(consentSubmitted) },
+    ];
+  }, [affiliation]);
+
+  const completedCount = verificationSteps.filter((item) => item.state === 'done').length;
   const percentage = Math.round(
     (completedCount / verificationSteps.length) * 100,
   );
@@ -492,15 +501,12 @@ const FoundingInfoTab = ({ onTabChange }) => {
         logoUrl: requestForm.logoUrl,
       };
 
+      // CHỈ lưu snapshot — KHÔNG auto gửi duyệt. Đơn ở trạng thái chuẩn bị (pending),
+      // HR tiếp tục tải lên Giấy phép KD + Thỏa thuận DLCN rồi mới bấm "Gửi duyệt hồ sơ".
       await affiliationService.updateBasicInfo(payload);
 
-      // Sau khi cập nhật snapshot xong, gửi luôn cho admin duyệt.
-      await affiliationService.submitReview();
-
       toast.success(
-        affiliation?.isInfoSource
-          ? "Đã gửi yêu cầu cập nhật. Vui lòng gọi tổng đài để admin duyệt thay đổi info hiển thị."
-          : "Đã gửi yêu cầu xác thực tới admin.",
+        'Đã lưu thông tin công ty. Tiếp tục tải lên Giấy phép kinh doanh và Thỏa thuận dữ liệu, sau đó bấm "Gửi duyệt hồ sơ" để admin xác thực.',
       );
       setShowRequestModal(false);
       await fetchData();
@@ -654,15 +660,14 @@ const FoundingInfoTab = ({ onTabChange }) => {
 
   const handleStepAction = (index) => {
     switch (index) {
-      case 0:
-        onTabChange?.('settings');
-        // Scroll to phone section if possible or just switch tab
-        break;
-      case 1:
+      case 0: // Thông tin công ty
         openCreateRequestModal();
         break;
-      case 2:
+      case 1: // Giấy đăng ký doanh nghiệp
         onTabChange?.('verification');
+        break;
+      case 2: // Thỏa thuận dữ liệu cá nhân
+        onTabChange?.('data-processing');
         break;
       default:
         break;
@@ -888,9 +893,9 @@ const FoundingInfoTab = ({ onTabChange }) => {
 
       <ReasonModal
         isOpen={showReasonModal}
-        reason={company?.statusReason}
+        reason={affiliation?.submissionRejectReason || company?.statusReason}
         onClose={() => setShowReasonModal(false)}
-        status={company?.companyInfoUpdateStatus}
+        status={affiliation?.submissionStatus || company?.companyInfoUpdateStatus}
       />
 
       {/* Phase 5: banner cảnh báo cho HR đến sau (không phải info source) */}
@@ -967,26 +972,43 @@ const FoundingInfoTab = ({ onTabChange }) => {
         </div>
 
         <div className="mt-8 divide-y divide-green-100/50">
-          {verificationSteps.map((step, index) => (
+          {verificationSteps.map((step, index) => {
+            const isDone = step.state === 'done';
+            const isPending = step.state === 'pending';
+            return (
             <div
-              key={index}
+              key={step.id}
               onClick={() => handleStepAction(index)}
               className="group flex items-center justify-between py-4 cursor-pointer transition-all hover:translate-x-1"
             >
               <div className="flex items-center gap-4">
-                <div className={`flex h-6 w-6 items-center justify-center rounded-full ${step.done ? 'bg-green-500 text-white' : 'border-2 border-gray-300 bg-white text-transparent'
-                  }`}>
-                  <FaCheckCircle className="text-lg" />
+                <div className={`flex h-6 w-6 items-center justify-center rounded-full ${
+                  isDone
+                    ? 'bg-green-500 text-white'
+                    : isPending
+                      ? 'border-2 border-amber-300 bg-amber-50 text-amber-500'
+                      : 'border-2 border-gray-300 bg-white text-transparent'
+                }`}>
+                  {isPending ? <FaClock className="text-[11px]" /> : <FaCheckCircle className="text-lg" />}
                 </div>
-                <span className={`text-sm font-medium transition-colors ${step.done ? "text-gray-400 line-through" : "text-gray-700 group-hover:text-green-600"}`}>
-                  {step.label}
-                </span>
+                <div className="flex flex-col">
+                  <span className={`text-sm font-medium transition-colors ${isDone ? "text-gray-400 line-through" : "text-gray-700 group-hover:text-green-600"}`}>
+                    {step.label}
+                  </span>
+                  {isPending && (
+                    <span className="text-[11px] font-semibold text-amber-600">Đã cung cấp · chờ admin duyệt</span>
+                  )}
+                  {step.state === 'todo' && (
+                    <span className="text-[11px] text-gray-400">Chưa cung cấp</span>
+                  )}
+                </div>
               </div>
               <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-white/50 text-gray-400 opacity-0 transition-all group-hover:opacity-100 group-hover:shadow-sm">
                 <FaArrowRight className="text-xs group-hover:text-green-500" />
               </div>
             </div>
-          ))}
+            );
+          })}
         </div>
       </div>
       )}
@@ -1010,13 +1032,16 @@ const FoundingInfoTab = ({ onTabChange }) => {
             <p className="mt-1 text-sm text-gray-500">Thông tin hiển thị bên dưới là dữ liệu cuối cùng đã được duyệt.</p>
           </div>
           <div className="flex flex-col sm:flex-row gap-2 w-full md:w-auto">
-            {(company?.companyInfoUpdateStatus === 'DRAFT' || company?.companyInfoUpdateStatus === 'REJECTED' || company?.companyInfoUpdateStatus === 'NEEDS_RESUBMISSION') && (
+            {/* Gửi duyệt: gom thông tin + giấy phép + thỏa thuận thành 1 đơn tới admin.
+                Hiện khi có đơn và đơn KHÔNG đang chờ duyệt. Backend validate đủ 3 phần;
+                nếu thiếu, toast sẽ chỉ rõ phần còn thiếu. */}
+            {affiliation && affiliation.submissionStatus !== 'PENDING_REVIEW' && (
               <button
                 type="button"
                 onClick={async () => {
                   try {
                     setLoading(true);
-                    await companyService.submitInfoReview();
+                    await affiliationService.submitReview();
                     toast.success("Hồ sơ đã được gửi đi. Vui lòng chờ Admin xét duyệt.");
                     await fetchData();
                   } catch (error) {
@@ -1055,8 +1080,8 @@ const FoundingInfoTab = ({ onTabChange }) => {
             <span className="text-sm font-medium text-gray-700">Trạng thái hiện tại</span>
           </div>
           <StatusBadge
-            status={company?.companyInfoUpdateStatus}
-            hasReason={!!company?.statusReason && ['REJECTED', 'SUSPENDED', 'NEEDS_RESUBMISSION'].includes(company?.companyInfoUpdateStatus)}
+            status={affiliation?.submissionStatus || company?.companyInfoUpdateStatus}
+            hasReason={!!affiliation?.submissionRejectReason}
             onClick={() => setShowReasonModal(true)}
           />
         </div>

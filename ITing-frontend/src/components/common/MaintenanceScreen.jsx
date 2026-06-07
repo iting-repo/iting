@@ -1,8 +1,10 @@
 import React from 'react';
+import maintenanceImg from '../../assets/maintainance_status.png';
 
 /**
  * Màn hình toàn trang hiển thị khi hệ thống đang bảo trì (cho user thường).
  * Admin được bỏ qua màn hình này (xử lý ở App.jsx) để vẫn truy cập trang quản trị.
+ * Hiển thị ảnh bảo trì (đã chứa sẵn thông điệp).
  */
 const MaintenanceScreen = ({ message }) => (
   <div
@@ -11,42 +13,32 @@ const MaintenanceScreen = ({ message }) => (
       inset: 0,
       zIndex: 99999,
       display: 'flex',
+      flexDirection: 'column',
       alignItems: 'center',
       justifyContent: 'center',
-      padding: 20,
-      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+      gap: 16,
+      padding: 24,
+      background: '#ffffff',
     }}
   >
-    <div
-      style={{
-        background: '#fff',
-        borderRadius: 20,
-        padding: '56px 40px',
-        textAlign: 'center',
-        maxWidth: 480,
-        boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)',
-      }}
-    >
-      <div
+    <img
+      src={maintenanceImg}
+      alt="Hệ thống đang bảo trì"
+      style={{ maxWidth: 'min(90vw, 560px)', width: '100%', height: 'auto' }}
+    />
+    {message ? (
+      <p
         style={{
-          width: 44,
-          height: 44,
-          margin: '0 auto 20px',
-          border: '4px solid #e2e8f0',
-          borderTopColor: '#667eea',
-          borderRadius: '50%',
-          animation: 'iting-spin 1s linear infinite',
+          color: '#4a5568',
+          fontSize: 16,
+          lineHeight: 1.6,
+          textAlign: 'center',
+          maxWidth: 520,
         }}
-      />
-      <h1 style={{ color: '#1a202c', fontSize: 26, fontWeight: 700, marginBottom: 14 }}>
-        Đang bảo trì
-      </h1>
-      <p style={{ color: '#4a5568', fontSize: 16, lineHeight: 1.6, marginBottom: 24 }}>
-        {message || 'Hệ thống đang bảo trì. Vui lòng quay lại sau.'}
+      >
+        {message}
       </p>
-      <div style={{ color: '#a0aec0', fontSize: 14 }}>ITing Vietnam</div>
-      <style>{`@keyframes iting-spin { to { transform: rotate(360deg); } }`}</style>
-    </div>
+    ) : null}
   </div>
 );
 

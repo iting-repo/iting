@@ -57,7 +57,12 @@ function* hydrateUserProfile(baseUser) {
             });
         }
     } catch (error) {
-        console.warn('Hydrate user profile warning:', error);
+        // HR mới chưa xác thực company → /companies/me trả 403/400/404 là BÌNH THƯỜNG.
+        // Không log như cảnh báo để tránh gây hiểu nhầm là lỗi hệ thống.
+        const status = error?.httpStatus || error?.response?.status;
+        if (![400, 403, 404].includes(status)) {
+            console.warn('Hydrate user profile warning:', error);
+        }
     }
 
     return buildFallbackUser(baseUser);
