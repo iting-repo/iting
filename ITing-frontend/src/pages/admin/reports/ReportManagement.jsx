@@ -1,14 +1,18 @@
 import React, { useState, useMemo, useEffect } from "react";
 import {
   Card, CardContent, CardHeader, CardTitle, CardDescription,
-  Badge, Button, Select, Table, Td, Input, Textarea, Dialog, StatsCard, Pagination
+  Badge, Button, Table, Td, Textarea, Dialog, Pagination, PageHeader
 } from "../../../components/common";
+import { StatCard } from "../../../components/admin/StatCard";
+import {
+  AdminFilterBar, AdminSearchInput, adminSelectClass, AdminResetButton
+} from "../../../components/admin/AdminFilterBar";
 import {
   PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer, AreaChart, Area, XAxis, YAxis, CartesianGrid
 } from "recharts";
 import {
   AlertTriangle, Ban, Building2, CircleCheck, Clock, Download, Eye,
-  FileText, Flag, MessageSquare, Search, Shield, ThumbsDown, TrendingDown,
+  FileText, Flag, MessageSquare, Shield, ThumbsDown, TrendingDown,
   TrendingUp, UserX, Users, CircleX, Filter, Calendar, BarChart3, PieChart as PieChartIcon,
   MoreVertical
 } from "lucide-react";
@@ -337,41 +341,44 @@ const ReportManagement = () => {
   return (
     <div className="p-6 space-y-6 bg-slate-50 min-h-screen">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-black text-slate-900 tracking-tight">Báo cáo vi phạm</h1>
-          <p className="text-slate-500 text-sm font-medium mt-1">Quản lý và xử lý các báo cáo vi phạm từ người dùng</p>
-        </div>
-        <Button variant="outline" className="gap-2 bg-white border-slate-200 self-start sm:self-auto" onClick={fetchReports}>
-          <Calendar className="w-4 h-4" /> Làm mới dữ liệu
+      <PageHeader
+        title="Báo cáo vi phạm"
+        description="Quản lý và xử lý các báo cáo vi phạm từ người dùng."
+      >
+        <Button
+          variant="outline"
+          className="flex items-center gap-2 border-slate-200 font-medium text-slate-600 hover:bg-slate-50"
+          onClick={fetchReports}
+        >
+          <Calendar className="h-4 w-4" /> Làm mới dữ liệu
         </Button>
-      </div>
+      </PageHeader>
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <StatsCard
-          title="Chờ xử lý"
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <StatCard
+          label="Chờ xử lý"
           value={stats?.pendingReports || 0}
-          icon={<Clock className="w-5 h-5" />}
-          color="yellow"
+          accent="amber"
+          icon={<Clock className="h-5 w-5" strokeWidth={2} />}
         />
-        <StatsCard
-          title="Nghiêm trọng"
+        <StatCard
+          label="Nghiêm trọng"
           value={stats?.criticalReports || 0}
-          icon={<AlertTriangle className="w-5 h-5" />}
-          color="red"
+          accent="red"
+          icon={<AlertTriangle className="h-5 w-5" strokeWidth={2} />}
         />
-        <StatsCard
-          title="Đã xử lý tuần này"
+        <StatCard
+          label="Đã xử lý tuần này"
           value={stats?.resolvedThisWeek || 0}
-          icon={<CircleCheck className="w-5 h-5" />}
-          color="green"
+          accent="emerald"
+          icon={<CircleCheck className="h-5 w-5" strokeWidth={2} />}
         />
-        <StatsCard
-          title="Tổng báo cáo"
+        <StatCard
+          label="Tổng báo cáo"
           value={stats?.totalReports || 0}
-          icon={<FileText className="w-5 h-5" />}
-          color="blue"
+          accent="blue"
+          icon={<FileText className="h-5 w-5" strokeWidth={2} />}
         />
       </div>
 
@@ -396,53 +403,47 @@ const ReportManagement = () => {
       {activeTab === "list" ? (
         <div className="space-y-4">
           {/* Filters */}
-          <Card className="border border-slate-100 shadow-sm">
-            <div className="flex flex-col gap-3 p-4 lg:flex-row lg:items-center">
-              <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-slate-400" />
-                <Input
-                  className="pl-9 h-10"
-                  placeholder="Tìm theo ID, tên đối tượng..."
-                  value={search}
-                  onChange={e => setSearch(e.target.value)}
-                  onKeyDown={e => e.key === "Enter" && setKeyword(search)}
-                />
-              </div>
+          <AdminFilterBar>
+            <AdminSearchInput
+              placeholder="Tìm theo ID, tên đối tượng..."
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              onKeyDown={e => e.key === "Enter" && setKeyword(search)}
+            />
 
-              <Select
+            <div className="flex flex-wrap items-center gap-2">
+              <select
                 value={statusFilter}
                 onChange={e => { setStatusFilter(e.target.value); setPage(1); }}
-                className="h-10 w-full lg:w-48"
+                className={adminSelectClass}
               >
                 <option value="all">Tất cả trạng thái</option>
                 {Object.entries(STATUS_MAP).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
-              </Select>
+              </select>
 
-              <Select
+              <select
                 value={categoryFilter}
                 onChange={e => { setCategoryFilter(e.target.value); setPage(1); }}
-                className="h-10 w-full lg:w-48"
+                className={adminSelectClass}
               >
                 <option value="all">Tất cả loại vi phạm</option>
                 {Object.entries(CATEGORY_MAP).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
-              </Select>
+              </select>
 
-              <Select
+              <select
                 value={targetFilter}
                 onChange={e => { setTargetFilter(e.target.value); setPage(1); }}
-                className="h-10 w-full lg:w-48"
+                className={adminSelectClass}
               >
                 <option value="all">Tất cả đối tượng</option>
                 {Object.entries(TARGET_MAP).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
-              </Select>
+              </select>
 
-              <Button className="bg-[#3AB4E6] hover:bg-[#2C9ACD] h-10 px-6" onClick={() => setKeyword(search)}>
+              <Button className="h-10 rounded-full bg-[#3AB4E6] px-5 hover:bg-[#2C9ACD]" onClick={() => setKeyword(search)}>
                 Tìm kiếm
               </Button>
 
-              <Button
-                variant="outline"
-                className="h-10 px-6"
+              <AdminResetButton
                 onClick={() => {
                   setSearch("");
                   setKeyword("");
@@ -452,11 +453,9 @@ const ReportManagement = () => {
                   setPriorityFilter("all");
                   setPage(1);
                 }}
-              >
-                Đặt lại
-              </Button>
+              />
             </div>
-          </Card>
+          </AdminFilterBar>
 
           {/* Table Container */}
           <Card className="border border-slate-100 shadow-sm !p-0 overflow-hidden bg-white">

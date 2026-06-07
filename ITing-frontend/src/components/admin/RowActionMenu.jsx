@@ -73,7 +73,11 @@ export const RowActionMenu = ({ company, onViewDetail, onAction, onViewApplicant
           e.stopPropagation();
           setOpenMenuId(isOpen ? null : id);
         }}
-        className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 transition-colors"
+        className={`inline-flex h-9 w-9 items-center justify-center rounded-lg border transition-colors ${
+          isOpen
+            ? "border-slate-300 bg-slate-100 text-slate-900"
+            : "border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:bg-slate-100 hover:text-slate-900"
+        }`}
       >
         <MoreHorizontal className="h-5 w-5" />
       </button>

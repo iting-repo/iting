@@ -10,6 +10,7 @@ import com.iting.jobportal.common.service.GeminiService;
 import com.iting.jobportal.company.entity.Company;
 import com.iting.jobportal.company.entity.enums.CompanyReviewStatus;
 import com.iting.jobportal.company.entity.enums.DocumentReviewStatus;
+import com.iting.jobportal.company.entity.enums.VerificationLevel;
 import com.iting.jobportal.company.repository.CompanyRepository;
 import com.iting.jobportal.company.service.AuthorizationService;
 import com.iting.jobportal.job.dto.request.CreateJobRequest;
@@ -37,6 +38,7 @@ class JobServiceTest {
   private Query query;
   private GeminiService geminiService;
   private AdminNotificationService adminNotificationService;
+  private com.iting.jobportal.admin.service.AdminConfigService adminConfigService;
   private JobServiceImpl jobService;
 
   @BeforeEach
@@ -49,6 +51,7 @@ class JobServiceTest {
     query = mock(Query.class);
     geminiService = mock(GeminiService.class);
     adminNotificationService = mock(AdminNotificationService.class);
+    adminConfigService = mock(com.iting.jobportal.admin.service.AdminConfigService.class);
 
     jobService =
         new JobServiceImpl(
@@ -69,7 +72,8 @@ class JobServiceTest {
             mock(
                 com.iting.jobportal.userprofile.service.embedding.HuggingFaceCvExtractionClient
                     .class),
-            mock(com.iting.jobportal.recommendation.service.RecommendationService.class));
+            mock(com.iting.jobportal.recommendation.service.RecommendationService.class),
+            adminConfigService);
 
     // entityManager is injected via @PersistenceContext, not constructor, so wire it manually.
     ReflectionTestUtils.setField(jobService, "entityManager", entityManager);
@@ -124,6 +128,74 @@ class JobServiceTest {
     // Có thể save nhiều lần (lần đầu khi tạo + lần sau cập nhật AI review status).
     verify(jobRepository, atLeastOnce()).save(any());
     verify(query, times(1)).executeUpdate();
+  }
+
+  private CreateJobRequest buildValidRequest() {
+    CreateJobRequest request = new CreateJobRequest();
+    request.setTitle("Test Job");
+    request.setPosition("Developer");
+    request.setDescription("Job description");
+    request.setProvince("TP HCM");
+    request.setAddress("123 Street");
+    request.setDueDate(java.time.LocalDate.now().plusDays(30));
+    request.setMaxAccept(10);
+    request.setMinSalary(new java.math.BigDecimal("1000"));
+    request.setMaxSalary(new java.math.BigDecimal("2000"));
+    request.setSalaryType(com.iting.jobportal.job.entity.enums.SalaryType.MONTH);
+    request.setJobType(com.iting.jobportal.job.entity.enums.JobType.FULL_TIME);
+    request.setExperienceLevel(com.iting.jobportal.job.entity.enums.ExperienceLevel.JUNIOR);
+    return request;
+  }
+
+  @Test
+  void createJob_verifiedCompany_autoApproveOn_jobIsActive() {
+    testCompany.setVerificationLevel(VerificationLevel.ADVANCED);
+    when(authz.requireApprovedCompanyOf(employerId)).thenReturn(testCompany.getId());
+    when(companyRepository.findById(testCompany.getId())).thenReturn(Optional.of(testCompany));
+    when(entityManager.createNativeQuery(anyString())).thenReturn(query);
+    when(query.setParameter(anyString(), any())).thenReturn(query);
+    when(adminConfigService.getConfig())
+        .thenReturn(
+            com.iting.jobportal.admin.entity.SystemConfig.builder()
+                .autoApproveVerified(true)
+                .build());
+    // save trả về job ACTIVE để bỏ qua nhánh autoAiReview (chỉ chạy khi PENDING)
+    when(jobRepository.save(any(Job.class)))
+        .thenReturn(Job.builder().id(1L).company(testCompany).status(JobStatus.ACTIVE).build());
+
+    jobService.createJob(employerId, buildValidRequest());
+
+    org.mockito.ArgumentCaptor<Job> captor = org.mockito.ArgumentCaptor.forClass(Job.class);
+    verify(jobRepository, atLeastOnce()).save(captor.capture());
+    assertEquals(
+        JobStatus.ACTIVE,
+        captor.getAllValues().get(0).getStatus(),
+        "Công ty ADVANCED + autoApproveVerified=true → job ACTIVE ngay");
+  }
+
+  @Test
+  void createJob_verifiedCompany_autoApproveOff_jobIsPending() {
+    testCompany.setVerificationLevel(VerificationLevel.ADVANCED);
+    when(authz.requireApprovedCompanyOf(employerId)).thenReturn(testCompany.getId());
+    when(companyRepository.findById(testCompany.getId())).thenReturn(Optional.of(testCompany));
+    when(entityManager.createNativeQuery(anyString())).thenReturn(query);
+    when(query.setParameter(anyString(), any())).thenReturn(query);
+    when(adminConfigService.getConfig())
+        .thenReturn(
+            com.iting.jobportal.admin.entity.SystemConfig.builder()
+                .autoApproveVerified(false)
+                .build());
+    when(jobRepository.save(any(Job.class)))
+        .thenReturn(Job.builder().id(1L).company(testCompany).status(JobStatus.ACTIVE).build());
+
+    jobService.createJob(employerId, buildValidRequest());
+
+    org.mockito.ArgumentCaptor<Job> captor = org.mockito.ArgumentCaptor.forClass(Job.class);
+    verify(jobRepository, atLeastOnce()).save(captor.capture());
+    assertEquals(
+        JobStatus.PENDING,
+        captor.getAllValues().get(0).getStatus(),
+        "autoApproveVerified=false → job vẫn PENDING chờ duyệt");
   }
 
   @Test

@@ -31,18 +31,38 @@ const AI_ICON_MAP = {
   CircleHelp,
 };
 
-const getJobStatusLabel = (status) => {
-  const map = {
-    ACTIVE: "Đang hoạt động",
-    PENDING: "Chờ duyệt",
-    REJECTED: "Bị từ chối",
-    CLOSED: "Đã đóng",
-    EXPIRED: "Hết hạn",
-    NEEDS_REVISION: "Cần chỉnh sửa",
-    SUSPENDED: "Bị đình chỉ",
-  };
+const JOB_STATUS_META = {
+  ACTIVE: { label: "Đang hoạt động", variant: "success" },
+  PENDING: { label: "Chờ duyệt", variant: "warning" },
+  REJECTED: { label: "Bị từ chối", variant: "danger" },
+  CLOSED: { label: "Đã đóng", variant: "default" },
+  EXPIRED: { label: "Hết hạn", variant: "danger" },
+  NEEDS_REVISION: { label: "Cần chỉnh sửa", variant: "warning" },
+  SUSPENDED: { label: "Bị đình chỉ", variant: "warning" },
+};
 
-  return map[status] || status || "Chưa cập nhật";
+const getJobStatusMeta = (status) =>
+  JOB_STATUS_META[status] || { label: status || "Chưa cập nhật", variant: "default" };
+
+const JOB_TYPE_LABELS = {
+  FULL_TIME: "Toàn thời gian",
+  PART_TIME: "Bán thời gian",
+  INTERNSHIP: "Thực tập",
+  CONTRACT: "Hợp đồng",
+  FREELANCE: "Freelance",
+  REMOTE: "Remote",
+};
+
+// "Đăng x ngày trước" từ ngày tạo (nếu API trả về). An toàn nếu thiếu field.
+const formatPostedAgo = (raw) => {
+  if (!raw) return null;
+  const d = new Date(raw);
+  if (Number.isNaN(d.getTime())) return null;
+  const diffDays = Math.floor((Date.now() - d.getTime()) / 86400000);
+  if (diffDays <= 0) return "Đăng hôm nay";
+  if (diffDays === 1) return "Đăng hôm qua";
+  if (diffDays < 30) return `Đăng ${diffDays} ngày trước`;
+  return `Đăng ${d.toLocaleDateString("vi-VN")}`;
 };
 
 export const JobTable = ({
@@ -98,7 +118,7 @@ export const JobTable = ({
   return (
     <Table
       className="overflow-x-auto custom-scrollbar"
-      tableClassName="[&_th]:!p-3 [&_td]:!p-3 text-[13px]"
+      tableClassName="[&_th]:!px-4 [&_th]:!py-3.5 [&_td]:!px-4 [&_td]:!py-4 text-[13px] [&_tbody_tr:nth-child(even)]:bg-slate-50/40"
       headers={[
         {
           label: (
@@ -160,12 +180,24 @@ export const JobTable = ({
 
               <Td>
                 <button
-                  className="font-bold text-blue-600 hover:text-blue-800 transition-colors text-left line-clamp-2"
+                  className="text-left font-semibold text-[15px] leading-snug text-blue-600 transition-colors hover:text-blue-800 line-clamp-2"
                   onClick={() => onPreview(job)}
                   title={job.title || job.position}
                 >
                   {job.title || job.position}
                 </button>
+                {(() => {
+                  // Dòng metadata phụ: hình thức • cấp bậc • ngày đăng (chỉ hiện phần có dữ liệu)
+                  const jobType = JOB_TYPE_LABELS[job.jobType] || job.jobType;
+                  const level = job.experienceLevel;
+                  const postedAgo = formatPostedAgo(job.createdAt || job.postedAt || job.createdDate);
+                  const parts = [jobType, level, postedAgo].filter(Boolean);
+                  return parts.length > 0 ? (
+                    <p className="mt-1 text-[11px] text-slate-400">
+                      {parts.join(" • ")}
+                    </p>
+                  ) : null;
+                })()}
               </Td>
 
               <Td>
@@ -174,13 +206,18 @@ export const JobTable = ({
                 </div>
               </Td>
 
-              <Td className="max-w-[200px] truncate">{job.location}</Td>
+              <Td className="max-w-[200px]">
+                <span className="block text-slate-600 line-clamp-2" title={job.location}>
+                  {job.location || "—"}
+                </span>
+              </Td>
 
               <Td className="whitespace-nowrap">
                 <div className="flex flex-col gap-1">
-                  <Badge variant={job.status === "ACTIVE" ? "success" : job.status === "PENDING" ? "warning" : "danger"}>
-                    {getJobStatusLabel(job.status)}
-                  </Badge>
+                  {(() => {
+                    const meta = getJobStatusMeta(job.status);
+                    return <Badge variant={meta.variant}>{meta.label}</Badge>;
+                  })()}
                   {job.status === "PENDING" && job.dueDate && new Date(job.dueDate) < new Date().setHours(0, 0, 0, 0) && (
                     <Badge variant="danger" className="text-[10px] py-0 px-1">
                       Quá hạn
@@ -203,51 +240,68 @@ export const JobTable = ({
 
               <Td className="whitespace-nowrap">
                 <div className="flex flex-col items-start gap-1.5">
-                  {(() => {
-                    const IconCmp = AI_ICON_MAP[getAiReviewIconName(aiReview.status)] || CircleHelp;
-                    return (
-                      <Badge variant={getAiReviewVariant(aiReview.status)}>
-                        <span className="inline-flex items-center gap-1">
-                          <IconCmp className="w-3 h-3" />
-                          {getAiReviewLabel(aiReview.status)}
-                        </span>
-                      </Badge>
-                    );
-                  })()}
+                  {/* Dòng 1: badge trạng thái + % rủi ro */}
+                  <div className="flex items-center gap-2">
+                    {(() => {
+                      const IconCmp = AI_ICON_MAP[getAiReviewIconName(aiReview.status)] || CircleHelp;
+                      return (
+                        <Badge variant={getAiReviewVariant(aiReview.status)}>
+                          <span className="inline-flex items-center gap-1">
+                            <IconCmp className="w-3 h-3" />
+                            {getAiReviewLabel(aiReview.status)}
+                          </span>
+                        </Badge>
+                      );
+                    })()}
+                    {typeof aiReview.score === "number" && (
+                      <span className={`text-[11px] font-bold ${aiReview.score > 0.7 ? "text-red-500" : aiReview.score > 0.4 ? "text-amber-500" : "text-emerald-500"}`}>
+                        {Math.round(aiReview.score * 100)}% rủi ro
+                      </span>
+                    )}
+                  </div>
 
-                  {typeof aiReview.score === "number" && (
-                    <span className={`text-[11px] font-bold ${aiReview.score > 0.7 ? "text-red-500" : aiReview.score > 0.4 ? "text-amber-500" : "text-emerald-500"}`}>
-                      Rủi ro: {Math.round(aiReview.score * 100)}%
-                    </span>
-                  )}
-
+                  {/* Dòng 2: mô tả ngắn — chỉ 1 dòng, hover xem đầy đủ */}
                   {aiReview.reason && (
-                    <span className="text-[10px] text-slate-500 leading-tight max-w-[180px] line-clamp-2" title={aiReview.reason}>
+                    <span className="text-[11px] text-slate-500 leading-snug max-w-[200px] line-clamp-1" title={aiReview.reason}>
                       {aiReview.reason}
                     </span>
                   )}
 
-                  <button
-                    onClick={() => handleRunAi(job.id)}
-                    disabled={isRunning}
-                    className={`inline-flex items-center gap-1.5 text-[11px] font-bold px-2.5 py-1 rounded-md border transition-all
-                      ${isRunning
-                        ? "bg-slate-50 text-slate-400 border-slate-200 cursor-not-allowed"
-                        : hasBeenReviewed
-                          ? "bg-white text-[#3AB4E6] border-[#3AB4E6]/30 hover:bg-[#3AB4E6]/10"
-                          : "bg-[#3AB4E6]/10 text-[#3AB4E6] border-[#3AB4E6]/30 hover:bg-[#3AB4E6]/20"
+                  {/* Dòng 3: action link nhỏ — Chạy/Chạy lại AI · Xem chi tiết */}
+                  <div className="flex items-center gap-2 text-[11px] font-bold">
+                    <button
+                      onClick={() => handleRunAi(job.id)}
+                      disabled={isRunning}
+                      className={`inline-flex items-center gap-1 transition-colors ${
+                        isRunning
+                          ? "text-slate-400 cursor-not-allowed"
+                          : "text-[#3AB4E6] hover:text-[#2C9ACD] hover:underline"
                       }`}
-                    title={hasBeenReviewed ? "Chạy lại AI kiểm tra" : "Chạy AI kiểm tra ngay"}
-                  >
-                    {isRunning ? (
-                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                    ) : hasBeenReviewed ? (
-                      <RefreshCw className="w-3.5 h-3.5" />
-                    ) : (
-                      <Sparkles className="w-3.5 h-3.5" />
+                      title={hasBeenReviewed ? "Chạy lại AI kiểm tra" : "Chạy AI kiểm tra ngay"}
+                    >
+                      {isRunning ? (
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      ) : hasBeenReviewed ? (
+                        <RefreshCw className="w-3.5 h-3.5" />
+                      ) : (
+                        <Sparkles className="w-3.5 h-3.5" />
+                      )}
+                      {isRunning ? "Đang kiểm tra..." : hasBeenReviewed ? "Chạy lại AI" : "Chạy AI"}
+                    </button>
+
+                    {!isRunning && (
+                      <>
+                        <span className="text-slate-300">·</span>
+                        <button
+                          onClick={() => onDetail(job)}
+                          className="text-slate-500 transition-colors hover:text-slate-700 hover:underline"
+                          title="Xem chi tiết kiểm duyệt"
+                        >
+                          Xem chi tiết
+                        </button>
+                      </>
                     )}
-                    {isRunning ? "Đang kiểm tra..." : hasBeenReviewed ? "Chạy lại AI" : "Chạy AI kiểm tra"}
-                  </button>
+                  </div>
                 </div>
               </Td>
 

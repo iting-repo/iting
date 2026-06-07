@@ -45,6 +45,8 @@ class AuthServiceTest {
 
   @Mock private EmailTemplateService emailTemplateService;
 
+  @Mock private com.iting.jobportal.admin.service.AdminConfigService adminConfigService;
+
   @InjectMocks private AuthServiceImpl authService;
 
   private Account testAccount;
@@ -111,5 +113,85 @@ class AuthServiceTest {
     RuntimeException exception =
         assertThrows(RuntimeException.class, () -> authService.login(loginRequest));
     assertTrue(exception.getMessage().contains("bị khóa"));
+  }
+
+  // ── Đăng nhập sai nhiều lần → khóa tạm thời (maxLoginAttempts/lockoutDuration) ──
+
+  private com.iting.jobportal.admin.entity.SystemConfig securityConfig(
+      int maxAttempts, int lockoutMinutes, boolean requireEmailVerification) {
+    return com.iting.jobportal.admin.entity.SystemConfig.builder()
+        .maxLoginAttempts(maxAttempts)
+        .lockoutDuration(lockoutMinutes)
+        .requireEmailVerification(requireEmailVerification)
+        .build();
+  }
+
+  @Test
+  void login_wrongPasswordReachingThreshold_locksAccount() {
+    testAccount.setFailedLoginAttempts(2); // lần này là lần thứ 3
+    when(accountRepository.findByEmail(anyString())).thenReturn(Optional.of(testAccount));
+    when(passwordEncoder.matches(anyString(), anyString())).thenReturn(false);
+    when(adminConfigService.getConfig()).thenReturn(securityConfig(3, 30, false));
+
+    LoginRequest req = new LoginRequest();
+    req.setEmail("test@example.com");
+    req.setPassword("wrong");
+
+    RuntimeException ex = assertThrows(RuntimeException.class, () -> authService.login(req));
+    assertTrue(ex.getMessage().contains("tạm khóa"));
+    assertNotNull(testAccount.getLockedUntil(), "lockedUntil phải được set khi vượt ngưỡng");
+    verify(accountRepository).save(testAccount);
+  }
+
+  @Test
+  void login_whenAlreadyLocked_throwsBeforePasswordCheck() {
+    testAccount.setLockedUntil(java.time.LocalDateTime.now().plusMinutes(10));
+    when(accountRepository.findByEmail(anyString())).thenReturn(Optional.of(testAccount));
+    when(adminConfigService.getConfig()).thenReturn(securityConfig(5, 30, false));
+
+    LoginRequest req = new LoginRequest();
+    req.setEmail("test@example.com");
+    req.setPassword("whatever");
+
+    RuntimeException ex = assertThrows(RuntimeException.class, () -> authService.login(req));
+    assertTrue(ex.getMessage().contains("tạm khóa"));
+    // không kiểm tra mật khẩu khi đang bị khóa
+    verify(passwordEncoder, never()).matches(anyString(), anyString());
+  }
+
+  @Test
+  void login_requireEmailVerification_blocksPendingAccount() {
+    testAccount.setStatus(AccountStatus.PENDING);
+    when(accountRepository.findByEmail(anyString())).thenReturn(Optional.of(testAccount));
+    when(passwordEncoder.matches(anyString(), anyString())).thenReturn(true);
+    when(adminConfigService.getConfig()).thenReturn(securityConfig(5, 30, true));
+
+    LoginRequest req = new LoginRequest();
+    req.setEmail("test@example.com");
+    req.setPassword("password");
+
+    RuntimeException ex = assertThrows(RuntimeException.class, () -> authService.login(req));
+    assertTrue(ex.getMessage().contains("xác minh email"));
+  }
+
+  @Test
+  void login_success_resetsFailedAttempts() {
+    testAccount.setFailedLoginAttempts(4);
+    when(accountRepository.findByEmail(anyString())).thenReturn(Optional.of(testAccount));
+    when(passwordEncoder.matches(anyString(), anyString())).thenReturn(true);
+    when(adminConfigService.getConfig()).thenReturn(securityConfig(5, 30, false));
+    when(jwtTokenUtil.generateToken(any(), anyString(), anyString())).thenReturn("jwt");
+    when(refreshTokenService.createRefreshToken(any(), anyString(), anyString(), anyString()))
+        .thenReturn(
+            com.iting.jobportal.auth.entity.RefreshToken.builder().token("refresh").build());
+
+    LoginRequest req = new LoginRequest();
+    req.setEmail("test@example.com");
+    req.setPassword("password");
+
+    var resp = authService.login(req);
+    assertNotNull(resp);
+    assertEquals(0, testAccount.getFailedLoginAttempts());
+    assertNull(testAccount.getLockedUntil());
   }
 }

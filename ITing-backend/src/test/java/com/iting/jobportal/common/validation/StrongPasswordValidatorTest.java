@@ -2,10 +2,15 @@ package com.iting.jobportal.common.validation;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
+import com.iting.jobportal.admin.entity.SystemConfig;
+import com.iting.jobportal.admin.service.AdminConfigService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
+import org.springframework.test.util.ReflectionTestUtils;
 
 class StrongPasswordValidatorTest {
 
@@ -112,5 +117,36 @@ class StrongPasswordValidatorTest {
   void unicodeNonAscii_doesNotCountAsUpperOrLowerOrDigit() {
     // 8 ký tự Vietnamese tones — không có ASCII upper/lower/digit
     assertFalse(validator.isValid("ăăăăăăăă", null));
+  }
+
+  // ─── minPasswordLength lấy từ SystemConfig (động) ────────────────────
+
+  private StrongPasswordValidator validatorWithMinLen(Integer minLen) {
+    AdminConfigService cfgService = mock(AdminConfigService.class);
+    when(cfgService.getConfig())
+        .thenReturn(SystemConfig.builder().minPasswordLength(minLen).build());
+    StrongPasswordValidator v = new StrongPasswordValidator();
+    ReflectionTestUtils.setField(v, "adminConfigService", cfgService);
+    return v;
+  }
+
+  @Test
+  void configMinLength12_rejectsValidEightCharPassword() {
+    StrongPasswordValidator v = validatorWithMinLen(12);
+    assertFalse(v.isValid("Aa1bcdef", null), "8 ký tự không đạt min 12 từ config");
+    assertTrue(v.isValid("Aa1bcdefghij", null), "12 ký tự + đủ nhóm → hợp lệ");
+  }
+
+  @Test
+  void configMinLength6_acceptsSixCharPassword() {
+    StrongPasswordValidator v = validatorWithMinLen(6);
+    assertTrue(v.isValid("Aa1bcd", null), "6 ký tự + đủ nhóm → hợp lệ khi min 6");
+  }
+
+  @Test
+  void configNullMinLength_fallsBackToDefaultEight() {
+    StrongPasswordValidator v = validatorWithMinLen(null);
+    assertFalse(v.isValid("Aa1bcd", null), "config null → fallback min 8");
+    assertTrue(v.isValid("Aa1bcdef", null));
   }
 }

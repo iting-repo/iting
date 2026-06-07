@@ -1,6 +1,6 @@
 import React from "react";
-import StatsCard from "../../../../components/common/StatsCard";
 import { Briefcase, Clock, CheckCircle2, XCircle } from "lucide-react";
+import { StatCard } from "../../../../components/admin/StatCard";
 
 export const JobStats = ({ jobs }) => {
   const total = jobs.length;
@@ -8,40 +8,35 @@ export const JobStats = ({ jobs }) => {
   const active = jobs.filter((j) => j.status === "ACTIVE").length;
   const rejected = jobs.filter((j) => j.status === "REJECTED").length;
 
-  const lastUpdate = new Date().toLocaleString('vi-VN', {
-    hour: '2-digit',
-    minute: '2-digit',
-    second: '2-digit',
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric'
-  });
-
   return (
-    <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-      <StatsCard 
-        title="Tổng tin tuyển dụng" 
-        value={total} 
-        icon={<Briefcase />} 
-        footerLabel={`Cập nhật: ${lastUpdate}`}
+    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <StatCard
+        label="Tổng tin tuyển dụng"
+        value={total}
+        sub={`${active} đang hiển thị · ${pending} chờ duyệt`}
+        accent="blue"
+        icon={<Briefcase className="h-6 w-6" strokeWidth={2} />}
       />
-      <StatsCard 
-        title="Chờ duyệt" 
-        value={pending} 
-        icon={<Clock />} 
-        footerLabel={`Cập nhật: ${lastUpdate}`}
+      <StatCard
+        label="Chờ duyệt"
+        value={pending}
+        sub={pending > 0 ? "Cần admin xử lý" : "Đã xử lý hết"}
+        accent="amber"
+        icon={<Clock className="h-6 w-6" strokeWidth={2} />}
       />
-      <StatsCard 
-        title="Đang hiển thị" 
-        value={active} 
-        icon={<CheckCircle2 />} 
-        footerLabel={`Cập nhật: ${lastUpdate}`}
+      <StatCard
+        label="Đang hiển thị"
+        value={active}
+        sub="Đang nhận ứng tuyển"
+        accent="emerald"
+        icon={<CheckCircle2 className="h-6 w-6" strokeWidth={2} />}
       />
-      <StatsCard 
-        title="Bị từ chối" 
-        value={rejected} 
-        icon={<XCircle />} 
-        footerLabel={`Cập nhật: ${lastUpdate}`}
+      <StatCard
+        label="Bị từ chối"
+        value={rejected}
+        sub={rejected > 0 ? "Đã ẩn khỏi hệ thống" : "Không có tin bị từ chối"}
+        accent="red"
+        icon={<XCircle className="h-6 w-6" strokeWidth={2} />}
       />
     </div>
   );

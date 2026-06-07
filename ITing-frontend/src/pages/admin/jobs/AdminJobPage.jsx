@@ -241,14 +241,16 @@ const AdminJobPage = () => {
     <>
 
       <div className="space-y-6 pb-60">
-      <PageHeader title="Quản lý Công việc">
-        <div className="flex gap-2 flex-wrap">
+      <PageHeader
+        title="Quản lý Công việc"
+        description="Theo dõi, duyệt và quản lý toàn bộ tin tuyển dụng trong hệ thống."
+      >
+        <div className="flex flex-wrap items-center gap-2">
+          {/* Primary CTA — hành động quan trọng nhất, nền nổi bật */}
           <Button
-            variant="outline"
-            className={`flex items-center gap-2 border-violet-300 font-bold transition-all ${
-              bulkAiRunning
-                ? 'text-violet-400 cursor-not-allowed'
-                : 'text-violet-600 hover:bg-violet-50'
+            variant="primary"
+            className={`flex items-center gap-2 bg-gradient-to-r from-[#7C5CFC] to-[#5B7CFA] font-semibold text-white shadow-sm transition-all hover:opacity-90 ${
+              bulkAiRunning ? "cursor-not-allowed opacity-70" : ""
             }`}
             onClick={handleRunAiAll}
             disabled={bulkAiRunning}
@@ -265,17 +267,19 @@ const AdminJobPage = () => {
               </>
             )}
           </Button>
-          <Button 
-            variant="outline" 
-            className="flex items-center gap-2 border-slate-200 text-slate-600 hover:bg-slate-50"
+
+          {/* Secondary — nền trắng, viền nhẹ */}
+          <Button
+            variant="outline"
+            className="flex items-center gap-2 border-slate-200 font-medium text-slate-600 hover:bg-slate-50"
             onClick={() => setShowImportModal(true)}
           >
             <FaUpload className="h-4 w-4" />
-            Nhập công việc (Excel)
+            Nhập Excel
           </Button>
-          <Button 
-            variant="outline" 
-            className="flex items-center gap-2 border-[#1967D2] text-[#1967D2] hover:bg-blue-50"
+          <Button
+            variant="outline"
+            className="flex items-center gap-2 border-slate-200 font-medium text-slate-600 hover:bg-slate-50"
             onClick={handleExportExcel}
           >
             <FaDownload className="h-4 w-4" />

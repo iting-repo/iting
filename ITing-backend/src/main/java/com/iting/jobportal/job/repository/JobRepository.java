@@ -2,6 +2,7 @@ package com.iting.jobportal.job.repository;
 
 import com.iting.jobportal.job.entity.Job;
 import com.iting.jobportal.job.entity.enums.JobStatus;
+import java.time.LocalDateTime;
 import java.util.List;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -58,6 +59,15 @@ public interface JobRepository extends JpaRepository<Job, Long>, JpaSpecificatio
           + " j.createdAt DESC")
   Page<Job> findByCompany_IdAndStatus(
       @Param("companyId") Long companyId, @Param("status") JobStatus status, Pageable pageable);
+
+  // Tự động đóng tin: ACTIVE quá hạn (đăng trước mốc threshold) → EXPIRED
+  @Modifying
+  @Query(
+      "UPDATE Job j SET j.status = :expired WHERE j.status = :active AND j.createdAt < :threshold")
+  int expireJobsPostedBefore(
+      @Param("expired") JobStatus expired,
+      @Param("active") JobStatus active,
+      @Param("threshold") LocalDateTime threshold);
 
   // Tăng view count
   @Modifying

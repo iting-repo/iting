@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Bell, LogOut, Menu } from 'lucide-react';
+import { Bell, LogOut, Menu, Search } from 'lucide-react';
 import { useSelector, useDispatch } from 'react-redux';
 import { logout } from '../../store/auth/authSlice';
 import { useNavigate } from 'react-router-dom';
@@ -115,18 +115,18 @@ const AdminHeader = ({ onToggleSidebar }) => {
         </div>
         <div className="relative ml-4 hidden md:block">
           <input
-            className="w-64 h-9 rounded-lg bg-white/20 text-white text-sm pl-9 pr-3 placeholder:text-white/70 focus:outline-none focus:bg-white/30"
+            className="peer w-56 h-9 rounded-full bg-white/15 text-white text-sm pl-10 pr-4 placeholder:text-white/70 outline-none transition-all focus:w-72 focus:bg-white focus:text-slate-700 focus:placeholder:text-slate-400"
             placeholder="Tìm kiếm user, company, job..."
           />
-          <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/70" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+          <Search className="absolute left-3.5 top-1/2 w-4 h-4 -translate-y-1/2 text-white/70 transition-colors peer-focus:text-slate-400" strokeWidth={2} />
         </div>
       </div>
-      <div className="flex items-center gap-4">
-        <div className="relative mr-4" ref={notifRef}>
-          <button onClick={handleToggleNotifs} className="relative text-white/90 hover:text-white transition-colors">
-            <Bell className="w-5 h-5" />
+      <div className="flex items-center gap-2">
+        <div className="relative" ref={notifRef}>
+          <button onClick={handleToggleNotifs} className="relative flex h-9 w-9 items-center justify-center rounded-full text-white/90 transition-colors hover:bg-white/15 hover:text-white">
+            <Bell className="w-5 h-5" strokeWidth={2} />
             {unreadCount > 0 && (
-              <span className="absolute -top-1 -right-1 min-w-[18px] h-5 px-1 rounded-full bg-red-500 text-xs text-white flex items-center justify-center font-semibold">{unreadCount}</span>
+              <span className="absolute top-1 right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-red-500 text-[10px] text-white flex items-center justify-center font-semibold ring-2 ring-[#1A8FBF]">{unreadCount}</span>
             )}
           </button>
 
@@ -170,26 +170,26 @@ const AdminHeader = ({ onToggleSidebar }) => {
             </div>
           )}
         </div>
-        <div className="flex items-center gap-3 pl-4 border-l border-white/20">
+        <div className="flex items-center gap-1 pl-2 ml-1 border-l border-white/20">
           <button
             onClick={() => navigate('/admin/profile')}
-            className="flex items-center gap-3 hover:bg-white/10 rounded-lg px-2 py-1 -mx-2 transition-colors"
+            className="flex items-center gap-2.5 hover:bg-white/10 rounded-full px-2 py-1 transition-colors"
             title="Xem hồ sơ của tôi"
           >
-            <div className="w-8 h-8 rounded-full bg-white/30 flex items-center justify-center text-white text-xs font-bold border-2 border-white/50">
+            <div className="w-8 h-8 rounded-full bg-white/25 flex items-center justify-center text-white text-xs font-bold ring-2 ring-white/40">
               {user.name ? user.name.charAt(0).toUpperCase() : 'SA'}
             </div>
-            <div className="text-right mr-2 hidden sm:block">
-              <p className="text-white text-sm font-medium">{user.name || "Quản trị viên cấp cao"}</p>
-              <p className="text-white/80 text-xs">{user.email || "admin@iting.vn"}</p>
+            <div className="text-left hidden sm:block leading-tight">
+              <p className="text-white text-sm font-semibold">{user.name || "Quản trị viên cấp cao"}</p>
+              <p className="text-white/70 text-[11px]">{user.email || "admin@iting.vn"}</p>
             </div>
           </button>
           <button
             onClick={handleLogout}
-            className="p-1.5 text-white/80 hover:text-white hover:bg-white/20 rounded-lg transition-colors ml-1"
+            className="flex h-9 w-9 items-center justify-center text-white/80 hover:text-white hover:bg-white/15 rounded-full transition-colors"
             title="Đăng xuất"
           >
-            <LogOut className="w-5 h-5" />
+            <LogOut className="w-5 h-5" strokeWidth={2} />
           </button>
         </div>
       </div>

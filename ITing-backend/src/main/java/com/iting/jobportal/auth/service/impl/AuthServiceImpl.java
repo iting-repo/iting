@@ -46,6 +46,7 @@ public class AuthServiceImpl implements AuthService {
   private final EmailService emailService;
   private final EmailTemplateService emailTemplateService;
   private final AdminNotificationService adminNotificationService;
+  private final com.iting.jobportal.admin.service.AdminConfigService adminConfigService;
 
   @Override
   @Transactional
@@ -389,7 +390,34 @@ public class AuthServiceImpl implements AuthService {
             .findByEmail(request.getEmail())
             .orElseThrow(() -> new RuntimeException("Sai mật khẩu hoặc tài khoản"));
 
+    // Đọc cấu hình hệ thống (an toàn nếu service/giá trị null → dùng mặc định)
+    com.iting.jobportal.admin.entity.SystemConfig cfg =
+        adminConfigService != null ? adminConfigService.getConfig() : null;
+    int maxAttempts = (cfg != null && cfg.getMaxLoginAttempts() != null) ? cfg.getMaxLoginAttempts() : 5;
+    int lockoutMinutes = (cfg != null && cfg.getLockoutDuration() != null) ? cfg.getLockoutDuration() : 30;
+    boolean requireEmailVerification =
+        cfg != null && Boolean.TRUE.equals(cfg.getRequireEmailVerification());
+
+    // 1) Đang bị khóa tạm thời do đăng nhập sai nhiều lần?
+    if (account.getLockedUntil() != null && account.getLockedUntil().isAfter(LocalDateTime.now())) {
+      throw new RuntimeException(
+          "Tài khoản tạm khóa do đăng nhập sai quá nhiều lần. Vui lòng thử lại sau "
+              + lockoutMinutes
+              + " phút.");
+    }
+
+    // 2) Sai mật khẩu → tăng đếm, khóa nếu vượt ngưỡng
     if (!passwordEncoder.matches(request.getPassword(), account.getPasswordHash())) {
+      int attempts = (account.getFailedLoginAttempts() != null ? account.getFailedLoginAttempts() : 0) + 1;
+      account.setFailedLoginAttempts(attempts);
+      if (attempts >= maxAttempts) {
+        account.setLockedUntil(LocalDateTime.now().plusMinutes(lockoutMinutes));
+        account.setFailedLoginAttempts(0);
+        accountRepository.save(account);
+        throw new RuntimeException(
+            "Đăng nhập sai quá " + maxAttempts + " lần. Tài khoản tạm khóa " + lockoutMinutes + " phút.");
+      }
+      accountRepository.save(account);
       throw new RuntimeException("Sai mật khẩu hoặc tài khoản");
     }
 
@@ -398,6 +426,16 @@ public class AuthServiceImpl implements AuthService {
           "Tài khoản của bạn đã bị khóa. Vui lòng kiểm tra email để biết thêm chi tiết.");
     }
 
+    // 3) Yêu cầu xác minh email (nếu bật trong cấu hình): chặn tài khoản chưa kích hoạt
+    if (requireEmailVerification
+        && account.getStatus() == com.iting.jobportal.auth.entity.Enum.AccountStatus.PENDING) {
+      throw new RuntimeException(
+          "Vui lòng xác minh email trước khi đăng nhập. Kiểm tra hộp thư để lấy mã OTP.");
+    }
+
+    // Đăng nhập thành công → reset bộ đếm khóa
+    account.setFailedLoginAttempts(0);
+    account.setLockedUntil(null);
     account.setLastLoginAt(LocalDateTime.now());
     accountRepository.save(account);
 

@@ -82,6 +82,19 @@ public class JobServiceImpl implements JobService {
 
   @Lazy private final RecommendationService recommendationService;
 
+  private final com.iting.jobportal.admin.service.AdminConfigService adminConfigService;
+
+  /** Cấu hình "Tự động duyệt tin công ty đã xác minh" (an toàn nếu config/giá trị null). */
+  private boolean isAutoApproveVerifiedEnabled() {
+    if (adminConfigService == null) return false;
+    try {
+      var cfg = adminConfigService.getConfig();
+      return cfg != null && Boolean.TRUE.equals(cfg.getAutoApproveVerified());
+    } catch (RuntimeException e) {
+      return false;
+    }
+  }
+
   // =========================================================
   // PRIVATE HELPERS
   // =========================================================
@@ -426,6 +439,11 @@ public class JobServiceImpl implements JobService {
 
     // If company has highest verification level (PREMIUM), auto-activate job without pending
     if (company.getVerificationLevel() == VerificationLevel.PREMIUM) {
+      initialStatus = JobStatus.ACTIVE;
+    } else if (company.getVerificationLevel() != null
+        && company.getVerificationLevel().getValue() >= VerificationLevel.ADVANCED.getValue()
+        && isAutoApproveVerifiedEnabled()) {
+      // Cấu hình hệ thống: tự động duyệt tin của công ty đã xác minh (ADVANCED trở lên)
       initialStatus = JobStatus.ACTIVE;
     }
 

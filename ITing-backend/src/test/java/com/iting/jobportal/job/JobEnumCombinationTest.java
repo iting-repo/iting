@@ -71,7 +71,8 @@ class JobEnumCombinationTest {
             Optional.empty(),
             mock(com.iting.jobportal.common.event.KafkaTopics.class),
             mock(com.iting.jobportal.userprofile.service.embedding.HuggingFaceCvExtractionClient.class),
-            mock(com.iting.jobportal.recommendation.service.RecommendationService.class));
+            mock(com.iting.jobportal.recommendation.service.RecommendationService.class),
+            mock(com.iting.jobportal.admin.service.AdminConfigService.class));
 
     ReflectionTestUtils.setField(jobService, "entityManager", entityManager);
   }

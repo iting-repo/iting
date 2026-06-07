@@ -1,13 +1,13 @@
 import React, { useEffect, useMemo, useState, useRef, useCallback } from "react";
 import {
-    FaSearch,
     FaDownload,
     FaEye,
     FaTrash,
-    FaBan,
     FaUnlock,
     FaUsers,
-    FaEllipsisV,
+    FaUserCheck,
+    FaUserSlash,
+    FaCircle,
     FaUpload,
     FaBan as FaBanIcon,
     FaTrashAlt,
@@ -18,12 +18,15 @@ import { toast } from "sonner";
 import {
     Pagination,
     Button,
-    Input,
     Card,
     Table,
     Td,
     Dialog,
 } from "../../../components";
+import { StatCard } from "../../../components/admin/StatCard";
+import {
+    AdminFilterBar, AdminSearchInput, adminSelectClass, AdminResetButton
+} from "../../../components/admin/AdminFilterBar";
 import { ActionMenuPortal } from "../../../components/admin/ActionMenuPortal";
 import { ConfirmModal } from "../../../components/common";
 import useConfirm from "../../../hooks/useConfirm";
@@ -512,24 +515,28 @@ const UserManagement = () => {
                 </div>
             </div>
 
-            {/* Filters */}
-            <Card className="border border-slate-100 shadow-sm">
-                <div className="flex flex-col gap-3 p-4 lg:flex-row lg:items-center">
-                    <div className="relative flex-1">
-                        <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-slate-400" />
-                        <Input
-                            className="pl-9"
-                            placeholder="Tìm theo tên, email..."
-                            value={searchInput}
-                            onChange={(e) => setSearchInput(e.target.value)}
-                            onKeyDown={(e) => {
-                                if (e.key === "Enter") handleSearch();
-                            }}
-                        />
-                    </div>
+            {/* KPI cards */}
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+                <StatCard label="Tổng người dùng" value={totalElements} accent="blue" icon={<FaUsers className="h-5 w-5" />} />
+                <StatCard label="Đang hoạt động" value={stats.activeCount} accent="emerald" icon={<FaUserCheck className="h-5 w-5" />} />
+                <StatCard label="Đang online" value={onlineUserIds.size} accent="violet" icon={<FaCircle className="h-4 w-4" />} />
+                <StatCard label="Bị khóa" value={stats.bannedCount} accent="red" icon={<FaUserSlash className="h-5 w-5" />} />
+            </div>
 
+            {/* Filters */}
+            <AdminFilterBar>
+                <AdminSearchInput
+                    placeholder="Tìm theo tên, email..."
+                    value={searchInput}
+                    onChange={(e) => setSearchInput(e.target.value)}
+                    onKeyDown={(e) => {
+                        if (e.key === "Enter") handleSearch();
+                    }}
+                />
+
+                <div className="flex flex-wrap items-center gap-2">
                     <select
-                        className="h-10 rounded-lg border border-slate-200 px-3 text-sm outline-none focus:border-sky-400"
+                        className={adminSelectClass}
                         value={roleFilter}
                         onChange={(e) => {
                             setRoleFilter(e.target.value);
@@ -543,7 +550,7 @@ const UserManagement = () => {
                     </select>
 
                     <select
-                        className="h-10 rounded-lg border border-slate-200 px-3 text-sm outline-none focus:border-sky-400"
+                        className={adminSelectClass}
                         value={statusFilter}
                         onChange={(e) => {
                             setStatusFilter(e.target.value);
@@ -557,15 +564,13 @@ const UserManagement = () => {
                         <option value="PENDING">Đang chờ</option>
                     </select>
 
-                    <Button className="bg-[#3AB4E6] hover:bg-[#2C9ACD]" onClick={handleSearch}>
+                    <Button className="h-10 rounded-full bg-[#3AB4E6] hover:bg-[#2C9ACD]" onClick={handleSearch}>
                         Tìm kiếm
                     </Button>
 
-                    <Button variant="outline" onClick={handleResetFilter}>
-                        Đặt lại
-                    </Button>
+                    <AdminResetButton onClick={handleResetFilter} />
                 </div>
-            </Card>
+            </AdminFilterBar>
 
             {/* Table */}
             <Card className="border border-slate-100 shadow-sm !p-0">

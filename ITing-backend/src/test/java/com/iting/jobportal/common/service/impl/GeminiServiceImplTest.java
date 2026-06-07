@@ -11,8 +11,8 @@ import java.util.List;
 import org.junit.jupiter.api.Test;
 
 /**
- * AI service stub — chưa kích hoạt. Test fallback behavior cho cover letter template + APPROVE
- * response + empty extractors.
+ * AI service stub — chưa kích hoạt. Test fallback behavior cho cover letter template + NEEDS_REVIEW
+ * response (khi thiếu API key) + empty extractors.
  */
 class GeminiServiceImplTest {
 
@@ -30,12 +30,14 @@ class GeminiServiceImplTest {
   }
 
   @Test
-  void reviewJob_defaultApprove() {
+  void reviewJob_noApiKey_defaultsNeedsReview() {
+    // Không cấu hình GEMINI_API_KEY trong unit test → fallback an toàn = NEEDS_REVIEW
+    // để admin kiểm tra tay (không tự APPROVE khi AI không khả dụng).
     Job job = Job.builder().id(42L).title("Dev").build();
 
     String result = service.reviewJob(job);
 
-    assertTrue(result.contains("APPROVE"));
+    assertTrue(result.contains("NEEDS_REVIEW"));
     assertTrue(result.contains("FINAL_DECISION"));
   }
 

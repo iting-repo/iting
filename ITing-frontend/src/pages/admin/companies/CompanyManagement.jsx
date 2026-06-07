@@ -1,8 +1,12 @@
 import React, { useEffect, useMemo, useState } from "react";
 import adminCompanyService from '../../../services/adminCompanyService';
 import {
-  Button, Badge, Input, PageHeader, Card, StatsCard, GlobalLoading
+  Button, Badge, PageHeader, GlobalLoading
 } from "../../../components";
+import { StatCard } from "../../../components/admin/StatCard";
+import {
+  AdminFilterBar, AdminSearchInput, adminSelectClass, AdminResetButton
+} from "../../../components/admin/AdminFilterBar";
 import { RowActionMenu } from "../../../components/admin/RowActionMenu";
 import { CompanyDetailDialog } from "../../../components/admin/CompanyDetailDialog";
 import { ActionDialog } from "../../../components/admin/ActionDialog";
@@ -14,7 +18,6 @@ import {
   FaUserCheck,
   FaUserTimes,
   FaShieldAlt,
-  FaSearch,
   FaDownload,
   FaUpload,
   FaTrashAlt,
@@ -361,28 +364,24 @@ const CompanyManagement = () => {
         </Button>
       </PageHeader>
 
-      <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
-        <StatsCard title="Tổng công ty" value={stats.total} icon={<FaBuilding />} percentage="12" isIncrease={true} />
-        <StatsCard title="Chờ duyệt" value={stats.pending} icon={<FaUsers />} percentage="5" isIncrease={true} />
-        <StatsCard title="Đã duyệt" value={stats.approved} icon={<FaUserCheck />} percentage="8" isIncrease={true} />
-        <StatsCard title="Bị khóa" value={stats.suspended} icon={<FaUserTimes />} percentage="2" isIncrease={false} />
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <StatCard label="Tổng công ty" value={stats.total} accent="blue" icon={<FaBuilding className="h-5 w-5" />} />
+        <StatCard label="Chờ duyệt" value={stats.pending} accent="amber" icon={<FaUsers className="h-5 w-5" />} />
+        <StatCard label="Đã duyệt" value={stats.approved} accent="emerald" icon={<FaUserCheck className="h-5 w-5" />} />
+        <StatCard label="Bị khóa" value={stats.suspended} accent="red" icon={<FaUserTimes className="h-5 w-5" />} />
       </div>
 
-      <Card className="!p-4">
-        <div className="flex flex-col gap-4 md:flex-row md:items-center">
-          <div className="relative flex-1">
-            <FaSearch className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-            <Input
-              placeholder="Tìm theo tên công ty, MST, email..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="pl-10"
-            />
-          </div>
+      <AdminFilterBar>
+        <AdminSearchInput
+          placeholder="Tìm theo tên công ty, MST, email..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+        />
+        <div className="flex items-center gap-2">
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
-            className="w-full md:w-56 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm focus:border-sky-400 focus:outline-none"
+            className={adminSelectClass}
           >
             <option value="ALL">Tất cả trạng thái</option>
             <option value="PENDING_REVIEW">Chờ duyệt</option>
@@ -392,8 +391,16 @@ const CompanyManagement = () => {
             <option value="NEEDS_RESUBMISSION">Yêu cầu nộp lại</option>
             <option value="SUSPENDED">Bị đình chỉ</option>
           </select>
+          {(search || statusFilter !== "ALL") && (
+            <AdminResetButton
+              onClick={() => {
+                setSearch("");
+                setStatusFilter("ALL");
+              }}
+            />
+          )}
         </div>
-      </Card>
+      </AdminFilterBar>
 
       <DataTable
         columns={columns}
