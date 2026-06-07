@@ -20,37 +20,10 @@ import cvService from "../services/cvService";
 import authService from "../services/authService";
 import jobService from "../services/jobService";
 import { storage } from "../utils/storage";
-
-// Map cvLanguage → CTA hiển thị cho ứng viên (cả CV và cover letter)
-const CV_LANGUAGE_CTA = {
-  VIETNAMESE: {
-    badge: '🇻🇳 Yêu cầu tiếng Việt',
-    cls: 'bg-red-50 text-red-700 border-red-200',
-    cvHint: 'Hãy chọn CV viết bằng tiếng Việt. Hồ sơ nộp sai ngôn ngữ có thể bị loại.',
-    coverHint: 'Viết thư giới thiệu bằng tiếng Việt.',
-  },
-  ENGLISH: {
-    badge: '🇬🇧 Required: English',
-    cls: 'bg-blue-50 text-blue-700 border-blue-200',
-    cvHint: 'HR requires an English CV. Please pick (or upload) a CV written in English.',
-    coverHint: 'Write your cover letter in English.',
-  },
-  BOTH: {
-    badge: '🇻🇳 + 🇬🇧 Song ngữ',
-    cls: 'bg-purple-50 text-purple-700 border-purple-200',
-    cvHint: 'HR yêu cầu CV song ngữ (Việt + Anh). Đảm bảo CV của bạn có cả 2 ngôn ngữ.',
-    coverHint: 'Thư giới thiệu nên viết bằng tiếng Anh, kèm 1-2 câu tóm tắt tiếng Việt.',
-  },
-  ANY: {
-    badge: '✓ Việt hoặc Anh',
-    cls: 'bg-gray-50 text-gray-600 border-gray-200',
-    cvHint: 'HR chấp nhận CV tiếng Việt hoặc tiếng Anh — chọn loại bạn tự tin nhất.',
-    coverHint: 'Viết thư giới thiệu bằng ngôn ngữ phù hợp với CV bạn nộp.',
-  },
-};
+import { getCvLanguageCta } from "../utils/cvLanguage";
 
 const JobApplyModal = ({ isOpen, onClose, onSuccess, jobTitle, jobId, cvLanguage }) => {
-  const langCta = CV_LANGUAGE_CTA[cvLanguage] || CV_LANGUAGE_CTA.ANY;
+  const langCta = getCvLanguageCta(cvLanguage);
   const navigate = useNavigate();
   const [cvMethod, setCvMethod] = useState("recent"); // 'recent', 'library', 'upload'
   const [coverLetter, setCoverLetter] = useState("");
@@ -293,7 +266,7 @@ const JobApplyModal = ({ isOpen, onClose, onSuccess, jobTitle, jobId, cvLanguage
               Hồ sơ của bạn đã được gửi đến nhà tuyển dụng cho vị trí <span className="font-bold text-[#3AB4E6]">{jobTitle}</span>
             </p>
             <div className="mt-3 bg-blue-50 border border-blue-100 rounded-lg p-3 text-xs text-blue-700 font-medium">
-              📬 Thông báo đã được gửi. Theo dõi trạng thái tại mục <Link to="/candidate/applied-jobs" onClick={handleCloseSuccess} className="underline font-bold">"Việc đã ứng tuyển"</Link>
+              📬 Thông báo đã được gửi. Theo dõi trạng thái tại mục <Link to="/candidate/applied-jobs" onClick={handleCloseSuccess} className="underline font-bold">&quot;Việc đã ứng tuyển&quot;</Link>
             </div>
           </div>
 

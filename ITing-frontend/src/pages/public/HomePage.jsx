@@ -1437,7 +1437,7 @@ const HomePage = () => {
                         </div>
                         {/* FIX: Thay BsArrowRight bằng FaArrowRight */}
                         <Link to="/blogs" className="text-[#0E7BAA] font-medium hover:underline flex items-center gap-1">
-                            View all <FaArrowRight />
+                            Xem tất cả <FaArrowRight />
                         </Link>
                     </div>
 
@@ -1456,7 +1456,7 @@ const HomePage = () => {
                                 </h3>
                                 {/* FIX: Thay BsArrowRight bằng FaArrowRight */}
                                 <div className="flex items-center gap-2 text-[#3AB4E6] text-sm font-medium hover:underline">
-                                    Read more <FaArrowRight />
+                                    Đọc tiếp <FaArrowRight />
                                 </div>
                             </div>
                         ))}

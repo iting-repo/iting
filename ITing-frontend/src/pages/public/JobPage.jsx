@@ -332,6 +332,14 @@ const JobPage = () => {
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
                     {/* Desktop Sidebar (hidden on mobile/tablet) */}
                     <div className="hidden lg:block lg:col-span-3">
+                        {/* AI Search Button — đặt trên cùng sidebar */}
+                        <button
+                            onClick={() => setIsAiModalOpen(true)}
+                            className="w-full mb-4 py-3 bg-gradient-to-r from-[#1E3A8A] to-[#3AB4E6] hover:from-[#1E3A8A] hover:to-[#2a9fd4] text-white font-bold text-sm rounded-xl transition-all flex items-center justify-center gap-2 shadow-md hover:shadow-lg"
+                        >
+                            <FaMagic className="text-yellow-300" /> Tìm việc bằng AI
+                        </button>
+
                         <JobFilters
                             filters={filters}
                             provinces={provinces}
@@ -340,19 +348,11 @@ const JobPage = () => {
                             onReset={handleResetFilters}
                         />
                         <JobPromo />
-
-                        {/* AI Search Button */}
-                        <button
-                            onClick={() => setIsAiModalOpen(true)}
-                            className="w-full mt-4 py-3 bg-gradient-to-r from-[#1E3A8A] to-[#3AB4E6] hover:from-[#1E3A8A] hover:to-[#2a9fd4] text-white font-bold text-sm rounded-xl transition-all flex items-center justify-center gap-2 shadow-md hover:shadow-lg"
-                        >
-                            <FaMagic className="text-yellow-300" /> Tìm việc bằng AI
-                        </button>
                     </div>
 
-                    <div className="lg:col-span-9 space-y-6">
-                        {/* Mobile Filter Button */}
-                        <div className="lg:hidden flex justify-between items-center bg-white p-4 rounded-lg border border-gray-100 shadow-sm">
+                    <div className="lg:col-span-9">
+                        {/* Mobile Filter Button (lg:hidden — tách khỏi space-y để không đẩy thanh kết quả xuống trên desktop) */}
+                        <div className="lg:hidden mb-6 flex justify-between items-center bg-white p-4 rounded-lg border border-gray-100 shadow-sm">
                             <span className="font-bold text-gray-800">Bộ lọc tìm kiếm</span>
                             <button
                                 onClick={() => setIsMobileFilterOpen(true)}
@@ -362,6 +362,7 @@ const JobPage = () => {
                             </button>
                         </div>
 
+                        <div className="space-y-6">
                         <div className="flex flex-col md:flex-row justify-between items-center bg-white p-4 rounded-lg border border-gray-100">
                             <span className="text-gray-500 text-sm mb-2 md:mb-0">
                                 Hiển thị <span className="font-bold text-gray-800">{start}-{end}</span> trong tổng số <span className="font-bold text-gray-800">{totalJobs}</span> kết quả
@@ -463,6 +464,7 @@ const JobPage = () => {
                             >
                                 <FaChevronRight size={12} />
                             </button>
+                        </div>
                         </div>
                     </div>
                 </div>
@@ -655,6 +657,14 @@ const JobPage = () => {
                     </div>
                     {/* Body */}
                     <div className="p-4 space-y-6 pb-6">
+                        {/* AI Search Button — đặt trên cùng */}
+                        <button
+                            onClick={() => { setIsMobileFilterOpen(false); setIsAiModalOpen(true); }}
+                            className="w-full mb-2 py-3 bg-gradient-to-r from-[#1E3A8A] to-[#3AB4E6] hover:from-[#1E3A8A] hover:to-[#2a9fd4] text-white font-bold text-sm rounded-xl transition-all flex items-center justify-center gap-2 shadow-md hover:shadow-lg"
+                        >
+                            <FaMagic className="text-yellow-300" /> Tìm việc bằng AI
+                        </button>
+
                         <JobFilters
                             filters={filters}
                             provinces={provinces}
@@ -663,12 +673,6 @@ const JobPage = () => {
                             onReset={() => { handleResetFilters(); setIsMobileFilterOpen(false); }}
                         />
                         <JobPromo />
-                        <button
-                            onClick={() => { setIsMobileFilterOpen(false); setIsAiModalOpen(true); }}
-                            className="w-full mt-4 py-3 bg-gradient-to-r from-[#1E3A8A] to-[#3AB4E6] hover:from-[#1E3A8A] hover:to-[#2a9fd4] text-white font-bold text-sm rounded-xl transition-all flex items-center justify-center gap-2 shadow-md hover:shadow-lg"
-                        >
-                            <FaMagic className="text-yellow-300" /> Tìm việc bằng AI
-                        </button>
                     </div>
                 </div>
             </div>

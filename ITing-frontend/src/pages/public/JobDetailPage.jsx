@@ -28,6 +28,7 @@ import { vi } from 'date-fns/locale';
 
 import JobCard from '../../components/JobCard';
 import JobApplyModal from '../../components/JobApplyModal';
+import { getCvLanguageCta } from '../../utils/cvLanguage';
 import companyService from '../../services/companyService';
 import messageService from '../../services/messageService';
 import applicationService from '../../services/applicationService';
@@ -900,6 +901,22 @@ const JobDetailPage = () => {
                                     {isSaved ? <FaBookmark size={20} /> : <FaRegBookmark size={20} />}
                                 </button>
                             </div>
+
+                            {/* Thông báo ngôn ngữ CV (giống popup ứng tuyển) — hiển thị ngay tại đây */}
+                            {(() => {
+                                const cta = getCvLanguageCta(currentJob?.cvLanguage);
+                                return (
+                                    <div className={`mt-3 rounded-lg p-3 border ${cta.cls} flex items-start gap-3`}>
+                                        <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-bold border ${cta.cls} shrink-0`}>
+                                            {cta.badge}
+                                        </span>
+                                        <div className="text-xs leading-relaxed">
+                                            <p className="font-semibold mb-0.5">{cta.cvHint}</p>
+                                            <p className="opacity-80">{cta.coverHint}</p>
+                                        </div>
+                                    </div>
+                                );
+                            })()}
                         </div>
 
                         <div className="space-y-8 text-gray-700 leading-relaxed">
