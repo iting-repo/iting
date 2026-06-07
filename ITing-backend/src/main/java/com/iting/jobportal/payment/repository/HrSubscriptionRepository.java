@@ -15,4 +15,7 @@ public interface HrSubscriptionRepository extends JpaRepository<HrSubscription, 
       String status, Boolean autoRenew, LocalDateTime cutoff);
 
   List<HrSubscription> findByAccount_IdOrderByCreatedAtDesc(Long accountId);
+
+  /** Có HR nào đang/đã dùng tier code này không (để chặn xóa gói còn ràng buộc). */
+  boolean existsByTier(String tier);
 }

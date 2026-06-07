@@ -110,7 +110,7 @@ const Verification = () => {
       await fetchCompany();
     } catch (err) {
       console.error("Lỗi upload:", err);
-      toast.error(err?.response?.data?.error || err?.response?.data?.message || "Tải lên thất bại. Vui lòng thử lại.");
+      toast.error(err?.error || err?.message || err?.response?.data?.error || err?.response?.data?.message || "Tải lên thất bại. Vui lòng thử lại.");
     } finally {
       setSubmitting(false);
     }
@@ -133,7 +133,7 @@ const Verification = () => {
       await fetchCompany();
     } catch (err) {
       console.error("Lỗi gửi duyệt:", err);
-      toast.error(err?.response?.data?.error || err?.response?.data?.message || "Không thể gửi duyệt. Vui lòng thử lại.");
+      toast.error(err?.error || err?.message || err?.response?.data?.error || err?.response?.data?.message || "Không thể gửi duyệt. Vui lòng thử lại.");
     } finally {
       setSubmitting(false);
     }

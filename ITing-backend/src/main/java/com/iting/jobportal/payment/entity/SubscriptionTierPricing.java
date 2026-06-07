@@ -52,6 +52,29 @@ public class SubscriptionTierPricing {
   @Builder.Default
   private boolean active = true;
 
+  /** Thứ tự hiển thị trên bảng giá (nhỏ → trái). */
+  @Column(name = "sort_order", nullable = false)
+  @Builder.Default
+  private int sortOrder = 0;
+
+  /** Gói nổi bật — được highlight ("đề xuất") trên bảng giá. */
+  @Column(name = "popular", nullable = false)
+  @Builder.Default
+  private boolean popular = false;
+
+  /** Cho phép tính năng Talent Pool (tìm kiếm ứng viên trực tiếp). */
+  @Column(name = "talent_pool", nullable = false)
+  @Builder.Default
+  private boolean talentPool = false;
+
+  /** Nhãn nhỏ trên thẻ (VD: "PHỔ BIẾN NHẤT"). Null = không có. */
+  @Column(name = "badge", length = 50)
+  private String badge;
+
+  /** Màu nhấn (hex, VD #3AB4E6) cho thẻ trên giao diện. */
+  @Column(name = "accent_color", length = 20)
+  private String accentColor;
+
   @Column(name = "updated_by")
   private Long updatedBy;
 

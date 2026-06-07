@@ -1,11 +1,8 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import {
   FaCheck,
   FaCrown,
-  FaRocket,
-  FaStar,
   FaCopy,
   FaTimes,
   FaCalendarAlt,
@@ -15,59 +12,32 @@ import {
   FaGem,
   FaArrowRight,
   FaInfoCircle,
-  FaBolt,
-  FaHeadset,
-  FaChartLine,
-  FaUsers,
-  FaMagic,
 } from 'react-icons/fa';
 import SEO from '../../components/common/SEO';
-import { Breadcrumb } from '../../components/common';
+import { Breadcrumb, Pagination } from '../../components/common';
 import subscriptionService from '../../services/subscriptionService';
 import paymentService from '../../services/paymentService';
 
-/* ─── Icon + colour per tier ─── */
-const TIER_META = {
-  BASIC: {
-    icon: FaStar,
-    gradient: 'from-sky-400 to-blue-600',
-    bg: 'bg-sky-50',
-    ring: 'ring-sky-200',
-    text: 'text-sky-600',
-    btnBg: 'bg-sky-500 hover:bg-sky-600',
-    badge: null,
-    featureIcons: [FaBolt, FaHeadset, FaShieldAlt, FaUsers, FaChartLine, FaMagic],
-  },
-  PRO: {
-    icon: FaRocket,
-    gradient: 'from-amber-400 to-orange-500',
-    bg: 'bg-amber-50',
-    ring: 'ring-amber-300',
-    text: 'text-amber-600',
-    btnBg: 'bg-amber-500 hover:bg-amber-600',
-    badge: 'PHỔ BIẾN NHẤT',
-    featureIcons: [FaBolt, FaUsers, FaChartLine, FaHeadset, FaMagic, FaShieldAlt],
-  },
-  ENTERPRISE: {
-    icon: FaCrown,
-    gradient: 'from-violet-500 to-purple-700',
-    bg: 'bg-violet-50',
-    ring: 'ring-violet-300',
-    text: 'text-violet-600',
-    btnBg: 'bg-violet-600 hover:bg-violet-700',
-    badge: 'DOANH NGHIỆP',
-    featureIcons: [FaBolt, FaUsers, FaMagic, FaChartLine, FaHeadset, FaShieldAlt],
-  },
+const DEFAULT_ACCENT = '#3AB4E6';
+const TIERS_PER_PAGE = 8; // 2 hàng × 4 cột (xl:grid-cols-4)
+
+/* Pha màu nhấn (hex) sang nền nhạt / chữ — dùng inline style để hỗ trợ màu tùy ý do admin chọn. */
+const withAlpha = (hex, alpha) => {
+  const h = (hex || DEFAULT_ACCENT).replace('#', '');
+  const full = h.length === 3 ? h.split('').map((c) => c + c).join('') : h;
+  const r = parseInt(full.slice(0, 2), 16);
+  const g = parseInt(full.slice(2, 4), 16);
+  const b = parseInt(full.slice(4, 6), 16);
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
 };
 
 const EmployerServicesPage = () => {
-  const navigate = useNavigate();
-
   /* ─── State ─── */
   const [tiers, setTiers] = useState([]);
   const [current, setCurrent] = useState(null);
   const [loading, setLoading] = useState(true);
   const [subscribing, setSubscribing] = useState(null); // tier code being subscribed
+  const [page, setPage] = useState(1); // phân trang client-side (1-indexed)
 
   // QR modal
   const [order, setOrder] = useState(null);
@@ -156,6 +126,11 @@ const EmployerServicesPage = () => {
 
   const fmtPrice = (v) => Number(v).toLocaleString('vi-VN');
 
+  /* ─── Phân trang client-side ─── */
+  const totalPages = Math.max(1, Math.ceil(tiers.length / TIERS_PER_PAGE));
+  const safePage = Math.min(page, totalPages); // clamp khi tiers thay đổi
+  const pagedTiers = tiers.slice((safePage - 1) * TIERS_PER_PAGE, safePage * TIERS_PER_PAGE);
+
   /* ─── Loading skeleton ─── */
   if (loading) {
     return (
@@ -233,38 +208,41 @@ const EmployerServicesPage = () => {
           </div>
         )}
 
-        {/* ═══ Pricing Cards ═══ */}
-        <div className="grid md:grid-cols-3 gap-6 mb-12">
-          {tiers.map((t, idx) => {
-            const meta = TIER_META[t.code] || TIER_META.BASIC;
-            const Icon = meta.icon;
+        {/* ═══ Pricing Cards — lưới ô vuông, co giãn theo số lượng gói ═══ */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mb-6">
+          {pagedTiers.map((t) => {
+            const accent = t.accentColor || DEFAULT_ACCENT;
             const isCurrent = current?.active && current.tier === t.code;
-            const isPro = t.code === 'PRO';
             const features = tierFeatures(t);
 
             return (
               <div
                 key={t.code}
-                className={`relative group bg-white rounded-2xl p-6 transition-all duration-300 hover:shadow-xl hover:-translate-y-1 ${
-                  isPro
-                    ? 'ring-2 ring-amber-400 shadow-lg scale-[1.03] z-10'
-                    : 'ring-1 ring-gray-200 shadow-sm'
+                className={`relative group flex flex-col bg-white rounded-2xl p-6 transition-all duration-300 hover:shadow-xl hover:-translate-y-1 ${
+                  t.popular ? 'shadow-lg' : 'ring-1 ring-gray-200 shadow-sm'
                 }`}
-                style={{ animationDelay: `${idx * 100}ms` }}
+                style={t.popular ? { boxShadow: `0 0 0 2px ${accent}, 0 10px 25px ${withAlpha(accent, 0.25)}` } : undefined}
               >
                 {/* Badge */}
-                {meta.badge && (
-                  <span className={`absolute -top-3.5 left-1/2 -translate-x-1/2 px-4 py-1 text-xs font-extrabold text-white rounded-full shadow-md bg-gradient-to-r ${meta.gradient}`}>
-                    {meta.badge}
+                {t.badge && (
+                  <span
+                    className="absolute -top-3.5 left-1/2 -translate-x-1/2 px-4 py-1 text-xs font-extrabold text-white rounded-full shadow-md whitespace-nowrap"
+                    style={{ backgroundColor: accent }}
+                  >
+                    {t.badge}
                   </span>
                 )}
 
                 {/* Tier icon + name */}
-                <div className={`w-14 h-14 rounded-2xl flex items-center justify-center mb-5 bg-gradient-to-br ${meta.gradient} shadow-lg shadow-${t.code === 'BASIC' ? 'sky' : t.code === 'PRO' ? 'amber' : 'violet'}-200/50`}>
-                  <Icon className="text-white text-xl" />
+                <div
+                  className="w-14 h-14 rounded-2xl flex items-center justify-center mb-5 shadow-lg"
+                  style={{ backgroundColor: accent }}
+                >
+                  <FaGem className="text-white text-xl" />
                 </div>
 
                 <h3 className="text-xl font-bold text-gray-900 mb-1">{t.code}</h3>
+                <p className="text-xs text-gray-400 mb-3 line-clamp-1">{t.displayName}</p>
 
                 {/* Price */}
                 <div className="mb-4">
@@ -277,27 +255,30 @@ const EmployerServicesPage = () => {
 
                 {/* Credits badge */}
                 {t.credits > 0 && (
-                  <div className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg ${meta.bg} ${meta.text} text-xs font-bold mb-5`}>
+                  <div
+                    className="inline-flex w-fit items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold mb-5"
+                    style={{ backgroundColor: withAlpha(accent, 0.12), color: accent }}
+                  >
                     💰 +{t.credits} credits/tháng
                   </div>
                 )}
 
                 {/* Divider */}
-                <div className={`h-0.5 w-full rounded-full bg-gradient-to-r ${meta.gradient} opacity-20 mb-6`} />
+                <div className="h-0.5 w-full rounded-full mb-6" style={{ backgroundColor: withAlpha(accent, 0.2) }} />
 
                 {/* Features */}
                 <ul className="space-y-3 mb-8 flex-1">
-                  {features.map((f, i) => {
-                    const FeatureIcon = meta.featureIcons[i % meta.featureIcons.length];
-                    return (
-                      <li key={f} className="flex items-start gap-3 text-sm text-gray-700">
-                        <span className={`flex-shrink-0 w-6 h-6 rounded-lg flex items-center justify-center ${meta.bg} ${meta.text} mt-0.5`}>
-                          <FeatureIcon className="text-xs" />
-                        </span>
-                        <span className="font-medium">{f}</span>
-                      </li>
-                    );
-                  })}
+                  {features.map((f) => (
+                    <li key={f} className="flex items-start gap-3 text-sm text-gray-700">
+                      <span
+                        className="flex-shrink-0 w-6 h-6 rounded-lg flex items-center justify-center mt-0.5"
+                        style={{ backgroundColor: withAlpha(accent, 0.12), color: accent }}
+                      >
+                        <FaCheck className="text-xs" />
+                      </span>
+                      <span className="font-medium">{f}</span>
+                    </li>
+                  ))}
                 </ul>
 
                 {/* CTA */}
@@ -310,8 +291,9 @@ const EmployerServicesPage = () => {
                       ? 'bg-gray-100 text-gray-400 cursor-not-allowed ring-1 ring-gray-200'
                       : subscribing === t.code
                         ? 'bg-gray-100 text-gray-400 cursor-wait'
-                        : `${meta.btnBg} text-white shadow-md hover:shadow-lg active:scale-[0.98]`
+                        : 'text-white shadow-md hover:shadow-lg hover:brightness-95 active:scale-[0.98]'
                   }`}
+                  style={isCurrent || subscribing === t.code ? undefined : { backgroundColor: accent }}
                 >
                   {isCurrent ? (
                     <><FaCheckCircle /> Đang sử dụng</>
@@ -331,6 +313,18 @@ const EmployerServicesPage = () => {
             );
           })}
         </div>
+
+        {/* ═══ Phân trang (chỉ hiện khi > 1 trang) ═══ */}
+        {tiers.length > TIERS_PER_PAGE && (
+          <div className="mb-12 rounded-2xl ring-1 ring-gray-100 overflow-hidden">
+            <Pagination
+              currentPage={safePage}
+              totalItems={tiers.length}
+              itemsPerPage={TIERS_PER_PAGE}
+              onPageChange={(p) => setPage(p)}
+            />
+          </div>
+        )}
 
         {/* ═══ Bottom info section ═══ */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">

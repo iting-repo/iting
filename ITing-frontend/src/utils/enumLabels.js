@@ -313,6 +313,13 @@ export const roleLabel = (v) => labelOf(ROLE_LABELS, v);
 export const companyReviewStatusLabel = (v) => labelOf(COMPANY_REVIEW_STATUS_LABELS, v);
 export const documentReviewStatusLabel = (v) => labelOf(DOCUMENT_REVIEW_STATUS_LABELS, v);
 export const verificationLevelLabel = (v) => labelOf(VERIFICATION_LEVEL_LABELS, v);
+/**
+ * Công ty được coi là "đã xác thực" khi đạt mức ADVANCED trở lên — backend set
+ * ADVANCED khi cả thông tin cơ bản + Giấy phép KD được admin duyệt (xem
+ * AdminCompanyServiceImpl / JobServiceImpl dùng cùng ngưỡng value >= ADVANCED).
+ */
+export const isCompanyVerified = (verificationLevel) =>
+    verificationLevel === 'ADVANCED' || verificationLevel === 'PREMIUM';
 export const industryLabel = (v) => labelOf(INDUSTRY_LABELS, v);
 export const affiliationStatusLabel = (v) => labelOf(AFFILIATION_STATUS_LABELS, v);
 export const submissionStatusLabel = (v) => labelOf(SUBMISSION_STATUS_LABELS, v);

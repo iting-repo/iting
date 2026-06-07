@@ -3,6 +3,7 @@ package com.iting.jobportal.payment.service;
 import com.iting.jobportal.job.repository.JobRepository;
 import com.iting.jobportal.payment.entity.HrSubscription;
 import com.iting.jobportal.payment.entity.SubscriptionTier;
+import com.iting.jobportal.payment.entity.SubscriptionTierPricing;
 import com.iting.jobportal.payment.repository.HrSubscriptionRepository;
 import com.iting.jobportal.payment.repository.PaymentOrderRepository;
 import java.time.LocalDateTime;
@@ -47,8 +48,8 @@ public class QuotaService {
    * @param hrAccountId HR account đang post job
    */
   public void requireJobQuota(Long hrAccountId) {
-    int limit = resolveActiveTier(hrAccountId)
-        .map(t -> pricingService.getPricing(t).getMaxJobsPerMonth())
+    int limit = resolveActivePricing(hrAccountId)
+        .map(SubscriptionTierPricing::getMaxJobsPerMonth)
         .orElse(SubscriptionTier.FREE_MAX_JOBS_PER_MONTH);
     if (limit < 0) return; // unlimited (ENTERPRISE)
 
@@ -79,8 +80,8 @@ public class QuotaService {
    * @param hrAccountId HR account đang boost
    */
   public void requireBoostQuota(Long hrAccountId) {
-    int limit = resolveActiveTier(hrAccountId)
-        .map(t -> pricingService.getPricing(t).getMaxBoostsPerMonth())
+    int limit = resolveActivePricing(hrAccountId)
+        .map(SubscriptionTierPricing::getMaxBoostsPerMonth)
         .orElse(SubscriptionTier.FREE_MAX_BOOSTS_PER_MONTH);
     if (limit < 0) return; // unlimited
 
@@ -112,22 +113,21 @@ public class QuotaService {
    * cho phép HR search direct database ứng viên đang openToWork, không cần đăng job chờ apply.
    */
   public void requireTalentPoolAccess(Long hrAccountId) {
-    SubscriptionTier tier = resolveActiveTier(hrAccountId).orElse(null);
-    if (tier == SubscriptionTier.PRO || tier == SubscriptionTier.ENTERPRISE) {
+    Optional<SubscriptionTierPricing> pricing = resolveActivePricing(hrAccountId);
+    if (pricing.map(SubscriptionTierPricing::isTalentPool).orElse(false)) {
       return; // allowed
     }
-    String currentLabel = tier == null ? "FREE" : tier.name();
+    String currentLabel = pricing.map(SubscriptionTierPricing::getCode).orElse("FREE");
     log.info("[QUOTA] HR {} blocked talent-pool search (tier={})", hrAccountId, currentLabel);
     throw new ResponseStatusException(
         HttpStatus.PAYMENT_REQUIRED,
-        "Tính năng Tìm kiếm ứng viên (Talent Pool) chỉ dành cho gói PRO trở lên. "
-            + "Bạn đang dùng gói "
+        "Tính năng Tìm kiếm ứng viên (Talent Pool) không có trong gói hiện tại của bạn ("
             + currentLabel
-            + ". Vui lòng nâng cấp để sử dụng.");
+            + "). Vui lòng nâng cấp để sử dụng.");
   }
 
-  /** Lookup tier subscription ACTIVE chưa expire của HR. */
-  private Optional<SubscriptionTier> resolveActiveTier(Long hrAccountId) {
+  /** Lookup pricing của subscription ACTIVE chưa expire của HR. */
+  private Optional<SubscriptionTierPricing> resolveActivePricing(Long hrAccountId) {
     Optional<HrSubscription> sub =
         subscriptionRepository.findFirstByAccount_IdAndStatusOrderByExpiresAtDesc(
             hrAccountId, "ACTIVE");
@@ -135,10 +135,10 @@ public class QuotaService {
     if (sub.get().getExpiresAt() == null || sub.get().getExpiresAt().isBefore(LocalDateTime.now())) {
       return Optional.empty();
     }
-    return Optional.ofNullable(sub.get().getTier());
+    return pricingService.find(sub.get().getTier());
   }
 
   private String activeTierName(Long hrAccountId) {
-    return resolveActiveTier(hrAccountId).map(Enum::name).orElse("FREE");
+    return resolveActivePricing(hrAccountId).map(SubscriptionTierPricing::getCode).orElse("FREE");
   }
 }

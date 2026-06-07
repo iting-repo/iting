@@ -65,7 +65,8 @@ public class SubscriptionRenewalTask {
 
   private void sendRenewalReminderEmail(HrSubscription sub) {
     if (sub.getAccount() == null || sub.getAccount().getEmail() == null) return;
-    SubscriptionTierPricing pricing = pricingService.getPricing(sub.getTier());
+    SubscriptionTierPricing pricing = pricingService.find(sub.getTier()).orElse(null);
+    if (pricing == null) return;
 
     String subject = "⏰ [ITing] Subscription Premium sắp hết hạn — gia hạn ngay";
     String body =

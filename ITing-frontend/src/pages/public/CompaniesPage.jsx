@@ -9,6 +9,7 @@ import { useSelector } from "react-redux";
 import { toast } from "sonner";
 import companyService from "../../services/companyService";
 import { Breadcrumb, CompanyLogo } from "../../components/common";
+import { isCompanyVerified } from "../../utils/enumLabels";
 
 // 34 tỉnh/thành VN sau sáp nhập 2025 (Nghị quyết 60-NQ/TW). Sắp theo
 // thứ tự dân số/IT job density để các vùng IT hub lên đầu dropdown.
@@ -368,7 +369,11 @@ const CompaniesPage = () => {
                       <h3 className="font-bold text-gray-900 text-lg line-clamp-1 group-hover:text-[#3AB4E6] transition-colors">
                         {company.name}
                       </h3>
-                      <BadgeCheck className="w-5 h-5 text-[#3AB4E6] shrink-0" />
+                      {isCompanyVerified(company.verificationLevel) && (
+                        <span title="Công ty đã xác thực" className="shrink-0">
+                          <BadgeCheck className="w-5 h-5 text-[#3AB4E6]" />
+                        </span>
+                      )}
                     </div>
                     <p className="text-sm text-gray-500 line-clamp-2 leading-relaxed min-h-[40px]">
                       {company.description || "Công ty chưa cập nhật giới thiệu."}

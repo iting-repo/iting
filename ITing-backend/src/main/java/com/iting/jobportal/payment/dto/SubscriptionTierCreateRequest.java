@@ -2,12 +2,10 @@ package com.iting.jobportal.payment.dto;
 
 import lombok.Data;
 
-/**
- * Payload admin cập nhật một gói HR. Mọi field nullable — chỉ field khác null mới được áp dụng
- * (partial update).
- */
+/** Payload admin tạo gói HR mới. {@code code} là định danh duy nhất (VD: STARTER, TEAM). */
 @Data
-public class SubscriptionTierUpdateRequest {
+public class SubscriptionTierCreateRequest {
+  private String code;
   private String displayName;
   private Long priceVnd;
   private Integer periodDays;

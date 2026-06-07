@@ -22,9 +22,10 @@ public class HrSubscription {
   @JoinColumn(name = "account_id", nullable = false)
   private Account account;
 
-  @Enumerated(EnumType.STRING)
+  /** Tier code (BASIC/PRO/ENTERPRISE hoặc gói tùy chỉnh do admin tạo). Khớp {@code
+   * subscription_tier_pricing.code}. */
   @Column(name = "tier", nullable = false, length = 30)
-  private SubscriptionTier tier;
+  private String tier;
 
   /** ACTIVE | EXPIRED | CANCELED | PENDING_RENEWAL */
   @Column(name = "status", nullable = false, length = 20)

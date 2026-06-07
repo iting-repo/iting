@@ -6,7 +6,6 @@ import com.iting.jobportal.common.service.EmailService;
 import com.iting.jobportal.payment.entity.HrSubscription;
 import com.iting.jobportal.payment.entity.PaymentOrder;
 import com.iting.jobportal.payment.entity.PaymentStatus;
-import com.iting.jobportal.payment.entity.SubscriptionTier;
 import com.iting.jobportal.payment.entity.SubscriptionTierPricing;
 import com.iting.jobportal.payment.repository.HrSubscriptionRepository;
 import com.iting.jobportal.payment.repository.PaymentOrderRepository;
@@ -83,14 +82,15 @@ public class SubscriptionService {
    */
   @Transactional
   public Map<String, Object> createSubscriptionOrder(
-      Long accountId, SubscriptionTier tier, boolean autoRenew) {
+      Long accountId, String tierCode, boolean autoRenew) {
     Account account =
         accountRepository
             .findById(accountId)
             .orElseThrow(
                 () -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Account không tồn tại"));
 
-    SubscriptionTierPricing pricing = pricingService.getPricing(tier);
+    SubscriptionTierPricing pricing = pricingService.require(tierCode);
+    String code = pricing.getCode();
     long priceVnd = pricing.getPriceVnd();
 
     String orderCode = generateOrderCode();
@@ -99,10 +99,10 @@ public class SubscriptionService {
             .account(account)
             .orderCode(orderCode)
             .amount(priceVnd)
-            .description("Subscription " + tier.name() + (autoRenew ? " (auto-renew)" : ""))
+            .description("Subscription " + code + (autoRenew ? " (auto-renew)" : ""))
             .itemType("PREMIUM_SUBSCRIPTION")
             .itemId(null)
-            .tier(tier.name())
+            .tier(code)
             .status(PaymentStatus.PENDING)
             .gateway("SEPAY")
             .expiresAt(LocalDateTime.now().plusMinutes(30))
@@ -114,7 +114,7 @@ public class SubscriptionService {
     response.put("orderCode", orderCode);
     response.put("amount", priceVnd);
     response.put("status", "PENDING");
-    response.put("tier", tier.name());
+    response.put("tier", code);
     response.put("tierDisplayName", pricing.getDisplayName());
     response.put("autoRenew", autoRenew);
 
@@ -131,10 +131,7 @@ public class SubscriptionService {
     response.put("bank", bank);
 
     log.info(
-        "[Subscription] Order created: code={} tier={} account={}",
-        orderCode,
-        tier.name(),
-        accountId);
+        "[Subscription] Order created: code={} tier={} account={}", orderCode, code, accountId);
     return response;
   }
 
@@ -146,16 +143,14 @@ public class SubscriptionService {
   public void activateAfterPayment(PaymentOrder order) {
     if (!"PREMIUM_SUBSCRIPTION".equals(order.getItemType())) return;
 
-    SubscriptionTier tier;
-    try {
-      tier = SubscriptionTier.valueOf(order.getTier());
-    } catch (Exception e) {
+    String code = order.getTier();
+    SubscriptionTierPricing pricing = pricingService.find(code).orElse(null);
+    if (pricing == null) {
       log.error(
           "[Subscription] Unknown tier {} in order {}", order.getTier(), order.getOrderCode());
       return;
     }
 
-    SubscriptionTierPricing pricing = pricingService.getPricing(tier);
     Long accountId = order.getAccount().getId();
     LocalDateTime now = LocalDateTime.now();
 
@@ -180,14 +175,14 @@ public class SubscriptionService {
       // Extend: add period to current expiry
       sub = existing.get();
       sub.setExpiresAt(sub.getExpiresAt().plus(pricing.getPeriod()));
-      sub.setTier(tier);
+      sub.setTier(code);
       sub.setLastPaymentOrderId(order.getId());
     } else {
       // New subscription
       sub =
           HrSubscription.builder()
               .account(order.getAccount())
-              .tier(tier)
+              .tier(code)
               .status("ACTIVE")
               .startedAt(now)
               .expiresAt(now.plus(pricing.getPeriod()))
@@ -205,21 +200,21 @@ public class SubscriptionService {
         creditsToAdd,
         "SUBSCRIPTION",
         sub.getId(),
-        "Kích hoạt gói " + pricing.getDisplayName() + " (" + tier.name() + ")");
+        "Kích hoạt gói " + pricing.getDisplayName() + " (" + code + ")");
     account.setPremiumUntil(sub.getExpiresAt());
-    account.setPremiumSource(tier.name());
+    account.setPremiumSource(code);
     accountRepository.save(account);
 
     log.info(
         "[Subscription] Activated: account={} tier={} expires={} credits_added={}",
         accountId,
-        tier.name(),
+        code,
         sub.getExpiresAt(),
         creditsToAdd);
 
     // ── Send marketing welcome email (async, non-blocking) ──
     try {
-      sendSubscriptionWelcomeEmail(account, tier, pricing, sub, creditsToAdd);
+      sendSubscriptionWelcomeEmail(account, code, pricing, sub, creditsToAdd);
     } catch (Exception e) {
       log.warn(
           "[Subscription] Failed to send welcome email to {}: {}",
@@ -231,7 +226,7 @@ public class SubscriptionService {
   /** Sends a styled HTML welcome email after successful subscription. */
   private void sendSubscriptionWelcomeEmail(
       Account account,
-      SubscriptionTier tier,
+      String code,
       SubscriptionTierPricing pricing,
       HrSubscription sub,
       int creditsAdded) {
@@ -241,7 +236,7 @@ public class SubscriptionService {
     String name = account.getFullName() != null ? account.getFullName() : "Nhà tuyển dụng";
     String expiryDate = sub.getExpiresAt().toLocalDate().toString();
 
-    String subject = "🎉 Chào mừng bạn đến với ITing " + tier.name() + "!";
+    String subject = "🎉 Chào mừng bạn đến với ITing " + code + "!";
     String html =
         """
 <div style="font-family:'Segoe UI',Arial,sans-serif;max-width:600px;margin:0 auto;background:#ffffff;border-radius:12px;overflow:hidden;border:1px solid #e5e7eb">
@@ -274,12 +269,12 @@ public class SubscriptionService {
 """
             .formatted(
                 name,
-                tier.name(),
+                code,
                 pricing.getDisplayName(),
                 (long) pricing.getPeriodDays(),
                 expiryDate,
                 creditsAdded,
-                tier.name(),
+                code,
                 pricing.getBenefits().replace("·", "<br>·"));
 
     emailService.sendHtmlEmail(to, subject, html);

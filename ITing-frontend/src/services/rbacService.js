@@ -41,6 +41,14 @@ const rbacService = {
     axiosInstance.put(`/admin/rbac/members/${affiliationId}/role`, { roleCode }),
   removeCompanyMember: (affiliationId) =>
     axiosInstance.delete(`/admin/rbac/members/${affiliationId}`),
+
+  // ── Tài khoản nội bộ (gán platform role) ────────────────────────────
+  getStaff: (keyword) =>
+    axiosInstance.get("/admin/rbac/staff", { params: keyword ? { keyword } : {} }),
+  promoteStaff: (accountId) =>
+    axiosInstance.post(`/admin/rbac/staff/${accountId}/promote`),
+  clearStaffRole: (accountId) =>
+    axiosInstance.delete(`/admin/rbac/staff/${accountId}/role`),
 };
 
 export default rbacService;

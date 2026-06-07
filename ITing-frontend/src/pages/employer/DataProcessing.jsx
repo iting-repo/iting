@@ -96,7 +96,7 @@ const DataProcessing = () => {
       await fetchAffiliation();
     } catch (err) {
       console.error("Lỗi:", err);
-      toast.error(err?.response?.data?.message || err?.response?.data?.error || "Gửi duyệt thất bại. Vui lòng thử lại.");
+      toast.error(err?.error || err?.message || err?.response?.data?.error || err?.response?.data?.message || "Gửi duyệt thất bại. Vui lòng thử lại.");
     } finally {
       setSubmitting(false);
     }

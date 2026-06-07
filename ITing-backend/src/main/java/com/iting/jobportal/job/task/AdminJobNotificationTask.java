@@ -1,5 +1,7 @@
 package com.iting.jobportal.job.task;
 
+import com.iting.jobportal.admin.entity.SystemConfig;
+import com.iting.jobportal.admin.service.AdminConfigService;
 import com.iting.jobportal.auth.entity.Account;
 import com.iting.jobportal.auth.entity.Enum.Role;
 import com.iting.jobportal.auth.repository.AccountRepository;
@@ -23,6 +25,7 @@ public class AdminJobNotificationTask {
   private final JobRepository jobRepository;
   private final AccountRepository accountRepository;
   private final NotificationService notificationService;
+  private final AdminConfigService adminConfigService;
 
   /**
    * Chạy mỗi 3 tiếng để thông báo cho Admin về các Job đang chờ duyệt. 3 giờ = 3 * 60 * 60 * 1000 =
@@ -30,6 +33,13 @@ public class AdminJobNotificationTask {
    */
   @Scheduled(fixedRate = 10800000)
   public void notifyAdminPendingJobs() {
+    // Tôn trọng cấu hình admin: nếu "Tin tuyển dụng mới / chờ duyệt" đang TẮT thì không nhắc.
+    SystemConfig config = adminConfigService.getConfig();
+    if (config.getNotifyNewJob() == null || !config.getNotifyNewJob()) {
+      log.debug("[SCHEDULED TASK] notifyNewJob đang TẮT — bỏ qua nhắc job chờ duyệt.");
+      return;
+    }
+
     long pendingCount = jobRepository.countByStatus(JobStatus.PENDING);
 
     if (pendingCount > 0) {

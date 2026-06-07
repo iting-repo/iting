@@ -23,6 +23,19 @@ public interface AccountRepository
 
   java.util.List<Account> findByRole(com.iting.jobportal.auth.entity.Enum.Role role);
 
+  // RBAC (V113): lọc theo loại tài khoản (PUBLIC / COMPANY_STAFF / INTERNAL_STAFF).
+  java.util.List<Account> findByAccountType(
+      com.iting.jobportal.auth.entity.Enum.AccountType accountType);
+
+  // Tìm tài khoản theo email/họ tên (dùng cho màn gán quyền nội bộ).
+  @org.springframework.data.jpa.repository.Query(
+      "SELECT a FROM Account a "
+          + "WHERE LOWER(a.email) LIKE CONCAT('%', :kw, '%') "
+          + "   OR LOWER(COALESCE(a.fullName, '')) LIKE CONCAT('%', :kw, '%') "
+          + "ORDER BY a.id")
+  java.util.List<Account> searchByKeyword(
+      @org.springframework.data.repository.query.Param("kw") String kw);
+
   // Accounts currently locked: locked_until > now()
   java.util.List<Account> findByLockedUntilAfter(java.time.LocalDateTime now);
 

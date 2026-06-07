@@ -243,10 +243,14 @@ public class RbacServiceImpl implements RbacService {
           HttpStatus.BAD_REQUEST, "Chỉ gán được role đang ACTIVE");
     }
 
-    // Rule 6: không ai được tự nâng quyền SUPER_ADMIN cho chính mình
-    if (SUPER_ADMIN.equals(role.getCode()) && Objects.equals(actorId, target.getId())) {
-      throw new ResponseStatusException(
-          HttpStatus.FORBIDDEN, "Không thể tự gán quyền SUPER_ADMIN cho chính mình");
+    // Cấp SUPER_ADMIN là quyền nhạy cảm nhất → chỉ Super Admin hiện tại mới được cấp
+    if (SUPER_ADMIN.equals(role.getCode())) {
+      requireSuperAdmin(actorId, "gán quyền SUPER_ADMIN");
+      // Rule 6: không ai được tự nâng quyền SUPER_ADMIN cho chính mình
+      if (Objects.equals(actorId, target.getId())) {
+        throw new ResponseStatusException(
+            HttpStatus.FORBIDDEN, "Không thể tự gán quyền SUPER_ADMIN cho chính mình");
+      }
     }
 
     // Rule 1 & 8: chặn gán quyền nội bộ cho tài khoản công khai / sai phạm vi
@@ -453,6 +457,72 @@ public class RbacServiceImpl implements RbacService {
         .companyRoleCode(a.getCompanyRoleCode())
         .companyRoleName(
             a.getCompanyRoleCode() != null ? roleNames.get(a.getCompanyRoleCode()) : null)
+        .build();
+  }
+
+  // ── Tài khoản nội bộ ───────────────────────────────────────────────────────
+
+  @Override
+  public List<StaffResponse> listStaff(String keyword) {
+    Map<String, String> platformNames = platformRoleNames();
+    List<Account> accounts;
+    if (keyword == null || keyword.isBlank()) {
+      accounts = accountRepository.findByAccountType(AccountType.INTERNAL_STAFF);
+    } else {
+      accounts = accountRepository.searchByKeyword(keyword.trim().toLowerCase());
+      if (accounts.size() > 50) accounts = accounts.subList(0, 50);
+    }
+    return accounts.stream().map(a -> toStaff(a, platformNames)).collect(Collectors.toList());
+  }
+
+  @Override
+  @Transactional
+  public StaffResponse promoteToStaff(Long actorId, Long accountId) {
+    Account acc =
+        accountRepository
+            .findById(accountId)
+            .orElseThrow(
+                () -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Không tìm thấy tài khoản"));
+    acc.setAccountType(AccountType.INTERNAL_STAFF);
+    accountRepository.save(acc);
+    audit(actorId, "PROMOTE_STAFF", acc.getId(), "Nâng " + acc.getEmail() + " thành nhân sự nội bộ");
+    return toStaff(acc, platformRoleNames());
+  }
+
+  @Override
+  @Transactional
+  public void clearPlatformRole(Long actorId, Long accountId) {
+    Account acc =
+        accountRepository
+            .findById(accountId)
+            .orElseThrow(
+                () -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Không tìm thấy tài khoản"));
+    if (SUPER_ADMIN.equals(acc.getAdminRole())) {
+      requireSuperAdmin(actorId, "thu hồi quyền của Super Admin");
+    }
+    acc.setAdminRole(null);
+    accountRepository.save(acc);
+    audit(actorId, "REVOKE_ROLE", acc.getId(), "Thu hồi platform role của " + acc.getEmail());
+  }
+
+  private Map<String, String> platformRoleNames() {
+    Map<String, String> map = new HashMap<>();
+    roleRepository
+        .findByScopeOrderBySystemRoleDescCreatedAtAsc(PermissionScope.PLATFORM)
+        .forEach(r -> map.put(r.getCode(), r.getName()));
+    return map;
+  }
+
+  private StaffResponse toStaff(Account a, Map<String, String> platformNames) {
+    return StaffResponse.builder()
+        .accountId(a.getId())
+        .email(a.getEmail())
+        .fullName(a.getFullName())
+        .accountType(a.getAccountType() != null ? a.getAccountType().name() : AccountType.PUBLIC.name())
+        .status(a.getStatus() != null ? a.getStatus().name() : null)
+        .roleBasic(a.getRole() != null ? a.getRole().normalizedName() : null)
+        .platformRoleCode(a.getAdminRole())
+        .platformRoleName(a.getAdminRole() != null ? platformNames.get(a.getAdminRole()) : null)
         .build();
   }
 

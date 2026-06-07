@@ -1,7 +1,7 @@
 package com.iting.jobportal.payment.controller;
 
 import com.iting.jobportal.auth.security.JwtTokenUtil;
-import com.iting.jobportal.payment.entity.SubscriptionTier;
+import com.iting.jobportal.payment.entity.SubscriptionTierPricing;
 import com.iting.jobportal.payment.service.SubscriptionPricingService;
 import com.iting.jobportal.payment.service.SubscriptionService;
 import jakarta.servlet.http.HttpServletRequest;
@@ -37,6 +37,10 @@ public class SubscriptionController {
                   m.put("periodDays", (long) t.getPeriodDays());
                   m.put("benefits", t.getBenefits());
                   m.put("credits", t.getCredits());
+                  m.put("popular", t.isPopular());
+                  m.put("badge", t.getBadge());
+                  m.put("accentColor", t.getAccentColor());
+                  m.put("talentPool", t.isTalentPool());
                   return m;
                 })
             .collect(Collectors.toList()));
@@ -49,14 +53,17 @@ public class SubscriptionController {
       @RequestParam(defaultValue = "true") boolean autoRenew,
       HttpServletRequest request) {
     Long userId = requireUser(request);
-    SubscriptionTier t;
-    try {
-      t = SubscriptionTier.valueOf(tier.toUpperCase());
-    } catch (Exception e) {
-      throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Tier không hợp lệ");
+    SubscriptionTierPricing pricing =
+        pricingService
+            .find(tier)
+            .orElseThrow(
+                () -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Gói không hợp lệ"));
+    if (!pricing.isActive()) {
+      throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Gói hiện không khả dụng");
     }
 
-    return ResponseEntity.ok(subscriptionService.createSubscriptionOrder(userId, t, autoRenew));
+    return ResponseEntity.ok(
+        subscriptionService.createSubscriptionOrder(userId, pricing.getCode(), autoRenew));
   }
 
   /** Get current active subscription (if any). */
@@ -68,11 +75,13 @@ public class SubscriptionController {
         .getActiveSubscription(userId)
         .ifPresentOrElse(
             sub -> {
+              String code = sub.getTier();
+              SubscriptionTierPricing pricing = pricingService.find(code).orElse(null);
               m.put("active", true);
               m.put("id", sub.getId());
-              m.put("tier", sub.getTier().name());
-              m.put("tierDisplayName", sub.getTier().getDisplayName());
-              m.put("benefits", sub.getTier().getBenefits());
+              m.put("tier", code);
+              m.put("tierDisplayName", pricing != null ? pricing.getDisplayName() : code);
+              m.put("benefits", pricing != null ? pricing.getBenefits() : "");
               m.put("startedAt", sub.getStartedAt());
               m.put("expiresAt", sub.getExpiresAt());
               m.put("autoRenew", sub.getAutoRenew());

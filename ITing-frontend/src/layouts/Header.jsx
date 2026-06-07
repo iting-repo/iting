@@ -11,6 +11,9 @@ import { formatChatTime, sortConversationsForInbox } from '../utils/chatFormat';
 import ChatDockBox from '../components/chat/ChatDockBox';
 import notificationService from '../services/notificationService';
 import creditService from '../services/creditService';
+import companyService from '../services/companyService';
+import { isCompanyVerified } from '../utils/enumLabels';
+import { BadgeCheck } from 'lucide-react';
 import axiosInstance from '../utils/axiosInstance';
 import { storage } from '../utils/storage';
 import { CompanyLogo } from '../components/common';
@@ -60,6 +63,21 @@ const Header = () => {
 
   // ── Credit balance (Employer only) ──
   const [creditBalance, setCreditBalance] = useState(0);
+
+  // ── Verification level công ty (Employer only) — để hiện huy hiệu "Đã xác thực" ──
+  const [companyVerificationLevel, setCompanyVerificationLevel] = useState(null);
+
+  useEffect(() => {
+    if (role !== 'EMPLOYER') return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const company = await companyService.getMyCompany();
+        if (!cancelled) setCompanyVerificationLevel(company?.verificationLevel ?? null);
+      } catch { /* silent */ }
+    })();
+    return () => { cancelled = true; };
+  }, [role]);
 
   useEffect(() => {
     if (role !== 'EMPLOYER') return;
@@ -678,6 +696,11 @@ const Header = () => {
                       <div className="px-4 py-3 border-b border-gray-100 bg-gray-50/50 shrink-0">
                         <p className="text-sm font-bold text-gray-900 truncate">{displayName}</p>
                         <p className="text-xs text-gray-500 truncate mt-0.5">{role === 'CANDIDATE' ? 'Ứng viên' : 'Nhà tuyển dụng'}</p>
+                        {role === 'EMPLOYER' && isCompanyVerified(companyVerificationLevel) && (
+                          <span className="mt-1 inline-flex items-center gap-1 rounded-full bg-[#EAF6FF] px-2 py-0.5 text-[10px] font-bold text-[#3AB4E6]">
+                            <BadgeCheck className="w-3 h-3" /> Đã xác thực
+                          </span>
+                        )}
                         {role === 'EMPLOYER' && (
                           <Link
                             to="/employer/subscriptions/manage"

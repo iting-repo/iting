@@ -17,6 +17,7 @@ import { formatDistanceToNowStrict, parseISO } from "date-fns";
 import { vi } from "date-fns/locale";
 import { useModalEscape } from "../../hooks/useModalEscape";
 import { buildJobDetailPath, getCompanyLogoUrl } from "../../utils/jobUrl";
+import { isCompanyVerified } from "../../utils/enumLabels";
 
 
 /**
@@ -374,9 +375,11 @@ const CompanyDetailPage = () => {
                 <h1 className="text-3xl md:text-4xl font-black text-gray-900 tracking-tight">
                   {company.name}
                 </h1>
-                <div className="p-1 bg-blue-50 rounded-full">
-                  <BadgeCheck className="w-7 h-7 text-[#3AB4E6] fill-blue-50" />
-                </div>
+                {isCompanyVerified(company.verificationLevel) && (
+                  <div className="p-1 bg-blue-50 rounded-full" title="Công ty đã xác thực">
+                    <BadgeCheck className="w-7 h-7 text-[#3AB4E6] fill-blue-50" />
+                  </div>
+                )}
                 <div className="flex items-center gap-1.5 px-3 py-1 bg-green-50 text-green-700 rounded-full text-[10px] font-black border border-green-100 tracking-wider">
                   <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></div>
                   ĐANG TUYỂN DỤNG

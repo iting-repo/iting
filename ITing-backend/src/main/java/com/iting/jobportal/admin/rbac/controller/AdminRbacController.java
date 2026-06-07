@@ -176,4 +176,27 @@ public class AdminRbacController {
     rbacService.removeCompanyMember(actorId(user), affiliationId);
     return ResponseEntity.ok(Map.of("message", "Đã gỡ thành viên"));
   }
+
+  // ── Tài khoản nội bộ (gán platform role) ──────────────────────────────────
+
+  @GetMapping("/staff")
+  @Operation(summary = "Danh sách tài khoản để gán quyền (rỗng → chỉ nhân sự nội bộ)")
+  public ResponseEntity<List<StaffResponse>> staff(@RequestParam(required = false) String keyword) {
+    return ResponseEntity.ok(rbacService.listStaff(keyword));
+  }
+
+  @PostMapping("/staff/{accountId}/promote")
+  @Operation(summary = "Nâng tài khoản thành nhân sự nội bộ ITing")
+  public ResponseEntity<StaffResponse> promote(
+      @AuthenticationPrincipal AuthUser user, @PathVariable Long accountId) {
+    return ResponseEntity.ok(rbacService.promoteToStaff(actorId(user), accountId));
+  }
+
+  @DeleteMapping("/staff/{accountId}/role")
+  @Operation(summary = "Thu hồi platform role của tài khoản")
+  public ResponseEntity<Map<String, String>> clearRole(
+      @AuthenticationPrincipal AuthUser user, @PathVariable Long accountId) {
+    rbacService.clearPlatformRole(actorId(user), accountId);
+    return ResponseEntity.ok(Map.of("message", "Đã thu hồi quyền"));
+  }
 }

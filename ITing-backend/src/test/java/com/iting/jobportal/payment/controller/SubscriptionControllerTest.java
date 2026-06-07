@@ -80,39 +80,65 @@ class SubscriptionControllerTest {
     }
   }
 
+  private static SubscriptionTierPricing pricing(String code, boolean active) {
+    return SubscriptionTierPricing.builder()
+        .code(code)
+        .displayName(code + " plan")
+        .priceVnd(199000)
+        .periodDays(30)
+        .credits(50)
+        .benefits("Quyền lợi A · Quyền lợi B")
+        .maxJobsPerMonth(10)
+        .maxBoostsPerMonth(5)
+        .active(active)
+        .build();
+  }
+
   // ── subscribe ────────────────────────────────────────────────────────
 
   @Test
   void subscribe_validTier_returnsServiceResult() {
-    SubscriptionTier tier = SubscriptionTier.values()[0];
     Map<String, Object> result = Map.of("orderId", 42L);
     when(jwtTokenUtil.getUserIdFromHeader(request)).thenReturn(1L);
-    when(subscriptionService.createSubscriptionOrder(1L, tier, true)).thenReturn(result);
+    when(pricingService.find("BASIC")).thenReturn(Optional.of(pricing("BASIC", true)));
+    when(subscriptionService.createSubscriptionOrder(1L, "BASIC", true)).thenReturn(result);
 
-    ResponseEntity<Map<String, Object>> resp = controller.subscribe(tier.name(), true, request);
+    ResponseEntity<Map<String, Object>> resp = controller.subscribe("BASIC", true, request);
 
     assertSame(result, resp.getBody());
   }
 
   @Test
-  void subscribe_tierLowercase_isUppercased() {
-    SubscriptionTier tier = SubscriptionTier.values()[0];
+  void subscribe_usesCanonicalCodeFromPricing() {
     when(jwtTokenUtil.getUserIdFromHeader(request)).thenReturn(1L);
-    when(subscriptionService.createSubscriptionOrder(1L, tier, false)).thenReturn(Map.of());
+    when(pricingService.find("pro")).thenReturn(Optional.of(pricing("PRO", true)));
+    when(subscriptionService.createSubscriptionOrder(1L, "PRO", false)).thenReturn(Map.of());
 
-    controller.subscribe(tier.name().toLowerCase(), false, request);
+    controller.subscribe("pro", false, request);
 
-    verify(subscriptionService).createSubscriptionOrder(1L, tier, false);
+    verify(subscriptionService).createSubscriptionOrder(1L, "PRO", false);
   }
 
   @Test
   void subscribe_invalidTier_throws400() {
     when(jwtTokenUtil.getUserIdFromHeader(request)).thenReturn(1L);
+    when(pricingService.find("INVALID_TIER")).thenReturn(Optional.empty());
 
     ResponseStatusException ex =
         assertThrows(
             ResponseStatusException.class,
             () -> controller.subscribe("INVALID_TIER", true, request));
+    assertEquals(HttpStatus.BAD_REQUEST, ex.getStatusCode());
+  }
+
+  @Test
+  void subscribe_inactiveTier_throws400() {
+    when(jwtTokenUtil.getUserIdFromHeader(request)).thenReturn(1L);
+    when(pricingService.find("OLD")).thenReturn(Optional.of(pricing("OLD", false)));
+
+    ResponseStatusException ex =
+        assertThrows(
+            ResponseStatusException.class, () -> controller.subscribe("OLD", true, request));
     assertEquals(HttpStatus.BAD_REQUEST, ex.getStatusCode());
   }
 
@@ -130,11 +156,11 @@ class SubscriptionControllerTest {
 
   @Test
   void getMine_activeSubscription_returnsAllFields() {
-    SubscriptionTier tier = SubscriptionTier.values()[0];
+    SubscriptionTierPricing p = pricing("BASIC", true);
     HrSubscription sub =
         HrSubscription.builder()
             .id(7L)
-            .tier(tier)
+            .tier("BASIC")
             .startedAt(LocalDateTime.of(2026, 5, 1, 0, 0))
             .expiresAt(LocalDateTime.of(2026, 6, 1, 0, 0))
             .autoRenew(true)
@@ -143,6 +169,7 @@ class SubscriptionControllerTest {
 
     when(jwtTokenUtil.getUserIdFromHeader(request)).thenReturn(1L);
     when(subscriptionService.getActiveSubscription(1L)).thenReturn(Optional.of(sub));
+    when(pricingService.find("BASIC")).thenReturn(Optional.of(p));
 
     ResponseEntity<Map<String, Object>> resp = controller.getMine(request);
 
@@ -150,8 +177,8 @@ class SubscriptionControllerTest {
     assertNotNull(body);
     assertEquals(true, body.get("active"));
     assertEquals(7L, body.get("id"));
-    assertEquals(tier.name(), body.get("tier"));
-    assertEquals(tier.getDisplayName(), body.get("tierDisplayName"));
+    assertEquals("BASIC", body.get("tier"));
+    assertEquals(p.getDisplayName(), body.get("tierDisplayName"));
     assertNotNull(body.get("startedAt"));
     assertNotNull(body.get("expiresAt"));
     assertEquals(true, body.get("autoRenew"));

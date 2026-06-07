@@ -52,4 +52,15 @@ public interface RbacService {
 
   /** Gỡ HR khỏi công ty (thu hồi affiliation). */
   void removeCompanyMember(Long actorId, Long affiliationId);
+
+  // ── Tài khoản nội bộ (gán platform role) ──────────────────────────────────
+
+  /** Danh sách tài khoản để gán quyền. keyword rỗng → chỉ INTERNAL_STAFF; có keyword → tìm mọi tài khoản. */
+  List<StaffResponse> listStaff(String keyword);
+
+  /** Nâng một tài khoản công khai/HR thành nhân sự nội bộ ITing. */
+  StaffResponse promoteToStaff(Long actorId, Long accountId);
+
+  /** Thu hồi platform role đang gán (xóa adminRole). */
+  void clearPlatformRole(Long actorId, Long accountId);
 }

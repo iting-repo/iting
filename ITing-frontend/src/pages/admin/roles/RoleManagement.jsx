@@ -3,7 +3,7 @@ import {
   FaShieldAlt, FaUserShield, FaBuilding, FaHourglassHalf,
   FaCheck, FaTimes, FaPlus, FaTrash, FaPaperPlane, FaLock,
   FaExclamationTriangle, FaInfoCircle, FaToggleOn, FaToggleOff,
-  FaEdit, FaUsers, FaUserPlus,
+  FaEdit, FaUsers, FaUserPlus, FaUserCog, FaSearch,
 } from 'react-icons/fa';
 import { toast } from 'sonner';
 import Dialog from '../../../components/common/Dialog';
@@ -33,8 +33,15 @@ const MODULE_LABEL = {
 const TABS = [
   { key: 'platform', label: 'Vai trò nền tảng ITing', icon: FaUserShield, scope: 'PLATFORM' },
   { key: 'company',  label: 'Vai trò doanh nghiệp',    icon: FaBuilding,   scope: 'COMPANY' },
+  { key: 'staff',    label: 'Tài khoản nội bộ',        icon: FaUserCog,    scope: null },
   { key: 'pending',  label: 'Yêu cầu chờ duyệt',       icon: FaHourglassHalf, scope: null },
 ];
+
+const ACCOUNT_TYPE_META = {
+  INTERNAL_STAFF: { label: 'Nội bộ ITing',     cls: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
+  COMPANY_STAFF:  { label: 'Nhân sự công ty',  cls: 'bg-sky-50 text-sky-700 border-sky-200' },
+  PUBLIC:         { label: 'Công khai',         cls: 'bg-slate-100 text-slate-600 border-slate-200' },
+};
 
 const Badge = ({ meta }) => (
   <span className={`px-2 py-0.5 rounded-full text-[11px] font-bold border ${meta.cls}`}>
@@ -96,6 +103,7 @@ const RoleManagement = () => {
   }, []);
 
   const loadRoles = useCallback(async (tab) => {
+    if (tab === 'staff') return; // tab này tự fetch trong StaffManagement
     try {
       setLoading(true);
       if (tab === 'pending') {
@@ -208,6 +216,8 @@ const RoleManagement = () => {
           onApprove={doApprove}
           onReject={(r) => setRejectTarget(r)}
         />
+      ) : activeTab === 'staff' ? (
+        <StaffManagement />
       ) : activeTab === 'company' ? (
         <div className="space-y-8">
           <CompanyMembers companyRoles={roles.company} />
@@ -810,6 +820,155 @@ const AddMemberDialog = ({ companyId, activeRoles, onClose, onAdded }) => {
         </button>
       </div>
     </Dialog>
+  );
+};
+
+// ── Internal staff management (gán platform role cho tài khoản) ─────────
+const StaffManagement = () => {
+  const [platformRoles, setPlatformRoles] = useState([]);
+  const [staff, setStaff] = useState([]);
+  const [keyword, setKeyword] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  const activeRoles = useMemo(
+    () => platformRoles.filter(r => r.status === 'ACTIVE'), [platformRoles]);
+
+  useEffect(() => {
+    rbacService.getRoles('PLATFORM')
+      .then(d => setPlatformRoles(d || []))
+      .catch(() => {});
+  }, []);
+
+  const load = useCallback((kw) => {
+    setLoading(true);
+    rbacService.getStaff(kw)
+      .then(d => setStaff(d || []))
+      .catch(() => toast.error('Không tải được danh sách tài khoản'))
+      .finally(() => setLoading(false));
+  }, []);
+
+  useEffect(() => { load(''); }, [load]);
+
+  const onSearch = (e) => {
+    e.preventDefault();
+    load(keyword.trim());
+  };
+
+  const assign = async (s, roleCode) => {
+    try {
+      await rbacService.assignRole(s.accountId, roleCode);
+      toast.success(`Đã gán vai trò cho ${s.email}`);
+      load(keyword.trim());
+    } catch (e) { toast.error(e?.message || 'Gán vai trò thất bại'); }
+  };
+  const promote = async (s) => {
+    try {
+      await rbacService.promoteStaff(s.accountId);
+      toast.success(`${s.email} đã trở thành nhân sự nội bộ`);
+      load(keyword.trim());
+    } catch (e) { toast.error(e?.message || 'Thao tác thất bại'); }
+  };
+  const revoke = async (s) => {
+    if (!window.confirm(`Thu hồi quyền nội bộ của ${s.email}?`)) return;
+    try {
+      await rbacService.clearStaffRole(s.accountId);
+      toast.success('Đã thu hồi quyền');
+      load(keyword.trim());
+    } catch (e) { toast.error(e?.message || 'Thu hồi thất bại'); }
+  };
+
+  return (
+    <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
+        <div>
+          <h3 className="font-bold text-slate-800 flex items-center gap-2">
+            <FaUserCog className="text-[#3AB4E6]" /> Tài khoản nội bộ ITing
+          </h3>
+          <p className="text-xs text-slate-500 mt-1">
+            Gán vai trò nền tảng cho nhân sự nội bộ. Tìm kiếm để nâng tài khoản khác thành nội bộ.
+          </p>
+        </div>
+        <form onSubmit={onSearch} className="relative">
+          <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={12} />
+          <input
+            value={keyword}
+            onChange={(e) => setKeyword(e.target.value)}
+            placeholder="Tìm email / tên để gán quyền…"
+            className="pl-9 pr-3 py-2 text-sm border border-slate-200 rounded-xl outline-none focus:border-[#3AB4E6] w-full sm:w-72"
+          />
+        </form>
+      </div>
+
+      {loading ? (
+        <div className="text-center py-8 text-slate-400 text-sm">Đang tải…</div>
+      ) : staff.length === 0 ? (
+        <div className="text-center py-8 text-slate-400 text-sm">
+          {keyword ? 'Không tìm thấy tài khoản phù hợp.' : 'Chưa có tài khoản nội bộ nào.'}
+        </div>
+      ) : (
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="text-left text-[11px] font-bold text-slate-400 uppercase tracking-wider border-b border-slate-100">
+                <th className="py-2 px-2">Tài khoản</th>
+                <th className="py-2 px-2">Loại</th>
+                <th className="py-2 px-2">Trạng thái</th>
+                <th className="py-2 px-2 w-[210px]">Vai trò nền tảng</th>
+                <th className="py-2 px-2 text-right">Thao tác</th>
+              </tr>
+            </thead>
+            <tbody>
+              {staff.map(s => {
+                const isInternal = s.accountType === 'INTERNAL_STAFF';
+                return (
+                  <tr key={s.accountId} className="border-b border-slate-50 hover:bg-slate-50/50">
+                    <td className="py-2.5 px-2">
+                      <div className="font-medium text-slate-700">{s.fullName || s.email}</div>
+                      <div className="text-[11px] text-slate-400">{s.email}</div>
+                    </td>
+                    <td className="py-2.5 px-2">
+                      <Badge meta={ACCOUNT_TYPE_META[s.accountType] || ACCOUNT_TYPE_META.PUBLIC} />
+                    </td>
+                    <td className="py-2.5 px-2"><span className="text-xs text-slate-500">{s.status}</span></td>
+                    <td className="py-2.5 px-2">
+                      {isInternal ? (
+                        <select
+                          value={s.platformRoleCode || ''}
+                          onChange={(e) => e.target.value && assign(s, e.target.value)}
+                          className="w-full border border-slate-200 rounded-lg px-2 py-1.5 text-sm bg-white outline-none focus:border-[#3AB4E6]"
+                        >
+                          <option value="">— Chưa gán —</option>
+                          {activeRoles.map(r => (
+                            <option key={r.code} value={r.code}>{r.name}</option>
+                          ))}
+                        </select>
+                      ) : (
+                        <span className="inline-flex items-center gap-1.5 text-[11px] text-slate-400">
+                          <FaLock size={9} /> Tài khoản công khai
+                        </span>
+                      )}
+                    </td>
+                    <td className="py-2.5 px-2 text-right whitespace-nowrap">
+                      {isInternal ? (
+                        s.platformRoleCode && (
+                          <button onClick={() => revoke(s)} className="inline-flex items-center gap-1 text-xs font-bold text-red-500 hover:text-red-600">
+                            <FaTrash size={10} /> Thu hồi
+                          </button>
+                        )
+                      ) : (
+                        <button onClick={() => promote(s)} className="inline-flex items-center gap-1 text-xs font-bold text-[#3AB4E6] hover:underline">
+                          <FaUserPlus size={11} /> Nâng thành nội bộ
+                        </button>
+                      )}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
   );
 };
 
