@@ -44,6 +44,15 @@ public interface AffiliationService {
    */
   AffiliationMeResponse submitReview(Long hrAccountId);
 
+  /** Gửi RIÊNG phần thông tin công ty cho admin duyệt (info_status = PENDING_REVIEW). */
+  AffiliationMeResponse submitInfo(Long hrAccountId);
+
+  /** Gửi RIÊNG phần giấy phép kinh doanh cho admin duyệt (license_status = PENDING_REVIEW). */
+  AffiliationMeResponse submitLicense(Long hrAccountId);
+
+  /** Gửi RIÊNG phần thỏa thuận DLCN cho admin duyệt (consent_status = PENDING_REVIEW). */
+  AffiliationMeResponse submitConsent(Long hrAccountId);
+
   /** Presigned URL self-check cho HR xem lại license đã upload. */
   String getLicensePresignedUrl(Long hrAccountId, int expiryMinutes);
 

@@ -45,4 +45,12 @@ public class AffiliationMeResponse {
   private String submittedLicenseUrl;
   private String submittedConsentUrl;
   private Boolean submittedConsentConfirmed;
+
+  // ─ Trạng thái duyệt từng phần (V120)
+  private SubmissionStatus infoStatus;
+  private SubmissionStatus licenseStatus;
+  private SubmissionStatus consentStatus;
+  private String infoRejectReason;
+  private String licenseRejectReason;
+  private String consentRejectReason;
 }

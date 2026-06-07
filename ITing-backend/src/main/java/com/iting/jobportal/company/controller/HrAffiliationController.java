@@ -104,6 +104,27 @@ public class HrAffiliationController {
     return ResponseEntity.ok(affiliationService.submitReview(hrAccountId));
   }
 
+  @PostMapping("/submit-info")
+  @Operation(summary = "Gửi RIÊNG phần thông tin công ty cho admin duyệt (info_status).")
+  public ResponseEntity<AffiliationMeResponse> submitInfo(
+      @Parameter(hidden = true) @CurrentUser Long hrAccountId) {
+    return ResponseEntity.ok(affiliationService.submitInfo(hrAccountId));
+  }
+
+  @PostMapping("/submit-license")
+  @Operation(summary = "Gửi RIÊNG phần giấy phép kinh doanh cho admin duyệt (license_status).")
+  public ResponseEntity<AffiliationMeResponse> submitLicense(
+      @Parameter(hidden = true) @CurrentUser Long hrAccountId) {
+    return ResponseEntity.ok(affiliationService.submitLicense(hrAccountId));
+  }
+
+  @PostMapping("/submit-consent")
+  @Operation(summary = "Gửi RIÊNG phần thỏa thuận DLCN cho admin duyệt (consent_status).")
+  public ResponseEntity<AffiliationMeResponse> submitConsent(
+      @Parameter(hidden = true) @CurrentUser Long hrAccountId) {
+    return ResponseEntity.ok(affiliationService.submitConsent(hrAccountId));
+  }
+
   @GetMapping("/license/view")
   @Operation(summary = "Presigned URL self-check cho HR xem lại license đã upload")
   public ResponseEntity<Map<String, String>> viewLicense(

@@ -111,7 +111,7 @@ public class EmployerCandidateSearchServiceImpl implements EmployerCandidateSear
     List<ScoredCandidate> scored = new ArrayList<>(matched.size());
     for (UserProfile profile : matched) {
       var user = profile.getUser();
-      var account = user.getAccount();
+      var account = user == null ? null : user.getAccount();
 
       double score = 0.0;
       if (queryEmbedding.isPresent()) {
@@ -399,7 +399,7 @@ public class EmployerCandidateSearchServiceImpl implements EmployerCandidateSear
   private EmployerCandidateSearchResponse toResponse(
       UserProfile profile, double score, List<String> searchSkills) {
     var user = profile.getUser();
-    var account = user.getAccount();
+    var account = user == null ? null : user.getAccount();
 
     List<String> skills =
         profile.getSkills() == null
@@ -422,7 +422,7 @@ public class EmployerCandidateSearchServiceImpl implements EmployerCandidateSear
     return EmployerCandidateSearchResponse.builder()
         .id(profile.getId())
         .name(account != null ? account.getFullName() : null)
-        .email(account.getEmail())
+        .email(account == null ? null : account.getEmail())
         .title(nullToEmpty(profile.getHeadline()))
         .level(deriveLevel(expYears))
         .location(nullToEmpty(profile.getLocation()))

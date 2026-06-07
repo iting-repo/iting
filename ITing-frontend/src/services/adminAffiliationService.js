@@ -62,6 +62,25 @@ const adminAffiliationService = {
     return await axiosInstance.post(`/admin/affiliations/${affiliationId}/reject`, { reason });
   },
 
+  /** Duyệt RIÊNG 1 phần (part = info|license|consent). */
+  approvePart: async (affiliationId, part) => {
+    return await axiosInstance.post(`/admin/affiliations/${affiliationId}/parts/${part}/approve`);
+  },
+
+  /** Từ chối RIÊNG 1 phần (part = info|license|consent) + lý do. */
+  rejectPart: async (affiliationId, part, reason) => {
+    return await axiosInstance.post(`/admin/affiliations/${affiliationId}/parts/${part}/reject`, {
+      reason,
+    });
+  },
+
+  /** Gán HR vào công ty được chọn (ghi đè). Yêu cầu cả 3 phần đã APPROVED. */
+  assignCompany: async (affiliationId, companyId) => {
+    return await axiosInstance.post(`/admin/affiliations/${affiliationId}/assign-company`, {
+      companyId,
+    });
+  },
+
   /** Thu hồi membership sau khi đã APPROVED. */
   revoke: async (affiliationId, reason) => {
     return await axiosInstance.post(`/admin/affiliations/${affiliationId}/revoke`, { reason });

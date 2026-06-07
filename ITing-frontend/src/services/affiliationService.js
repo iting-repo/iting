@@ -87,6 +87,21 @@ const affiliationService = {
     return await axiosInstance.post("/hr/affiliations/me/submit-review");
   },
 
+  /** Gửi RIÊNG phần thông tin công ty cho admin duyệt (info_status = PENDING_REVIEW). */
+  submitInfo: async () => {
+    return await axiosInstance.post("/hr/affiliations/me/submit-info");
+  },
+
+  /** Gửi RIÊNG phần giấy phép kinh doanh cho admin duyệt (license_status = PENDING_REVIEW). */
+  submitLicense: async () => {
+    return await axiosInstance.post("/hr/affiliations/me/submit-license");
+  },
+
+  /** Gửi RIÊNG phần thỏa thuận DLCN cho admin duyệt (consent_status = PENDING_REVIEW). */
+  submitConsent: async () => {
+    return await axiosInstance.post("/hr/affiliations/me/submit-consent");
+  },
+
   /**
    * Presigned URL self-check cho HR xem lại license đã upload (15 phút).
    */

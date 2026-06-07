@@ -66,8 +66,8 @@ const Verification = () => {
     REJECTED: { label: "Bị từ chối", color: "bg-red-100 text-red-600" },
   };
 
-  // Ưu tiên submission status của affiliation (mới); fallback document status cũ của Company.
-  const submissionState = affiliation?.submissionStatus || company?.documentReviewStatus;
+  // Trạng thái duyệt RIÊNG của phần giấy phép (license_status).
+  const submissionState = affiliation?.licenseStatus || company?.documentReviewStatus;
   const currentStatus = statusMap[submissionState] || statusMap.MISSING;
 
   // Đã có file giấy phép trên server (HR đã upload trước đó)
@@ -120,18 +120,18 @@ const Verification = () => {
     try {
       setSubmitting(true);
 
-      // CHỈ lưu giấy phép vào snapshot (không tự gửi duyệt). Việc gửi duyệt gom cả
-      // thông tin + giấy phép + thỏa thuận được thực hiện 1 lần ở tab "Thông tin chung".
+      // Upload (nếu có file mới) rồi GỬI DUYỆT RIÊNG phần giấy phép (license_status).
       if (file) {
         await companyService.uploadBusinessLicense(file);
         setFile(null);
         setFilePreviewUrl(null);
       }
-      toast.success('Đã lưu giấy phép kinh doanh. Vào tab "Thông tin chung" và bấm "Gửi duyệt hồ sơ" khi đã đủ hồ sơ.');
+      await affiliationService.submitLicense();
+      toast.success("Đã gửi giấy phép kinh doanh cho admin xét duyệt!");
       await fetchCompany();
     } catch (err) {
-      console.error("Lỗi lưu giấy phép:", err);
-      toast.error(err?.error || err?.message || err?.response?.data?.error || err?.response?.data?.message || "Không thể lưu. Vui lòng thử lại.");
+      console.error("Lỗi gửi duyệt giấy phép:", err);
+      toast.error(err?.error || err?.message || err?.response?.data?.error || err?.response?.data?.message || "Không thể gửi duyệt. Vui lòng thử lại.");
     } finally {
       setSubmitting(false);
     }
@@ -349,8 +349,8 @@ const Verification = () => {
                 : !file && !hasUploadedLicense
                   ? "Vui lòng upload trước"
                   : file
-                    ? "Lưu giấy phép"
-                    : "Đã lưu — Lưu lại"}
+                    ? "Tải lên & Gửi duyệt"
+                    : "Gửi duyệt giấy phép"}
           </Button>
         </div>
       </div>

@@ -34,6 +34,19 @@ public interface AdminAffiliationService {
 
   AdminAffiliationResponse reject(Long affiliationId, Long adminAccountId, String reason);
 
+  /** Duyệt RIÊNG 1 phần (part = info|license|consent) → partStatus = APPROVED. */
+  AdminAffiliationResponse approvePart(Long affiliationId, String part, Long adminAccountId);
+
+  /** Từ chối RIÊNG 1 phần (part = info|license|consent) → partStatus = REJECTED + lý do. */
+  AdminAffiliationResponse rejectPart(
+      Long affiliationId, String part, Long adminAccountId, String reason);
+
+  /**
+   * Gán HR vào một công ty cụ thể (ghi đè company_id) sau khi cả 3 phần APPROVED. Approve membership
+   * + apply snapshot lên công ty được chọn.
+   */
+  AdminAffiliationResponse assignToCompany(Long affiliationId, Long companyId, Long adminAccountId);
+
   AdminAffiliationResponse applyToCompany(
       Long affiliationId, Long adminAccountId, String verifiedHrEmail, String contactNote);
 

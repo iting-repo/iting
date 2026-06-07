@@ -135,4 +135,31 @@ public class CompanyHrAffiliation extends AuditEntity {
   /** Thời điểm snapshot này được apply lên Company gần nhất. NULL nếu chưa từng. */
   @Column(name = "applied_to_company_at")
   private LocalDateTime appliedToCompanyAt;
+
+  // ───────── Per-part review: info / license / consent (V120) ─────────
+  // HR gửi từng phần độc lập; admin duyệt/từ chối từng phần. Đủ 3 APPROVED → assign-to-company.
+
+  @Enumerated(EnumType.STRING)
+  @Column(name = "info_status", nullable = false, length = 20)
+  @lombok.Builder.Default
+  private SubmissionStatus infoStatus = SubmissionStatus.NONE;
+
+  @Enumerated(EnumType.STRING)
+  @Column(name = "license_status", nullable = false, length = 20)
+  @lombok.Builder.Default
+  private SubmissionStatus licenseStatus = SubmissionStatus.NONE;
+
+  @Enumerated(EnumType.STRING)
+  @Column(name = "consent_status", nullable = false, length = 20)
+  @lombok.Builder.Default
+  private SubmissionStatus consentStatus = SubmissionStatus.NONE;
+
+  @Column(name = "info_reject_reason", columnDefinition = "TEXT")
+  private String infoRejectReason;
+
+  @Column(name = "license_reject_reason", columnDefinition = "TEXT")
+  private String licenseRejectReason;
+
+  @Column(name = "consent_reject_reason", columnDefinition = "TEXT")
+  private String consentRejectReason;
 }

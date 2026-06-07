@@ -31,6 +31,7 @@ import {
 } from "../../../components/admin/AdminFilterBar";
 import { ActionMenuPortal } from "../../../components/admin/ActionMenuPortal";
 import adminAffiliationService from "../../../services/adminAffiliationService";
+import adminCompanyService from "../../../services/adminCompanyService";
 import { getIndustryLabel } from "../../../constants/industries";
 
 const PAGE_SIZE = 10;
@@ -78,40 +79,13 @@ const SubmissionBadge = ({ status }) => {
 };
 
 const RowActionMenu = ({ aff, openMenuId, setOpenMenuId, onAction, onViewDetail }) => {
+    // Duyệt/từ chối từng phần + gán công ty đều thực hiện trong "Xem chi tiết".
     const actions = [
         {
-            label: "Xem chi tiết",
+            label: "Xem chi tiết / Duyệt",
             icon: FaEye,
             onClick: () => onViewDetail(aff),
             className: "text-slate-700 font-medium",
-        },
-        {
-            label: "Duyệt xác thực",
-            icon: FaCheck,
-            onClick: () => onAction(aff, "approve"),
-            className: "text-emerald-600 font-medium",
-            hidden: aff.status !== "PENDING",
-        },
-        {
-            label: "Từ chối xác thực",
-            icon: FaTimes,
-            onClick: () => onAction(aff, "reject"),
-            className: "text-red-600 font-medium",
-            hidden: aff.status !== "PENDING",
-        },
-        {
-            label: "Duyệt hồ sơ",
-            icon: FaCheckCircle,
-            onClick: () => onAction(aff, "approve-submission"),
-            className: "text-blue-600 font-medium",
-            hidden: aff.submissionStatus !== "PENDING_REVIEW",
-        },
-        {
-            label: "Từ chối hồ sơ",
-            icon: FaBan,
-            onClick: () => onAction(aff, "reject-submission"),
-            className: "text-orange-600 font-medium",
-            hidden: aff.submissionStatus !== "PENDING_REVIEW",
         },
         {
             label: "Thu hồi xác thực",
@@ -221,11 +195,115 @@ const ActionDialog = ({ actionDialog, actionNote, setActionNote, onClose, onConf
 };
 
 /* ─── Detail Dialog: 3 tầng thông tin ─── */
-const AffiliationDetailDialog = ({ aff, open, onClose }) => {
+const AffiliationDetailDialog = ({ aff, open, onClose, onChanged }) => {
     const [licenseUrl, setLicenseUrl] = useState(null);
     const [consentUrl, setConsentUrl] = useState(null);
     const [logoUrl, setLogoUrl] = useState(null);
     const [loading, setLoading] = useState(false);
+
+    // Per-part review (V120) + gán công ty
+    const [data, setData] = useState(aff);
+    const [companies, setCompanies] = useState([]);
+    const [selectedCompanyId, setSelectedCompanyId] = useState("");
+    const [busy, setBusy] = useState(false);
+
+    useEffect(() => { setData(aff); setSelectedCompanyId(""); }, [aff]);
+
+    // Danh sách công ty cho dropdown gán
+    useEffect(() => {
+        if (!open) return;
+        adminCompanyService.getCompanies({ page: 0, size: 200 })
+            .then((r) => setCompanies(r?.content || []))
+            .catch(() => setCompanies([]));
+    }, [open]);
+
+    const d = data || aff;
+
+    const refreshDetail = async () => {
+        try {
+            const fresh = await adminAffiliationService.getDetail(aff.id);
+            setData(fresh);
+        } catch { /* ignore */ }
+        onChanged?.();
+    };
+
+    const doApprovePart = async (part) => {
+        setBusy(true);
+        try {
+            await adminAffiliationService.approvePart(aff.id, part);
+            toast.success("Đã duyệt phần này");
+            await refreshDetail();
+        } catch (e) {
+            toast.error(e?.error || e?.message || e?.response?.data?.error || "Duyệt thất bại");
+        } finally { setBusy(false); }
+    };
+
+    const doRejectPart = async (part) => {
+        const reason = window.prompt("Lý do từ chối phần này:");
+        if (!reason || !reason.trim()) return;
+        setBusy(true);
+        try {
+            await adminAffiliationService.rejectPart(aff.id, part, reason.trim());
+            toast.success("Đã từ chối phần này");
+            await refreshDetail();
+        } catch (e) {
+            toast.error(e?.error || e?.message || e?.response?.data?.error || "Từ chối thất bại");
+        } finally { setBusy(false); }
+    };
+
+    const handleAssign = async () => {
+        if (!selectedCompanyId) return;
+        setBusy(true);
+        try {
+            await adminAffiliationService.assignCompany(aff.id, Number(selectedCompanyId));
+            toast.success("Đã gán HR vào công ty và xác thực!");
+            await refreshDetail();
+            onClose();
+        } catch (e) {
+            toast.error(e?.error || e?.message || e?.response?.data?.error || "Gán công ty thất bại");
+        } finally { setBusy(false); }
+    };
+
+    const PART_BADGE = {
+        APPROVED: "bg-emerald-50 text-emerald-700 border border-emerald-200",
+        PENDING_REVIEW: "bg-amber-50 text-amber-700 border border-amber-200",
+        REJECTED: "bg-red-50 text-red-700 border border-red-200",
+    };
+    const PART_LABEL = {
+        APPROVED: "Đã duyệt",
+        PENDING_REVIEW: "Chờ duyệt",
+        REJECTED: "Từ chối",
+    };
+    const PartReview = ({ label, part, status, reason }) => (
+        <div className="flex items-center justify-between gap-2 rounded-lg border border-slate-100 bg-slate-50/60 px-3 py-2">
+            <div className="min-w-0">
+                <div className="text-sm font-medium text-slate-700">{label}</div>
+                <span className={`mt-0.5 inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold ${PART_BADGE[status] || "bg-slate-100 text-slate-500 border border-slate-200"}`}>
+                    {PART_LABEL[status] || "Chưa gửi"}
+                </span>
+                {status === "REJECTED" && reason && (
+                    <div className="text-[11px] text-red-500 italic mt-0.5">{reason}</div>
+                )}
+            </div>
+            <div className="flex gap-1.5 shrink-0">
+                <Button
+                    className="h-8 px-3 text-xs bg-emerald-500 hover:bg-emerald-600 text-white"
+                    disabled={busy || status === "APPROVED" || !status || status === "NONE"}
+                    onClick={() => doApprovePart(part)}
+                >
+                    Duyệt
+                </Button>
+                <Button
+                    variant="outline"
+                    className="h-8 px-3 text-xs text-red-600 border-red-200 hover:bg-red-50"
+                    disabled={busy || status === "REJECTED" || !status || status === "NONE"}
+                    onClick={() => doRejectPart(part)}
+                >
+                    Từ chối
+                </Button>
+            </div>
+        </div>
+    );
 
     useEffect(() => {
         if (!aff?.id || !open) return;
@@ -394,6 +472,48 @@ const AffiliationDetailDialog = ({ aff, open, onClose }) => {
                             </span>
                         )}
                     </div>
+                </div>
+
+                {/* ─── Duyệt từng phần + Gán công ty (V120) ─── */}
+                <div className="border-t border-slate-100 pt-4 space-y-2">
+                    <h4 className="text-sm font-semibold text-slate-800 flex items-center gap-2">
+                        <ShieldCheck className="h-4 w-4 text-[#3AB4E6]" /> Duyệt từng phần
+                    </h4>
+                    <PartReview label="Thông tin công ty" part="info" status={d.infoStatus} reason={d.infoRejectReason} />
+                    <PartReview label="Giấy phép kinh doanh" part="license" status={d.licenseStatus} reason={d.licenseRejectReason} />
+                    <PartReview label="Thỏa thuận DLCN" part="consent" status={d.consentStatus} reason={d.consentRejectReason} />
+
+                    {/* Gán công ty: chỉ khi đủ 3 phần APPROVED */}
+                    {d.status === "APPROVED" ? (
+                        <div className="flex items-center gap-2 rounded-lg bg-emerald-50 border border-emerald-200 px-3 py-2 text-sm text-emerald-700">
+                            <CheckCircle2 className="h-4 w-4" /> Đã gán vào công ty: <span className="font-bold">{d.companyName}</span>
+                        </div>
+                    ) : d.allPartsApproved ? (
+                        <div className="rounded-xl border border-indigo-200 bg-indigo-50/60 p-3 space-y-2">
+                            <p className="text-sm font-medium text-indigo-800">Đủ 3 phần — gán HR vào một công ty cụ thể:</p>
+                            <select
+                                value={selectedCompanyId}
+                                onChange={(e) => setSelectedCompanyId(e.target.value)}
+                                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-[#3AB4E6]"
+                            >
+                                <option value="">— Chọn công ty —</option>
+                                {companies.map((c) => (
+                                    <option key={c.id} value={c.id}>
+                                        {c.name || "(chưa đặt tên)"}{c.taxCode ? ` · MST: ${c.taxCode}` : ""} (#{c.id})
+                                    </option>
+                                ))}
+                            </select>
+                            <Button
+                                className="w-full bg-indigo-600 hover:bg-indigo-700 text-white"
+                                disabled={!selectedCompanyId || busy}
+                                onClick={handleAssign}
+                            >
+                                Gán vào công ty & xác thực
+                            </Button>
+                        </div>
+                    ) : (
+                        <p className="text-xs text-slate-400 italic">Cần duyệt đủ cả 3 phần mới gán được công ty.</p>
+                    )}
                 </div>
 
                 {/* ─── HR + Trạng thái ─── */}
@@ -714,6 +834,7 @@ const AffiliationManagement = () => {
                 aff={detailAff}
                 open={!!detailAff}
                 onClose={() => setDetailAff(null)}
+                onChanged={fetchData}
             />
         </div>
     );

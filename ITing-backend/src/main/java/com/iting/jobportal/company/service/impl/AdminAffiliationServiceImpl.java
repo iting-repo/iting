@@ -13,6 +13,7 @@ import com.iting.jobportal.company.entity.enums.CompanyReviewStatus;
 import com.iting.jobportal.company.entity.enums.DocumentReviewStatus;
 import com.iting.jobportal.company.entity.enums.Industry;
 import com.iting.jobportal.company.entity.enums.SubmissionStatus;
+import com.iting.jobportal.company.entity.enums.VerificationLevel;
 import com.iting.jobportal.company.repository.CompanyAuditLogRepository;
 import com.iting.jobportal.company.repository.CompanyHrAffiliationRepository;
 import com.iting.jobportal.company.repository.CompanyRepository;
@@ -193,6 +194,121 @@ public class AdminAffiliationServiceImpl implements AdminAffiliationService {
     }
 
     return toResponse(affiliationRepo.save(aff));
+  }
+
+  // ════════════════════════════════════════════════════════════════
+  // DUYỆT / TỪ CHỐI TỪNG PHẦN + GÁN CÔNG TY (V120)
+  // ════════════════════════════════════════════════════════════════
+
+  @Override
+  @Transactional
+  public AdminAffiliationResponse approvePart(
+      Long affiliationId, String part, Long adminAccountId) {
+    CompanyHrAffiliation aff = findOrThrow(affiliationId);
+    switch (normalizePart(part)) {
+      case "info" -> {
+        aff.setInfoStatus(SubmissionStatus.APPROVED);
+        aff.setInfoRejectReason(null);
+      }
+      case "license" -> {
+        aff.setLicenseStatus(SubmissionStatus.APPROVED);
+        aff.setLicenseRejectReason(null);
+      }
+      case "consent" -> {
+        aff.setConsentStatus(SubmissionStatus.APPROVED);
+        aff.setConsentRejectReason(null);
+      }
+      default -> throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Phần không hợp lệ");
+    }
+    return toResponse(affiliationRepo.save(aff));
+  }
+
+  @Override
+  @Transactional
+  public AdminAffiliationResponse rejectPart(
+      Long affiliationId, String part, Long adminAccountId, String reason) {
+    CompanyHrAffiliation aff = findOrThrow(affiliationId);
+    switch (normalizePart(part)) {
+      case "info" -> {
+        aff.setInfoStatus(SubmissionStatus.REJECTED);
+        aff.setInfoRejectReason(reason);
+      }
+      case "license" -> {
+        aff.setLicenseStatus(SubmissionStatus.REJECTED);
+        aff.setLicenseRejectReason(reason);
+      }
+      case "consent" -> {
+        aff.setConsentStatus(SubmissionStatus.REJECTED);
+        aff.setConsentRejectReason(reason);
+      }
+      default -> throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Phần không hợp lệ");
+    }
+    return toResponse(affiliationRepo.save(aff));
+  }
+
+  @Override
+  @Transactional
+  public AdminAffiliationResponse assignToCompany(
+      Long affiliationId, Long companyId, Long adminAccountId) {
+    CompanyHrAffiliation aff = findOrThrow(affiliationId);
+
+    boolean allApproved =
+        aff.getInfoStatus() == SubmissionStatus.APPROVED
+            && aff.getLicenseStatus() == SubmissionStatus.APPROVED
+            && aff.getConsentStatus() == SubmissionStatus.APPROVED;
+    if (!allApproved) {
+      throw new ResponseStatusException(
+          HttpStatus.BAD_REQUEST,
+          "Cần duyệt đủ cả 3 phần (thông tin + giấy phép + thỏa thuận) trước khi gán công ty");
+    }
+
+    Company target =
+        companyRepo
+            .findById(companyId)
+            .orElseThrow(
+                () ->
+                    new ResponseStatusException(
+                        HttpStatus.NOT_FOUND, "Không tìm thấy công ty #" + companyId));
+
+    LocalDateTime now = LocalDateTime.now();
+
+    // Gán HR vào công ty được chọn (ghi đè company_id) + duyệt membership/submission.
+    aff.setCompany(target);
+    aff.setStatus(AffiliationStatus.APPROVED);
+    aff.setReviewedAt(now);
+    aff.setReviewedBy(adminAccountId);
+    aff.setSubmissionStatus(SubmissionStatus.APPROVED);
+    aff.setSubmissionReviewedAt(now);
+    aff.setSubmissionReviewedBy(adminAccountId);
+    aff.setSubmissionRejectReason(null);
+
+    // Apply snapshot HR lên công ty được chọn → thông tin hiển thị đúng dữ liệu HR xác thực.
+    applySnapshotToCompany(aff, target);
+    aff.setAppliedToCompanyAt(now);
+    if (target.getInfoSourceAffiliationId() == null) {
+      target.setInfoSourceAffiliationId(aff.getId());
+    }
+    target.setCompanyReviewStatus(CompanyReviewStatus.APPROVED);
+    target.setDocumentReviewStatus(DocumentReviewStatus.APPROVED);
+    if (target.getVerificationLevel() == null
+        || target.getVerificationLevel().getValue() < VerificationLevel.ADVANCED.getValue()) {
+      target.setVerificationLevel(VerificationLevel.ADVANCED);
+    }
+    companyRepo.save(target);
+
+    recordAudit(
+        target,
+        CompanyAuditAction.APPROVE,
+        adminAccountId,
+        "Gán HR account #" + aff.getHrAccount().getId() + " vào công ty (assign-to-company)",
+        null,
+        "APPROVED");
+
+    return toResponse(affiliationRepo.save(aff));
+  }
+
+  private String normalizePart(String part) {
+    return part == null ? "" : part.trim().toLowerCase();
   }
 
   // ════════════════════════════════════════════════════════════════
@@ -409,6 +525,16 @@ public class AdminAffiliationServiceImpl implements AdminAffiliationService {
         .hasLicense(hasLicense)
         .hasConsent(hasConsent)
         .documentsComplete(docsComplete)
+        .infoStatus(aff.getInfoStatus())
+        .licenseStatus(aff.getLicenseStatus())
+        .consentStatus(aff.getConsentStatus())
+        .infoRejectReason(aff.getInfoRejectReason())
+        .licenseRejectReason(aff.getLicenseRejectReason())
+        .consentRejectReason(aff.getConsentRejectReason())
+        .allPartsApproved(
+            aff.getInfoStatus() == SubmissionStatus.APPROVED
+                && aff.getLicenseStatus() == SubmissionStatus.APPROVED
+                && aff.getConsentStatus() == SubmissionStatus.APPROVED)
         .build();
   }
 

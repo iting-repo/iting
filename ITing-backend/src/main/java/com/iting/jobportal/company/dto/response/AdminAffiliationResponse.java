@@ -69,4 +69,13 @@ public class AdminAffiliationResponse {
   private boolean hasLicense;
   private boolean hasConsent;
   private boolean documentsComplete; // license + consent + confirmed
+
+  // ─ Trạng thái duyệt từng phần (V120) — admin duyệt info/license/consent độc lập
+  private SubmissionStatus infoStatus;
+  private SubmissionStatus licenseStatus;
+  private SubmissionStatus consentStatus;
+  private String infoRejectReason;
+  private String licenseRejectReason;
+  private String consentRejectReason;
+  private boolean allPartsApproved; // đủ điều kiện gán công ty
 }

@@ -47,7 +47,8 @@ const DataProcessing = () => {
     REJECTED: { label: "Bị từ chối", color: "bg-red-100 text-red-600" },
   };
 
-  const submissionState = affiliation?.submissionStatus;
+  // Trạng thái duyệt RIÊNG của phần thỏa thuận (consent_status).
+  const submissionState = affiliation?.consentStatus;
   const currentStatus = statusMap[submissionState] || statusMap.MISSING;
 
   // Đã có file thỏa thuận trên server (HR đã upload trước đó)
@@ -84,17 +85,17 @@ const DataProcessing = () => {
     try {
       setSubmitting(true);
 
-      // CHỈ lưu thỏa thuận + cam đoan vào snapshot (không tự gửi duyệt). Việc gửi duyệt
-      // gom cả thông tin + giấy phép + thỏa thuận làm 1 lần ở tab "Thông tin chung".
+      // Upload (nếu có file mới) rồi GỬI DUYỆT RIÊNG phần thỏa thuận (consent_status).
       if (file) {
         await affiliationService.uploadConsent(file, agreed);
       }
-      toast.success('Đã lưu văn bản thỏa thuận. Vào tab "Thông tin chung" và bấm "Gửi duyệt hồ sơ" khi đã đủ hồ sơ.');
+      await affiliationService.submitConsent();
+      toast.success("Đã gửi văn bản thỏa thuận cho admin xét duyệt!");
       setFile(null);
       await fetchAffiliation();
     } catch (err) {
-      console.error("Lỗi lưu thỏa thuận:", err);
-      toast.error(err?.error || err?.message || err?.response?.data?.error || err?.response?.data?.message || "Lưu thất bại. Vui lòng thử lại.");
+      console.error("Lỗi gửi duyệt thỏa thuận:", err);
+      toast.error(err?.error || err?.message || err?.response?.data?.error || err?.response?.data?.message || "Gửi duyệt thất bại. Vui lòng thử lại.");
     } finally {
       setSubmitting(false);
     }
@@ -288,10 +289,10 @@ const DataProcessing = () => {
                 : !file && !hasUploadedConsent
                   ? "Vui lòng upload trước"
                   : !agreed
-                    ? "Tick cam đoan để lưu"
+                    ? "Tick cam đoan để gửi"
                     : file
-                      ? "Lưu thỏa thuận"
-                      : "Đã lưu — Lưu lại"}
+                      ? "Tải lên & Gửi duyệt"
+                      : "Gửi duyệt thỏa thuận"}
           </Button>
         </div>
       </div>

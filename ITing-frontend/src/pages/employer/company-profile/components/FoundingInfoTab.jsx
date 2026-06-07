@@ -338,27 +338,18 @@ const FoundingInfoTab = ({ onTabChange }) => {
   //   'done'    = admin đã duyệt (xác thực chính thức)
   //   'pending' = HR đã cung cấp, đang chờ admin duyệt
   //   'todo'    = HR chưa cung cấp
+  // Mỗi phần (info/license/consent) có trạng thái duyệt RIÊNG do admin xử lý độc lập.
+  //   APPROVED → done · PENDING_REVIEW → pending · REJECTED → rejected · còn lại → todo
   const verificationSteps = useMemo(() => {
-    const affApproved =
-      affiliation?.status === 'APPROVED' && affiliation?.submissionStatus === 'APPROVED';
-
-    const infoSubmitted = !!(
-      affiliation?.submittedName &&
-      affiliation?.submittedCompanyEmail &&
-      affiliation?.submittedPhone &&
-      affiliation?.submittedAddress
-    );
-    const licenseSubmitted = !!affiliation?.submittedLicenseUrl;
-    const consentSubmitted =
-      !!affiliation?.submittedConsentUrl && !!affiliation?.submittedConsentConfirmed;
-
-    const stateOf = (submitted) =>
-      submitted && affApproved ? 'done' : submitted ? 'pending' : 'todo';
-
+    const stateOf = (s) =>
+      s === 'APPROVED' ? 'done'
+        : s === 'PENDING_REVIEW' ? 'pending'
+        : s === 'REJECTED' ? 'rejected'
+        : 'todo';
     return [
-      { id: 'info', label: "Cập nhật thông tin công ty", state: stateOf(infoSubmitted) },
-      { id: 'license', label: "Xác thực Giấy đăng ký doanh nghiệp", state: stateOf(licenseSubmitted) },
-      { id: 'consent', label: "Thỏa thuận xử lý dữ liệu cá nhân", state: stateOf(consentSubmitted) },
+      { id: 'info', label: "Cập nhật thông tin công ty", state: stateOf(affiliation?.infoStatus) },
+      { id: 'license', label: "Xác thực Giấy đăng ký doanh nghiệp", state: stateOf(affiliation?.licenseStatus) },
+      { id: 'consent', label: "Thỏa thuận xử lý dữ liệu cá nhân", state: stateOf(affiliation?.consentStatus) },
     ];
   }, [affiliation]);
 
@@ -726,7 +717,7 @@ const FoundingInfoTab = ({ onTabChange }) => {
                 : "bg-gray-300 text-gray-500 opacity-60"
             }`}
           >
-            {submittingRequest ? "Đang gửi..." : "Gửi admin duyệt"}
+            {submittingRequest ? "Đang lưu..." : "Lưu thông tin"}
           </button>
         </div>
       }
@@ -893,9 +884,9 @@ const FoundingInfoTab = ({ onTabChange }) => {
 
       <ReasonModal
         isOpen={showReasonModal}
-        reason={affiliation?.submissionRejectReason || company?.statusReason}
+        reason={affiliation?.infoRejectReason || company?.statusReason}
         onClose={() => setShowReasonModal(false)}
-        status={affiliation?.submissionStatus || company?.companyInfoUpdateStatus}
+        status={affiliation?.infoStatus || company?.companyInfoUpdateStatus}
       />
 
       {/* Phase 5: banner cảnh báo cho HR đến sau (không phải info source) */}
@@ -975,6 +966,11 @@ const FoundingInfoTab = ({ onTabChange }) => {
           {verificationSteps.map((step, index) => {
             const isDone = step.state === 'done';
             const isPending = step.state === 'pending';
+            const isRejected = step.state === 'rejected';
+            const rejectReason =
+              step.id === 'info' ? affiliation?.infoRejectReason
+                : step.id === 'license' ? affiliation?.licenseRejectReason
+                : affiliation?.consentRejectReason;
             return (
             <div
               key={step.id}
@@ -987,19 +983,26 @@ const FoundingInfoTab = ({ onTabChange }) => {
                     ? 'bg-green-500 text-white'
                     : isPending
                       ? 'border-2 border-amber-300 bg-amber-50 text-amber-500'
-                      : 'border-2 border-gray-300 bg-white text-transparent'
+                      : isRejected
+                        ? 'border-2 border-red-300 bg-red-50 text-red-500'
+                        : 'border-2 border-gray-300 bg-white text-transparent'
                 }`}>
-                  {isPending ? <FaClock className="text-[11px]" /> : <FaCheckCircle className="text-lg" />}
+                  {isPending ? <FaClock className="text-[11px]" />
+                    : isRejected ? <FaExclamationTriangle className="text-[11px]" />
+                    : <FaCheckCircle className="text-lg" />}
                 </div>
                 <div className="flex flex-col">
-                  <span className={`text-sm font-medium transition-colors ${isDone ? "text-gray-400 line-through" : "text-gray-700 group-hover:text-green-600"}`}>
+                  <span className={`text-sm font-medium transition-colors ${isDone ? "text-gray-400 line-through" : isRejected ? "text-red-600" : "text-gray-700 group-hover:text-green-600"}`}>
                     {step.label}
                   </span>
                   {isPending && (
-                    <span className="text-[11px] font-semibold text-amber-600">Đã cung cấp · chờ admin duyệt</span>
+                    <span className="text-[11px] font-semibold text-amber-600">Đã gửi · chờ admin duyệt</span>
+                  )}
+                  {isRejected && (
+                    <span className="text-[11px] font-semibold text-red-500">Bị từ chối{rejectReason ? ` · ${rejectReason}` : ''} — sửa & gửi lại</span>
                   )}
                   {step.state === 'todo' && (
-                    <span className="text-[11px] text-gray-400">Chưa cung cấp</span>
+                    <span className="text-[11px] text-gray-400">Chưa gửi duyệt</span>
                   )}
                 </div>
               </div>
@@ -1032,17 +1035,16 @@ const FoundingInfoTab = ({ onTabChange }) => {
             <p className="mt-1 text-sm text-gray-500">Thông tin hiển thị bên dưới là dữ liệu cuối cùng đã được duyệt.</p>
           </div>
           <div className="flex flex-col sm:flex-row gap-2 w-full md:w-auto">
-            {/* Gửi duyệt: gom thông tin + giấy phép + thỏa thuận thành 1 đơn tới admin.
-                Hiện khi có đơn và đơn KHÔNG đang chờ duyệt. Backend validate đủ 3 phần;
-                nếu thiếu, toast sẽ chỉ rõ phần còn thiếu. */}
-            {affiliation && affiliation.submissionStatus !== 'PENDING_REVIEW' && (
+            {/* Gửi duyệt RIÊNG phần thông tin (info). Giấy phép & thỏa thuận gửi ở 2 tab kia.
+                Hiện khi phần info chưa gửi / bị từ chối. Backend validate đủ tên/email/sđt/địa chỉ. */}
+            {affiliation && affiliation.infoStatus !== 'PENDING_REVIEW' && affiliation.infoStatus !== 'APPROVED' && (
               <button
                 type="button"
                 onClick={async () => {
                   try {
                     setLoading(true);
-                    await affiliationService.submitReview();
-                    toast.success("Hồ sơ đã được gửi đi. Vui lòng chờ Admin xét duyệt.");
+                    await affiliationService.submitInfo();
+                    toast.success("Đã gửi phần thông tin cho admin duyệt.");
                     await fetchData();
                   } catch (error) {
                     toast.error(
@@ -1059,7 +1061,7 @@ const FoundingInfoTab = ({ onTabChange }) => {
                 className="w-full sm:w-auto flex justify-center items-center gap-2 rounded-lg bg-emerald-600 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 <FaCheckCircle />
-                Gửi duyệt hồ sơ
+                Gửi duyệt thông tin
               </button>
             )}
             <button
@@ -1080,8 +1082,8 @@ const FoundingInfoTab = ({ onTabChange }) => {
             <span className="text-sm font-medium text-gray-700">Trạng thái hiện tại</span>
           </div>
           <StatusBadge
-            status={affiliation?.submissionStatus || company?.companyInfoUpdateStatus}
-            hasReason={!!affiliation?.submissionRejectReason}
+            status={affiliation?.infoStatus || company?.companyInfoUpdateStatus}
+            hasReason={!!affiliation?.infoRejectReason}
             onClick={() => setShowReasonModal(true)}
           />
         </div>

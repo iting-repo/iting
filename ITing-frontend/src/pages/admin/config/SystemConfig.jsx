@@ -483,7 +483,7 @@ const SystemConfig = () => {
       {/* Bottom padding for bulk bar if needed, but not here */}
       <div className="h-20" />
 
-      <ConfirmModal isOpen={confirm.isOpen} onClose={resetConfirm} onConfirm={confirm.onConfirm} title={confirm.title} message={confirm.message} warning={confirm.warning} confirmText={confirm.confirmText} variant={confirm.variant} />
+      <ConfirmModal isOpen={confirm.isOpen} onClose={resetConfirm} onConfirm={() => { confirm.onConfirm?.(); resetConfirm(); }} title={confirm.title} message={confirm.message} warning={confirm.warning} confirmText={confirm.confirmText} variant={confirm.variant} />
     </div>
   );
 };

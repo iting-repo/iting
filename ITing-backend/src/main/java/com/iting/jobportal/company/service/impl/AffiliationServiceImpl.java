@@ -155,6 +155,12 @@ public class AffiliationServiceImpl implements AffiliationService {
         .submittedLicenseUrl(aff.getSubmittedLicenseUrl())
         .submittedConsentUrl(aff.getSubmittedConsentUrl())
         .submittedConsentConfirmed(aff.getSubmittedConsentConfirmed())
+        .infoStatus(aff.getInfoStatus())
+        .licenseStatus(aff.getLicenseStatus())
+        .consentStatus(aff.getConsentStatus())
+        .infoRejectReason(aff.getInfoRejectReason())
+        .licenseRejectReason(aff.getLicenseRejectReason())
+        .consentRejectReason(aff.getConsentRejectReason())
         .build();
   }
 
@@ -182,6 +188,9 @@ public class AffiliationServiceImpl implements AffiliationService {
     // Reset submission state: HR đã sửa → chưa submit lại
     aff.setSubmissionStatus(SubmissionStatus.DRAFT);
     aff.setSubmissionRejectReason(null);
+    // Sửa thông tin → phần info cần gửi duyệt lại
+    aff.setInfoStatus(SubmissionStatus.NONE);
+    aff.setInfoRejectReason(null);
 
     return toMeResponse(affiliationRepo.save(aff));
   }
@@ -222,6 +231,9 @@ public class AffiliationServiceImpl implements AffiliationService {
     String newUrl = fileUploadService.uploadBusinessLicense(file);
     aff.setSubmittedLicenseUrl(newUrl);
     aff.setSubmissionStatus(SubmissionStatus.DRAFT);
+    // Upload lại giấy phép → phần license cần gửi duyệt lại
+    aff.setLicenseStatus(SubmissionStatus.NONE);
+    aff.setLicenseRejectReason(null);
     affiliationRepo.save(aff);
 
     if (oldUrl != null && !oldUrl.isBlank()) {
@@ -245,6 +257,9 @@ public class AffiliationServiceImpl implements AffiliationService {
     aff.setSubmittedConsentUrl(newUrl);
     aff.setSubmittedConsentConfirmed(confirmed);
     aff.setSubmissionStatus(SubmissionStatus.DRAFT);
+    // Upload lại thỏa thuận → phần consent cần gửi duyệt lại
+    aff.setConsentStatus(SubmissionStatus.NONE);
+    aff.setConsentRejectReason(null);
     affiliationRepo.save(aff);
 
     if (oldUrl != null && !oldUrl.isBlank()) {
@@ -310,6 +325,81 @@ public class AffiliationServiceImpl implements AffiliationService {
     }
 
     return toMeResponse(saved);
+  }
+
+  // ════════════════════════════════════════════════════════════════
+  // SUBMIT TỪNG PHẦN (V120) — info / license / consent gửi duyệt độc lập
+  // ════════════════════════════════════════════════════════════════
+
+  @Override
+  @Transactional
+  public AffiliationMeResponse submitInfo(Long hrAccountId) {
+    CompanyHrAffiliation aff = requireActiveAffiliation(hrAccountId);
+    if (isBlank(aff.getSubmittedName()))
+      throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Tên công ty không được để trống");
+    if (isBlank(aff.getSubmittedCompanyEmail()))
+      throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Email công ty không được để trống");
+    if (isBlank(aff.getSubmittedPhone()))
+      throw new ResponseStatusException(
+          HttpStatus.BAD_REQUEST, "Số điện thoại công ty không được để trống");
+    if (isBlank(aff.getSubmittedAddress()))
+      throw new ResponseStatusException(
+          HttpStatus.BAD_REQUEST, "Địa chỉ công ty không được để trống");
+
+    aff.setInfoStatus(SubmissionStatus.PENDING_REVIEW);
+    aff.setInfoRejectReason(null);
+    return toMeResponse(markPartSubmitted(aff));
+  }
+
+  @Override
+  @Transactional
+  public AffiliationMeResponse submitLicense(Long hrAccountId) {
+    CompanyHrAffiliation aff = requireActiveAffiliation(hrAccountId);
+    if (isBlank(aff.getSubmittedLicenseUrl()))
+      throw new ResponseStatusException(
+          HttpStatus.BAD_REQUEST, "Vui lòng upload giấy phép kinh doanh trước khi gửi duyệt");
+
+    aff.setLicenseStatus(SubmissionStatus.PENDING_REVIEW);
+    aff.setLicenseRejectReason(null);
+    return toMeResponse(markPartSubmitted(aff));
+  }
+
+  @Override
+  @Transactional
+  public AffiliationMeResponse submitConsent(Long hrAccountId) {
+    CompanyHrAffiliation aff = requireActiveAffiliation(hrAccountId);
+    if (isBlank(aff.getSubmittedConsentUrl()))
+      throw new ResponseStatusException(
+          HttpStatus.BAD_REQUEST,
+          "Vui lòng upload văn bản thỏa thuận xử lý DLCN trước khi gửi duyệt");
+    if (!Boolean.TRUE.equals(aff.getSubmittedConsentConfirmed()))
+      throw new ResponseStatusException(
+          HttpStatus.BAD_REQUEST, "Vui lòng xác nhận cam đoan đối với văn bản thỏa thuận DLCN");
+
+    aff.setConsentStatus(SubmissionStatus.PENDING_REVIEW);
+    aff.setConsentRejectReason(null);
+    return toMeResponse(markPartSubmitted(aff));
+  }
+
+  /**
+   * Sau khi HR gửi 1 phần: đưa membership vào PENDING (nếu đang INCOMPLETE/REJECTED), set
+   * submissionStatus tổng = PENDING_REVIEW để đơn xuất hiện ở hàng chờ của admin, và notify admin.
+   */
+  private CompanyHrAffiliation markPartSubmitted(CompanyHrAffiliation aff) {
+    aff.setSubmissionStatus(SubmissionStatus.PENDING_REVIEW);
+    aff.setSubmissionSubmittedAt(LocalDateTime.now());
+    aff.setSubmissionRejectReason(null);
+    if (aff.getStatus() == AffiliationStatus.INCOMPLETE
+        || aff.getStatus() == AffiliationStatus.REJECTED) {
+      aff.setStatus(AffiliationStatus.PENDING);
+    }
+    CompanyHrAffiliation saved = affiliationRepo.save(aff);
+    try {
+      adminNotificationService.notifyNewCompany(saved.getCompany());
+    } catch (Exception e) {
+      log.warn("Không gửi được thông báo admin về submit-part affiliation #{}", saved.getId(), e);
+    }
+    return saved;
   }
 
   // ════════════════════════════════════════════════════════════════

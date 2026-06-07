@@ -2,6 +2,7 @@ package com.iting.jobportal.admin.controller;
 
 import com.iting.jobportal.company.dto.request.AffiliationRejectRequest;
 import com.iting.jobportal.company.dto.request.ApplyAffiliationToCompanyRequest;
+import com.iting.jobportal.company.dto.request.AssignCompanyRequest;
 import com.iting.jobportal.company.dto.response.AdminAffiliationResponse;
 import com.iting.jobportal.company.entity.enums.AffiliationStatus;
 import com.iting.jobportal.company.entity.enums.SubmissionStatus;
@@ -93,6 +94,38 @@ public class AdminAffiliationController {
       @Parameter(hidden = true) @CurrentUser Long adminAccountId,
       @Valid @RequestBody AffiliationRejectRequest body) {
     return ResponseEntity.ok(adminAffiliationService.reject(id, adminAccountId, body.getReason()));
+  }
+
+  @PostMapping("/{id}/parts/{part}/approve")
+  @Operation(summary = "Duyệt RIÊNG 1 phần (part = info|license|consent).")
+  public ResponseEntity<AdminAffiliationResponse> approvePart(
+      @PathVariable Long id,
+      @PathVariable String part,
+      @Parameter(hidden = true) @CurrentUser Long adminAccountId) {
+    return ResponseEntity.ok(adminAffiliationService.approvePart(id, part, adminAccountId));
+  }
+
+  @PostMapping("/{id}/parts/{part}/reject")
+  @Operation(summary = "Từ chối RIÊNG 1 phần (part = info|license|consent) + lý do.")
+  public ResponseEntity<AdminAffiliationResponse> rejectPart(
+      @PathVariable Long id,
+      @PathVariable String part,
+      @Parameter(hidden = true) @CurrentUser Long adminAccountId,
+      @Valid @RequestBody AffiliationRejectRequest body) {
+    return ResponseEntity.ok(
+        adminAffiliationService.rejectPart(id, part, adminAccountId, body.getReason()));
+  }
+
+  @PostMapping("/{id}/assign-company")
+  @Operation(
+      summary =
+          "Gán HR vào một công ty cụ thể (ghi đè). Yêu cầu cả 3 phần đã APPROVED. Apply snapshot.")
+  public ResponseEntity<AdminAffiliationResponse> assignCompany(
+      @PathVariable Long id,
+      @Parameter(hidden = true) @CurrentUser Long adminAccountId,
+      @Valid @RequestBody AssignCompanyRequest body) {
+    return ResponseEntity.ok(
+        adminAffiliationService.assignToCompany(id, body.getCompanyId(), adminAccountId));
   }
 
   @PostMapping("/{id}/apply-to-company")
