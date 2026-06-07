@@ -1,7 +1,18 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import {
-  CreditCard, Pencil, Trash2, Plus, RefreshCw, Loader2, Coins, Briefcase, Rocket,
-  Check, EyeOff, Star, Users,
+  CreditCard,
+  Pencil,
+  Trash2,
+  Plus,
+  RefreshCw,
+  Loader2,
+  Coins,
+  Briefcase,
+  Rocket,
+  Check,
+  EyeOff,
+  Star,
+  Users,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button, Input, Dialog, Switch, ConfirmDialog, Pagination } from '../../../components';
@@ -57,7 +68,7 @@ const SubscriptionTierManagement = () => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [creating, setCreating] = useState(false);   // create vs edit
+  const [creating, setCreating] = useState(false); // create vs edit
   const [form, setForm] = useState(emptyForm);
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [page, setPage] = useState(1); // phân trang client-side (1-indexed)
@@ -74,7 +85,9 @@ const SubscriptionTierManagement = () => {
     }
   }, []);
 
-  useEffect(() => { fetchTiers(); }, [fetchTiers]);
+  useEffect(() => {
+    fetchTiers();
+  }, [fetchTiers]);
 
   const openCreate = () => {
     setCreating(true);
@@ -103,18 +116,30 @@ const SubscriptionTierManagement = () => {
     setDialogOpen(true);
   };
 
-  const closeDialog = () => { setDialogOpen(false); setForm(emptyForm); };
+  const closeDialog = () => {
+    setDialogOpen(false);
+    setForm(emptyForm);
+  };
 
   const handleSave = async () => {
     if (creating && !/^[A-Za-z][A-Za-z0-9_]{1,29}$/.test(form.code.trim())) {
       toast.error('Mã gói: bắt đầu bằng chữ, chỉ gồm chữ/số/gạch dưới (VD: STARTER)');
       return;
     }
-    if (!form.displayName.trim()) { toast.error('Vui lòng nhập tên hiển thị'); return; }
+    if (!form.displayName.trim()) {
+      toast.error('Vui lòng nhập tên hiển thị');
+      return;
+    }
     const price = Number(form.priceVnd);
-    if (Number.isNaN(price) || price < 0) { toast.error('Giá không hợp lệ'); return; }
+    if (Number.isNaN(price) || price < 0) {
+      toast.error('Giá không hợp lệ');
+      return;
+    }
     const period = Number(form.periodDays);
-    if (Number.isNaN(period) || period < 1) { toast.error('Số ngày phải ≥ 1'); return; }
+    if (Number.isNaN(period) || period < 1) {
+      toast.error('Số ngày phải ≥ 1');
+      return;
+    }
 
     const toInt = (s, def = 0) => {
       const n = parseInt(s, 10);
@@ -140,7 +165,10 @@ const SubscriptionTierManagement = () => {
     setSaving(true);
     try {
       if (creating) {
-        await adminSubscriptionService.createTier({ ...payload, code: form.code.trim().toUpperCase() });
+        await adminSubscriptionService.createTier({
+          ...payload,
+          code: form.code.trim().toUpperCase(),
+        });
         toast.success(`Đã tạo gói ${form.code.trim().toUpperCase()}`);
       } else {
         await adminSubscriptionService.updateTier(form.code, payload);
@@ -179,7 +207,10 @@ const SubscriptionTierManagement = () => {
   };
 
   const benefitList = (b) =>
-    (b || '').split('·').map((s) => s.trim()).filter(Boolean);
+    (b || '')
+      .split('·')
+      .map((s) => s.trim())
+      .filter(Boolean);
 
   /* ─── Phân trang client-side ─── */
   const totalPages = Math.max(1, Math.ceil(tiers.length / TIERS_PER_PAGE));
@@ -195,9 +226,6 @@ const SubscriptionTierManagement = () => {
             <CreditCard className="h-6 w-6 text-[#3AB4E6]" />
             Quản lý gói HR Premium
           </h2>
-          <p className="mt-1 text-sm text-slate-500">
-            Thêm, sửa, ẩn hoặc xóa các gói. Thay đổi có hiệu lực ngay với HR — không cần deploy lại.
-          </p>
         </div>
         <div className="flex gap-2">
           <Button variant="outline" onClick={fetchTiers} disabled={loading}>
@@ -254,7 +282,9 @@ const SubscriptionTierManagement = () => {
                   </div>
 
                   <div className="mb-4">
-                    <span className="text-2xl font-extrabold text-slate-900">{fmtVnd(t.priceVnd)}đ</span>
+                    <span className="text-2xl font-extrabold text-slate-900">
+                      {fmtVnd(t.priceVnd)}đ
+                    </span>
                     <span className="text-sm text-slate-500"> / {t.periodDays} ngày</span>
                   </div>
 
@@ -271,7 +301,9 @@ const SubscriptionTierManagement = () => {
                     </div>
                     <div className="rounded-lg bg-purple-50 p-2">
                       <Rocket className="mx-auto mb-1 h-4 w-4 text-purple-500" />
-                      <div className="font-bold text-slate-800">{fmtLimit(t.maxBoostsPerMonth)}</div>
+                      <div className="font-bold text-slate-800">
+                        {fmtLimit(t.maxBoostsPerMonth)}
+                      </div>
                       <div className="text-slate-500">boost/th</div>
                     </div>
                   </div>
@@ -367,7 +399,9 @@ const SubscriptionTierManagement = () => {
                 type="text"
                 inputMode="numeric"
                 value={groupDigits(form.periodDays)}
-                onChange={(e) => setForm({ ...form, periodDays: e.target.value.replace(/\D/g, '') })}
+                onChange={(e) =>
+                  setForm({ ...form, periodDays: e.target.value.replace(/\D/g, '') })
+                }
               />
             </Field>
           </div>
@@ -394,7 +428,9 @@ const SubscriptionTierManagement = () => {
                 type="text"
                 inputMode="numeric"
                 value={groupSigned(form.maxBoostsPerMonth)}
-                onChange={(e) => setForm({ ...form, maxBoostsPerMonth: parseSigned(e.target.value) })}
+                onChange={(e) =>
+                  setForm({ ...form, maxBoostsPerMonth: parseSigned(e.target.value) })
+                }
               />
             </Field>
           </div>
@@ -441,17 +477,31 @@ const SubscriptionTierManagement = () => {
           </div>
 
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-            <ToggleRow label="Hiển thị công khai" desc="Cho HR thấy & mua"
-              checked={form.active} onChange={(v) => setForm({ ...form, active: v })} />
-            <ToggleRow label="Gói nổi bật" desc="Highlight trên bảng giá"
-              checked={form.popular} onChange={(v) => setForm({ ...form, popular: v })} />
-            <ToggleRow label="Talent Pool" desc="Cho phép tìm ứng viên"
-              checked={form.talentPool} onChange={(v) => setForm({ ...form, talentPool: v })} />
+            <ToggleRow
+              label="Hiển thị công khai"
+              desc="Cho HR thấy & mua"
+              checked={form.active}
+              onChange={(v) => setForm({ ...form, active: v })}
+            />
+            <ToggleRow
+              label="Gói nổi bật"
+              desc="Highlight trên bảng giá"
+              checked={form.popular}
+              onChange={(v) => setForm({ ...form, popular: v })}
+            />
+            <ToggleRow
+              label="Talent Pool"
+              desc="Cho phép tìm ứng viên"
+              checked={form.talentPool}
+              onChange={(v) => setForm({ ...form, talentPool: v })}
+            />
           </div>
         </div>
 
         <div className="mt-6 flex justify-end gap-3">
-          <Button variant="outline" onClick={closeDialog} disabled={saving}>Hủy</Button>
+          <Button variant="outline" onClick={closeDialog} disabled={saving}>
+            Hủy
+          </Button>
           <Button variant="primary" onClick={handleSave} disabled={saving}>
             {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             {creating ? 'Tạo gói' : 'Lưu thay đổi'}

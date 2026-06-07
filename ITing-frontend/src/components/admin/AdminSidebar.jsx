@@ -118,9 +118,14 @@ const AdminSidebar = ({ isCollapsed, onToggle }) => {
     }))
     .filter(section => section.items.length > 0);
 
-  // Track which sections are expanded (all open by default)
+  // Mặc định GẬP hết các nhóm — chỉ xổ ra khi người dùng bấm vào tiêu đề nhóm.
+  // Riêng nhóm chứa trang đang mở thì tự xổ để thấy vị trí hiện tại.
+  const location = useLocation();
   const [expandedSections, setExpandedSections] = useState(() =>
-    SIDEBAR_SECTIONS.reduce((acc, s) => ({ ...acc, [s.id]: true }), {})
+    SIDEBAR_SECTIONS.reduce((acc, s) => {
+      const hasActive = s.items.some((i) => location.pathname.startsWith(i.path));
+      return { ...acc, [s.id]: hasActive };
+    }, {})
   );
 
   const toggleSection = useCallback((id) => {
