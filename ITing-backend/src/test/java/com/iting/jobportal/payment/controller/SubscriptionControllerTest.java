@@ -11,12 +11,16 @@ import static org.mockito.Mockito.when;
 import com.iting.jobportal.auth.security.JwtTokenUtil;
 import com.iting.jobportal.payment.entity.HrSubscription;
 import com.iting.jobportal.payment.entity.SubscriptionTier;
+import com.iting.jobportal.payment.entity.SubscriptionTierPricing;
+import com.iting.jobportal.payment.service.SubscriptionPricingService;
 import com.iting.jobportal.payment.service.SubscriptionService;
 import jakarta.servlet.http.HttpServletRequest;
 import java.time.LocalDateTime;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -30,15 +34,37 @@ import org.springframework.web.server.ResponseStatusException;
 class SubscriptionControllerTest {
 
   @Mock private SubscriptionService subscriptionService;
+  @Mock private SubscriptionPricingService pricingService;
   @Mock private JwtTokenUtil jwtTokenUtil;
   @Mock private HttpServletRequest request;
 
   @InjectMocks private SubscriptionController controller;
 
+  /** Pricing default từ enum — mô phỏng listActive() khi chưa có override trong DB. */
+  private static List<SubscriptionTierPricing> enumDefaults() {
+    return Arrays.stream(SubscriptionTier.values())
+        .map(
+            t ->
+                SubscriptionTierPricing.builder()
+                    .code(t.name())
+                    .displayName(t.getDisplayName())
+                    .priceVnd(t.getPriceVnd())
+                    .periodDays((int) t.getPeriod().toDays())
+                    .credits(t.getCredits())
+                    .benefits(t.getBenefits())
+                    .maxJobsPerMonth(t.getMaxJobsPerMonth())
+                    .maxBoostsPerMonth(t.getMaxBoostsPerMonth())
+                    .active(true)
+                    .build())
+        .collect(Collectors.toList());
+  }
+
   // ── listTiers ────────────────────────────────────────────────────────
 
   @Test
   void listTiers_returnsAllTiersWithAllFields() {
+    when(pricingService.listActive()).thenReturn(enumDefaults());
+
     ResponseEntity<List<Map<String, Object>>> resp = controller.listTiers();
 
     List<Map<String, Object>> tiers = resp.getBody();

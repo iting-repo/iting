@@ -86,7 +86,9 @@ public class BackupServiceImpl implements BackupService {
   }
 
   private String createRdsSnapshot(String timestamp) {
-    String snapshotId = "iting-backup-" + timestamp;
+    // RDS DBSnapshotIdentifier chỉ cho phép chữ/số/gạch-ngang (KHÔNG có '_').
+    // timestamp dạng yyyyMMdd_HHmmss → thay '_' bằng '-' cho hợp lệ.
+    String snapshotId = "iting-backup-" + timestamp.replace("_", "-");
 
     try (RdsClient rdsClient = createRdsClient()) {
       CreateDbSnapshotRequest request =

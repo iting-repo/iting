@@ -4,7 +4,7 @@ import {
   ChevronLeft, ChevronRight, ChevronDown,
   Bell, BookOpen, Building2,
   FileText, HelpCircle, LayoutDashboard,
-  Layers, Image, Settings, Shield, Users
+  Layers, Image, Settings, Shield, Users, CreditCard
 } from 'lucide-react';
 import './AdminSidebar.css';
 
@@ -26,6 +26,7 @@ const SIDEBAR_SECTIONS = [
       { path: '/admin/companies', label: 'Quản lý công ty', icon: Building2 },
       { path: '/admin/users', label: 'Người dùng', icon: Users },
       { path: '/admin/reports', label: 'Báo cáo', icon: FileText },
+      { path: '/admin/subscriptions', label: 'Gói HR & Giá', icon: CreditCard },
     ],
   },
   {

@@ -126,4 +126,54 @@ public class AdminRbacController {
     rbacService.assignRole(actorId(user), request);
     return ResponseEntity.ok(Map.of("message", "Đã gán role"));
   }
+
+  // ── Company RBAC: HR con trong công ty ────────────────────────────────────
+
+  @GetMapping("/companies")
+  @Operation(summary = "Danh sách công ty (cho dropdown phân quyền HR)")
+  public ResponseEntity<List<CompanySummaryResponse>> companies(
+      @RequestParam(required = false) String keyword) {
+    return ResponseEntity.ok(rbacService.listCompanies(keyword));
+  }
+
+  @GetMapping("/companies/{companyId}/members")
+  @Operation(summary = "Danh sách HR thuộc công ty + company role")
+  public ResponseEntity<List<CompanyMemberResponse>> members(@PathVariable Long companyId) {
+    return ResponseEntity.ok(rbacService.listCompanyMembers(companyId));
+  }
+
+  @GetMapping("/companies/available-hr")
+  @Operation(summary = "HR chưa thuộc công ty nào (để thêm vào công ty)")
+  public ResponseEntity<List<AvailableHrResponse>> availableHr(
+      @RequestParam(required = false) String keyword) {
+    return ResponseEntity.ok(rbacService.listAvailableHr(keyword));
+  }
+
+  @PostMapping("/companies/{companyId}/members")
+  @Operation(summary = "Thêm HR vào công ty kèm company role")
+  public ResponseEntity<CompanyMemberResponse> addMember(
+      @AuthenticationPrincipal AuthUser user,
+      @PathVariable Long companyId,
+      @Valid @RequestBody AddCompanyMemberRequest request) {
+    return ResponseEntity.status(HttpStatus.CREATED)
+        .body(rbacService.addCompanyMember(actorId(user), companyId, request));
+  }
+
+  @PutMapping("/members/{affiliationId}/role")
+  @Operation(summary = "Gán / đổi company role cho một thành viên")
+  public ResponseEntity<CompanyMemberResponse> assignMemberRole(
+      @AuthenticationPrincipal AuthUser user,
+      @PathVariable Long affiliationId,
+      @Valid @RequestBody AssignCompanyRoleRequest request) {
+    return ResponseEntity.ok(
+        rbacService.assignCompanyRole(actorId(user), affiliationId, request.getRoleCode()));
+  }
+
+  @DeleteMapping("/members/{affiliationId}")
+  @Operation(summary = "Gỡ HR khỏi công ty")
+  public ResponseEntity<Map<String, String>> removeMember(
+      @AuthenticationPrincipal AuthUser user, @PathVariable Long affiliationId) {
+    rbacService.removeCompanyMember(actorId(user), affiliationId);
+    return ResponseEntity.ok(Map.of("message", "Đã gỡ thành viên"));
+  }
 }

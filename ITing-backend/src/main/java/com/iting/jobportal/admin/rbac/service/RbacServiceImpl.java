@@ -15,6 +15,12 @@ import com.iting.jobportal.auth.entity.Account;
 import com.iting.jobportal.auth.entity.Enum.AccountType;
 import com.iting.jobportal.auth.entity.Enum.Role;
 import com.iting.jobportal.auth.repository.AccountRepository;
+import com.iting.jobportal.company.entity.Company;
+import com.iting.jobportal.company.entity.CompanyHrAffiliation;
+import com.iting.jobportal.company.entity.enums.AffiliationStatus;
+import com.iting.jobportal.company.entity.enums.SubmissionStatus;
+import com.iting.jobportal.company.repository.CompanyHrAffiliationRepository;
+import com.iting.jobportal.company.repository.CompanyRepository;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -36,6 +42,8 @@ public class RbacServiceImpl implements RbacService {
   private final RbacRolePermissionRepository rolePermissionRepository;
   private final AccountRepository accountRepository;
   private final AdminActivityLogService activityLogService;
+  private final CompanyRepository companyRepository;
+  private final CompanyHrAffiliationRepository affiliationRepository;
 
   // ── Queries ───────────────────────────────────────────────────────────────
 
@@ -265,6 +273,187 @@ public class RbacServiceImpl implements RbacService {
         "ASSIGN_ROLE",
         target.getId(),
         "Gán role " + role.getCode() + " cho tài khoản " + target.getEmail());
+  }
+
+  // ── Company RBAC ─────────────────────────────────────────────────────────
+
+  @Override
+  public List<CompanySummaryResponse> listCompanies(String keyword) {
+    String kw = keyword == null ? "" : keyword.trim().toLowerCase();
+    return companyRepository.findAll().stream()
+        .filter(c -> kw.isEmpty() || (c.getName() != null && c.getName().toLowerCase().contains(kw)))
+        .sorted(Comparator.comparing(Company::getName, Comparator.nullsLast(String::compareTo)))
+        .map(
+            c ->
+                CompanySummaryResponse.builder()
+                    .id(c.getId())
+                    .name(c.getName())
+                    .memberCount(
+                        (int)
+                            affiliationRepository.countByCompany_IdAndStatus(
+                                c.getId(), AffiliationStatus.APPROVED))
+                    .build())
+        .collect(Collectors.toList());
+  }
+
+  @Override
+  public List<CompanyMemberResponse> listCompanyMembers(Long companyId) {
+    Map<String, String> roleNames = companyRoleNames();
+    return affiliationRepository.findByCompany_Id(companyId).stream()
+        .filter(a -> a.getStatus() != AffiliationStatus.REVOKED)
+        .map(a -> toMember(a, roleNames))
+        .collect(Collectors.toList());
+  }
+
+  @Override
+  public List<AvailableHrResponse> listAvailableHr(String keyword) {
+    String kw = keyword == null ? "" : keyword.trim().toLowerCase();
+    return accountRepository.findByRole(Role.EMPLOYER).stream()
+        .filter(a -> affiliationRepository.findActiveByHrAccountId(a.getId()).isEmpty())
+        .filter(
+            a ->
+                kw.isEmpty()
+                    || (a.getEmail() != null && a.getEmail().toLowerCase().contains(kw))
+                    || (a.getFullName() != null && a.getFullName().toLowerCase().contains(kw)))
+        .map(
+            a ->
+                AvailableHrResponse.builder()
+                    .accountId(a.getId())
+                    .email(a.getEmail())
+                    .fullName(a.getFullName())
+                    .build())
+        .collect(Collectors.toList());
+  }
+
+  @Override
+  @Transactional
+  public CompanyMemberResponse addCompanyMember(
+      Long actorId, Long companyId, AddCompanyMemberRequest req) {
+    Company company =
+        companyRepository
+            .findById(companyId)
+            .orElseThrow(
+                () -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Không tìm thấy công ty"));
+    Account hr =
+        accountRepository
+            .findById(req.getAccountId())
+            .orElseThrow(
+                () -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Không tìm thấy tài khoản"));
+
+    if (hr.getRole() == null || hr.getRole().normalize() != Role.EMPLOYER) {
+      throw new ResponseStatusException(
+          HttpStatus.BAD_REQUEST, "Chỉ tài khoản HR (EMPLOYER) mới được thêm vào công ty");
+    }
+    // Rule 2: mỗi HR chỉ thuộc 1 công ty (1 affiliation active duy nhất)
+    if (affiliationRepository.findActiveByHrAccountId(hr.getId()).isPresent()) {
+      throw new ResponseStatusException(
+          HttpStatus.CONFLICT, "HR này đã thuộc một công ty khác");
+    }
+    requireActiveCompanyRole(req.getRoleCode());
+
+    CompanyHrAffiliation aff =
+        CompanyHrAffiliation.builder()
+            .hrAccount(hr)
+            .company(company)
+            .status(AffiliationStatus.APPROVED)
+            .companyRoleCode(req.getRoleCode())
+            .requestedAt(LocalDateTime.now())
+            .reviewedAt(LocalDateTime.now())
+            .reviewedBy(actorId)
+            .submissionStatus(SubmissionStatus.NONE)
+            .submittedConsentConfirmed(false)
+            .build();
+    aff = affiliationRepository.save(aff);
+
+    // Tài khoản HR thuộc tổ chức công ty → COMPANY_STAFF
+    if (hr.getAccountType() != AccountType.COMPANY_STAFF) {
+      hr.setAccountType(AccountType.COMPANY_STAFF);
+      accountRepository.save(hr);
+    }
+
+    audit(
+        actorId,
+        "ADD_MEMBER",
+        aff.getId(),
+        "Thêm HR " + hr.getEmail() + " vào công ty " + company.getName() + " với vai trò "
+            + req.getRoleCode());
+    return toMember(aff, companyRoleNames());
+  }
+
+  @Override
+  @Transactional
+  public CompanyMemberResponse assignCompanyRole(Long actorId, Long affiliationId, String roleCode) {
+    CompanyHrAffiliation aff = findAffiliation(affiliationId);
+    requireActiveCompanyRole(roleCode);
+    aff.setCompanyRoleCode(roleCode);
+    aff = affiliationRepository.save(aff);
+    audit(
+        actorId,
+        "ASSIGN_COMPANY_ROLE",
+        aff.getId(),
+        "Gán company role " + roleCode + " cho " + aff.getHrAccount().getEmail());
+    return toMember(aff, companyRoleNames());
+  }
+
+  @Override
+  @Transactional
+  public void removeCompanyMember(Long actorId, Long affiliationId) {
+    CompanyHrAffiliation aff = findAffiliation(affiliationId);
+    aff.setStatus(AffiliationStatus.REVOKED);
+    aff.setCompanyRoleCode(null);
+    affiliationRepository.save(aff);
+    audit(
+        actorId,
+        "REMOVE_MEMBER",
+        aff.getId(),
+        "Gỡ HR " + aff.getHrAccount().getEmail() + " khỏi công ty");
+  }
+
+  private CompanyHrAffiliation findAffiliation(Long id) {
+    return affiliationRepository
+        .findById(id)
+        .orElseThrow(
+            () -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Không tìm thấy thành viên #" + id));
+  }
+
+  /** Xác thực role tồn tại, đúng scope COMPANY và đang ACTIVE. */
+  private void requireActiveCompanyRole(String roleCode) {
+    RbacRole role =
+        roleRepository
+            .findByCode(roleCode)
+            .orElseThrow(
+                () ->
+                    new ResponseStatusException(
+                        HttpStatus.NOT_FOUND, "Không tìm thấy company role: " + roleCode));
+    if (role.getScope() != PermissionScope.COMPANY) {
+      throw new ResponseStatusException(
+          HttpStatus.BAD_REQUEST, roleCode + " không phải company role");
+    }
+    if (role.getStatus() != RoleStatus.ACTIVE) {
+      throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Company role chưa được kích hoạt");
+    }
+  }
+
+  private Map<String, String> companyRoleNames() {
+    Map<String, String> map = new HashMap<>();
+    roleRepository
+        .findByScopeOrderBySystemRoleDescCreatedAtAsc(PermissionScope.COMPANY)
+        .forEach(r -> map.put(r.getCode(), r.getName()));
+    return map;
+  }
+
+  private CompanyMemberResponse toMember(CompanyHrAffiliation a, Map<String, String> roleNames) {
+    Account hr = a.getHrAccount();
+    return CompanyMemberResponse.builder()
+        .affiliationId(a.getId())
+        .accountId(hr != null ? hr.getId() : null)
+        .email(hr != null ? hr.getEmail() : null)
+        .fullName(hr != null ? hr.getFullName() : null)
+        .status(a.getStatus() != null ? a.getStatus().name() : null)
+        .companyRoleCode(a.getCompanyRoleCode())
+        .companyRoleName(
+            a.getCompanyRoleCode() != null ? roleNames.get(a.getCompanyRoleCode()) : null)
+        .build();
   }
 
   // ── Helpers ────────────────────────────────────────────────────────────────

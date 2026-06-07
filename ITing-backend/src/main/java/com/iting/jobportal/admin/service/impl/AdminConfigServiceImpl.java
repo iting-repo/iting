@@ -3,6 +3,7 @@ package com.iting.jobportal.admin.service.impl;
 import com.iting.jobportal.admin.entity.SystemConfig;
 import com.iting.jobportal.admin.repository.SystemConfigRepository;
 import com.iting.jobportal.admin.service.AdminConfigService;
+import com.iting.jobportal.common.audit.AuditContext;
 import jakarta.mail.MessagingException;
 import java.util.Properties;
 import lombok.RequiredArgsConstructor;
@@ -25,6 +26,33 @@ public class AdminConfigServiceImpl implements AdminConfigService {
   @Transactional
   public SystemConfig updateConfig(SystemConfig config, Long adminId) {
     SystemConfig current = getConfig();
+
+    // Ghi nhận changeset (trước khi mutate) cho audit log — bỏ qua mật khẩu SMTP (nhạy cảm).
+    AuditContext.change("Tên website", current.getSiteName(), config.getSiteName());
+    AuditContext.change("URL website", current.getSiteUrl(), config.getSiteUrl());
+    AuditContext.change("Email hỗ trợ", current.getSupportEmail(), config.getSupportEmail());
+    AuditContext.change("Số tin tối đa/công ty", current.getMaxJobsPerCompany(), config.getMaxJobsPerCompany());
+    AuditContext.change("Tin hết hạn sau (ngày)", current.getJobExpiryDays(), config.getJobExpiryDays());
+    AuditContext.change("Tự duyệt công ty đã xác minh", current.getAutoApproveVerified(), config.getAutoApproveVerified());
+    AuditContext.change("SMTP Host", current.getSmtpHost(), config.getSmtpHost());
+    AuditContext.change("SMTP Port", current.getSmtpPort(), config.getSmtpPort());
+    AuditContext.change("SMTP User", current.getSmtpUser(), config.getSmtpUser());
+    AuditContext.change("Tên người gửi", current.getEmailFromName(), config.getEmailFromName());
+    AuditContext.change("Báo công ty mới", current.getNotifyNewCompany(), config.getNotifyNewCompany());
+    AuditContext.change("Báo tin mới", current.getNotifyNewJob(), config.getNotifyNewJob());
+    AuditContext.change("Báo report vi phạm", current.getNotifyUserReport(), config.getNotifyUserReport());
+    AuditContext.change("Email digest", current.getEmailDigest(), config.getEmailDigest());
+    AuditContext.change("Đăng nhập sai tối đa", current.getMaxLoginAttempts(), config.getMaxLoginAttempts());
+    AuditContext.change("Thời gian khóa (phút)", current.getLockoutDuration(), config.getLockoutDuration());
+    AuditContext.change("Hết hạn phiên (phút)", current.getSessionTimeout(), config.getSessionTimeout());
+    AuditContext.change("Yêu cầu xác minh email", current.getRequireEmailVerification(), config.getRequireEmailVerification());
+    AuditContext.change("Bật 2FA", current.getEnable2FA(), config.getEnable2FA());
+    AuditContext.change("Độ dài mật khẩu tối thiểu", current.getMinPasswordLength(), config.getMinPasswordLength());
+    AuditContext.change("Chế độ bảo trì", current.getMaintenanceMode(), config.getMaintenanceMode());
+    AuditContext.change("Thông báo bảo trì", current.getMaintenanceMessage(), config.getMaintenanceMessage());
+    AuditContext.change("Tự động sao lưu", current.getAutoBackup(), config.getAutoBackup());
+    AuditContext.change("Tần suất sao lưu", current.getBackupFrequency(), config.getBackupFrequency());
+    AuditContext.change("Số ngày lưu backup", current.getBackupRetention(), config.getBackupRetention());
 
     // Update all fields (excluding ID)
     current.setSiteName(config.getSiteName());

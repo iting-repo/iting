@@ -60,6 +60,11 @@ public class CompanyHrAffiliation extends AuditEntity {
   @Column(name = "rejected_reason", columnDefinition = "TEXT")
   private String rejectedReason;
 
+  // Company role (RBAC scope=COMPANY) gán cho HR này: SUPER_HR/HR_MANAGER/HR_RECRUITER/HR_VIEWER
+  // — tham chiếu rbac_role.code (V117). NULL = chưa gán vai trò.
+  @Column(name = "company_role_code", length = 60)
+  private String companyRoleCode;
+
   @Column(name = "requested_at", nullable = false)
   private LocalDateTime requestedAt;
 

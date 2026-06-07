@@ -36,6 +36,7 @@ public class QuotaService {
   private final HrSubscriptionRepository subscriptionRepository;
   private final JobRepository jobRepository;
   private final PaymentOrderRepository paymentOrderRepository;
+  private final SubscriptionPricingService pricingService;
 
   /** Window 30 ngày tính từ now (rolling). Khớp với period của subscription. */
   private static final int WINDOW_DAYS = 30;
@@ -46,7 +47,8 @@ public class QuotaService {
    * @param hrAccountId HR account đang post job
    */
   public void requireJobQuota(Long hrAccountId) {
-    int limit = resolveActiveTier(hrAccountId).map(SubscriptionTier::getMaxJobsPerMonth)
+    int limit = resolveActiveTier(hrAccountId)
+        .map(t -> pricingService.getPricing(t).getMaxJobsPerMonth())
         .orElse(SubscriptionTier.FREE_MAX_JOBS_PER_MONTH);
     if (limit < 0) return; // unlimited (ENTERPRISE)
 
@@ -77,7 +79,8 @@ public class QuotaService {
    * @param hrAccountId HR account đang boost
    */
   public void requireBoostQuota(Long hrAccountId) {
-    int limit = resolveActiveTier(hrAccountId).map(SubscriptionTier::getMaxBoostsPerMonth)
+    int limit = resolveActiveTier(hrAccountId)
+        .map(t -> pricingService.getPricing(t).getMaxBoostsPerMonth())
         .orElse(SubscriptionTier.FREE_MAX_BOOSTS_PER_MONTH);
     if (limit < 0) return; // unlimited
 

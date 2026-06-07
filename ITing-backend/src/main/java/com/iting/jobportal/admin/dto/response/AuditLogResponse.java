@@ -19,4 +19,7 @@ public class AuditLogResponse {
   private String fromStatus;
   private String toStatus;
   private String ip;
+  private String userAgent;
+  private String riskLevel; // LOW | MEDIUM | HIGH | CRITICAL
+  private String changes; // JSON: [{"field","from","to"}, ...]
 }

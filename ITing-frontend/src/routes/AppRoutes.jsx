@@ -63,6 +63,7 @@ const AnnouncementManagement = lazy(() => import('../pages/admin/announcements/A
 const BlogManagement = lazy(() => import('../pages/admin/blog/BlogManagement'));
 const FaqManagement = lazy(() => import('../pages/admin/faq/FaqManagement'));
 const RoleManagement = lazy(() => import('../pages/admin/roles/RoleManagement'));
+const SubscriptionTierManagement = lazy(() => import('../pages/admin/subscriptions/SubscriptionTierManagement'));
 const AdminProfilePage = lazy(() => import('../pages/admin/profile/AdminProfilePage'));
 const CompaniesPage = lazy(() => import('../pages/public/CompaniesPage'));
 const CompanyDetailPage = lazy(() => import('../pages/public/CompanyDetailPage'));
@@ -107,6 +108,7 @@ const AppRoutes = () => {
             <Route path="config" element={<SystemConfig />} />
             <Route path="notifications" element={<NotificationManagement />} />
             <Route path="categories" element={<CategoryManagement />} />
+            <Route path="subscriptions" element={<SubscriptionTierManagement />} />
             <Route path="banner" element={<BannerManagement />} />
             <Route path="announcements" element={<AnnouncementManagement />} />
             <Route path="blog" element={<BlogManagement />} />

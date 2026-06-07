@@ -7,6 +7,7 @@ import com.iting.jobportal.payment.entity.HrSubscription;
 import com.iting.jobportal.payment.entity.PaymentOrder;
 import com.iting.jobportal.payment.entity.PaymentStatus;
 import com.iting.jobportal.payment.entity.SubscriptionTier;
+import com.iting.jobportal.payment.entity.SubscriptionTierPricing;
 import com.iting.jobportal.payment.repository.HrSubscriptionRepository;
 import com.iting.jobportal.payment.repository.PaymentOrderRepository;
 import java.security.SecureRandom;
@@ -42,6 +43,7 @@ import org.springframework.web.server.ResponseStatusException;
 public class SubscriptionService {
 
   private final CreditService creditService;
+  private final SubscriptionPricingService pricingService;
 
   @Value("${sepay.order-prefix:ITI}")
   private String orderPrefix;
@@ -88,12 +90,15 @@ public class SubscriptionService {
             .orElseThrow(
                 () -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Account không tồn tại"));
 
+    SubscriptionTierPricing pricing = pricingService.getPricing(tier);
+    long priceVnd = pricing.getPriceVnd();
+
     String orderCode = generateOrderCode();
     PaymentOrder order =
         PaymentOrder.builder()
             .account(account)
             .orderCode(orderCode)
-            .amount(tier.getPriceVnd())
+            .amount(priceVnd)
             .description("Subscription " + tier.name() + (autoRenew ? " (auto-renew)" : ""))
             .itemType("PREMIUM_SUBSCRIPTION")
             .itemId(null)
@@ -107,10 +112,10 @@ public class SubscriptionService {
     Map<String, Object> response = new LinkedHashMap<>();
     response.put("orderId", order.getId());
     response.put("orderCode", orderCode);
-    response.put("amount", tier.getPriceVnd());
+    response.put("amount", priceVnd);
     response.put("status", "PENDING");
     response.put("tier", tier.name());
-    response.put("tierDisplayName", tier.getDisplayName());
+    response.put("tierDisplayName", pricing.getDisplayName());
     response.put("autoRenew", autoRenew);
 
     Map<String, Object> bank = new LinkedHashMap<>();
@@ -122,7 +127,7 @@ public class SubscriptionService {
         "qrImageUrl",
         String.format(
             "https://qr.sepay.vn/img?acc=%s&bank=%s&amount=%d&des=%s&template=%s",
-            accountNumber, bankCode, tier.getPriceVnd(), orderCode, qrTemplate));
+            accountNumber, bankCode, priceVnd, orderCode, qrTemplate));
     response.put("bank", bank);
 
     log.info(
@@ -150,6 +155,7 @@ public class SubscriptionService {
       return;
     }
 
+    SubscriptionTierPricing pricing = pricingService.getPricing(tier);
     Long accountId = order.getAccount().getId();
     LocalDateTime now = LocalDateTime.now();
 
@@ -173,7 +179,7 @@ public class SubscriptionService {
     if (existing.isPresent() && existing.get().getExpiresAt().isAfter(now)) {
       // Extend: add period to current expiry
       sub = existing.get();
-      sub.setExpiresAt(sub.getExpiresAt().plus(tier.getPeriod()));
+      sub.setExpiresAt(sub.getExpiresAt().plus(pricing.getPeriod()));
       sub.setTier(tier);
       sub.setLastPaymentOrderId(order.getId());
     } else {
@@ -184,7 +190,7 @@ public class SubscriptionService {
               .tier(tier)
               .status("ACTIVE")
               .startedAt(now)
-              .expiresAt(now.plus(tier.getPeriod()))
+              .expiresAt(now.plus(pricing.getPeriod()))
               .autoRenew(true)
               .lastPaymentOrderId(order.getId())
               .build();
@@ -193,13 +199,13 @@ public class SubscriptionService {
 
     // ── Add credits to HR account (via CreditService để có audit ledger) ──
     Account account = order.getAccount();
-    int creditsToAdd = tier.getCredits();
+    int creditsToAdd = pricing.getCredits();
     creditService.grant(
         accountId,
         creditsToAdd,
         "SUBSCRIPTION",
         sub.getId(),
-        "Kích hoạt gói " + tier.getDisplayName() + " (" + tier.name() + ")");
+        "Kích hoạt gói " + pricing.getDisplayName() + " (" + tier.name() + ")");
     account.setPremiumUntil(sub.getExpiresAt());
     account.setPremiumSource(tier.name());
     accountRepository.save(account);
@@ -213,7 +219,7 @@ public class SubscriptionService {
 
     // ── Send marketing welcome email (async, non-blocking) ──
     try {
-      sendSubscriptionWelcomeEmail(account, tier, sub, creditsToAdd);
+      sendSubscriptionWelcomeEmail(account, tier, pricing, sub, creditsToAdd);
     } catch (Exception e) {
       log.warn(
           "[Subscription] Failed to send welcome email to {}: {}",
@@ -224,7 +230,11 @@ public class SubscriptionService {
 
   /** Sends a styled HTML welcome email after successful subscription. */
   private void sendSubscriptionWelcomeEmail(
-      Account account, SubscriptionTier tier, HrSubscription sub, int creditsAdded) {
+      Account account,
+      SubscriptionTier tier,
+      SubscriptionTierPricing pricing,
+      HrSubscription sub,
+      int creditsAdded) {
     String to = account.getEmail();
     if (to == null || to.isBlank()) return;
 
@@ -265,12 +275,12 @@ public class SubscriptionService {
             .formatted(
                 name,
                 tier.name(),
-                tier.getDisplayName(),
-                tier.getPeriod().toDays(),
+                pricing.getDisplayName(),
+                (long) pricing.getPeriodDays(),
                 expiryDate,
                 creditsAdded,
                 tier.name(),
-                tier.getBenefits().replace("·", "<br>·"));
+                pricing.getBenefits().replace("·", "<br>·"));
 
     emailService.sendHtmlEmail(to, subject, html);
     log.info("[Subscription] Welcome email sent to {}", to);

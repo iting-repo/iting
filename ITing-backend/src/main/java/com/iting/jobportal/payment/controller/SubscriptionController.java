@@ -2,9 +2,9 @@ package com.iting.jobportal.payment.controller;
 
 import com.iting.jobportal.auth.security.JwtTokenUtil;
 import com.iting.jobportal.payment.entity.SubscriptionTier;
+import com.iting.jobportal.payment.service.SubscriptionPricingService;
 import com.iting.jobportal.payment.service.SubscriptionService;
 import jakarta.servlet.http.HttpServletRequest;
-import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -20,20 +20,21 @@ import org.springframework.web.server.ResponseStatusException;
 public class SubscriptionController {
 
   private final SubscriptionService subscriptionService;
+  private final SubscriptionPricingService pricingService;
   private final JwtTokenUtil jwtTokenUtil;
 
-  /** Public tier list with prices + benefits. */
+  /** Public tier list with prices + benefits (giá hiệu lực từ DB, chỉ tier active). */
   @GetMapping("/api/payments/subscription-tiers")
   public ResponseEntity<List<Map<String, Object>>> listTiers() {
     return ResponseEntity.ok(
-        Arrays.stream(SubscriptionTier.values())
+        pricingService.listActive().stream()
             .map(
                 t -> {
                   Map<String, Object> m = new LinkedHashMap<>();
-                  m.put("code", t.name());
+                  m.put("code", t.getCode());
                   m.put("displayName", t.getDisplayName());
                   m.put("priceVnd", t.getPriceVnd());
-                  m.put("periodDays", t.getPeriod().toDays());
+                  m.put("periodDays", (long) t.getPeriodDays());
                   m.put("benefits", t.getBenefits());
                   m.put("credits", t.getCredits());
                   return m;

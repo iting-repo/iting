@@ -1,9 +1,11 @@
-import React, { useEffect, useRef, lazy, Suspense } from 'react';
+import React, { useEffect, useRef, useState, lazy, Suspense } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import AppRoutes from './routes/AppRoutes';
 import { checkAuth } from './store/auth/authSlice';
 import ScrollToTop from './components/common/ScrollToTop';
+import MaintenanceScreen from './components/common/MaintenanceScreen';
+import axiosInstance from './utils/axiosInstance';
 // Lazy-load: modal chỉ render khi có announcement active, không cần trong initial bundle.
 const SystemAnnouncementModal = lazy(() => import('./components/common/SystemAnnouncementModal'));
 
@@ -26,10 +28,30 @@ function App() {
   const location = useLocation();
   const { currentUser } = useSelector((state) => state.auth);
   const hasRedirected = useRef(false);
+  const [maintenance, setMaintenance] = useState({ on: false, message: '' });
 
   useEffect(() => {
     dispatch(checkAuth());
   }, [dispatch]);
+
+  // Kiểm tra trạng thái bảo trì (public, không bị interceptor chặn) — poll mỗi 60s.
+  useEffect(() => {
+    let active = true;
+    const check = async () => {
+      try {
+        const { data } = await axiosInstance.get('/public/maintenance');
+        if (active) setMaintenance({ on: !!data?.maintenanceMode, message: data?.message || '' });
+      } catch {
+        if (active) setMaintenance({ on: false, message: '' });
+      }
+    };
+    check();
+    const id = setInterval(check, 60000);
+    return () => {
+      active = false;
+      clearInterval(id);
+    };
+  }, []);
 
   useEffect(() => {
     if (!currentUser) {
@@ -55,6 +77,14 @@ function App() {
       hasRedirected.current = true;
     }
   }, [currentUser, location.pathname, navigate]);
+
+  // Bảo trì: chặn user thường; admin và các route quản trị/đăng nhập vẫn vào được để tắt.
+  const isAdmin = currentUser?.role === 'ADMIN';
+  const onAdminOrAuth =
+    location.pathname.startsWith('/admin') || location.pathname.startsWith('/login');
+  if (maintenance.on && !isAdmin && !onAdminOrAuth) {
+    return <MaintenanceScreen message={maintenance.message} />;
+  }
 
   return (
     <>

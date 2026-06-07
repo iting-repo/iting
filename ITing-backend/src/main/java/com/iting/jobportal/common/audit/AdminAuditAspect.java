@@ -1,12 +1,16 @@
 package com.iting.jobportal.common.audit;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.iting.jobportal.admin.entity.ActivityLog;
 import com.iting.jobportal.admin.repository.ActivityLogRepository;
 import com.iting.jobportal.auth.security.AuthUser;
 import jakarta.servlet.http.HttpServletRequest;
+import java.util.List;
+import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.aspectj.lang.JoinPoint;
+import org.aspectj.lang.annotation.After;
 import org.aspectj.lang.annotation.AfterReturning;
 import org.aspectj.lang.annotation.Aspect;
 import org.aspectj.lang.annotation.Pointcut;
@@ -34,6 +38,7 @@ import org.springframework.web.context.request.ServletRequestAttributes;
 public class AdminAuditAspect {
 
   private final ActivityLogRepository activityLogRepository;
+  private final ObjectMapper objectMapper;
 
   @Pointcut("within(com.iting.jobportal.admin.controller..*)")
   public void inAdminController() {}
@@ -60,19 +65,41 @@ public class AdminAuditAspect {
       String entityType = controller.replaceFirst("^Admin", "").replaceFirst("Controller$", "");
       if (entityType.isEmpty()) entityType = controller;
 
+      String action = toAction(method);
+      String description = method + " " + uri;
+
       ActivityLog row =
           ActivityLog.builder()
               .userId(userId)
-              .action(toAction(method))
+              .action(action)
               .entityType(entityType)
-              .description(method + " " + uri)
+              .description(description)
               .ipAddress(clientIp(req))
               .userAgent(truncate(req.getHeader("User-Agent"), 255))
+              .riskLevel(AuditRisk.level(action, entityType, description))
+              .changes(serializeChanges())
               .build();
 
       activityLogRepository.save(row);
     } catch (Exception e) {
       log.warn("Audit log write failed: {}", e.getMessage());
+    }
+  }
+
+  /** Luôn dọn ThreadLocal sau mỗi request write (kể cả khi handler ném lỗi) → tránh rò rỉ thread. */
+  @After("inAdminController() && writeMethod()")
+  public void clearAuditContext() {
+    AuditContext.clear();
+  }
+
+  /** Serialize changeset (nếu service đã đóng góp qua AuditContext) thành JSON. */
+  private String serializeChanges() {
+    List<Map<String, Object>> changes = AuditContext.getChanges();
+    if (changes == null || changes.isEmpty()) return null;
+    try {
+      return objectMapper.writeValueAsString(changes);
+    } catch (Exception e) {
+      return null;
     }
   }
 

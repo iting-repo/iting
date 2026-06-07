@@ -2,8 +2,9 @@ package com.iting.jobportal.payment.task;
 
 import com.iting.jobportal.common.service.EmailService;
 import com.iting.jobportal.payment.entity.HrSubscription;
-import com.iting.jobportal.payment.entity.SubscriptionTier;
+import com.iting.jobportal.payment.entity.SubscriptionTierPricing;
 import com.iting.jobportal.payment.repository.HrSubscriptionRepository;
+import com.iting.jobportal.payment.service.SubscriptionPricingService;
 import com.iting.jobportal.payment.service.SubscriptionService;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -28,6 +29,7 @@ public class SubscriptionRenewalTask {
 
   private final HrSubscriptionRepository subscriptionRepository;
   private final SubscriptionService subscriptionService;
+  private final SubscriptionPricingService pricingService;
   private final EmailService emailService;
 
   /** Run every hour. */
@@ -63,7 +65,7 @@ public class SubscriptionRenewalTask {
 
   private void sendRenewalReminderEmail(HrSubscription sub) {
     if (sub.getAccount() == null || sub.getAccount().getEmail() == null) return;
-    SubscriptionTier tier = sub.getTier();
+    SubscriptionTierPricing pricing = pricingService.getPricing(sub.getTier());
 
     String subject = "⏰ [ITing] Subscription Premium sắp hết hạn — gia hạn ngay";
     String body =
@@ -71,13 +73,13 @@ public class SubscriptionRenewalTask {
             + (sub.getAccount().getFullName() != null ? sub.getAccount().getFullName() : "bạn")
             + ",\n\n"
             + "Tài khoản Premium "
-            + tier.getDisplayName()
+            + pricing.getDisplayName()
             + " sẽ hết hạn ngày "
             + sub.getExpiresAt().toLocalDate()
             + " (còn vài ngày).\n\n"
             + "Gia hạn ngay để giữ các quyền lợi:\n"
             + "• "
-            + tier.getBenefits()
+            + pricing.getBenefits()
             + "\n\n"
             + "→ Gia hạn: https://iting.vn/employer/subscription\n\n"
             + "Trân trọng,\nĐội ngũ ITing.";

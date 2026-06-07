@@ -46,4 +46,12 @@ public class ActivityLog extends AuditEntity {
 
   @Column(length = 255)
   private String userAgent;
+
+  /** Mức độ rủi ro: LOW | MEDIUM | HIGH | CRITICAL (tính khi ghi log). */
+  @Column(length = 20)
+  private String riskLevel;
+
+  /** Danh sách trường thay đổi dưới dạng JSON: [{"field","from","to"}, ...]. */
+  @Column(columnDefinition = "TEXT")
+  private String changes;
 }

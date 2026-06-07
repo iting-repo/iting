@@ -7,14 +7,18 @@ const adminAuditService = {
     return response;
   },
 
-  // Xuất dữ liệu ra CSV (Placeholder - có thể xử lý ở backend sau)
+  // Danh mục (entityType) thực tế để dựng dropdown lọc
+  getCategories: async () => {
+    return await axiosInstance.get("/admin/audit/categories");
+  },
+
+  // Xuất CSV theo bộ lọc hiện tại — trả về Blob để tải xuống
   exportLogs: async (params = {}) => {
-    // Trong thực tế sẽ gọi endpoint download
-    // const response = await axiosInstance.get("/admin/audit/export", { params, responseType: 'blob' });
-    // return response;
-    console.log("Exporting logs with filters:", params);
-    return null;
-  }
+    return await axiosInstance.get("/admin/audit/export", {
+      params,
+      responseType: "blob",
+    });
+  },
 };
 
 export default adminAuditService;
