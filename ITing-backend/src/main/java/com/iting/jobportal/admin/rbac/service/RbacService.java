@@ -63,4 +63,7 @@ public interface RbacService {
 
   /** Thu hồi platform role đang gán (xóa adminRole). */
   void clearPlatformRole(Long actorId, Long accountId);
+
+  /** Quyền hiệu lực của user hiện tại (cho frontend ẩn/hiện menu). */
+  MePermissionsResponse currentUserPermissions(Long accountId);
 }

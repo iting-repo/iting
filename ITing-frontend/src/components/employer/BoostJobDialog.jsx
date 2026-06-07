@@ -19,6 +19,7 @@ const BoostJobDialog = ({ open, onClose, jobId, jobTitle }) => {
   const [selectedTier, setSelectedTier] = useState(null);
   const [order, setOrder] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [countdown, setCountdown] = useState(0);
 
   // Load tiers on first open
   useEffect(() => {
@@ -53,6 +54,23 @@ const BoostJobDialog = ({ open, onClose, jobId, jobTitle }) => {
     return () => clearInterval(interval);
   }, [stage, order, jobId, onClose]);
 
+  // Countdown timer khi QR hiển thị (60 giây)
+  useEffect(() => {
+    if (stage !== 'qr') return;
+    setCountdown(60);
+    const timer = setInterval(() => {
+      setCountdown((prev) => {
+        if (prev <= 1) {
+          clearInterval(timer);
+          setStage('expired');
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [stage]);
+
   if (!open) return null;
 
   const handleSelectTier = async (tier) => {
@@ -62,6 +80,7 @@ const BoostJobDialog = ({ open, onClose, jobId, jobTitle }) => {
       const ord = await paymentService.boostJob(jobId, tier.code);
       setOrder(ord);
       setStage('qr');
+      setCountdown(60);
     } catch (e) {
       toast.error(e?.response?.data?.message || 'Không tạo được đơn thanh toán');
     } finally {
@@ -205,8 +224,9 @@ const BoostJobDialog = ({ open, onClose, jobId, jobTitle }) => {
               <FaSpinner className="animate-spin text-blue-500" />
               <span>Đang chờ xác nhận thanh toán...</span>
             </div>
-            <div className="flex items-center gap-2 mt-2 text-xs text-slate-400">
-              <FaClock /> Đơn hàng hết hạn sau 30 phút
+            <div className={`flex items-center gap-2 mt-2 text-sm font-bold tabular-nums ${countdown < 60 ? 'text-red-500' : 'text-slate-600'}`}>
+              <FaClock />
+              ⏱ {String(Math.floor(countdown / 60)).padStart(2, '0')}:{String(countdown % 60).padStart(2, '0')}
             </div>
           </>
         )}

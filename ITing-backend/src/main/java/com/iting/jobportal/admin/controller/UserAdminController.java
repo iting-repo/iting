@@ -18,6 +18,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -56,6 +57,7 @@ public class UserAdminController {
   }
 
   @PostMapping("/{id}/ban")
+  @PreAuthorize("@perm.has('platform.users.ban')")
   @Operation(summary = "Cấm người dùng (chuyển sang trạng thái BANNED)")
   public ResponseEntity<?> banUser(@PathVariable Long id, @RequestBody BanUserRequest request) {
     Long adminId = 1L;
@@ -64,6 +66,7 @@ public class UserAdminController {
   }
 
   @PostMapping("/{id}/unban")
+  @PreAuthorize("@perm.has('platform.users.ban')")
   @Operation(summary = "Mở cấm người dùng (chuyển sang trạng thái ACTIVE)")
   public ResponseEntity<?> unbanUser(@PathVariable Long id) {
     Long adminId = 1L;
@@ -72,6 +75,7 @@ public class UserAdminController {
   }
 
   @DeleteMapping("/{id}")
+  @PreAuthorize("@perm.has('platform.users.delete')")
   @Operation(summary = "Xóa người dùng (hard delete)")
   public ResponseEntity<?> deleteUser(@PathVariable Long id) {
     Long adminId = 1L;
@@ -80,6 +84,7 @@ public class UserAdminController {
   }
 
   @PostMapping("/bulk-ban")
+  @PreAuthorize("@perm.has('platform.users.ban')")
   @Operation(summary = "Ban nhiều người dùng")
   public ResponseEntity<?> bulkBanUsers(@RequestBody java.util.List<Long> ids) {
     Long adminId = 1L;
@@ -95,6 +100,7 @@ public class UserAdminController {
   }
 
   @PostMapping("/bulk-delete")
+  @PreAuthorize("@perm.has('platform.users.delete')")
   @Operation(summary = "Xóa nhiều người dùng")
   public ResponseEntity<?> bulkDeleteUsers(@RequestBody java.util.List<Long> ids) {
     adminUserService.bulkDeleteUsers(ids);

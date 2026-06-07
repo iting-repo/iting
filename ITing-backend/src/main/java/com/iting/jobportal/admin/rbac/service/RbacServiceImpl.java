@@ -44,6 +44,7 @@ public class RbacServiceImpl implements RbacService {
   private final AdminActivityLogService activityLogService;
   private final CompanyRepository companyRepository;
   private final CompanyHrAffiliationRepository affiliationRepository;
+  private final RbacPermissionResolver permissionResolver;
 
   // ── Queries ───────────────────────────────────────────────────────────────
 
@@ -503,6 +504,28 @@ public class RbacServiceImpl implements RbacService {
     acc.setAdminRole(null);
     accountRepository.save(acc);
     audit(actorId, "REVOKE_ROLE", acc.getId(), "Thu hồi platform role của " + acc.getEmail());
+  }
+
+  @Override
+  public MePermissionsResponse currentUserPermissions(Long accountId) {
+    Account acc =
+        accountId == null ? null : accountRepository.findById(accountId).orElse(null);
+    if (acc == null) {
+      return MePermissionsResponse.builder().permissions(List.of()).build();
+    }
+    boolean superAdmin = SUPER_ADMIN.equals(acc.getAdminRole());
+    String roleName =
+        acc.getAdminRole() != null ? platformRoleNames().get(acc.getAdminRole()) : null;
+    return MePermissionsResponse.builder()
+        .accountId(acc.getId())
+        .email(acc.getEmail())
+        .accountType(
+            acc.getAccountType() != null ? acc.getAccountType().name() : AccountType.PUBLIC.name())
+        .platformRole(acc.getAdminRole())
+        .platformRoleName(roleName)
+        .superAdmin(superAdmin)
+        .permissions(new ArrayList<>(permissionResolver.effectivePermissions(accountId)))
+        .build();
   }
 
   private Map<String, String> platformRoleNames() {

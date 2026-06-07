@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import adminCompanyService from '../../../services/adminCompanyService';
+import adminAffiliationService from '../../../services/adminAffiliationService';
 import {
   Button, Badge, PageHeader, GlobalLoading
 } from "../../../components";
@@ -185,6 +186,33 @@ const CompanyManagement = () => {
     const { company, action } = actionDialog;
     setIsProcessing(true);
     try {
+      // ── Flow MỚI (Phase 5/6): duyệt/từ chối/thu hồi qua affiliation.
+      //    approve auto-apply snapshot (info + giấy tờ) lên Company.
+      const AFFILIATION_ACTIONS = {
+        "approve-submission": "approve",
+        "approve-affiliation": "approve",
+        "reject-submission": "reject",
+        "reject-affiliation": "reject",
+        "revoke-affiliation": "revoke",
+      };
+      if (AFFILIATION_ACTIONS[action]) {
+        const affId = company.affiliation?.id;
+        if (!affId) {
+          toast.error("Không tìm thấy hồ sơ affiliation để xử lý.");
+          return;
+        }
+        const op = AFFILIATION_ACTIONS[action];
+        if (op === "approve") await adminAffiliationService.approve(affId);
+        else if (op === "reject") await adminAffiliationService.reject(affId, actionNote);
+        else await adminAffiliationService.revoke(affId, actionNote);
+        setActionDialog(null);
+        setActionNote("");
+        setDetailCompany(null);
+        await fetchCompanies();
+        toast.success("Cập nhật trạng thái thành công!");
+        return;
+      }
+
       if (action === "approve") {
         await adminCompanyService.approveCompany(
           company.id,
@@ -314,11 +342,15 @@ const CompanyManagement = () => {
           setOpenMenuId={setOpenMenuId}
           onViewDetail={async (company) => {
             try {
-              const [detail, logs] = await Promise.all([
+              // Phase 5/6: giấy tờ HR nộp nằm ở affiliation snapshot, không phải Company entity.
+              // Lấy kèm affiliation để dialog hiển thị + duyệt đúng nguồn.
+              const [detail, logs, affiliation] = await Promise.all([
                 adminCompanyService.getCompanyDetail(company.id),
                 adminCompanyService.getCompanyAuditLogs(company.id),
+                adminAffiliationService.getLatestByCompany(company.id).catch(() => null),
               ]);
               detail.reviewHistory = logs || [];
+              detail.affiliation = affiliation;
               setDetailCompany(detail);
             } catch (error) {
               console.error("Lỗi lấy chi tiết công ty:", error);

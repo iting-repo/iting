@@ -42,6 +42,7 @@ const EmployerServicesPage = () => {
   // QR modal
   const [order, setOrder] = useState(null);
   const [orderStage, setOrderStage] = useState('idle'); // idle | qr | paid
+  const [countdown, setCountdown] = useState(0);
 
   // Cancel dialog
   const [showCancelDialog, setShowCancelDialog] = useState(false);
@@ -88,6 +89,25 @@ const EmployerServicesPage = () => {
     return () => clearInterval(itv);
   }, [orderStage, order, loadData]);
 
+  // Countdown timer khi QR hiển thị (60 giây)
+  useEffect(() => {
+    if (orderStage !== 'qr') return;
+    setCountdown(60);
+    const timer = setInterval(() => {
+      setCountdown((prev) => {
+        if (prev <= 1) {
+          clearInterval(timer);
+          toast.error('Đơn hàng đã hết hạn. Vui lòng thử lại.');
+          setOrder(null);
+          setOrderStage('idle');
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [orderStage]);
+
   /* ─── Subscribe ─── */
   const subscribe = async (tierCode) => {
     setSubscribing(tierCode);
@@ -95,6 +115,7 @@ const EmployerServicesPage = () => {
       const ord = await subscriptionService.subscribe(tierCode, true);
       setOrder(ord);
       setOrderStage('qr');
+      setCountdown(60);
     } catch (e) {
       toast.error(e?.response?.data?.message || 'Tạo đơn hàng thất bại. Vui lòng thử lại.');
     } finally {
@@ -422,6 +443,9 @@ const EmployerServicesPage = () => {
               <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-[#3AB4E6]" />
               <span>Đang chờ xác nhận thanh toán...</span>
             </div>
+            <p className={`text-center text-sm font-bold tabular-nums mt-2 ${countdown < 60 ? 'text-red-500' : 'text-slate-700'}`}>
+              ⏱ {String(Math.floor(countdown / 60)).padStart(2, '0')}:{String(countdown % 60).padStart(2, '0')}
+            </p>
           </div>
         </div>
       )}

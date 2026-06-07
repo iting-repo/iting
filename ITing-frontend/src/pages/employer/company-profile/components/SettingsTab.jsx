@@ -164,6 +164,9 @@ const SettingsTab = () => {
                               value={phone}
                               onChange={(e) => {
                                  const cleaned = e.target.value.replace(/[^0-9+]/g, '');
+                                 // Giới hạn độ dài: +84xxxxxxxxx (12) hoặc 0xxxxxxxxx (10)
+                                 if (cleaned.startsWith('+') && cleaned.length > 12) return;
+                                 if (!cleaned.startsWith('+') && cleaned.length > 10) return;
                                  setPhone(cleaned);
                                  setFormErrors(prev => ({...prev, phone: ''}));
                                  if (otpStep === 'sent') {
@@ -171,6 +174,7 @@ const SettingsTab = () => {
                                     setOtpCode('');
                                  }
                               }}
+                              maxLength={12}
                               placeholder="VD: 0901234567"
                               className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:border-[#3AB4E6]"
                               disabled={otpStep === 'sent'}
@@ -195,6 +199,26 @@ const SettingsTab = () => {
                         </button>
                      </div>
                      {formErrors.phone && <p className="text-xs text-red-500 mt-2">{formErrors.phone}</p>}
+                     {/* Gợi ý độ dài real-time */}
+                     {phone && !formErrors.phone && !isPhoneVerified && (() => {
+                        const n = phone.replace(/\s+/g, '');
+                        const expected = n.startsWith('+84') ? 12 : 10;
+                        if (n.length < expected) {
+                           return (
+                              <p className="text-xs text-amber-500 mt-2">
+                                 Còn thiếu {expected - n.length} chữ số (cần {expected} ký tự cho số VN).
+                              </p>
+                           );
+                        }
+                        if (!PHONE_REGEX.test(n)) {
+                           return (
+                              <p className="text-xs text-amber-500 mt-2">
+                                 Số không đúng định dạng di động VN. VD: 09x, 03x, 05x, 07x, 08x.
+                              </p>
+                           );
+                        }
+                        return null;
+                     })()}
                      {isPhoneVerified && !phoneChanged && !formErrors.phone && (
                         <p className="text-xs text-green-600 mt-2 flex items-center gap-1">
                            <FaCheckCircle /> Số điện thoại này đã được xác minh.

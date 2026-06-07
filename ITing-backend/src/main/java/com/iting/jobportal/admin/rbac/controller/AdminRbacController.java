@@ -28,6 +28,13 @@ public class AdminRbacController {
     return user != null ? user.getId() : null;
   }
 
+  @GetMapping("/me/permissions")
+  @Operation(summary = "Quyền hiệu lực của user hiện tại (ẩn/hiện menu & nút ở frontend)")
+  public ResponseEntity<MePermissionsResponse> myPermissions(
+      @AuthenticationPrincipal AuthUser user) {
+    return ResponseEntity.ok(rbacService.currentUserPermissions(actorId(user)));
+  }
+
   // ── Catalog ─────────────────────────────────────────────────────────────
 
   @GetMapping("/permissions")
@@ -58,6 +65,7 @@ public class AdminRbacController {
   }
 
   @PostMapping("/roles")
+  @PreAuthorize("@perm.has('platform.roles.manage')")
   @Operation(summary = "Tạo role mới (mặc định DRAFT)")
   public ResponseEntity<RoleResponse> create(
       @AuthenticationPrincipal AuthUser user, @Valid @RequestBody CreateRoleRequest request) {
@@ -66,6 +74,7 @@ public class AdminRbacController {
   }
 
   @PutMapping("/roles/{id}")
+  @PreAuthorize("@perm.has('platform.roles.manage')")
   @Operation(summary = "Cập nhật role (metadata và/hoặc quyền)")
   public ResponseEntity<RoleResponse> update(
       @AuthenticationPrincipal AuthUser user,
@@ -75,6 +84,7 @@ public class AdminRbacController {
   }
 
   @DeleteMapping("/roles/{id}")
+  @PreAuthorize("@perm.has('platform.roles.manage')")
   @Operation(summary = "Xóa role (không áp dụng role hệ thống)")
   public ResponseEntity<Map<String, String>> delete(
       @AuthenticationPrincipal AuthUser user, @PathVariable Long id) {
@@ -92,6 +102,7 @@ public class AdminRbacController {
   }
 
   @PostMapping("/roles/{id}/approve")
+  @PreAuthorize("@perm.has('platform.roles.approve')")
   @Operation(summary = "Duyệt role (Super Admin) — kích hoạt")
   public ResponseEntity<RoleResponse> approve(
       @AuthenticationPrincipal AuthUser user, @PathVariable Long id) {
@@ -99,6 +110,7 @@ public class AdminRbacController {
   }
 
   @PostMapping("/roles/{id}/reject")
+  @PreAuthorize("@perm.has('platform.roles.approve')")
   @Operation(summary = "Từ chối role (Super Admin)")
   public ResponseEntity<RoleResponse> reject(
       @AuthenticationPrincipal AuthUser user,
@@ -120,6 +132,7 @@ public class AdminRbacController {
   // ── Assignment ───────────────────────────────────────────────────────────
 
   @PostMapping("/assign")
+  @PreAuthorize("@perm.has('platform.roles.manage')")
   @Operation(summary = "Gán role cho tài khoản (kiểm tra account_type & rule bảo mật)")
   public ResponseEntity<Map<String, String>> assign(
       @AuthenticationPrincipal AuthUser user, @Valid @RequestBody AssignRoleRequest request) {
@@ -186,6 +199,7 @@ public class AdminRbacController {
   }
 
   @PostMapping("/staff/{accountId}/promote")
+  @PreAuthorize("@perm.has('platform.roles.manage')")
   @Operation(summary = "Nâng tài khoản thành nhân sự nội bộ ITing")
   public ResponseEntity<StaffResponse> promote(
       @AuthenticationPrincipal AuthUser user, @PathVariable Long accountId) {
@@ -193,6 +207,7 @@ public class AdminRbacController {
   }
 
   @DeleteMapping("/staff/{accountId}/role")
+  @PreAuthorize("@perm.has('platform.roles.manage')")
   @Operation(summary = "Thu hồi platform role của tài khoản")
   public ResponseEntity<Map<String, String>> clearRole(
       @AuthenticationPrincipal AuthUser user, @PathVariable Long accountId) {

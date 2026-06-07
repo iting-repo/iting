@@ -171,17 +171,13 @@ public class NotificationServiceImpl implements NotificationService {
                   if (htmlContent != null) {
                     emailService.sendHtmlEmail(account.getEmail(), subject, htmlContent);
                   } else {
-                    // Fallback to generic template/text
-                    String body =
-                        String.format(
-                            "Chào bạn,\n\n"
-                                + "Bạn có một thông báo mới từ hệ thống ITing Job Portal:\n\n"
-                                + "\"%s\"\n\n"
-                                + "Bạn có thể xem chi tiết tại: %s\n\n"
-                                + "Trân trọng,\n"
-                                + "Đội ngũ ITing.",
-                            saved.getContent(), actionUrl);
-                    emailService.sendEmail(account.getEmail(), subject, body);
+                    // Fallback: sử dụng template HTML generic thay vì plain-text
+                    String genericHtml =
+                        emailTemplateService.getGenericNotificationTemplate(
+                            saved.getContent(),
+                            actionUrl,
+                            saved.getType() != null ? saved.getType().name() : null);
+                    emailService.sendHtmlEmail(account.getEmail(), subject, genericHtml);
                   }
                 });
       } catch (Exception e) {

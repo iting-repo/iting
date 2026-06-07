@@ -14,8 +14,7 @@ import {
 } from "lucide-react";
 import { Dialog, Badge, Button } from "../common";
 import { getIndustryLabel } from "../../constants/industries";
-import adminCompanyService from "../../services/adminCompanyService";
-import { toast } from "sonner";
+import adminAffiliationService from "../../services/adminAffiliationService";
 
 export const CompanyDetailDialog = ({ company, open, onClose, onAction }) => {
   const [showLicensePreview, setShowLicensePreview] = React.useState(false);
@@ -23,6 +22,18 @@ export const CompanyDetailDialog = ({ company, open, onClose, onAction }) => {
   const [previewTitle, setPreviewTitle] = React.useState("");
   const [loadingPreview, setLoadingPreview] = React.useState(false);
   if (!company) return null;
+
+  // Phase 5/6: giấy tờ + thông tin HR nộp nằm ở affiliation snapshot (Company entity chỉ
+  // có dữ liệu sau khi đã duyệt). Đọc từ đây để thấy đúng những gì HR đã upload.
+  const aff = company.affiliation || null;
+  const hasPendingSubmission = aff?.submissionStatus === "PENDING_REVIEW";
+
+  // Ưu tiên field snapshot HR submit, fallback sang Company entity (cho công ty cũ chưa có aff).
+  const infoName = aff?.submittedName || company.name;
+  const infoEmail = aff?.submittedCompanyEmail || company.companyEmail;
+  const infoPhone = aff?.submittedPhone || company.representativePhone || company.phone;
+  const hasLicense = aff ? aff.hasLicense : !!company.businessLicenseFileUrl;
+  const hasConsent = aff ? aff.hasConsent : !!company.consentDocumentFileUrl;
 
   const SAMPLE_URLS = {
     license: "/doanhnghieptunhan (1).pdf",
@@ -32,17 +43,22 @@ export const CompanyDetailDialog = ({ company, open, onClose, onAction }) => {
   const handleViewDoc = async (type) => {
     setPreviewTitle(type === "license" ? "Giấy phép kinh doanh" : "Văn bản thỏa thuận dữ liệu");
 
-    // Try real presigned URL first if company has uploaded
-    const hasUploaded = type === "license"
-      ? !!company.businessLicenseFileUrl
-      : !!company.consentDocumentFileUrl;
+    // 1) Presigned URL kèm sẵn trong response affiliation (15 phút) — mở ngay.
+    const inlineUrl = type === "license" ? aff?.licensePreviewUrl : aff?.consentPreviewUrl;
+    if (inlineUrl) {
+      setPreviewUrl(inlineUrl);
+      setShowLicensePreview(true);
+      return;
+    }
 
-    if (hasUploaded) {
+    // 2) Nếu URL inline đã hết hạn nhưng HR có nộp → xin presigned URL mới theo affiliation id.
+    const uploaded = type === "license" ? hasLicense : hasConsent;
+    if (uploaded && aff?.id) {
       try {
         setLoadingPreview(true);
         const res = type === "license"
-          ? await adminCompanyService.getBusinessLicenseViewUrl(company.id)
-          : await adminCompanyService.getConsentDocumentViewUrl(company.id);
+          ? await adminAffiliationService.getLicenseViewUrl(aff.id)
+          : await adminAffiliationService.getConsentViewUrl(aff.id);
         setPreviewUrl(res?.url || SAMPLE_URLS[type]);
         setShowLicensePreview(true);
         return;
@@ -53,7 +69,7 @@ export const CompanyDetailDialog = ({ company, open, onClose, onAction }) => {
       }
     }
 
-    // Fallback: show sample template PDF
+    // 3) Fallback: văn bản mẫu.
     setPreviewUrl(SAMPLE_URLS[type]);
     setShowLicensePreview(true);
   };
@@ -103,6 +119,22 @@ export const CompanyDetailDialog = ({ company, open, onClose, onAction }) => {
             <Shield className="h-4 w-4 text-slate-400" />
             MST: {company.taxCode || "---"}
           </div>
+
+          <div className="flex items-center gap-2 text-sm md:col-span-2">
+            <ExternalLink className="h-4 w-4 text-slate-400 shrink-0" />
+            {company.webLink ? (
+              <a
+                href={company.webLink.startsWith("http") ? company.webLink : `https://${company.webLink}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-blue-600 hover:underline truncate"
+              >
+                {company.webLink}
+              </a>
+            ) : (
+              <span>---</span>
+            )}
+          </div>
         </div>
 
         <div>
@@ -114,9 +146,9 @@ export const CompanyDetailDialog = ({ company, open, onClose, onAction }) => {
           <h4 className="mb-2 text-sm font-semibold text-blue-600">Checklist duyệt thông tin</h4>
           <div className="space-y-2">
             {[
-              { label: "Tên công ty", ok: !!company.name },
-              { label: "Email công ty", ok: !!company.companyEmail },
-              { label: "Số điện thoại", ok: !!(company.representativePhone || company.phone) },
+              { label: "Tên công ty", ok: !!infoName },
+              { label: "Email công ty", ok: !!infoEmail },
+              { label: "Số điện thoại", ok: !!infoPhone },
               { label: "Người đại diện", ok: !!company.representativeName },
               { label: "Mã số thuế", ok: !!company.taxCode && company.taxCode !== "0000000000" },
               { label: "Tài khoản đang hoạt động", ok: company.active },
@@ -127,24 +159,6 @@ export const CompanyDetailDialog = ({ company, open, onClose, onAction }) => {
               </div>
             ))}
           </div>
-
-          <div className="mt-4 flex gap-2">
-             <Button
-                className="h-8 text-xs"
-                onClick={() => onAction(company, "approve-info")}
-                disabled={company.companyInfoUpdateStatus === "APPROVED"}
-              >
-                Duyệt thông tin
-              </Button>
-              <Button
-                variant="destructive"
-                className="h-8 text-xs"
-                onClick={() => onAction(company, "reject-info")}
-                disabled={company.companyInfoUpdateStatus === "REJECTED"}
-              >
-                Từ chối thông tin
-              </Button>
-          </div>
         </div>
 
         <div className="border-t border-slate-100 pt-4">
@@ -154,13 +168,13 @@ export const CompanyDetailDialog = ({ company, open, onClose, onAction }) => {
           <div className="mb-3 rounded-xl border border-slate-100 bg-slate-50/60 p-3">
             <div className="flex items-center justify-between flex-wrap gap-2">
               <div className="flex items-center gap-2 text-sm">
-                {company.businessLicenseFileUrl
+                {hasLicense
                   ? <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0" />
                   : <XCircle className="h-4 w-4 text-red-400 shrink-0" />}
-                <span className={company.businessLicenseFileUrl ? "font-medium text-slate-700" : "text-red-500"}>
+                <span className={hasLicense ? "font-medium text-slate-700" : "text-red-500"}>
                   Giấy phép kinh doanh
                 </span>
-                {!company.businessLicenseFileUrl && (
+                {!hasLicense && (
                   <span className="text-[10px] bg-amber-50 text-amber-600 border border-amber-200 px-1.5 py-0.5 rounded font-bold">Chưa nộp</span>
                 )}
               </div>
@@ -174,8 +188,8 @@ export const CompanyDetailDialog = ({ company, open, onClose, onAction }) => {
                   <Eye className="h-3 w-3" />
                   Xem mẫu
                 </button>
-                {/* Uploaded doc button - only when company has uploaded */}
-                {company.businessLicenseFileUrl && (
+                {/* Uploaded doc button - only when HR has uploaded */}
+                {hasLicense && (
                   <button
                     type="button"
                     onClick={() => handleViewDoc("license")}
@@ -194,13 +208,13 @@ export const CompanyDetailDialog = ({ company, open, onClose, onAction }) => {
           <div className="mb-4 rounded-xl border border-slate-100 bg-slate-50/60 p-3">
             <div className="flex items-center justify-between flex-wrap gap-2">
               <div className="flex items-center gap-2 text-sm">
-                {company.consentDocumentFileUrl
+                {hasConsent
                   ? <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0" />
                   : <XCircle className="h-4 w-4 text-red-400 shrink-0" />}
-                <span className={company.consentDocumentFileUrl ? "font-medium text-slate-700" : "text-red-500"}>
+                <span className={hasConsent ? "font-medium text-slate-700" : "text-red-500"}>
                   Giấy thỏa thuận dữ liệu (NĐ 13)
                 </span>
-                {!company.consentDocumentFileUrl && (
+                {!hasConsent && (
                   <span className="text-[10px] bg-amber-50 text-amber-600 border border-amber-200 px-1.5 py-0.5 rounded font-bold">Chưa nộp</span>
                 )}
               </div>
@@ -215,7 +229,7 @@ export const CompanyDetailDialog = ({ company, open, onClose, onAction }) => {
                   Xem mẫu
                 </button>
                 {/* Uploaded doc button */}
-                {company.consentDocumentFileUrl && (
+                {hasConsent && (
                   <button
                     type="button"
                     onClick={() => handleViewDoc("consent")}
@@ -230,64 +244,139 @@ export const CompanyDetailDialog = ({ company, open, onClose, onAction }) => {
             </div>
           </div>
 
-          <div className="mt-2 flex gap-2">
-             <Button
-                className="h-8 text-xs"
-                onClick={() => onAction(company, "approve-documents")}
-                disabled={company.documentReviewStatus === "APPROVED"}
-              >
-                Duyệt giấy tờ
-              </Button>
-              <Button
-                variant="destructive"
-                className="h-8 text-xs"
-                onClick={() => onAction(company, "reject-documents")}
-                disabled={company.documentReviewStatus === "REJECTED"}
-              >
-                Từ chối giấy tờ
-              </Button>
-          </div>
         </div>
 
+        {/* ─── Duyệt đơn xác thực công ty (Affiliation Membership) ─── */}
+        {aff && (
+          <div className="border-t border-slate-200 pt-4">
+            <h4 className="mb-3 text-sm font-semibold text-indigo-600">Đơn xác thực thuộc công ty</h4>
 
-        {(company.companyInfoUpdateStatus === "PENDING_REVIEW" || company.companyInfoUpdateStatus === "UNDER_REVIEW") && (
-          <div className="flex gap-2 border-t border-slate-200 pt-3">
-            <Button
-              className="flex-1"
-              onClick={() => {
-                onClose();
-                onAction(company, "approve");
-              }}
-            >
-              <CheckCircle2 className="mr-2 h-4 w-4" />
-              Duyệt
-            </Button>
+            <div className="rounded-xl border border-slate-100 bg-slate-50/60 p-3 mb-3">
+              <div className="grid grid-cols-1 gap-2 text-sm md:grid-cols-2">
+                <div className="flex items-center gap-2">
+                  <User className="h-4 w-4 text-slate-400" />
+                  <span className="text-slate-500">HR:</span>
+                  <span className="font-medium">{aff.hrFullName || aff.hrEmail || "---"}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Mail className="h-4 w-4 text-slate-400" />
+                  <span className="text-slate-500">Email:</span>
+                  <span className="font-medium">{aff.hrEmail || "---"}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Shield className="h-4 w-4 text-slate-400" />
+                  <span className="text-slate-500">Trạng thái:</span>
+                  <Badge variant={aff.status === "APPROVED" ? "success" : aff.status === "REJECTED" || aff.status === "REVOKED" ? "danger" : aff.status === "PENDING" ? "warning" : "default"}>
+                    {aff.status || "—"}
+                  </Badge>
+                </div>
+                {aff.requestedAt && (
+                  <div className="flex items-center gap-2 text-xs text-slate-400">
+                    Ngày yêu cầu: {new Date(aff.requestedAt).toLocaleString("vi-VN")}
+                  </div>
+                )}
+              </div>
+              {aff.rejectedReason && (
+                <div className="mt-2 text-xs text-red-500 italic bg-red-50 border border-red-100 rounded-lg px-3 py-2">
+                  Lý do từ chối: {aff.rejectedReason}
+                </div>
+              )}
+            </div>
 
-            <Button
-              variant="destructive"
-              className="flex-1"
-              onClick={() => {
-                onClose();
-                onAction(company, "reject");
-              }}
-            >
-              <XCircle className="mr-2 h-4 w-4" />
-              Từ chối
-            </Button>
+            {aff.status === "PENDING" && (
+              <div className="flex gap-2">
+                <Button
+                  className="flex-1"
+                  onClick={() => onAction(company, "approve-affiliation")}
+                >
+                  <CheckCircle2 className="mr-2 h-4 w-4" />
+                  Duyệt xác thực
+                </Button>
+                <Button
+                  variant="destructive"
+                  className="flex-1"
+                  onClick={() => onAction(company, "reject-affiliation")}
+                >
+                  <XCircle className="mr-2 h-4 w-4" />
+                  Từ chối
+                </Button>
+              </div>
+            )}
 
-            <Button
-              variant="outline"
-              className="flex-1"
-              onClick={() => {
-                onClose();
-                onAction(company, "resubmit");
-              }}
-            >
-              <RotateCcw className="mr-2 h-4 w-4" />
-              Yêu cầu nộp lại
-            </Button>
+            {aff.status === "APPROVED" && (
+              <div className="flex gap-2">
+                <div className="flex items-center gap-2 flex-1 text-sm text-emerald-600">
+                  <CheckCircle2 className="h-4 w-4" />
+                  Đã xác thực thuộc công ty
+                  {aff.reviewedAt && (
+                    <span className="text-xs text-slate-400">
+                      · {new Date(aff.reviewedAt).toLocaleString("vi-VN")}
+                    </span>
+                  )}
+                </div>
+                <Button
+                  variant="outline"
+                  className="text-red-500 border-red-200 hover:bg-red-50"
+                  onClick={() => onAction(company, "revoke-affiliation")}
+                >
+                  <RotateCcw className="mr-2 h-4 w-4" />
+                  Thu hồi
+                </Button>
+              </div>
+            )}
           </div>
         )}
+
+        {/* ─── Duyệt hồ sơ (submission) — duyệt 1 lần áp cả thông tin + giấy tờ lên Company ─── */}
+        <div className="border-t border-slate-200 pt-4">
+          {!aff ? (
+            <p className="rounded-lg bg-slate-50 px-3 py-2 text-xs text-slate-500">
+              Công ty này chưa có hồ sơ HR nộp qua hệ thống — không có gì để duyệt ở đây.
+            </p>
+          ) : hasPendingSubmission ? (
+            <>
+              <h4 className="mb-3 text-sm font-semibold text-emerald-600">Duyệt hồ sơ công ty</h4>
+              <p className="mb-3 text-xs text-slate-500">
+                Duyệt sẽ áp toàn bộ hồ sơ HR đã nộp (thông tin + giấy phép + thỏa thuận DLCN) lên công ty và xác thực ở mức Nâng cao.
+                {!aff.documentsComplete && (
+                  <span className="ml-1 font-semibold text-amber-600">
+                    Lưu ý: HR chưa nộp/đủ giấy tờ (license/consent/cam đoan).
+                  </span>
+                )}
+              </p>
+              <div className="flex gap-2">
+                <Button
+                  className="flex-1"
+                  onClick={() => onAction(company, "approve-submission")}
+                >
+                  <CheckCircle2 className="mr-2 h-4 w-4" />
+                  Duyệt hồ sơ
+                </Button>
+                <Button
+                  variant="destructive"
+                  className="flex-1"
+                  onClick={() => onAction(company, "reject-submission")}
+                >
+                  <XCircle className="mr-2 h-4 w-4" />
+                  Từ chối hồ sơ
+                </Button>
+              </div>
+            </>
+          ) : (
+            <div className="flex items-center gap-2 text-sm">
+              <span className="text-slate-500">Trạng thái hồ sơ:</span>
+              <Badge variant={aff.submissionStatus === "APPROVED" ? "success" : aff.submissionStatus === "REJECTED" ? "danger" : "default"}>
+                {aff.submissionStatus || "—"}
+              </Badge>
+              {aff.submissionStatus === "REJECTED" && aff.submissionRejectReason && (
+                <span className="text-xs text-red-500 italic">· {aff.submissionRejectReason}</span>
+              )}
+              {aff.submissionStatus === "APPROVED" && (
+                <span className="text-xs text-slate-400">· Không có hồ sơ mới cần duyệt</span>
+              )}
+            </div>
+          )}
+        </div>
 
         {/* Lịch sử duyệt */}
         {company.reviewHistory && company.reviewHistory.length > 0 && (

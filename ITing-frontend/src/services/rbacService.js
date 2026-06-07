@@ -49,6 +49,9 @@ const rbacService = {
     axiosInstance.post(`/admin/rbac/staff/${accountId}/promote`),
   clearStaffRole: (accountId) =>
     axiosInstance.delete(`/admin/rbac/staff/${accountId}/role`),
+
+  // Quyền hiệu lực của user hiện tại (ẩn/hiện menu & nút)
+  getMyPermissions: () => axiosInstance.get("/admin/rbac/me/permissions"),
 };
 
 export default rbacService;

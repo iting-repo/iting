@@ -8,4 +8,7 @@ public interface EmailTemplateService {
 
   String getApplicationRejectedTemplate(
       String candidateName, String jobTitle, String companyName, String reason);
+
+  String getGenericNotificationTemplate(
+      String notificationContent, String actionUrl, String notificationType);
 }

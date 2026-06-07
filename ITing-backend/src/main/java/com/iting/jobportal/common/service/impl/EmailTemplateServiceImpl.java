@@ -123,6 +123,138 @@ public class EmailTemplateServiceImpl implements EmailTemplateService {
             + " việc phù hợp nhé.  </p></div>");
   }
 
+  @Override
+  public String getGenericNotificationTemplate(
+      String notificationContent, String actionUrl, String notificationType) {
+    // Map notification type to Vietnamese label + icon (emoji) for the hero
+    String typeLabel = "Thông báo mới";
+    String typeEmoji = "🔔";
+    String heroGradient =
+        "linear-gradient(135deg, #3AB4E6 0%, #2196F3 50%, #1976D2 100%)";
+
+    if (notificationType != null) {
+      switch (notificationType) {
+        case "JOB_RECOMMENDATION":
+          typeLabel = "Gợi ý việc làm mới";
+          typeEmoji = "💼";
+          heroGradient = "linear-gradient(135deg, #3AB4E6 0%, #0288D1 100%)";
+          break;
+        case "NEW_MESSAGE":
+          typeLabel = "Tin nhắn mới";
+          typeEmoji = "💬";
+          heroGradient = "linear-gradient(135deg, #7C3AED 0%, #5B21B6 100%)";
+          break;
+        case "APPLICATION_STATUS_UPDATE":
+        case "APPLICATION_VIEWED":
+          typeLabel = "Cập nhật ứng tuyển";
+          typeEmoji = "📋";
+          heroGradient = "linear-gradient(135deg, #059669 0%, #047857 100%)";
+          break;
+        case "COMPANY_REVIEW":
+        case "COMPANY_VERIFIED":
+          typeLabel = "Cập nhật công ty";
+          typeEmoji = "🏢";
+          heroGradient = "linear-gradient(135deg, #F59E0B 0%, #D97706 100%)";
+          break;
+        case "SYSTEM_ANNOUNCEMENT":
+          typeLabel = "Thông báo hệ thống";
+          typeEmoji = "📢";
+          heroGradient = "linear-gradient(135deg, #EF4444 0%, #DC2626 100%)";
+          break;
+        default:
+          break;
+      }
+    }
+
+    String ctaSection =
+        (actionUrl != null && !actionUrl.isBlank())
+            ? "<div style='text-align: center; margin: 32px 0 16px;'>"
+                + "  <a href='"
+                + actionUrl
+                + "' style='display: inline-block; background: "
+                + BRAND_COLOR
+                + "; color: #ffffff; padding: 14px 40px; border-radius: 50px; text-decoration:"
+                + " none; font-weight: bold; font-size: 15px; letter-spacing: 0.5px; box-shadow: 0"
+                + " 4px 15px rgba(58,180,230,0.35); transition: all 0.3s;'>"
+                + "    Xem chi tiết &rarr;"
+                + "  </a>"
+                + "</div>"
+                + "<p style='text-align: center; color: #9ca3af; font-size: 11px; margin-top: 8px;'>"
+                + "  Hoặc copy link: <span style='color: "
+                + BRAND_COLOR
+                + ";'>"
+                + actionUrl
+                + "</span>"
+                + "</p>"
+            : "";
+
+    return buildWrapper(
+        // ── Hero section with gradient + icon ──
+        "<div style='text-align: center; padding: 36px 24px 28px; background: "
+            + heroGradient
+            + "; border-radius: 0 0 24px 24px; margin: -40px -40px 32px -40px;'>"
+            + "  <div style='font-size: 48px; margin-bottom: 12px;'>"
+            + typeEmoji
+            + "</div>"
+            + "  <h1 style='margin: 0; color: #ffffff; font-size: 22px; font-weight: 700;"
+            + " letter-spacing: 0.5px;'>"
+            + typeLabel
+            + "</h1>"
+            + "  <p style='margin: 8px 0 0; color: rgba(255,255,255,0.85); font-size: 13px;'>"
+            + "    ITing Job Portal"
+            + "  </p>"
+            + "</div>"
+
+            // ── Notification content card ──
+            + "<div style='background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px;"
+            + " padding: 24px; margin: 0 0 24px;'>"
+            + "  <p style='margin: 0; color: "
+            + TEXT_COLOR
+            + "; font-size: 15px; line-height: 1.7;'>"
+            + notificationContent
+            + "  </p>"
+            + "</div>"
+
+            // ── CTA button ──
+            + ctaSection
+
+            // ── 3 feature strip ──
+            + "<div style='margin: 36px 0 8px; border-top: 1px solid #f1f5f9; padding-top: 28px;'>"
+            + "  <table width='100%' cellpadding='0' cellspacing='0' border='0'>"
+            + "    <tr>"
+            + "      <td width='33%' style='text-align: center; padding: 0 8px;'>"
+            + "        <div style='font-size: 24px; margin-bottom: 6px;'>🎯</div>"
+            + "        <p style='margin: 0; font-size: 11px; font-weight: 600; color: #374151;'>"
+            + "          Việc làm IT"
+            + "        </p>"
+            + "        <p style='margin: 2px 0 0; font-size: 10px; color: #9ca3af;'>"
+            + "          Hàng ngàn cơ hội"
+            + "        </p>"
+            + "      </td>"
+            + "      <td width='33%' style='text-align: center; padding: 0 8px; border-left: 1px"
+            + " solid #f1f5f9; border-right: 1px solid #f1f5f9;'>"
+            + "        <div style='font-size: 24px; margin-bottom: 6px;'>🤖</div>"
+            + "        <p style='margin: 0; font-size: 11px; font-weight: 600; color: #374151;'>"
+            + "          AI Matching"
+            + "        </p>"
+            + "        <p style='margin: 2px 0 0; font-size: 10px; color: #9ca3af;'>"
+            + "          Gợi ý thông minh"
+            + "        </p>"
+            + "      </td>"
+            + "      <td width='33%' style='text-align: center; padding: 0 8px;'>"
+            + "        <div style='font-size: 24px; margin-bottom: 6px;'>⚡</div>"
+            + "        <p style='margin: 0; font-size: 11px; font-weight: 600; color: #374151;'>"
+            + "          Realtime"
+            + "        </p>"
+            + "        <p style='margin: 2px 0 0; font-size: 10px; color: #9ca3af;'>"
+            + "          Phản hồi tức thì"
+            + "        </p>"
+            + "      </td>"
+            + "    </tr>"
+            + "  </table>"
+            + "</div>");
+  }
+
   private String buildWrapper(String content) {
     return "<!DOCTYPE html><html><head>  <meta charset='utf-8'>  <meta name='viewport'"
         + " content='width=device-width, initial-scale=1.0'>  <style>    body { font-family:"
@@ -149,11 +281,12 @@ public class EmailTemplateServiceImpl implements EmailTemplateService {
         + content
         + "    </div>"
         + "    <div class='footer'>"
-        + "      <p>&copy; 2024 ITing Job Portal. Tất cả quyền được bảo lưu.</p>"
-        + "      <p>Địa chỉ: Khu CNC Hòa Lạc, Thạch Thất, Hà Nội</p>"
-        + "      <p><a href='#' style='color: "
+        + "      <p>&copy; 2026 ITing Job Portal. Tất cả quyền được bảo lưu.</p>"
+        + "      <p>Đại học Bách Khoa TP.HCM (HCMUT) — Đồ án tốt nghiệp HK252</p>"
+        + "      <p><a href='https://datnhk252iting.dpdns.org/terms' style='color: "
         + BRAND_COLOR
-        + ";'>Điều khoản sử dụng</a> | <a href='#' style='color: "
+        + ";'>Điều khoản sử dụng</a> | <a href='https://datnhk252iting.dpdns.org/privacy'"
+        + " style='color: "
         + BRAND_COLOR
         + ";'>Chính sách bảo mật</a></p>"
         + "    </div>"
@@ -162,3 +295,4 @@ public class EmailTemplateServiceImpl implements EmailTemplateService {
         + "</html>";
   }
 }
+

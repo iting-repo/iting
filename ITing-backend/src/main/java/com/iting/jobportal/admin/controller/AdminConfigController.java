@@ -28,7 +28,7 @@ public class AdminConfigController {
   }
 
   @PutMapping
-  @PreAuthorize("hasRole('ADMIN')")
+  @PreAuthorize("@perm.has('platform.system.config')")
   @Operation(summary = "Update system configuration")
   public ResponseEntity<SystemConfig> updateConfig(
       @RequestBody SystemConfig config, HttpServletRequest request) {
@@ -37,7 +37,7 @@ public class AdminConfigController {
   }
 
   @PostMapping("/reset")
-  @PreAuthorize("hasRole('ADMIN')")
+  @PreAuthorize("@perm.has('platform.system.config')")
   @Operation(summary = "Reset configuration to default")
   public ResponseEntity<Void> resetToDefault() {
     adminConfigService.resetToDefault();

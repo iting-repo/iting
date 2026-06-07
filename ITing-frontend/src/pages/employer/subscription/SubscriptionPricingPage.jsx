@@ -22,6 +22,7 @@ const SubscriptionPricingPage = () => {
   // Order modal state
   const [order, setOrder] = useState(null);    // {orderId, orderCode, bank, ...}
   const [orderStage, setOrderStage] = useState('idle');  // idle | qr | paid
+  const [countdown, setCountdown] = useState(0); // seconds remaining
 
   useEffect(() => {
     Promise.all([
@@ -62,11 +63,31 @@ const SubscriptionPricingPage = () => {
     return () => clearInterval(itv);
   }, [orderStage, order, navigate]);
 
+  // Countdown timer khi QR hiển thị (60 giây)
+  useEffect(() => {
+    if (orderStage !== 'qr') return;
+    setCountdown(60);
+    const timer = setInterval(() => {
+      setCountdown((prev) => {
+        if (prev <= 1) {
+          clearInterval(timer);
+          toast.error('Đơn hàng đã hết hạn. Vui lòng thử lại.');
+          setOrder(null);
+          setOrderStage('idle');
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [orderStage]);
+
   const subscribe = async (tierCode) => {
     try {
       const ord = await subscriptionService.subscribe(tierCode, true);
       setOrder(ord);
       setOrderStage('qr');
+      setCountdown(60);
     } catch (e) {
       toast.error(e?.response?.data?.message || 'Tạo đơn thất bại');
     }
@@ -186,7 +207,13 @@ const SubscriptionPricingPage = () => {
                   className="ml-2 text-blue-600"
                 ><FaCopy className="inline" /></button>
               </div>
-              <p className="text-xs text-slate-500 text-center">Đang chờ xác nhận thanh toán...</p>
+              <div className="flex items-center justify-center gap-3 mb-1">
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-[#3AB4E6]" />
+                <span className="text-xs text-slate-500">Đang chờ xác nhận thanh toán...</span>
+              </div>
+              <p className={`text-center text-sm font-bold tabular-nums ${countdown < 60 ? 'text-red-500' : 'text-slate-700'}`}>
+                ⏱ {String(Math.floor(countdown / 60)).padStart(2, '0')}:{String(countdown % 60).padStart(2, '0')}
+              </p>
             </div>
           </div>
         )}

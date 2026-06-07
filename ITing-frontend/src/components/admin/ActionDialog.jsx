@@ -17,6 +17,13 @@ const ACTION_CONFIG = {
   "reject-info":       { title: "Từ chối thông tin công ty", needsNote: true,  noteLabel: "Lý do *", variant: "destructive" },
   "reject-documents":  { title: "Từ chối giấy tờ pháp lý",  needsNote: true,  noteLabel: "Lý do *", variant: "destructive" },
   resubmit:            { title: "Yêu cầu nộp lại",           needsNote: true,  noteLabel: "Lý do *", variant: "destructive" },
+
+  // Affiliation actions (Phase 5/6) — duyệt hồ sơ HR submit qua affiliation snapshot
+  "approve-submission":  { title: "Duyệt hồ sơ xác thực",          needsNote: false, noteLabel: "Ghi chú (tuỳ chọn)", variant: "default"     },
+  "reject-submission":   { title: "Từ chối hồ sơ xác thực",        needsNote: true,  noteLabel: "Lý do từ chối *",   variant: "destructive" },
+  "approve-affiliation": { title: "Duyệt đơn xác thực thuộc công ty", needsNote: false, noteLabel: "Ghi chú (tuỳ chọn)", variant: "default"     },
+  "reject-affiliation":  { title: "Từ chối đơn xác thực",           needsNote: true,  noteLabel: "Lý do từ chối *",   variant: "destructive" },
+  "revoke-affiliation":  { title: "Thu hồi xác thực",              needsNote: true,  noteLabel: "Lý do thu hồi *",   variant: "destructive" },
 };
 
 export const ActionDialog = ({ actionDialog, actionNote, setActionNote, onClose, onConfirm }) => {

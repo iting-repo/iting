@@ -4,11 +4,15 @@ import {
   ChevronLeft, ChevronRight, ChevronDown,
   Bell, BookOpen, Building2,
   FileText, HelpCircle, LayoutDashboard,
-  Layers, Image, Settings, Shield, Users, CreditCard
+  Layers, Image, Settings, Shield, ShieldCheck, Users, CreditCard
 } from 'lucide-react';
+import { usePermissions } from '../../contexts/PermissionsContext';
 import './AdminSidebar.css';
 
-/* ─── Menu data ─────────────────────────────────────────────────────────── */
+/* ─── Menu data ─────────────────────────────────────────────────────────────
+ * Mỗi item có thể khai báo `permission` (mã quyền platform). Nếu user không có
+ * quyền đó (và không phải super admin) → item bị ẩn. Item không có `permission`
+ * luôn hiển thị. */
 const SIDEBAR_SECTIONS = [
   {
     id: 'overview',
@@ -22,30 +26,31 @@ const SIDEBAR_SECTIONS = [
     id: 'management',
     title: 'QUẢN LÝ',
     items: [
-      { path: '/admin/jobs', label: 'Quản lý công việc', icon: BookOpen },
-      { path: '/admin/companies', label: 'Quản lý công ty', icon: Building2 },
-      { path: '/admin/users', label: 'Người dùng', icon: Users },
-      { path: '/admin/reports', label: 'Báo cáo', icon: FileText },
-      { path: '/admin/subscriptions', label: 'Gói HR & Giá', icon: CreditCard },
+      { path: '/admin/jobs', label: 'Quản lý công việc', icon: BookOpen, permission: 'platform.jobs.view' },
+      { path: '/admin/companies', label: 'Quản lý công ty', icon: Building2, permission: 'platform.companies.view' },
+      { path: '/admin/users', label: 'Người dùng', icon: Users, permission: 'platform.users.view' },
+      { path: '/admin/reports', label: 'Báo cáo', icon: FileText, permission: 'platform.reports.view' },
+      { path: '/admin/subscriptions', label: 'Gói HR & Giá', icon: CreditCard, permission: 'platform.finance.view' },
+      { path: '/admin/affiliations', label: 'Xác thực công ty', icon: ShieldCheck, permission: 'platform.companies.approve' },
     ],
   },
   {
     id: 'cms',
     title: 'CMS',
     items: [
-      { path: '/admin/blog', label: 'Blog', icon: BookOpen },
-      { path: '/admin/faq', label: 'FAQ', icon: HelpCircle },
-      { path: '/admin/categories', label: 'Danh mục', icon: Layers },
-      { path: '/admin/banner', label: 'Banner', icon: Image },
+      { path: '/admin/blog', label: 'Blog', icon: BookOpen, permission: 'platform.cms.manage' },
+      { path: '/admin/faq', label: 'FAQ', icon: HelpCircle, permission: 'platform.cms.manage' },
+      { path: '/admin/categories', label: 'Danh mục', icon: Layers, permission: 'platform.cms.manage' },
+      { path: '/admin/banner', label: 'Banner', icon: Image, permission: 'platform.cms.manage' },
     ],
   },
   {
     id: 'system',
     title: 'HỆ THỐNG',
     items: [
-      { path: '/admin/roles', label: 'Phân quyền', icon: Shield },
-      { path: '/admin/audit', label: 'Nhật ký kiểm tra', icon: FileText },
-      { path: '/admin/config', label: 'Cấu hình', icon: Settings },
+      { path: '/admin/roles', label: 'Phân quyền', icon: Shield, permission: 'platform.roles.view' },
+      { path: '/admin/audit', label: 'Nhật ký kiểm tra', icon: FileText, permission: 'platform.audit.view' },
+      { path: '/admin/config', label: 'Cấu hình', icon: Settings, permission: 'platform.system.config' },
     ],
   },
 ];
@@ -103,6 +108,16 @@ const SidebarSection = ({ section, isExpanded, isCollapsed, onToggle }) => {
 
 /* ─── Main sidebar ──────────────────────────────────────────────────────── */
 const AdminSidebar = ({ isCollapsed, onToggle }) => {
+  const { has } = usePermissions();
+
+  // Lọc item theo quyền; bỏ section rỗng. Item không khai báo permission luôn hiện.
+  const visibleSections = SIDEBAR_SECTIONS
+    .map(section => ({
+      ...section,
+      items: section.items.filter(item => has(item.permission)),
+    }))
+    .filter(section => section.items.length > 0);
+
   // Track which sections are expanded (all open by default)
   const [expandedSections, setExpandedSections] = useState(() =>
     SIDEBAR_SECTIONS.reduce((acc, s) => ({ ...acc, [s.id]: true }), {})
@@ -135,7 +150,7 @@ const AdminSidebar = ({ isCollapsed, onToggle }) => {
 
       {/* Navigation sections */}
       <nav className="adm-sb__nav">
-        {SIDEBAR_SECTIONS.map((section) => (
+        {visibleSections.map((section) => (
           <SidebarSection
             key={section.id}
             section={section}
