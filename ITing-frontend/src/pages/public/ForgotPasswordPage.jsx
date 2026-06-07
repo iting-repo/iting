@@ -4,7 +4,8 @@ import authService from '../../services/authService';
 import publicService from '../../services/publicService';
 import { FaArrowRight, FaEye, FaEyeSlash, FaCheckCircle } from 'react-icons/fa';
 import { BsBriefcaseFill, BsBuilding, BsPeopleFill } from 'react-icons/bs';
-import bgImage from '../../assets/bg_login.jpg';
+// Dùng chung ảnh nền với HomePage
+const heroBg = '/jobportal_banner.avif';
 
 const ForgotPasswordPage = () => {
   const navigate = useNavigate();
@@ -221,7 +222,7 @@ const ForgotPasswordPage = () => {
       <div 
         className="hidden lg:block w-[50%] relative bg-cover bg-center"
         style={{ 
-            backgroundImage: `url(${bgImage})`,
+            backgroundImage: `url(${heroBg})`,
             clipPath: 'polygon(80px 0, 100% 0, 100% 100%, 0 100%)',
             marginLeft: '-1px'
         }}
