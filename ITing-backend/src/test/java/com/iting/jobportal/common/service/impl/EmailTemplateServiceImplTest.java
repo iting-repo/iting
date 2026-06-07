@@ -48,7 +48,7 @@ class EmailTemplateServiceImplTest {
 
     // ITing branding header + footer
     assertTrue(html.contains("ITing"));
-    assertTrue(html.contains("&copy; 2024 ITing Job Portal"));
+    assertTrue(html.contains("&copy; 2026 ITing Job Portal"));
     assertTrue(html.contains("<!DOCTYPE html>"));
     assertTrue(html.contains("Mã xác thực của bạn"));
     // OTP expiry note
@@ -84,7 +84,7 @@ class EmailTemplateServiceImplTest {
     String html = service.getApplicationAcceptedTemplate("A", "B", "C", "/u");
 
     assertTrue(html.contains("ITing"));
-    assertTrue(html.contains("&copy; 2024 ITing Job Portal"));
+    assertTrue(html.contains("&copy; 2026 ITing Job Portal"));
   }
 
   // ── getApplicationRejectedTemplate ─────────────────────────────────
@@ -142,7 +142,7 @@ class EmailTemplateServiceImplTest {
     String html = service.getApplicationRejectedTemplate("A", "B", "C", "r");
 
     assertTrue(html.contains("ITing"));
-    assertTrue(html.contains("&copy; 2024 ITing Job Portal"));
+    assertTrue(html.contains("&copy; 2026 ITing Job Portal"));
   }
 
   // ── Wrapper smoke test ──────────────────────────────────────────────
@@ -160,7 +160,7 @@ class EmailTemplateServiceImplTest {
       assertTrue(html.contains("<body>"));
       assertTrue(html.contains("</body>"));
       // Footer địa chỉ
-      assertTrue(html.contains("Khu CNC Hòa Lạc"));
+      assertTrue(html.contains("Đại học Bách Khoa TP.HCM"));
     }
   }
 }
