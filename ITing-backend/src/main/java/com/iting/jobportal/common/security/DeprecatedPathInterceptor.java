@@ -29,7 +29,8 @@ public class DeprecatedPathInterceptor implements HandlerInterceptor {
     DEPRECATIONS.put("/api/employers/candidates", "/api/hr/candidates");
     // /api/companies/me/* — không alias 1-1 (HR side đã đổi semantics qua affiliation)
     // nhưng vẫn log để biết FE còn dùng.
-    DEPRECATIONS.put("/api/companies/me", "/api/hr/affiliations/me  hoặc  /api/hr/companies/{id}");
+    // Giá trị header HTTP chỉ chấp nhận ASCII (0-255) → KHÔNG dùng tiếng Việt ("hoặc" gây lỗi encode).
+    DEPRECATIONS.put("/api/companies/me", "/api/hr/affiliations/me or /api/hr/companies/{id}");
   }
 
   @Override
@@ -44,12 +45,23 @@ public class DeprecatedPathInterceptor implements HandlerInterceptor {
             request.getMethod(),
             uri,
             replacement);
-        response.setHeader("X-Deprecated-Path", e.getKey());
-        response.setHeader("X-Replacement-Path", replacement);
+        response.setHeader("X-Deprecated-Path", asciiSafe(e.getKey()));
+        response.setHeader("X-Replacement-Path", asciiSafe(replacement));
         response.setHeader("Deprecation", "true");
         break;
       }
     }
     return true;
+  }
+
+  /** Header HTTP chỉ cho phép ký tự ISO-8859-1 (0-255); loại bỏ ký tự ngoài phạm vi để tránh 500. */
+  private static String asciiSafe(String value) {
+    if (value == null) return "";
+    StringBuilder sb = new StringBuilder(value.length());
+    for (int i = 0; i < value.length(); i++) {
+      char c = value.charAt(i);
+      sb.append(c <= 0xFF ? c : '?');
+    }
+    return sb.toString();
   }
 }
