@@ -131,9 +131,18 @@ const HrReportPage = () => {
     };
 
     const stages = data?.applicationsByStage || {};
-    // Bar % tính trên TỔNG hồ sơ tiếp nhận (totalApplications) thay vì sum stages.
-    // 2 giá trị này thường bằng nhau, nhưng dùng totalApplications cho chính xác về ngữ nghĩa.
-    const totalForBar = Math.max(1, data?.totalApplications || 0);
+
+    // KPI chuyển đổi (suy ra từ pipeline + chi phí). View→Apply & Time-to-Hire cần
+    // backend bổ sung (lượt xem job, mốc thời gian tuyển) nên tạm chưa có.
+    const conv = data
+        ? {
+              interviewRate: pctOf(stages.INTERVIEW || 0, data.totalApplications || 0),
+              offerRate: pctOf(stages.OFFER || 0, stages.INTERVIEW || 0),
+              hiredRate: pctOf(stages.HIRED || 0, stages.OFFER || 0),
+              costPerHire: (stages.HIRED || 0) > 0 ? Math.round(data.totalSpentVnd / stages.HIRED) : 0,
+          }
+        : null;
+    const insights = data ? buildInsights(data, stages) : [];
 
     return (
         <div className="space-y-6 pb-20">
@@ -187,9 +196,35 @@ const HrReportPage = () => {
                     <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
                         <MetricCard icon={<FaFileAlt />} color="text-slate-700" label="Hồ sơ tiếp nhận" value={fmtNum(data.totalApplications)} />
                         <MetricCard icon={<FaUserCheck />} color="text-emerald-600" label="Ứng tuyển (HIRED)" value={fmtNum(stages.HIRED || 0)} />
-                        <MetricCard icon={<FaMagic />} color="text-indigo-600" label="AI Match đã chạy" value={fmtNum(data.aiMatchCount)} />
+                        <MetricCard icon={<FaMagic />} color="text-indigo-600" label="Hồ sơ đã phân tích AI" value={fmtNum(data.aiMatchCount)} sub="lượt AI matching" />
                         <MetricCard icon={<FaSearch />} color="text-amber-600" label="Tin đăng" value={`${fmtNum(data.activeJobs)} / ${fmtNum(data.totalJobs)}`} sub="đang active / tổng" />
                         <MetricCard icon={<FaBolt />} color="text-rose-600" label="Tin đang boost" value={fmtNum(data.boostedJobs)} />
+                    </div>
+
+                    {/* Conversion KPIs */}
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                        <ConvCard label="Tỷ lệ vào phỏng vấn" value={`${conv.interviewRate.toFixed(1)}%`} sub="Hồ sơ → Phỏng vấn" color="text-blue-600" />
+                        <ConvCard label="Tỷ lệ nhận đề nghị" value={`${conv.offerRate.toFixed(1)}%`} sub="Phỏng vấn → Offer" color="text-amber-600" />
+                        <ConvCard label="Tỷ lệ nhận việc" value={`${conv.hiredRate.toFixed(1)}%`} sub="Offer → Nhận việc" color="text-emerald-600" />
+                        <ConvCard label="Chi phí / nhận việc" value={conv.costPerHire > 0 ? fmtVnd(conv.costPerHire) : "—"} sub="Tổng chi phí ÷ số nhận việc" color="text-slate-800" />
+                    </div>
+
+                    {/* Insights / gợi ý */}
+                    <div className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm">
+                        <h3 className="text-xs font-black uppercase tracking-widest text-gray-400 mb-3 flex items-center gap-2">
+                            <FaMagic className="text-indigo-500" /> Gợi ý từ hệ thống
+                        </h3>
+                        <ul className="space-y-2">
+                            {insights.map((it, i) => {
+                                const s = INSIGHT_STYLE[it.type] || INSIGHT_STYLE.info;
+                                return (
+                                    <li key={i} className={`flex items-start gap-2 rounded-xl border px-3 py-2 text-sm ${s.cls}`}>
+                                        <span className="shrink-0">{s.icon}</span>
+                                        <span className="break-words">{it.text}</span>
+                                    </li>
+                                );
+                            })}
+                        </ul>
                     </div>
 
                     {/* Credits + spend overview */}
@@ -217,42 +252,9 @@ const HrReportPage = () => {
                     {/* Trạng thái hồ sơ + Chi phí chuyển đổi */}
                     <div className="grid md:grid-cols-2 gap-4">
                         <div className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm">
-                            <h3 className="text-xs font-black uppercase tracking-widest text-gray-400 mb-4">Trạng thái hồ sơ</h3>
-                            <ul className="space-y-3">
-                                {/* Hàng tổng — baseline 100% */}
-                                <li>
-                                    <div className="flex items-center justify-between text-xs mb-1">
-                                        <div className="flex items-center gap-2">
-                                            <span className="w-2 h-2 rounded-full bg-slate-800" />
-                                            <span className="font-bold text-gray-800">Tổng hồ sơ tiếp nhận</span>
-                                            <span className="text-gray-500 font-bold ml-1">{fmtNum(data.totalApplications)}</span>
-                                        </div>
-                                        <span className="text-gray-500 font-semibold">100%</span>
-                                    </div>
-                                    <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
-                                        <div className="h-full rounded-full bg-slate-800" style={{ width: `100%` }} />
-                                    </div>
-                                </li>
-                                {Object.entries(STAGE_META).map(([code, meta]) => {
-                                    const count = stages[code] || 0;
-                                    const pct = (count / totalForBar) * 100;
-                                    return (
-                                        <li key={code}>
-                                            <div className="flex items-center justify-between text-xs mb-1">
-                                                <div className="flex items-center gap-2">
-                                                    <span className="w-2 h-2 rounded-full" style={{ background: meta.color }} />
-                                                    <span className="font-medium text-gray-700">{meta.label}</span>
-                                                    <span className="text-gray-400 font-bold ml-1">{fmtNum(count)}</span>
-                                                </div>
-                                                <span className="text-gray-400">{pct.toFixed(0)}%</span>
-                                            </div>
-                                            <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
-                                                <div className="h-full rounded-full" style={{ width: `${pct}%`, background: meta.color }} />
-                                            </div>
-                                        </li>
-                                    );
-                                })}
-                            </ul>
+                            <h3 className="text-xs font-black uppercase tracking-widest text-gray-400 mb-1">Phễu trạng thái hồ sơ</h3>
+                            <p className="text-[11px] text-gray-400 mb-4">Số hồ sơ đang ở mỗi bước · % so với tổng tiếp nhận.</p>
+                            <PipelineFunnel total={data.totalApplications || 0} stages={stages} />
                         </div>
 
                         <div className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm">
@@ -322,6 +324,7 @@ const HrReportPage = () => {
                                         <th className="px-3 py-3 font-bold text-right">Đề nghị</th>
                                         <th className="px-3 py-3 font-bold text-right text-emerald-600">Nhận việc</th>
                                         <th className="px-3 py-3 font-bold text-right text-red-500">Từ chối</th>
+                                        <th className="px-3 py-3 font-bold text-right">Tỷ lệ tuyển</th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-gray-50">
@@ -334,9 +337,12 @@ const HrReportPage = () => {
                                             <td className="px-3 py-3 text-right text-gray-600 tabular-nums">{fmtNum(j.offer)}</td>
                                             <td className="px-3 py-3 text-right text-emerald-600 font-bold tabular-nums">{fmtNum(j.hired)}</td>
                                             <td className="px-3 py-3 text-right text-red-500 tabular-nums">{fmtNum(j.rejected)}</td>
+                                            <td className="px-3 py-3 text-right font-semibold tabular-nums text-gray-700">
+                                                {j.totalApplications > 0 ? `${pctOf(j.hired, j.totalApplications).toFixed(0)}%` : "—"}
+                                            </td>
                                         </tr>
                                     )) : (
-                                        <tr><td colSpan={7} className="text-center py-10 text-gray-400">Chưa có tin tuyển dụng nào.</td></tr>
+                                        <tr><td colSpan={8} className="text-center py-10 text-gray-400">Chưa có tin tuyển dụng nào.</td></tr>
                                     )}
                                 </tbody>
                             </table>
@@ -344,6 +350,106 @@ const HrReportPage = () => {
                     </div>
                 </>
             )}
+        </div>
+    );
+};
+
+const pctOf = (a, b) => (b > 0 ? (a / b) * 100 : 0);
+
+// Sinh "Gợi ý từ hệ thống" từ dữ liệu sẵn có (heuristic phía client).
+const buildInsights = (data, stages) => {
+    const out = [];
+    const total = data.totalApplications || 0;
+    const hired = stages.HIRED || 0;
+
+    const stuckJob = (data.topJobs || []).find((j) => j.totalApplications >= 5 && j.hired === 0);
+    if (stuckJob) {
+        out.push({
+            type: "warn",
+            text: `Tin "${stuckJob.title}" có ${stuckJob.totalApplications} hồ sơ nhưng chưa tuyển được ai — nên xem lại mô tả/mức lương hoặc tốc độ phản hồi.`,
+        });
+    }
+
+    const earlyStuck = (stages.SCREENING || 0) + (stages.PHONE_SCREEN || 0);
+    if (total > 0 && (stages.INTERVIEW || 0) === 0 && earlyStuck > 0) {
+        out.push({
+            type: "warn",
+            text: `Có ${earlyStuck} hồ sơ đang dừng ở bước sàng lọc / đã liên hệ, chưa ai vào phỏng vấn — nên follow-up sớm.`,
+        });
+    }
+
+    const bestJob = (data.topJobs || [])
+        .filter((j) => j.hired > 0)
+        .sort((a, b) => b.hired / Math.max(1, b.totalApplications) - a.hired / Math.max(1, a.totalApplications))[0];
+    if (bestJob) {
+        out.push({
+            type: "good",
+            text: `Tin "${bestJob.title}" đang tuyển hiệu quả nhất (${bestJob.hired} nhận việc / ${bestJob.totalApplications} hồ sơ).`,
+        });
+    }
+
+    if ((data.totalSpentVnd || 0) > 0 && hired === 0) {
+        out.push({
+            type: "warn",
+            text: `Đã chi ${fmtVnd(data.totalSpentVnd)} nhưng chưa có ai nhận việc — cân nhắc tối ưu tin đăng hoặc cách sàng lọc.`,
+        });
+    }
+
+    if (out.length === 0) {
+        out.push({ type: "info", text: "Chưa có cảnh báo nào — dữ liệu tuyển dụng đang ổn định." });
+    }
+    return out;
+};
+
+const INSIGHT_STYLE = {
+    warn: { icon: "⚠️", cls: "bg-amber-50 border-amber-100 text-amber-800" },
+    good: { icon: "✅", cls: "bg-emerald-50 border-emerald-100 text-emerald-800" },
+    info: { icon: "💡", cls: "bg-sky-50 border-sky-100 text-sky-800" },
+};
+
+// Thẻ KPI chuyển đổi — số to, dễ quét.
+const ConvCard = ({ label, value, sub, color }) => (
+    <div className="bg-white rounded-xl border border-gray-100 p-4 shadow-sm">
+        <p className="text-[11px] font-bold uppercase tracking-wider text-gray-400">{label}</p>
+        <div className={`text-3xl font-black tabular-nums mt-1 ${color}`}>{value}</div>
+        {sub && <p className="text-[11px] text-gray-400 mt-0.5">{sub}</p>}
+    </div>
+);
+
+// Funnel phân bố hồ sơ theo bước pipeline (snapshot — số hồ sơ đang ở mỗi bước).
+const PipelineFunnel = ({ total, stages }) => {
+    const rows = [
+        { label: "Tiếp nhận", count: total, color: "#0f172a" },
+        { label: "Đang sàng lọc", count: stages.SCREENING || 0, color: "#94a3b8" },
+        { label: "Đã liên hệ", count: stages.PHONE_SCREEN || 0, color: "#0ea5e9" },
+        { label: "Hẹn phỏng vấn", count: stages.INTERVIEW || 0, color: "#3b82f6" },
+        { label: "Gửi đề nghị", count: stages.OFFER || 0, color: "#f59e0b" },
+        { label: "Đã nhận việc", count: stages.HIRED || 0, color: "#10b981" },
+    ];
+    const max = Math.max(1, total);
+    return (
+        <div className="space-y-1.5">
+            {rows.map((r, i) => {
+                const w = Math.max(8, (r.count / max) * 100);
+                const pct = pctOf(r.count, max);
+                return (
+                    <div key={r.label}>
+                        <div className="flex items-center gap-3">
+                            <div className="flex-1 flex justify-center">
+                                <div
+                                    className="h-9 rounded-md flex items-center justify-center text-white text-xs font-bold transition-all overflow-hidden"
+                                    style={{ width: `${w}%`, background: r.color }}
+                                    title={`${r.label}: ${fmtNum(r.count)}`}
+                                >
+                                    <span className="px-2 truncate">{r.label} · {fmtNum(r.count)}</span>
+                                </div>
+                            </div>
+                            <span className="w-10 text-right text-xs font-semibold text-gray-400 tabular-nums">{pct.toFixed(0)}%</span>
+                        </div>
+                        {i < rows.length - 1 && <div className="text-center text-[10px] leading-none text-gray-300">▼</div>}
+                    </div>
+                );
+            })}
         </div>
     );
 };
