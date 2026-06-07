@@ -103,7 +103,7 @@ public class AuthServiceImpl implements AuthService {
           .accessToken(jwtToken)
           .refreshToken(refreshToken.getToken())
           .tokenType("Bearer")
-          .expiresIn(86400L)
+          .expiresIn(jwtTokenUtil.getExpirationSeconds())
           .build();
 
     } catch (Exception e) {
@@ -181,7 +181,7 @@ public class AuthServiceImpl implements AuthService {
           .accessToken(jwtToken)
           .refreshToken(refreshToken.getToken())
           .tokenType("Bearer")
-          .expiresIn(86400L)
+          .expiresIn(jwtTokenUtil.getExpirationSeconds())
           .build();
 
     } catch (Exception e) {
@@ -461,7 +461,7 @@ public class AuthServiceImpl implements AuthService {
         .accessToken(accessToken)
         .refreshToken(refreshToken.getToken())
         .tokenType("Bearer")
-        .expiresIn(86400L) // 24 hours in seconds
+        .expiresIn(jwtTokenUtil.getExpirationSeconds()) // 24 hours in seconds
         .build();
   }
 

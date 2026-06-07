@@ -91,20 +91,17 @@ const AuditLogPage = () => {
   };
 
   return (
-    <div className="space-y-6 animate-in fade-in duration-500">
+    <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-6 rounded-2xl border border-slate-100 shadow-sm">
-        <div className="flex items-start sm:items-center gap-4">
-          <div className="w-12 h-12 bg-sky-50 rounded-xl flex items-center justify-center text-sky-600 shrink-0">
-            <Shield className="w-6 h-6" />
-          </div>
-          <div>
-            <h1 className="text-xl font-black text-slate-900 tracking-tight">Nhật ký kiểm tra</h1>
-            <p className="text-sm text-slate-500 font-medium">Lịch sử mọi hành động thay đổi trên hệ thống</p>
-          </div>
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-slate-900 flex items-center gap-2">
+            <Shield className="h-6 w-6 text-[#3AB4E6]" /> Nhật ký kiểm tra
+          </h1>
+          <p className="text-sm text-slate-500 mt-1">Lịch sử mọi hành động thay đổi trên hệ thống</p>
         </div>
-        <Button variant="outline" className="h-10 border-slate-200 text-xs font-bold uppercase tracking-widest self-start md:self-auto shrink-0" onClick={handleExport}>
-          <Download className="w-4 h-4 mr-2" /> Xuất dữ liệu
+        <Button variant="outline" className="flex items-center gap-2 border-slate-200 font-medium text-slate-600 hover:bg-slate-50 self-start sm:self-auto shrink-0" onClick={handleExport}>
+          <Download className="w-4 h-4" /> Xuất dữ liệu
         </Button>
       </div>
 

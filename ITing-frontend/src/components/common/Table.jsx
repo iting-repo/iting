@@ -3,7 +3,7 @@ import React from 'react';
 export const Table = ({ headers, children, className = "", tableClassName = "" }) => (
   <div className={`overflow-x-auto rounded-xl border border-gray-100 bg-white ${className}`}>
     <table className={`w-full text-left border-collapse ${tableClassName}`}>
-      <thead className="bg-gray-50/80 text-gray-500 text-xs uppercase tracking-wider font-semibold">
+      <thead className="bg-slate-50 text-slate-600 text-[11px] uppercase tracking-wider font-bold">
         <tr>
           {headers.map((h, i) => (
             <th key={i} className={`p-5 ${h.className || ''}`}>

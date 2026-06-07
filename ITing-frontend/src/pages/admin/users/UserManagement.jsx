@@ -22,6 +22,7 @@ import {
     Table,
     Td,
     Dialog,
+    PageHeader,
 } from "../../../components";
 import { StatCard } from "../../../components/admin/StatCard";
 import {
@@ -486,34 +487,29 @@ const UserManagement = () => {
     }, [users]);
 
     return (
-        <div className="space-y-4 p-6">
+        <div className="space-y-6 pb-60">
             {/* Header */}
-            <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-                <div>
-                    <h2 className="text-xl font-bold text-slate-800">Quản lý người dùng</h2>
-                    <p className="mt-1 text-sm text-slate-500">
-                        Tổng cộng {totalElements} người dùng · {onlineUserIds.size} đang online · {stats.bannedCount} bị khóa
-                    </p>
-                </div>
-
-                <div className="flex items-center gap-2">
-                    <Button 
-                        variant="outline" 
-                        className="flex items-center gap-2 border-slate-200 text-slate-600 hover:bg-slate-50"
-                        onClick={() => setShowImportModal(true)}
-                    >
-                        <FaUpload size={14} />
-                        Nhập Excel
-                    </Button>
-                    <Button 
-                        className="flex items-center gap-2 bg-[#1967D2] hover:bg-[#1452A8]"
-                        onClick={handleExportExcel}
-                    >
-                        <FaDownload size={14} />
-                        Xuất Excel
-                    </Button>
-                </div>
-            </div>
+            <PageHeader
+                title="Quản lý người dùng"
+                description={`Tổng cộng ${totalElements} người dùng · ${onlineUserIds.size} đang online · ${stats.bannedCount} bị khóa`}
+            >
+                <Button
+                    variant="outline"
+                    className="flex items-center gap-2 border-slate-200 font-medium text-slate-600 hover:bg-slate-50"
+                    onClick={() => setShowImportModal(true)}
+                >
+                    <FaUpload size={14} />
+                    Nhập Excel
+                </Button>
+                <Button
+                    variant="outline"
+                    className="flex items-center gap-2 border-slate-200 font-medium text-slate-600 hover:bg-slate-50"
+                    onClick={handleExportExcel}
+                >
+                    <FaDownload size={14} />
+                    Xuất Excel
+                </Button>
+            </PageHeader>
 
             {/* KPI cards */}
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">

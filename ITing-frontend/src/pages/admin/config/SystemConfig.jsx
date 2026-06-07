@@ -150,23 +150,20 @@ const SystemConfig = () => {
   if (!config) return <div className="p-8 text-center text-slate-500">Failed to load configuration.</div>;
 
   return (
-    <div className="space-y-6 animate-in fade-in duration-500">
+    <div className="space-y-6">
       {/* Page Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-6 rounded-2xl border border-slate-100 shadow-sm">
-        <div className="flex items-start sm:items-center gap-4">
-          <div className="w-12 h-12 bg-sky-50 rounded-xl flex items-center justify-center text-sky-600 shrink-0">
-             <Database className="w-6 h-6" />
-          </div>
-          <div>
-            <h1 className="text-xl font-black text-slate-900 tracking-tight">Cấu hình hệ thống</h1>
-            <p className="text-sm text-slate-500 font-medium">Quản lý các thiết lập vận hành toàn hệ thống</p>
-          </div>
+      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-slate-900 flex items-center gap-2">
+            <Database className="h-6 w-6 text-[#3AB4E6]" /> Cấu hình hệ thống
+          </h1>
+          <p className="text-sm text-slate-500 mt-1">Quản lý các thiết lập vận hành toàn hệ thống</p>
         </div>
         <div className="flex flex-wrap gap-3">
-          <Button variant="outline" className="h-11 border-slate-200 shrink-0" onClick={handleReset}>
+          <Button variant="outline" className="border-slate-200 shrink-0" onClick={handleReset}>
             <RotateCcw className="w-4 h-4 mr-2" /> Khôi phục
           </Button>
-          <Button className="h-11 bg-[#3AB4E6] hover:bg-[#2fa0d1] shadow-lg shadow-sky-100 shrink-0" onClick={handleSave}>
+          <Button className="bg-[#3AB4E6] hover:bg-[#2fa0d1] shadow-lg shadow-sky-100 shrink-0" onClick={handleSave}>
             <Save className="w-4 h-4 mr-2" /> Lưu thay đổi
           </Button>
         </div>

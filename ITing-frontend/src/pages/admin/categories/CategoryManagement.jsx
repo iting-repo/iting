@@ -314,12 +314,12 @@ const CategoryManagement = () => {
   const inactiveCount = filtered.filter((i) => !i.active).length;
 
   return (
-    <div className="space-y-6 animate-in fade-in duration-500">
+    <div className="space-y-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-bold text-gray-800">Quản lý Danh mục</h2>
-          <p className="text-gray-500 text-sm mt-1">{cfg.desc}</p>
+          <h2 className="text-2xl font-bold text-slate-900">Quản lý Danh mục</h2>
+          <p className="text-slate-500 text-sm mt-1">{cfg.desc}</p>
         </div>
         <div className="flex flex-wrap gap-2 self-start sm:self-auto shrink-0">
           <Button variant="outline" onClick={() => fetchCategories(activeTab)} disabled={loading}>
@@ -434,7 +434,7 @@ const CategoryManagement = () => {
               <p className="font-medium">
                 {search ? `Không tìm thấy "${search}"` : `Chưa có ${cfg.label.toLowerCase()} nào`}
               </p>
-              <p className="text-sm mt-1">Bấm "Thêm {cfg.label}" để bắt đầu</p>
+              <p className="text-sm mt-1">Bấm &quot;Thêm {cfg.label}&quot; để bắt đầu</p>
             </div>
           )}
 

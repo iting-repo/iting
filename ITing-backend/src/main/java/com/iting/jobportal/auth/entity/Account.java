@@ -1,6 +1,7 @@
 package com.iting.jobportal.auth.entity;
 
 import com.iting.jobportal.auth.entity.Enum.AccountStatus;
+import com.iting.jobportal.auth.entity.Enum.AccountType;
 import com.iting.jobportal.auth.entity.Enum.Role;
 import com.iting.jobportal.common.entity.AuditEntity;
 import com.iting.jobportal.user.entity.User;
@@ -43,8 +44,16 @@ public class Account extends AuditEntity {
 
   // Sub-role key for ADMIN accounts (e.g. "SUPER_ADMIN", "MODERATOR").
   // NULL for non-admin accounts. Will eventually be backed by V65 migration.
+  // Tham chiếu tới rbac_role.code (platform role) cho tài khoản INTERNAL_STAFF.
   @Column(name = "admin_role", length = 50)
   private String adminRole;
+
+  // Phân loại nguồn gốc tài khoản (V113) — chặn user công khai nhận role nội bộ.
+  // PUBLIC = candidate đăng ký công khai; COMPANY_STAFF = HR công ty; INTERNAL_STAFF = nhân sự ITing.
+  @Enumerated(EnumType.STRING)
+  @Column(name = "account_type", nullable = false, length = 20)
+  @Builder.Default
+  private AccountType accountType = AccountType.PUBLIC;
 
   // Common identity fields (added by V54). Nullable until V54 backfills.
   @Column(name = "full_name", length = 255)

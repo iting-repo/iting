@@ -24,8 +24,16 @@ import {
     Dialog,
     Select,
     Switch,
+    Pagination,
 } from "../../../components";
 import adminFaqService from "../../../services/adminFaqService";
+
+// Số câu hỏi hiển thị mỗi trang
+const PAGE_SIZE = 8;
+
+// Giới hạn tối đa số FAQ được tạo (đồng bộ với backend AdminFaqController.MAX_FAQ)
+// nhằm tránh trang FAQ ngoài trang chủ bị tràn.
+const MAX_FAQ = 15;
 
 const quillModules = {
     toolbar: [
@@ -59,6 +67,7 @@ const FaqManagement = () => {
     const [search, setSearch] = useState("");
     const [filterStatus, setFilterStatus] = useState("all");
     const [expandedId, setExpandedId] = useState(null);
+    const [page, setPage] = useState(1);
 
     const [dialogOpen, setDialogOpen] = useState(false);
     const [editingFaq, setEditingFaq] = useState(null);
@@ -92,7 +101,22 @@ const FaqManagement = () => {
         fetchFaqs();
     }, [fetchFaqs]);
 
+    // Quay về trang 1 khi đổi từ khóa tìm kiếm / bộ lọc trạng thái
+    useEffect(() => {
+        setPage(1);
+    }, [search, filterStatus]);
+
+    // Kẹp trang hiện tại trong khoảng hợp lệ khi danh sách thay đổi (vd sau khi xóa)
+    useEffect(() => {
+        const totalPages = Math.max(1, Math.ceil(faqs.length / PAGE_SIZE));
+        if (page > totalPages) setPage(totalPages);
+    }, [faqs, page]);
+
     const openCreate = () => {
+        if (faqs.length >= MAX_FAQ) {
+            toast.error(`Đã đạt giới hạn tối đa ${MAX_FAQ} câu hỏi FAQ. Vui lòng xóa bớt trước khi tạo mới.`);
+            return;
+        }
         setEditingFaq(null);
         setForm(emptyForm);
         setFormErrors({});
@@ -113,6 +137,12 @@ const FaqManagement = () => {
     };
 
     const handleSave = async () => {
+        // Chốt chặn phía client: không cho tạo vượt giới hạn (chỉ áp dụng khi tạo mới)
+        if (!editingFaq && faqs.length >= MAX_FAQ) {
+            toast.error(`Đã đạt giới hạn tối đa ${MAX_FAQ} câu hỏi FAQ. Vui lòng xóa bớt trước khi tạo mới.`);
+            return;
+        }
+
         const errors = {};
         if (!form.title.trim()) errors.title = "* Vui lòng nhập câu hỏi";
         if (!form.content || !form.content.replace(/<[^>]*>/g, "").trim()) errors.content = "* Vui lòng nhập câu trả lời";
@@ -140,7 +170,7 @@ const FaqManagement = () => {
             setDialogOpen(false);
             fetchFaqs();
         } catch (e) {
-            toast.error(e?.response?.data?.message || e?.message || "Có lỗi xảy ra");
+            toast.error(e?.response?.data?.error || e?.response?.data?.message || e?.message || "Có lỗi xảy ra");
         } finally {
             setSaving(false);
         }
@@ -176,8 +206,11 @@ const FaqManagement = () => {
         draft: faqs.filter((f) => !f.published).length,
     };
 
+    // Cắt danh sách theo trang hiện tại (phân trang phía client)
+    const pagedFaqs = faqs.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+
     return (
-        <div className="space-y-6 p-6 pb-20 bg-slate-50 min-h-screen">
+        <div className="space-y-6">
             {/* Header */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
@@ -186,14 +219,23 @@ const FaqManagement = () => {
                         Quản lý FAQ
                     </h1>
                     <p className="text-slate-500 text-sm mt-1">
-                        {stats.total} câu hỏi · {stats.published} đã xuất bản · {stats.draft} bản nháp
+                        <span className={stats.total >= MAX_FAQ ? "font-semibold text-amber-600" : ""}>
+                            {stats.total}/{MAX_FAQ} câu hỏi
+                        </span>{" "}
+                        · {stats.published} đã xuất bản · {stats.draft} bản nháp
                     </p>
                     <p className="text-xs text-slate-400 mt-0.5">
-                        Sắp xếp theo <span className="font-semibold">Thứ tự</span> tăng dần, sau đó theo ngày tạo mới nhất.
+                        {stats.total >= MAX_FAQ ? (
+                            <span className="text-amber-600">Đã đạt giới hạn {MAX_FAQ} câu hỏi — xóa bớt để tạo mới.</span>
+                        ) : (
+                            <>Sắp xếp theo <span className="font-semibold">Thứ tự</span> tăng dần, sau đó theo ngày tạo mới nhất.</>
+                        )}
                     </p>
                 </div>
                 <Button
                     onClick={openCreate}
+                    disabled={stats.total >= MAX_FAQ}
+                    title={stats.total >= MAX_FAQ ? `Đã đạt giới hạn tối đa ${MAX_FAQ} câu hỏi` : "Thêm câu hỏi mới"}
                     className="flex items-center gap-2 bg-[#1967D2] hover:bg-[#1452A8] text-white shadow-lg shadow-blue-100 self-start sm:self-auto shrink-0"
                 >
                     <Plus className="h-4 w-4" /> Thêm câu hỏi
@@ -241,8 +283,9 @@ const FaqManagement = () => {
                     </Button>
                 </Card>
             ) : (
+                <>
                 <div className="space-y-3">
-                    {faqs.map((faq) => {
+                    {pagedFaqs.map((faq) => {
                         const isExpanded = expandedId === faq.id;
                         return (
                             <Card
@@ -335,6 +378,18 @@ const FaqManagement = () => {
                         );
                     })}
                 </div>
+
+                {faqs.length > PAGE_SIZE && (
+                    <div className="overflow-hidden rounded-xl border border-slate-100 bg-white shadow-sm">
+                        <Pagination
+                            currentPage={page}
+                            totalItems={faqs.length}
+                            itemsPerPage={PAGE_SIZE}
+                            onPageChange={setPage}
+                        />
+                    </div>
+                )}
+                </>
             )}
 
             {/* Create / Edit Dialog */}

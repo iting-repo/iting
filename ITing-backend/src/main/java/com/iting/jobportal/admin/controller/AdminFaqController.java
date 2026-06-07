@@ -28,6 +28,9 @@ public class AdminFaqController {
 
   private static final String FAQ_TYPE = "FAQ";
 
+  /** Giới hạn tối đa số FAQ được tạo — tránh trang FAQ ngoài trang chủ bị tràn. */
+  private static final int MAX_FAQ = 15;
+
   private final StaticContentRepository contentRepository;
 
   @GetMapping
@@ -76,6 +79,12 @@ public class AdminFaqController {
   @PostMapping
   @Operation(summary = "Tạo FAQ mới")
   public ResponseEntity<StaticContent> create(@Valid @RequestBody FaqRequest request) {
+    long current = contentRepository.countByType(FAQ_TYPE);
+    if (current >= MAX_FAQ) {
+      throw new IllegalArgumentException(
+          "Đã đạt giới hạn tối đa " + MAX_FAQ + " câu hỏi FAQ. Vui lòng xóa bớt trước khi tạo mới.");
+    }
+
     String slug = resolveSlug(request.getSlug(), request.getTitle(), null);
 
     StaticContent faq =

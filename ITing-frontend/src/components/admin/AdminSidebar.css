@@ -6,7 +6,7 @@
 :root {
   --sb-width-expanded: 240px;
   --sb-width-collapsed: 64px;
-  --sb-bg: #3791B0;            /* xanh nhạt & bớt bão hòa hơn, giảm sức nặng thị giác */
+  --sb-bg: linear-gradient(180deg, #2C92B5 0%, #176C86 100%); /* gradient nhẹ tạo chiều sâu, top sáng để bớt nặng */
   --sb-bg-hover: rgba(255, 255, 255, 0.12);
   --sb-bg-active: #ffffff;
   --sb-text: rgba(255, 255, 255, 0.88);
@@ -21,7 +21,7 @@
 .adm-sb {
   position: fixed;
   left: 0;
-  top: 56px;              /* header height */
+  top: 64px;              /* header height */
   bottom: 0;
   width: var(--sb-width-expanded);
   background: var(--sb-bg);

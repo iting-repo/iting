@@ -24,4 +24,6 @@ public interface StaticContentRepository extends JpaRepository<StaticContent, Lo
       String type, Boolean published, String title, Pageable pageable);
 
   boolean existsBySlug(String slug);
+
+  long countByType(String type);
 }

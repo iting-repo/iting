@@ -6,6 +6,11 @@ import useConfirm from "../../../hooks/useConfirm";
 import { toast } from "sonner";
 import axiosInstance from "../../../utils/axiosInstance";
 
+// Giới hạn banner đang bật ở carousel trang chủ (đồng bộ với backend
+// AdminBannerController.MAX_HOMEPAGE_ACTIVE).
+const MAX_HOMEPAGE_BANNERS = 5;
+const HOMEPAGE_POSITION = "homepage_main";
+
 const BannerManagement = () => {
   const [banners, setBanners] = useState([]);
   const [search, setSearch] = useState("");
@@ -76,9 +81,19 @@ const BannerManagement = () => {
   };
 
   const handleSave = async () => {
-    if (!form.title.trim()) { 
-      toast.error("Tiêu đề không được trống"); 
-      return; 
+    if (!form.title.trim()) {
+      toast.error("Tiêu đề không được trống");
+      return;
+    }
+    // Chặn vượt giới hạn banner đang bật ở carousel trang chủ (homepage_main + ACTIVE).
+    if (form.position === HOMEPAGE_POSITION && form.status === "ACTIVE") {
+      const othersActive = banners.filter(
+        (b) => b.position === HOMEPAGE_POSITION && b.status === "ACTIVE" && b.id !== editing?.id
+      ).length;
+      if (othersActive >= MAX_HOMEPAGE_BANNERS) {
+        toast.error(`Tối đa ${MAX_HOMEPAGE_BANNERS} banner đang bật ở Trang chủ (Main). Hãy tắt bớt banner khác trước.`);
+        return;
+      }
     }
     try {
       if (editing) {
@@ -91,7 +106,7 @@ const BannerManagement = () => {
       setDialogOpen(false);
       fetchBanners();
     } catch (error) {
-      toast.error("Lỗi khi lưu banner");
+      toast.error(error?.response?.data?.error || "Lỗi khi lưu banner");
     }
   };
 
@@ -114,13 +129,26 @@ const BannerManagement = () => {
     });
   };
 
-  const toggleActive = async (id, currentStatus) => { 
+  const toggleActive = async (id, currentStatus) => {
+    const newStatus = currentStatus === "ACTIVE" ? "INACTIVE" : "ACTIVE";
+    // Khi bật một banner trang chủ, kiểm tra giới hạn carousel.
+    if (newStatus === "ACTIVE") {
+      const banner = banners.find((b) => b.id === id);
+      if (banner?.position === HOMEPAGE_POSITION) {
+        const othersActive = banners.filter(
+          (b) => b.position === HOMEPAGE_POSITION && b.status === "ACTIVE" && b.id !== id
+        ).length;
+        if (othersActive >= MAX_HOMEPAGE_BANNERS) {
+          toast.error(`Tối đa ${MAX_HOMEPAGE_BANNERS} banner đang bật ở Trang chủ (Main). Hãy tắt bớt banner khác trước.`);
+          return;
+        }
+      }
+    }
     try {
-      const newStatus = currentStatus === "ACTIVE" ? "INACTIVE" : "ACTIVE";
       await axiosInstance.patch(`/admin/banners/${id}/status?status=${newStatus}`);
       fetchBanners();
     } catch (error) {
-      toast.error("Lỗi khi cập nhật trạng thái");
+      toast.error(error?.response?.data?.error || "Lỗi khi cập nhật trạng thái");
     }
   };
 
@@ -128,8 +156,20 @@ const BannerManagement = () => {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-800">Quản lý Banner</h1>
-          <p className="text-gray-500 text-sm mt-1">Hệ thống phân phối nội dung quảng cáo CMS</p>
+          <h1 className="text-2xl font-bold text-slate-900">Quản lý Banner</h1>
+          <p className="text-slate-500 text-sm mt-1">Hệ thống phân phối nội dung quảng cáo CMS</p>
+          {(() => {
+            const activeHomepage = banners.filter(
+              (b) => b.position === HOMEPAGE_POSITION && b.status === "ACTIVE"
+            ).length;
+            const full = activeHomepage >= MAX_HOMEPAGE_BANNERS;
+            return (
+              <p className={`text-xs mt-0.5 ${full ? "font-semibold text-amber-600" : "text-slate-400"}`}>
+                Carousel Trang chủ: {activeHomepage}/{MAX_HOMEPAGE_BANNERS} banner đang bật
+                {full && " — đã đạt giới hạn"}
+              </p>
+            );
+          })()}
         </div>
         <Button variant="primary" onClick={openCreate}><Plus className="h-4 w-4 mr-2" />Thêm Banner</Button>
       </div>

@@ -205,11 +205,11 @@ const RoleManagement = () => {
   };
 
   return (
-    <div className="space-y-6 p-6">
+    <div className="space-y-6">
       {/* Header */}
       <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
         <div>
-          <h2 className="text-xl font-bold text-slate-800 flex items-center gap-2">
+          <h2 className="text-2xl font-bold text-slate-900 flex items-center gap-2">
             <FaShieldAlt className="text-[#3AB4E6] shrink-0" />
             <span className="break-words">Phân quyền RBAC</span>
           </h2>

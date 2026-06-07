@@ -175,7 +175,7 @@ const BlogManagement = () => {
   };
 
   return (
-    <div className="space-y-6 p-6 pb-20 bg-slate-50 min-h-screen">
+    <div className="space-y-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
@@ -441,7 +441,7 @@ const BlogManagement = () => {
         {deleteConfirm && (
           <div className="space-y-4">
             <p className="text-sm text-slate-600">
-              Bạn có chắc chắn muốn xóa bài viết <span className="font-bold text-slate-800">"{deleteConfirm.title}"</span>?
+              Bạn có chắc chắn muốn xóa bài viết <span className="font-bold text-slate-800">&quot;{deleteConfirm.title}&quot;</span>?
               Hành động này không thể hoàn tác.
             </p>
             <div className="flex justify-end gap-3 pt-2">

@@ -142,6 +142,30 @@ class JwtTokenUtilTest {
     assertThrows(Exception.class, () -> util.getUserIdFromHeader(req));
   }
 
+  // ── Hết hạn phiên theo SystemConfig.sessionTimeout ──────────────────
+
+  @Test
+  void getExpirationSeconds_noConfig_usesDefaultExpiration() {
+    // không set adminConfigService → fallback EXPIRATION (86_400_000 ms)
+    assertEquals(86_400L, util.getExpirationSeconds());
+  }
+
+  @Test
+  void getExpirationSeconds_withConfig_usesSessionTimeoutMinutes() throws Exception {
+    com.iting.jobportal.admin.service.AdminConfigService cfgService =
+        org.mockito.Mockito.mock(com.iting.jobportal.admin.service.AdminConfigService.class);
+    org.mockito.Mockito.when(cfgService.getConfig())
+        .thenReturn(
+            com.iting.jobportal.admin.entity.SystemConfig.builder().sessionTimeout(15).build());
+    setField("adminConfigService", cfgService);
+
+    assertEquals(15L * 60, util.getExpirationSeconds(), "15 phút → 900 giây");
+
+    // token cũng phải hết hạn ~15 phút (còn hiệu lực ngay sau khi tạo)
+    String token = util.generateToken(1L, "x@iting.vn", "ADMIN");
+    assertTrue(util.validateToken(token));
+  }
+
   // ── Smoke ───────────────────────────────────────────────────────────
 
   @Test

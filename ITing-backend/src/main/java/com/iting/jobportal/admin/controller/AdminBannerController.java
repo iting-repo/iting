@@ -15,7 +15,37 @@ import org.springframework.web.bind.annotation.*;
 @Tag(name = "Admin Banners", description = "Admin Banner Management")
 public class AdminBannerController {
 
+  /** Vị trí hero carousel trang chủ. */
+  private static final String HOMEPAGE_POSITION = "homepage_main";
+
+  private static final String STATUS_ACTIVE = "ACTIVE";
+
+  /** Giới hạn số banner đang bật ở carousel trang chủ — tránh vòng xoay quá dài. */
+  private static final int MAX_HOMEPAGE_ACTIVE = 5;
+
   private final BannerRepository bannerRepository;
+
+  /**
+   * Chặn vượt quá {@link #MAX_HOMEPAGE_ACTIVE} banner ACTIVE ở vị trí homepage_main. Chỉ kiểm tra khi
+   * banner đích thực sự là homepage_main + ACTIVE. {@code excludeId} bỏ qua chính banner đang
+   * sửa/bật để không tự đếm trùng.
+   */
+  private void enforceHomepageLimit(String position, String status, Long excludeId) {
+    if (!HOMEPAGE_POSITION.equals(position) || !STATUS_ACTIVE.equals(status)) {
+      return;
+    }
+    long activeCount =
+        (excludeId == null)
+            ? bannerRepository.countByPositionAndStatus(HOMEPAGE_POSITION, STATUS_ACTIVE)
+            : bannerRepository.countByPositionAndStatusAndIdNot(
+                HOMEPAGE_POSITION, STATUS_ACTIVE, excludeId);
+    if (activeCount >= MAX_HOMEPAGE_ACTIVE) {
+      throw new IllegalArgumentException(
+          "Đã đạt giới hạn tối đa "
+              + MAX_HOMEPAGE_ACTIVE
+              + " banner đang bật ở vị trí Trang chủ (Main). Hãy tắt bớt banner khác trước.");
+    }
+  }
 
   @GetMapping
   @Operation(summary = "Get all banners")
@@ -36,11 +66,12 @@ public class AdminBannerController {
   @Operation(summary = "Create a new banner")
   public ResponseEntity<Banner> createBanner(@RequestBody Banner banner) {
     if (banner.getStatus() == null) {
-      banner.setStatus("ACTIVE");
+      banner.setStatus(STATUS_ACTIVE);
     }
     if (banner.getPriority() == null) {
       banner.setPriority(0);
     }
+    enforceHomepageLimit(banner.getPosition(), banner.getStatus(), null);
     return ResponseEntity.ok(bannerRepository.save(banner));
   }
 
@@ -52,6 +83,8 @@ public class AdminBannerController {
         .findById(id)
         .map(
             banner -> {
+              enforceHomepageLimit(
+                  bannerDetails.getPosition(), bannerDetails.getStatus(), banner.getId());
               banner.setTitle(bannerDetails.getTitle());
               banner.setPosition(bannerDetails.getPosition());
               banner.setImageDesktop(bannerDetails.getImageDesktop());
@@ -87,6 +120,7 @@ public class AdminBannerController {
         .findById(id)
         .map(
             banner -> {
+              enforceHomepageLimit(banner.getPosition(), status, banner.getId());
               banner.setStatus(status);
               return ResponseEntity.ok(bannerRepository.save(banner));
             })

@@ -11,8 +11,8 @@
 /* ── Main content ──────────────────────────────────────────────────────── */
 .admin-layout__main {
   margin-left: 240px;   /* matches --sb-width-expanded */
-  margin-top: 56px;     /* header height */
-  min-height: calc(100vh - 56px);
+  margin-top: 64px;     /* header height */
+  min-height: calc(100vh - 64px);
   display: flex;
   flex-direction: column;
   transition: margin-left 280ms cubic-bezier(0.4, 0, 0.2, 1);
@@ -53,7 +53,7 @@
   display: none;
   position: fixed;
   inset: 0;
-  top: 56px; /* Below header */
+  top: 64px; /* Below header */
   background: rgba(0, 0, 0, 0.5);
   z-index: 30; /* Below sidebar (40) but above main content */
   opacity: 0;

@@ -176,6 +176,19 @@ export const getAiReviewIconName = (status) => {
   return icons[status] || "CircleHelp";
 };
 
+// Câu mô tả ngắn, thân thiện cho bảng chính — KHÔNG hiện log kỹ thuật ở đây
+// (log chi tiết để trong modal "Xem chi tiết").
+export const getAiReviewShortText = (status) => {
+  const texts = {
+    [AI_REVIEW_STATUS.APPROVED]: "Tin đăng hợp lệ, nội dung đầy đủ.",
+    [AI_REVIEW_STATUS.CLEANED]: "AI đã làm sạch nội dung nhạy cảm.",
+    [AI_REVIEW_STATUS.NEEDS_REVIEW]: "Có dấu hiệu cần admin kiểm tra.",
+    [AI_REVIEW_STATUS.REJECTED]: "Nội dung có rủi ro cao, nên xem xét.",
+    [AI_REVIEW_STATUS.NOT_REVIEWED]: "Chưa kiểm tra AI.",
+  };
+  return texts[status] || "Chưa kiểm tra AI.";
+};
+
 export const getAiReviewVariant = (status) => {
   const variants = {
     [AI_REVIEW_STATUS.APPROVED]: "success",

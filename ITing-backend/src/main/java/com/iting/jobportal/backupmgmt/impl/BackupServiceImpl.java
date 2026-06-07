@@ -52,10 +52,37 @@ public class BackupServiceImpl implements BackupService {
     String timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss"));
     String datePrefix = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd"));
 
-    String snapshotId = createRdsSnapshot(timestamp);
-    String dumpFileKey = createPgDumpAndUpload(timestamp, datePrefix);
+    // Chạy 2 phương thức ĐỘC LẬP: RDS snapshot (chuẩn cho RDS, không cần pg_dump)
+    // và pg_dump → S3. Một cách hỏng không làm hỏng cách kia. Chỉ lỗi khi cả hai fail.
+    String snapshotId = null;
+    String dumpFileKey = null;
+    List<String> errors = new ArrayList<>();
 
-    return new BackupResult(snapshotId, "creating", dumpFileKey, 0L, timestamp);
+    try {
+      snapshotId = createRdsSnapshot(timestamp);
+    } catch (Exception e) {
+      log.error("RDS snapshot thất bại: {}", e.getMessage());
+      errors.add("RDS snapshot: " + e.getMessage());
+    }
+
+    try {
+      dumpFileKey = createPgDumpAndUpload(timestamp, datePrefix);
+    } catch (Exception e) {
+      log.error("pg_dump/S3 thất bại: {}", e.getMessage());
+      errors.add("pg_dump→S3: " + e.getMessage());
+    }
+
+    if (snapshotId == null && dumpFileKey == null) {
+      throw new RuntimeException(
+          "Backup thất bại (cả RDS snapshot và pg_dump). Chi tiết: " + String.join(" | ", errors));
+    }
+
+    return new BackupResult(
+        snapshotId != null ? snapshotId : "n/a",
+        snapshotId != null ? "creating" : "skipped",
+        dumpFileKey != null ? dumpFileKey : "n/a",
+        0L,
+        timestamp);
   }
 
   private String createRdsSnapshot(String timestamp) {

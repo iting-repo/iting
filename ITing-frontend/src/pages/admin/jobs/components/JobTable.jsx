@@ -7,6 +7,7 @@ import {
   getAiReviewLabel,
   getAiReviewVariant,
   getAiReviewIconName,
+  getAiReviewShortText,
 } from "../../../../utils/jobModeration";
 import adminJobService from "../../../../services/adminJobService";
 import { toast } from "sonner";
@@ -260,22 +261,23 @@ export const JobTable = ({
                     )}
                   </div>
 
-                  {/* Dòng 2: mô tả ngắn — chỉ 1 dòng, hover xem đầy đủ */}
-                  {aiReview.reason && (
-                    <span className="text-[11px] text-slate-500 leading-snug max-w-[200px] line-clamp-1" title={aiReview.reason}>
-                      {aiReview.reason}
-                    </span>
-                  )}
+                  {/* Dòng 2: mô tả ngắn thân thiện — log kỹ thuật để trong "Xem chi tiết" */}
+                  <span
+                    className="text-[11px] text-slate-500 leading-snug max-w-[200px] line-clamp-1"
+                    title={aiReview.reason || undefined}
+                  >
+                    {getAiReviewShortText(aiReview.status)}
+                  </span>
 
-                  {/* Dòng 3: action link nhỏ — Chạy/Chạy lại AI · Xem chi tiết */}
-                  <div className="flex items-center gap-2 text-[11px] font-bold">
+                  {/* Dòng 3: action — Chạy/Chạy lại AI • Xem chi tiết */}
+                  <div className="mt-0.5 flex items-center gap-2 text-xs font-semibold">
                     <button
                       onClick={() => handleRunAi(job.id)}
                       disabled={isRunning}
                       className={`inline-flex items-center gap-1 transition-colors ${
                         isRunning
                           ? "text-slate-400 cursor-not-allowed"
-                          : "text-[#3AB4E6] hover:text-[#2C9ACD] hover:underline"
+                          : "text-sky-600 hover:text-sky-700 hover:underline"
                       }`}
                       title={hasBeenReviewed ? "Chạy lại AI kiểm tra" : "Chạy AI kiểm tra ngay"}
                     >
@@ -291,7 +293,7 @@ export const JobTable = ({
 
                     {!isRunning && (
                       <>
-                        <span className="text-slate-300">·</span>
+                        <span className="text-slate-300">•</span>
                         <button
                           onClick={() => onDetail(job)}
                           className="text-slate-500 transition-colors hover:text-slate-700 hover:underline"

@@ -339,7 +339,7 @@ const ReportManagement = () => {
   }, [stats]);
 
   return (
-    <div className="p-6 space-y-6 bg-slate-50 min-h-screen">
+    <div className="space-y-6 pb-60">
       {/* Header */}
       <PageHeader
         title="Báo cáo vi phạm"
