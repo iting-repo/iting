@@ -34,7 +34,7 @@ class PublicBannerControllerTest {
     when(bannerRepository.findByPositionOrderByPriorityDesc("homepage_main"))
         .thenReturn(List.of(banner("ACTIVE", null, null)));
 
-    controller.getActiveBanners("homepage_main");
+    controller.getActiveBanners("homepage_main", null);
 
     verify(bannerRepository).findByPositionOrderByPriorityDesc("homepage_main");
     verify(bannerRepository, never()).findByStatusOrderByPriorityDesc("ACTIVE");
@@ -45,7 +45,7 @@ class PublicBannerControllerTest {
     when(bannerRepository.findByStatusOrderByPriorityDesc("ACTIVE"))
         .thenReturn(List.of(banner("ACTIVE", null, null)));
 
-    controller.getActiveBanners(null);
+    controller.getActiveBanners(null, null);
 
     verify(bannerRepository).findByStatusOrderByPriorityDesc("ACTIVE");
   }
@@ -54,7 +54,7 @@ class PublicBannerControllerTest {
   void getActiveBanners_emptyPosition_queriesByStatusActive() {
     when(bannerRepository.findByStatusOrderByPriorityDesc("ACTIVE")).thenReturn(List.of());
 
-    controller.getActiveBanners("");
+    controller.getActiveBanners("", null);
 
     verify(bannerRepository).findByStatusOrderByPriorityDesc("ACTIVE");
   }
@@ -66,7 +66,7 @@ class PublicBannerControllerTest {
     when(bannerRepository.findByStatusOrderByPriorityDesc("ACTIVE"))
         .thenReturn(List.of(banner("INACTIVE", null, null)));
 
-    ResponseEntity<List<Banner>> resp = controller.getActiveBanners(null);
+    ResponseEntity<List<Banner>> resp = controller.getActiveBanners(null, null);
 
     assertTrue(resp.getBody().isEmpty(), "INACTIVE banner phải bị filter ra dù repo trả về");
   }
@@ -78,7 +78,7 @@ class PublicBannerControllerTest {
         .thenReturn(List.of(banner("ACTIVE", future, null)));
 
     assertTrue(
-        controller.getActiveBanners(null).getBody().isEmpty(), "Banner chưa tới startAt → ẩn");
+        controller.getActiveBanners(null, null).getBody().isEmpty(), "Banner chưa tới startAt → ẩn");
   }
 
   @Test
@@ -87,7 +87,7 @@ class PublicBannerControllerTest {
     when(bannerRepository.findByStatusOrderByPriorityDesc("ACTIVE"))
         .thenReturn(List.of(banner("ACTIVE", null, past)));
 
-    assertTrue(controller.getActiveBanners(null).getBody().isEmpty(), "Banner hết hạn → ẩn");
+    assertTrue(controller.getActiveBanners(null, null).getBody().isEmpty(), "Banner hết hạn → ẩn");
   }
 
   @Test
@@ -97,7 +97,7 @@ class PublicBannerControllerTest {
     when(bannerRepository.findByStatusOrderByPriorityDesc("ACTIVE"))
         .thenReturn(List.of(banner("ACTIVE", past, future)));
 
-    assertEquals(1, controller.getActiveBanners(null).getBody().size());
+    assertEquals(1, controller.getActiveBanners(null, null).getBody().size());
   }
 
   @Test
@@ -105,6 +105,6 @@ class PublicBannerControllerTest {
     when(bannerRepository.findByStatusOrderByPriorityDesc("ACTIVE"))
         .thenReturn(List.of(banner("ACTIVE", null, null)));
 
-    assertEquals(1, controller.getActiveBanners(null).getBody().size());
+    assertEquals(1, controller.getActiveBanners(null, null).getBody().size());
   }
 }

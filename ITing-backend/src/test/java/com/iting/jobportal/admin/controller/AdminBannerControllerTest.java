@@ -25,6 +25,8 @@ import org.springframework.http.ResponseEntity;
 class AdminBannerControllerTest {
 
   @Mock private BannerRepository bannerRepository;
+  @Mock private com.iting.jobportal.admin.repository.SystemConfigRepository systemConfigRepository;
+
   @InjectMocks private AdminBannerController controller;
 
   // ── getAllBanners ────────────────────────────────────────────────────
