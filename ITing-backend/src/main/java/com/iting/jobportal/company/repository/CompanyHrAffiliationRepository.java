@@ -45,6 +45,20 @@ public interface CompanyHrAffiliationRepository
   Optional<CompanyHrAffiliation> findActiveByHrAccountIdAndCompanyId(
       @Param("hrId") Long hrId, @Param("companyId") Long companyId);
 
+  /**
+   * Affiliation đang active của nhiều HR cùng lúc (batch) — dùng để resolve account → company khi
+   * admin liệt kê người đăng ký, tránh N+1. JOIN FETCH company để lấy tên trong cùng query.
+   */
+  @Query(
+      """
+      SELECT a FROM CompanyHrAffiliation a JOIN FETCH a.company
+       WHERE a.hrAccount.id IN :hrIds
+         AND a.status IN (com.iting.jobportal.company.entity.enums.AffiliationStatus.INCOMPLETE,
+                          com.iting.jobportal.company.entity.enums.AffiliationStatus.PENDING,
+                          com.iting.jobportal.company.entity.enums.AffiliationStatus.APPROVED)
+      """)
+  List<CompanyHrAffiliation> findActiveByHrAccountIds(@Param("hrIds") List<Long> hrIds);
+
   long countByCompany_IdAndStatus(Long companyId, AffiliationStatus status);
 
   Page<CompanyHrAffiliation> findByStatus(AffiliationStatus status, Pageable pageable);

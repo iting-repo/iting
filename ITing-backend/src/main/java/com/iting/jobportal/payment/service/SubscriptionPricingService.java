@@ -1,13 +1,20 @@
 package com.iting.jobportal.payment.service;
 
+import com.iting.jobportal.company.entity.CompanyHrAffiliation;
+import com.iting.jobportal.company.repository.CompanyHrAffiliationRepository;
+import com.iting.jobportal.payment.dto.SubscriberRow;
 import com.iting.jobportal.payment.dto.SubscriptionTierCreateRequest;
 import com.iting.jobportal.payment.dto.SubscriptionTierUpdateRequest;
+import com.iting.jobportal.payment.entity.HrSubscription;
 import com.iting.jobportal.payment.entity.SubscriptionTierPricing;
 import com.iting.jobportal.payment.repository.HrSubscriptionRepository;
 import com.iting.jobportal.payment.repository.SubscriptionTierPricingRepository;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.function.Function;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -27,6 +34,7 @@ public class SubscriptionPricingService {
 
   private final SubscriptionTierPricingRepository repo;
   private final HrSubscriptionRepository subscriptionRepository;
+  private final CompanyHrAffiliationRepository affiliationRepository;
 
   /** Code hợp lệ: in hoa, bắt đầu bằng chữ, chỉ chữ/số/gạch dưới, tối đa 30 ký tự. */
   private static final Pattern CODE_PATTERN = Pattern.compile("^[A-Z][A-Z0-9_]{1,29}$");
@@ -54,6 +62,81 @@ public class SubscriptionPricingService {
   /** Chỉ các gói đang active — dùng cho bảng giá public. */
   public List<SubscriptionTierPricing> listActive() {
     return listAll().stream().filter(SubscriptionTierPricing::isActive).toList();
+  }
+
+  /**
+   * Danh sách người đăng ký cho trang admin: mỗi tài khoản HR đang/đã đăng ký gói nào + công ty trực
+   * thuộc. Cho phép lọc theo {@code status} (ACTIVE/EXPIRED/...) và {@code tier} (code gói); bỏ
+   * trống = lấy tất cả.
+   */
+  @Transactional(readOnly = true)
+  public List<SubscriberRow> listSubscribers(String status, String tier) {
+    List<HrSubscription> subs = subscriptionRepository.findAllWithAccount();
+
+    final String statusFilter = trimToNull(status);
+    final String tierFilter = tier == null || tier.isBlank() ? null : tier.trim().toUpperCase();
+    if (statusFilter != null) {
+      subs =
+          subs.stream()
+              .filter(s -> statusFilter.equalsIgnoreCase(s.getStatus()))
+              .collect(Collectors.toList());
+    }
+    if (tierFilter != null) {
+      subs =
+          subs.stream()
+              .filter(s -> tierFilter.equalsIgnoreCase(s.getTier()))
+              .collect(Collectors.toList());
+    }
+
+    // Tên hiển thị của gói (code → displayName) để bảng dễ đọc.
+    Map<String, String> tierNames =
+        repo.findAllByOrderBySortOrderAscPriceVndAsc().stream()
+            .collect(
+                Collectors.toMap(
+                    SubscriptionTierPricing::getCode,
+                    SubscriptionTierPricing::getDisplayName,
+                    (a, b) -> a));
+
+    // Resolve account → công ty trực thuộc (1 batch query, tránh N+1).
+    List<Long> accountIds =
+        subs.stream()
+            .map(s -> s.getAccount() != null ? s.getAccount().getId() : null)
+            .filter(java.util.Objects::nonNull)
+            .distinct()
+            .collect(Collectors.toList());
+    Map<Long, CompanyHrAffiliation> companyByAccount =
+        accountIds.isEmpty()
+            ? Map.of()
+            : affiliationRepository.findActiveByHrAccountIds(accountIds).stream()
+                .collect(
+                    Collectors.toMap(
+                        a -> a.getHrAccount().getId(),
+                        Function.identity(),
+                        (a, b) -> a));
+
+    return subs.stream()
+        .map(
+            s -> {
+              var acc = s.getAccount();
+              CompanyHrAffiliation aff =
+                  acc != null ? companyByAccount.get(acc.getId()) : null;
+              return SubscriberRow.builder()
+                  .subscriptionId(s.getId())
+                  .accountId(acc != null ? acc.getId() : null)
+                  .email(acc != null ? acc.getEmail() : null)
+                  .fullName(acc != null ? acc.getFullName() : null)
+                  .phone(acc != null ? acc.getPhone() : null)
+                  .tier(s.getTier())
+                  .tierName(tierNames.getOrDefault(s.getTier(), s.getTier()))
+                  .status(s.getStatus())
+                  .startedAt(s.getStartedAt())
+                  .expiresAt(s.getExpiresAt())
+                  .autoRenew(s.getAutoRenew())
+                  .companyId(aff != null ? aff.getCompany().getId() : null)
+                  .companyName(aff != null ? aff.getCompany().getName() : null)
+                  .build();
+            })
+        .collect(Collectors.toList());
   }
 
   // ─── Admin CRUD ───────────────────────────────────────────────────

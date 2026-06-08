@@ -389,6 +389,44 @@ public class AdminAffiliationServiceImpl implements AdminAffiliationService {
     return toResponse(affiliationRepo.save(aff));
   }
 
+  @Override
+  @Transactional
+  public AdminAffiliationResponse restoreRevoked(Long affiliationId, Long adminAccountId) {
+    CompanyHrAffiliation aff = findOrThrow(affiliationId);
+    if (aff.getStatus() != AffiliationStatus.REVOKED) {
+      throw new ResponseStatusException(
+          HttpStatus.BAD_REQUEST,
+          "Chỉ hoàn được đơn đang ở trạng thái Đã thu hồi (hiện: " + aff.getStatus() + ")");
+    }
+
+    aff.setStatus(AffiliationStatus.APPROVED);
+    aff.setRejectedReason(null);
+    aff.setReviewedAt(LocalDateTime.now());
+    aff.setReviewedBy(adminAccountId);
+
+    // Khôi phục con trỏ info source + áp lại snapshot nếu công ty hiện chưa có nguồn thông tin
+    // (revoke đã clear pointer; lúc thu hồi không đổi thông tin công ty nên áp lại an toàn).
+    Company company = aff.getCompany();
+    if (company != null && company.getInfoSourceAffiliationId() == null) {
+      company.setInfoSourceAffiliationId(aff.getId());
+      applySnapshotToCompany(aff, company);
+      aff.setAppliedToCompanyAt(LocalDateTime.now());
+      companyRepo.save(company);
+    }
+
+    if (company != null) {
+      recordAudit(
+          company,
+          CompanyAuditAction.APPROVE,
+          adminAccountId,
+          "Hoàn thu hồi xác thực (affiliation #" + aff.getId() + ")",
+          null,
+          "APPROVED");
+    }
+
+    return toResponse(affiliationRepo.save(aff));
+  }
+
   // ════════════════════════════════════════════════════════════════
   // INTERNAL
   // ════════════════════════════════════════════════════════════════

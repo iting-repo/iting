@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { Plus, GripVertical, Pencil, Trash2, Search, Tag, MapPin, Cpu, Loader2, RefreshCw, Eye, EyeOff, Shield, Briefcase } from 'lucide-react';
+import { Plus, GripVertical, Pencil, Trash2, Search, Tag, MapPin, Cpu, Loader2, RefreshCw, Eye, EyeOff, Shield, Briefcase, Gift } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button, Badge, Input, Switch, Dialog, ConfirmDialog } from '../../../components';
 import categoryService from '../../../services/categoryService';
@@ -29,6 +29,12 @@ const typeConfig = {
     color: 'bg-orange-500/10 text-orange-700',
     desc: 'Quản lý danh sách vị trí tuyển dụng (Frontend, Backend,...)',
   },
+  BENEFIT: {
+    label: 'Quyền lợi',
+    icon: Gift,
+    color: 'bg-rose-500/10 text-rose-700',
+    desc: 'Quản lý danh sách quyền lợi gói HR (chọn khi cấu hình gói Premium)',
+  },
 };
 
 const CategoryManagement = () => {
@@ -41,7 +47,7 @@ const CategoryManagement = () => {
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [summary, setSummary] = useState({ SKILL: 0, LOCATION: 0, INDUSTRY: 0, POSITION: 0 });
+  const [summary, setSummary] = useState({ SKILL: 0, LOCATION: 0, INDUSTRY: 0, POSITION: 0, BENEFIT: 0 });
   const [industryEnums, setIndustryEnums] = useState([]);
 
   // Drag state
@@ -53,7 +59,7 @@ const CategoryManagement = () => {
   const fetchSummary = useCallback(async () => {
     try {
       const data = await categoryService.getSummary();
-      setSummary(data || { SKILL: 0, LOCATION: 0, INDUSTRY: 0, POSITION: 0 });
+      setSummary(data || { SKILL: 0, LOCATION: 0, INDUSTRY: 0, POSITION: 0, BENEFIT: 0 });
     } catch {
       // Silently ignore
     }
@@ -110,7 +116,8 @@ const CategoryManagement = () => {
   // For SKILL tab: show DEFAULT_TECH_OPTIONS (system) + custom categories from DB
   // For POSITION tab: show DEFAULT_POSITION_OPTIONS (system) + custom categories from DB
   const getMergedItems = () => {
-    if (activeTab === 'LOCATION') return items;
+    // LOCATION & BENEFIT: hoàn toàn quản lý trong DB, không có item hệ thống mặc định.
+    if (activeTab === 'LOCATION' || activeTab === 'BENEFIT') return items;
 
     let systemItems = [];
     if (activeTab === 'INDUSTRY') {
@@ -306,6 +313,7 @@ const CategoryManagement = () => {
     { key: 'LOCATION', label: 'Địa điểm', icon: MapPin },
     { key: 'INDUSTRY', label: 'Ngành nghề', icon: Tag },
     { key: 'POSITION', label: 'Vị trí', icon: Briefcase },
+    { key: 'BENEFIT', label: 'Quyền lợi', icon: Gift },
   ];
 
   const systemCount = filtered.filter((i) => i.isSystem).length;
@@ -565,6 +573,7 @@ const CategoryManagement = () => {
               placeholder={
                 activeTab === 'SKILL' ? 'VD: Java, Python, React...' :
                 activeTab === 'LOCATION' ? 'VD: Hà Nội, TP. Hồ Chí Minh...' :
+                activeTab === 'BENEFIT' ? 'VD: Boost tin lên đầu trang, Xem liên hệ ứng viên...' :
                 'VD: Fintech, EdTech, HealthTech...'
               }
               autoFocus
@@ -580,6 +589,7 @@ const CategoryManagement = () => {
               placeholder={
                 activeTab === 'SKILL' ? 'VD: Java, Python, React...' :
                 activeTab === 'LOCATION' ? 'VD: Hanoi, Ho Chi Minh City...' :
+                activeTab === 'BENEFIT' ? 'VD: Boost to top, View candidate contact...' :
                 'VD: Fintech, EdTech, HealthTech...'
               }
             />

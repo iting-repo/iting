@@ -15,6 +15,13 @@ const adminSubscriptionService = {
   /** Xóa một gói theo code. */
   deleteTier: (code) =>
     axios.delete(`/admin/subscription-tiers/${code}`),
+
+  /**
+   * Danh sách người đăng ký: tài khoản nào đang đăng ký gói nào + công ty trực thuộc.
+   * @param {{status?: string, tier?: string}} [params] lọc theo trạng thái / code gói
+   */
+  listSubscribers: (params = {}) =>
+    axios.get("/admin/subscription-tiers/subscribers", { params }),
 };
 
 export default adminSubscriptionService;

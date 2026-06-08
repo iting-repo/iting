@@ -148,6 +148,13 @@ public class AdminAffiliationController {
     return ResponseEntity.ok(adminAffiliationService.revoke(id, adminAccountId, body.getReason()));
   }
 
+  @PostMapping("/{id}/restore")
+  @Operation(summary = "Hoàn thu hồi: đưa affiliation REVOKED về lại APPROVED")
+  public ResponseEntity<AdminAffiliationResponse> restore(
+      @PathVariable Long id, @Parameter(hidden = true) @CurrentUser Long adminAccountId) {
+    return ResponseEntity.ok(adminAffiliationService.restoreRevoked(id, adminAccountId));
+  }
+
   private Sort parseSort(String sortParam) {
     try {
       String[] parts = sortParam.split(",");

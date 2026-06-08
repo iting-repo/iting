@@ -135,7 +135,7 @@ const headerHtml = {
 };
 
 const baseCss = `
-  *{box-sizing:border-box;margin:0;padding:0}
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-print-color-adjust:exact;print-color-adjust:exact}
   html,body{background:#e5e7eb;font-family:var(--font);color:#1f2937}
   .page{width:794px;min-height:1123px;margin:24px auto;background:#fff;box-shadow:0 8px 30px rgba(0,0,0,.15)}
   a{color:inherit;text-decoration:none}

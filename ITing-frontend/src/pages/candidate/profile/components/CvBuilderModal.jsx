@@ -5,11 +5,7 @@ import { Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import ReactQuill from 'react-quill-new';
 import 'react-quill-new/dist/quill.snow.css';
-import html2pdfBundle from 'html2pdf.js/dist/html2pdf.bundle.min.js';
 import axiosInstance from '../../../../utils/axiosInstance';
-
-// Interop CJS/ESM (webpack): lấy đúng hàm html2pdf dù được wrap dạng nào.
-const html2pdf = typeof html2pdfBundle === 'function' ? html2pdfBundle : (html2pdfBundle?.default || html2pdfBundle);
 import { CV_TEMPLATES, CV_FONTS, ACCENT_PRESETS, getFont, SECTION_DEFS, DEFAULT_ORDER, normalizeCvData, buildCvHtml } from '../../../../utils/cvTemplates';
 
 const SECTION_LABEL = Object.fromEntries(SECTION_DEFS.map((s) => [s.id, s.label]));
@@ -168,41 +164,43 @@ const CvBuilderModal = ({ isOpen, onClose }) => {
     if (!cv || downloading) return;
     setDownloading(true);
     let frame;
+    const cleanup = () => { if (frame) { try { document.body.removeChild(frame); } catch { /* ignore */ } frame = null; } };
     try {
-      // Nhúng avatar dạng dataURL để ảnh không bị trắng khi vẽ canvas (CORS).
-      // Nếu ảnh không cho CORS → bỏ avatar (CV tự dùng chữ viết tắt), tránh export lỗi.
+      // Nhúng avatar dạng dataURL để ảnh không bị trắng (CORS). Nếu ảnh không cho CORS → bỏ avatar.
       let exportCv = cv;
       if (cv.avatarUrl) {
         const dataUrl = await toDataUrl(cv.avatarUrl);
         exportCv = { ...cv, avatarUrl: dataUrl || '' };
       }
+      // Dùng đúng cơ chế render của trình duyệt (giữ NGUYÊN định dạng như preview) rồi in →
+      // "Lưu thành PDF". Tránh html2canvas rasterize bị mất CSS (màu/đường kẻ/chip) khi nguồn ở iframe ẩn.
       const html = buildCvHtml(exportCv, templateId, { order, hidden, accent: accent || undefined, font });
 
-      // iframe ẩn để cô lập CSS của CV khỏi app.
       frame = document.createElement('iframe');
-      frame.style.cssText = 'position:fixed;left:-99999px;top:0;width:794px;height:1123px;border:0;visibility:hidden';
+      // Offscreen nhưng vẫn được render (không dùng display:none / visibility:hidden để in được).
+      frame.style.cssText = 'position:fixed;right:0;bottom:0;width:794px;height:1123px;border:0;opacity:0;pointer-events:none;z-index:-1';
       document.body.appendChild(frame);
       await new Promise((res) => { frame.onload = res; frame.srcdoc = html; });
 
+      const win = frame.contentWindow;
       const doc = frame.contentDocument;
       try { await doc.fonts.ready; } catch { /* ignore */ }
       await Promise.all([...doc.images].map((im) => (im.complete ? null : new Promise((r) => { im.onload = im.onerror = r; }))));
+      await new Promise((r) => setTimeout(r, 150)); // chờ layout ổn định
 
-      const el = doc.querySelector('.page');
-      const safeName = (cv.name || 'CV').replace(/[^\p{L}\p{N}\s-]/gu, '').trim().replace(/\s+/g, '_') || 'CV';
-      await html2pdf().set({
-        margin: 0,
-        filename: `CV-${safeName}.pdf`,
-        image: { type: 'jpeg', quality: 0.98 },
-        html2canvas: { scale: 2, useCORS: true, backgroundColor: '#ffffff', windowWidth: 794 },
-        jsPDF: { unit: 'px', format: [794, Math.max(1123, el.scrollHeight)], orientation: 'portrait' },
-      }).from(el).save();
-      toast.success('Đã tải CV về máy.');
+      // Dọn iframe sau khi in xong (afterprint) hoặc fallback timeout.
+      let cleaned = false;
+      const done = () => { if (!cleaned) { cleaned = true; cleanup(); } };
+      win.addEventListener('afterprint', done);
+      win.focus();
+      win.print();
+      setTimeout(done, 60000); // fallback nếu trình duyệt không bắn afterprint
+      toast.success('Chọn "Lưu thành PDF" (Save as PDF) trong hộp thoại in để tải CV.');
     } catch (e) {
       console.error('Export PDF failed', e);
-      toast.error('Không tạo được PDF. Vui lòng thử lại.');
+      toast.error('Không in/tải được PDF. Vui lòng thử lại.');
+      cleanup();
     } finally {
-      if (frame) document.body.removeChild(frame);
       setDownloading(false);
     }
   };

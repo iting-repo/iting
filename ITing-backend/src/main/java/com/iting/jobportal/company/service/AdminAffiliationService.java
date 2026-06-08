@@ -51,4 +51,7 @@ public interface AdminAffiliationService {
       Long affiliationId, Long adminAccountId, String verifiedHrEmail, String contactNote);
 
   AdminAffiliationResponse revoke(Long affiliationId, Long adminAccountId, String reason);
+
+  /** Hoàn thu hồi: đưa affiliation REVOKED trở lại APPROVED (khi admin thao tác nhầm). */
+  AdminAffiliationResponse restoreRevoked(Long affiliationId, Long adminAccountId);
 }

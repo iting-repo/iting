@@ -39,6 +39,8 @@ public class AdminContentServiceImpl implements AdminContentService {
     summary.put("SKILL", categoryRepository.countByType("SKILL"));
     summary.put("LOCATION", categoryRepository.countByType("LOCATION"));
     summary.put("INDUSTRY", categoryRepository.countByType("INDUSTRY"));
+    summary.put("POSITION", categoryRepository.countByType("POSITION"));
+    summary.put("BENEFIT", categoryRepository.countByType("BENEFIT"));
     return summary;
   }
 
@@ -62,7 +64,7 @@ public class AdminContentServiceImpl implements AdminContentService {
     String normalizedType = type.toUpperCase();
 
     // Validate type
-    if (!List.of("SKILL", "LOCATION", "INDUSTRY").contains(normalizedType)) {
+    if (!List.of("SKILL", "LOCATION", "INDUSTRY", "POSITION", "BENEFIT").contains(normalizedType)) {
       throw new IllegalArgumentException("Loại danh mục không hợp lệ: " + type);
     }
 

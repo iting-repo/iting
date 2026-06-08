@@ -85,6 +85,11 @@ const adminAffiliationService = {
   revoke: async (affiliationId, reason) => {
     return await axiosInstance.post(`/admin/affiliations/${affiliationId}/revoke`, { reason });
   },
+
+  /** Hoàn thu hồi: đưa đơn REVOKED về lại APPROVED (khi thao tác nhầm). */
+  restore: async (affiliationId) => {
+    return await axiosInstance.post(`/admin/affiliations/${affiliationId}/restore`);
+  },
 };
 
 export default adminAffiliationService;

@@ -94,6 +94,13 @@ const RowActionMenu = ({ aff, openMenuId, setOpenMenuId, onAction, onViewDetail 
             className: "text-orange-600 font-medium border-t border-slate-50",
             hidden: aff.status !== "APPROVED",
         },
+        {
+            label: "Hoàn thu hồi",
+            icon: FaUndoAlt,
+            onClick: () => onAction(aff, "restore"),
+            className: "text-emerald-600 font-medium border-t border-slate-50",
+            hidden: aff.status !== "REVOKED",
+        },
     ];
 
     return (
@@ -146,6 +153,13 @@ const ActionDialog = ({ actionDialog, actionNote, setActionNote, onClose, onConf
             buttonClass: "bg-orange-500 hover:bg-orange-600 text-white",
             description: `Thu hồi quyền xác thực của HR "${aff.hrEmail}" với công ty "${aff.companyName}".`,
             needReason: true,
+        },
+        restore: {
+            title: "Hoàn thu hồi xác thực",
+            buttonText: "Hoàn thu hồi",
+            buttonClass: "bg-emerald-500 hover:bg-emerald-600 text-white",
+            description: `Khôi phục lại xác thực của HR "${aff.hrEmail}" với công ty "${aff.companyName}" (đưa về trạng thái Đã duyệt).`,
+            needReason: false,
         },
     };
 
@@ -624,6 +638,8 @@ const AffiliationManagement = () => {
                 await adminAffiliationService.reject(aff.id, actionNote.trim() || "Hồ sơ không đạt");
             } else if (action === "revoke") {
                 await adminAffiliationService.revoke(aff.id, actionNote.trim() || "Vi phạm quy định");
+            } else if (action === "restore") {
+                await adminAffiliationService.restore(aff.id);
             }
 
             setActionDialog(null);

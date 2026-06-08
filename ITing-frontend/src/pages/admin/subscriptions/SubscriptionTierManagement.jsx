@@ -13,15 +13,46 @@ import {
   EyeOff,
   Star,
   Users,
+  Building2,
+  Search,
+  Mail,
+  Gift,
+  X,
+  Plus as PlusIcon,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button, Input, Dialog, Switch, ConfirmDialog, Pagination } from '../../../components';
 import adminSubscriptionService from '../../../services/adminSubscriptionService';
+import categoryService from '../../../services/categoryService';
 
 const TIERS_PER_PAGE = 8; // 2 hàng × 4 cột (xl:grid-cols-4)
 
 const fmtVnd = (n) => Number(n || 0).toLocaleString('vi-VN');
 const fmtLimit = (n) => (Number(n) < 0 ? 'Không giới hạn' : Number(n).toLocaleString('vi-VN'));
+
+const fmtDate = (s) => {
+  if (!s) return '—';
+  const d = new Date(s);
+  return Number.isNaN(d.getTime()) ? '—' : d.toLocaleDateString('vi-VN');
+};
+
+/** code trạng thái subscription → nhãn + class màu. */
+const SUB_STATUS_META = {
+  ACTIVE: { label: 'Đang hiệu lực', cls: 'bg-green-50 text-green-700' },
+  PENDING_RENEWAL: { label: 'Chờ gia hạn', cls: 'bg-amber-50 text-amber-700' },
+  EXPIRED: { label: 'Hết hạn', cls: 'bg-slate-100 text-slate-500' },
+  CANCELED: { label: 'Đã hủy', cls: 'bg-red-50 text-red-600' },
+};
+const subStatusMeta = (s) =>
+  SUB_STATUS_META[s] || { label: s || '—', cls: 'bg-slate-100 text-slate-500' };
+
+const SUB_STATUS_FILTERS = [
+  { value: '', label: 'Tất cả trạng thái' },
+  { value: 'ACTIVE', label: 'Đang hiệu lực' },
+  { value: 'PENDING_RENEWAL', label: 'Chờ gia hạn' },
+  { value: 'EXPIRED', label: 'Hết hạn' },
+  { value: 'CANCELED', label: 'Đã hủy' },
+];
 
 /** Nhóm số bằng dấu chấm để dễ đọc (2000 → "2.000"). */
 const groupDigits = (raw) => {
@@ -88,6 +119,76 @@ const SubscriptionTierManagement = () => {
   useEffect(() => {
     fetchTiers();
   }, [fetchTiers]);
+
+  /* ─── Người đăng ký ─── */
+  const [subscribers, setSubscribers] = useState([]);
+  const [subsLoading, setSubsLoading] = useState(true);
+  const [subStatus, setSubStatus] = useState('');
+  const [subSearch, setSubSearch] = useState('');
+
+  const fetchSubscribers = useCallback(async () => {
+    setSubsLoading(true);
+    try {
+      const data = await adminSubscriptionService.listSubscribers(
+        subStatus ? { status: subStatus } : {},
+      );
+      setSubscribers(Array.isArray(data) ? data : []);
+    } catch {
+      toast.error('Không thể tải danh sách người đăng ký');
+    } finally {
+      setSubsLoading(false);
+    }
+  }, [subStatus]);
+
+  useEffect(() => {
+    fetchSubscribers();
+  }, [fetchSubscribers]);
+
+  /* ─── Danh sách quyền lợi (quản lý ở Danh mục → Quyền lợi) ─── */
+  const [benefitOptions, setBenefitOptions] = useState([]); // [{ name, nameEn }]
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const data = await categoryService.getByType('BENEFIT');
+        const active = (Array.isArray(data) ? data : [])
+          .filter((c) => c.active !== false)
+          .map((c) => ({ name: c.name, nameEn: c.nameEn }));
+        setBenefitOptions(active);
+      } catch {
+        setBenefitOptions([]);
+      }
+    })();
+  }, []);
+
+  // form.benefits là chuỗi nối bằng ' · '. Tách/ghép để thao tác dạng chip.
+  const selectedBenefits = (form.benefits || '')
+    .split('·')
+    .map((s) => s.trim())
+    .filter(Boolean);
+
+  const setSelectedBenefits = (list) =>
+    setForm((f) => ({ ...f, benefits: list.join(' · ') }));
+
+  const addBenefit = (name) => {
+    if (!name || selectedBenefits.includes(name)) return;
+    setSelectedBenefits([...selectedBenefits, name]);
+  };
+
+  const removeBenefit = (name) =>
+    setSelectedBenefits(selectedBenefits.filter((b) => b !== name));
+
+  const availableBenefits = benefitOptions.filter(
+    (o) => !selectedBenefits.includes(o.name),
+  );
+
+  const filteredSubscribers = subscribers.filter((s) => {
+    const q = subSearch.trim().toLowerCase();
+    if (!q) return true;
+    return [s.email, s.fullName, s.companyName, s.tier, s.tierName]
+      .filter(Boolean)
+      .some((v) => String(v).toLowerCase().includes(q));
+  });
 
   const openCreate = () => {
     setCreating(true);
@@ -349,6 +450,110 @@ const SubscriptionTierManagement = () => {
         </div>
       )}
 
+      {/* ─── Người đăng ký: tài khoản nào đăng ký gói nào + công ty trực thuộc ─── */}
+      <div className="rounded-2xl bg-white shadow-sm ring-1 ring-slate-200">
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 px-5 py-4">
+          <h3 className="flex items-center gap-2 text-lg font-bold text-slate-900">
+            <Users className="h-5 w-5 text-[#3AB4E6]" />
+            Người đăng ký
+            <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-semibold text-slate-500">
+              {filteredSubscribers.length}
+            </span>
+          </h3>
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="relative">
+              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+              <input
+                value={subSearch}
+                onChange={(e) => setSubSearch(e.target.value)}
+                placeholder="Tìm email, tên, công ty, gói..."
+                className="w-64 rounded-lg border border-slate-300 bg-white py-2 pl-9 pr-3 text-sm outline-none placeholder:text-slate-400 focus:border-slate-400 focus:ring-2 focus:ring-[#3AB4E6]"
+              />
+            </div>
+            <select
+              value={subStatus}
+              onChange={(e) => setSubStatus(e.target.value)}
+              className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-slate-400 focus:ring-2 focus:ring-[#3AB4E6]"
+            >
+              {SUB_STATUS_FILTERS.map((o) => (
+                <option key={o.value} value={o.value}>
+                  {o.label}
+                </option>
+              ))}
+            </select>
+            <Button variant="outline" onClick={fetchSubscribers} disabled={subsLoading}>
+              <RefreshCw className={`h-4 w-4 ${subsLoading ? 'animate-spin' : ''}`} />
+            </Button>
+          </div>
+        </div>
+
+        {subsLoading ? (
+          <div className="py-14 text-center text-slate-400">Đang tải người đăng ký...</div>
+        ) : filteredSubscribers.length === 0 ? (
+          <div className="py-14 text-center text-slate-400">
+            {subSearch || subStatus ? 'Không có người đăng ký phù hợp.' : 'Chưa có ai đăng ký gói.'}
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-slate-100 bg-slate-50 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
+                  <th className="px-5 py-3">Tài khoản</th>
+                  <th className="px-5 py-3">Công ty trực thuộc</th>
+                  <th className="px-5 py-3">Gói</th>
+                  <th className="px-5 py-3">Trạng thái</th>
+                  <th className="px-5 py-3">Đăng ký</th>
+                  <th className="px-5 py-3">Hết hạn</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-50">
+                {filteredSubscribers.map((s) => {
+                  const meta = subStatusMeta(s.status);
+                  return (
+                    <tr key={s.subscriptionId} className="hover:bg-slate-50/60">
+                      <td className="px-5 py-3">
+                        <div className="font-semibold text-slate-800">
+                          {s.fullName || '(Chưa đặt tên)'}
+                        </div>
+                        <div className="flex items-center gap-1.5 text-xs text-slate-500">
+                          <Mail className="h-3 w-3" /> {s.email || '—'}
+                        </div>
+                      </td>
+                      <td className="px-5 py-3">
+                        {s.companyName ? (
+                          <span className="inline-flex items-center gap-1.5 text-slate-700">
+                            <Building2 className="h-4 w-4 text-slate-400" /> {s.companyName}
+                          </span>
+                        ) : (
+                          <span className="text-xs italic text-slate-400">Chưa liên kết công ty</span>
+                        )}
+                      </td>
+                      <td className="px-5 py-3">
+                        <span className="rounded-md bg-[#EAF6FF] px-2 py-0.5 text-xs font-bold text-[#0E7BAA]">
+                          {s.tier}
+                        </span>
+                        {s.tierName && s.tierName !== s.tier && (
+                          <div className="mt-0.5 truncate text-xs text-slate-400">{s.tierName}</div>
+                        )}
+                      </td>
+                      <td className="px-5 py-3">
+                        <span
+                          className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-semibold ${meta.cls}`}
+                        >
+                          {meta.label}
+                        </span>
+                      </td>
+                      <td className="px-5 py-3 text-slate-600">{fmtDate(s.startedAt)}</td>
+                      <td className="px-5 py-3 text-slate-600">{fmtDate(s.expiresAt)}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+
       {/* Create / Edit dialog */}
       <Dialog
         open={dialogOpen}
@@ -435,14 +640,72 @@ const SubscriptionTierManagement = () => {
             </Field>
           </div>
 
-          <Field label="Quyền lợi" hint="Phân tách từng quyền lợi bằng dấu ·">
-            <textarea
-              rows={3}
-              value={form.benefits}
-              onChange={(e) => setForm({ ...form, benefits: e.target.value })}
-              placeholder="Đăng 50 job/tháng · 20 boost · Talent pool search · Priority support"
-              className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm outline-none placeholder:text-slate-400 focus:border-slate-400 focus:ring-2 focus:ring-[#3AB4E6] transition-all"
-            />
+          <Field
+            label="Quyền lợi"
+            hint="chọn từ danh sách — quản lý ở Danh mục → Quyền lợi"
+          >
+            <div className="space-y-2">
+              {/* Chip các quyền lợi đã chọn */}
+              {selectedBenefits.length > 0 ? (
+                <div className="flex flex-wrap gap-1.5">
+                  {selectedBenefits.map((b) => {
+                    const known = benefitOptions.some((o) => o.name === b);
+                    return (
+                      <span
+                        key={b}
+                        className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium ${
+                          known
+                            ? 'bg-[#EAF6FF] text-[#0E7BAA]'
+                            : 'bg-amber-50 text-amber-700'
+                        }`}
+                        title={known ? '' : 'Quyền lợi tùy chỉnh (không có trong danh mục)'}
+                      >
+                        <Gift className="h-3 w-3" />
+                        {b}
+                        <button
+                          type="button"
+                          onClick={() => removeBenefit(b)}
+                          className="ml-0.5 rounded-full p-0.5 hover:bg-black/10"
+                        >
+                          <X className="h-3 w-3" />
+                        </button>
+                      </span>
+                    );
+                  })}
+                </div>
+              ) : (
+                <p className="text-xs italic text-slate-400">Chưa chọn quyền lợi nào.</p>
+              )}
+
+              {/* Dropdown thêm quyền lợi từ danh mục */}
+              <div className="flex items-center gap-2">
+                <div className="relative flex-1">
+                  <select
+                    value=""
+                    onChange={(e) => {
+                      addBenefit(e.target.value);
+                      e.target.value = '';
+                    }}
+                    disabled={availableBenefits.length === 0}
+                    className="w-full appearance-none rounded-lg border border-slate-300 bg-white px-3 py-2 pr-9 text-sm outline-none focus:border-slate-400 focus:ring-2 focus:ring-[#3AB4E6] disabled:bg-slate-50 disabled:text-slate-400"
+                  >
+                    <option value="" disabled>
+                      {benefitOptions.length === 0
+                        ? 'Chưa có quyền lợi nào — thêm ở Danh mục → Quyền lợi'
+                        : availableBenefits.length === 0
+                          ? 'Đã chọn tất cả quyền lợi'
+                          : '+ Thêm quyền lợi...'}
+                    </option>
+                    {availableBenefits.map((o) => (
+                      <option key={o.name} value={o.name}>
+                        {o.name}
+                      </option>
+                    ))}
+                  </select>
+                  <PlusIcon className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                </div>
+              </div>
+            </div>
           </Field>
 
           <div className="grid grid-cols-2 gap-4">

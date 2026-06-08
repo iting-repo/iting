@@ -1,6 +1,7 @@
 package com.iting.jobportal.payment.controller;
 
 import com.iting.jobportal.auth.security.JwtTokenUtil;
+import com.iting.jobportal.payment.dto.SubscriberRow;
 import com.iting.jobportal.payment.dto.SubscriptionTierCreateRequest;
 import com.iting.jobportal.payment.dto.SubscriptionTierUpdateRequest;
 import com.iting.jobportal.payment.entity.SubscriptionTierPricing;
@@ -29,6 +30,16 @@ public class AdminSubscriptionTierController {
   @Operation(summary = "Danh sách tất cả gói HR kèm giá hiệu lực")
   public ResponseEntity<List<SubscriptionTierPricing>> list() {
     return ResponseEntity.ok(pricingService.listAll());
+  }
+
+  @GetMapping("/subscribers")
+  @PreAuthorize("hasRole('ADMIN')")
+  @Operation(
+      summary = "Danh sách người đăng ký — tài khoản nào đang đăng ký gói nào + công ty trực thuộc")
+  public ResponseEntity<List<SubscriberRow>> subscribers(
+      @RequestParam(required = false) String status,
+      @RequestParam(required = false) String tier) {
+    return ResponseEntity.ok(pricingService.listSubscribers(status, tier));
   }
 
   @PostMapping
