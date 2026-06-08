@@ -418,6 +418,69 @@ const PostJob = ({
   const [availablePositionOptions, setAvailablePositionOptions] = useState(DEFAULT_POSITION_OPTIONS);
   const [aiChecking, setAiChecking] = useState(false);
   const [aiWarning, setAiWarning] = useState(null); // { issues, flaggedTerms, suggestion, summary, riskLevel, payload }
+  const [parsingJd, setParsingJd] = useState(false);
+  const jdInputRef = useRef(null);
+
+  // Áp dữ liệu Gemini parse từ JD vào form (chỉ ghi đè field có giá trị).
+  const ALLOWED = {
+    workType: ["FULL_TIME", "PART_TIME", "REMOTE", "FREELANCE", "INTERN"],
+    experienceLevel: ["INTERN", "FRESHER", "JUNIOR", "MIDDLE", "SENIOR", "LEAD", "MANAGER"],
+    workingDays: ["MON_TO_FRI", "MON_TO_SAT", "FLEXIBLE"],
+    cvLanguage: ["ANY", "VIETNAMESE", "ENGLISH", "BOTH"],
+    salaryType: ["NEGOTIABLE", "MONTH", "PROJECT", "HOUR"],
+  };
+  const applyParsedJd = (d) => {
+    setFormData((prev) => {
+      const next = { ...prev };
+      const setStr = (k, v) => { if (v && String(v).trim()) next[k] = String(v).trim(); };
+      const setArr = (k, v) => { if (Array.isArray(v) && v.length) next[k] = v.map((x) => String(x).trim()).filter(Boolean); };
+      const setEnum = (k, v) => { if (v && ALLOWED[k]?.includes(v)) next[k] = v; };
+      setStr("jobTitle", d.jobTitle);
+      setArr("jobPosition", d.jobPosition);
+      setArr("techStack", d.techStack);
+      setEnum("workType", d.workType);
+      setEnum("experienceLevel", d.experienceLevel);
+      setEnum("workingDays", d.workingDays);
+      setEnum("cvLanguage", d.cvLanguage);
+      setEnum("salaryType", d.salaryType);
+      if (d.quantity && Number(d.quantity) > 0) next.quantity = String(Number(d.quantity));
+      if (d.minSalary && Number(d.minSalary) > 0) next.minSalary = String(Number(d.minSalary));
+      if (d.maxSalary && Number(d.maxSalary) > 0) next.maxSalary = String(Number(d.maxSalary));
+      setStr("province", d.province);
+      setStr("address", d.address);
+      setStr("description", d.description);
+      setStr("responsibilities", d.responsibilities);
+      setStr("requirements", d.requirements);
+      setStr("benefits", d.benefits);
+      return next;
+    });
+  };
+
+  const handleJdUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (e.target) e.target.value = "";
+    if (!file) return;
+    const ok = file.type === "application/pdf" || /\.(pdf|png|jpe?g)$/i.test(file.name);
+    if (!ok) { toast.error("Chỉ hỗ trợ JD dạng PDF hoặc ảnh."); return; }
+    if (file.size > 10 * 1024 * 1024) { toast.error("File tối đa 10MB."); return; }
+    try {
+      setParsingJd(true);
+      toast.loading("🤖 AI đang đọc JD và điền form...", { id: "jd-parse" });
+      const fd = new FormData();
+      fd.append("file", file);
+      const res = await axiosInstance.post("/hr/jobs/parse-jd", fd, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+      const data = typeof res === "string" ? JSON.parse(res) : res;
+      if (data?.error) throw new Error(data.error);
+      applyParsedJd(data);
+      toast.success("Đã tự điền từ JD. Vui lòng kiểm tra & chỉnh lại trước khi đăng.", { id: "jd-parse" });
+    } catch (err) {
+      toast.error(err?.error || err?.message || err?.response?.data?.error || "Không đọc được JD. Thử lại.", { id: "jd-parse" });
+    } finally {
+      setParsingJd(false);
+    }
+  };
 
   useEffect(() => {
     setFormData(initialFormState);
@@ -802,6 +865,32 @@ const PostJob = ({
               </div>
             ) : (
               <form onSubmit={handleSubmit}>
+                {/* AI tự điền từ Job Description */}
+                <div className="mb-8 rounded-xl border border-[#3AB4E6]/30 bg-gradient-to-r from-[#EAF6FF] to-blue-50/50 p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <div className="flex items-start gap-3">
+                    <div className="w-9 h-9 rounded-lg bg-[#3AB4E6] text-white flex items-center justify-center shrink-0">🤖</div>
+                    <div>
+                      <p className="text-sm font-bold text-gray-800">Tải JD lên — AI tự điền form</p>
+                      <p className="text-xs text-gray-500">Hỗ trợ PDF/ảnh. AI (Gemini) đọc JD và điền sẵn tiêu đề, kỹ năng, mô tả, lương... bạn chỉ cần kiểm tra lại.</p>
+                    </div>
+                  </div>
+                  <input
+                    ref={jdInputRef}
+                    type="file"
+                    accept="application/pdf,image/*"
+                    className="hidden"
+                    onChange={handleJdUpload}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => jdInputRef.current?.click()}
+                    disabled={parsingJd}
+                    className="shrink-0 inline-flex items-center justify-center gap-2 rounded-lg bg-[#3AB4E6] hover:bg-[#2A9DCB] text-white text-sm font-bold px-5 py-2.5 shadow-md shadow-blue-500/20 disabled:opacity-60 disabled:cursor-wait"
+                  >
+                    {parsingJd ? "Đang đọc JD..." : "Tải JD lên"}
+                  </button>
+                </div>
+
                 <div className="mb-8">
                   <h3 className="text-lg font-bold text-gray-800 mb-4">
                     Tiêu đề công việc

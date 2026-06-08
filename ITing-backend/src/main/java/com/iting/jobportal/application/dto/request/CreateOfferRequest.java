@@ -34,4 +34,11 @@ public class CreateOfferRequest {
 
   @Size(max = 5000)
   private String notes;
+
+  /**
+   * URL file offer letter PDF do HR tự đính kèm (đã upload qua /api/hr/offers/upload-letter). Nếu có
+   * → dùng file này làm offer letter thay vì auto-generate PDF.
+   */
+  @Size(max = 1000)
+  private String offerLetterUrl;
 }

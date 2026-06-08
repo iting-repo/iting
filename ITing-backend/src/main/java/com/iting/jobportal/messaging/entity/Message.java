@@ -1,9 +1,15 @@
 package com.iting.jobportal.messaging.entity;
 
+import com.iting.jobportal.messaging.dto.AttachmentDto;
+import com.iting.jobportal.messaging.dto.LinkPreviewDto;
+import com.iting.jobportal.messaging.entity.converter.AttachmentListJsonConverter;
+import com.iting.jobportal.messaging.entity.converter.LinkPreviewJsonConverter;
+import com.iting.jobportal.messaging.enums.MessageType;
 import com.iting.jobportal.messaging.enums.ReceiverType;
 import com.iting.jobportal.messaging.enums.SenderType;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
+import java.util.List;
 import lombok.*;
 
 @Entity
@@ -36,8 +42,28 @@ public class Message {
   @Column(name = "receiver_type", nullable = false, length = 20)
   private ReceiverType receiverType;
 
-  @Column(name = "content", columnDefinition = "TEXT", nullable = false)
+  // content có thể null khi tin nhắn chỉ gồm sticker / file đính kèm không kèm caption.
+  @Column(name = "content", columnDefinition = "TEXT")
   private String content;
+
+  @Enumerated(EnumType.STRING)
+  @Column(name = "message_type", nullable = false, length = 20)
+  @Builder.Default
+  private MessageType messageType = MessageType.TEXT;
+
+  /** Danh sách tệp đính kèm (ảnh / PDF / DOCX). Lưu JSON. */
+  @Convert(converter = AttachmentListJsonConverter.class)
+  @Column(name = "attachments", columnDefinition = "TEXT")
+  private List<AttachmentDto> attachments;
+
+  /** Thẻ xem trước Open Graph cho URL đầu tiên trong nội dung. Lưu JSON. */
+  @Convert(converter = LinkPreviewJsonConverter.class)
+  @Column(name = "link_preview", columnDefinition = "TEXT")
+  private LinkPreviewDto linkPreview;
+
+  /** URL ảnh sticker (khi messageType = STICKER). */
+  @Column(name = "sticker_url", length = 500)
+  private String stickerUrl;
 
   @Column(name = "is_read", nullable = false)
   private Boolean isRead = false;
@@ -78,6 +104,9 @@ public class Message {
     }
     if (isEdited == null) {
       isEdited = false;
+    }
+    if (messageType == null) {
+      messageType = MessageType.TEXT;
     }
   }
 }

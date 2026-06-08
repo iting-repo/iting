@@ -1,6 +1,9 @@
 package com.iting.jobportal.messaging.controller;
 
+import com.iting.jobportal.file.FileUploadService;
 import com.iting.jobportal.job.controller.CurrentUser;
+import com.iting.jobportal.messaging.dto.AttachmentDto;
+import com.iting.jobportal.messaging.dto.LinkPreviewDto;
 import com.iting.jobportal.messaging.dto.request.EditMessageRequest;
 import com.iting.jobportal.messaging.dto.request.SendMessageRequest;
 import com.iting.jobportal.messaging.dto.response.ConversationListResponse;
@@ -8,18 +11,26 @@ import com.iting.jobportal.messaging.dto.response.ConversationResponse;
 import com.iting.jobportal.messaging.dto.response.MessageResponse;
 import com.iting.jobportal.messaging.enums.ConversationType;
 import com.iting.jobportal.messaging.service.ConversationService;
+import com.iting.jobportal.messaging.service.LinkPreviewService;
 import com.iting.jobportal.messaging.service.MessageService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import java.io.IOException;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.server.ResponseStatusException;
 
 @RestController
 @RequestMapping("/api/messages")
@@ -30,6 +41,22 @@ public class MessageController {
   private final MessageService messageService;
   private final ConversationService conversationService;
   private final SimpMessagingTemplate messagingTemplate;
+  private final FileUploadService fileUploadService;
+  private final LinkPreviewService linkPreviewService;
+
+  /** Định dạng tệp đính kèm cho phép: ảnh, PDF, Word. */
+  private static final Set<String> ALLOWED_ATTACHMENT_TYPES =
+      Set.of(
+          "image/png",
+          "image/jpeg",
+          "image/jpg",
+          "image/gif",
+          "image/webp",
+          "application/pdf",
+          "application/msword",
+          "application/vnd.openxmlformats-officedocument.wordprocessingml.document");
+
+  private static final long MAX_ATTACHMENT_BYTES = 10L * 1024 * 1024; // 10MB
 
   @PostMapping
   @Operation(summary = "Send a message")
@@ -40,6 +67,51 @@ public class MessageController {
     messagingTemplate.convertAndSend(
         "/topic/conversation/" + response.getConversationId(), response);
     return ResponseEntity.ok(response);
+  }
+
+  @PostMapping(value = "/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+  @Operation(summary = "Upload a chat attachment (image / PDF / DOCX) → returns attachment metadata")
+  public ResponseEntity<AttachmentDto> uploadAttachment(
+      @Parameter(hidden = true) @CurrentUser Long userId,
+      @RequestParam("file") MultipartFile file) {
+    if (file == null || file.isEmpty()) {
+      throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Tệp trống");
+    }
+    if (file.getSize() > MAX_ATTACHMENT_BYTES) {
+      throw new ResponseStatusException(
+          HttpStatus.BAD_REQUEST, "Tệp vượt quá 10MB");
+    }
+    String contentType = file.getContentType();
+    if (contentType == null || !ALLOWED_ATTACHMENT_TYPES.contains(contentType.toLowerCase())) {
+      throw new ResponseStatusException(
+          HttpStatus.BAD_REQUEST, "Chỉ hỗ trợ ảnh, PDF hoặc Word (DOC/DOCX)");
+    }
+
+    String original = file.getOriginalFilename();
+    String ext =
+        (original != null && original.contains("."))
+            ? original.substring(original.lastIndexOf('.'))
+            : "";
+    String key = "messages/" + UUID.randomUUID() + ext;
+
+    try {
+      String url = fileUploadService.uploadBytes(file.getBytes(), key, contentType);
+      return ResponseEntity.ok(
+          AttachmentDto.builder()
+              .url(url)
+              .name(original)
+              .contentType(contentType)
+              .size(file.getSize())
+              .build());
+    } catch (IOException e) {
+      throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Tải tệp lên thất bại");
+    }
+  }
+
+  @GetMapping("/link-preview")
+  @Operation(summary = "Fetch Open Graph preview for a URL (YouTube, articles...)")
+  public ResponseEntity<LinkPreviewDto> linkPreview(@RequestParam("url") String url) {
+    return ResponseEntity.ok(linkPreviewService.fetch(url));
   }
 
   @GetMapping("/conversations")

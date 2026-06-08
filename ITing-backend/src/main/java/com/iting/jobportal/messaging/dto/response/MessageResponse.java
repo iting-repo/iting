@@ -1,8 +1,12 @@
 package com.iting.jobportal.messaging.dto.response;
 
+import com.iting.jobportal.messaging.dto.AttachmentDto;
+import com.iting.jobportal.messaging.dto.LinkPreviewDto;
+import com.iting.jobportal.messaging.enums.MessageType;
 import com.iting.jobportal.messaging.enums.ReceiverType;
 import com.iting.jobportal.messaging.enums.SenderType;
 import java.time.LocalDateTime;
+import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -27,6 +31,10 @@ public class MessageResponse {
   private String receiverName;
   private String receiverAvatar;
   private String content;
+  private MessageType messageType;
+  private List<AttachmentDto> attachments;
+  private LinkPreviewDto linkPreview;
+  private String stickerUrl;
   private Boolean isRead;
   private LocalDateTime readAt;
   private LocalDateTime createdAt;

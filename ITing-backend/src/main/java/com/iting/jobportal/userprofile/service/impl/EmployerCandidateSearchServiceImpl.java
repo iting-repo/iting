@@ -260,10 +260,7 @@ public class EmployerCandidateSearchServiceImpl implements EmployerCandidateSear
     for (UserProfile profile : matched) {
       double cosine = 0.0;
       if (finalJobVec != null) {
-        List<String> cvEmb =
-            cvRepository.findActiveCvEmbeddingByProfileId(profile.getId(), PageRequest.of(0, 1));
-        String candidateEmbedding = cvEmb.isEmpty() ? null : cvEmb.get(0);
-        cosine = cosineSimilarity(finalJobVec, parseEmbedding(candidateEmbedding).orElse(null));
+        cosine = cosineSimilarity(finalJobVec, candidateVector(profile, finalJobVec.length));
       }
 
       double score = cosine;
@@ -472,6 +469,44 @@ public class EmployerCandidateSearchServiceImpl implements EmployerCandidateSear
     } catch (Exception e) {
       return Optional.empty();
     }
+  }
+
+  /**
+   * Vector embedding của ứng viên để so khớp với job. Ưu tiên CV embedding đã lưu nếu CÙNG số chiều
+   * với job vector; nếu chưa có CV embedding (hoặc lệch chiều do nhúng bằng model khác), nhúng
+   * on-the-fly từ văn bản hồ sơ (headline + kỹ năng + khu vực + bio) bằng CÙNG EmbeddingClient với
+   * job ⇒ cùng không gian vector ⇒ cosine có ý nghĩa kể cả khi CV chưa được nhúng.
+   */
+  private double[] candidateVector(UserProfile profile, int targetDim) {
+    List<String> cvEmb =
+        cvRepository.findActiveCvEmbeddingByProfileId(profile.getId(), PageRequest.of(0, 1));
+    if (!cvEmb.isEmpty()) {
+      double[] stored = parseEmbedding(cvEmb.get(0)).orElse(null);
+      if (stored != null && stored.length == targetDim) return stored;
+    }
+    return embeddingClient.embed(buildCandidateText(profile)).orElse(null);
+  }
+
+  private String buildCandidateText(UserProfile profile) {
+    StringBuilder sb = new StringBuilder();
+    if (profile.getHeadline() != null && !profile.getHeadline().isBlank()) {
+      sb.append(profile.getHeadline()).append(". ");
+    }
+    if (profile.getSkills() != null && !profile.getSkills().isEmpty()) {
+      String skills =
+          profile.getSkills().stream()
+              .map(Skill::getName)
+              .filter(s -> s != null && !s.isBlank())
+              .collect(Collectors.joining(", "));
+      if (!skills.isBlank()) sb.append("Kỹ năng: ").append(skills).append(". ");
+    }
+    if (profile.getLocation() != null && !profile.getLocation().isBlank()) {
+      sb.append("Khu vực: ").append(profile.getLocation()).append(". ");
+    }
+    if (profile.getShortBio() != null && !profile.getShortBio().isBlank()) {
+      sb.append(profile.getShortBio());
+    }
+    return sb.toString();
   }
 
   private static double cosineSimilarity(double[] a, double[] b) {

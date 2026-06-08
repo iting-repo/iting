@@ -4,6 +4,7 @@ import com.iting.jobportal.admin.dto.request.BulkActionRequest;
 import com.iting.jobportal.job.dto.request.CreateJobRequest;
 import com.iting.jobportal.job.dto.request.UpdateJobRequest;
 import com.iting.jobportal.job.dto.response.JobResponse;
+import com.iting.jobportal.job.service.GeminiJobParserService;
 import com.iting.jobportal.job.service.JobService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -12,8 +13,10 @@ import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 
 /**
@@ -29,6 +32,18 @@ import org.springframework.web.server.ResponseStatusException;
 public class HrJobController {
 
   private final JobService jobService;
+  private final GeminiJobParserService geminiJobParserService;
+
+  @PostMapping(value = "/parse-jd", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+  @Operation(
+      summary = "Phân tích file Job Description bằng AI (Gemini) → JSON tự điền form đăng tin")
+  public ResponseEntity<?> parseJd(@RequestParam("file") MultipartFile file) {
+    try {
+      return ResponseEntity.ok(geminiJobParserService.parseJobDescription(file));
+    } catch (Exception e) {
+      return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+    }
+  }
 
   @PostMapping
   @Operation(summary = "Đăng tin tuyển dụng mới")

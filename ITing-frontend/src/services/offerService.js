@@ -19,6 +19,15 @@ const offerService = {
       return await axiosInstance.post("/hr/offers", payload);
    },
 
+   /** Upload file offer letter PDF tự soạn → trả { url } để truyền vào create({ offerLetterUrl }). */
+   uploadLetter: async (file) => {
+      const formData = new FormData();
+      formData.append("file", file);
+      return await axiosInstance.post("/hr/offers/upload-letter", formData, {
+         headers: { "Content-Type": "multipart/form-data" },
+      });
+   },
+
    revoke: async (offerId) => {
       return await axiosInstance.post(`/hr/offers/${offerId}/revoke`);
    },

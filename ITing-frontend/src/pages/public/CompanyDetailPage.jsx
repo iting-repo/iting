@@ -18,6 +18,7 @@ import { vi } from "date-fns/locale";
 import { useModalEscape } from "../../hooks/useModalEscape";
 import { buildJobDetailPath, getCompanyLogoUrl } from "../../utils/jobUrl";
 import { isCompanyVerified } from "../../utils/enumLabels";
+import { decodeId, encodeId } from "../../utils/idCodec";
 
 
 /**
@@ -106,7 +107,9 @@ const renderCompanyDescription = (raw) => {
 
 
 const CompanyDetailPage = () => {
-  const { id } = useParams();
+  // URL dùng token mã hoá (vd /companies/dT9uA) để không lộ id tuần tự. Giải về id số ở đây.
+  const { id: idParam } = useParams();
+  const id = decodeId(idParam);
   const navigate = useNavigate();
   const { currentUser } = useSelector((state) => state.auth);
   const isAuthenticated = !!currentUser;
@@ -490,7 +493,7 @@ const CompanyDetailPage = () => {
                 </h2>
                 {(company.activeJobCount > jobs.length || jobs.length > 5) && (
                   <button
-                    onClick={() => navigate(`/jobs?companyId=${id}`)}
+                    onClick={() => navigate(`/jobs?companyId=${encodeId(id)}`)}
                     className="px-6 py-2.5 bg-gray-50 text-[#3AB4E6] rounded-full font-black text-xs hover:bg-[#3AB4E6] hover:text-white transition-all flex items-center gap-2 group"
                   >
                     Xem tất cả <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />

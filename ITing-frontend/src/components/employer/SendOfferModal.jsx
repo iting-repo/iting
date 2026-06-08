@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { FaTimes, FaFileSignature } from 'react-icons/fa';
+import React, { useRef, useState } from 'react';
+import { FaTimes, FaFileSignature, FaFilePdf, FaUpload } from 'react-icons/fa';
 import { toast } from 'sonner';
 import offerService from '../../services/offerService';
 
@@ -30,7 +30,35 @@ const SendOfferModal = ({ open, applyFormId, jobId, defaultPosition, candidateNa
    const [notes, setNotes] = useState('');
    const [submitting, setSubmitting] = useState(false);
 
+   // Đính kèm offer letter PDF tự soạn (tuỳ chọn). Nếu có → dùng thay PDF auto-generate.
+   const [letterFile, setLetterFile] = useState(null);
+   const [letterUrl, setLetterUrl] = useState('');
+   const [uploadingLetter, setUploadingLetter] = useState(false);
+   const letterInputRef = useRef(null);
+
    if (!open) return null;
+
+   const handleLetterChange = async (e) => {
+      const file = e.target.files?.[0];
+      if (e.target) e.target.value = '';
+      if (!file) return;
+      const isPdf = file.type === 'application/pdf' || /\.pdf$/i.test(file.name);
+      if (!isPdf) { toast.error('Chỉ chấp nhận file PDF.'); return; }
+      if (file.size > 10 * 1024 * 1024) { toast.error('File tối đa 10MB.'); return; }
+      try {
+         setUploadingLetter(true);
+         const res = await offerService.uploadLetter(file);
+         setLetterUrl(res?.url || '');
+         setLetterFile(file);
+         toast.success('Đã đính kèm offer letter.');
+      } catch (err) {
+         toast.error(err?.response?.data?.error || err?.error || 'Tải file thất bại.');
+      } finally {
+         setUploadingLetter(false);
+      }
+   };
+
+   const removeLetter = () => { setLetterFile(null); setLetterUrl(''); };
 
    const handleSubmit = async () => {
       if (!position.trim()) {
@@ -53,6 +81,7 @@ const SendOfferModal = ({ open, applyFormId, jobId, defaultPosition, candidateNa
             startDate: startDate || undefined,
             expiresAt: new Date(expiresAt).toISOString(),
             notes: notes.trim() || undefined,
+            offerLetterUrl: letterUrl || undefined,
          };
          const offer = await offerService.create(payload);
          toast.success('Đã gửi offer cho ứng viên.');
@@ -159,9 +188,45 @@ const SendOfferModal = ({ open, applyFormId, jobId, defaultPosition, candidateNa
                   />
                </div>
 
+               <div>
+                  <label className="block text-xs font-bold text-gray-600 uppercase tracking-wider mb-1.5">
+                     Đính kèm Offer Letter (PDF) — tuỳ chọn
+                  </label>
+                  <input
+                     ref={letterInputRef}
+                     type="file"
+                     accept="application/pdf"
+                     className="hidden"
+                     onChange={handleLetterChange}
+                  />
+                  {letterFile ? (
+                     <div className="flex items-center justify-between gap-2 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2.5">
+                        <div className="flex items-center gap-2 min-w-0">
+                           <FaFilePdf className="text-red-500 shrink-0" />
+                           <span className="text-sm text-gray-700 truncate">{letterFile.name}</span>
+                        </div>
+                        <button type="button" onClick={removeLetter} className="text-xs font-bold text-red-500 hover:text-red-600 shrink-0">
+                           Xoá
+                        </button>
+                     </div>
+                  ) : (
+                     <button
+                        type="button"
+                        onClick={() => letterInputRef.current?.click()}
+                        disabled={uploadingLetter}
+                        className="w-full flex items-center justify-center gap-2 rounded-lg border-2 border-dashed border-gray-200 px-3 py-2.5 text-sm font-medium text-gray-500 hover:border-[#3AB4E6] hover:text-[#3AB4E6] transition-colors disabled:opacity-60"
+                     >
+                        <FaUpload className="text-xs" />
+                        {uploadingLetter ? 'Đang tải lên...' : 'Tải lên file offer letter của bạn'}
+                     </button>
+                  )}
+               </div>
+
                <p className="text-xs text-gray-500 leading-relaxed bg-amber-50 border border-amber-100 rounded-lg p-3">
-                  Sau khi gửi, hệ thống sẽ tự động tạo PDF offer letter, gửi email và thông báo tới ứng viên.
-                  Pipeline của application sẽ chuyển sang <strong>OFFER</strong>.
+                  {letterFile
+                     ? <>Sẽ dùng <strong>file PDF bạn đính kèm</strong> làm offer letter (không tự tạo PDF). Hệ thống vẫn gửi email + thông báo tới ứng viên.</>
+                     : <>Không đính kèm thì hệ thống <strong>tự tạo PDF offer letter</strong>. Sau khi gửi sẽ gửi email + thông báo tới ứng viên.</>}
+                  {' '}Pipeline của application sẽ chuyển sang <strong>OFFER</strong>.
                </p>
             </div>
 
@@ -175,7 +240,7 @@ const SendOfferModal = ({ open, applyFormId, jobId, defaultPosition, candidateNa
                </button>
                <button
                   onClick={handleSubmit}
-                  disabled={submitting}
+                  disabled={submitting || uploadingLetter}
                   className="px-6 py-2 bg-[#3AB4E6] hover:bg-[#2A9DCB] text-white text-sm font-bold rounded-lg shadow-md shadow-blue-500/20 disabled:opacity-50"
                >
                   {submitting ? 'Đang gửi…' : 'Gửi offer'}

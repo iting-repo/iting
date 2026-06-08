@@ -13,6 +13,19 @@ const messageService = {
 
   sendMessage: async (payload) => axiosInstance.post('/messages', payload),
 
+  // Upload tệp đính kèm (ảnh / PDF / DOCX) → trả về { url, name, contentType, size }.
+  uploadAttachment: async (file) => {
+    const form = new FormData();
+    form.append('file', file);
+    return axiosInstance.post('/messages/upload', form, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+  },
+
+  // Lấy thẻ xem trước (Open Graph) cho 1 URL. Trả về null nếu không lấy được.
+  getLinkPreview: async (url) =>
+    axiosInstance.get('/messages/link-preview', { params: { url } }),
+
   markConversationAsRead: async (conversationId) =>
     axiosInstance.patch(`/messages/conversations/${conversationId}/read`),
 

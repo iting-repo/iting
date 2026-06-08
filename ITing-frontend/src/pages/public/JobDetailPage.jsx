@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
+import { encodeId } from '../../utils/idCodec';
 import { fetchJobDetailRequest } from '../../store/job/jobSlice';
 import {
     FaMapMarkerAlt,
@@ -1161,7 +1162,7 @@ const JobDetailPage = () => {
                             </div>
 
                             <Link
-                                to={`/companies/${currentJob?.companyId || '#'}`}
+                                to={currentJob?.companyId ? `/companies/${encodeId(currentJob.companyId)}` : '#'}
                                 className="flex items-center justify-center gap-2 text-[#3AB4E6] font-bold py-2.5 border border-[#3AB4E6] rounded-xl hover:bg-[#3AB4E6] hover:text-white transition-all duration-300 group mt-2"
                             >
                                 <span>Xem trang công ty</span>

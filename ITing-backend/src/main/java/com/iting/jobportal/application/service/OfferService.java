@@ -4,11 +4,18 @@ import com.iting.jobportal.application.dto.request.CreateOfferRequest;
 import com.iting.jobportal.application.dto.request.DeclineOfferRequest;
 import com.iting.jobportal.application.dto.response.OfferResponse;
 import java.util.List;
+import org.springframework.web.multipart.MultipartFile;
 
 public interface OfferService {
 
   /** HR tạo + gửi offer cho 1 application. Tự generate PDF + send email + in-app notification. */
   OfferResponse create(Long hrAccountId, CreateOfferRequest request);
+
+  /**
+   * HR upload file offer letter PDF tự soạn → lưu S3, trả về URL để truyền vào {@code
+   * CreateOfferRequest.offerLetterUrl}.
+   */
+  String uploadOfferLetter(Long hrAccountId, MultipartFile file);
 
   /** HR thu hồi offer (chỉ owner hoặc admin company). */
   OfferResponse revoke(Long hrAccountId, Long offerId);

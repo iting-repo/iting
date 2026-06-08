@@ -31,6 +31,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 
 @Service
@@ -119,22 +120,28 @@ public class OfferServiceImpl implements OfferService {
             .build();
     offer = offerRepo.save(offer);
 
-    // Generate PDF + upload S3
-    try {
-      byte[] pdfBytes =
-          offerPdfService.generate(
-              offer,
-              candidate.getFullName(),
-              job.getCompany() != null ? job.getCompany().getName() : null,
-              job.getCompany() != null ? job.getCompany().getAddress() : null,
-              job.getTitle());
-      String key = "offers/offer-" + offer.getId() + "-" + UUID.randomUUID() + ".pdf";
-      String url = fileUploadService.uploadBytes(pdfBytes, key, "application/pdf");
-      offer.setPdfFileUrl(url);
+    // Nếu HR đính kèm file offer letter PDF → dùng file đó; ngược lại auto-generate.
+    if (req.getOfferLetterUrl() != null && !req.getOfferLetterUrl().isBlank()) {
+      offer.setPdfFileUrl(req.getOfferLetterUrl().trim());
       offerRepo.save(offer);
-    } catch (Exception e) {
-      log.error("Failed to generate/upload offer PDF (offer #{})", offer.getId(), e);
-      // không rollback — offer đã tạo, PDF có thể regenerate sau
+    } else {
+      // Generate PDF + upload S3
+      try {
+        byte[] pdfBytes =
+            offerPdfService.generate(
+                offer,
+                candidate.getFullName(),
+                job.getCompany() != null ? job.getCompany().getName() : null,
+                job.getCompany() != null ? job.getCompany().getAddress() : null,
+                job.getTitle());
+        String key = "offers/offer-" + offer.getId() + "-" + UUID.randomUUID() + ".pdf";
+        String url = fileUploadService.uploadBytes(pdfBytes, key, "application/pdf");
+        offer.setPdfFileUrl(url);
+        offerRepo.save(offer);
+      } catch (Exception e) {
+        log.error("Failed to generate/upload offer PDF (offer #{})", offer.getId(), e);
+        // không rollback — offer đã tạo, PDF có thể regenerate sau
+      }
     }
 
     // Auto-move pipeline sang OFFER (nếu chưa)
@@ -149,6 +156,34 @@ public class OfferServiceImpl implements OfferService {
     notifyOfferSent(offer, candidate, job);
 
     return OfferResponse.fromEntity(offer);
+  }
+
+  @Override
+  public String uploadOfferLetter(Long hrAccountId, MultipartFile file) {
+    // Đảm bảo HR thuộc 1 công ty đã duyệt mới được upload.
+    authorizationService.requireApprovedCompanyOf(hrAccountId);
+
+    if (file == null || file.isEmpty()) {
+      throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "File offer letter rỗng");
+    }
+    String ct = file.getContentType();
+    String name = file.getOriginalFilename() != null ? file.getOriginalFilename() : "";
+    boolean isPdf =
+        (ct != null && ct.equals("application/pdf")) || name.toLowerCase().endsWith(".pdf");
+    if (!isPdf) {
+      throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Chỉ chấp nhận file PDF");
+    }
+    if (file.getSize() > 10L * 1024 * 1024) {
+      throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "File tối đa 10MB");
+    }
+    try {
+      String key = "offers/manual/" + hrAccountId + "-" + UUID.randomUUID() + ".pdf";
+      return fileUploadService.uploadBytes(file.getBytes(), key, "application/pdf");
+    } catch (Exception e) {
+      log.error("Upload offer letter thất bại (hr #{})", hrAccountId, e);
+      throw new ResponseStatusException(
+          HttpStatus.INTERNAL_SERVER_ERROR, "Không upload được file offer letter");
+    }
   }
 
   private void notifyOfferSent(OfferLetter offer, Account candidate, Job job) {

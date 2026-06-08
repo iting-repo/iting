@@ -11,9 +11,11 @@ import jakarta.validation.Valid;
 import java.util.List;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 @Tag(name = "08.2 HR Offer Letter", description = "HR-side offer letter management")
 @RestController
@@ -31,6 +33,16 @@ public class HrOfferController {
       @Parameter(hidden = true) @CurrentUser Long hrAccountId,
       @Valid @RequestBody CreateOfferRequest request) {
     return ResponseEntity.ok(offerService.create(hrAccountId, request));
+  }
+
+  @PostMapping(value = "/upload-letter", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+  @Operation(
+      summary =
+          "Upload file offer letter PDF tự soạn. Trả {url} để truyền vào offerLetterUrl khi tạo offer.")
+  public ResponseEntity<Map<String, String>> uploadLetter(
+      @Parameter(hidden = true) @CurrentUser Long hrAccountId,
+      @RequestPart("file") MultipartFile file) {
+    return ResponseEntity.ok(Map.of("url", offerService.uploadOfferLetter(hrAccountId, file)));
   }
 
   @PostMapping("/{offerId}/revoke")

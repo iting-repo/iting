@@ -10,6 +10,7 @@ import { toast } from "sonner";
 import companyService from "../../services/companyService";
 import { Breadcrumb, CompanyLogo } from "../../components/common";
 import { isCompanyVerified } from "../../utils/enumLabels";
+import { encodeId } from "../../utils/idCodec";
 
 // 34 tỉnh/thành VN sau sáp nhập 2025 (Nghị quyết 60-NQ/TW). Sắp theo
 // thứ tự dân số/IT job density để các vùng IT hub lên đầu dropdown.
@@ -338,7 +339,7 @@ const CompaniesPage = () => {
             {companies.map((company) => (
               <div
                 key={company.id}
-                onClick={() => navigate(`/companies/${company.id}`)}
+                onClick={() => navigate(`/companies/${encodeId(company.id)}`)}
                 className="group relative bg-white rounded-2xl border border-gray-100 hover:border-[#3AB4E6]/50 transition-all duration-300 hover:shadow-2xl hover:-translate-y-1 cursor-pointer overflow-hidden p-6"
               >
                 {/* Header Info */}

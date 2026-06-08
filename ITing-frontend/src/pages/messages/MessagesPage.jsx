@@ -1,17 +1,20 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { FaPaperPlane, FaSearch, FaSignOutAlt, FaEllipsisH, FaPen, FaTrash, FaCheck, FaTimes } from 'react-icons/fa';
+import { FaSearch, FaEllipsisH, FaPen, FaTrash, FaCheck, FaTimes, FaPaperclip, FaRegSmile, FaSpinner } from 'react-icons/fa';
 import { toast } from 'sonner';
 import { CompanyLogo, ConfirmModal } from '../../components/common';
+import MessageContent from '../../components/chat/MessageContent';
+import EmojiStickerPicker from '../../components/chat/EmojiStickerPicker';
 import useConfirm from '../../hooks/useConfirm';
-import { useSearchParams, useNavigate, useLocation } from 'react-router-dom';
+import { useSearchParams, useLocation } from 'react-router-dom';
 import messageService from '../../services/messageService';
 import applicationService from '../../services/applicationService';
 import chatRealtimeService from '../../services/chatRealtimeService';
 import { formatChatTime, sortConversationsForInbox } from '../../utils/chatFormat';
 
+const FIRST_URL_REGEX = /(https?:\/\/[^\s]+)/;
+
 const MessagesPage = () => {
   const [searchParams] = useSearchParams();
-  const navigate = useNavigate();
   const location = useLocation();
   const [conversations, setConversations] = useState([]);
   const [activeConversationId, setActiveConversationId] = useState(null);
@@ -27,6 +30,15 @@ const MessagesPage = () => {
   const messagesRef = useRef(null);
   const typingStopTimeoutRef = useRef(null);
   const [targetUser, setTargetUser] = useState(null); // For when we initiate from userId param
+
+  // Attachments + link preview + emoji/sticker composer state
+  const [attachments, setAttachments] = useState([]); // [{url,name,contentType,size}]
+  const [uploading, setUploading] = useState(false);
+  const [linkPreview, setLinkPreview] = useState(null);
+  const [showPicker, setShowPicker] = useState(false);
+  const fileInputRef = useRef(null);
+  const linkDebounceRef = useRef(null);
+  const lastPreviewUrlRef = useRef(null);
 
   // CRUD edit/delete state cho message bubble.
   // menuOpenId: id của message đang hiện 3-dot menu (click outside → close)
@@ -275,15 +287,30 @@ const MessagesPage = () => {
   const senderType = me?.role === 'EMPLOYER' ? 'COMPANY' : 'USER';
   const receiverType = me?.role === 'EMPLOYER' ? 'USER' : 'COMPANY';
 
-  const handleSend = async (e) => {
-    e.preventDefault();
-    const content = draft.trim();
-    if (!content || !activeConversationId || sending) return;
+  const previewForContent = (content, msgType) => {
+    if (content) return content;
+    if (msgType === 'STICKER') return '[Nhãn dán]';
+    if (msgType === 'IMAGE') return '[Hình ảnh]';
+    if (msgType === 'FILE') return '[Tệp đính kèm]';
+    return '';
+  };
+
+  // Gửi 1 tin nhắn (text/attachments hoặc sticker). extra = { stickerUrl, messageType }.
+  const sendPayload = async ({ content = '', extra = {} }) => {
+    if (!activeConversationId || sending) return;
+    const hasSticker = !!extra.stickerUrl;
+    const atts = hasSticker ? [] : attachments;
+    if (!content && atts.length === 0 && !hasSticker) return;
 
     const isNew = String(activeConversationId).startsWith('new-');
     const targetUserId = isNew ? Number(activeConversationId.split('-')[1]) : activeConversation.otherParticipantId;
 
-    // Optimistic update — show message instantly
+    const msgType = extra.messageType
+      || (hasSticker ? 'STICKER'
+        : atts.length > 0 ? (atts.every((a) => (a.contentType || '').startsWith('image/')) ? 'IMAGE' : 'FILE')
+        : 'TEXT');
+    const lp = (!hasSticker && content) ? linkPreview : null;
+
     const tempId = `temp-${Date.now()}`;
     const now = new Date().toISOString();
     const optimisticMsg = {
@@ -294,28 +321,38 @@ const MessagesPage = () => {
       receiverId: targetUserId,
       receiverType,
       content,
+      messageType: msgType,
+      attachments: atts,
+      linkPreview: lp,
+      stickerUrl: extra.stickerUrl || null,
       isRead: false,
       createdAt: now,
       _optimistic: true,
     };
 
     setMessages((prev) => [...prev, optimisticMsg]);
-    setDraft('');
-    
-    if (!isNew) {
-        setConversations((prev) =>
-          sortConversationsForInbox(
-            prev.map((c) =>
-              c.id === activeConversation.id
-                ? { ...c, lastMessageContent: content, lastMessageTime: now }
-                : c
-            )
-          )
-        );
-        chatRealtimeService.send('/app/chat.typing', { conversationId: activeConversation.id, typing: false });
+    // Reset composer cho lần gửi text/file (sticker không dùng các state này)
+    if (!hasSticker) {
+      setDraft('');
+      setAttachments([]);
+      setLinkPreview(null);
+      lastPreviewUrlRef.current = null;
     }
 
-    // Fire API in background
+    if (!isNew) {
+      const previewText = previewForContent(content, msgType);
+      setConversations((prev) =>
+        sortConversationsForInbox(
+          prev.map((c) =>
+            c.id === activeConversation.id
+              ? { ...c, lastMessageContent: previewText, lastMessageTime: now }
+              : c
+          )
+        )
+      );
+      chatRealtimeService.send('/app/chat.typing', { conversationId: activeConversation.id, typing: false });
+    }
+
     setSending(true);
     try {
       const sent = await messageService.sendMessage({
@@ -324,26 +361,68 @@ const MessagesPage = () => {
         receiverType,
         senderType,
         content,
+        messageType: msgType,
+        attachments: atts,
+        linkPreview: lp,
+        stickerUrl: extra.stickerUrl || null,
       });
-      
+
       if (isNew) {
-          // If it was a new conversation, we now have a real ID
-          setActiveConversationId(sent.conversationId);
-          // Refresh conversation list to include the new one
-          const res = await messageService.getConversations({ page: 0, size: 50 });
-          setConversations(sortConversationsForInbox(res?.conversations || []));
+        setActiveConversationId(sent.conversationId);
+        const res = await messageService.getConversations({ page: 0, size: 50 });
+        setConversations(sortConversationsForInbox(res?.conversations || []));
       }
-      
-      // Replace optimistic message with real one
       setMessages((prev) => prev.map((m) => m.id === tempId ? sent : m));
     } catch (err) {
       console.error('Send failed', err);
-      // Remove failed optimistic message
       setMessages((prev) => prev.filter((m) => m.id !== tempId));
-      setDraft(content); // restore draft so user can retry
+      if (!hasSticker) setDraft(content); // restore draft so user can retry
+      toast.error(err?.response?.data?.message || 'Gửi tin nhắn thất bại');
     } finally {
       setSending(false);
     }
+  };
+
+  const handleSend = async (e) => {
+    e.preventDefault();
+    await sendPayload({ content: draft.trim() });
+  };
+
+  const sendSticker = (url) => {
+    setShowPicker(false);
+    sendPayload({ content: '', extra: { stickerUrl: url, messageType: 'STICKER' } });
+  };
+
+  const insertEmoji = (emoji) => {
+    setDraft((d) => d + emoji);
+  };
+
+  // Upload tệp đính kèm đã chọn
+  const handleAttachFiles = async (fileList) => {
+    const files = Array.from(fileList || []);
+    if (files.length === 0) return;
+    setUploading(true);
+    try {
+      for (const file of files) {
+        if (file.size > 10 * 1024 * 1024) {
+          toast.error(`"${file.name}" vượt quá 10MB`);
+          continue;
+        }
+        try {
+          const meta = await messageService.uploadAttachment(file);
+          if (meta?.url) setAttachments((prev) => [...prev, meta]);
+        } catch (err) {
+          toast.error(err?.response?.data?.message || `Không tải được "${file.name}"`);
+        }
+      }
+    } finally {
+      setUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  };
+
+  const removeAttachment = (idx) => {
+    setAttachments((prev) => prev.filter((_, i) => i !== idx));
   };
 
   // CRUD: edit / delete tin nhắn của chính mình.
@@ -394,6 +473,27 @@ const MessagesPage = () => {
 
   const handleDraftChange = (value) => {
     setDraft(value);
+
+    // Phát hiện URL đầu tiên → fetch link preview (debounce 600ms).
+    const match = value.match(FIRST_URL_REGEX);
+    const url = match ? match[0] : null;
+    if (!url) {
+      setLinkPreview(null);
+      lastPreviewUrlRef.current = null;
+    } else if (url !== lastPreviewUrlRef.current) {
+      if (linkDebounceRef.current) clearTimeout(linkDebounceRef.current);
+      linkDebounceRef.current = setTimeout(async () => {
+        lastPreviewUrlRef.current = url;
+        try {
+          const preview = await messageService.getLinkPreview(url);
+          if (preview && (preview.title || preview.image)) setLinkPreview(preview);
+          else setLinkPreview(null);
+        } catch {
+          setLinkPreview(null);
+        }
+      }, 600);
+    }
+
     if (!activeConversation?.id) return;
     chatRealtimeService.send('/app/chat.typing', { conversationId: activeConversation.id, typing: true });
 
@@ -403,10 +503,6 @@ const MessagesPage = () => {
     typingStopTimeoutRef.current = setTimeout(() => {
       chatRealtimeService.send('/app/chat.typing', { conversationId: activeConversation.id, typing: false });
     }, 900);
-  };
-
-  const handleExit = () => {
-    navigate(-1);
   };
 
   /* ── Color tokens ── */
@@ -699,19 +795,17 @@ const MessagesPage = () => {
                           <div className={`px-3.5 py-2 text-[14px] italic shadow-sm border border-dashed ${mine ? 'border-[#0084FF]/30 text-[#0084FF]/70 bg-[#0084FF]/5' : 'border-slate-300 text-slate-500 bg-slate-50'} ${roundedClasses}`}>
                             Tin nhắn đã thu hồi
                           </div>
+                        ) : msg.messageType === 'STICKER' && msg.stickerUrl ? (
+                          /* Sticker — ảnh lớn, không có nền bong bóng */
+                          <img src={msg.stickerUrl} alt="sticker" className="w-28 h-28 object-contain" />
                         ) : (
-                          /* Normal bubble */
+                          /* Normal bubble — text / attachments / link preview */
                           <div className={`
                             px-3.5 py-2 text-[15px] shadow-sm
                             ${mine ? 'bg-[#0084FF] text-white' : 'bg-[#E4E6EB] text-slate-900'}
                             ${roundedClasses}
                           `}>
-                            <p className="whitespace-pre-wrap break-words leading-relaxed">{msg.content}</p>
-                            {msg.isEdited && (
-                              <span className={`text-[10px] ${mine ? 'text-white/60' : 'text-slate-400'} block mt-0.5`}>
-                                (đã sửa)
-                              </span>
-                            )}
+                            <MessageContent msg={msg} mine={mine} />
                           </div>
                         )}
                       </div>
@@ -729,25 +823,123 @@ const MessagesPage = () => {
                 </p>
               </div>
             ) : (
-              <form onSubmit={handleSend} className="p-4 bg-white flex items-center gap-2 flex-shrink-0 pb-6 md:pb-4 border-t border-slate-100">
-                <input
-                  value={draft}
-                  onChange={(e) => handleDraftChange(e.target.value)}
-                  placeholder="Aa"
-                  className="flex-1 h-[40px] px-4 rounded-full bg-slate-100 text-[15px] text-slate-900 outline-none placeholder-slate-500 focus:bg-slate-200/50 transition-colors"
-                />
-                <button
-                  type="submit"
-                  disabled={!draft.trim() || sending}
-                  className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 transition-colors ${
-                    !draft.trim() || sending ? 'text-slate-300' : 'text-[#0084FF] hover:bg-sky-50'
-                  }`}
-                >
-                  <svg viewBox="0 0 24 24" fill="currentColor" className="w-6 h-6">
-                    <path d="M3.4 20.4l17.4.5-17.4-4.5 3-4-3-4 17.4-4.5-17.4.5a2 2 0 0 0-1.8 2.2l1.3 5.4v.8l-1.3 5.4a2 2 0 0 0 1.8 2.2z"></path>
-                  </svg>
-                </button>
-              </form>
+              <div className="bg-white flex-shrink-0 pb-6 md:pb-4 border-t border-slate-100">
+                {/* Link preview phía trên ô soạn */}
+                {linkPreview && (linkPreview.title || linkPreview.image) && (
+                  <div className="px-4 pt-3">
+                    <div className="relative flex gap-3 rounded-xl border border-slate-200 bg-slate-50 p-2 pr-8">
+                      {linkPreview.image && (
+                        <img src={linkPreview.image} alt="" className="w-14 h-14 rounded-lg object-cover flex-shrink-0" />
+                      )}
+                      <div className="min-w-0 self-center">
+                        {linkPreview.siteName && (
+                          <div className="text-[11px] uppercase tracking-wide text-slate-400 truncate">{linkPreview.siteName}</div>
+                        )}
+                        <div className="text-sm font-semibold text-slate-800 line-clamp-1">{linkPreview.title}</div>
+                        {linkPreview.description && (
+                          <div className="text-xs text-slate-500 line-clamp-1">{linkPreview.description}</div>
+                        )}
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => { setLinkPreview(null); lastPreviewUrlRef.current = null; }}
+                        className="absolute right-2 top-2 text-slate-400 hover:text-slate-600"
+                      >
+                        <FaTimes size={12} />
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {/* Chip các tệp/ảnh đã chọn */}
+                {(attachments.length > 0 || uploading) && (
+                  <div className="px-4 pt-3 flex flex-wrap gap-2">
+                    {attachments.map((a, i) => (
+                      <div key={i} className="relative">
+                        {(a.contentType || '').startsWith('image/') ? (
+                          <img src={a.url} alt={a.name} className="w-16 h-16 rounded-lg object-cover border border-slate-200" />
+                        ) : (
+                          <div className="w-40 h-16 rounded-lg border border-slate-200 bg-slate-50 flex items-center gap-2 px-2">
+                            <FaPaperclip className="text-slate-400 flex-shrink-0" />
+                            <span className="text-xs text-slate-600 truncate">{a.name}</span>
+                          </div>
+                        )}
+                        <button
+                          type="button"
+                          onClick={() => removeAttachment(i)}
+                          className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-slate-700 text-white flex items-center justify-center"
+                        >
+                          <FaTimes size={9} />
+                        </button>
+                      </div>
+                    ))}
+                    {uploading && (
+                      <div className="w-16 h-16 rounded-lg border border-dashed border-slate-300 flex items-center justify-center text-slate-400">
+                        <FaSpinner className="animate-spin" />
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                <form onSubmit={handleSend} className="p-4 flex items-center gap-1.5">
+                  {/* Emoji + sticker */}
+                  <div className="relative flex-shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => setShowPicker((v) => !v)}
+                      className="w-10 h-10 rounded-full text-[#0084FF] hover:bg-sky-50 flex items-center justify-center"
+                      aria-label="Emoji & sticker"
+                    >
+                      <FaRegSmile size={20} />
+                    </button>
+                    {showPicker && (
+                      <EmojiStickerPicker
+                        onPickEmoji={insertEmoji}
+                        onPickSticker={sendSticker}
+                        onClose={() => setShowPicker(false)}
+                      />
+                    )}
+                  </div>
+
+                  {/* Đính kèm tệp */}
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={uploading}
+                    className="w-10 h-10 rounded-full text-[#0084FF] hover:bg-sky-50 flex items-center justify-center flex-shrink-0 disabled:opacity-50"
+                    aria-label="Đính kèm tệp"
+                  >
+                    <FaPaperclip size={18} />
+                  </button>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    multiple
+                    accept="image/*,.pdf,.doc,.docx"
+                    className="hidden"
+                    onChange={(e) => handleAttachFiles(e.target.files)}
+                  />
+
+                  <input
+                    value={draft}
+                    onChange={(e) => handleDraftChange(e.target.value)}
+                    placeholder="Aa"
+                    className="flex-1 h-[40px] px-4 rounded-full bg-slate-100 text-[15px] text-slate-900 outline-none placeholder-slate-500 focus:bg-slate-200/50 transition-colors"
+                  />
+
+                  <button
+                    type="submit"
+                    disabled={(!draft.trim() && attachments.length === 0) || sending}
+                    className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 transition-colors ${
+                      (!draft.trim() && attachments.length === 0) || sending ? 'text-slate-300' : 'text-[#0084FF] hover:bg-sky-50'
+                    }`}
+                  >
+                    <svg viewBox="0 0 24 24" fill="currentColor" className="w-6 h-6">
+                      <path d="M3.4 20.4l17.4.5-17.4-4.5 3-4-3-4 17.4-4.5-17.4.5a2 2 0 0 0-1.8 2.2l1.3 5.4v.8l-1.3 5.4a2 2 0 0 0 1.8 2.2z"></path>
+                    </svg>
+                  </button>
+                </form>
+              </div>
             )}
           </>
         ) : (

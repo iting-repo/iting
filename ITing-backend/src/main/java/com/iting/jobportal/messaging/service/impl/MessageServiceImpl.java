@@ -7,6 +7,7 @@ import com.iting.jobportal.messaging.dto.response.MessageResponse;
 import com.iting.jobportal.messaging.entity.Conversation;
 import com.iting.jobportal.messaging.entity.Message;
 import com.iting.jobportal.messaging.enums.ConversationType;
+import com.iting.jobportal.messaging.enums.MessageType;
 import com.iting.jobportal.messaging.enums.ReceiverType;
 import com.iting.jobportal.messaging.enums.SenderType;
 import com.iting.jobportal.messaging.repository.ConversationRepository;
@@ -100,6 +101,17 @@ public class MessageServiceImpl implements MessageService {
                   });
     }
 
+    // Chuẩn hoá nội dung + xác định loại tin nhắn.
+    String content = request.getContent() == null ? null : request.getContent().trim();
+    boolean hasContent = content != null && !content.isBlank();
+    boolean hasAttachments =
+        request.getAttachments() != null && !request.getAttachments().isEmpty();
+    boolean hasSticker = request.getStickerUrl() != null && !request.getStickerUrl().isBlank();
+    if (!hasContent && !hasAttachments && !hasSticker) {
+      throw new RuntimeException("Tin nhắn trống");
+    }
+    MessageType messageType = resolveMessageType(request, hasSticker, hasAttachments);
+
     // Create message
     Message message =
         Message.builder()
@@ -108,14 +120,21 @@ public class MessageServiceImpl implements MessageService {
             .senderType(request.getSenderType())
             .receiverId(request.getReceiverId())
             .receiverType(request.getReceiverType())
-            .content(request.getContent())
+            .content(hasContent ? content : null)
+            .messageType(messageType)
+            .attachments(hasAttachments ? request.getAttachments() : null)
+            .linkPreview(request.getLinkPreview())
+            .stickerUrl(hasSticker ? request.getStickerUrl() : null)
             .isRead(false)
             .build();
 
     final Message savedMessage = messageRepository.save(message);
 
+    // Preview hiển thị ở danh sách hội thoại + notification.
+    String preview = buildPreview(content, messageType);
+
     // Update conversation's last message
-    conversation.setLastMessageContent(request.getContent());
+    conversation.setLastMessageContent(preview);
     conversation.setLastMessageTime(savedMessage.getCreatedAt());
     conversation.setLastMessageId(savedMessage.getId());
     conversationRepository.save(conversation);
@@ -130,6 +149,10 @@ public class MessageServiceImpl implements MessageService {
             .receiverId(savedMessage.getReceiverId())
             .receiverType(savedMessage.getReceiverType())
             .content(savedMessage.getContent())
+            .messageType(savedMessage.getMessageType())
+            .attachments(savedMessage.getAttachments())
+            .linkPreview(savedMessage.getLinkPreview())
+            .stickerUrl(savedMessage.getStickerUrl())
             .isRead(savedMessage.getIsRead())
             .readAt(savedMessage.getReadAt())
             .createdAt(savedMessage.getCreatedAt())
@@ -139,7 +162,7 @@ public class MessageServiceImpl implements MessageService {
     final Long convId = conversation.getId();
     try {
       String senderDisplayName = resolveSenderName(savedMessage);
-      String contentPreview = request.getContent();
+      String contentPreview = preview;
       if (contentPreview != null && contentPreview.length() > 120) {
         contentPreview = contentPreview.substring(0, 120) + "...";
       }
@@ -287,6 +310,34 @@ public class MessageServiceImpl implements MessageService {
 
   // Helper methods
 
+  /** Suy ra loại tin nhắn nếu client không gửi rõ. */
+  private MessageType resolveMessageType(
+      SendMessageRequest request, boolean hasSticker, boolean hasAttachments) {
+    if (request.getMessageType() != null) return request.getMessageType();
+    if (hasSticker) return MessageType.STICKER;
+    if (hasAttachments) {
+      boolean allImages =
+          request.getAttachments().stream()
+              .allMatch(
+                  a ->
+                      a.getContentType() != null
+                          && a.getContentType().toLowerCase().startsWith("image/"));
+      return allImages ? MessageType.IMAGE : MessageType.FILE;
+    }
+    return MessageType.TEXT;
+  }
+
+  /** Text hiển thị ở danh sách hội thoại + notification cho tin nhắn không phải text thuần. */
+  private String buildPreview(String content, MessageType type) {
+    if (content != null && !content.isBlank()) return content;
+    return switch (type) {
+      case STICKER -> "[Nhãn dán]";
+      case IMAGE -> "[Hình ảnh]";
+      case FILE -> "[Tệp đính kèm]";
+      default -> "";
+    };
+  }
+
   private ConversationType determineConversationType(SendMessageRequest request) {
     if (request.getSenderType() == SenderType.USER
         && request.getReceiverType() == ReceiverType.USER) {
@@ -305,6 +356,10 @@ public class MessageServiceImpl implements MessageService {
             .receiverId(message.getReceiverId())
             .receiverType(message.getReceiverType())
             .content(message.getContent())
+            .messageType(message.getMessageType())
+            .attachments(message.getAttachments())
+            .linkPreview(message.getLinkPreview())
+            .stickerUrl(message.getStickerUrl())
             .isRead(message.getIsRead())
             .readAt(message.getReadAt())
             .createdAt(message.getCreatedAt())
