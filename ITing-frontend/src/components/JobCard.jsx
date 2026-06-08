@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FaMapMarkerAlt, FaDollarSign, FaClock, FaBriefcase, FaRegBookmark, FaBookmark } from 'react-icons/fa';
+import { FaMapMarkerAlt, FaDollarSign, FaClock, FaBriefcase, FaRegBookmark, FaBookmark, FaBolt } from 'react-icons/fa';
 import { toast } from 'sonner';
 import { buildJobDetailPath } from '../utils/jobUrl';
 import { jobTypeLabel, experienceLevelLabel } from '../utils/enumLabels';
@@ -20,6 +20,14 @@ function timeAgo(dateStr) {
     if (days < 30) return `${days} ngày trước`;
     const months = Math.floor(days / 30);
     return `${months} tháng trước`;
+}
+
+/** Job đang được boost nếu featuredUntil còn ở tương lai. */
+function isBoosted(job) {
+    const until = job?.featuredUntil;
+    if (!until) return false;
+    const t = new Date(until).getTime();
+    return !Number.isNaN(t) && t > Date.now();
 }
 
 const JobCard = ({ job, onHoverIn, onHoverOut, isHovered = false }) => {
@@ -110,6 +118,11 @@ const JobCard = ({ job, onHoverIn, onHoverOut, isHovered = false }) => {
                     <span className="bg-blue-50 text-[#3AB4E6] text-[10px] font-bold px-2 py-1 rounded">
                         {timeAgo(job.createdAt || job.postedDate || job.createdDate) || job.timePosted || 'Mới đăng'}
                     </span>
+                    {isBoosted(job) && (
+                        <span className="bg-gradient-to-r from-amber-400 to-orange-500 text-white text-[10px] font-bold px-2 py-1 rounded shadow-sm flex items-center gap-1">
+                            <FaBolt className="text-[9px]" /> Nổi bật
+                        </span>
+                    )}
                     {job.isAiSuggested && (
                         <span className="bg-gradient-to-r from-orange-400 to-red-400 text-white text-[10px] font-bold px-2 py-1 rounded shadow-sm flex items-center gap-1">
                              AI Suggestion

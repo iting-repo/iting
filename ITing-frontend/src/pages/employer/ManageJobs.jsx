@@ -16,6 +16,7 @@ import {
   FaExclamationTriangle,
   FaTrash,
   FaMagic,
+  FaBolt,
 } from "react-icons/fa";
 import { BsThreeDotsVertical } from "react-icons/bs";
 import { toast } from "sonner";
@@ -70,6 +71,13 @@ const formatDeadline = (dueDate) => {
   }
 };
 
+/** Job đang được boost nếu featuredUntil còn trong tương lai. */
+const isBoostActive = (featuredUntil) => {
+  if (!featuredUntil) return false;
+  const until = new Date(featuredUntil);
+  return !Number.isNaN(until.getTime()) && until.getTime() > Date.now();
+};
+
 const mapJobToTableRow = (job) => {
   // Auto-detect expired: if status is ACTIVE but dueDate has passed, treat as EXPIRED
   let effectiveStatus = job.status;
@@ -90,6 +98,8 @@ const mapJobToTableRow = (job) => {
     deadline: formatDeadline(job.dueDate),
     status: effectiveStatus,
     apps: job.applicationCount ?? 0,
+    boosted: isBoostActive(job.featuredUntil),
+    featuredUntil: job.featuredUntil || null,
     raw: job,
   };
 };
@@ -107,6 +117,50 @@ const ManageJobs = () => {
   const [editingJob, setEditingJob] = useState(null);
   const [confirmAction, setConfirmAction] = useState(null); // { type, jobId, title }
   const [matchDrawer, setMatchDrawer] = useState({ open: false, jobId: null, jobTitle: "" });
+  const [boostQuota, setBoostQuota] = useState(null); // { tier, limit, used, remaining, unlimited }
+  const [boostingId, setBoostingId] = useState(null);
+
+  const fetchBoostQuota = async () => {
+    try {
+      const data = await companyService.getBoostQuota();
+      setBoostQuota(data || null);
+    } catch (err) {
+      // Không chặn UI nếu lỗi lấy quota
+      console.error("Lỗi load boost quota:", err);
+    }
+  };
+
+  const handleBoostJob = async (jobId) => {
+    setBoostingId(jobId);
+    try {
+      const data = await companyService.boostJobWithQuota(jobId);
+      toast.success(data?.message || "Đã đẩy tin lên đầu trang việc làm");
+      setActiveMenu(null);
+      // Response phẳng: chứa tier/limit/used/remaining cùng jobId/featuredUntil/message
+      if (data && data.limit !== undefined) {
+        setBoostQuota({
+          tier: data.tier,
+          limit: data.limit,
+          used: data.used,
+          remaining: data.remaining,
+          unlimited: data.unlimited,
+        });
+      }
+      await fetchJobs();
+    } catch (err) {
+      // 402 = hết quota → interceptor đã toast; bổ sung gợi ý nâng cấp
+      if (err?.response?.status === 402) {
+        toast.error(
+          err?.response?.data?.message ||
+            "Bạn đã dùng hết lượt boost trong gói. Nâng cấp gói để boost thêm.",
+        );
+      } else {
+        toast.error(err?.response?.data?.message || "Boost tin thất bại");
+      }
+    } finally {
+      setBoostingId(null);
+    }
+  };
 
   const fetchJobs = async () => {
     try {
@@ -124,6 +178,7 @@ const ManageJobs = () => {
 
   useEffect(() => {
     fetchJobs();
+    fetchBoostQuota();
   }, []);
 
   useEffect(() => {
@@ -279,6 +334,14 @@ const ManageJobs = () => {
             <p className="text-gray-500 text-xs md:text-sm mt-1">
               Quản lý trạng thái và hồ sơ ứng tuyển
             </p>
+            {boostQuota && (
+              <span className="inline-flex items-center gap-1.5 mt-2 bg-amber-50 text-amber-700 text-xs font-semibold px-3 py-1 rounded-full border border-amber-100">
+                <FaBolt className="text-[10px]" />
+                {boostQuota.unlimited
+                  ? `Boost không giới hạn (${boostQuota.tier})`
+                  : `Lượt boost: còn ${boostQuota.remaining}/${boostQuota.limit} tháng này`}
+              </span>
+            )}
           </div>
 
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full md:w-auto">
@@ -346,8 +409,15 @@ const ManageJobs = () => {
                     className="hover:bg-gray-50/60 transition-colors group"
                   >
                     <td className="p-4 md:p-5">
-                      <div className="font-bold text-gray-800 text-base mb-1 group-hover:text-[#3AB4E6] transition-colors cursor-pointer line-clamp-1">
-                        {job.title}
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="font-bold text-gray-800 text-base group-hover:text-[#3AB4E6] transition-colors cursor-pointer line-clamp-1">
+                          {job.title}
+                        </span>
+                        {job.boosted && (
+                          <span className="shrink-0 inline-flex items-center gap-1 bg-amber-100 text-amber-700 text-[10px] font-bold px-2 py-0.5 rounded-full">
+                            <FaBolt className="text-[9px]" /> BOOST
+                          </span>
+                        )}
                       </div>
                       <div className="text-sm text-gray-500 flex items-center gap-2">
                         <span className="bg-gray-100 px-2 py-0.5 rounded text-xs text-gray-600">
@@ -427,6 +497,35 @@ const ManageJobs = () => {
                             >
                               <FaMagic /> Tìm ứng viên AI <span className="ml-auto text-[10px] text-amber-600 font-bold">5 credits</span>
                             </button>
+
+                            {job.status === "ACTIVE" &&
+                              (job.boosted ? (
+                                <div className="w-full text-left px-4 py-3 text-sm text-amber-600 flex items-center gap-2 border-b border-gray-50 bg-amber-50/40">
+                                  <FaBolt /> Đang boost
+                                  <span className="ml-auto text-[10px] text-amber-500 font-medium">
+                                    đến {formatDeadline(job.featuredUntil)}
+                                  </span>
+                                </div>
+                              ) : (
+                                <button
+                                  disabled={boostingId === job.id}
+                                  className="w-full text-left px-4 py-3 text-sm text-amber-600 hover:bg-amber-50 flex items-center gap-2 border-b border-gray-50 disabled:opacity-50"
+                                  onClick={() => handleBoostJob(job.id)}
+                                >
+                                  <FaBolt />
+                                  {boostingId === job.id ? "Đang boost..." : "Đẩy lên đầu trang"}
+                                  {boostQuota && !boostQuota.unlimited && (
+                                    <span className="ml-auto text-[10px] text-amber-500 font-bold">
+                                      còn {boostQuota.remaining}/{boostQuota.limit}
+                                    </span>
+                                  )}
+                                  {boostQuota?.unlimited && (
+                                    <span className="ml-auto text-[10px] text-amber-500 font-bold">
+                                      không giới hạn
+                                    </span>
+                                  )}
+                                </button>
+                              ))}
 
                             {job.status === "ACTIVE" && (
                               <button

@@ -81,6 +81,8 @@ const mapJobToCard = (job) => ({
     // edit/approve job → nếu dùng nó, mọi job vừa được duyệt sẽ hiển thị
     // "Vừa xong" sai.
     timePosted: timeAgo(job.createdAt || job.lastUpdate),
+    featuredUntil: job.featuredUntil || null,
+    isAiSuggested: job.isAiSuggested,
 });
 
 const compactParams = (filters) => ({
@@ -303,6 +305,7 @@ const JobPage = () => {
                         postedAt: job.createdAt || job.lastUpdate,
                         isHot: job.viewCount > 100 || job.applicationCount > 50,
                         featured: job.featured,
+                        featuredUntil: job.featuredUntil || null,
                         isAiSuggested: job.isAiSuggested
                     }));
                     setRecommendedJobs(mapped);

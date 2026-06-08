@@ -14,7 +14,7 @@ import {
     FaSearch, FaMapMarkerAlt, FaBriefcase, FaBuilding, FaUserFriends,
     FaCode, FaCloud, FaShieldAlt, FaDatabase, FaMobileAlt, FaPencilRuler, FaBug,
     FaArrowRight, FaRegBookmark, FaBookmark, FaClock, FaFilter, FaArrowLeft, FaMagic, FaChevronRight,
-    FaCubes, FaGamepad, FaLaptopCode, FaCloudUploadAlt, FaFilePdf, FaKeyboard
+    FaCubes, FaGamepad, FaLaptopCode, FaCloudUploadAlt, FaFilePdf, FaKeyboard, FaBolt
 } from 'react-icons/fa';
 import { toast } from 'sonner';
 import jobService from '../../services/jobService';
@@ -1094,6 +1094,11 @@ const HomePage = () => {
                                                         {job.title || job.position}
                                                     </h3>
                                                     <p className="text-xs md:text-sm text-gray-500 font-medium mt-1 truncate">{job.companyName}</p>
+                                                    {job.featuredUntil && new Date(job.featuredUntil).getTime() > Date.now() && (
+                                                        <span className="inline-flex items-center gap-1 mt-1.5 bg-gradient-to-r from-amber-400 to-orange-500 text-white text-[10px] font-bold px-2 py-0.5 rounded shadow-sm">
+                                                            <FaBolt className="text-[9px]" /> Nổi bật
+                                                        </span>
+                                                    )}
                                                 </div>
                                                 <button
                                                     type="button"

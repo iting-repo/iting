@@ -58,6 +58,18 @@ const companyService = {
     return await axiosInstance.get(`/hr/jobs/my-jobs?page=${page}&size=${size}`);
   },
 
+  // ─── BOOST (gói bao gồm — miễn phí theo quota) ────────────────────────
+
+  /** Số lượt boost đã dùng / hạn mức tháng của HR ({ tier, limit, used, remaining, unlimited }). */
+  getBoostQuota: async () => {
+    return await axiosInstance.get(`/hr/boost-quota`);
+  },
+
+  /** Boost job lên đầu trang bằng quota gói (miễn phí). Ném 402 khi hết hạn mức. */
+  boostJobWithQuota: async (jobId) => {
+    return await axiosInstance.post(`/hr/jobs/${jobId}/boost-quota`);
+  },
+
   // ─── BUSINESS LICENSE / LOGO ──────────────────────────────────────────
 
   /**
