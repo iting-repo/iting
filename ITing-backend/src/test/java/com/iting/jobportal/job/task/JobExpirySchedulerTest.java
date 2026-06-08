@@ -10,7 +10,6 @@ import com.iting.jobportal.admin.entity.SystemConfig;
 import com.iting.jobportal.admin.service.AdminConfigService;
 import com.iting.jobportal.job.entity.enums.JobStatus;
 import com.iting.jobportal.job.repository.JobRepository;
-import java.time.LocalDateTime;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -25,27 +24,36 @@ class JobExpirySchedulerTest {
   @InjectMocks private JobExpiryScheduler scheduler;
 
   @Test
-  void doesNothing_whenJobExpiryDaysNotConfigured() {
+  void doesNothing_whenJobExpiryDaysDisabled() {
+    // jobExpiryDays <= 0 → tắt scheduler
+    when(adminConfigService.getConfig())
+        .thenReturn(SystemConfig.builder().jobExpiryDays(0).build());
+
+    scheduler.expireOverdueJobs();
+
+    verify(jobRepository, never()).expirePastDueJobs(any(), any());
+  }
+
+  @Test
+  void doesNothing_whenJobExpiryDaysNull() {
     when(adminConfigService.getConfig())
         .thenReturn(SystemConfig.builder().jobExpiryDays(null).build());
 
     scheduler.expireOverdueJobs();
 
-    verify(jobRepository, never()).expireJobsPostedBefore(any(), any(), any());
+    verify(jobRepository, never()).expirePastDueJobs(any(), any());
   }
 
   @Test
-  void expiresActiveJobsOlderThanThreshold() {
+  void expiresOnlyPastDueJobs_whenEnabled() {
     when(adminConfigService.getConfig())
         .thenReturn(SystemConfig.builder().jobExpiryDays(30).build());
-    when(jobRepository.expireJobsPostedBefore(
-            eq(JobStatus.EXPIRED), eq(JobStatus.ACTIVE), any(LocalDateTime.class)))
-        .thenReturn(3);
+    when(jobRepository.expirePastDueJobs(eq(JobStatus.EXPIRED), eq(JobStatus.ACTIVE)))
+        .thenReturn(2);
 
     scheduler.expireOverdueJobs();
 
-    verify(jobRepository)
-        .expireJobsPostedBefore(
-            eq(JobStatus.EXPIRED), eq(JobStatus.ACTIVE), any(LocalDateTime.class));
+    // Đóng theo dueDate quá hạn, KHÔNG theo tuổi createdAt
+    verify(jobRepository).expirePastDueJobs(eq(JobStatus.EXPIRED), eq(JobStatus.ACTIVE));
   }
 }
