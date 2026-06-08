@@ -2,9 +2,7 @@ package com.iting.jobportal.recommendation.service.impl;
 
 import com.iting.jobportal.job.dto.response.JobResponse;
 import com.iting.jobportal.job.entity.Job;
-import com.iting.jobportal.job.entity.enums.ExperienceLevel;
 import com.iting.jobportal.job.entity.enums.JobStatus;
-import com.iting.jobportal.job.entity.enums.JobType;
 import com.iting.jobportal.job.repository.JobRepository;
 import com.iting.jobportal.job.service.JobEmbeddingService;
 import com.iting.jobportal.job.service.UserSavedJobService;
@@ -72,10 +70,12 @@ import org.springframework.stereotype.Service;
 public class RecommendationServiceImpl implements RecommendationService {
 
   // ─── Trọng số các yếu tố ─────────────────────────────────────────
-  private static final double W_SEMANTIC = 30.0;
+  // Tăng trọng số semantic (CV↔job) để kết quả "đúng"/liên quan hơn với hồ sơ ứng viên.
+  private static final double W_SEMANTIC = 36.0;
   private static final double W_SEARCH = 20.0;
-  private static final double W_SKILL = 15.0;
-  private static final double W_LOCATION = 10.0;
+  private static final double W_SKILL = 18.0;
+  // Location nâng từ 10 → 18: ưu tiên rõ job cùng khu vực với hồ sơ/hành vi của ứng viên.
+  private static final double W_LOCATION = 18.0;
   private static final double W_JOBTYPE = 5.0;
   private static final double W_EXP = 5.0;
   private static final double W_SALARY = 5.0;
@@ -87,11 +87,21 @@ public class RecommendationServiceImpl implements RecommendationService {
   private static final int MAX_PER_COMPANY = 2;
   private static final double DIVERSITY_PENALTY = 0.6;
 
+  // MMR (Maximal Marginal Relevance): cân bằng độ liên quan & đa dạng để không trả về
+  // nhiều job na ná nhau. λ càng cao → ưu tiên liên quan; (1-λ) → ưu tiên đa dạng.
+  private static final double MMR_LAMBDA = 0.72;
+  // Chỉ MMR-rerank trên top N ứng viên liên quan nhất (giới hạn chi phí O(N²)).
+  private static final int MMR_RERANK_POOL = 60;
+
   // Pool ứng viên — đủ rộng để bao quát job cũ phù hợp hồ sơ user
-  private static final int CANDIDATE_POOL_SIZE = 200;
+  private static final int CANDIDATE_POOL_SIZE = 400;
 
   // Half-life: behavior cũ giảm trọng số theo thời gian
   private static final double BEHAVIOR_HALFLIFE_DAYS = 30.0;
+
+  // Trọng số nền khi seed sở thích từ hồ sơ (UserProfile) — đủ để cold-profile (chưa có hành vi) có
+  // tín hiệu khu vực/ngành, nhưng nhỏ để hành vi thật (tích lũy lớn dần) lấn át theo thời gian.
+  private static final double PROFILE_SEED_WEIGHT = 2.0;
 
   private final JobRepository jobRepository;
   private final InteractionService interactionService;
@@ -101,6 +111,8 @@ public class RecommendationServiceImpl implements RecommendationService {
   private final UserJobInteractionRepository interactionRepository;
   private final JobEmbeddingService jobEmbeddingService;
   private final UserSavedJobService userSavedJobService;
+  private final com.iting.jobportal.userprofile.repository.UserProfileRepository
+      userProfileRepository;
 
   @Override
   @org.springframework.transaction.annotation.Transactional(readOnly = true)
@@ -269,8 +281,8 @@ public class RecommendationServiceImpl implements RecommendationService {
   private BehavioralProfile buildBehavioralProfile(Long userId) {
     Map<String, Double> skillPref = new HashMap<>();
     Map<String, Double> locPref = new HashMap<>();
-    Map<JobType, Double> jobTypePref = new HashMap<>();
-    Map<ExperienceLevel, Double> expPref = new HashMap<>();
+    Map<String, Double> jobTypePref = new HashMap<>();
+    Map<String, Double> expPref = new HashMap<>();
     Map<Long, Double> companyPref = new HashMap<>();
     List<BigDecimal> salaryAnchors = new ArrayList<>();
 
@@ -324,6 +336,10 @@ public class RecommendationServiceImpl implements RecommendationService {
       log.warn("Failed to build behavioral profile for user {}: {}", userId, e.getMessage());
     }
 
+    // Seed thêm từ hồ sơ ứng viên (UserProfile): location + kỹ năng + headline. Nhờ đó người dùng
+    // CHƯA có hành vi vẫn được gợi ý đúng khu vực/ngành ngay từ đầu.
+    seedPreferencesFromProfile(userId, skillPref, locPref);
+
     BigDecimal salaryAnchor = null;
     if (!salaryAnchors.isEmpty()) {
       BigDecimal sum = BigDecimal.ZERO;
@@ -334,6 +350,53 @@ public class RecommendationServiceImpl implements RecommendationService {
 
     return new BehavioralProfile(
         skillPref, locPref, jobTypePref, expPref, companyPref, salaryAnchor);
+  }
+
+  /**
+   * Mồi (seed) sở thích từ hồ sơ ứng viên (UserProfile): location, kỹ năng, headline. Mục đích: gợi ý
+   * đúng khu vực/ngành ngay cả khi user CHƯA có hành vi (cold profile). Trọng số nền nhỏ
+   * ({@link #PROFILE_SEED_WEIGHT}) nên khi đã có hành vi thật (tích lũy lớn dần) thì seed bị pha loãng
+   * tự nhiên. So khớp chuỗi thuần — KHÔNG dùng Knowledge Graph.
+   */
+  private void seedPreferencesFromProfile(
+      Long userId, Map<String, Double> skillPref, Map<String, Double> locPref) {
+    if (userId == null) return;
+    try {
+      var profileOpt = userProfileRepository.findByAccount_Id(userId);
+      if (profileOpt.isEmpty()) return;
+      var profile = profileOpt.get();
+
+      // Location: seed cả chuỗi đầy đủ + phần thành phố (đoạn sau dấu phẩy cuối, vd "TP. Hồ Chí Minh").
+      String loc = profile.getLocation();
+      if (loc != null && !loc.isBlank()) {
+        String full = normalize(loc);
+        if (!full.isEmpty()) locPref.merge(full, PROFILE_SEED_WEIGHT, Double::sum);
+        int comma = loc.lastIndexOf(',');
+        if (comma >= 0 && comma < loc.length() - 1) {
+          String city = normalize(loc.substring(comma + 1));
+          if (!city.isEmpty()) locPref.merge(city, PROFILE_SEED_WEIGHT, Double::sum);
+        }
+      }
+
+      // Kỹ năng khai báo trong hồ sơ.
+      if (profile.getSkills() != null) {
+        for (var s : profile.getSkills()) {
+          if (s.getName() != null && !s.getName().isBlank()) {
+            skillPref.merge(normalize(s.getName()), PROFILE_SEED_WEIGHT, Double::sum);
+          }
+        }
+      }
+
+      // Headline (vd "Senior Java Backend Developer") → tách token, trọng số thấp hơn skill.
+      String headline = profile.getHeadline();
+      if (headline != null) {
+        for (String tok : headline.toLowerCase().split("\\s+")) {
+          if (tok.length() >= 3) skillPref.merge(tok, PROFILE_SEED_WEIGHT * 0.4, Double::sum);
+        }
+      }
+    } catch (Exception e) {
+      log.warn("Failed to seed preferences from profile for user {}: {}", userId, e.getMessage());
+    }
   }
 
   // =================================================================
@@ -438,8 +501,22 @@ public class RecommendationServiceImpl implements RecommendationService {
     double maxPref = profile.locPref.values().stream().max(Double::compareTo).orElse(1.0);
     if (maxPref <= 0) return 0.0;
 
-    Double p = profile.locPref.get(normalize(job.getProvince()));
-    return p == null ? 0.0 : Math.min(1.0, p / maxPref);
+    String jobProv = normalize(job.getProvince());
+    if (jobProv.isEmpty()) return 0.0;
+
+    // Khớp linh hoạt (contains 2 chiều) để hồ sơ "Quận 1, TP. Hồ Chí Minh" vẫn khớp tin ghi
+    // "TP. Hồ Chí Minh" / "Hồ Chí Minh". So khớp chuỗi thuần — KHÔNG dùng Knowledge Graph.
+    double best = 0.0;
+    for (Map.Entry<String, Double> e : profile.locPref.entrySet()) {
+      String key = e.getKey();
+      if (key.isEmpty()) continue;
+      boolean match =
+          key.equals(jobProv)
+              || (key.length() >= 4 && jobProv.contains(key))
+              || (jobProv.length() >= 4 && key.contains(jobProv));
+      if (match) best = Math.max(best, e.getValue() / maxPref);
+    }
+    return Math.min(1.0, best);
   }
 
   private <T> double scoreEnumPreference(T value, Map<T, Double> pref) {
@@ -487,27 +564,74 @@ public class RecommendationServiceImpl implements RecommendationService {
   // DIVERSITY — giới hạn số job mỗi công ty trong top
   // =================================================================
 
+  /**
+   * Chọn kết quả cuối theo MMR (Maximal Marginal Relevance): mỗi bước chọn job có điểm
+   * <code>λ·relevance − (1−λ)·max_similarity_to_đã_chọn</code> cao nhất → vừa liên quan vừa đa dạng,
+   * tránh trả về loạt job na ná nhau. Kèm soft-cap số job mỗi công ty. Độ tương tự dùng chính
+   * embedding của job (job thiếu embedding coi như khác biệt → vẫn được đa dạng hóa tự nhiên).
+   */
   private List<JobResponse> applyDiversityAndLimit(List<ScoredJob> scored, int limit) {
+    if (scored.isEmpty() || limit <= 0) return List.of();
+
+    int poolSize = Math.min(scored.size(), Math.max(limit * 5, MMR_RERANK_POOL));
+    List<ScoredJob> pool = new ArrayList<>(scored.subList(0, poolSize)); // scored đã sort desc
+
+    double maxScore = pool.stream().mapToDouble(ScoredJob::score).max().orElse(1.0);
+    final double maxScoreF = maxScore <= 0 ? 1.0 : maxScore;
+
+    Map<Long, double[]> vecCache = new HashMap<>();
+    java.util.function.Function<Job, double[]> vecOf =
+        (j) ->
+            vecCache.computeIfAbsent(
+                j.getId(),
+                id ->
+                    j.getJobEmbedding() == null
+                        ? null
+                        : jobEmbeddingService.parseEmbedding(j.getJobEmbedding()));
+
+    List<JobResponse> out = new ArrayList<>();
+    List<double[]> selectedVecs = new ArrayList<>();
     Map<Long, Integer> companyCount = new HashMap<>();
-    List<ScoredJob> rescored = new ArrayList<>(scored.size());
 
-    for (ScoredJob sj : scored) {
-      Long companyId = sj.job().getCompany() == null ? null : sj.job().getCompany().getId();
-      int count = companyId == null ? 0 : companyCount.getOrDefault(companyId, 0);
-      double finalScore = sj.score();
-      if (count >= MAX_PER_COMPANY) {
-        finalScore *= Math.pow(DIVERSITY_PENALTY, count - MAX_PER_COMPANY + 1);
+    while (out.size() < limit && !pool.isEmpty()) {
+      int bestIdx = -1;
+      double bestMmr = -Double.MAX_VALUE;
+      for (int i = 0; i < pool.size(); i++) {
+        ScoredJob sj = pool.get(i);
+        Long companyId = sj.job().getCompany() == null ? null : sj.job().getCompany().getId();
+        int cc = companyId == null ? 0 : companyCount.getOrDefault(companyId, 0);
+
+        double rel = sj.score() / maxScoreF;
+        if (cc >= MAX_PER_COMPANY) {
+          rel *= Math.pow(DIVERSITY_PENALTY, cc - MAX_PER_COMPANY + 1);
+        }
+
+        double maxSim = 0.0;
+        double[] v = vecOf.apply(sj.job());
+        if (v != null) {
+          for (double[] sv : selectedVecs) {
+            double s = cosine(v, sv);
+            if (s > maxSim) maxSim = s;
+          }
+        }
+
+        double mmr = MMR_LAMBDA * rel - (1 - MMR_LAMBDA) * maxSim;
+        if (mmr > bestMmr) {
+          bestMmr = mmr;
+          bestIdx = i;
+        }
       }
-      rescored.add(new ScoredJob(sj.job(), finalScore));
-      if (companyId != null) companyCount.merge(companyId, 1, Integer::sum);
-    }
 
-    return rescored.stream()
-        .sorted(Comparator.comparingDouble(ScoredJob::score).reversed())
-        .limit(limit)
-        .map(sj -> JobResponse.fromEntity(sj.job()))
-        .filter(r -> r.getCompanyName() != null)
-        .collect(Collectors.toList());
+      ScoredJob chosen = pool.remove(bestIdx);
+      JobResponse r = JobResponse.fromEntity(chosen.job());
+      if (r.getCompanyName() == null) continue;
+      out.add(r);
+      Long companyId = chosen.job().getCompany() == null ? null : chosen.job().getCompany().getId();
+      if (companyId != null) companyCount.merge(companyId, 1, Integer::sum);
+      double[] v = vecOf.apply(chosen.job());
+      if (v != null) selectedVecs.add(v);
+    }
+    return out;
   }
 
   // =================================================================
@@ -563,8 +687,8 @@ public class RecommendationServiceImpl implements RecommendationService {
   private record BehavioralProfile(
       Map<String, Double> skillPref,
       Map<String, Double> locPref,
-      Map<JobType, Double> jobTypePref,
-      Map<ExperienceLevel, Double> expPref,
+      Map<String, Double> jobTypePref,
+      Map<String, Double> expPref,
       Map<Long, Double> companyPref,
       BigDecimal salaryAnchor) {}
 
