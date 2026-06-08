@@ -72,6 +72,24 @@ public class LocalFileUploadServiceImpl implements FileUploadService {
   }
 
   @Override
+  public boolean objectExists(String fileUrl) {
+    if (fileUrl == null || fileUrl.isBlank()) {
+      return false;
+    }
+    // Local chỉ phục vụ các tệp lưu nội bộ (đường dẫn tương đối "/uploads/...").
+    // URL ngoài (vd S3 seed) trong môi trường local coi như không xem được → trả false.
+    if (!fileUrl.startsWith("/")) {
+      return false;
+    }
+    try {
+      Path filePath = Paths.get(fileUrl.substring(1));
+      return Files.exists(filePath) && Files.isRegularFile(filePath);
+    } catch (Exception e) {
+      return false;
+    }
+  }
+
+  @Override
   public String uploadBytes(byte[] bytes, String key, String contentType) {
     try {
       Path filePath = Paths.get(UPLOAD_DIR + key);

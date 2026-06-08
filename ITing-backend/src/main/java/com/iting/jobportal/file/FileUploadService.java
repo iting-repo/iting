@@ -10,6 +10,13 @@ public interface FileUploadService {
 
   String generatePresignedUrl(String fileUrl, int minutes);
 
+  /**
+   * Kiểm tra object/tệp tương ứng với {@code fileUrl} có thực sự tồn tại trên storage hay không.
+   * Dùng để tránh cấp presigned URL trỏ tới object không tồn tại (gây lỗi S3 NoSuchKey thô khi
+   * hiển thị preview). Trả về {@code false} nếu URL trống, không hợp lệ, hoặc object không tồn tại.
+   */
+  boolean objectExists(String fileUrl);
+
   String uploadAvatar(MultipartFile file);
 
   String uploadBusinessLicense(MultipartFile file);

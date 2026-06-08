@@ -5,6 +5,7 @@ import java.net.URL;
 import java.time.Duration;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Service;
@@ -13,10 +14,13 @@ import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
 import software.amazon.awssdk.services.s3.model.GetObjectRequest;
+import software.amazon.awssdk.services.s3.model.HeadObjectRequest;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
+import software.amazon.awssdk.services.s3.model.S3Exception;
 import software.amazon.awssdk.services.s3.presigner.S3Presigner;
 import software.amazon.awssdk.services.s3.presigner.model.GetObjectPresignRequest;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 @ConditionalOnProperty(name = "aws.enabled", havingValue = "true")
@@ -90,6 +94,31 @@ public class S3FileUploadServiceImpl implements FileUploadService {
 
     URL presignedUrl = s3Presigner.presignGetObject(presignRequest).url();
     return presignedUrl.toString();
+  }
+
+  @Override
+  public boolean objectExists(String fileUrl) {
+    if (fileUrl == null || fileUrl.isBlank()) {
+      return false;
+    }
+    String prefix = "amazonaws.com/";
+    int idx = fileUrl.indexOf(prefix);
+    if (idx < 0) {
+      return false;
+    }
+    String key = fileUrl.substring(idx + prefix.length());
+    try {
+      s3Client.headObject(HeadObjectRequest.builder().bucket(bucket).key(key).build());
+      return true;
+    } catch (S3Exception e) {
+      // 404 (NoSuchKey) → object không tồn tại. Các lỗi khác cũng coi như không xem được để
+      // tránh trả presigned URL hỏng (gây lỗi S3 thô khi hiển thị preview).
+      if (e.statusCode() != 404) {
+        log.warn("Không kiểm tra được object S3 key={} ({})", key, e.awsErrorDetails() != null
+            ? e.awsErrorDetails().errorCode() : e.getMessage());
+      }
+      return false;
+    }
   }
 
   /** Delete a file from S3 by its full URL. */

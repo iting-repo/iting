@@ -411,8 +411,11 @@ public class AffiliationServiceImpl implements AffiliationService {
   public String getLicensePresignedUrl(Long hrAccountId, int expiryMinutes) {
     CompanyHrAffiliation aff = requireActiveAffiliation(hrAccountId);
     String url = aff.getSubmittedLicenseUrl();
-    if (isBlank(url))
-      throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Chưa upload giấy phép");
+    // Chưa upload hoặc object không tồn tại trên storage → trả null để FE hiển thị placeholder
+    // thay vì nhúng presigned URL hỏng (gây lỗi S3 NoSuchKey thô).
+    if (isBlank(url) || !fileUploadService.objectExists(url)) {
+      return null;
+    }
     return fileUploadService.generatePresignedUrl(url, expiryMinutes);
   }
 

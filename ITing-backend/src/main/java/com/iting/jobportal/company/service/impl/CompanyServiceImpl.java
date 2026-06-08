@@ -246,8 +246,10 @@ public class CompanyServiceImpl implements CompanyService {
     Company company = getCompanyByAccountId(accountId);
 
     String fileUrl = company.getBusinessLicenseFileUrl();
-    if (fileUrl == null || fileUrl.isBlank()) {
-      throw new IllegalArgumentException("Công ty chưa tải giấy phép kinh doanh");
+    // Chưa có file hoặc object không tồn tại trên storage → trả null để FE hiển thị placeholder
+    // thay vì nhúng presigned URL hỏng (gây lỗi S3 NoSuchKey thô).
+    if (fileUrl == null || fileUrl.isBlank() || !fileUploadService.objectExists(fileUrl)) {
+      return null;
     }
 
     return fileUploadService.generatePresignedUrl(fileUrl, minutes);

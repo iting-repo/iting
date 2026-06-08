@@ -51,7 +51,9 @@ public class CompanyController {
 
     String presignedUrl = companyService.getBusinessLicensePresignedUrlByAccountId(userId, 15);
 
-    return ResponseEntity.ok(Map.of("url", presignedUrl));
+    // singletonMap chấp nhận value null (Map.of thì không) → trả {"url": null} khi chưa có/file
+    // không tồn tại, để FE hiển thị placeholder thay vì lỗi.
+    return ResponseEntity.ok(java.util.Collections.singletonMap("url", presignedUrl));
   }
 
   @PostMapping(value = "/me/consent-document", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)

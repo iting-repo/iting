@@ -61,7 +61,7 @@ public class HrCompanyController {
     }
 
     String url = companyService.getBusinessLicensePresignedUrlByAccountId(hrAccountId, 15);
-    return ResponseEntity.ok(Map.of("url", url));
+    return ResponseEntity.ok(java.util.Collections.singletonMap("url", url));
   }
 
   @GetMapping("/{id}/followers/count")

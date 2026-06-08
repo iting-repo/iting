@@ -130,7 +130,8 @@ public class HrAffiliationController {
   public ResponseEntity<Map<String, String>> viewLicense(
       @Parameter(hidden = true) @CurrentUser Long hrAccountId) {
     return ResponseEntity.ok(
-        Map.of("url", affiliationService.getLicensePresignedUrl(hrAccountId, 15)));
+        java.util.Collections.singletonMap(
+            "url", affiliationService.getLicensePresignedUrl(hrAccountId, 15)));
   }
 
   @GetMapping("/logo/view")
