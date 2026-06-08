@@ -34,6 +34,7 @@ const MessagesPage = () => {
   // Attachments + link preview + emoji/sticker composer state
   const [attachments, setAttachments] = useState([]); // [{url,name,contentType,size}]
   const [uploading, setUploading] = useState(false);
+  const [isDragging, setIsDragging] = useState(false); // kéo-thả file vào khung chat
   const [linkPreview, setLinkPreview] = useState(null);
   const [showPicker, setShowPicker] = useState(false);
   const fileInputRef = useRef(null);
@@ -163,14 +164,12 @@ const MessagesPage = () => {
             return next;
           }
 
-          // If we have an optimistic message from this sender with the same content,
-          // ignore the websocket echo and wait for HTTP replacement to avoid duplicates.
-          const isOwnOptimistic = prev.some(m =>
-            m._optimistic &&
-            m.senderId === incoming.senderId &&
-            m.content === incoming.content
-          );
-          if (isOwnOptimistic) return prev;
+          // Tin nhắn MỚI của chính mình: đã hiển thị optimistic và sẽ được thay bằng
+          // HTTP response → bỏ qua echo websocket để tránh nhân đôi. Trước đây so khớp
+          // theo `content`, nhưng ảnh/sticker/file có content rỗng nên so khớp sai →
+          // echo bị append thành bản sao. Skip theo senderId là chắc chắn.
+          // (Edit/Delete tin của mình đã được xử lý ở nhánh existingIdx >= 0 phía trên.)
+          if (incoming.senderId === myActorId) return prev;
 
           return [...prev, incoming];
         });
@@ -425,6 +424,30 @@ const MessagesPage = () => {
     setAttachments((prev) => prev.filter((_, i) => i !== idx));
   };
 
+  // ── Kéo-thả file vào khung chat → đính kèm như nút kẹp giấy ──
+  const dragHasFiles = (e) =>
+    Array.from(e.dataTransfer?.types || []).includes('Files');
+
+  const handleDragOver = (e) => {
+    if (!activeConversationId || !dragHasFiles(e)) return;
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'copy';
+    if (!isDragging) setIsDragging(true);
+  };
+
+  const handleDragLeave = (e) => {
+    // Chỉ tắt khi rời hẳn khung chat (không phải di chuyển qua phần tử con).
+    if (!e.currentTarget.contains(e.relatedTarget)) setIsDragging(false);
+  };
+
+  const handleDrop = (e) => {
+    if (!activeConversationId || !dragHasFiles(e)) return;
+    e.preventDefault();
+    setIsDragging(false);
+    const files = e.dataTransfer?.files;
+    if (files && files.length > 0) handleAttachFiles(files);
+  };
+
   // CRUD: edit / delete tin nhắn của chính mình.
   // WebSocket sẽ broadcast tin nhắn updated qua /topic/conversation/{id} →
   // setMessages handler (logic findIndex ở trên) update in-place tự động.
@@ -650,11 +673,22 @@ const MessagesPage = () => {
       </aside>
 
       {/* ─── Chat area (Main content) ─── */}
-      <section 
-        className={`flex-1 flex-col min-w-0 min-h-0 bg-white ${
+      <section
+        className={`relative flex-1 flex-col min-w-0 min-h-0 bg-white ${
           activeConversationId ? 'flex' : 'hidden md:flex'
         }`}
+        onDragOver={handleDragOver}
+        onDragLeave={handleDragLeave}
+        onDrop={handleDrop}
       >
+        {/* Lớp phủ khi kéo file vào */}
+        {isDragging && activeConversation && (
+          <div className="absolute inset-2 z-30 flex flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-[#0084FF] bg-sky-50/90 pointer-events-none">
+            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#0084FF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" x2="12" y1="3" y2="15"/></svg>
+            <p className="text-sm font-bold text-[#0084FF]">Thả file vào đây để gửi</p>
+            <p className="text-xs text-slate-500">Ảnh, PDF, Word — tối đa 10MB/tệp</p>
+          </div>
+        )}
         {activeConversation ? (
           <>
             {/* Chat header */}
