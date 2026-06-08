@@ -1026,7 +1026,13 @@ const JobDetailPage = () => {
                                     </h3>
                                     <p className="text-sm text-gray-500">
                                         • Ứng viên nộp hồ sơ trực tuyến bằng cách bấm{' '}
-                                        <strong>Ứng tuyển ngay</strong> dưới đây.
+                                        <button
+                                            type="button"
+                                            onClick={() => !hasApplied && !isCompanySuspended && setIsApplyModalOpen(true)}
+                                            className="font-semibold text-[#3AB4E6] hover:underline"
+                                        >
+                                            Ứng tuyển ngay
+                                        </button>.
                                     </p>
                                     <p className="text-sm text-gray-400 mt-2">
                                         Hạn nộp hồ sơ: {jobDetail.deadline}

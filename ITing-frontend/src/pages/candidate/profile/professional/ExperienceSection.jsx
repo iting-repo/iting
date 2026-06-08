@@ -133,17 +133,17 @@ const ExperienceSection = () => {
                             <form onSubmit={handleAddSubmit} className="space-y-4">
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     <div>
-                                        <label className="block text-xs font-medium text-gray-700 mb-1">Vị trí chức danh *</label>
+                                        <label className="block text-xs font-medium text-gray-700 mb-1">Vị trí chức danh <span className="text-red-500">*</span></label>
                                         <Input name="position" value={formData.position} onChange={handleChange} placeholder="VD: Senior Frontend Developer" className={formErrors.position ? 'border-red-500' : ''} />
                                         {formErrors.position && <span className="text-red-500 text-xs mt-1 block">* {formErrors.position}</span>}
                                     </div>
                                     <div>
-                                        <label className="block text-xs font-medium text-gray-700 mb-1">Tên công ty *</label>
+                                        <label className="block text-xs font-medium text-gray-700 mb-1">Tên công ty <span className="text-red-500">*</span></label>
                                         <Input name="companyName" value={formData.companyName} onChange={handleChange} placeholder="VD: FPT Software" className={formErrors.companyName ? 'border-red-500' : ''} />
                                         {formErrors.companyName && <span className="text-red-500 text-xs mt-1 block">* {formErrors.companyName}</span>}
                                     </div>
                                     <div>
-                                        <label className="block text-xs font-medium text-gray-700 mb-1">Ngày bắt đầu *</label>
+                                        <label className="block text-xs font-medium text-gray-700 mb-1">Ngày bắt đầu <span className="text-red-500">*</span></label>
                                         <Input type="date" name="startDate" value={formData.startDate} onChange={handleChange} className={formErrors.startDate ? 'border-red-500' : ''} />
                                         {formErrors.startDate && <span className="text-red-500 text-xs mt-1 block">* {formErrors.startDate}</span>}
                                     </div>

@@ -185,7 +185,7 @@ const PersonalInfoTab = () => {
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
 
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Họ và tên *</label>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Họ và tên <span className="text-red-500">*</span></label>
                                 <input
                                     name="fullName"
                                     type="text"
@@ -210,7 +210,7 @@ const PersonalInfoTab = () => {
                             </div>
 
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Số điện thoại *</label>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Số điện thoại <span className="text-red-500">*</span></label>
                                 <input
                                     name="phoneNum"
                                     type="text"

@@ -96,7 +96,7 @@ const SkillsSection = () => {
                         <div className="p-4 md:p-6 overflow-y-auto">
                             <form onSubmit={handleAddSkill} className="space-y-4 flex flex-col">
                                 <div className="flex-1 w-full">
-                                    <label className="block text-xs text-gray-500 mb-1">Tên kỹ năng *</label>
+                                    <label className="block text-xs text-gray-500 mb-1">Tên kỹ năng <span className="text-red-500">*</span></label>
                                     <div className="grid grid-cols-1 md:grid-cols-[1fr_auto] gap-2">
                                         <div className="relative">
                                             <select

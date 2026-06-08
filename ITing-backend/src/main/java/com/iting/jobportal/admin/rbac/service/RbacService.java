@@ -61,6 +61,9 @@ public interface RbacService {
   /** Nâng một tài khoản công khai/HR thành nhân sự nội bộ ITing. */
   StaffResponse promoteToStaff(Long actorId, Long accountId);
 
+  /** Tạo tài khoản nội bộ ITing mới (đăng nhập được), tuỳ chọn gán luôn platform role. */
+  StaffResponse createInternalAccount(Long actorId, CreateInternalAccountRequest request);
+
   /** Thu hồi platform role đang gán (xóa adminRole). */
   void clearPlatformRole(Long actorId, Long accountId);
 

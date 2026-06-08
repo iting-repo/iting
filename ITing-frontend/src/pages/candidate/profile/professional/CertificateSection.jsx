@@ -132,12 +132,12 @@ const CertificateSection = () => {
                             <form onSubmit={handleAddSubmit} className="space-y-4">
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     <div>
-                                        <label className="block text-xs font-medium text-gray-700 mb-1">Tên chứng chỉ *</label>
+                                        <label className="block text-xs font-medium text-gray-700 mb-1">Tên chứng chỉ <span className="text-red-500">*</span></label>
                                         <Input name="title" value={formData.title} onChange={handleChange} placeholder="VD: AWS Certified..." className={formErrors.title ? 'border-red-500' : ''} />
                                         {formErrors.title && <span className="text-red-500 text-xs mt-1 block">* {formErrors.title}</span>}
                                     </div>
                                     <div>
-                                        <label className="block text-xs font-medium text-gray-700 mb-1">Tổ chức cấp *</label>
+                                        <label className="block text-xs font-medium text-gray-700 mb-1">Tổ chức cấp <span className="text-red-500">*</span></label>
                                         <Input name="issuingOrganization" value={formData.issuingOrganization} onChange={handleChange} placeholder="VD: Amazon Web Services" className={formErrors.issuingOrganization ? 'border-red-500' : ''} />
                                         {formErrors.issuingOrganization && <span className="text-red-500 text-xs mt-1 block">* {formErrors.issuingOrganization}</span>}
                                     </div>

@@ -72,7 +72,7 @@ const STATIC_PROVINCES = [
     { code: 96, name: 'Tỉnh Cà Mau', shortName: 'Cà Mau' },
 ];
 
-const LocationPicker = ({ value, onChange }) => {
+const LocationPicker = ({ value, onChange, wide = false }) => {
     const [isOpen, setIsOpen] = useState(false);
     const [searchTermProvince, setSearchTermProvince] = useState('');
     const [searchTermDistrict, setSearchTermDistrict] = useState('');
@@ -179,33 +179,42 @@ const LocationPicker = ({ value, onChange }) => {
 
     // Update position when opening or window changes
     const updatePosition = () => {
-        if (triggerRef.current) {
-            const smallContainer = triggerRef.current.closest('.px-5') || triggerRef.current;
-            const outerContainer = triggerRef.current.closest('.max-w-5xl') || smallContainer;
-            
-            const smallRect = smallContainer.getBoundingClientRect();
-            const outerRect = outerContainer.getBoundingClientRect();
-            
-            const isMobile = window.innerWidth < 768; // Tablet (>=768) và Desktop
-            
-            if (isMobile) {
-                setCoords({
-                    top: smallRect.bottom + window.scrollY,
-                    left: smallRect.left + window.scrollX,
-                    width: smallRect.width
-                });
-            } else {
-                const computed = window.getComputedStyle(outerContainer);
-                const pl = parseFloat(computed.paddingLeft) || 0;
-                const pr = parseFloat(computed.paddingRight) || 0;
-                
-                setCoords({
-                    top: smallRect.bottom + window.scrollY,
-                    left: outerRect.left + pl + window.scrollX,
-                    width: outerRect.width - pl - pr
-                });
-            }
+        if (!triggerRef.current) return;
+
+        const smallContainer = triggerRef.current.closest('.px-5') || triggerRef.current;
+        const outerContainer = triggerRef.current.closest('.max-w-5xl') || smallContainer;
+
+        const smallRect = smallContainer.getBoundingClientRect();
+        const outerRect = outerContainer.getBoundingClientRect();
+
+        const isMobile = window.innerWidth < 768; // Tablet (>=768) và Desktop
+
+        let top = smallRect.bottom + window.scrollY;
+        let left;
+        let width;
+
+        if (isMobile) {
+            left = smallRect.left + window.scrollX;
+            width = smallRect.width;
+        } else {
+            const computed = window.getComputedStyle(outerContainer);
+            const pl = parseFloat(computed.paddingLeft) || 0;
+            const pr = parseFloat(computed.paddingRight) || 0;
+            left = outerRect.left + pl + window.scrollX;
+            width = outerRect.width - pl - pr;
         }
+
+        // Chế độ "wide": dùng trong form hẹp (vd Thông tin cơ bản) — nới rộng dropdown
+        // tối thiểu 520px, canh theo ô và clamp để không tràn ra ngoài màn hình.
+        if (wide) {
+            const triggerRect = triggerRef.current.getBoundingClientRect();
+            width = Math.min(window.innerWidth - 24, Math.max(width, 520));
+            left = triggerRect.left + window.scrollX;
+            const maxLeft = window.scrollX + window.innerWidth - 12 - width;
+            if (left > maxLeft) left = Math.max(window.scrollX + 12, maxLeft);
+        }
+
+        setCoords({ top, left, width });
     };
 
     useEffect(() => {

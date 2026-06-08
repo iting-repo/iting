@@ -1,14 +1,19 @@
-import React, { useState, useEffect } from 'react';
-import { FileText, Upload, CheckCircle, MoreVertical, Trash2, Star, Plus, Loader2, BarChart3, X } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { FileText, Upload, CheckCircle, MoreVertical, Trash2, Star, Plus, Loader2, BarChart3, X, User } from 'lucide-react';
 import { Button, Card, Input, ConfirmModal, Badge } from "../../../../components/common";
 import axiosInstance from "../../../../utils/axiosInstance";
 import cvService from "../../../../services/cvService";
 import useConfirm from "../../../../hooks/useConfirm";
 import { toast } from "sonner";
+import CvBuilderModal from "../components/CvBuilderModal";
 
 const CVSection = () => {
     const [cvs, setCvs] = useState([]);
     const [isAdding, setIsAdding] = useState(false);
+    const [showBuilder, setShowBuilder] = useState(false);
+    const [avatarUrl, setAvatarUrl] = useState('');
+    const [avatarUploading, setAvatarUploading] = useState(false);
+    const avatarInputRef = useRef(null);
     const [isUploading, setIsUploading] = useState(false);
     const [confirm, askConfirm, resetConfirm] = useConfirm();
     const [selectedFile, setSelectedFile] = useState(null);
@@ -27,7 +32,35 @@ const CVSection = () => {
 
     useEffect(() => {
         fetchCVs();
+        // Lấy avatar hiện tại (dùng làm ảnh trong CV builder)
+        axiosInstance.get('/user/profile')
+            .then((d) => setAvatarUrl(d?.avatarUrl || ''))
+            .catch(() => {});
     }, []);
+
+    const handleAvatarUpload = async (e) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+        if (!file.type.startsWith('image/')) { toast.error('Vui lòng chọn file ảnh'); return; }
+        if (file.size > 5 * 1024 * 1024) { toast.error('Ảnh tối đa 5MB'); return; }
+        const fd = new FormData();
+        fd.append('file', file);
+        setAvatarUploading(true);
+        try {
+            const res = await axiosInstance.post('/user/profile/avatar/upload', fd, {
+                headers: { 'Content-Type': 'multipart/form-data' },
+            });
+            const url = res.avatarUrl || res.data?.avatarUrl;
+            if (url) setAvatarUrl(url);
+            toast.success('Đã cập nhật ảnh đại diện!');
+        } catch (err) {
+            console.error('Avatar upload failed', err);
+            toast.error('Không thể tải ảnh lên. Vui lòng thử lại.');
+        } finally {
+            setAvatarUploading(false);
+            if (avatarInputRef.current) avatarInputRef.current.value = '';
+        }
+    };
 
     const fetchCVs = async () => {
         try {
@@ -188,10 +221,39 @@ const CVSection = () => {
                     <p className="text-sm text-gray-600 mt-1">Quản lý các bản CV của bạn</p>
                 </div>
                 {!isAdding && (
-                    <Button variant="outline" className="text-blue-600 border-blue-200 hover:bg-blue-50" onClick={() => setIsAdding(true)}>
-                        <Upload className="w-4 h-4 mr-2" /> Tải lên CV (PDF)
-                    </Button>
+                    <div className="flex flex-wrap items-center gap-2">
+                        <Button variant="primary" onClick={() => setShowBuilder(true)}>
+                            <FileText className="w-4 h-4 mr-2" /> Tạo CV từ hồ sơ
+                        </Button>
+                        <Button variant="outline" className="text-blue-600 border-blue-200 hover:bg-blue-50" onClick={() => setIsAdding(true)}>
+                            <Upload className="w-4 h-4 mr-2" /> Tải lên CV (PDF)
+                        </Button>
+                    </div>
                 )}
+            </div>
+
+            <CvBuilderModal isOpen={showBuilder} onClose={() => setShowBuilder(false)} />
+
+            {/* Ảnh đại diện — dùng làm avatar trong CV builder */}
+            <div className="flex items-center gap-3 mb-5 p-3 rounded-xl bg-slate-50 border border-slate-100">
+                <div className="w-14 h-14 rounded-full overflow-hidden bg-slate-200 flex items-center justify-center shrink-0 border border-slate-200">
+                    {avatarUrl ? (
+                        <img src={avatarUrl} alt="avatar" className="w-full h-full object-cover" />
+                    ) : (
+                        <User className="w-6 h-6 text-slate-400" />
+                    )}
+                </div>
+                <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold text-slate-800">Ảnh đại diện cho CV</p>
+                    <p className="text-xs text-slate-500">
+                        {avatarUrl ? 'Ảnh này được dùng làm avatar khi tạo CV.' : 'Chưa có ảnh — tải lên để hiển thị avatar trong CV.'}
+                    </p>
+                </div>
+                <input ref={avatarInputRef} type="file" accept="image/*" className="hidden" onChange={handleAvatarUpload} />
+                <Button variant="outline" onClick={() => avatarInputRef.current?.click()} disabled={avatarUploading}>
+                    {avatarUploading ? <Loader2 className="w-4 h-4 mr-1 animate-spin" /> : <Upload className="w-4 h-4 mr-1" />}
+                    {avatarUrl ? 'Đổi ảnh' : 'Tải ảnh'}
+                </Button>
             </div>
 
             {isAdding && (

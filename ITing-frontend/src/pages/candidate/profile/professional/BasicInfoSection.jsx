@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { Save, User } from "lucide-react";
-import { Button, Input, Card } from "../../../../components/common";
+import { Button, Input, Card, LocationPicker } from "../../../../components/common";
 import axiosInstance from "../../../../utils/axiosInstance";
 import { toast } from "sonner";
 
@@ -14,6 +14,7 @@ export default function BasicInfoSection() {
         handleSubmit,
         reset,
         watch,
+        setValue,
         formState: { errors },
     } = useForm({
         defaultValues: {
@@ -71,6 +72,9 @@ export default function BasicInfoSection() {
         }
     };
 
+    // Đăng ký field location (điều khiển qua LocationPicker) để validate "required".
+    register("location", { required: "Vui lòng chọn địa điểm" });
+
     if (isLoading) {
         return (
             <Card className="p-6">
@@ -95,7 +99,7 @@ export default function BasicInfoSection() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     {/* Chức danh */}
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="headline">Chức danh *</label>
+                        <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="headline">Chức danh <span className="text-red-500">*</span></label>
                         <Input
                             id="headline"
                             {...register("headline", { required: "Vui lòng nhập chức danh" })}
@@ -108,7 +112,7 @@ export default function BasicInfoSection() {
 
                     {/* Học vấn */}
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="education">Học vấn *</label>
+                        <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="education">Học vấn <span className="text-red-500">*</span></label>
                         <select
                             id="education"
                             {...register("education", { required: "Vui lòng chọn học vấn" })}
@@ -129,7 +133,7 @@ export default function BasicInfoSection() {
 
                     {/* Kinh nghiệm */}
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="experience">Kinh nghiệm (Số năm) *</label>
+                        <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="experience">Kinh nghiệm (Số năm) <span className="text-red-500">*</span></label>
                         <Input
                             id="experience"
                             type="number"
@@ -145,14 +149,16 @@ export default function BasicInfoSection() {
                         )}
                     </div>
 
-                    {/* Địa điểm */}
+                    {/* Địa điểm — picker tỉnh/thành + quận/huyện từ provinces.open-api.vn */}
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="location">Địa điểm *</label>
-                        <Input
-                            id="location"
-                            {...register("location", { required: "Vui lòng nhập địa điểm" })}
-                            placeholder="VD: TP. Hồ Chí Minh"
-                        />
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Địa điểm <span className="text-red-500">*</span></label>
+                        <div className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 focus-within:border-slate-400 focus-within:ring-2 focus-within:ring-[#9D5CE9] transition-all">
+                            <LocationPicker
+                                wide
+                                value={watch("location")}
+                                onChange={(val) => setValue("location", val, { shouldValidate: true })}
+                            />
+                        </div>
                         {errors.location && (
                             <p className="text-red-600 text-sm mt-1">{errors.location.message}</p>
                         )}

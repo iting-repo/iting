@@ -126,12 +126,12 @@ const EducationSection = () => {
                             <form onSubmit={handleAddSubmit} className="space-y-4">
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     <div>
-                                        <label className="block text-xs font-medium text-gray-700 mb-1">Trường/Cơ sở đào tạo *</label>
+                                        <label className="block text-xs font-medium text-gray-700 mb-1">Trường/Cơ sở đào tạo <span className="text-red-500">*</span></label>
                                         <Input name="schoolName" value={formData.schoolName} onChange={handleChange} placeholder="VD: Đại học Bách Khoa" className={formErrors.schoolName ? 'border-red-500' : ''} />
                                         {formErrors.schoolName && <span className="text-red-500 text-xs mt-1 block">* {formErrors.schoolName}</span>}
                                     </div>
                                     <div>
-                                        <label className="block text-xs font-medium text-gray-700 mb-1">Ngành học/Chuyên ngành *</label>
+                                        <label className="block text-xs font-medium text-gray-700 mb-1">Ngành học/Chuyên ngành <span className="text-red-500">*</span></label>
                                         <Input name="major" value={formData.major} onChange={handleChange} placeholder="VD: Khoa học máy tính" className={formErrors.major ? 'border-red-500' : ''} />
                                         {formErrors.major && <span className="text-red-500 text-xs mt-1 block">* {formErrors.major}</span>}
                                     </div>
@@ -144,7 +144,7 @@ const EducationSection = () => {
                                         <Input name="areaOfStudy" value={formData.areaOfStudy} onChange={handleChange} placeholder="VD: Software Engineering" />
                                     </div>
                                     <div>
-                                        <label className="block text-xs font-medium text-gray-700 mb-1">Ngày bắt đầu *</label>
+                                        <label className="block text-xs font-medium text-gray-700 mb-1">Ngày bắt đầu <span className="text-red-500">*</span></label>
                                         <Input type="date" name="startDate" value={formData.startDate} onChange={handleChange} className={formErrors.startDate ? 'border-red-500' : ''} />
                                         {formErrors.startDate && <span className="text-red-500 text-xs mt-1 block">* {formErrors.startDate}</span>}
                                     </div>

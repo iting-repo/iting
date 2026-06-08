@@ -27,6 +27,7 @@
     "axios": "^1.16.1",
     "chart.js": "^4.5.1",
     "date-fns": "^4.1.0",
+    "html2pdf.js": "^0.14.0",
     "i18next": "^26.0.3",
     "lucide-react": "^0.577.0",
     "react": "^19.2.0",
@@ -46,6 +47,7 @@
   },
   "devDependencies": {
     "@babel/core": "^7.28.5",
+    "@babel/eslint-parser": "^7.25.0",
     "@babel/preset-env": "^7.28.5",
     "@babel/preset-react": "^7.28.5",
     "@playwright/test": "^1.54.2",
@@ -56,10 +58,15 @@
     "css-loader": "^7.1.2",
     "css-minimizer-webpack-plugin": "^8.0.0",
     "dotenv-webpack": "^9.0.0",
+    "eslint": "^8.57.0",
+    "eslint-config-prettier": "^9.1.0",
+    "eslint-plugin-react": "^7.35.0",
+    "eslint-plugin-react-hooks": "^5.0.0",
     "html-webpack-plugin": "^5.6.5",
     "mini-css-extract-plugin": "^2.10.2",
     "postcss": "^8.5.6",
     "postcss-loader": "^8.2.0",
+    "prettier": "^3.3.3",
     "react-refresh": "^0.18.0",
     "sharp": "^0.34.5",
     "style-loader": "^4.0.0",
@@ -67,12 +74,6 @@
     "terser-webpack-plugin": "^5.6.1",
     "webpack": "^5.103.0",
     "webpack-cli": "^6.0.1",
-    "webpack-dev-server": "^5.2.2",
-    "@babel/eslint-parser": "^7.25.0",
-    "eslint": "^8.57.0",
-    "eslint-config-prettier": "^9.1.0",
-    "eslint-plugin-react": "^7.35.0",
-    "eslint-plugin-react-hooks": "^5.0.0",
-    "prettier": "^3.3.3"
+    "webpack-dev-server": "^5.2.2"
   }
 }

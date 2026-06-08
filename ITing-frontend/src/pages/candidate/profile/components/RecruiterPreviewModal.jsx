@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import { useModalEscape } from '../../../../hooks/useModalEscape';
 import { FaEnvelope, FaExternalLinkAlt, FaStar, FaRegStar, FaUserTie, FaTimes, FaPhone } from 'react-icons/fa';
 import axiosInstance from '../../../../utils/axiosInstance';
+import cvService from '../../../../services/cvService';
 
 const emptyArray = [];
 
@@ -21,6 +22,7 @@ const RecruiterPreviewModal = ({ isOpen, onClose }) => {
     const [portfolios, setPortfolios] = useState(emptyArray);
     const [socialLinks, setSocialLinks] = useState(emptyArray);
     const [cvs, setCvs] = useState(emptyArray);
+    const [cvViewUrl, setCvViewUrl] = useState(''); // URL ký sẵn MỚI (tránh presigned hết hạn)
 
     useEffect(() => {
         if (!isOpen) {
@@ -76,6 +78,25 @@ const RecruiterPreviewModal = ({ isOpen, onClose }) => {
 
     const defaultCv = useMemo(() => cvs.find((cv) => cv.isDefault) || cvs[0], [cvs]);
 
+    // Lấy URL xem CV MỚI mỗi lần mở (presigned cũ trong fileUrl đã hết hạn → AccessDenied).
+    useEffect(() => {
+        if (!isOpen || !defaultCv?.id) {
+            setCvViewUrl('');
+            return;
+        }
+        let cancelled = false;
+        (async () => {
+            try {
+                const res = await cvService.getViewUrl(defaultCv.id);
+                const fresh = typeof res === 'string' ? res : (res?.url || res?.viewUrl || '');
+                if (!cancelled) setCvViewUrl(fresh || defaultCv.fileUrl || '');
+            } catch (e) {
+                if (!cancelled) setCvViewUrl(defaultCv.fileUrl || '');
+            }
+        })();
+        return () => { cancelled = true; };
+    }, [isOpen, defaultCv?.id, defaultCv?.fileUrl]);
+
     useEffect(() => {
         if (!isOpen) {
             return;
@@ -109,9 +130,9 @@ const RecruiterPreviewModal = ({ isOpen, onClose }) => {
                             </div>
                             <h3 className="font-bold text-slate-800">Review Hồ sơ ứng viên (Xem trước)</h3>
                         </div>
-                        {defaultCv?.fileUrl && (
+                        {(cvViewUrl || defaultCv?.fileUrl) && (
                             <a
-                                href={defaultCv.fileUrl}
+                                href={cvViewUrl || defaultCv.fileUrl}
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 className="text-xs font-bold text-[#1967D2] hover:underline flex items-center gap-1"
@@ -122,9 +143,9 @@ const RecruiterPreviewModal = ({ isOpen, onClose }) => {
                     </div>
 
                     <div className="flex-1 bg-[#525659] overflow-hidden">
-                        {defaultCv?.fileUrl ? (
+                        {(cvViewUrl || defaultCv?.fileUrl) ? (
                             <iframe
-                                src={`${defaultCv.fileUrl}#toolbar=0`}
+                                src={`${cvViewUrl || defaultCv.fileUrl}#toolbar=0`}
                                 className="w-full h-full border-none"
                                 title="Xem trước CV"
                             />

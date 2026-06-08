@@ -95,7 +95,7 @@ const PortfolioSection = () => {
                         <div className="p-4 md:p-6 overflow-y-auto">
                             <form onSubmit={handleAddSubmit} className="space-y-4">
                                 <div>
-                                    <label className="block text-xs font-medium text-gray-700 mb-1">Tên dự án *</label>
+                                    <label className="block text-xs font-medium text-gray-700 mb-1">Tên dự án <span className="text-red-500">*</span></label>
                                     <Input name="title" value={formData.title} onChange={handleChange} required placeholder="VD: Ứng dụng quản lý nhân sự" />
                                 </div>
                                 <div>
