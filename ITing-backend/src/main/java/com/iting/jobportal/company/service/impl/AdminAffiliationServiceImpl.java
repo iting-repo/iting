@@ -220,7 +220,67 @@ public class AdminAffiliationServiceImpl implements AdminAffiliationService {
       }
       default -> throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Phần không hợp lệ");
     }
+
+    // Khi đã duyệt đủ cả 3 phần (thông tin + giấy phép + thỏa thuận) thì tự động "chốt" hồ sơ:
+    // chuyển submission sang APPROVED và xác thực công ty (nếu đã được gán) để công ty có dấu
+    // xác thực và được phép đăng tin tuyển dụng — không cần thao tác chốt/gán riêng.
+    boolean allApproved =
+        aff.getInfoStatus() == SubmissionStatus.APPROVED
+            && aff.getLicenseStatus() == SubmissionStatus.APPROVED
+            && aff.getConsentStatus() == SubmissionStatus.APPROVED;
+    if (allApproved && aff.getSubmissionStatus() != SubmissionStatus.APPROVED) {
+      finalizeFullApproval(aff, adminAccountId);
+    }
+
     return toResponse(affiliationRepo.save(aff));
+  }
+
+  /**
+   * Chốt hồ sơ sau khi đã duyệt đủ 3 phần: đặt submission/membership = APPROVED và, nếu affiliation
+   * đã được gán vào một công ty, nâng công ty lên trạng thái đã xác thực (review APPROVED +
+   * verification ADVANCED + active) để được phép đăng tin tuyển dụng và hiển thị dấu xác thực.
+   */
+  private void finalizeFullApproval(CompanyHrAffiliation aff, Long adminAccountId) {
+    LocalDateTime now = LocalDateTime.now();
+    aff.setStatus(AffiliationStatus.APPROVED);
+    aff.setReviewedAt(now);
+    aff.setReviewedBy(adminAccountId);
+    aff.setSubmissionStatus(SubmissionStatus.APPROVED);
+    aff.setSubmissionReviewedAt(now);
+    aff.setSubmissionReviewedBy(adminAccountId);
+    aff.setSubmissionRejectReason(null);
+
+    Company company = aff.getCompany();
+    if (company == null) {
+      return; // Chưa gán công ty → để bước gán công ty xử lý xác thực sau.
+    }
+
+    // Áp snapshot HR lên công ty nếu công ty lấy thông tin xác thực từ chính affiliation này.
+    if (company.getInfoSourceAffiliationId() == null
+        || company.getInfoSourceAffiliationId().equals(aff.getId())) {
+      applySnapshotToCompany(aff, company);
+      aff.setAppliedToCompanyAt(now);
+      if (company.getInfoSourceAffiliationId() == null) {
+        company.setInfoSourceAffiliationId(aff.getId());
+      }
+    }
+
+    company.setCompanyReviewStatus(CompanyReviewStatus.APPROVED);
+    company.setDocumentReviewStatus(DocumentReviewStatus.APPROVED);
+    if (company.getVerificationLevel() == null
+        || company.getVerificationLevel().getValue() < VerificationLevel.ADVANCED.getValue()) {
+      company.setVerificationLevel(VerificationLevel.ADVANCED);
+    }
+    company.setActive(true);
+    companyRepo.save(company);
+
+    recordAudit(
+        company,
+        CompanyAuditAction.APPROVE,
+        adminAccountId,
+        "Tự động xác thực công ty sau khi duyệt đủ 3 phần hồ sơ (affiliation #" + aff.getId() + ")",
+        null,
+        "APPROVED");
   }
 
   @Override
