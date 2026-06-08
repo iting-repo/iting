@@ -102,10 +102,24 @@ public class MessageController {
               .name(original)
               .contentType(contentType)
               .size(file.getSize())
+              .viewUrl(presign(url))
               .build());
     } catch (IOException e) {
       throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Tải tệp lên thất bại");
     }
+  }
+
+  /** Presigned URL để xem tệp private trên S3. URL không phải S3 (local dev) thì giữ nguyên. */
+  private String presign(String url) {
+    if (url == null) return null;
+    try {
+      if (url.contains("amazonaws.com")) {
+        return fileUploadService.generatePresignedUrl(url, 60 * 24); // 24h
+      }
+    } catch (Exception ignored) {
+      // fallback: trả URL gốc
+    }
+    return url;
   }
 
   @GetMapping("/link-preview")

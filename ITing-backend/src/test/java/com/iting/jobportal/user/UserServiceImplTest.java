@@ -28,6 +28,8 @@ class UserServiceImplTest {
 
   @Mock private FileUploadService fileUploadService;
 
+  @Mock private com.iting.jobportal.file.FileValidator fileValidator;
+
   @InjectMocks private UserServiceImpl userService;
 
   @Test

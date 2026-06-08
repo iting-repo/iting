@@ -3,6 +3,8 @@ package com.iting.jobportal.job.controller;
 import com.iting.jobportal.admin.dto.request.BulkActionRequest;
 import com.iting.jobportal.job.dto.request.CreateJobRequest;
 import com.iting.jobportal.job.dto.request.UpdateJobRequest;
+import com.iting.jobportal.common.ratelimit.RateLimitPolicy;
+import com.iting.jobportal.common.ratelimit.RateLimited;
 import com.iting.jobportal.job.dto.response.JobResponse;
 import com.iting.jobportal.job.service.GeminiJobParserService;
 import com.iting.jobportal.job.service.JobService;
@@ -35,6 +37,7 @@ public class HrJobController {
   private final GeminiJobParserService geminiJobParserService;
 
   @PostMapping(value = "/parse-jd", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+  @RateLimited(policy = RateLimitPolicy.FILE_UPLOAD, subject = "user")
   @Operation(
       summary = "Phân tích file Job Description bằng AI (Gemini) → JSON tự điền form đăng tin")
   public ResponseEntity<?> parseJd(@RequestParam("file") MultipartFile file) {

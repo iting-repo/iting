@@ -2,6 +2,7 @@ package com.iting.jobportal.userprofile.service.impl;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.iting.jobportal.common.service.S3Service;
+import com.iting.jobportal.file.FileValidator;
 import com.iting.jobportal.user.entity.User;
 import com.iting.jobportal.user.repository.UserRepository;
 import com.iting.jobportal.userprofile.dto.response.CVResponse;
@@ -34,6 +35,7 @@ public class CVServiceImpl implements CVService {
     private final UserProfileRepository userProfileRepository;
     private final UserRepository userRepository;
     private final S3Service s3Service;
+    private final FileValidator fileValidator;
     private final EntityManager entityManager;
     private final HuggingFaceCvExtractionClient hfCvExtractionClient;
     private final ObjectMapper objectMapper;
@@ -60,6 +62,7 @@ public class CVServiceImpl implements CVService {
   @Override
   @Transactional
   public CVResponse uploadCV(Long userId, MultipartFile file, String title) throws IOException {
+    fileValidator.validate(file, FileValidator.Category.CV);
     UserProfile profile = getOrCreateProfile(userId);
 
     // Check if user has reached the limit

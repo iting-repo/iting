@@ -62,16 +62,19 @@ const MessageContent = ({ msg, mine }) => {
       {/* Ảnh đính kèm */}
       {images.length > 0 && (
         <div className={`grid gap-1.5 ${images.length > 1 ? 'grid-cols-2' : 'grid-cols-1'}`}>
-          {images.map((img, i) => (
-            <a key={i} href={img.url} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()}>
-              <img
-                src={img.url}
-                alt={img.name || 'image'}
-                className="rounded-xl max-h-60 w-full object-cover border border-black/5"
-                loading="lazy"
-              />
-            </a>
-          ))}
+          {images.map((img, i) => {
+            const src = img.viewUrl || img.url;
+            return (
+              <a key={i} href={src} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()}>
+                <img
+                  src={src}
+                  alt={img.name || 'image'}
+                  className="rounded-xl max-h-60 w-full object-cover border border-black/5"
+                  loading="lazy"
+                />
+              </a>
+            );
+          })}
         </div>
       )}
 
@@ -79,7 +82,7 @@ const MessageContent = ({ msg, mine }) => {
       {files.map((f, i) => (
         <a
           key={i}
-          href={f.url}
+          href={f.viewUrl || f.url}
           target="_blank"
           rel="noopener noreferrer"
           download={f.name}

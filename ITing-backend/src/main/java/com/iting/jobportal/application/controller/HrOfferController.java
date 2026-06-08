@@ -3,6 +3,8 @@ package com.iting.jobportal.application.controller;
 import com.iting.jobportal.application.dto.request.CreateOfferRequest;
 import com.iting.jobportal.application.dto.response.OfferResponse;
 import com.iting.jobportal.application.service.OfferService;
+import com.iting.jobportal.common.ratelimit.RateLimitPolicy;
+import com.iting.jobportal.common.ratelimit.RateLimited;
 import com.iting.jobportal.job.controller.CurrentUser;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -36,6 +38,7 @@ public class HrOfferController {
   }
 
   @PostMapping(value = "/upload-letter", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+  @RateLimited(policy = RateLimitPolicy.FILE_UPLOAD, subject = "user")
   @Operation(
       summary =
           "Upload file offer letter PDF tự soạn. Trả {url} để truyền vào offerLetterUrl khi tạo offer.")

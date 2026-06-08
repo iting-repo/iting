@@ -3,6 +3,8 @@ package com.iting.jobportal.admin.controller;
 import com.iting.jobportal.admin.dto.request.*;
 import com.iting.jobportal.admin.dto.response.CompanyAuditLogResponse;
 import com.iting.jobportal.admin.service.*;
+import com.iting.jobportal.common.ratelimit.RateLimitPolicy;
+import com.iting.jobportal.common.ratelimit.RateLimited;
 import com.iting.jobportal.company.dto.response.CompanyResponse;
 import com.iting.jobportal.company.entity.enums.CompanyAuditAction;
 import com.iting.jobportal.company.entity.enums.CompanyReviewStatus;
@@ -286,6 +288,7 @@ public class CompanyAdminController {
   }
 
   @PostMapping("/import")
+  @RateLimited(policy = RateLimitPolicy.FILE_UPLOAD, subject = "user")
   @Operation(summary = "Nhập danh sách công ty từ file Excel")
   public ResponseEntity<?> importCompanies(@RequestParam("file") MultipartFile file) {
     adminCompanyService.importCompaniesFromExcel(file);

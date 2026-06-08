@@ -1,5 +1,7 @@
 package com.iting.jobportal.user.controller; // Đảm bảo đúng package của bạn
 
+import com.iting.jobportal.common.ratelimit.RateLimitPolicy;
+import com.iting.jobportal.common.ratelimit.RateLimited;
 import com.iting.jobportal.user.dto.request.*;
 import com.iting.jobportal.user.dto.response.UserProfileResponse;
 import com.iting.jobportal.user.service.UserService;
@@ -42,6 +44,7 @@ public class UserController {
   }
 
   @PostMapping("/avatar/upload")
+  @RateLimited(policy = RateLimitPolicy.FILE_UPLOAD, subject = "user")
   public ResponseEntity<?> uploadAvatar(
       @CurrentUser Long userId, @RequestParam("file") MultipartFile file) {
     String url = userService.uploadAvatar(userId, file);

@@ -2,6 +2,8 @@ package com.iting.jobportal.messaging.service.impl;
 
 import com.iting.jobportal.company.entity.Company;
 import com.iting.jobportal.company.repository.CompanyRepository;
+import com.iting.jobportal.file.FileUploadService;
+import com.iting.jobportal.messaging.dto.AttachmentDto;
 import com.iting.jobportal.messaging.dto.request.SendMessageRequest;
 import com.iting.jobportal.messaging.dto.response.MessageResponse;
 import com.iting.jobportal.messaging.entity.Conversation;
@@ -38,6 +40,7 @@ public class MessageServiceImpl implements MessageService {
   private final UserRepository userRepository;
   private final CompanyRepository companyRepository;
   private final DomainNotificationPublisher domainNotificationPublisher;
+  private final FileUploadService fileUploadService;
 
   @Override
   @Transactional
@@ -122,7 +125,7 @@ public class MessageServiceImpl implements MessageService {
             .receiverType(request.getReceiverType())
             .content(hasContent ? content : null)
             .messageType(messageType)
-            .attachments(hasAttachments ? request.getAttachments() : null)
+            .attachments(hasAttachments ? sanitizeForStorage(request.getAttachments()) : null)
             .linkPreview(request.getLinkPreview())
             .stickerUrl(hasSticker ? request.getStickerUrl() : null)
             .isRead(false)
@@ -150,7 +153,7 @@ public class MessageServiceImpl implements MessageService {
             .receiverType(savedMessage.getReceiverType())
             .content(savedMessage.getContent())
             .messageType(savedMessage.getMessageType())
-            .attachments(savedMessage.getAttachments())
+            .attachments(withViewUrls(savedMessage.getAttachments()))
             .linkPreview(savedMessage.getLinkPreview())
             .stickerUrl(savedMessage.getStickerUrl())
             .isRead(savedMessage.getIsRead())
@@ -310,6 +313,50 @@ public class MessageServiceImpl implements MessageService {
 
   // Helper methods
 
+  /** Bỏ viewUrl (presigned, hết hạn) trước khi lưu DB — chỉ giữ URL gốc. */
+  private List<AttachmentDto> sanitizeForStorage(List<AttachmentDto> list) {
+    if (list == null) return null;
+    return list.stream()
+        .map(
+            a ->
+                AttachmentDto.builder()
+                    .url(a.getUrl())
+                    .name(a.getName())
+                    .contentType(a.getContentType())
+                    .size(a.getSize())
+                    .build())
+        .collect(Collectors.toList());
+  }
+
+  /** Gắn viewUrl (presigned) cho từng attachment khi trả về client. */
+  private List<AttachmentDto> withViewUrls(List<AttachmentDto> list) {
+    if (list == null) return null;
+    return list.stream()
+        .map(
+            a ->
+                AttachmentDto.builder()
+                    .url(a.getUrl())
+                    .name(a.getName())
+                    .contentType(a.getContentType())
+                    .size(a.getSize())
+                    .viewUrl(presign(a.getUrl()))
+                    .build())
+        .collect(Collectors.toList());
+  }
+
+  /** Presigned URL để xem object private trên S3; URL không phải S3 thì giữ nguyên. */
+  private String presign(String url) {
+    if (url == null) return null;
+    try {
+      if (url.contains("amazonaws.com")) {
+        return fileUploadService.generatePresignedUrl(url, 60 * 24); // 24h
+      }
+    } catch (Exception ignored) {
+      // fallback: URL gốc
+    }
+    return url;
+  }
+
   /** Suy ra loại tin nhắn nếu client không gửi rõ. */
   private MessageType resolveMessageType(
       SendMessageRequest request, boolean hasSticker, boolean hasAttachments) {
@@ -357,7 +404,7 @@ public class MessageServiceImpl implements MessageService {
             .receiverType(message.getReceiverType())
             .content(message.getContent())
             .messageType(message.getMessageType())
-            .attachments(message.getAttachments())
+            .attachments(withViewUrls(message.getAttachments()))
             .linkPreview(message.getLinkPreview())
             .stickerUrl(message.getStickerUrl())
             .isRead(message.getIsRead())

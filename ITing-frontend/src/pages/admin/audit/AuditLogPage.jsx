@@ -10,7 +10,9 @@ import {
   LayoutDashboard,
   Calendar,
   Globe,
-  ArrowRight
+  ArrowRight,
+  FileText,
+  ShieldCheck
 } from "lucide-react";
 import {
   Button,
@@ -24,6 +26,7 @@ import {
   Pagination,
   Dialog
 } from "../../../components";
+import { StatCard } from "../../../components/admin/StatCard";
 import { toast } from "sonner";
 import adminAuditService from "../../../services/adminAuditService";
 import { format } from "date-fns";
@@ -244,24 +247,12 @@ const AuditLogPage = () => {
         </Button>
       </div>
 
-      {/* Stats - Quick Overview */}
+      {/* Stats - Quick Overview (dùng StatCard chung để đồng dạng với các trang khác) */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-white p-4 rounded-xl border border-slate-100 shadow-sm text-center space-y-1">
-          <p className="text-2xl font-black text-slate-900">{totalElements}</p>
-          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Tổng bản ghi</p>
-        </div>
-        <div className="bg-white p-4 rounded-xl border border-slate-100 shadow-sm text-center space-y-1">
-          <p className="text-2xl font-black text-indigo-600 truncate" title={topPerformer || "—"}>{topPerformer || "—"}</p>
-          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Người thao tác nhiều nhất</p>
-        </div>
-        <div className="bg-white p-4 rounded-xl border border-slate-100 shadow-sm text-center space-y-1">
-          <p className="text-2xl font-black text-emerald-600">{monthLabel}</p>
-          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Khoảng thời gian audit</p>
-        </div>
-        <div className="bg-white p-4 rounded-xl border border-slate-100 shadow-sm text-center space-y-1">
-          <Badge variant="sky" className="px-3 py-1 font-black">ACTIVE</Badge>
-          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Trạng thái audit</p>
-        </div>
+        <StatCard label="Tổng bản ghi" value={totalElements} accent="blue" icon={<FileText className="h-5 w-5" />} />
+        <StatCard label="Người thao tác nhiều nhất" value={topPerformer || "—"} accent="violet" icon={<User className="h-5 w-5" />} />
+        <StatCard label="Khoảng thời gian audit" value={monthLabel} accent="emerald" icon={<Calendar className="h-5 w-5" />} />
+        <StatCard label="Trạng thái audit" value="Hoạt động" accent="sky" icon={<ShieldCheck className="h-5 w-5" />} />
       </div>
 
       {/* Toolbar */}

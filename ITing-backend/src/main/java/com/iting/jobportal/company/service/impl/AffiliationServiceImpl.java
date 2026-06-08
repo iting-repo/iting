@@ -20,6 +20,7 @@ import com.iting.jobportal.company.repository.CompanyHrAffiliationRepository;
 import com.iting.jobportal.company.repository.CompanyRepository;
 import com.iting.jobportal.company.service.AffiliationService;
 import com.iting.jobportal.file.FileUploadService;
+import com.iting.jobportal.file.FileValidator;
 import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.List;
@@ -41,6 +42,7 @@ public class AffiliationServiceImpl implements AffiliationService {
   private final CompanyRepository companyRepo;
   private final AccountRepository accountRepo;
   private final FileUploadService fileUploadService;
+  private final FileValidator fileValidator;
   private final AdminNotificationService adminNotificationService;
   private final ObjectMapper objectMapper;
 
@@ -203,7 +205,7 @@ public class AffiliationServiceImpl implements AffiliationService {
   @Transactional
   public String uploadLogo(Long hrAccountId, MultipartFile file) {
     CompanyHrAffiliation aff = requireActiveAffiliation(hrAccountId);
-    validateImage(file);
+    fileValidator.validate(file, FileValidator.Category.LOGO);
 
     String oldUrl = aff.getSubmittedLogoUrl();
     String newUrl = fileUploadService.uploadLogo(file);
@@ -225,7 +227,7 @@ public class AffiliationServiceImpl implements AffiliationService {
   @Transactional
   public String uploadLicense(Long hrAccountId, MultipartFile file) {
     CompanyHrAffiliation aff = requireActiveAffiliation(hrAccountId);
-    validatePdfOrImage(file);
+    fileValidator.validate(file, FileValidator.Category.LICENSE);
 
     String oldUrl = aff.getSubmittedLicenseUrl();
     String newUrl = fileUploadService.uploadBusinessLicense(file);
@@ -250,7 +252,7 @@ public class AffiliationServiceImpl implements AffiliationService {
   @Transactional
   public String uploadConsent(Long hrAccountId, MultipartFile file, boolean confirmed) {
     CompanyHrAffiliation aff = requireActiveAffiliation(hrAccountId);
-    validateDocOrPdf(file);
+    fileValidator.validate(file, FileValidator.Category.CONSENT);
 
     String oldUrl = aff.getSubmittedConsentUrl();
     String newUrl = fileUploadService.uploadConsentDocument(file);
@@ -307,6 +309,21 @@ public class AffiliationServiceImpl implements AffiliationService {
     aff.setSubmissionStatus(SubmissionStatus.PENDING_REVIEW);
     aff.setSubmissionSubmittedAt(LocalDateTime.now());
     aff.setSubmissionRejectReason(null);
+
+    // Nộp cả gói = đưa cả 3 phần (info/license/consent) vào hàng chờ duyệt để admin
+    // duyệt từng phần. Giữ nguyên phần nào đã APPROVED ở chu kỳ trước (không reset).
+    if (aff.getInfoStatus() != SubmissionStatus.APPROVED) {
+      aff.setInfoStatus(SubmissionStatus.PENDING_REVIEW);
+      aff.setInfoRejectReason(null);
+    }
+    if (aff.getLicenseStatus() != SubmissionStatus.APPROVED) {
+      aff.setLicenseStatus(SubmissionStatus.PENDING_REVIEW);
+      aff.setLicenseRejectReason(null);
+    }
+    if (aff.getConsentStatus() != SubmissionStatus.APPROVED) {
+      aff.setConsentStatus(SubmissionStatus.PENDING_REVIEW);
+      aff.setConsentRejectReason(null);
+    }
 
     // Lần đầu HR submit: status INCOMPLETE/REJECTED → PENDING (chờ admin duyệt membership).
     // Re-submit (status APPROVED): giữ APPROVED, chỉ submission đi qua review chu kỳ mới.
@@ -455,39 +472,6 @@ public class AffiliationServiceImpl implements AffiliationService {
 
   private static boolean isBlank(String s) {
     return s == null || s.trim().isEmpty();
-  }
-
-  private void validateImage(MultipartFile file) {
-    if (file == null || file.isEmpty())
-      throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "File không được để trống");
-    String ct = file.getContentType();
-    if (ct == null || !ct.startsWith("image/"))
-      throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "File phải là ảnh");
-  }
-
-  private void validatePdfOrImage(MultipartFile file) {
-    if (file == null || file.isEmpty())
-      throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "File không được để trống");
-    String ct = file.getContentType();
-    if (ct == null || !(ct.equals("application/pdf") || ct.startsWith("image/")))
-      throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "File phải là PDF hoặc ảnh");
-  }
-
-  private void validateDocOrPdf(MultipartFile file) {
-    if (file == null || file.isEmpty())
-      throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "File không được để trống");
-    String ct = file.getContentType();
-    String name =
-        file.getOriginalFilename() == null ? "" : file.getOriginalFilename().toLowerCase();
-    boolean okMime =
-        ct != null
-            && (ct.equals("application/pdf")
-                || ct.equals("application/msword")
-                || ct.equals(
-                    "application/vnd.openxmlformats-officedocument.wordprocessingml.document"));
-    boolean okExt = name.endsWith(".pdf") || name.endsWith(".doc") || name.endsWith(".docx");
-    if (!okMime && !okExt)
-      throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "File phải là PDF, DOC hoặc DOCX");
   }
 
   private String serializeIndustries(List<String> industries) {

@@ -2,6 +2,7 @@ package com.iting.jobportal.user.service.impl;
 
 import com.iting.jobportal.auth.exception.ResourceNotFoundException;
 import com.iting.jobportal.file.FileUploadService;
+import com.iting.jobportal.file.FileValidator;
 import com.iting.jobportal.user.dto.request.PersonalUpdateDto;
 import com.iting.jobportal.user.dto.request.UpdateUserRequest;
 import com.iting.jobportal.user.dto.response.UserProfileResponse;
@@ -21,6 +22,7 @@ public class UserServiceImpl implements UserService {
 
   private final UserRepository userRepository;
   private final FileUploadService fileUploadService;
+  private final FileValidator fileValidator;
 
   private User getUserEntity(Long id) {
     return userRepository
@@ -100,6 +102,7 @@ public class UserServiceImpl implements UserService {
 
   @Override
   public String uploadAvatar(Long id, MultipartFile file) {
+    fileValidator.validate(file, FileValidator.Category.AVATAR);
     String avatarUrl = fileUploadService.uploadAvatar(file);
 
     User user = getUserEntity(id);

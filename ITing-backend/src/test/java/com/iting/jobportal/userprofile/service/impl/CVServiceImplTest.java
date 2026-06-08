@@ -47,6 +47,8 @@ class CVServiceImplTest {
   @Mock private EntityManager entityManager;
   @Mock private HuggingFaceCvExtractionClient hfCvExtractionClient;
 
+  @Mock private com.iting.jobportal.file.FileValidator fileValidator;
+
   @InjectMocks private CVServiceImpl service;
 
   private UserProfile profile;

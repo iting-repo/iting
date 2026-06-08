@@ -42,6 +42,7 @@ public class AdminCompanyServiceImpl implements AdminCompanyService {
   private final CompanyRepository companyRepository;
   private final CompanyMapper companyMapper;
   private final FileUploadService fileUploadService;
+  private final com.iting.jobportal.file.FileValidator fileValidator;
   private final CompanyAuditService companyAuditService;
   private final CompanyAuditLogRepository companyAuditLogRepository;
   private final CompanyKybNoteRepository companyKybNoteRepository;
@@ -672,22 +673,61 @@ public class AdminCompanyServiceImpl implements AdminCompanyService {
   @Override
   @Transactional
   public void importCompaniesFromExcel(org.springframework.web.multipart.MultipartFile file) {
+    // 1.1 Validate file: chỉ .xlsx, magic bytes ZIP/OOXML, ≤10MB.
+    fileValidator.validate(file, com.iting.jobportal.file.FileValidator.Category.EXCEL_IMPORT);
     try {
       List<Company> companies =
           com.iting.jobportal.common.excel.ExcelHelper.excelToData(
               file.getInputStream(),
               row -> {
+                int rowNo = row.getRowNum() + 1; // 1-based cho người dùng
                 Company company = new Company();
-                company.setName(row.getCell(0).getStringCellValue());
-                company.setTaxCode(row.getCell(1).getStringCellValue());
+                company.setName(safeCell(row.getCell(0), "Tên công ty", rowNo));
+                company.setTaxCode(safeCell(row.getCell(1), "Mã số thuế", rowNo));
                 company.setCompanyReviewStatus(CompanyReviewStatus.PENDING_REVIEW);
                 company.setVerificationLevel(VerificationLevel.UNVERIFIED);
                 return company;
               });
+      // 1.4 Giới hạn số dòng để tránh import quá lớn / spam.
+      if (companies.size() > 5000) {
+        throw new org.springframework.web.server.ResponseStatusException(
+            org.springframework.http.HttpStatus.BAD_REQUEST,
+            "File vượt quá 5000 dòng (" + companies.size() + ")");
+      }
       companyRepository.saveAll(companies);
     } catch (java.io.IOException e) {
       throw new RuntimeException("fail to store excel data: " + e.getMessage());
     }
+  }
+
+  /**
+   * Đọc + làm sạch 1 ô string từ Excel: trim, bắt buộc không rỗng, và CHỐNG CSV/Excel formula
+   * injection — từ chối ô bắt đầu bằng {@code = + - @} (hoặc tab/CR) vì có thể thực thi công thức
+   * nguy hiểm khi mở lại bằng Excel.
+   */
+  private static String safeCell(
+      org.apache.poi.ss.usermodel.Cell cell, String fieldName, int rowNo) {
+    String v;
+    try {
+      v = cell == null ? "" : cell.getStringCellValue();
+    } catch (Exception e) {
+      throw new org.springframework.web.server.ResponseStatusException(
+          org.springframework.http.HttpStatus.BAD_REQUEST,
+          fieldName + " ở dòng " + rowNo + " phải là dạng văn bản");
+    }
+    v = v == null ? "" : v.trim();
+    if (v.isEmpty()) {
+      throw new org.springframework.web.server.ResponseStatusException(
+          org.springframework.http.HttpStatus.BAD_REQUEST,
+          fieldName + " không được để trống (dòng " + rowNo + ")");
+    }
+    char c0 = v.charAt(0);
+    if (c0 == '=' || c0 == '+' || c0 == '-' || c0 == '@' || c0 == '\t' || c0 == '\r') {
+      throw new org.springframework.web.server.ResponseStatusException(
+          org.springframework.http.HttpStatus.BAD_REQUEST,
+          fieldName + " chứa ký tự không an toàn (=,+,-,@) ở dòng " + rowNo);
+    }
+    return v;
   }
 
   @Override

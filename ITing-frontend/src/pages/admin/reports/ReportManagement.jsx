@@ -4,6 +4,7 @@ import {
   Badge, Button, Table, Td, Textarea, Dialog, Pagination, PageHeader
 } from "../../../components/common";
 import { StatCard } from "../../../components/admin/StatCard";
+import { REPORT_STATUS_META } from "../../../utils/statusMeta";
 import {
   AdminFilterBar, AdminSearchInput, adminSelectClass, AdminResetButton
 } from "../../../components/admin/AdminFilterBar";
@@ -48,12 +49,8 @@ const TARGET_MAP = {
   REVIEW: { label: "Đánh giá", color: "default" },
 };
 
-const STATUS_MAP = {
-  PENDING: { label: "Chờ xử lý", color: "warning" },
-  REVIEWING: { label: "Đang xem xét", color: "info" },
-  RESOLVED: { label: "Đã xử lý", color: "success" },
-  DISMISSED: { label: "Bác bỏ", color: "danger" },
-};
+// Trạng thái xử lý báo cáo lấy từ nguồn chuẩn dùng chung (statusMeta).
+const STATUS_MAP = REPORT_STATUS_META;
 
 const PRIORITY_MAP = {
   LOW: { label: "Thấp", color: "default" },
@@ -526,7 +523,7 @@ const ReportManagement = () => {
                       </div>
                     </Td>
                     <Td className="whitespace-nowrap"><Badge variant={PRIORITY_MAP[r.priority]?.color || "default"}>{PRIORITY_MAP[r.priority]?.label || r.priority}</Badge></Td>
-                    <Td className="whitespace-nowrap"><Badge variant={STATUS_MAP[r.status]?.color || "default"}>{STATUS_MAP[r.status]?.label || r.status}</Badge></Td>
+                    <Td className="whitespace-nowrap"><Badge variant={STATUS_MAP[r.status]?.variant || "default"}>{STATUS_MAP[r.status]?.label || r.status}</Badge></Td>
                     <Td className="text-xs text-slate-400 font-medium whitespace-nowrap">{new Date(r.createdAt).toLocaleString("vi-VN")}</Td>
                     <Td className="text-right">
                       <ReportRowActionMenu

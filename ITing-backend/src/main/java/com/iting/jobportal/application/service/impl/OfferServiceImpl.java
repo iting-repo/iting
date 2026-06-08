@@ -15,6 +15,7 @@ import com.iting.jobportal.auth.repository.AccountRepository;
 import com.iting.jobportal.common.service.EmailService;
 import com.iting.jobportal.company.service.AuthorizationService;
 import com.iting.jobportal.file.FileUploadService;
+import com.iting.jobportal.file.FileValidator;
 import com.iting.jobportal.job.entity.Job;
 import com.iting.jobportal.job.repository.JobRepository;
 import com.iting.jobportal.notification.dto.request.CreateNotificationRequest;
@@ -48,6 +49,7 @@ public class OfferServiceImpl implements OfferService {
   private final AuthorizationService authorizationService;
   private final OfferPdfService offerPdfService;
   private final FileUploadService fileUploadService;
+  private final FileValidator fileValidator;
   private final EmailService emailService;
   private final NotificationService notificationService;
 
@@ -162,20 +164,7 @@ public class OfferServiceImpl implements OfferService {
   public String uploadOfferLetter(Long hrAccountId, MultipartFile file) {
     // Đảm bảo HR thuộc 1 công ty đã duyệt mới được upload.
     authorizationService.requireApprovedCompanyOf(hrAccountId);
-
-    if (file == null || file.isEmpty()) {
-      throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "File offer letter rỗng");
-    }
-    String ct = file.getContentType();
-    String name = file.getOriginalFilename() != null ? file.getOriginalFilename() : "";
-    boolean isPdf =
-        (ct != null && ct.equals("application/pdf")) || name.toLowerCase().endsWith(".pdf");
-    if (!isPdf) {
-      throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Chỉ chấp nhận file PDF");
-    }
-    if (file.getSize() > 10L * 1024 * 1024) {
-      throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "File tối đa 10MB");
-    }
+    fileValidator.validate(file, FileValidator.Category.OFFER_LETTER);
     try {
       String key = "offers/manual/" + hrAccountId + "-" + UUID.randomUUID() + ".pdf";
       return fileUploadService.uploadBytes(file.getBytes(), key, "application/pdf");

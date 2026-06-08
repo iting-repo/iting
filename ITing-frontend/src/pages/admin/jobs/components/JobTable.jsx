@@ -9,6 +9,7 @@ import {
   getAiReviewIconName,
   getAiReviewShortText,
 } from "../../../../utils/jobModeration";
+import { getJobStatusMeta } from "../../../../utils/statusMeta";
 import adminJobService from "../../../../services/adminJobService";
 import { toast } from "sonner";
 import {
@@ -31,19 +32,6 @@ const AI_ICON_MAP = {
   Ban,
   CircleHelp,
 };
-
-const JOB_STATUS_META = {
-  ACTIVE: { label: "Đang hoạt động", variant: "success" },
-  PENDING: { label: "Chờ duyệt", variant: "warning" },
-  REJECTED: { label: "Bị từ chối", variant: "danger" },
-  CLOSED: { label: "Đã đóng", variant: "default" },
-  EXPIRED: { label: "Hết hạn", variant: "danger" },
-  NEEDS_REVISION: { label: "Cần chỉnh sửa", variant: "warning" },
-  SUSPENDED: { label: "Bị đình chỉ", variant: "warning" },
-};
-
-const getJobStatusMeta = (status) =>
-  JOB_STATUS_META[status] || { label: status || "Chưa cập nhật", variant: "default" };
 
 const JOB_TYPE_LABELS = {
   FULL_TIME: "Toàn thời gian",

@@ -2,7 +2,10 @@ package com.iting.jobportal.admin.controller;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -30,6 +33,8 @@ class AdminBlogControllerTest {
 
   @Mock private AdminBlogService adminBlogService;
   @Mock private FileUploadService fileUploadService;
+  @Mock private com.iting.jobportal.file.FileValidator fileValidator;
+
   @InjectMocks private AdminBlogController controller;
 
   // ── getBlogs ─────────────────────────────────────────────────────────
@@ -94,53 +99,30 @@ class AdminBlogControllerTest {
   }
 
   @Test
-  void uploadImage_nullFile_returns400() {
-    ResponseEntity<Map<String, String>> resp = controller.uploadImage(null);
+  void uploadImage_invalidFile_propagatesValidationError() {
+    // Validation đã chuyển sang FileValidator (ném 400). Controller chỉ delegate + propagate lỗi.
+    MockMultipartFile bad = new MockMultipartFile("file", "img.jpg", "image/jpeg", new byte[0]);
+    doThrow(
+            new org.springframework.web.server.ResponseStatusException(
+                HttpStatus.BAD_REQUEST, "File không hợp lệ"))
+        .when(fileValidator)
+        .validate(any(), any());
 
-    assertEquals(HttpStatus.BAD_REQUEST, resp.getStatusCode());
-    assertEquals("File rỗng", resp.getBody().get("error"));
+    assertThrows(
+        org.springframework.web.server.ResponseStatusException.class,
+        () -> controller.uploadImage(bad));
     verify(fileUploadService, never()).uploadBlogImage(any());
   }
 
   @Test
-  void uploadImage_emptyFile_returns400() {
-    MockMultipartFile empty = new MockMultipartFile("file", "img.jpg", "image/jpeg", new byte[0]);
-    ResponseEntity<Map<String, String>> resp = controller.uploadImage(empty);
+  void uploadImage_delegatesToFileValidatorWithBlogCategory() {
+    MockMultipartFile file = new MockMultipartFile("file", "img.jpg", "image/jpeg", new byte[1024]);
+    when(fileUploadService.uploadBlogImage(any())).thenReturn("https://s3/img.jpg");
 
-    assertEquals(HttpStatus.BAD_REQUEST, resp.getStatusCode());
-    verify(fileUploadService, never()).uploadBlogImage(any());
-  }
+    controller.uploadImage(file);
 
-  @Test
-  void uploadImage_nonImageContentType_returns400() {
-    MockMultipartFile pdf =
-        new MockMultipartFile("file", "doc.pdf", "application/pdf", new byte[1024]);
-    ResponseEntity<Map<String, String>> resp = controller.uploadImage(pdf);
-
-    assertEquals(HttpStatus.BAD_REQUEST, resp.getStatusCode());
-    assertEquals("Chỉ chấp nhận file ảnh", resp.getBody().get("error"));
-    verify(fileUploadService, never()).uploadBlogImage(any());
-  }
-
-  @Test
-  void uploadImage_nullContentType_returns400() {
-    MockMultipartFile noType = new MockMultipartFile("file", "img.jpg", null, new byte[1024]);
-    ResponseEntity<Map<String, String>> resp = controller.uploadImage(noType);
-
-    assertEquals(HttpStatus.BAD_REQUEST, resp.getStatusCode());
-  }
-
-  @Test
-  void uploadImage_oversizeFile_returns400() {
-    // 5MB + 1 byte
-    byte[] big = new byte[(int) (5L * 1024 * 1024 + 1)];
-    MockMultipartFile oversize = new MockMultipartFile("file", "big.png", "image/png", big);
-
-    ResponseEntity<Map<String, String>> resp = controller.uploadImage(oversize);
-
-    assertEquals(HttpStatus.BAD_REQUEST, resp.getStatusCode());
-    assertEquals("Ảnh tối đa 5MB", resp.getBody().get("error"));
-    verify(fileUploadService, never()).uploadBlogImage(any());
+    verify(fileValidator)
+        .validate(eq(file), eq(com.iting.jobportal.file.FileValidator.Category.BLOG_IMAGE));
   }
 
   @Test

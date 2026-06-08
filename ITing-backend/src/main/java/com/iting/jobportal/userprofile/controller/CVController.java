@@ -140,6 +140,7 @@ public class CVController {
       value = "/parse",
       consumes = MediaType.MULTIPART_FORM_DATA_VALUE,
       produces = MediaType.APPLICATION_JSON_VALUE)
+  @RateLimited(policy = RateLimitPolicy.FILE_UPLOAD, subject = "user")
   @Operation(
       summary = "Phân tích CV bằng AI (Gemini)",
       description =

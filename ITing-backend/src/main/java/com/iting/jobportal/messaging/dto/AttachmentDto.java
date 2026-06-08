@@ -13,8 +13,16 @@ import lombok.Setter;
 @AllArgsConstructor
 @Builder
 public class AttachmentDto {
+  /** URL gốc (canonical) trên storage — lưu trong DB. */
   private String url;
+
   private String name;
   private String contentType;
   private Long size;
+
+  /**
+   * URL có chữ ký để xem/tải tạm thời (presigned). Chỉ tồn tại trong response/upload, KHÔNG lưu DB
+   * (object S3 ở prefix messages/ không public).
+   */
+  private String viewUrl;
 }

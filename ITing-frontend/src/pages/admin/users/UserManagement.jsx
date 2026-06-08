@@ -18,6 +18,7 @@ import { toast } from "sonner";
 import {
     Pagination,
     Button,
+    Badge,
     Card,
     Table,
     Td,
@@ -25,6 +26,7 @@ import {
     PageHeader,
 } from "../../../components";
 import { StatCard } from "../../../components/admin/StatCard";
+import { getUserStatusMeta } from "../../../utils/statusMeta";
 import {
     AdminFilterBar, AdminSearchInput, adminSelectClass, AdminResetButton
 } from "../../../components/admin/AdminFilterBar";
@@ -63,47 +65,34 @@ const RoleBadge = ({ role }) => {
 };
 
 const StatusBadge = ({ status, isOnline }) => {
-    if (status === "BANNED") {
+    // Trạng thái ACTIVE → hiển thị hiện diện realtime (online/offline) với chấm
+    // báo, nhưng vẫn dùng <Badge> chung để đồng dạng hình dạng/màu với toàn hệ thống.
+    if (status === "ACTIVE") {
+        if (isOnline) {
+            return (
+                <Badge variant="success">
+                    <span className="inline-flex items-center gap-1.5">
+                        <span className="relative flex h-2 w-2">
+                            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
+                            <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500" />
+                        </span>
+                        Đang online
+                    </span>
+                </Badge>
+            );
+        }
         return (
-            <span className="inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold bg-red-50 text-red-700 border border-red-200">
-                Bị khóa
-            </span>
-        );
-    }
-    if (status === "INACTIVE") {
-        return (
-            <span className="inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold bg-gray-50 text-gray-700 border border-gray-200">
-                Chưa kích hoạt
-            </span>
-        );
-    }
-    if (status === "PENDING") {
-        return (
-            <span className="inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold bg-yellow-50 text-yellow-700 border border-yellow-200">
-                Chờ duyệt
-            </span>
-        );
-    }
-
-    // ACTIVE status - show online/offline realtime
-    if (isOnline) {
-        return (
-            <span className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                <span className="relative flex h-2 w-2">
-                    <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
-                    <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500" />
+            <Badge variant="default">
+                <span className="inline-flex items-center gap-1.5">
+                    <span className="inline-flex h-2 w-2 rounded-full bg-slate-300" />
+                    Ngoại tuyến
                 </span>
-                Đang online
-            </span>
+            </Badge>
         );
     }
 
-    return (
-        <span className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold bg-slate-50 text-slate-500 border border-slate-200">
-            <span className="inline-flex h-2 w-2 rounded-full bg-slate-300" />
-            Ngoại tuyến
-        </span>
-    );
+    const meta = getUserStatusMeta(status);
+    return <Badge variant={meta.variant}>{meta.label}</Badge>;
 };
 
 const UserRowActionMenu = ({

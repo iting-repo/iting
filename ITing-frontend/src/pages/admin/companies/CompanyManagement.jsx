@@ -30,37 +30,12 @@ import ImportExcelModal from "../../../components/admin/ImportExcelModal";
 import { ConfirmModal } from "../../../components/common";
 import useConfirm from "../../../hooks/useConfirm";
 import { toast } from "sonner";
-
-const STATUS_COLOR = {
-  PENDING_REVIEW: "warning",
-  UNDER_REVIEW: "info",
-  APPROVED: "success",
-  REJECTED: "danger",
-  NEEDS_RESUBMISSION: "amber",
-  SUSPENDED: "danger",
-  MISSING: "slate",
-  UPLOADED: "info",
-};
+import { getCompanyStatusMeta } from "../../../utils/statusMeta";
 
 const VERIFICATION_COLOR = {
   BASIC: "slate",
   ADVANCED: "emerald",
   VERIFIED: "success",
-};
-
-const STATUS_LABEL = {
-  PENDING_REVIEW: "CHỜ DUYỆT",
-  APPROVED: "ĐÃ DUYỆT",
-  REJECTED: "BỊ TỪ CHỐI",
-  SUSPENDED: "BỊ ĐÌNH CHỈ",
-};
-
-const DOC_LABEL = {
-  MISSING: "THIẾU",
-  UPLOADED: "ĐÃ TẢI LÊN",
-  PENDING_REVIEW: "CHỜ DUYỆT",
-  APPROVED: "ĐÃ DUYỆT",
-  REJECTED: "BỊ TỪ CHỐI",
 };
 
 const VERIFICATION_LABEL = {
@@ -309,19 +284,17 @@ const CompanyManagement = () => {
     },
     {
       key: "infoStatus", label: "T.Thái Thông Tin", className: "whitespace-nowrap", cellClassName: "whitespace-nowrap",
-      render: (c) => (
-        <Badge variant={STATUS_COLOR[c.companyInfoUpdateStatus] || "default"}>
-          {STATUS_LABEL[c.companyInfoUpdateStatus] || c.companyInfoUpdateStatus || "CHƯA XÁC ĐỊNH"}
-        </Badge>
-      ),
+      render: (c) => {
+        const m = getCompanyStatusMeta(c.companyInfoUpdateStatus);
+        return <Badge variant={m.variant}>{m.label}</Badge>;
+      },
     },
     {
       key: "docStatus", label: "T.Thái Giấy Tờ", className: "whitespace-nowrap", cellClassName: "whitespace-nowrap",
-      render: (c) => (
-        <Badge variant={STATUS_COLOR[c.documentReviewStatus] || "default"}>
-          {DOC_LABEL[c.documentReviewStatus] || c.documentReviewStatus || "THIẾU"}
-        </Badge>
-      ),
+      render: (c) => {
+        const m = getCompanyStatusMeta(c.documentReviewStatus);
+        return <Badge variant={m.variant}>{m.label}</Badge>;
+      },
     },
     {
       key: "active", label: "Hoạt động", className: "w-32 whitespace-nowrap", cellClassName: "whitespace-nowrap",

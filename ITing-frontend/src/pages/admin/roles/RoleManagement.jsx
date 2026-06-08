@@ -380,8 +380,6 @@ const RoleManagement = () => {
           </button>
         </div>
       </Dialog>
-
-      <ArchitectureInfo />
     </div>
   );
 };

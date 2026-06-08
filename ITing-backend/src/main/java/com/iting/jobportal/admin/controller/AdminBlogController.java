@@ -3,7 +3,10 @@ package com.iting.jobportal.admin.controller;
 import com.iting.jobportal.admin.dto.request.BlogRequest;
 import com.iting.jobportal.admin.entity.Blog;
 import com.iting.jobportal.admin.service.AdminBlogService;
+import com.iting.jobportal.common.ratelimit.RateLimitPolicy;
+import com.iting.jobportal.common.ratelimit.RateLimited;
 import com.iting.jobportal.file.FileUploadService;
+import com.iting.jobportal.file.FileValidator;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -23,6 +26,7 @@ public class AdminBlogController {
 
   private final AdminBlogService adminBlogService;
   private final FileUploadService fileUploadService;
+  private final FileValidator fileValidator;
 
   @GetMapping
   @Operation(
@@ -68,18 +72,10 @@ public class AdminBlogController {
    * chèn <img src=url> vào content.
    */
   @PostMapping(value = "/upload-image", consumes = "multipart/form-data")
+  @RateLimited(policy = RateLimitPolicy.FILE_UPLOAD, subject = "user")
   @Operation(summary = "Upload 1 ảnh cho blog editor, trả về URL")
   public ResponseEntity<Map<String, String>> uploadImage(@RequestParam("file") MultipartFile file) {
-    if (file == null || file.isEmpty()) {
-      return ResponseEntity.badRequest().body(Map.of("error", "File rỗng"));
-    }
-    String contentType = file.getContentType();
-    if (contentType == null || !contentType.startsWith("image/")) {
-      return ResponseEntity.badRequest().body(Map.of("error", "Chỉ chấp nhận file ảnh"));
-    }
-    if (file.getSize() > 5L * 1024 * 1024) {
-      return ResponseEntity.badRequest().body(Map.of("error", "Ảnh tối đa 5MB"));
-    }
+    fileValidator.validate(file, FileValidator.Category.BLOG_IMAGE);
     String url = fileUploadService.uploadBlogImage(file);
     Map<String, String> body = new HashMap<>();
     body.put("url", url);

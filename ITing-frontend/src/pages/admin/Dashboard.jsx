@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { FaUserFriends, FaFileAlt, FaClipboardList, FaHourglassHalf } from 'react-icons/fa';
-import { StatsCard, Table, Td, LoadingSpinner } from '../../components';
+import { Badge, Table, Td, LoadingSpinner } from '../../components';
+import { StatCard } from '../../components/admin/StatCard';
+import { getJobStatusMeta } from '../../utils/statusMeta';
 import adminDashboardService from '../../services/adminDashboardService';
 
 // 1. IMPORT CHART.JS
@@ -80,31 +82,11 @@ const chartOptions = {
     }
 };
 
-const getStatusColor = (status) => {
-    switch (status) {
-        case 'ACTIVE': return 'bg-green-100 text-green-600';
-        case 'PENDING': return 'bg-yellow-100 text-yellow-600';
-        case 'CLOSED':
-        case 'REJECTED': return 'bg-red-100 text-red-600';
-        default: return 'bg-gray-100 text-gray-600';
-    }
-};
-
-const getStatusLabel = (status) => {
-    const map = {
-        ACTIVE: 'Đang hoạt động',
-        PENDING: 'Chờ duyệt',
-        CLOSED: 'Đã đóng',
-        REJECTED: 'Bị từ chối',
-        EXPIRED: 'Hết hạn',
-        SUSPENDED: 'Bị đình chỉ',
-        NEEDS_REVISION: 'Cần chỉnh sửa',
-    };
-
-    return map[status] || status || 'Chưa cập nhật';
-};
-
 const formatter = new Intl.NumberFormat('en-US');
+
+// Dòng phụ hiển thị xu hướng tăng/giảm trong StatCard
+const trendSub = (change) =>
+    `${change >= 0 ? '▲' : '▼'} ${Math.abs(change).toFixed(1)}% so với kỳ trước`;
 
 const AdminDashboard = () => {
     const [stats, setStats] = useState(null);
@@ -206,34 +188,34 @@ const AdminDashboard = () => {
             <h2 className="text-2xl font-bold text-slate-900">Tổng quan hệ thống</h2>
 
             {/* ROW 1: STATS CARDS */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                <StatsCard 
-                    title="Tổng người dùng" 
-                    value={formatter.format(stats.totalUsers)} 
-                    icon={<FaUserFriends />} 
-                    percentage={Math.abs(stats.userChange).toFixed(1)} 
-                    isIncrease={stats.userChange >= 0} 
+            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+                <StatCard
+                    label="Tổng người dùng"
+                    value={formatter.format(stats.totalUsers)}
+                    icon={<FaUserFriends className="h-5 w-5" />}
+                    accent="blue"
+                    sub={trendSub(stats.userChange)}
                 />
-                <StatsCard 
-                    title="Tổng tin tuyển dụng" 
-                    value={formatter.format(stats.totalJobs)} 
-                    icon={<FaFileAlt />} 
-                    percentage={Math.abs(stats.jobChange).toFixed(1)} 
-                    isIncrease={stats.jobChange >= 0} 
+                <StatCard
+                    label="Tổng tin tuyển dụng"
+                    value={formatter.format(stats.totalJobs)}
+                    icon={<FaFileAlt className="h-5 w-5" />}
+                    accent="violet"
+                    sub={trendSub(stats.jobChange)}
                 />
-                <StatsCard 
-                    title="Tổng lượt ứng tuyển" 
-                    value={formatter.format(stats.totalApplications)} 
-                    icon={<FaClipboardList />} 
-                    percentage={Math.abs(stats.applicationChange).toFixed(1)} 
-                    isIncrease={stats.applicationChange >= 0} 
+                <StatCard
+                    label="Tổng lượt ứng tuyển"
+                    value={formatter.format(stats.totalApplications)}
+                    icon={<FaClipboardList className="h-5 w-5" />}
+                    accent="emerald"
+                    sub={trendSub(stats.applicationChange)}
                 />
-                <StatsCard 
-                    title="Ứng tuyển chờ duyệt" 
-                    value={formatter.format(stats.pendingApplications)} 
-                    icon={<FaHourglassHalf />} 
-                    percentage={Math.abs(stats.pendingChange).toFixed(1)} 
-                    isIncrease={stats.pendingChange >= 0} 
+                <StatCard
+                    label="Ứng tuyển chờ duyệt"
+                    value={formatter.format(stats.pendingApplications)}
+                    icon={<FaHourglassHalf className="h-5 w-5" />}
+                    accent="amber"
+                    sub={trendSub(stats.pendingChange)}
                 />
             </div>
 
@@ -300,9 +282,10 @@ const AdminDashboard = () => {
                                 <Td className="text-gray-500 whitespace-nowrap">{job.dateTime}</Td>
                                 <Td className="font-medium text-gray-700">{formatter.format(job.applications)}</Td>
                                 <Td className="text-center">
-                                    <span className={`px-3 py-1 rounded-full text-xs font-bold whitespace-nowrap ${getStatusColor(job.status)}`}>
-                                        {getStatusLabel(job.status)}
-                                    </span>
+                                    {(() => {
+                                        const meta = getJobStatusMeta(job.status);
+                                        return <Badge variant={meta.variant}>{meta.label}</Badge>;
+                                    })()}
                                 </Td>
                             </tr>
                         )) : (

@@ -857,7 +857,7 @@ const MessagesPage = () => {
                     {attachments.map((a, i) => (
                       <div key={i} className="relative">
                         {(a.contentType || '').startsWith('image/') ? (
-                          <img src={a.url} alt={a.name} className="w-16 h-16 rounded-lg object-cover border border-slate-200" />
+                          <img src={a.viewUrl || a.url} alt={a.name} className="w-16 h-16 rounded-lg object-cover border border-slate-200" />
                         ) : (
                           <div className="w-40 h-16 rounded-lg border border-slate-200 bg-slate-50 flex items-center gap-2 px-2">
                             <FaPaperclip className="text-slate-400 flex-shrink-0" />
