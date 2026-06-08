@@ -14,4 +14,10 @@ public interface BannerRepository extends JpaRepository<Banner, Long> {
   long countByPositionAndStatus(String position, String status);
 
   long countByPositionAndStatusAndIdNot(String position, String status, Long id);
+
+  long countByBannerTypeAndStatus(String bannerType, String status);
+
+  long countByBannerTypeAndStatusAndIdNot(String bannerType, String status, Long id);
+
+  List<Banner> findByBannerTypeAndStatusOrderByPriorityDesc(String bannerType, String status);
 }

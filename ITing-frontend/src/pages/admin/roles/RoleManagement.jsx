@@ -1142,6 +1142,12 @@ const StaffManagement = () => {
   const [keyword, setKeyword] = useState('');
   const [loading, setLoading] = useState(false);
 
+  // Tạo tài khoản nội bộ mới
+  const EMPTY_CREATE = { email: '', fullName: '', password: '', platformRoleCode: '' };
+  const [showCreate, setShowCreate] = useState(false);
+  const [creating, setCreating] = useState(false);
+  const [createForm, setCreateForm] = useState(EMPTY_CREATE);
+
   const activeRoles = useMemo(
     () => platformRoles.filter((r) => r.status === 'ACTIVE'),
     [platformRoles]
@@ -1201,6 +1207,32 @@ const StaffManagement = () => {
     }
   };
 
+  const handleCreate = async (e) => {
+    e.preventDefault();
+    const email = createForm.email.trim();
+    if (!email) { toast.error('Vui lòng nhập email'); return; }
+    if ((createForm.password || '').length < 6) { toast.error('Mật khẩu tối thiểu 6 ký tự'); return; }
+    if (!createForm.fullName.trim()) { toast.error('Vui lòng nhập họ tên'); return; }
+    setCreating(true);
+    try {
+      await rbacService.createStaff({
+        email,
+        password: createForm.password,
+        fullName: createForm.fullName.trim(),
+        platformRoleCode: createForm.platformRoleCode || null,
+      });
+      toast.success('Đã tạo tài khoản nội bộ');
+      setShowCreate(false);
+      setCreateForm(EMPTY_CREATE);
+      load('');
+      setKeyword('');
+    } catch (err) {
+      toast.error(err?.response?.data?.message || err?.error || err?.message || 'Tạo tài khoản thất bại');
+    } finally {
+      setCreating(false);
+    }
+  };
+
   return (
     <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
@@ -1212,15 +1244,24 @@ const StaffManagement = () => {
             Gán vai trò nền tảng cho nhân sự nội bộ. Tìm kiếm để nâng tài khoản khác thành nội bộ.
           </p>
         </div>
-        <form onSubmit={onSearch} className="relative">
-          <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={12} />
-          <input
-            value={keyword}
-            onChange={(e) => setKeyword(e.target.value)}
-            placeholder="Tìm email / tên để gán quyền…"
-            className="pl-9 pr-3 py-2 text-sm border border-slate-200 rounded-xl outline-none focus:border-[#3AB4E6] w-full sm:w-72"
-          />
-        </form>
+        <div className="flex items-center gap-2">
+          <form onSubmit={onSearch} className="relative">
+            <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={12} />
+            <input
+              value={keyword}
+              onChange={(e) => setKeyword(e.target.value)}
+              placeholder="Tìm email / tên để gán quyền…"
+              className="pl-9 pr-3 py-2 text-sm border border-slate-200 rounded-xl outline-none focus:border-[#3AB4E6] w-full sm:w-72"
+            />
+          </form>
+          <button
+            type="button"
+            onClick={() => { setCreateForm(EMPTY_CREATE); setShowCreate(true); }}
+            className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-xl bg-[#3AB4E6] px-3.5 py-2 text-sm font-semibold text-white hover:bg-[#2A9DCB] transition-colors"
+          >
+            <FaUserPlus size={13} /> Tạo tài khoản
+          </button>
+        </div>
       </div>
 
       {loading ? (
@@ -1302,6 +1343,86 @@ const StaffManagement = () => {
           </table>
         </div>
       )}
+
+      {/* Modal tạo tài khoản nội bộ */}
+      <Dialog
+        open={showCreate}
+        onClose={() => !creating && setShowCreate(false)}
+        title="Tạo tài khoản nội bộ ITing"
+        widthClass="max-w-md"
+      >
+        <form onSubmit={handleCreate} className="space-y-4">
+          <p className="text-xs text-slate-500 -mt-1">
+            Tài khoản này dùng để nhân sự nội bộ ITing đăng nhập. Mật khẩu nên được đổi sau lần đăng nhập đầu.
+          </p>
+
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">Email <span className="text-red-500">*</span></label>
+            <input
+              type="email"
+              value={createForm.email}
+              onChange={(e) => setCreateForm((f) => ({ ...f, email: e.target.value }))}
+              placeholder="vd: nhanvien@iting.com"
+              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-[#3AB4E6] focus:ring-2 focus:ring-sky-100"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">Họ tên <span className="text-red-500">*</span></label>
+            <input
+              type="text"
+              value={createForm.fullName}
+              onChange={(e) => setCreateForm((f) => ({ ...f, fullName: e.target.value }))}
+              placeholder="vd: Nguyễn Văn A"
+              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-[#3AB4E6] focus:ring-2 focus:ring-sky-100"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">Mật khẩu <span className="text-red-500">*</span></label>
+            <input
+              type="text"
+              value={createForm.password}
+              onChange={(e) => setCreateForm((f) => ({ ...f, password: e.target.value }))}
+              placeholder="Tối thiểu 6 ký tự"
+              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-[#3AB4E6] focus:ring-2 focus:ring-sky-100"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">Vai trò nền tảng <span className="text-slate-400 font-normal">(tuỳ chọn)</span></label>
+            <select
+              value={createForm.platformRoleCode}
+              onChange={(e) => setCreateForm((f) => ({ ...f, platformRoleCode: e.target.value }))}
+              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm bg-white outline-none focus:border-[#3AB4E6]"
+            >
+              <option value="">— Chưa gán (gán sau) —</option>
+              {activeRoles.map((r) => (
+                <option key={r.code} value={r.code}>{r.name}</option>
+              ))}
+            </select>
+            <p className="text-[11px] text-slate-400 mt-1">Có thể để trống rồi gán vai trò ở bảng bên ngoài sau khi tạo.</p>
+          </div>
+
+          <div className="flex justify-end gap-2 pt-2">
+            <button
+              type="button"
+              onClick={() => setShowCreate(false)}
+              disabled={creating}
+              className="px-4 py-2 text-sm font-semibold text-slate-600 rounded-lg hover:bg-slate-100 disabled:opacity-50"
+            >
+              Hủy
+            </button>
+            <button
+              type="submit"
+              disabled={creating}
+              className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-semibold text-white rounded-lg bg-[#3AB4E6] hover:bg-[#2A9DCB] disabled:opacity-50"
+            >
+              {creating ? 'Đang tạo…' : 'Tạo tài khoản'}
+            </button>
+          </div>
+        </form>
+      </Dialog>
     </div>
   );
 };

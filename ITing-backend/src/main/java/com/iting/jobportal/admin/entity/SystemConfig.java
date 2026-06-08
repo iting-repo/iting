@@ -25,6 +25,9 @@ public class SystemConfig {
   private Integer jobExpiryDays;
   private Boolean autoApproveVerified;
 
+  /** Giới hạn số banner QUẢNG CÁO (ADVERTISEMENT) được bật cùng lúc. Cấu hình ở trang Banner. */
+  private Integer bannerAdLimit;
+
   // --- Email (SMTP) Settings ---
   private String smtpHost;
   private String smtpPort;

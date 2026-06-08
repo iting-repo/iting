@@ -68,6 +68,14 @@ public class Account extends AuditEntity {
   @Column(name = "last_login_at")
   private LocalDateTime lastLoginAt;
 
+  // 2FA (TOTP / Google Authenticator) — bắt buộc cho tài khoản nội bộ ITing.
+  @Column(name = "two_factor_secret", length = 64)
+  private String twoFactorSecret;
+
+  @Column(name = "two_factor_enabled", nullable = false)
+  @Builder.Default
+  private Boolean twoFactorEnabled = false;
+
   // Brute-force protection (added by V69).
   @Column(name = "failed_login_attempts", nullable = false)
   @Builder.Default

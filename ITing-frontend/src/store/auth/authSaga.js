@@ -7,7 +7,7 @@ import { storage } from '../../utils/storage';
 import {
     loginRequest, loginSuccess, loginFailure, googleLoginRequest, facebookLoginRequest,
     registerRequest, registerSuccess, registerFailure,
-    checkAuth
+    checkAuth, twoFactorRequired, twoFactorVerifyRequest
 } from './authSlice';
 
 function buildFallbackUser(baseUser = {}) {
@@ -175,7 +175,18 @@ function* handleLogin(action) {
         const { email, password, navigate } = action.payload;
         console.log("Starting login request for:", email);
         const data = yield call(authService.login, email, password);
-        
+
+        // Tài khoản nội bộ → backend yêu cầu xác thực 2 bước (chưa cấp token)
+        if (data?.twoFactorRequired) {
+            yield put(twoFactorRequired({
+                setup: !!data.twoFactorSetup,
+                secret: data.twoFactorSecret || null,
+                otpauthUrl: data.otpauthUrl || null,
+                email,
+            }));
+            return;
+        }
+
         const token = data.token || data.accessToken;
         if (token) {
             data.token = token;
@@ -201,9 +212,41 @@ function* handleLogin(action) {
     }
 }
 
+// Worker Saga: 2FA verify (cả setup lần đầu lẫn đăng nhập thường)
+function* handleTwoFactorVerify(action) {
+    try {
+        const { email, password, code, setup, navigate } = action.payload;
+        const fn = setup ? authService.twoFactorSetupVerify : authService.twoFactorVerify;
+        const data = yield call(fn, { email, password, code });
+
+        const token = data.token || data.accessToken;
+        if (token) {
+            data.token = token;
+            const hydratedUser = yield call(hydrateUserProfile, data);
+            storage.setAuth(token, data.role, hydratedUser);
+            yield put(loginSuccess(hydratedUser));
+
+            if (data.role === 'EMPLOYER') {
+                navigate('/employer/dashboard');
+            } else if (data.role === 'ADMIN') {
+                navigate('/admin/dashboard');
+            } else {
+                navigate('/');
+            }
+        } else {
+            throw new Error("API response missing token");
+        }
+    } catch (error) {
+        console.error("2FA verify saga error:", error);
+        const message = error.error || error.response?.data?.message || error.message || "Mã xác thực không đúng";
+        yield put(loginFailure(message));
+    }
+}
+
 // Watcher Saga
 export default function* authSaga() {
     yield takeLatest(loginRequest.type, handleLogin);
+    yield takeLatest(twoFactorVerifyRequest.type, handleTwoFactorVerify);
     yield takeLatest(googleLoginRequest.type, handleGoogleLogin);
     yield takeLatest(facebookLoginRequest.type, handleFacebookLogin);
     yield takeLatest(registerRequest.type, handleRegister);

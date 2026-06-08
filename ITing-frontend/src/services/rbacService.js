@@ -45,6 +45,8 @@ const rbacService = {
   // ── Tài khoản nội bộ (gán platform role) ────────────────────────────
   getStaff: (keyword) =>
     axiosInstance.get("/admin/rbac/staff", { params: keyword ? { keyword } : {} }),
+  // Tạo tài khoản nội bộ mới (đăng nhập được). payload: {email, password, fullName, platformRoleCode?}
+  createStaff: (payload) => axiosInstance.post("/admin/rbac/staff", payload),
   promoteStaff: (accountId) =>
     axiosInstance.post(`/admin/rbac/staff/${accountId}/promote`),
   clearStaffRole: (accountId) =>

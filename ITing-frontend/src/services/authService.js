@@ -58,4 +58,13 @@ authService.changePassword = async (oldPassword, newPassword) => {
     return axiosInstance.post('/auth/change-password', { oldPassword, newPassword });
 }
 
+// 2FA (Google Authenticator) — bước 2 sau khi nhập đúng mật khẩu
+authService.twoFactorSetupVerify = async ({ email, password, code }) => {
+    return axiosInstance.post('/auth/2fa/setup-verify', { email, password, code });
+}
+
+authService.twoFactorVerify = async ({ email, password, code }) => {
+    return axiosInstance.post('/auth/2fa/verify', { email, password, code });
+}
+
 export default authService;

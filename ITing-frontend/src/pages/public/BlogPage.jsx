@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import publicService from '../../services/publicService';
 import { GlobalLoading } from '../../components/common';
+import PageBanner from '../../components/PageBanner';
 import { Search, Briefcase, FileText, ArrowRight, Clock, ChevronRight, TrendingUp, BookOpen, Eye } from 'lucide-react';
 
 function formatViews(n) {
@@ -121,6 +122,11 @@ export default function BlogPage() {
             </div>
         </div>
       </section>
+
+      {/* ─── BANNER (vị trí: Trang blog) ─── */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-6">
+        <PageBanner position="blog" />
+      </div>
 
       {/* ─── FEATURED BENTO ─── */}
       {hero && (

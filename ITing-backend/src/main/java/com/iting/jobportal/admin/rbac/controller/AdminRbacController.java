@@ -198,6 +198,15 @@ public class AdminRbacController {
     return ResponseEntity.ok(rbacService.listStaff(keyword));
   }
 
+  @PostMapping("/staff")
+  @PreAuthorize("@perm.has('platform.roles.manage')")
+  @Operation(summary = "Tạo tài khoản nội bộ ITing mới (đăng nhập được)")
+  public ResponseEntity<StaffResponse> createStaff(
+      @AuthenticationPrincipal AuthUser user,
+      @Valid @RequestBody CreateInternalAccountRequest request) {
+    return ResponseEntity.ok(rbacService.createInternalAccount(actorId(user), request));
+  }
+
   @PostMapping("/staff/{accountId}/promote")
   @PreAuthorize("@perm.has('platform.roles.manage')")
   @Operation(summary = "Nâng tài khoản thành nhân sự nội bộ ITing")

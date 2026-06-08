@@ -1,10 +1,13 @@
 package com.iting.jobportal.admin.controller;
 
 import com.iting.jobportal.admin.entity.Banner;
+import com.iting.jobportal.admin.entity.SystemConfig;
 import com.iting.jobportal.admin.repository.BannerRepository;
+import com.iting.jobportal.admin.repository.SystemConfigRepository;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.List;
+import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -15,36 +18,68 @@ import org.springframework.web.bind.annotation.*;
 @Tag(name = "Admin Banners", description = "Admin Banner Management")
 public class AdminBannerController {
 
-  /** Vị trí hero carousel trang chủ. */
-  private static final String HOMEPAGE_POSITION = "homepage_main";
+  /** Banner quảng cáo — loại bị giới hạn số lượng bật cùng lúc. */
+  private static final String TYPE_ADVERTISEMENT = "ADVERTISEMENT";
 
   private static final String STATUS_ACTIVE = "ACTIVE";
 
-  /** Giới hạn số banner đang bật ở carousel trang chủ — tránh vòng xoay quá dài. */
-  private static final int MAX_HOMEPAGE_ACTIVE = 5;
+  /** Giới hạn mặc định nếu chưa cấu hình. */
+  private static final int DEFAULT_AD_LIMIT = 5;
 
   private final BannerRepository bannerRepository;
+  private final SystemConfigRepository systemConfigRepository;
+
+  /** Đọc giới hạn banner quảng cáo từ config (mặc định {@link #DEFAULT_AD_LIMIT}). */
+  private int getAdLimit() {
+    return systemConfigRepository
+        .findFirstByOrderByIdAsc()
+        .map(SystemConfig::getBannerAdLimit)
+        .filter(v -> v != null && v > 0)
+        .orElse(DEFAULT_AD_LIMIT);
+  }
 
   /**
-   * Chặn vượt quá {@link #MAX_HOMEPAGE_ACTIVE} banner ACTIVE ở vị trí homepage_main. Chỉ kiểm tra khi
-   * banner đích thực sự là homepage_main + ACTIVE. {@code excludeId} bỏ qua chính banner đang
-   * sửa/bật để không tự đếm trùng.
+   * Chặn vượt quá giới hạn banner QUẢNG CÁO (ADVERTISEMENT) đang bật. Chỉ kiểm tra khi banner đích là
+   * ADVERTISEMENT + ACTIVE. {@code excludeId} bỏ qua chính banner đang sửa/bật để không đếm trùng.
    */
-  private void enforceHomepageLimit(String position, String status, Long excludeId) {
-    if (!HOMEPAGE_POSITION.equals(position) || !STATUS_ACTIVE.equals(status)) {
+  private void enforceAdLimit(String bannerType, String status, Long excludeId) {
+    String type = bannerType == null ? TYPE_ADVERTISEMENT : bannerType;
+    if (!TYPE_ADVERTISEMENT.equals(type) || !STATUS_ACTIVE.equals(status)) {
       return;
     }
+    int limit = getAdLimit();
     long activeCount =
         (excludeId == null)
-            ? bannerRepository.countByPositionAndStatus(HOMEPAGE_POSITION, STATUS_ACTIVE)
-            : bannerRepository.countByPositionAndStatusAndIdNot(
-                HOMEPAGE_POSITION, STATUS_ACTIVE, excludeId);
-    if (activeCount >= MAX_HOMEPAGE_ACTIVE) {
+            ? bannerRepository.countByBannerTypeAndStatus(TYPE_ADVERTISEMENT, STATUS_ACTIVE)
+            : bannerRepository.countByBannerTypeAndStatusAndIdNot(
+                TYPE_ADVERTISEMENT, STATUS_ACTIVE, excludeId);
+    if (activeCount >= limit) {
       throw new IllegalArgumentException(
           "Đã đạt giới hạn tối đa "
-              + MAX_HOMEPAGE_ACTIVE
-              + " banner đang bật ở vị trí Trang chủ (Main). Hãy tắt bớt banner khác trước.");
+              + limit
+              + " banner Quảng cáo đang bật. Hãy tắt bớt banner khác hoặc tăng giới hạn.");
     }
+  }
+
+  @GetMapping("/ad-limit")
+  @Operation(summary = "Lấy giới hạn banner quảng cáo + số đang bật")
+  public ResponseEntity<Map<String, Object>> getAdLimitInfo() {
+    long active = bannerRepository.countByBannerTypeAndStatus(TYPE_ADVERTISEMENT, STATUS_ACTIVE);
+    return ResponseEntity.ok(Map.of("limit", getAdLimit(), "active", active));
+  }
+
+  @PutMapping("/ad-limit")
+  @Operation(summary = "Cập nhật giới hạn banner quảng cáo")
+  public ResponseEntity<Map<String, Object>> updateAdLimit(@RequestParam int limit) {
+    if (limit < 1 || limit > 50) {
+      throw new IllegalArgumentException("Giới hạn phải trong khoảng 1–50");
+    }
+    SystemConfig cfg =
+        systemConfigRepository.findFirstByOrderByIdAsc().orElseGet(SystemConfig::new);
+    cfg.setBannerAdLimit(limit);
+    systemConfigRepository.save(cfg);
+    long active = bannerRepository.countByBannerTypeAndStatus(TYPE_ADVERTISEMENT, STATUS_ACTIVE);
+    return ResponseEntity.ok(Map.of("limit", limit, "active", active));
   }
 
   @GetMapping
@@ -71,7 +106,10 @@ public class AdminBannerController {
     if (banner.getPriority() == null) {
       banner.setPriority(0);
     }
-    enforceHomepageLimit(banner.getPosition(), banner.getStatus(), null);
+    if (banner.getBannerType() == null) {
+      banner.setBannerType(TYPE_ADVERTISEMENT);
+    }
+    enforceAdLimit(banner.getBannerType(), banner.getStatus(), null);
     return ResponseEntity.ok(bannerRepository.save(banner));
   }
 
@@ -83,8 +121,11 @@ public class AdminBannerController {
         .findById(id)
         .map(
             banner -> {
-              enforceHomepageLimit(
-                  bannerDetails.getPosition(), bannerDetails.getStatus(), banner.getId());
+              String newType =
+                  bannerDetails.getBannerType() != null
+                      ? bannerDetails.getBannerType()
+                      : banner.getBannerType();
+              enforceAdLimit(newType, bannerDetails.getStatus(), banner.getId());
               banner.setTitle(bannerDetails.getTitle());
               banner.setPosition(bannerDetails.getPosition());
               banner.setImageDesktop(bannerDetails.getImageDesktop());
@@ -94,6 +135,9 @@ public class AdminBannerController {
               banner.setEndAt(bannerDetails.getEndAt());
               banner.setPriority(bannerDetails.getPriority());
               banner.setStatus(bannerDetails.getStatus());
+              if (bannerDetails.getBannerType() != null) {
+                banner.setBannerType(bannerDetails.getBannerType());
+              }
               return ResponseEntity.ok(bannerRepository.save(banner));
             })
         .orElse(ResponseEntity.notFound().build());
@@ -120,7 +164,7 @@ public class AdminBannerController {
         .findById(id)
         .map(
             banner -> {
-              enforceHomepageLimit(banner.getPosition(), status, banner.getId());
+              enforceAdLimit(banner.getBannerType(), status, banner.getId());
               banner.setStatus(status);
               return ResponseEntity.ok(bannerRepository.save(banner));
             })

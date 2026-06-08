@@ -66,7 +66,9 @@ public class SecurityConfig {
                         "/api/auth/register",
                         "/api/auth/google",
                         "/api/auth/facebook",
-                        "/api/auth/refresh")
+                        "/api/auth/refresh",
+                        "/api/auth/2fa/setup-verify",
+                        "/api/auth/2fa/verify")
                     .permitAll()
                     .requestMatchers(
                         "/api/auth/forgot-password",

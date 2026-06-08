@@ -4,15 +4,18 @@ import com.iting.jobportal.admin.service.AdminNotificationService;
 import com.iting.jobportal.auth.dto.request.ChangePasswordRequest;
 import com.iting.jobportal.auth.dto.request.LoginRequest;
 import com.iting.jobportal.auth.dto.request.RegisterRequest;
+import com.iting.jobportal.auth.dto.request.TwoFactorRequest;
 import com.iting.jobportal.auth.dto.response.LoginResponse;
 import com.iting.jobportal.auth.dto.response.UserMeResponse;
 import com.iting.jobportal.auth.entity.Account;
 import com.iting.jobportal.auth.entity.Enum.AccountStatus;
+import com.iting.jobportal.auth.entity.Enum.AccountType;
 import com.iting.jobportal.auth.entity.Enum.Role;
 import com.iting.jobportal.auth.entity.OtpCode;
 import com.iting.jobportal.auth.repository.AccountRepository;
 import com.iting.jobportal.auth.repository.OtpCodeRepository;
 import com.iting.jobportal.auth.security.JwtTokenUtil;
+import com.iting.jobportal.auth.security.TotpService;
 import com.iting.jobportal.auth.service.AuthService;
 import com.iting.jobportal.auth.service.GoogleAuthService;
 import com.iting.jobportal.auth.service.RefreshTokenService;
@@ -47,6 +50,9 @@ public class AuthServiceImpl implements AuthService {
   private final EmailTemplateService emailTemplateService;
   private final AdminNotificationService adminNotificationService;
   private final com.iting.jobportal.admin.service.AdminConfigService adminConfigService;
+  private final TotpService totpService;
+
+  private static final String TOTP_ISSUER = "ITing";
 
   @Override
   @Transactional
@@ -433,26 +439,109 @@ public class AuthServiceImpl implements AuthService {
           "Vui lòng xác minh email trước khi đăng nhập. Kiểm tra hộp thư để lấy mã OTP.");
     }
 
-    // Đăng nhập thành công → reset bộ đếm khóa
+    // Mật khẩu đúng → reset bộ đếm khóa (chưa cấp token nếu còn bước 2FA)
     account.setFailedLoginAttempts(0);
     account.setLockedUntil(null);
+    accountRepository.save(account);
+
+    // 🔒 2FA bắt buộc cho tài khoản nội bộ ITing (cấp doanh nghiệp)
+    if (account.getAccountType() == AccountType.INTERNAL_STAFF) {
+      if (!Boolean.TRUE.equals(account.getTwoFactorEnabled())) {
+        // Lần đầu: tạo secret (nếu chưa có) và yêu cầu thiết lập Google Authenticator
+        String secret = account.getTwoFactorSecret();
+        if (secret == null || secret.isBlank()) {
+          secret = totpService.generateSecret();
+          account.setTwoFactorSecret(secret);
+          accountRepository.save(account);
+        }
+        return LoginResponse.builder()
+            .userId(account.getId())
+            .email(account.getEmail())
+            .twoFactorRequired(true)
+            .twoFactorSetup(true)
+            .twoFactorSecret(secret)
+            .otpauthUrl(totpService.buildOtpAuthUrl(TOTP_ISSUER, account.getEmail(), secret))
+            .build();
+      }
+      // Đã bật 2FA → yêu cầu nhập mã 6 số từ authenticator
+      return LoginResponse.builder()
+          .userId(account.getId())
+          .email(account.getEmail())
+          .twoFactorRequired(true)
+          .twoFactorSetup(false)
+          .build();
+    }
+
+    return issueTokens(account, request.getDeviceInfo(), request.getIpAddress());
+  }
+
+  @Override
+  @Transactional
+  public LoginResponse twoFactorSetupVerify(TwoFactorRequest request) {
+    Account account = authenticateForTwoFactor(request.getEmail(), request.getPassword());
+    if (account.getAccountType() != AccountType.INTERNAL_STAFF) {
+      throw new RuntimeException("Tài khoản này không yêu cầu xác thực 2 bước");
+    }
+    String secret = account.getTwoFactorSecret();
+    if (secret == null || secret.isBlank()) {
+      throw new RuntimeException("Chưa khởi tạo 2FA. Vui lòng đăng nhập lại.");
+    }
+    if (!totpService.verifyCode(secret, request.getCode())) {
+      throw new RuntimeException("Mã xác thực không đúng. Vui lòng thử lại.");
+    }
+    account.setTwoFactorEnabled(true);
+    accountRepository.save(account);
+    return issueTokens(account, request.getDeviceInfo(), request.getIpAddress());
+  }
+
+  @Override
+  @Transactional
+  public LoginResponse twoFactorVerify(TwoFactorRequest request) {
+    Account account = authenticateForTwoFactor(request.getEmail(), request.getPassword());
+    if (!Boolean.TRUE.equals(account.getTwoFactorEnabled())
+        || account.getTwoFactorSecret() == null) {
+      throw new RuntimeException("Tài khoản chưa bật xác thực 2 bước");
+    }
+    if (!totpService.verifyCode(account.getTwoFactorSecret(), request.getCode())) {
+      throw new RuntimeException("Mã xác thực không đúng. Vui lòng thử lại.");
+    }
+    return issueTokens(account, request.getDeviceInfo(), request.getIpAddress());
+  }
+
+  /** Xác thực lại email + mật khẩu cho bước 2FA (không đếm sai để tránh khóa do nhập lại). */
+  private Account authenticateForTwoFactor(String email, String password) {
+    Account account =
+        accountRepository
+            .findByEmail(email)
+            .orElseThrow(() -> new RuntimeException("Sai mật khẩu hoặc tài khoản"));
+    if (account.getLockedUntil() != null
+        && account.getLockedUntil().isAfter(LocalDateTime.now())) {
+      throw new RuntimeException("Tài khoản tạm khóa. Vui lòng thử lại sau.");
+    }
+    if (!passwordEncoder.matches(password, account.getPasswordHash())) {
+      throw new RuntimeException("Sai mật khẩu hoặc tài khoản");
+    }
+    if (account.getStatus() == AccountStatus.BANNED) {
+      throw new RuntimeException("Tài khoản của bạn đã bị khóa.");
+    }
+    return account;
+  }
+
+  /** Cấp access + refresh token (dùng chung cho login thường và sau khi qua 2FA). */
+  private LoginResponse issueTokens(Account account, String deviceInfo, String ipAddress) {
     account.setLastLoginAt(LocalDateTime.now());
     accountRepository.save(account);
 
     String primaryRole =
         account.getRole() != null ? account.getRole().normalizedName() : "CANDIDATE";
-
-    // 🔥 Tạo JWT Access Token
     String accessToken =
         jwtTokenUtil.generateToken(account.getId(), account.getEmail(), primaryRole);
-
-    // 🔥 Tạo Refresh Token
     var refreshToken =
         refreshTokenService.createRefreshToken(
             account.getId(),
             account.getEmail(),
-            request.getDeviceInfo() != null ? request.getDeviceInfo() : "Unknown",
-            request.getIpAddress() != null ? request.getIpAddress() : "Unknown");
+            deviceInfo != null ? deviceInfo : "Unknown",
+            ipAddress != null ? ipAddress : "Unknown");
 
     return LoginResponse.builder()
         .userId(account.getId())
@@ -461,7 +550,7 @@ public class AuthServiceImpl implements AuthService {
         .accessToken(accessToken)
         .refreshToken(refreshToken.getToken())
         .tokenType("Bearer")
-        .expiresIn(jwtTokenUtil.getExpirationSeconds()) // 24 hours in seconds
+        .expiresIn(jwtTokenUtil.getExpirationSeconds())
         .build();
   }
 

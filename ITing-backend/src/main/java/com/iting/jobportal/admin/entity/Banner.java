@@ -45,9 +45,14 @@ public class Banner extends AuditEntity {
   @Column(nullable = false, length = 20)
   private String status;
 
+  /** Loại banner: ADVERTISEMENT (quảng cáo) | BRANDING (nhận diện thương hiệu ITing). */
+  @Column(name = "banner_type", nullable = false, length = 50)
+  private String bannerType;
+
   @PrePersist
   protected void onCreate() {
     if (priority == null) priority = 0;
     if (status == null) status = "ACTIVE";
+    if (bannerType == null) bannerType = "ADVERTISEMENT";
   }
 }

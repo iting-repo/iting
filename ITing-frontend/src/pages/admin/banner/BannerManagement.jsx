@@ -6,19 +6,60 @@ import useConfirm from "../../../hooks/useConfirm";
 import { toast } from "sonner";
 import axiosInstance from "../../../utils/axiosInstance";
 
-// Giới hạn banner đang bật ở carousel trang chủ (đồng bộ với backend
-// AdminBannerController.MAX_HOMEPAGE_ACTIVE).
-const MAX_HOMEPAGE_BANNERS = 5;
-const HOMEPAGE_POSITION = "homepage_main";
+// Loại banner — phân biệt mục đích sử dụng.
+const BANNER_TYPES = [
+  { value: "ADVERTISEMENT", label: "Banner quảng cáo", short: "Quảng cáo", variant: "warning" },
+  { value: "BRANDING", label: "Banner nhận diện thương hiệu ITing", short: "Thương hiệu ITing", variant: "sky" },
+];
+const typeMeta = (v) => BANNER_TYPES.find((t) => t.value === v) || BANNER_TYPES[0];
+
+// Vị trí hiển thị banner.
+const BANNER_POSITIONS = [
+  { value: "homepage_main", label: "Trang chủ" },
+  { value: "jobs_list", label: "Trang danh sách việc làm" },
+  { value: "blog", label: "Trang blog" },
+];
+const positionLabel = (v) => BANNER_POSITIONS.find((p) => p.value === v)?.label || v;
 
 const BannerManagement = () => {
   const [banners, setBanners] = useState([]);
   const [search, setSearch] = useState("");
   const [positionFilter, setPositionFilter] = useState("ALL");
+  const [typeFilter, setTypeFilter] = useState("ALL");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState(null);
   const [loading, setLoading] = useState(false);
   const [confirm, askConfirm, resetConfirm] = useConfirm();
+  const [adLimit, setAdLimit] = useState(5);
+  const [limitInput, setLimitInput] = useState(5);
+  const [savingLimit, setSavingLimit] = useState(false);
+
+  const fetchAdLimit = async () => {
+    try {
+      const res = await axiosInstance.get("/admin/banners/ad-limit");
+      if (res?.limit) { setAdLimit(res.limit); setLimitInput(res.limit); }
+    } catch { /* dùng mặc định */ }
+  };
+
+  const handleSaveLimit = async () => {
+    const v = parseInt(limitInput, 10);
+    if (!v || v < 1 || v > 50) { toast.error("Giới hạn phải trong khoảng 1–50"); return; }
+    try {
+      setSavingLimit(true);
+      const res = await axiosInstance.put(`/admin/banners/ad-limit?limit=${v}`);
+      setAdLimit(res?.limit || v);
+      toast.success("Đã cập nhật giới hạn banner quảng cáo");
+    } catch (error) {
+      toast.error(error?.response?.data?.error || "Lỗi khi lưu giới hạn");
+    } finally {
+      setSavingLimit(false);
+    }
+  };
+
+  // Số banner quảng cáo đang bật (cho chỉ báo x/limit).
+  const adActiveCount = banners.filter(
+    (b) => (b.bannerType || "ADVERTISEMENT") === "ADVERTISEMENT" && b.status === "ACTIVE"
+  ).length;
   
   const [form, setForm] = useState({
     title: "",
@@ -27,7 +68,8 @@ const BannerManagement = () => {
     imageMobile: "",
     link: "",
     priority: 0,
-    status: "ACTIVE"
+    status: "ACTIVE",
+    bannerType: "ADVERTISEMENT"
   });
 
   const fetchBanners = async () => {
@@ -44,40 +86,44 @@ const BannerManagement = () => {
 
   useEffect(() => {
     fetchBanners();
+    fetchAdLimit();
   }, []);
 
   const filtered = banners.filter((b) => {
     const matchSearch = b.title.toLowerCase().includes(search.toLowerCase());
     const matchPos = positionFilter === "ALL" || b.position === positionFilter;
-    return matchSearch && matchPos;
+    const matchType = typeFilter === "ALL" || (b.bannerType || "ADVERTISEMENT") === typeFilter;
+    return matchSearch && matchPos && matchType;
   }).sort((a, b) => b.priority - a.priority);
 
   const openCreate = () => { 
     setEditing(null); 
-    setForm({ 
-      title: "", 
-      position: "homepage_main", 
-      imageDesktop: "", 
-      imageMobile: "", 
-      link: "", 
-      priority: 0, 
-      status: "ACTIVE" 
-    }); 
-    setDialogOpen(true); 
+    setForm({
+      title: "",
+      position: "homepage_main",
+      imageDesktop: "",
+      imageMobile: "",
+      link: "",
+      priority: 0,
+      status: "ACTIVE",
+      bannerType: "ADVERTISEMENT"
+    });
+    setDialogOpen(true);
   };
 
   const openEdit = (item) => { 
     setEditing(item); 
-    setForm({ 
-      title: item.title, 
-      position: item.position, 
-      imageDesktop: item.imageDesktop || "", 
-      imageMobile: item.imageMobile || "", 
-      link: item.link || "", 
-      priority: item.priority || 0, 
-      status: item.status || "ACTIVE" 
-    }); 
-    setDialogOpen(true); 
+    setForm({
+      title: item.title,
+      position: item.position,
+      imageDesktop: item.imageDesktop || "",
+      imageMobile: item.imageMobile || "",
+      link: item.link || "",
+      priority: item.priority || 0,
+      status: item.status || "ACTIVE",
+      bannerType: item.bannerType || "ADVERTISEMENT"
+    });
+    setDialogOpen(true);
   };
 
   const handleSave = async () => {
@@ -85,13 +131,13 @@ const BannerManagement = () => {
       toast.error("Tiêu đề không được trống");
       return;
     }
-    // Chặn vượt giới hạn banner đang bật ở carousel trang chủ (homepage_main + ACTIVE).
-    if (form.position === HOMEPAGE_POSITION && form.status === "ACTIVE") {
+    // Chặn vượt giới hạn banner QUẢNG CÁO đang bật (cấu hình được).
+    if (form.bannerType === "ADVERTISEMENT" && form.status === "ACTIVE") {
       const othersActive = banners.filter(
-        (b) => b.position === HOMEPAGE_POSITION && b.status === "ACTIVE" && b.id !== editing?.id
+        (b) => (b.bannerType || "ADVERTISEMENT") === "ADVERTISEMENT" && b.status === "ACTIVE" && b.id !== editing?.id
       ).length;
-      if (othersActive >= MAX_HOMEPAGE_BANNERS) {
-        toast.error(`Tối đa ${MAX_HOMEPAGE_BANNERS} banner đang bật ở Trang chủ (Main). Hãy tắt bớt banner khác trước.`);
+      if (othersActive >= adLimit) {
+        toast.error(`Tối đa ${adLimit} banner Quảng cáo đang bật. Hãy tắt bớt banner khác hoặc tăng giới hạn.`);
         return;
       }
     }
@@ -131,15 +177,15 @@ const BannerManagement = () => {
 
   const toggleActive = async (id, currentStatus) => {
     const newStatus = currentStatus === "ACTIVE" ? "INACTIVE" : "ACTIVE";
-    // Khi bật một banner trang chủ, kiểm tra giới hạn carousel.
+    // Khi bật banner Quảng cáo, kiểm tra giới hạn.
     if (newStatus === "ACTIVE") {
       const banner = banners.find((b) => b.id === id);
-      if (banner?.position === HOMEPAGE_POSITION) {
+      if ((banner?.bannerType || "ADVERTISEMENT") === "ADVERTISEMENT") {
         const othersActive = banners.filter(
-          (b) => b.position === HOMEPAGE_POSITION && b.status === "ACTIVE" && b.id !== id
+          (b) => (b.bannerType || "ADVERTISEMENT") === "ADVERTISEMENT" && b.status === "ACTIVE" && b.id !== id
         ).length;
-        if (othersActive >= MAX_HOMEPAGE_BANNERS) {
-          toast.error(`Tối đa ${MAX_HOMEPAGE_BANNERS} banner đang bật ở Trang chủ (Main). Hãy tắt bớt banner khác trước.`);
+        if (othersActive >= adLimit) {
+          toast.error(`Tối đa ${adLimit} banner Quảng cáo đang bật. Hãy tắt bớt banner khác hoặc tăng giới hạn.`);
           return;
         }
       }
@@ -159,19 +205,37 @@ const BannerManagement = () => {
           <h1 className="text-2xl font-bold text-slate-900">Quản lý Banner</h1>
           <p className="text-slate-500 text-sm mt-1">Hệ thống phân phối nội dung quảng cáo CMS</p>
           {(() => {
-            const activeHomepage = banners.filter(
-              (b) => b.position === HOMEPAGE_POSITION && b.status === "ACTIVE"
-            ).length;
-            const full = activeHomepage >= MAX_HOMEPAGE_BANNERS;
+            const full = adActiveCount >= adLimit;
             return (
               <p className={`text-xs mt-0.5 ${full ? "font-semibold text-amber-600" : "text-slate-400"}`}>
-                Carousel Trang chủ: {activeHomepage}/{MAX_HOMEPAGE_BANNERS} banner đang bật
+                Banner Quảng cáo: {adActiveCount}/{adLimit} đang bật
                 {full && " — đã đạt giới hạn"}
               </p>
             );
           })()}
         </div>
-        <Button variant="primary" onClick={openCreate}><Plus className="h-4 w-4 mr-2" />Thêm Banner</Button>
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-1.5">
+            <span className="text-xs font-medium text-gray-600 whitespace-nowrap">Giới hạn banner QC</span>
+            <Input
+              type="number"
+              min={1}
+              max={50}
+              value={limitInput}
+              onChange={(e) => setLimitInput(e.target.value)}
+              className="w-16 h-8 text-center"
+            />
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleSaveLimit}
+              disabled={savingLimit || String(limitInput) === String(adLimit)}
+            >
+              {savingLimit ? "..." : "Lưu"}
+            </Button>
+          </div>
+          <Button variant="primary" onClick={openCreate}><Plus className="h-4 w-4 mr-2" />Thêm Banner</Button>
+        </div>
       </div>
 
       <div className="flex items-center gap-4">
@@ -179,11 +243,17 @@ const BannerManagement = () => {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
           <Input placeholder="Tìm tiêu đề banner..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />
         </div>
-        <Select value={positionFilter} onChange={(e) => setPositionFilter(e.target.value)} className="w-[180px]">
+        <Select value={positionFilter} onChange={(e) => setPositionFilter(e.target.value)} className="w-[200px]">
           <option value="ALL">Tất cả vị trí</option>
-          <option value="homepage_main">Trang chủ (Main)</option>
-          <option value="job_detail">Chi tiết việc làm</option>
-          <option value="company_list">Danh sách công ty</option>
+          {BANNER_POSITIONS.map((p) => (
+            <option key={p.value} value={p.value}>{p.label}</option>
+          ))}
+        </Select>
+        <Select value={typeFilter} onChange={(e) => setTypeFilter(e.target.value)} className="w-[200px]">
+          <option value="ALL">Tất cả loại</option>
+          {BANNER_TYPES.map((t) => (
+            <option key={t.value} value={t.value}>{t.label}</option>
+          ))}
         </Select>
       </div>
 
@@ -207,8 +277,9 @@ const BannerManagement = () => {
                 <div className="flex-1 min-w-0">
                   <h3 className="font-semibold text-gray-800 text-base truncate">{item.title}</h3>
                   <div className="flex items-center gap-2 mt-1 flex-wrap">
-                    <Badge variant="blue">{item.position}</Badge>
-                    <Badge variant="gray">Ưu tiên: {item.priority}</Badge>
+                    <Badge variant="info">{positionLabel(item.position)}</Badge>
+                    <Badge variant={typeMeta(item.bannerType).variant}>{typeMeta(item.bannerType).short}</Badge>
+                    <Badge variant="default">Ưu tiên: {item.priority}</Badge>
                     {item.link && <a href={item.link} target="_blank" rel="noreferrer" className="text-xs text-blue-500 hover:underline truncate max-w-[200px]">{item.link}</a>}
                   </div>
                 </div>
@@ -246,15 +317,48 @@ const BannerManagement = () => {
           <div className="space-y-2">
             <label className="text-sm font-medium text-gray-700">Vị trí hiển thị</label>
             <Select value={form.position} onChange={(e) => setForm({ ...form, position: e.target.value })} className="w-full">
-              <option value="homepage_main">Trang chủ (Main)</option>
-              <option value="job_detail">Chi tiết việc làm</option>
-              <option value="company_list">Danh sách công ty</option>
+              {BANNER_POSITIONS.map((p) => (
+                <option key={p.value} value={p.value}>{p.label}</option>
+              ))}
             </Select>
           </div>
           
           <div className="space-y-2">
             <label className="text-sm font-medium text-gray-700">Thứ tự ưu tiên (Số càng lớn xếp càng cao)</label>
             <Input type="number" value={form.priority} onChange={(e) => setForm({ ...form, priority: parseInt(e.target.value) || 0 })} />
+          </div>
+
+          <div className="space-y-2 md:col-span-2">
+            <label className="text-sm font-medium text-gray-700">Loại banner</label>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              {BANNER_TYPES.map((t) => (
+                <label
+                  key={t.value}
+                  className={`flex items-start gap-3 rounded-xl border p-3 cursor-pointer transition-colors ${
+                    form.bannerType === t.value
+                      ? "border-[#3AB4E6] bg-sky-50"
+                      : "border-gray-200 hover:border-gray-300"
+                  }`}
+                >
+                  <input
+                    type="radio"
+                    name="bannerType"
+                    value={t.value}
+                    checked={form.bannerType === t.value}
+                    onChange={(e) => setForm({ ...form, bannerType: e.target.value })}
+                    className="mt-1 accent-[#3AB4E6]"
+                  />
+                  <span>
+                    <span className="block text-sm font-semibold text-gray-800">{t.label}</span>
+                    <span className="block text-xs text-gray-500">
+                      {t.value === "ADVERTISEMENT"
+                        ? "Khuyến mãi, chiến dịch tuyển dụng, quảng bá tính năng"
+                        : "Slogan, giới thiệu nền tảng, giá trị thương hiệu ITing"}
+                    </span>
+                  </span>
+                </label>
+              ))}
+            </div>
           </div>
 
           <div className="space-y-2 md:col-span-2">

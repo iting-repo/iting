@@ -5,8 +5,11 @@ import { Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import ReactQuill from 'react-quill-new';
 import 'react-quill-new/dist/quill.snow.css';
-import html2pdf from 'html2pdf.js';
+import html2pdfBundle from 'html2pdf.js/dist/html2pdf.bundle.min.js';
 import axiosInstance from '../../../../utils/axiosInstance';
+
+// Interop CJS/ESM (webpack): lấy đúng hàm html2pdf dù được wrap dạng nào.
+const html2pdf = typeof html2pdfBundle === 'function' ? html2pdfBundle : (html2pdfBundle?.default || html2pdfBundle);
 import { CV_TEMPLATES, CV_FONTS, ACCENT_PRESETS, getFont, SECTION_DEFS, DEFAULT_ORDER, normalizeCvData, buildCvHtml } from '../../../../utils/cvTemplates';
 
 const SECTION_LABEL = Object.fromEntries(SECTION_DEFS.map((s) => [s.id, s.label]));
@@ -19,19 +22,21 @@ const LIST_SECTIONS = {
 const inputCls = 'w-full rounded-lg border border-slate-200 px-2.5 py-1.5 text-xs outline-none focus:border-[#1967D2] focus:ring-1 focus:ring-[#1967D2]/20';
 const RICH_MODULES = { toolbar: [['bold', 'italic', 'underline'], [{ list: 'ordered' }, { list: 'bullet' }], ['clean']] };
 
-// Tải ảnh về dạng dataURL để nhúng vào CV khi xuất PDF (tránh ảnh trắng do CORS canvas).
+// Tải ảnh về dạng dataURL để nhúng vào CV khi xuất PDF. Trả null nếu không lấy được
+// (ảnh không cho CORS, vd i.pravatar.cc) → khi đó dùng avatar chữ viết tắt để export khỏi vỡ.
 const toDataUrl = async (url) => {
   try {
     const res = await fetch(url, { mode: 'cors' });
+    if (!res.ok) return null;
     const blob = await res.blob();
     return await new Promise((resolve) => {
       const fr = new FileReader();
       fr.onload = () => resolve(fr.result);
-      fr.onerror = () => resolve(url);
+      fr.onerror = () => resolve(null);
       fr.readAsDataURL(blob);
     });
   } catch {
-    return url;
+    return null;
   }
 };
 
@@ -165,10 +170,11 @@ const CvBuilderModal = ({ isOpen, onClose }) => {
     let frame;
     try {
       // Nhúng avatar dạng dataURL để ảnh không bị trắng khi vẽ canvas (CORS).
+      // Nếu ảnh không cho CORS → bỏ avatar (CV tự dùng chữ viết tắt), tránh export lỗi.
       let exportCv = cv;
       if (cv.avatarUrl) {
         const dataUrl = await toDataUrl(cv.avatarUrl);
-        exportCv = { ...cv, avatarUrl: dataUrl };
+        exportCv = { ...cv, avatarUrl: dataUrl || '' };
       }
       const html = buildCvHtml(exportCv, templateId, { order, hidden, accent: accent || undefined, font });
 

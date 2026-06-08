@@ -23,9 +23,10 @@ public class PublicBannerController {
   private final BannerRepository bannerRepository;
 
   @GetMapping
-  @Operation(summary = "Get active banners")
+  @Operation(summary = "Get active banners (lọc theo position và/hoặc type)")
   public ResponseEntity<List<Banner>> getActiveBanners(
-      @RequestParam(required = false) String position) {
+      @RequestParam(required = false) String position,
+      @RequestParam(required = false) String type) {
     List<Banner> banners;
     if (position != null && !position.isEmpty()) {
       banners = bannerRepository.findByPositionOrderByPriorityDesc(position);
@@ -33,11 +34,12 @@ public class PublicBannerController {
       banners = bannerRepository.findByStatusOrderByPriorityDesc("ACTIVE");
     }
 
-    // Filter out inactive or expired banners
+    // Filter out inactive or expired banners (+ optional type)
     LocalDateTime now = LocalDateTime.now();
     List<Banner> activeBanners =
         banners.stream()
             .filter(b -> "ACTIVE".equals(b.getStatus()))
+            .filter(b -> type == null || type.isEmpty() || type.equals(b.getBannerType()))
             .filter(b -> b.getStartAt() == null || !now.isBefore(b.getStartAt()))
             .filter(b -> b.getEndAt() == null || !now.isAfter(b.getEndAt()))
             .collect(Collectors.toList());

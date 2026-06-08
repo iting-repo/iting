@@ -12,6 +12,7 @@ import com.iting.jobportal.admin.rbac.repository.RbacRolePermissionRepository;
 import com.iting.jobportal.admin.rbac.repository.RbacRoleRepository;
 import com.iting.jobportal.admin.service.AdminActivityLogService;
 import com.iting.jobportal.auth.entity.Account;
+import com.iting.jobportal.auth.entity.Enum.AccountStatus;
 import com.iting.jobportal.auth.entity.Enum.AccountType;
 import com.iting.jobportal.auth.entity.Enum.Role;
 import com.iting.jobportal.auth.repository.AccountRepository;
@@ -26,6 +27,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
@@ -45,6 +47,7 @@ public class RbacServiceImpl implements RbacService {
   private final CompanyRepository companyRepository;
   private final CompanyHrAffiliationRepository affiliationRepository;
   private final RbacPermissionResolver permissionResolver;
+  private final PasswordEncoder passwordEncoder;
 
   // ── Queries ───────────────────────────────────────────────────────────────
 
@@ -488,6 +491,69 @@ public class RbacServiceImpl implements RbacService {
     accountRepository.save(acc);
     audit(actorId, "PROMOTE_STAFF", acc.getId(), "Nâng " + acc.getEmail() + " thành nhân sự nội bộ");
     return toStaff(acc, platformRoleNames());
+  }
+
+  @Override
+  @Transactional
+  public StaffResponse createInternalAccount(Long actorId, CreateInternalAccountRequest req) {
+    String email = req.getEmail() == null ? "" : req.getEmail().trim().toLowerCase();
+    if (email.isBlank()) {
+      throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Email không được để trống");
+    }
+    if (accountRepository.existsByEmail(email)) {
+      throw new ResponseStatusException(HttpStatus.CONFLICT, "Email đã tồn tại: " + email);
+    }
+    if (req.getPassword() == null || req.getPassword().length() < 6) {
+      throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Mật khẩu tối thiểu 6 ký tự");
+    }
+    String fullName = req.getFullName() == null ? "" : req.getFullName().trim();
+    if (fullName.isBlank()) {
+      throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Họ tên không được để trống");
+    }
+
+    Account acc =
+        Account.builder()
+            .email(email)
+            .passwordHash(passwordEncoder.encode(req.getPassword()))
+            .fullName(fullName)
+            .role(Role.CANDIDATE) // mặc định; nâng ADMIN nếu gán platform role
+            .status(AccountStatus.ACTIVE)
+            .accountType(AccountType.INTERNAL_STAFF)
+            .build();
+
+    // Tuỳ chọn: gán luôn vai trò nền tảng khi tạo (mirror logic assignRole).
+    String roleCode = req.getPlatformRoleCode();
+    if (roleCode != null && !roleCode.isBlank()) {
+      RbacRole role =
+          roleRepository
+              .findByCode(roleCode)
+              .orElseThrow(
+                  () ->
+                      new ResponseStatusException(
+                          HttpStatus.NOT_FOUND, "Không tìm thấy role: " + roleCode));
+      if (role.getScope() != PermissionScope.PLATFORM) {
+        throw new ResponseStatusException(
+            HttpStatus.BAD_REQUEST, "Chỉ gán được vai trò nền tảng (PLATFORM)");
+      }
+      if (role.getStatus() != RoleStatus.ACTIVE) {
+        throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Chỉ gán được role đang ACTIVE");
+      }
+      if (SUPER_ADMIN.equals(role.getCode())) {
+        requireSuperAdmin(actorId, "tạo tài khoản với quyền SUPER_ADMIN");
+      }
+      acc.setRole(Role.ADMIN);
+      acc.setAdminRole(role.getCode());
+    }
+
+    Account saved = accountRepository.save(acc);
+    audit(
+        actorId,
+        "CREATE_STAFF",
+        saved.getId(),
+        "Tạo tài khoản nội bộ "
+            + saved.getEmail()
+            + (roleCode != null && !roleCode.isBlank() ? " (role " + roleCode + ")" : ""));
+    return toStaff(saved, platformRoleNames());
   }
 
   @Override

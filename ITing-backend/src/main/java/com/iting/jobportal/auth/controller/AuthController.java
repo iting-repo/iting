@@ -7,6 +7,7 @@ import com.iting.jobportal.auth.dto.request.GoogleLoginRequest;
 import com.iting.jobportal.auth.dto.request.LoginRequest;
 import com.iting.jobportal.auth.dto.request.RegisterRequest;
 import com.iting.jobportal.auth.dto.request.ResetPasswordRequest;
+import com.iting.jobportal.auth.dto.request.TwoFactorRequest;
 import com.iting.jobportal.auth.dto.response.LoginResponse;
 import com.iting.jobportal.auth.entity.Account;
 import com.iting.jobportal.auth.service.AuthService;
@@ -69,6 +70,18 @@ public class AuthController {
   @RateLimited(policy = RateLimitPolicy.LOGIN)
   public LoginResponse login(@Valid @RequestBody LoginRequest request) {
     return authService.login(request);
+  }
+
+  @PostMapping("/2fa/setup-verify")
+  @RateLimited(policy = RateLimitPolicy.LOGIN)
+  public LoginResponse twoFactorSetupVerify(@Valid @RequestBody TwoFactorRequest request) {
+    return authService.twoFactorSetupVerify(request);
+  }
+
+  @PostMapping("/2fa/verify")
+  @RateLimited(policy = RateLimitPolicy.LOGIN)
+  public LoginResponse twoFactorVerify(@Valid @RequestBody TwoFactorRequest request) {
+    return authService.twoFactorVerify(request);
   }
 
   @PostMapping("/google")

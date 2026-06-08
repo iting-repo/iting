@@ -3,10 +3,11 @@ import logoIting from '../../assets/logo-iting.png';
 import { Link, useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { useGoogleLogin } from '@react-oauth/google';
-import { loginRequest, googleLoginRequest, facebookLoginRequest } from '../../store/auth/authSlice';
+import { loginRequest, googleLoginRequest, facebookLoginRequest, twoFactorVerifyRequest, twoFactorClear } from '../../store/auth/authSlice';
 import useFacebookLogin from '../../hooks/useFacebookLogin';
 import { toast } from 'sonner';
 import { FaEye, FaEyeSlash, FaArrowRight } from 'react-icons/fa';
+import { QRCodeSVG } from 'qrcode.react';
 import { BsBriefcaseFill, BsBuilding, BsPeopleFill } from 'react-icons/bs';
 import publicService from '../../services/publicService';
 const bgImage = '/homepage-page.png';
@@ -42,8 +43,9 @@ const LoginPage = () => {
 
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  const { isLoading, error, currentUser } = useSelector((state) => state.auth);
+  const { isLoading, error, currentUser, twoFactor } = useSelector((state) => state.auth);
   const [showPassword, setShowPassword] = useState(false);
+  const [otpCode, setOtpCode] = useState('');
   const [formErrors, setFormErrors] = useState({});
   const [stats, setStats] = useState({ totalJobs: 0, totalCandidates: 0, totalCompanies: 0 });
 
@@ -124,6 +126,26 @@ const LoginPage = () => {
     dispatch(loginRequest({ email, password, navigate }));
   }
 
+  const handleVerify2fa = (e) => {
+    e.preventDefault();
+    if (!otpCode || otpCode.trim().length < 6) {
+      toast.error('Vui lòng nhập mã 6 số từ Microsoft Authenticator');
+      return;
+    }
+    dispatch(twoFactorVerifyRequest({
+      email,
+      password,
+      code: otpCode.trim(),
+      setup: !!twoFactor?.setup,
+      navigate,
+    }));
+  };
+
+  const cancel2fa = () => {
+    setOtpCode('');
+    dispatch(twoFactorClear());
+  };
+
   return (
     <div className="min-h-screen flex bg-white font-sans animate-in fade-in duration-500">
       <div className="w-full lg:w-[50%] flex flex-col px-6 sm:px-10 md:px-20 xl:px-32 relative z-10 h-full overflow-y-auto no-scrollbar py-8 md:py-12">
@@ -146,6 +168,7 @@ const LoginPage = () => {
               ⚠️ {error}
             </div>
           )}
+          {!twoFactor && (<>
           <form onSubmit={handleLogin} className="space-y-5">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
@@ -227,6 +250,74 @@ const LoginPage = () => {
               </div>
             </div>
           </div>
+          </>)}
+
+          {twoFactor && (
+            <form onSubmit={handleVerify2fa} className="space-y-5">
+              <button type="button" onClick={cancel2fa} className="text-sm text-[#3AB4E6] hover:underline">
+                ← Quay lại đăng nhập
+              </button>
+              <div className="rounded-lg bg-sky-50 border border-sky-100 p-3 text-sm text-slate-600">
+                <p className="font-semibold text-slate-800 mb-1">🔒 Xác thực 2 bước (Microsoft Authenticator)</p>
+                <p>Đây là tài khoản nội bộ ITing — bắt buộc xác thực bằng mã từ ứng dụng Microsoft Authenticator.</p>
+              </div>
+
+              {twoFactor.setup && (
+                <div className="rounded-lg border border-gray-200 p-4 space-y-3">
+                  <p className="text-sm text-gray-700 font-medium">Thiết lập lần đầu</p>
+                  <ol className="text-xs text-gray-500 list-decimal list-inside space-y-1">
+                    <li>Mở <b>Microsoft Authenticator</b> → <b>+</b> → <b>Tài khoản khác (Other account)</b>.</li>
+                    <li>Chọn <b>Quét mã QR</b> và quét mã bên dưới.</li>
+                    <li>Nhập mã 6 số mà ứng dụng sinh ra để kích hoạt.</li>
+                  </ol>
+
+                  {twoFactor.otpauthUrl && (
+                    <div className="flex justify-center">
+                      <div className="p-3 bg-white rounded-lg border border-gray-200">
+                        <QRCodeSVG value={twoFactor.otpauthUrl} size={176} level="M" />
+                      </div>
+                    </div>
+                  )}
+
+                  <details className="text-xs text-gray-500">
+                    <summary className="cursor-pointer text-[#3AB4E6] font-medium select-none">Không quét được? Nhập khóa thủ công</summary>
+                    <div className="flex items-center gap-2 mt-2">
+                      <code className="flex-1 break-all bg-gray-100 rounded px-2 py-1.5 text-sm font-mono tracking-wider">{twoFactor.secret}</code>
+                      <button
+                        type="button"
+                        onClick={() => { navigator.clipboard.writeText(twoFactor.secret); toast.success('Đã copy khóa'); }}
+                        className="text-xs font-semibold text-[#3AB4E6] hover:underline shrink-0"
+                      >
+                        Copy
+                      </button>
+                    </div>
+                  </details>
+                </div>
+              )}
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Mã xác thực (6 số)</label>
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  autoFocus
+                  maxLength={6}
+                  value={otpCode}
+                  onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, ''))}
+                  placeholder="000000"
+                  className="w-full px-5 py-3.5 bg-[#F0F5FA] border border-transparent rounded-lg text-gray-700 text-center text-xl tracking-[0.4em] font-mono focus:outline-none focus:bg-white focus:border-[#3AB4E6] focus:ring-2 focus:ring-blue-100 transition-all"
+                />
+              </div>
+
+              <button
+                type="submit"
+                disabled={isLoading}
+                className={`w-full bg-[#3AB4E6] hover:bg-[#2fa0d1] text-white font-bold py-3.5 rounded-lg transition duration-200 flex items-center justify-center gap-2 shadow-lg shadow-blue-500/30 ${isLoading ? 'opacity-70 cursor-not-allowed' : ''}`}
+              >
+                {isLoading ? 'Đang xác thực...' : (twoFactor.setup ? 'Kích hoạt & Đăng nhập' : 'Xác nhận')}
+              </button>
+            </form>
+          )}
         </div>
         <div className="absolute bottom-6 text-xs text-gray-400">© 2024 ITing. Bảo lưu mọi quyền.</div>
       </div>
