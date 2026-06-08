@@ -2,6 +2,7 @@ package com.iting.jobportal.job.repository;
 
 import com.iting.jobportal.job.entity.Job;
 import com.iting.jobportal.job.entity.enums.JobStatus;
+import java.time.LocalDateTime;
 import java.util.List;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -10,8 +11,17 @@ import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+import org.springframework.transaction.annotation.Transactional;
 
 public interface JobRepository extends JpaRepository<Job, Long>, JpaSpecificationExecutor<Job> {
+
+  /** Dọn boost đã hết hạn: bỏ featured để job không còn đứng đầu trang. */
+  @Modifying
+  @Transactional
+  @Query(
+      "UPDATE Job j SET j.featured = false, j.featuredUntil = null "
+          + "WHERE j.featuredUntil IS NOT NULL AND j.featuredUntil < :now")
+  int clearExpiredBoosts(@Param("now") LocalDateTime now);
 
   // Tìm jobs theo status VÀ công ty đang hoạt động VÀ chưa hết hạn
   @Query(

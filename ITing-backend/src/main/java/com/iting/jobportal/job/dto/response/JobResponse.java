@@ -62,6 +62,7 @@ public class JobResponse {
   private Integer viewCount;
   private Integer applicationCount;
   private Boolean featured;
+  private java.time.LocalDateTime featuredUntil;
   private JobStatus status;
   private Boolean isAiSuggested;
 
@@ -141,6 +142,7 @@ public class JobResponse {
         .viewCount(job.getViewCount())
         .applicationCount(job.getApplicationCount())
         .featured(job.getFeatured())
+        .featuredUntil(job.getFeaturedUntil())
         .status(job.getStatus())
         .reviewReason(
             job.getStatus() == JobStatus.REJECTED || job.getStatus() == JobStatus.SUSPENDED

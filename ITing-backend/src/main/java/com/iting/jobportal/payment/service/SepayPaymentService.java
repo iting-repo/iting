@@ -97,6 +97,66 @@ public class SepayPaymentService {
   // ─────────────────────────────────────────────────────────
 
   /**
+   * Boost MIỄN PHÍ bằng hạn mức gói (plan-included). Dùng 1 lượt boost trong quota tháng (vd PRO 20
+   * lượt). Hết quota → throw 402. Job được featured 7 ngày (cộng dồn nếu đang featured). Ghi 1
+   * PaymentOrder 0đ đã kích hoạt để {@link QuotaService#requireBoostQuota} đếm đúng số lượt.
+   */
+  @Transactional
+  public Map<String, Object> boostJobWithQuota(Long hrId, Long jobId) {
+    quotaService.requireBoostQuota(hrId); // 402 nếu hết quota
+
+    Long hrCompanyId = authorizationService.requireApprovedCompanyOf(hrId);
+    Job job =
+        jobRepository
+            .findById(jobId)
+            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Job không tồn tại"));
+    if (job.getCompany() == null || !hrCompanyId.equals(job.getCompany().getId())) {
+      throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Bạn không có quyền boost job này");
+    }
+    Account account =
+        accountRepository
+            .findById(hrId)
+            .orElseThrow(
+                () -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Account không tồn tại"));
+
+    BoostTier tier = BoostTier.BOOST_7D; // độ dài boost mặc định cho gói
+    LocalDateTime now = LocalDateTime.now();
+    LocalDateTime baseline =
+        (job.getFeaturedUntil() != null && job.getFeaturedUntil().isAfter(now))
+            ? job.getFeaturedUntil()
+            : now;
+    job.setFeatured(true);
+    job.setFeaturedUntil(baseline.plus(tier.getDuration()));
+    job.setFeaturedTier(tier.name());
+    jobRepository.save(job);
+
+    // Order 0đ đã kích hoạt → tính vào quota boost.
+    PaymentOrder order =
+        PaymentOrder.builder()
+            .account(account)
+            .orderCode(generateOrderCode())
+            .amount(0L)
+            .description("Boost job " + jobId + " — dùng quota gói")
+            .itemType("BOOST_JOB")
+            .itemId(jobId)
+            .tier(tier.name())
+            .status(PaymentStatus.PAID)
+            .activatedAt(now)
+            .gateway("QUOTA")
+            .build();
+    orderRepository.save(order);
+
+    log.info("[BOOST-QUOTA] Job {} boosted until {} by HR {}", jobId, job.getFeaturedUntil(), hrId);
+
+    Map<String, Object> res = new LinkedHashMap<>();
+    res.put("jobId", jobId);
+    res.put("featuredUntil", job.getFeaturedUntil());
+    res.putAll(quotaService.getBoostUsage(hrId));
+    res.put("message", "Đã đẩy tin lên đầu trang (dùng 1 lượt boost của gói).");
+    return res;
+  }
+
+  /**
    * Create a new boost order for a job. Validates HR ownership of the job.
    *
    * @param hrId authenticated HR account id

@@ -218,7 +218,13 @@ public class JobServiceImpl implements JobService {
         .orElseGet(() -> JobResponse.fromEntity(job));
   }
 
+  /** Job được boost (featured) luôn xếp ĐẦU, sau đó mới theo tiêu chí người dùng chọn. */
   private Sort buildSort(String sortBy, String sortOrder) {
+    Sort featuredFirst = Sort.by(Sort.Order.desc("featuredUntil").nullsLast());
+    return featuredFirst.and(baseSort(sortBy, sortOrder));
+  }
+
+  private Sort baseSort(String sortBy, String sortOrder) {
     if (sortBy == null || sortBy.isBlank()) {
       return Sort.by("lastUpdate").descending();
     }

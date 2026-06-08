@@ -2,6 +2,7 @@ package com.iting.jobportal.payment.controller;
 
 import com.iting.jobportal.auth.security.JwtTokenUtil;
 import com.iting.jobportal.payment.entity.BoostTier;
+import com.iting.jobportal.payment.service.QuotaService;
 import com.iting.jobportal.payment.service.SepayPaymentService;
 import jakarta.servlet.http.HttpServletRequest;
 import java.util.Arrays;
@@ -31,6 +32,7 @@ import org.springframework.web.server.ResponseStatusException;
 public class PaymentController {
 
   private final SepayPaymentService sepayPaymentService;
+  private final QuotaService quotaService;
   private final JwtTokenUtil jwtTokenUtil;
 
   /** List boost tiers — public so frontend can render the price card before HR login flow. */
@@ -69,6 +71,27 @@ public class PaymentController {
     }
 
     return ResponseEntity.ok(sepayPaymentService.createBoostOrder(hrId, jobId, tierEnum));
+  }
+
+  /** HR boost job MIỄN PHÍ bằng quota gói (không thanh toán). 402 nếu hết quota. */
+  @PostMapping("/api/hr/jobs/{jobId}/boost-quota")
+  public ResponseEntity<Map<String, Object>> boostJobWithQuota(
+      @PathVariable Long jobId, HttpServletRequest request) {
+    Long hrId = jwtTokenUtil.getUserIdFromHeader(request);
+    if (hrId == null) {
+      throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Phiên đăng nhập không hợp lệ");
+    }
+    return ResponseEntity.ok(sepayPaymentService.boostJobWithQuota(hrId, jobId));
+  }
+
+  /** Số lượt boost đã dùng / hạn mức trong 30 ngày của HR (cho UI hiển thị x/limit). */
+  @GetMapping("/api/hr/boost-quota")
+  public ResponseEntity<Map<String, Object>> boostQuota(HttpServletRequest request) {
+    Long hrId = jwtTokenUtil.getUserIdFromHeader(request);
+    if (hrId == null) {
+      throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Phiên đăng nhập không hợp lệ");
+    }
+    return ResponseEntity.ok(quotaService.getBoostUsage(hrId));
   }
 
   /** Poll order status — used by frontend after showing QR. */

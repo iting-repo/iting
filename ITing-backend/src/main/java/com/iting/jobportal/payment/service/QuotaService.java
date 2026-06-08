@@ -7,6 +7,8 @@ import com.iting.jobportal.payment.entity.SubscriptionTierPricing;
 import com.iting.jobportal.payment.repository.HrSubscriptionRepository;
 import com.iting.jobportal.payment.repository.PaymentOrderRepository;
 import java.time.LocalDateTime;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -124,6 +126,25 @@ public class QuotaService {
         "Tính năng Tìm kiếm ứng viên (Talent Pool) không có trong gói hiện tại của bạn ("
             + currentLabel
             + "). Vui lòng nâng cấp để sử dụng.");
+  }
+
+  /** Số lượt boost đã dùng / hạn mức trong 30 ngày (cho UI HR hiển thị x/limit, không throw). */
+  public Map<String, Object> getBoostUsage(Long hrAccountId) {
+    Optional<SubscriptionTierPricing> pricing = resolveActivePricing(hrAccountId);
+    int limit =
+        pricing
+            .map(SubscriptionTierPricing::getMaxBoostsPerMonth)
+            .orElse(SubscriptionTier.FREE_MAX_BOOSTS_PER_MONTH);
+    long used =
+        paymentOrderRepository.countActivatedByAccountAndItemTypeSince(
+            hrAccountId, "BOOST_JOB", LocalDateTime.now().minusDays(WINDOW_DAYS));
+    Map<String, Object> m = new LinkedHashMap<>();
+    m.put("tier", pricing.map(SubscriptionTierPricing::getCode).orElse("FREE"));
+    m.put("limit", limit); // -1 = không giới hạn
+    m.put("used", used);
+    m.put("unlimited", limit < 0);
+    m.put("remaining", limit < 0 ? -1 : Math.max(0, limit - used));
+    return m;
   }
 
   /** Lookup pricing của subscription ACTIVE chưa expire của HR. */
