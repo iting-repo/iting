@@ -131,6 +131,7 @@ const RoleManagement = () => {
   const [roles, setRoles] = useState({ platform: [], company: [], pending: [] });
   const [loading, setLoading] = useState(false);
   const [detailRole, setDetailRole] = useState(null);
+  const [editRole, setEditRole] = useState(null);
   const [showCreate, setShowCreate] = useState(false);
   const [rejectTarget, setRejectTarget] = useState(null);
   const [rejectReason, setRejectReason] = useState('');
@@ -312,11 +313,21 @@ const RoleManagement = () => {
             <h3 className="text-sm font-bold text-slate-600 uppercase tracking-wider mb-3 flex items-center gap-2">
               <FaBuilding size={13} className="text-slate-400" /> Danh mục vai trò doanh nghiệp
             </h3>
-            <RoleGrid roles={roles.company} onSelect={setDetailRole} />
+            <RoleGrid
+              roles={roles.company}
+              onSelect={setDetailRole}
+              onEdit={setEditRole}
+              onDelete={doDelete}
+            />
           </div>
         </div>
       ) : (
-        <RoleGrid roles={roles[activeTab]} onSelect={setDetailRole} />
+        <RoleGrid
+          roles={roles[activeTab]}
+          onSelect={setDetailRole}
+          onEdit={setEditRole}
+          onDelete={doDelete}
+        />
       )}
 
       {/* Detail dialog */}
@@ -343,6 +354,19 @@ const RoleManagement = () => {
           onClose={() => setShowCreate(false)}
           onCreated={() => {
             setShowCreate(false);
+            refresh();
+          }}
+        />
+      )}
+
+      {/* Edit dialog */}
+      {editRole && (
+        <EditRoleDialog
+          role={editRole}
+          permByScope={permByScope}
+          onClose={() => setEditRole(null)}
+          onSaved={() => {
+            setEditRole(null);
             refresh();
           }}
         />
@@ -385,17 +409,17 @@ const RoleManagement = () => {
 };
 
 // ── Role grid (platform / company) ─────────────────────────────────────
-const RoleGrid = ({ roles, onSelect }) => {
+const RoleGrid = ({ roles, onSelect, onEdit, onDelete }) => {
   if (!roles.length) {
     return <div className="text-center py-16 text-slate-400 text-sm">Chưa có vai trò nào.</div>;
   }
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
       {roles.map((role) => (
-        <button
+        <div
           key={role.id}
           onClick={() => onSelect(role)}
-          className="text-left p-5 rounded-2xl border-2 border-slate-100 bg-white hover:border-[#3AB4E6]/50 hover:shadow-md transition-all"
+          className="flex flex-col text-left p-5 rounded-2xl border-2 border-slate-100 bg-white hover:border-[#3AB4E6]/50 hover:shadow-md transition-all cursor-pointer"
         >
           <div className="flex items-start justify-between gap-2">
             <div className="min-w-0">
@@ -417,13 +441,43 @@ const RoleGrid = ({ roles, onSelect }) => {
             <span className="text-slate-300">·</span>
             <span className="text-xs text-slate-500">Rủi ro</span>
             <Badge meta={RISK_META[role.highestRisk] || RISK_META.LOW} />
-            {role.systemRole && (
-              <span className="ml-auto text-[10px] font-bold text-slate-400 uppercase tracking-wide">
-                Hệ thống
-              </span>
-            )}
           </div>
-        </button>
+
+          {/* Hàng thao tác Sửa / Xóa — hiện ngay trên thẻ (ẩn với vai trò hệ thống) */}
+          <div className="mt-4 pt-3 border-t border-slate-100 flex items-center gap-2">
+            {role.systemRole ? (
+              <span className="text-[11px] text-slate-400 flex items-center gap-1.5">
+                <FaLock size={9} /> Vai trò hệ thống — không thể sửa/xóa
+              </span>
+            ) : (
+              <>
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onEdit?.(role);
+                  }}
+                  className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-slate-200 text-slate-600 hover:border-[#3AB4E6] hover:text-[#3AB4E6] text-xs font-bold transition-colors"
+                >
+                  <FaEdit size={11} /> Sửa
+                </button>
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onDelete?.(role);
+                  }}
+                  className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-red-200 text-red-600 hover:bg-red-50 text-xs font-bold transition-colors"
+                >
+                  <FaTrash size={11} /> Xóa
+                </button>
+              </>
+            )}
+            <span className="ml-auto text-[10px] font-bold text-slate-300 uppercase tracking-wide">
+              {role.scope === 'COMPANY' ? 'Doanh nghiệp' : 'Hệ thống'}
+            </span>
+          </div>
+        </div>
       ))}
     </div>
   );
@@ -882,6 +936,123 @@ const CreateRoleDialog = ({ permByScope, onClose, onCreated }) => {
           className="px-4 py-2 rounded-lg bg-[#3AB4E6] hover:bg-[#2C9ACD] text-white text-sm font-bold disabled:opacity-60"
         >
           {saving ? 'Đang lưu…' : 'Tạo bản nháp'}
+        </button>
+      </div>
+    </Dialog>
+  );
+};
+
+// ── Edit role dialog (sửa tên + mô tả + quyền) ──────────────────────────
+const EditRoleDialog = ({ role, permByScope, onClose, onSaved }) => {
+  const [name, setName] = useState(role.name || '');
+  const [description, setDescription] = useState(role.description || '');
+  const [selected, setSelected] = useState(() => new Set(role.permissions || []));
+  const [saving, setSaving] = useState(false);
+
+  const perms = useMemo(() => permByScope[role.scope] || [], [permByScope, role.scope]);
+  const hasHighRisk = perms.some((p) => selected.has(p.code) && p.riskLevel === 'HIGH');
+  const willReapprove = role.status === 'ACTIVE' || role.status === 'APPROVED';
+
+  const toggle = (c) =>
+    setSelected((prev) => {
+      const n = new Set(prev);
+      n.has(c) ? n.delete(c) : n.add(c);
+      return n;
+    });
+
+  const submit = async () => {
+    if (!name.trim()) {
+      toast.error('Nhập tên vai trò');
+      return;
+    }
+    if (selected.size === 0) {
+      toast.error('Chọn ít nhất một quyền');
+      return;
+    }
+    try {
+      setSaving(true);
+      await rbacService.updateRole(role.id, {
+        name: name.trim(),
+        description,
+        permissions: Array.from(selected),
+      });
+      toast.success(willReapprove ? 'Đã lưu — vai trò cần được duyệt lại' : 'Đã lưu thay đổi');
+      onSaved();
+    } catch (e) {
+      toast.error(e?.response?.data?.message || e?.message || 'Lưu thất bại');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <Dialog open onClose={onClose} title="Chỉnh sửa vai trò" widthClass="max-w-2xl">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div>
+          <label className="text-xs font-bold text-slate-600">Tên vai trò *</label>
+          <input
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            className="mt-1 w-full border border-slate-200 rounded-xl px-3 py-2 text-sm outline-none focus:border-[#3AB4E6]"
+          />
+        </div>
+        <div>
+          <label className="text-xs font-bold text-slate-600">Mã vai trò</label>
+          <input
+            value={role.code}
+            disabled
+            title="Mã vai trò không thể thay đổi sau khi tạo"
+            className="mt-1 w-full border border-slate-200 rounded-xl px-3 py-2 text-sm font-mono bg-slate-50 text-slate-400 outline-none cursor-not-allowed"
+          />
+        </div>
+      </div>
+      <div className="mt-3">
+        <label className="text-xs font-bold text-slate-600">Mô tả</label>
+        <input
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+          placeholder="Mô tả ngắn về vai trò"
+          className="mt-1 w-full border border-slate-200 rounded-xl px-3 py-2 text-sm outline-none focus:border-[#3AB4E6]"
+        />
+      </div>
+
+      <div className="mt-4">
+        <div className="flex items-center justify-between mb-2">
+          <label className="text-xs font-bold text-slate-600 uppercase tracking-wider">
+            Quyền hạn ({selected.size})
+          </label>
+          <span className="text-[11px] text-slate-400 font-mono">
+            {role.scope === 'COMPANY' ? 'Doanh nghiệp (COMPANY)' : 'Nền tảng (PLATFORM)'}
+          </span>
+        </div>
+        <PermissionPicker perms={perms} selected={selected} onToggle={toggle} />
+      </div>
+
+      {(hasHighRisk || willReapprove) && (
+        <div className="mt-3 p-3 rounded-lg bg-amber-50 border border-amber-200 text-xs text-amber-700 flex gap-2">
+          <FaExclamationTriangle className="shrink-0 mt-0.5" />
+          <span>
+            {hasHighRisk
+              ? 'Vai trò có quyền rủi ro cao. '
+              : ''}
+            Thay đổi quyền của vai trò đã duyệt sẽ chuyển vai trò về trạng thái chờ duyệt lại.
+          </span>
+        </div>
+      )}
+
+      <div className="flex justify-end gap-2 mt-5 pt-4 border-t border-slate-100">
+        <button
+          onClick={onClose}
+          className="px-4 py-2 rounded-lg border border-slate-200 text-slate-600 text-sm font-bold hover:bg-slate-50"
+        >
+          Hủy
+        </button>
+        <button
+          onClick={submit}
+          disabled={saving}
+          className="px-4 py-2 rounded-lg bg-[#3AB4E6] hover:bg-[#2C9ACD] text-white text-sm font-bold disabled:opacity-60"
+        >
+          {saving ? 'Đang lưu…' : 'Lưu thay đổi'}
         </button>
       </div>
     </Dialog>
