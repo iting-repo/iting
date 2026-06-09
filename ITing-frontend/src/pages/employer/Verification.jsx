@@ -151,11 +151,11 @@ const Verification = () => {
   const isPdf = activeFilename?.toLowerCase().endsWith('.pdf');
 
   if (loading) {
-     return (
-        <div className="flex h-64 items-center justify-center">
-           <div className="h-8 w-8 animate-spin rounded-full border-4 border-[#3AB4E6] border-t-transparent"></div>
-        </div>
-     );
+    return (
+      <div className="flex h-64 items-center justify-center">
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-[#3AB4E6] border-t-transparent"></div>
+      </div>
+    );
   }
 
   return (
@@ -175,7 +175,7 @@ const Verification = () => {
         <div className="mb-8">
           <h2 className="text-lg font-bold text-gray-800 mb-1 flex flex-wrap items-center gap-2">
             <FileText className="w-5 h-5 text-[#3AB4E6]" />
-            Thông tin Giấy đăng ký doanh nghiệp
+            Xác thực thông tin giấy phép doanh nghiệp
             <span className={`ml-2 text-xs font-bold px-3 py-1 rounded-full ${currentStatus.color}`}>
               {currentStatus.label}
             </span>
@@ -189,12 +189,12 @@ const Verification = () => {
         <div className="space-y-6">
           {/* Phase 5: bỏ radio chọn loại tài liệu — chỉ còn 1 loại (Giấy đăng ký doanh nghiệp).
               Radio "Giấy ủy quyền và Giấy tờ định danh" đã bỏ hoàn toàn ở backend. */}
-          <div className="flex items-center gap-4">
+          {/* <div className="flex items-center gap-4">
             <FileText className="w-5 h-5 text-[#3AB4E6]" />
             <span className="text-gray-700 font-medium">
               Giấy đăng ký doanh nghiệp hoặc Giấy tờ tương đương khác
             </span>
-          </div>
+          </div> */}
 
           <div className="border border-gray-100 bg-gray-50/50 rounded-2xl p-8">
             <label className="block text-sm font-bold text-gray-700 mb-4 uppercase tracking-wider">
@@ -261,10 +261,10 @@ const Verification = () => {
 
               <div className="w-64 shrink-0 flex flex-col gap-3">
                 <p className="text-sm font-bold text-gray-700 border-b pb-2 uppercase tracking-tight">HƯỚNG DẪN MINH HỌA</p>
-                <a 
-                  href="/doanhnghieptunhan (1).pdf" 
-                  download 
-                  target="_blank" 
+                <a
+                  href="/doanhnghieptunhan (1).pdf"
+                  download
+                  target="_blank"
                   rel="noopener noreferrer"
                   className="w-full flex items-center justify-center text-xs py-2 h-auto gap-2 bg-[#EAF6FF] text-[#3AB4E6] border border-[#3AB4E6]/30 rounded-lg font-bold hover:bg-[#3AB4E6] hover:text-white transition-colors"
                 >
