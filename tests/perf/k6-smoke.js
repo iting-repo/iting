@@ -27,6 +27,12 @@ const TARGET_URL = __ENV.TARGET_URL || 'http://localhost:8080';
 const VUS = parseInt(__ENV.VUS || '50', 10);
 const DURATION = __ENV.DURATION || '5m';
 
+// Header bí mật để bỏ qua nginx rate-limit per-IP (load-test bắn tải cao từ 1 IP CI).
+// Phải khớp giá trị trong deploy/config/nginx/nginx.conf (map $http_x_loadtest_bypass).
+// Có thể override qua secret: -e K6_BYPASS_TOKEN=...
+const BYPASS_TOKEN = __ENV.K6_BYPASS_TOKEN || 'itg-k6-smoke-bypass-9f3a7c21e8';
+const PARAMS = { headers: { 'X-Loadtest-Bypass': BYPASS_TOKEN } };
+
 const errors = new Rate('errors');
 const apiDuration = new Trend('api_duration_ms', true);
 
@@ -48,21 +54,21 @@ export const options = {
 
 export default function () {
   group('jobs', () => {
-    const search = http.get(`${TARGET_URL}/api/jobs/search?page=0&size=10`);
+    const search = http.get(`${TARGET_URL}/api/jobs/search?page=0&size=10`, PARAMS);
     apiDuration.add(search.timings.duration, { endpoint: 'search' });
     check(search, { 'search 200': (r) => r.status === 200 }) || errors.add(1);
 
-    const latest = http.get(`${TARGET_URL}/api/jobs/latest?limit=20`);
+    const latest = http.get(`${TARGET_URL}/api/jobs/latest?limit=20`, PARAMS);
     apiDuration.add(latest.timings.duration, { endpoint: 'latest' });
     check(latest, { 'latest 200': (r) => r.status === 200 }) || errors.add(1);
 
-    const hot = http.get(`${TARGET_URL}/api/jobs/hot?limit=10`);
+    const hot = http.get(`${TARGET_URL}/api/jobs/hot?limit=10`, PARAMS);
     apiDuration.add(hot.timings.duration, { endpoint: 'hot' });
     check(hot, { 'hot 200': (r) => r.status === 200 }) || errors.add(1);
   });
 
   group('companies', () => {
-    const tiers = http.get(`${TARGET_URL}/api/payments/subscription-tiers`);
+    const tiers = http.get(`${TARGET_URL}/api/payments/subscription-tiers`, PARAMS);
     apiDuration.add(tiers.timings.duration, { endpoint: 'tiers' });
     check(tiers, { 'tiers 200': (r) => r.status === 200 }) || errors.add(1);
   });
