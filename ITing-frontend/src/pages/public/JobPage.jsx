@@ -372,6 +372,7 @@ const JobPage = () => {
                             </span>
                             <div className="flex items-center gap-2">
                                 <select
+                                    aria-label="Sắp xếp việc làm"
                                     value={filters.sortBy === 'salary' ? 'salary' : (filters.sortBy === 'createdAt' ? 'createdAt' : 'lastUpdate')}
                                     onChange={handleSortChange}
                                     className="bg-white border border-gray-200 text-gray-700 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2"
@@ -426,6 +427,7 @@ const JobPage = () => {
 
                         <div className="flex justify-center items-center gap-1 md:gap-2 mt-8">
                             <button
+                                aria-label="Trang trước"
                                 onClick={() => goToPage(currentPage - 1)}
                                 disabled={currentPage <= 1}
                                 className="w-8 h-8 md:w-10 md:h-10 flex items-center justify-center rounded-lg bg-white border border-gray-200 text-gray-600 hover:bg-gray-50 transition-colors disabled:opacity-50"
@@ -461,6 +463,7 @@ const JobPage = () => {
                             })()}
 
                             <button
+                                aria-label="Trang sau"
                                 onClick={() => goToPage(currentPage + 1)}
                                 disabled={currentPage >= totalPages}
                                 className="w-8 h-8 md:w-10 md:h-10 flex items-center justify-center rounded-lg bg-white border border-gray-200 text-gray-600 hover:bg-gray-50 transition-colors disabled:opacity-50"
@@ -652,6 +655,7 @@ const JobPage = () => {
                             <FaFilter className="text-[#3AB4E6]" /> Bộ lọc tìm kiếm
                         </h2>
                         <button
+                            aria-label="Đóng bộ lọc"
                             onClick={() => setIsMobileFilterOpen(false)}
                             className="w-8 h-8 flex items-center justify-center rounded-full bg-gray-100 hover:bg-gray-200 text-gray-600 transition-colors"
                         >

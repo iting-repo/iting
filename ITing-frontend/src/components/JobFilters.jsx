@@ -65,6 +65,7 @@ const DualRangeSlider = ({ min, max, minVal, maxVal, step, onChange }) => {
             {/* Min thumb */}
             <input
                 type="range"
+                aria-label="Mức lương tối thiểu"
                 min={min}
                 max={max}
                 step={step}
@@ -80,6 +81,7 @@ const DualRangeSlider = ({ min, max, minVal, maxVal, step, onChange }) => {
             {/* Max thumb */}
             <input
                 type="range"
+                aria-label="Mức lương tối đa"
                 min={min}
                 max={max}
                 step={step}
@@ -208,6 +210,7 @@ const JobFilters = ({
                         <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs" />
                         <input
                             type="text"
+                            aria-label="Tìm kiếm theo chức danh hoặc tên công ty"
                             value={filters.keyword}
                             onChange={(e) => onFieldChange('keyword', e.target.value)}
                             placeholder="Chức danh hoặc tên Công ty"

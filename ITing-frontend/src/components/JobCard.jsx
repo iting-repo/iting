@@ -123,11 +123,6 @@ const JobCard = ({ job, onHoverIn, onHoverOut, isHovered = false }) => {
                             <FaBolt className="text-[9px]" /> Nổi bật
                         </span>
                     )}
-                    {job.isAiSuggested && (
-                        <span className="bg-gradient-to-r from-orange-400 to-red-400 text-white text-[10px] font-bold px-2 py-1 rounded shadow-sm flex items-center gap-1">
-                             AI Suggestion
-                        </span>
-                    )}
                 </div>
                 <button
                   type="button"
