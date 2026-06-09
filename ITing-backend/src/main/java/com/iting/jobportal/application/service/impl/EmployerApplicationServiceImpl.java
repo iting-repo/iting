@@ -17,10 +17,6 @@ import com.iting.jobportal.application.service.EmployerApplicationService;
 import com.iting.jobportal.application.util.ApplicationMapperUtil;
 import com.iting.jobportal.job.entity.Job;
 import com.iting.jobportal.job.repository.JobRepository;
-import com.iting.jobportal.messaging.dto.request.SendMessageRequest;
-import com.iting.jobportal.messaging.enums.ReceiverType;
-import com.iting.jobportal.messaging.enums.SenderType;
-import com.iting.jobportal.messaging.service.MessageService;
 import com.iting.jobportal.notification.dto.request.CreateNotificationRequest;
 import com.iting.jobportal.notification.enums.NotificationType;
 import com.iting.jobportal.notification.enums.RecipientType;
@@ -47,7 +43,7 @@ public class EmployerApplicationServiceImpl implements EmployerApplicationServic
   private final JobRepository jobRepository;
   private final ApplicationMapperUtil applicationMapperUtil;
   private final NotificationService notificationService;
-  private final MessageService messageService;
+  private final ApplicationMessagingSideEffect messagingSideEffect;
   private final AccountRepository accountRepository;
 
   private Job verifyJobOwnership(Long employerId, Long jobId) {
@@ -239,34 +235,25 @@ public class EmployerApplicationServiceImpl implements EmployerApplicationServic
                 + " chưa phù hợp lúc này.";
       }
 
+      // Các side-effect (thông báo + tin nhắn tự động) đều chạy ở transaction RIÊNG
+      // (REQUIRES_NEW) qua messagingSideEffect và được nuốt lỗi tại đây. Nhờ vậy mọi lỗi side-effect
+      // (vd công ty đang bị đình chỉ khiến gửi tin nhắn ném lỗi) CHỈ rollback tx phụ, KHÔNG đánh dấu
+      // rollback-only tx chính — tránh UnexpectedRollbackException khiến accept/reject trả 500.
       if (type != null) {
-        notificationService.createNotification(
-            CreateNotificationRequest.builder()
-                .recipientId(form.getUserId())
-                .recipientType(RecipientType.USER)
-                .type(type)
-                .content(content)
-                .entityType("APPLICATION")
-                .entityId(applicationId)
-                .actionUrl("/candidate/applied-jobs")
-                .build());
+        try {
+          messagingSideEffect.fireStatusNotification(
+              form.getUserId(), type, content, applicationId);
+        } catch (RuntimeException e) {
+          // Bỏ qua lỗi tạo thông báo — không ảnh hưởng kết quả cập nhật trạng thái.
+        }
       }
 
-      // Gửi một yêu cầu (tin nhắn) tự động đến ứng viên khi được Chấp nhận
+      // Gửi tin nhắn tự động chào ứng viên khi được Chấp nhận.
       if (request.getStatus() == ApplicationStatus.ACCEPTED) {
         try {
-          SendMessageRequest msgReq = new SendMessageRequest();
-          msgReq.setReceiverId(form.getUserId());
-          msgReq.setReceiverType(ReceiverType.USER);
-          msgReq.setSenderType(SenderType.COMPANY);
-          msgReq.setContent(
-              String.format(
-                  "Chào bạn, hồ sơ ứng tuyển của bạn cho vị trí %s đã được chúng tôi chấp nhận. Vui"
-                      + " lòng phản hồi tin nhắn này để trao đổi thêm về lịch phỏng vấn nhé!",
-                  job.getTitle()));
-          messageService.sendMessage(msgReq, employerId);
-        } catch (Exception e) {
-          // Ignore message creation error if any
+          messagingSideEffect.sendAcceptanceMessage(employerId, form.getUserId(), job.getTitle());
+        } catch (RuntimeException e) {
+          // Bỏ qua lỗi gửi tin nhắn tự động — không ảnh hưởng kết quả chấp nhận.
         }
       }
     }
