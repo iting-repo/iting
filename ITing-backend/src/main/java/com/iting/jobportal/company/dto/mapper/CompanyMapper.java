@@ -42,6 +42,7 @@ public class CompanyMapper {
     res.setIndustries(
         company.getIndustries() == null ? null : new ArrayList<>(company.getIndustries()));
     res.setCompanySize(company.getCompanySize());
+    res.setFoundedYear(company.getFoundedYear());
     res.setPhone(company.getPhone());
     res.setRepresentativeName(company.getRepresentativeName());
     res.setRepresentativeGender(company.getRepresentativeGender());
