@@ -3,6 +3,7 @@ import { Outlet, useNavigate } from 'react-router-dom';
 import EmployerSidebar from '../components/employer/EmployerSidebar';
 import { FaBan, FaBars } from 'react-icons/fa';
 import companyService from '../services/companyService';
+import './EmployerLayout.css';
 
 const EmployerLayout = () => {
   const [companySuspended, setCompanySuspended] = useState(false);
@@ -34,7 +35,7 @@ const EmployerLayout = () => {
       <EmployerSidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
 
       {/* Nội dung thay đổi bên phải */}
-      <div className="flex-1 p-4 md:p-6 lg:p-8 overflow-x-hidden">
+      <div className="flex-1 p-4 md:p-6 lg:p-8 overflow-x-hidden hide-scrollbar">
 
         {/* Mobile Header / Hamburger Toggle */}
         <div className="lg:hidden flex items-center justify-between mb-4 bg-white p-4 rounded-2xl shadow-sm border border-gray-100">
