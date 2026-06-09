@@ -13,6 +13,7 @@ import {
   Textarea,
 } from "../../../components/common";
 import Pagination from "../../../components/common/Pagination";
+import { AdminFilterBar, AdminSearchInput, adminSelectClass } from "../../../components/admin/AdminFilterBar";
 import { toast } from "sonner";
 import {
   AlertTriangle,
@@ -21,7 +22,6 @@ import {
   Building2,
   CheckCircle,
   Clock,
-  Filter,
   Flag,
   Mail,
   MailOpen,
@@ -321,33 +321,27 @@ const NotificationManagement = () => {
         </button>
       </div>
 
-      <Card className="shadow-sm border border-slate-100">
-        <CardContent className="p-4">
-          <div className="flex items-center gap-3 flex-wrap">
-            <div className="relative flex-1 w-full sm:min-w-[200px]">
-              <Filter className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-              <Input
-                placeholder="Tìm kiếm thông báo..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="pl-9 h-10 w-full"
-              />
-            </div>
-            <Select
-              value={typeFilter}
-              onChange={(e) => setTypeFilter(e.target.value)}
-              className="w-full sm:w-[180px] h-10"
-            >
-              <option value="all">Tất cả loại</option>
-              {Object.entries(TYPE_MAP).map(([k, v]) => (
-                <option key={k} value={k}>
-                  {v.label}
-                </option>
-              ))}
-            </Select>
-          </div>
-        </CardContent>
-      </Card>
+      <AdminFilterBar>
+        <AdminSearchInput
+          placeholder="Tìm kiếm thông báo..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+        />
+        <div className="flex flex-wrap items-center gap-2">
+          <select
+            className={adminSelectClass}
+            value={typeFilter}
+            onChange={(e) => setTypeFilter(e.target.value)}
+          >
+            <option value="all">Tất cả loại</option>
+            {Object.entries(TYPE_MAP).map(([k, v]) => (
+              <option key={k} value={k}>
+                {v.label}
+              </option>
+            ))}
+          </select>
+        </div>
+      </AdminFilterBar>
 
       {/* Bulk actions */}
       {selected.size > 0 && (
@@ -400,6 +394,12 @@ const NotificationManagement = () => {
             {currentData.map((n) => {
               const typeInfo = getNotiTypeInfo(n.type);
               const TypeIcon = typeInfo.icon;
+              // Content có thể ở dạng "[Tiêu đề] Nội dung" hoặc chỉ là một chuỗi.
+              // Chỉ tách title/body khi đúng định dạng [..]; nếu không → hiện 1 dòng, tránh lặp text.
+              const raw = n.content || "Thông báo hệ thống";
+              const hasBracketTitle = raw.startsWith("[") && raw.includes("] ");
+              const notiTitle = hasBracketTitle ? raw.slice(1, raw.indexOf("] ")) : raw;
+              const notiBody = hasBracketTitle ? raw.slice(raw.indexOf("] ") + 2) : "";
               return (
                 <div
                   key={n.id}
@@ -439,14 +439,14 @@ const NotificationManagement = () => {
                               !n.isRead ? "font-bold text-slate-800" : "font-medium text-slate-600"
                             }`}
                           >
-                            {n.content?.split('] ')[0]?.replace('[', '') || "Thông báo hệ thống"}
+                            {notiTitle}
                           </p>
                         </div>
-                        <div className="w-full overflow-x-auto pb-1 custom-scrollbar">
-                          <p className={`text-sm text-slate-500 whitespace-nowrap ${!n.isRead ? "font-medium" : ""}`}>
-                            {n.content?.split('] ')[1] || n.content}
+                        {notiBody && (
+                          <p className={`text-sm text-slate-500 line-clamp-2 ${!n.isRead ? "font-medium" : ""}`}>
+                            {notiBody}
                           </p>
-                        </div>
+                        )}
                       </div>
                       <span className="text-[11px] font-medium text-slate-400 shrink-0 sm:whitespace-nowrap mt-1 sm:mt-0">
                         {n.time ? new Date(n.time).toLocaleString() : "---"}
