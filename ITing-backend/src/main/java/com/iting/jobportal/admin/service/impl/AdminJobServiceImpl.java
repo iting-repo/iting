@@ -114,10 +114,6 @@ public class AdminJobServiceImpl implements AdminJobService {
 
     // KIỂM TRA NGHIỆP VỤ: Nếu Job đã quá hạn nộp hồ sơ thì không được duyệt
     if (job.getDueDate() != null && job.getDueDate().isBefore(LocalDate.now())) {
-      job.setStatus(JobStatus.EXPIRED);
-      job.setReviewReason(
-          "Job đã quá hạn nộp hồ sơ (" + job.getDueDate() + ") trước khi được duyệt.");
-      jobRepository.save(job);
       throw new ResponseStatusException(
           HttpStatus.BAD_REQUEST,
           "Không thể duyệt job này. Hạn cuối nộp hồ sơ ("
