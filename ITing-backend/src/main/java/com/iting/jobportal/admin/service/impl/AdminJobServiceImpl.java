@@ -120,9 +120,9 @@ public class AdminJobServiceImpl implements AdminJobService {
       jobRepository.save(job);
       throw new ResponseStatusException(
           HttpStatus.BAD_REQUEST,
-          "Không thể duyệt Job này vì đã quá hạn nộp hồ sơ ("
+          "Không thể duyệt job này. Hạn cuối nộp hồ sơ ("
               + job.getDueDate()
-              + "). Hệ thống đã tự chuyển sang trạng thái Hết hạn.");
+              + ") đã vượt quá ngày hôm nay. Vui lòng cập nhật hạn mới trước khi duyệt.");
     }
 
     job.setStatus(JobStatus.ACTIVE);
@@ -393,7 +393,7 @@ public class AdminJobServiceImpl implements AdminJobService {
         .skills(job.getSkills())
         .jobType(job.getJobType())
         .experienceLevel(job.getExperienceLevel())
-        .workingDays(job.getWorkingDays() != null ? job.getWorkingDays().name() : null)
+        .workingDays(job.getWorkingDays())
         .minSalary(job.getMinSalary())
         .maxSalary(job.getMaxSalary())
         .salaryType(job.getSalaryType())
