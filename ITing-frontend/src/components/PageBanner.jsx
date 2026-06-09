@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import axiosInstance from '../utils/axiosInstance';
+import { resolveAssetUrl } from '../utils/assetUrl';
 
 /**
  * Banner ngang theo vị trí (position) — dùng cho các slot quảng cáo trên trang public
@@ -36,7 +37,7 @@ const PageBanner = ({ position, className = '' }) => {
     if (ads.length === 0) return null;
 
     const cur = ads[idx % ads.length];
-    const img = cur.imageDesktop || cur.imageMobile;
+    const img = resolveAssetUrl(cur.imageDesktop || cur.imageMobile);
     const link = cur.link || '#';
     const isExternal = /^https?:\/\//i.test(link);
 

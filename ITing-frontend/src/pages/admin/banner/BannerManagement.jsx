@@ -1,10 +1,11 @@
-import React, { useState, useEffect } from "react";
-import { Plus, Pencil, Trash2, Search, Image as ImageIcon } from "lucide-react";
+import React, { useState, useEffect, useRef } from "react";
+import { Plus, Pencil, Trash2, Search, Image as ImageIcon, Upload, Loader2, X } from "lucide-react";
 import { Button, Badge, Input, Switch, Dialog, Select, Card, CardContent } from "../../../components";
 import { ConfirmModal } from "../../../components/common";
 import useConfirm from "../../../hooks/useConfirm";
 import { toast } from "sonner";
 import axiosInstance from "../../../utils/axiosInstance";
+import { resolveAssetUrl } from "../../../utils/assetUrl";
 
 // Loại banner — phân biệt mục đích sử dụng.
 const BANNER_TYPES = [
@@ -71,6 +72,39 @@ const BannerManagement = () => {
     status: "ACTIVE",
     bannerType: "ADVERTISEMENT"
   });
+
+  // Upload ảnh banner trực tiếp lên S3 (field = "imageDesktop" | "imageMobile").
+  const [uploading, setUploading] = useState({ imageDesktop: false, imageMobile: false });
+  const fileInputs = { imageDesktop: useRef(null), imageMobile: useRef(null) };
+
+  const handleUploadImage = async (field, file) => {
+    if (!file) return;
+    if (!file.type.startsWith("image/")) {
+      toast.error("Vui lòng chọn tệp ảnh (jpg, png, webp, gif)");
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("Ảnh tối đa 5MB");
+      return;
+    }
+    try {
+      setUploading((u) => ({ ...u, [field]: true }));
+      const fd = new FormData();
+      fd.append("file", file);
+      const res = await axiosInstance.post("/admin/banners/upload-image", fd, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+      const url = res?.url || res?.data?.url;
+      if (!url) throw new Error("No url");
+      setForm((f) => ({ ...f, [field]: url }));
+      toast.success("Đã tải ảnh lên S3");
+    } catch (error) {
+      toast.error(error?.response?.data?.error || "Lỗi khi tải ảnh lên");
+    } finally {
+      setUploading((u) => ({ ...u, [field]: false }));
+      if (fileInputs[field].current) fileInputs[field].current.value = "";
+    }
+  };
 
   const fetchBanners = async () => {
     try {
@@ -268,7 +302,7 @@ const BannerManagement = () => {
               <CardContent className="p-4 flex flex-col md:flex-row items-start md:items-center gap-4">
                 <div className="h-16 w-24 bg-gray-100 rounded-md flex items-center justify-center overflow-hidden shrink-0 border border-gray-200">
                   {item.imageDesktop ? (
-                    <img src={item.imageDesktop} alt={item.title} className="w-full h-full object-cover" />
+                    <img src={resolveAssetUrl(item.imageDesktop)} alt={item.title} className="w-full h-full object-cover" />
                   ) : (
                     <ImageIcon className="h-6 w-6 text-gray-400" />
                   )}
@@ -361,15 +395,63 @@ const BannerManagement = () => {
             </div>
           </div>
 
-          <div className="space-y-2 md:col-span-2">
-            <label className="text-sm font-medium text-gray-700">Ảnh Desktop (URL)</label>
-            <Input value={form.imageDesktop} onChange={(e) => setForm({ ...form, imageDesktop: e.target.value })} placeholder="https://..." />
-          </div>
+          {[
+            { field: "imageDesktop", label: "Ảnh Desktop" },
+            { field: "imageMobile", label: "Ảnh Mobile" },
+          ].map(({ field, label }) => (
+            <div key={field} className="space-y-2 md:col-span-2">
+              <label className="text-sm font-medium text-gray-700">{label}</label>
+              <div className="flex items-start gap-3">
+                {/* Preview / dropzone */}
+                <div className="relative h-20 w-32 shrink-0 rounded-lg border border-dashed border-gray-300 bg-gray-50 flex items-center justify-center overflow-hidden">
+                  {form[field] ? (
+                    <>
+                      <img src={resolveAssetUrl(form[field])} alt={label} className="w-full h-full object-cover" />
+                      <button
+                        type="button"
+                        onClick={() => setForm((f) => ({ ...f, [field]: "" }))}
+                        className="absolute top-1 right-1 rounded-full bg-black/50 p-1 text-white hover:bg-black/70"
+                        title="Xóa ảnh"
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    </>
+                  ) : (
+                    <ImageIcon className="h-6 w-6 text-gray-300" />
+                  )}
+                </div>
 
-          <div className="space-y-2 md:col-span-2">
-            <label className="text-sm font-medium text-gray-700">Ảnh Mobile (URL)</label>
-            <Input value={form.imageMobile} onChange={(e) => setForm({ ...form, imageMobile: e.target.value })} placeholder="https://..." />
-          </div>
+                <div className="flex-1 space-y-2">
+                  <input
+                    ref={fileInputs[field]}
+                    type="file"
+                    accept="image/png,image/jpeg,image/webp,image/gif"
+                    className="hidden"
+                    onChange={(e) => handleUploadImage(field, e.target.files?.[0])}
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => fileInputs[field].current?.click()}
+                    disabled={uploading[field]}
+                  >
+                    {uploading[field] ? (
+                      <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Đang tải lên...</>
+                    ) : (
+                      <><Upload className="h-4 w-4 mr-2" />Tải ảnh lên S3</>
+                    )}
+                  </Button>
+                  <Input
+                    value={form[field]}
+                    onChange={(e) => setForm({ ...form, [field]: e.target.value })}
+                    placeholder="hoặc dán URL ảnh..."
+                    className="text-xs"
+                  />
+                </div>
+              </div>
+            </div>
+          ))}
           
           <div className="space-y-2 md:col-span-2">
             <label className="text-sm font-medium text-gray-700">Link khi click</label>

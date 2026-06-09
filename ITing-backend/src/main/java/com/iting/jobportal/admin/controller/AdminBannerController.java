@@ -4,6 +4,10 @@ import com.iting.jobportal.admin.entity.Banner;
 import com.iting.jobportal.admin.entity.SystemConfig;
 import com.iting.jobportal.admin.repository.BannerRepository;
 import com.iting.jobportal.admin.repository.SystemConfigRepository;
+import com.iting.jobportal.common.ratelimit.RateLimitPolicy;
+import com.iting.jobportal.common.ratelimit.RateLimited;
+import com.iting.jobportal.file.FileUploadService;
+import com.iting.jobportal.file.FileValidator;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.List;
@@ -11,6 +15,7 @@ import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 @RestController
 @RequestMapping("/api/admin/banners")
@@ -28,6 +33,22 @@ public class AdminBannerController {
 
   private final BannerRepository bannerRepository;
   private final SystemConfigRepository systemConfigRepository;
+  private final FileUploadService fileUploadService;
+  private final FileValidator fileValidator;
+
+  /**
+   * Upload ảnh banner trực tiếp lên S3, trả về { url } để gán vào imageDesktop / imageMobile. Dùng
+   * chung hạ tầng ảnh blog: lưu lên S3 (bucket private) và trả URL proxy same-origin presign-redirect
+   * lúc hiển thị — tránh lỗi 403 khi &lt;img&gt; tải trực tiếp object private.
+   */
+  @PostMapping(value = "/upload-image", consumes = "multipart/form-data")
+  @RateLimited(policy = RateLimitPolicy.FILE_UPLOAD, subject = "user")
+  @Operation(summary = "Upload 1 ảnh banner lên S3, trả về URL")
+  public ResponseEntity<Map<String, String>> uploadImage(@RequestParam("file") MultipartFile file) {
+    fileValidator.validate(file, FileValidator.Category.BLOG_IMAGE);
+    String url = fileUploadService.uploadBlogImage(file);
+    return ResponseEntity.ok(Map.of("url", url));
+  }
 
   /** Đọc giới hạn banner quảng cáo từ config (mặc định {@link #DEFAULT_AD_LIMIT}). */
   private int getAdLimit() {
