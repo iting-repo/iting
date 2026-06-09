@@ -11,6 +11,7 @@ import {
    Loader2,
 } from "lucide-react";
 import { toast } from "sonner";
+import { useBodyScrollLock } from "../../hooks/useBodyScrollLock";
 import adminApplicationService from "../../services/adminApplicationService";
 
 const STATUS_META = {
@@ -67,6 +68,8 @@ export const JobApplicantsDialog = ({ job, open, onClose }) => {
    useEffect(() => {
       if (open) setPage(0);
    }, [job?.id, open]);
+
+   useBodyScrollLock(open);
 
    if (!open) return null;
 
