@@ -1,5 +1,6 @@
 package com.iting.jobportal.company.dto.response;
 
+import com.iting.jobportal.company.dto.request.CompanySocialLinkDto;
 import com.iting.jobportal.company.entity.enums.BusinessDocumentType;
 import com.iting.jobportal.company.entity.enums.CompanyReviewStatus;
 import com.iting.jobportal.company.entity.enums.DocumentReviewStatus;
@@ -52,6 +53,9 @@ public class CompanyResponse {
   private Boolean active;
   private Boolean profileSetup;
 
+  /** Liên kết mạng xã hội công khai (Facebook, Instagram, YouTube, ...). */
+  private List<CompanySocialLinkDto> socialLinks;
+
   public static CompanyResponse fromEntity(com.iting.jobportal.company.entity.Company company) {
     return new CompanyResponse(
         company.getId(),
@@ -84,6 +88,7 @@ public class CompanyResponse {
         0L, // reviewCount - set later
         company.getStatusReason(),
         company.getActive(),
-        company.getProfileSetup());
+        company.getProfileSetup(),
+        null); // socialLinks set riêng ở service (mapToResponse) sau khi parse JSON
   }
 }

@@ -4,8 +4,20 @@ import {
   Building2, MapPin, Users, Globe, Star,
   ExternalLink, BadgeCheck, Briefcase,
   Calendar, CheckCircle2, ChevronRight,
-  ArrowLeft, Heart
+  ArrowLeft, Heart,
+  Facebook, Instagram, Youtube, Twitter, Linkedin
 } from "lucide-react";
+
+// Ánh xạ nền tảng mạng xã hội → icon + màu (đồng bộ với tab "Mạng xã hội" của HR).
+const SOCIAL_META = {
+  FACEBOOK: { label: "Facebook", icon: Facebook, cls: "bg-blue-50 text-blue-600 border-blue-100 hover:bg-blue-100" },
+  INSTAGRAM: { label: "Instagram", icon: Instagram, cls: "bg-pink-50 text-pink-600 border-pink-100 hover:bg-pink-100" },
+  YOUTUBE: { label: "YouTube", icon: Youtube, cls: "bg-red-50 text-red-600 border-red-100 hover:bg-red-100" },
+  TWITTER: { label: "Twitter / X", icon: Twitter, cls: "bg-sky-50 text-sky-600 border-sky-100 hover:bg-sky-100" },
+  LINKEDIN: { label: "LinkedIn", icon: Linkedin, cls: "bg-blue-50 text-blue-700 border-blue-100 hover:bg-blue-100" },
+  TIKTOK: { label: "TikTok", icon: Globe, cls: "bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100" },
+  OTHER: { label: "Liên kết", icon: Globe, cls: "bg-gray-50 text-gray-600 border-gray-200 hover:bg-gray-100" },
+};
 import { useSelector } from "react-redux";
 import { toast } from "sonner";
 import companyService from "../../services/companyService";
@@ -694,6 +706,34 @@ const CompanyDetailPage = () => {
                     </div>
                   </div>
                 </div>
+                {company.socialLinks?.length > 0 && (
+                  <div className="flex items-start gap-5">
+                    <div className="w-12 h-12 rounded-2xl bg-sky-50 flex items-center justify-center shrink-0 border border-sky-100">
+                      <Globe className="w-6 h-6 text-sky-500" />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-[10px] text-gray-400 font-black uppercase tracking-[0.15em] mb-2">Mạng xã hội</p>
+                      <div className="flex flex-wrap gap-2">
+                        {company.socialLinks.map((s, i) => {
+                          const meta = SOCIAL_META[s.platform] || SOCIAL_META.OTHER;
+                          const Icon = meta.icon;
+                          return (
+                            <a
+                              key={i}
+                              href={s.url}
+                              target="_blank"
+                              rel="noreferrer"
+                              title={`${meta.label}: ${s.url}`}
+                              className={`w-10 h-10 rounded-xl flex items-center justify-center border transition-all hover:-translate-y-0.5 ${meta.cls}`}
+                            >
+                              <Icon className="w-5 h-5" />
+                            </a>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* Call to Action Sidebar Card */}

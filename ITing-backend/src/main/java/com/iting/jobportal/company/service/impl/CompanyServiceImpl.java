@@ -383,6 +383,7 @@ public class CompanyServiceImpl implements CompanyService {
   }
 
   @Override
+  @CacheEvict(value = CacheNames.COMPANY_DETAIL, allEntries = true)
   public java.util.List<com.iting.jobportal.company.dto.request.CompanySocialLinkDto>
       updateMySocialLinks(
           Long accountId,
@@ -606,6 +607,8 @@ public class CompanyServiceImpl implements CompanyService {
     Double avgRating = companyReviewRepository.getAverageRating(company.getId());
     response.setAverageRating(avgRating != null ? Math.round(avgRating * 10.0) / 10.0 : null);
     response.setReviewCount(companyReviewRepository.countByCompanyId(company.getId()));
+    // Liên kết mạng xã hội công khai (parse từ social_links JSON) → hiển thị ở hồ sơ công ty.
+    response.setSocialLinks(parseSocialLinks(company.getSocialLinksJson()));
     return response;
   }
 
