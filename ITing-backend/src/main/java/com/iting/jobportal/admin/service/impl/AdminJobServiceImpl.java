@@ -431,7 +431,17 @@ public class AdminJobServiceImpl implements AdminJobService {
       }
     }
 
-    throw new IllegalStateException("Invalid job status: " + job.getStatus());
+    String allowed =
+        java.util.Arrays.stream(allowedStatuses)
+            .map(JobStatus::name)
+            .collect(java.util.stream.Collectors.joining(", "));
+    throw new ResponseStatusException(
+        HttpStatus.BAD_REQUEST,
+        "Không thể thực hiện thao tác này. Tin đang ở trạng thái "
+            + job.getStatus()
+            + ", chỉ cho phép khi trạng thái là: "
+            + allowed
+            + ".");
   }
 
   private void setReviewAudit(Job job, Long adminId) {

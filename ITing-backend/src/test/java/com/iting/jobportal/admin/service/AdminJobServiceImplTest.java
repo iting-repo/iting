@@ -9,6 +9,7 @@ import com.iting.jobportal.job.entity.Job;
 import com.iting.jobportal.job.entity.enums.JobStatus;
 import com.iting.jobportal.job.repository.JobRepository;
 import com.iting.jobportal.job.repository.JobReviewHistoryRepository;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
@@ -17,7 +18,9 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.http.HttpStatus;
 import org.springframework.test.util.ReflectionTestUtils;
+import org.springframework.web.server.ResponseStatusException;
 
 @ExtendWith(MockitoExtension.class)
 class AdminJobServiceImplTest {
@@ -65,11 +68,51 @@ class AdminJobServiceImplTest {
 
     when(jobRepository.findById(1L)).thenReturn(Optional.of(job));
 
-    IllegalStateException ex =
-        assertThrows(IllegalStateException.class, () -> service.approveJob(5L, 1L));
+    ResponseStatusException ex =
+        assertThrows(ResponseStatusException.class, () -> service.approveJob(5L, 1L));
 
-    assertEquals("Invalid job status: ACTIVE", ex.getMessage());
+    assertEquals(HttpStatus.BAD_REQUEST, ex.getStatusCode());
+    assertTrue(ex.getReason().contains("ACTIVE"));
     verify(jobRepository, never()).save(any());
+  }
+
+  @Test
+  void approveJob_whenDueDateExpired_shouldThrowAndNotMutateOrSave() {
+    Job job =
+        Job.builder()
+            .id(1L)
+            .status(JobStatus.PENDING)
+            .reviewReason("old reason")
+            .dueDate(LocalDate.now().minusDays(1))
+            .build();
+
+    when(jobRepository.findById(1L)).thenReturn(Optional.of(job));
+
+    ResponseStatusException ex =
+        assertThrows(ResponseStatusException.class, () -> service.approveJob(5L, 1L));
+
+    assertEquals(HttpStatus.BAD_REQUEST, ex.getStatusCode());
+    // Tin vẫn giữ nguyên PENDING (không tự đổi sang EXPIRED) để còn có thể từ chối / sửa hạn.
+    assertEquals(JobStatus.PENDING, job.getStatus());
+    assertEquals("old reason", job.getReviewReason());
+    verify(jobRepository, never()).save(any());
+  }
+
+  @Test
+  void approveJob_whenDueDateInFuture_shouldActivate() {
+    Job job =
+        Job.builder()
+            .id(1L)
+            .status(JobStatus.PENDING)
+            .dueDate(LocalDate.now().plusDays(30))
+            .build();
+
+    when(jobRepository.findById(1L)).thenReturn(Optional.of(job));
+
+    service.approveJob(5L, 1L);
+
+    assertEquals(JobStatus.ACTIVE, job.getStatus());
+    verify(jobRepository).save(job);
   }
 
   @Test
@@ -106,11 +149,12 @@ class AdminJobServiceImplTest {
 
     when(jobRepository.findById(1L)).thenReturn(Optional.of(job));
 
-    IllegalStateException ex =
+    ResponseStatusException ex =
         assertThrows(
-            IllegalStateException.class, () -> service.rejectJob(5L, 1L, "invalid content"));
+            ResponseStatusException.class, () -> service.rejectJob(5L, 1L, "invalid content"));
 
-    assertEquals("Invalid job status: ACTIVE", ex.getMessage());
+    assertEquals(HttpStatus.BAD_REQUEST, ex.getStatusCode());
+    assertTrue(ex.getReason().contains("ACTIVE"));
     verify(jobRepository, never()).save(any());
   }
 
@@ -159,11 +203,12 @@ class AdminJobServiceImplTest {
 
     when(jobRepository.findById(1L)).thenReturn(Optional.of(job));
 
-    IllegalStateException ex =
+    ResponseStatusException ex =
         assertThrows(
-            IllegalStateException.class, () -> service.suspendJob(9L, 1L, "policy violation"));
+            ResponseStatusException.class, () -> service.suspendJob(9L, 1L, "policy violation"));
 
-    assertEquals("Invalid job status: PENDING", ex.getMessage());
+    assertEquals(HttpStatus.BAD_REQUEST, ex.getStatusCode());
+    assertTrue(ex.getReason().contains("PENDING"));
     verify(jobRepository, never()).save(any());
   }
 
@@ -202,10 +247,11 @@ class AdminJobServiceImplTest {
 
     when(jobRepository.findById(1L)).thenReturn(Optional.of(job));
 
-    IllegalStateException ex =
-        assertThrows(IllegalStateException.class, () -> service.unsuspendJob(5L, 1L));
+    ResponseStatusException ex =
+        assertThrows(ResponseStatusException.class, () -> service.unsuspendJob(5L, 1L));
 
-    assertEquals("Invalid job status: ACTIVE", ex.getMessage());
+    assertEquals(HttpStatus.BAD_REQUEST, ex.getStatusCode());
+    assertTrue(ex.getReason().contains("ACTIVE"));
     verify(jobRepository, never()).save(any());
   }
 
@@ -229,10 +275,11 @@ class AdminJobServiceImplTest {
 
     when(jobRepository.findById(1L)).thenReturn(Optional.of(job));
 
-    IllegalStateException ex =
-        assertThrows(IllegalStateException.class, () -> service.closeJobByAdmin(7L, 1L));
+    ResponseStatusException ex =
+        assertThrows(ResponseStatusException.class, () -> service.closeJobByAdmin(7L, 1L));
 
-    assertEquals("Invalid job status: PENDING", ex.getMessage());
+    assertEquals(HttpStatus.BAD_REQUEST, ex.getStatusCode());
+    assertTrue(ex.getReason().contains("PENDING"));
     verify(jobRepository, never()).save(any());
   }
 

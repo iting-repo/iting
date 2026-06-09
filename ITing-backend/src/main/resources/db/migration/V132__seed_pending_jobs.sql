@@ -4,7 +4,7 @@
 INSERT INTO Job (
     Company_id,
     Title, Position,
-    Description, Tech_required,
+    Description, Skills,
     Job_type, Experience_level, Working_days,
     Min_salary, Max_salary, Salary_type,
     Max_accept, Current_accepted,
