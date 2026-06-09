@@ -72,6 +72,12 @@ public class LocalFileUploadServiceImpl implements FileUploadService {
   }
 
   @Override
+  public String presignByKey(String key, int minutes) {
+    // Local serve tĩnh — trả URL theo key, không cần presign.
+    return key == null ? null : (key.startsWith("/") ? key : "/" + key);
+  }
+
+  @Override
   public boolean objectExists(String fileUrl) {
     if (fileUrl == null || fileUrl.isBlank()) {
       return false;

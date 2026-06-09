@@ -67,7 +67,13 @@ public class S3FileUploadServiceImpl implements FileUploadService {
 
   @Override
   public String uploadBlogImage(MultipartFile file) {
-    return upload(file, "blog");
+    String rawUrl = upload(file, "blog");
+    // Bucket private → URL S3 thô bị 403 khi <img> tải. Trả URL proxy same-origin để backend
+    // presign-redirect lúc hiển thị (xem BlogImageController). Lưu URL proxy này vào nội dung blog.
+    String prefix = "amazonaws.com/";
+    int idx = rawUrl.indexOf(prefix);
+    String key = idx >= 0 ? rawUrl.substring(idx + prefix.length()) : rawUrl;
+    return "/api/public/blog-image?key=" + key;
   }
 
   @Override
@@ -94,6 +100,17 @@ public class S3FileUploadServiceImpl implements FileUploadService {
 
     URL presignedUrl = s3Presigner.presignGetObject(presignRequest).url();
     return presignedUrl.toString();
+  }
+
+  @Override
+  public String presignByKey(String key, int minutes) {
+    GetObjectRequest getObjectRequest = GetObjectRequest.builder().bucket(bucket).key(key).build();
+    GetObjectPresignRequest presignRequest =
+        GetObjectPresignRequest.builder()
+            .signatureDuration(Duration.ofMinutes(minutes))
+            .getObjectRequest(getObjectRequest)
+            .build();
+    return s3Presigner.presignGetObject(presignRequest).url().toString();
   }
 
   @Override
