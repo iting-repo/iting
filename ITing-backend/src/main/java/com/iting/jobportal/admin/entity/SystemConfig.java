@@ -25,6 +25,9 @@ public class SystemConfig {
   private Integer jobExpiryDays;
   private Boolean autoApproveVerified;
 
+  /** Cho phép ứng viên gửi đánh giá (review) công ty. Tắt → chặn gửi review mới toàn hệ thống. */
+  private Boolean allowCompanyReviews;
+
   /** Giới hạn số banner QUẢNG CÁO (ADVERTISEMENT) được bật cùng lúc. Cấu hình ở trang Banner. */
   private Integer bannerAdLimit;
 

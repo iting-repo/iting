@@ -21,10 +21,24 @@ public class CompanyReviewServiceImpl implements CompanyReviewService {
   private final CompanyReviewRepository reviewRepository;
   private final CompanyRepository companyRepository;
   private final AccountRepository accountRepository;
+  private final com.iting.jobportal.admin.service.AdminConfigService adminConfigService;
 
   @Override
   @Transactional
   public CompanyReview createReview(Long companyId, Long accountId, int rating, String content) {
+    try {
+      var cfg = adminConfigService.getConfig();
+      if (cfg != null && Boolean.FALSE.equals(cfg.getAllowCompanyReviews())) {
+        throw new org.springframework.web.server.ResponseStatusException(
+            org.springframework.http.HttpStatus.FORBIDDEN,
+            "Tính năng đánh giá công ty hiện đang tắt.");
+      }
+    } catch (org.springframework.web.server.ResponseStatusException e) {
+      throw e;
+    } catch (RuntimeException ignored) {
+      // lỗi đọc config → cho phép (fail-open, tương thích dữ liệu cũ)
+    }
+
     Company company =
         companyRepository
             .findById(companyId)

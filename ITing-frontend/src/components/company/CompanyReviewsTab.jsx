@@ -5,6 +5,7 @@ import {
   FaStar, FaThumbsUp, FaFlag, FaPen, FaUserShield, FaBriefcase, FaTrash
 } from 'react-icons/fa';
 import companyReviewService from '../../services/companyReviewService';
+import publicConfigService from '../../services/publicConfigService';
 import { ConfirmModal } from '../../components/common';
 import useConfirm from '../../hooks/useConfirm';
 import WriteReviewModal from './WriteReviewModal';
@@ -24,6 +25,13 @@ const CompanyReviewsTab = ({ companyId, companyName }) => {
   const [showWriteModal, setShowWriteModal] = useState(false);
   const [confirm, askConfirm, resetConfirm] = useConfirm();
   const [currentPage, setCurrentPage] = useState(1);
+  const [reviewsEnabled, setReviewsEnabled] = useState(true);
+
+  useEffect(() => {
+    publicConfigService.getSettings()
+      .then((s) => setReviewsEnabled(s?.allowCompanyReviews !== false))
+      .catch(() => setReviewsEnabled(true)); // lỗi đọc cấu hình → mặc định bật
+  }, []);
 
   const load = () => {
     setLoading(true);
@@ -110,13 +118,15 @@ const CompanyReviewsTab = ({ companyId, companyName }) => {
             <strong className="text-green-700">{data?.recommendPercent ?? 0}%</strong> giới thiệu công ty này
           </div>
         </div>
-        <button
-          type="button"
-          onClick={() => setShowWriteModal(true)}
-          className="px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold flex items-center gap-2"
-        >
-          <FaPen /> Viết đánh giá
-        </button>
+        {reviewsEnabled && (
+          <button
+            type="button"
+            onClick={() => setShowWriteModal(true)}
+            className="px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold flex items-center gap-2"
+          >
+            <FaPen /> Viết đánh giá
+          </button>
+        )}
       </div>
 
       {/* Reviews list */}

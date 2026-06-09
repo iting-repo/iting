@@ -34,6 +34,7 @@ public class AdminConfigServiceImpl implements AdminConfigService {
     AuditContext.change("Số tin tối đa/công ty", current.getMaxJobsPerCompany(), config.getMaxJobsPerCompany());
     AuditContext.change("Tin hết hạn sau (ngày)", current.getJobExpiryDays(), config.getJobExpiryDays());
     AuditContext.change("Tự duyệt công ty đã xác minh", current.getAutoApproveVerified(), config.getAutoApproveVerified());
+    AuditContext.change("Cho phép đánh giá công ty", current.getAllowCompanyReviews(), config.getAllowCompanyReviews());
     AuditContext.change("SMTP Host", current.getSmtpHost(), config.getSmtpHost());
     AuditContext.change("SMTP Port", current.getSmtpPort(), config.getSmtpPort());
     AuditContext.change("SMTP User", current.getSmtpUser(), config.getSmtpUser());
@@ -61,6 +62,9 @@ public class AdminConfigServiceImpl implements AdminConfigService {
     current.setMaxJobsPerCompany(config.getMaxJobsPerCompany());
     current.setJobExpiryDays(config.getJobExpiryDays());
     current.setAutoApproveVerified(config.getAutoApproveVerified());
+    if (config.getAllowCompanyReviews() != null) {
+      current.setAllowCompanyReviews(config.getAllowCompanyReviews());
+    }
     current.setSmtpHost(config.getSmtpHost());
     current.setSmtpPort(config.getSmtpPort());
     current.setSmtpUser(config.getSmtpUser());
@@ -128,6 +132,7 @@ public class AdminConfigServiceImpl implements AdminConfigService {
             .maxJobsPerCompany(50)
             .jobExpiryDays(30)
             .autoApproveVerified(true)
+            .allowCompanyReviews(true)
             .smtpHost("smtp.gmail.com")
             .smtpPort("587")
             .smtpUser("noreply@iting.vn")

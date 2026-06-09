@@ -46,6 +46,18 @@ public class CompanyReviewController {
   private final AccountRepository accountRepository;
   private final JwtTokenUtil jwtTokenUtil;
   private final CompanyReviewService companyReviewService;
+  private final com.iting.jobportal.admin.service.AdminConfigService adminConfigService;
+
+  /** Đánh giá công ty có đang được bật trong cấu hình hệ thống không (an toàn nếu config null). */
+  private boolean isCompanyReviewsEnabled() {
+    try {
+      var cfg = adminConfigService.getConfig();
+      // null => coi như bật (tương thích dữ liệu cũ trước khi có cờ này)
+      return cfg == null || !Boolean.FALSE.equals(cfg.getAllowCompanyReviews());
+    } catch (RuntimeException e) {
+      return true;
+    }
+  }
 
   /** Public: rating stats summary cho company (shape khớp frontend cũ). */
   @GetMapping("/api/public/companies/{companyId}/rating-stats")
@@ -108,6 +120,11 @@ public class CompanyReviewController {
       @PathVariable Long companyId,
       @RequestBody Map<String, Object> body,
       HttpServletRequest request) {
+
+    if (!isCompanyReviewsEnabled()) {
+      throw new ResponseStatusException(
+          HttpStatus.FORBIDDEN, "Tính năng đánh giá công ty hiện đang tắt.");
+    }
 
     Long userId = requireUser(request);
     Company company =

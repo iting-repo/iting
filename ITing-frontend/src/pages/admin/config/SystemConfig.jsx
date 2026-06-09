@@ -71,8 +71,6 @@ const SystemConfig = () => {
   const handleSave = async () => {
     // Validate config
     const errors = [];
-    if (config.maxJobsPerCompany < 1) errors.push("Số tin tối đa mỗi công ty phải lớn hơn 0.");
-    if (config.jobExpiryDays < 1) errors.push("Thời gian hết hạn tin phải lớn hơn 0.");
     if (config.maxLoginAttempts < 1) errors.push("Số lần đăng nhập sai tối đa phải lớn hơn 0.");
     if (config.lockoutDuration < 1) errors.push("Thời gian khóa tài khoản phải lớn hơn 0.");
     if (config.sessionTimeout < 1) errors.push("Thời gian hết hạn phiên làm việc phải lớn hơn 0.");
@@ -198,41 +196,29 @@ const SystemConfig = () => {
               </CardHeader>
               <Separator />
               <CardContent className="space-y-6 pt-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="space-y-2">
-                    <label className="text-sm font-bold text-slate-700">Tên website</label>
-                    <Input value={config.siteName} onChange={(e) => updateConfig("siteName", e.target.value)} placeholder="VD: ITing" />
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-sm font-bold text-slate-700">URL website</label>
-                    <Input value={config.siteUrl} onChange={(e) => updateConfig("siteUrl", e.target.value)} placeholder="https://..." />
-                  </div>
-                </div>
                 <div className="space-y-2">
                   <label className="text-sm font-bold text-slate-700">Email hỗ trợ</label>
-                  <Input value={config.supportEmail} onChange={(e) => updateConfig("supportEmail", e.target.value)} />
-                </div>
-                
-                <div className="space-y-4">
-                  <h3 className="text-sm font-black uppercase tracking-wider text-slate-400 mt-4">Quy tắc đăng tin</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div className="space-y-2">
-                      <label className="text-sm font-bold text-slate-700">Số tin tối đa / công ty</label>
-                      <Input type="number" value={config.maxJobsPerCompany} onChange={(e) => updateConfig("maxJobsPerCompany", e.target.value)} />
-                    </div>
-                    <div className="space-y-2">
-                      <label className="text-sm font-bold text-slate-700">Tin hết hạn sau (ngày)</label>
-                      <Input type="number" value={config.jobExpiryDays} onChange={(e) => updateConfig("jobExpiryDays", e.target.value)} />
-                    </div>
-                  </div>
+                  <Input value={config.supportEmail} onChange={(e) => updateConfig("supportEmail", e.target.value)} placeholder="support@iting.vn" />
                 </div>
 
-                <div className="flex items-start sm:items-center justify-between p-4 bg-sky-50/50 rounded-2xl border border-sky-100 gap-4">
-                  <div className="space-y-1">
-                    <p className="text-sm font-bold text-slate-800">Tự động duyệt công ty đã xác minh</p>
-                    <p className="text-xs text-slate-500">Công ty có trạng thái Verified sẽ được duyệt tin tự động</p>
+                <div className="space-y-3">
+                  <h3 className="text-sm font-black uppercase tracking-wider text-slate-400 mt-2">Quy tắc & tính năng</h3>
+
+                  <div className="flex items-start sm:items-center justify-between p-4 bg-sky-50/50 rounded-2xl border border-sky-100 gap-4">
+                    <div className="space-y-1">
+                      <p className="text-sm font-bold text-slate-800">Tự động duyệt công ty đã xác minh</p>
+                      <p className="text-xs text-slate-500">Công ty có trạng thái Verified sẽ được duyệt tin tự động</p>
+                    </div>
+                    <Switch className="shrink-0" checked={config.autoApproveVerified} onCheckedChange={(v) => updateConfig("autoApproveVerified", v)} />
                   </div>
-                  <Switch className="shrink-0" checked={config.autoApproveVerified} onCheckedChange={(v) => updateConfig("autoApproveVerified", v)} />
+
+                  <div className="flex items-start sm:items-center justify-between p-4 rounded-2xl border border-slate-100 gap-4">
+                    <div className="space-y-1">
+                      <p className="text-sm font-bold text-slate-800">Cho phép ứng viên đánh giá công ty</p>
+                      <p className="text-xs text-slate-500">Tắt sẽ ẩn nút “Viết đánh giá” và chặn gửi đánh giá mới trên toàn hệ thống</p>
+                    </div>
+                    <Switch className="shrink-0" checked={config.allowCompanyReviews} onCheckedChange={(v) => updateConfig("allowCompanyReviews", v)} />
+                  </div>
                 </div>
               </CardContent>
             </Card>
