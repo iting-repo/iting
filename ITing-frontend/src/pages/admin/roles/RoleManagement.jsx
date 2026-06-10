@@ -24,6 +24,11 @@ import { toast } from 'sonner';
 import Dialog from '../../../components/common/Dialog';
 import rbacService from '../../../services/rbacService';
 
+// axiosInstance reject lỗi bằng response BODY (GlobalExceptionHandler trả { error, httpStatus }),
+// không phải Error nên không có .message. Lấy theo thứ tự: error → message → fallback.
+const errText = (e, fallback) =>
+  e?.error || e?.response?.data?.error || e?.response?.data?.message || e?.message || fallback;
+
 // ── Tham chiếu hiển thị ───────────────────────────────────────────────
 const STATUS_META = {
   DRAFT: { label: 'Bản nháp', cls: 'bg-slate-100 text-slate-600 border-slate-200' },
@@ -95,11 +100,10 @@ const PermissionPicker = ({ perms, selected, onToggle }) => {
                   key={p.code}
                   type="button"
                   onClick={() => onToggle(p.code)}
-                  className={`flex items-center gap-2 text-sm rounded-lg px-2.5 py-1.5 border text-left transition-colors ${
-                    on
+                  className={`flex items-center gap-2 text-sm rounded-lg px-2.5 py-1.5 border text-left transition-colors ${on
                       ? 'bg-emerald-50 border-emerald-200 text-emerald-700'
                       : 'bg-white border-slate-200 text-slate-600 hover:border-slate-300'
-                  }`}
+                    }`}
                 >
                   <span
                     className={`w-4 h-4 rounded flex items-center justify-center shrink-0 ${on ? 'bg-emerald-500 text-white' : 'border border-slate-300'}`}
@@ -196,7 +200,7 @@ const RoleManagement = () => {
       toast.success(`Đã duyệt & kích hoạt "${role.name}"`);
       refresh();
     } catch (e) {
-      toast.error(e?.message || 'Duyệt thất bại');
+      toast.error(errText(e, 'Duyệt thất bại'));
     }
   };
   const doReject = async () => {
@@ -207,7 +211,7 @@ const RoleManagement = () => {
       setRejectReason('');
       refresh();
     } catch (e) {
-      toast.error(e?.message || 'Từ chối thất bại');
+      toast.error(errText(e, 'Từ chối thất bại'));
     }
   };
   const doSubmit = async (role) => {
@@ -217,7 +221,7 @@ const RoleManagement = () => {
       refresh();
       setDetailRole(null);
     } catch (e) {
-      toast.error(e?.message || 'Gửi duyệt thất bại');
+      toast.error(errText(e, 'Gửi duyệt thất bại'));
     }
   };
   const doToggle = async (role) => {
@@ -228,7 +232,7 @@ const RoleManagement = () => {
       refresh();
       setDetailRole(null);
     } catch (e) {
-      toast.error(e?.message || 'Thao tác thất bại');
+      toast.error(errText(e, 'Thao tác thất bại'));
     }
   };
   const doDelete = async (role) => {
@@ -239,7 +243,7 @@ const RoleManagement = () => {
       refresh();
       setDetailRole(null);
     } catch (e) {
-      toast.error(e?.message || 'Xóa thất bại');
+      toast.error(errText(e, 'Xóa thất bại'));
     }
   };
 
@@ -256,8 +260,7 @@ const RoleManagement = () => {
             <span>Phân quyền RBAC</span>
           </h2>
           <p className="mt-1 text-sm text-slate-500">
-            Tách quyền nền tảng (PLATFORM) & doanh nghiệp (COMPANY) · Least-privilege + quy trình
-            duyệt vai trò
+            Tạo vai trò và quản lý quyền
           </p>
         </div>
         <button
@@ -277,11 +280,10 @@ const RoleManagement = () => {
             <button
               key={t.key}
               onClick={() => setActiveTab(t.key)}
-              className={`relative flex items-center gap-2 px-4 py-3 text-sm font-bold whitespace-nowrap transition-colors ${
-                active
+              className={`relative flex items-center gap-2 px-4 py-3 text-sm font-bold whitespace-nowrap transition-colors ${active
                   ? 'text-[#3AB4E6] border-b-2 border-[#3AB4E6]'
                   : 'text-slate-500 hover:text-slate-700'
-              }`}
+                }`}
             >
               <Icon size={14} /> {t.label}
               {t.key === 'pending' && pendingCount > 0 && (
@@ -607,7 +609,7 @@ const RoleDetailDialog = ({
       );
       onSaved();
     } catch (e) {
-      toast.error(e?.message || 'Lưu thất bại');
+      toast.error(errText(e, 'Lưu thất bại'));
     } finally {
       setSaving(false);
     }
@@ -812,7 +814,7 @@ const CreateRoleDialog = ({ permByScope, onClose, onCreated }) => {
       toast.success('Đã tạo vai trò (bản nháp). Hãy gửi duyệt để kích hoạt.');
       onCreated();
     } catch (e) {
-      toast.error(e?.message || 'Tạo vai trò thất bại');
+      toast.error(errText(e, 'Tạo vai trò thất bại'));
     } finally {
       setSaving(false);
     }
@@ -886,11 +888,10 @@ const CreateRoleDialog = ({ permByScope, onClose, onCreated }) => {
                       key={p.code}
                       type="button"
                       onClick={() => toggle(p.code)}
-                      className={`flex items-center gap-2 text-sm rounded-lg px-2.5 py-1.5 border text-left transition-colors ${
-                        on
+                      className={`flex items-center gap-2 text-sm rounded-lg px-2.5 py-1.5 border text-left transition-colors ${on
                           ? 'bg-emerald-50 border-emerald-200 text-emerald-700'
                           : 'bg-white border-slate-200 text-slate-600 hover:border-slate-300'
-                      }`}
+                        }`}
                     >
                       <span
                         className={`w-4 h-4 rounded flex items-center justify-center shrink-0 ${on ? 'bg-emerald-500 text-white' : 'border border-slate-300'}`}
@@ -979,7 +980,7 @@ const EditRoleDialog = ({ role, permByScope, onClose, onSaved }) => {
       toast.success(willReapprove ? 'Đã lưu — vai trò cần được duyệt lại' : 'Đã lưu thay đổi');
       onSaved();
     } catch (e) {
-      toast.error(e?.response?.data?.message || e?.message || 'Lưu thất bại');
+      toast.error(errText(e, 'Lưu thất bại'));
     } finally {
       setSaving(false);
     }
@@ -1105,7 +1106,7 @@ const CompanyMembers = ({ companyRoles }) => {
       toast.success(`Đã gán vai trò cho ${m.email}`);
       loadMembers(companyId);
     } catch (e) {
-      toast.error(e?.message || 'Gán vai trò thất bại');
+      toast.error(errText(e, 'Gán vai trò thất bại'));
     }
   };
   const remove = async (m) => {
@@ -1115,7 +1116,7 @@ const CompanyMembers = ({ companyRoles }) => {
       toast.success('Đã gỡ thành viên');
       loadMembers(companyId);
     } catch (e) {
-      toast.error(e?.message || 'Gỡ thất bại');
+      toast.error(errText(e, 'Gỡ thất bại'));
     }
   };
 
@@ -1247,7 +1248,7 @@ const AddMemberDialog = ({ companyId, activeRoles, onClose, onAdded }) => {
       toast.success('Đã thêm HR vào công ty');
       onAdded();
     } catch (e) {
-      toast.error(e?.message || 'Thêm HR thất bại');
+      toast.error(errText(e, 'Thêm HR thất bại'));
     } finally {
       setSaving(false);
     }
@@ -1328,7 +1329,7 @@ const StaffManagement = () => {
     rbacService
       .getRoles('PLATFORM')
       .then((d) => setPlatformRoles(d || []))
-      .catch(() => {});
+      .catch(() => { });
   }, []);
 
   const load = useCallback((kw) => {
@@ -1355,7 +1356,7 @@ const StaffManagement = () => {
       toast.success(`Đã gán vai trò cho ${s.email}`);
       load(keyword.trim());
     } catch (e) {
-      toast.error(e?.message || 'Gán vai trò thất bại');
+      toast.error(errText(e, 'Gán vai trò thất bại'));
     }
   };
   const promote = async (s) => {
@@ -1364,7 +1365,7 @@ const StaffManagement = () => {
       toast.success(`${s.email} đã trở thành nhân sự nội bộ`);
       load(keyword.trim());
     } catch (e) {
-      toast.error(e?.message || 'Thao tác thất bại');
+      toast.error(errText(e, 'Thao tác thất bại'));
     }
   };
   const revoke = async (s) => {
@@ -1374,7 +1375,7 @@ const StaffManagement = () => {
       toast.success('Đã thu hồi quyền');
       load(keyword.trim());
     } catch (e) {
-      toast.error(e?.message || 'Thu hồi thất bại');
+      toast.error(errText(e, 'Thu hồi thất bại'));
     }
   };
 
