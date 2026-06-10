@@ -389,7 +389,7 @@ public class AdminJobServiceImpl implements AdminJobService {
         .skills(job.getSkills())
         .jobType(job.getJobType())
         .experienceLevel(job.getExperienceLevel())
-        .workingDays(job.getWorkingDays())
+        .workingDays(job.getWorkingDays() != null ? job.getWorkingDays().name() : null)
         .minSalary(job.getMinSalary())
         .maxSalary(job.getMaxSalary())
         .salaryType(job.getSalaryType())
