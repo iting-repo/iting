@@ -2,6 +2,8 @@
 
 A modern, scalable job portal platform built with microservices architecture, featuring AI-powered capabilities for job matching and candidate screening. ITing connects job seekers with employers through an intelligent, user-friendly platform.
 
+For demo video: https://youtu.be/pzYssfObK7o
+
 **Status**: Production-Ready | **License**: ISC | **Version**: 1.0.0
 
 ---
